@@ -1,0 +1,12 @@
+{
+  "name": "@rokid/tapdriver",
+  "version": "1.0.0",
+  "description": "Tap driver for Node.js",
+  "main": "index.js",
+  "keywords": [
+    "play",
+    "rokid"
+  ],
+  "author": "Yazhong Liu <yazhong.liu@rokid.com>",
+  "license": "MIT"
+}

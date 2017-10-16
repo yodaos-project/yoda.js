@@ -1,0 +1,15 @@
+{
+  "name": "@rokid/player",
+  "version": "1.0.0",
+  "description": "media player for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "play",
+    "rokid"
+  ],
+  "author": "Yazhong Liu <yazhong.liu@rokid.com>",
+  "license": "UNLICENSED"
+}

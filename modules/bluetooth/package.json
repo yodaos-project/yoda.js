@@ -1,0 +1,26 @@
+{
+  "name": "@rokid/bluetooth",
+  "version": "1.0.0",
+  "description": "Bluetooth bindings for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com/Rokid/node-bluetooth.git"
+  },
+  "keywords": [
+    "bluetooth",
+    "rokid",
+    "nodejs",
+    "binding"
+  ],
+  "author": "Yazhong Liu <yazhong.liu@rokid.com>",
+  "license": "UNLICENSED",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "1.3.0",
+    "nan": "2.6.2"
+  }
+}

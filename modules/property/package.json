@@ -1,0 +1,15 @@
+{
+  "name": "@rokid/property",
+  "version": "1.0.0",
+  "description": "property for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "play",
+    "rokid"
+  ],
+  "author": "Yazhong Liu <yazhong.liu@rokid.com>",
+  "license": "UNLICENSED"
+}
