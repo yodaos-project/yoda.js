@@ -15,6 +15,7 @@ class NativeApp extends EventEmitter {
     super();
     this._appid = appid;
     this._iface = null;
+    this._app = null;
   }
   /**
    * @method _onGetInfo
@@ -27,7 +28,7 @@ class NativeApp extends EventEmitter {
    */
   _onGetEvent(name, ...args) {
     const callback = args[args.length - 1];
-    this.emit(name, args.slice(0, args.length - 1));
+    this._app.emit(name, args.slice(0, args.length - 1));
     callback(true);
   }
   /**

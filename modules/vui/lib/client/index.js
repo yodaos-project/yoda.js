@@ -19,9 +19,11 @@ class RokidApp extends EventEmitter {
    * @param {Object} options
    */
   constructor(appid, runtime, options) {
+    super();
     this._appid = appid;
     this._runtime = runtime;
     this._options = Object.assign({
+      data: {},
       created() {
         // create, restart
       },
@@ -40,16 +42,18 @@ class RokidApp extends EventEmitter {
       onrequest() {
         // voice_command or other request
       },
+      keyEvent() {
+        // key event
+      }
     }, options);
-
-    let rt = this._runtime;
-    rt.on('create', this._onCreate.bind(rt));
-    rt.on('restart', this._onCreate.bind(rt));
-    rt.on('pause', this._onPaused.bind(rt));
-    rt.on('resume', this._onResumed.bind(rt));
-    rt.on('stop', this._onBeforeDestroy.bind(rt));
-    rt.on('destroy', this._onDestroyed.bind(rt));
-    rt.on('voice_command', this._onVoiceCommand.bind(rt));
+    this.on('create', this._onCreate.bind(this));
+    this.on('restart', this._onCreate.bind(this));
+    this.on('pause', this._onPaused.bind(this));
+    this.on('resume', this._onResumed.bind(this));
+    this.on('stop', this._onBeforeDestroy.bind(this));
+    this.on('destroy', this._onDestroyed.bind(this));
+    this.on('voice_command', this._onVoiceCommand.bind(this));
+    this.on('key_event', this._onKeyEvent.bind(this));
   }
   /**
    * @method _onCreate
@@ -95,6 +99,12 @@ class RokidApp extends EventEmitter {
     result.action.fetch();
   }
   /**
+   * @method _onKeyEvent
+   */
+  _onKeyEvent() {
+    this._options.keyEvent.apply(this, arguments);
+  }
+  /**
    * @method say
    */
   say(text, cb) {
@@ -135,9 +145,14 @@ module.exports = function(options) {
     if (started)
       return;
     started = true;
-    return new RokidApp(appid, runtime, options);
+    let app = new RokidApp(appid, runtime, options);
+    if (native)
+      runtime._app = app;
+    return app;
   };
   setImmediate(() => {
+    if (started)
+      return;
     native = true;
     const appid = (process.argv[2] || '').replace(/^rokid\.openvoice\.X/, '');
     if (!appid)

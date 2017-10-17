@@ -192,14 +192,15 @@ class AppExecutor {
    * @param {Object} runtime
    */
   createHandler(appid, runtime) {
-    if (this._type === 'light') {
-      // FIXME(Yazhong): fresh would lost state
-      return require(this._exec)(appid, runtime);
-    } else if (this._type === 'native') {
-      if (!this._connector)
+    if (!this._connector) {
+      if (this._type === 'light') {
+        // FIXME(Yazhong): fresh would lost state
+        this._connector = require(this._exec)(appid, runtime);
+      } else if (this._type === 'native') {
         this._connector = new NativeConnector(appid, runtime, this._exec);
-      return this._connector;
+      }
     }
+    return this._connector;
   }
 }
 

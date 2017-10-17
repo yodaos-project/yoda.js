@@ -219,7 +219,7 @@ class Light {
     }
     this._data = data;
     this._lumen.draw(data);
-    return this.sleep(this.tick);
+    return this.delay(this.tick);
   }
   /**
    * @method fill
