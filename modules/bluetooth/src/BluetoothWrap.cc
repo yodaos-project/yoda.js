@@ -17,7 +17,6 @@ public:
     Nan::HandleScope scope;
     char data[msg.id_pwd.length];
     memcpy(data, msg.id_pwd.value, sizeof(data));
-    printf("%s\n", data);
 
     Local<Value> argv[] = {
       Nan::Null(), 

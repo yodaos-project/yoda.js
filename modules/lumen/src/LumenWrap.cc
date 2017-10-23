@@ -94,6 +94,7 @@ NAN_METHOD(LumenWrap::Pause) {
 
 NAN_METHOD(LumenWrap::Stop) {
   LumenWrap* lumen = Nan::ObjectWrap::Unwrap<LumenWrap>(info.This());
+  lumen->light->lumen_set_enable(false);
   lumen->light = nullptr;
   lumen->enabled = false;
   info.GetReturnValue().Set(info.This());
@@ -120,7 +121,6 @@ NAN_METHOD(LumenWrap::Draw) {
   }
   lumen->light->lumen_set_enable(true);
   lumen->light->lumen_draw(data, sizeof(data));
-  lumen->light->lumen_set_enable(false);
   info.GetReturnValue().Set(info.This());
 }
 
