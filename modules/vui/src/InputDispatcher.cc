@@ -11,7 +11,9 @@ class InputServer : public virtual InputServerInterface {
   void dispatchKey(input_keyevent_t* event) {
     if (!event)
       return;
-    wrap->event = event;
+    wrap->event.deviceId = event->deviceId;
+    wrap->event.action = event->action;
+    wrap->event.keyCode = event->keyCode;
     uv_async_send(&wrap->async);
   }
   void notifySwitch(nsecs_t when, uint32_t switchValues, uint32_t switchMask) {
@@ -82,25 +84,21 @@ void InputDispatcherWrap::AfterExecute(uv_work_t* handle, int status) {
 void InputDispatcherWrap::AsyncCallback(uv_async_t* handle) {
   InputDispatcherWrap* wrap = static_cast<InputDispatcherWrap*>(handle->data);
   uv_mutex_lock(&wrap->async_locker);
-  input_keyevent_t* event = wrap->event;
+  input_keyevent_t event = wrap->event;
   uv_mutex_unlock(&wrap->async_locker);
 
   Nan::HandleScope scope;
   Local<Value> argv[1];
   Local<Object> eventObj = Nan::New<Object>();
-  const char* event_timestamp = std::to_string(event->eventTime).c_str();
-  const char* down_timestamp = std::to_string(event->downTime).c_str();
 
-  Nan::Set(eventObj, Nan::New("eventTime").ToLocalChecked(), Nan::New(event_timestamp).ToLocalChecked());
-  Nan::Set(eventObj, Nan::New("deviceId").ToLocalChecked(), Nan::New(event->deviceId));
-  Nan::Set(eventObj, Nan::New("source").ToLocalChecked(), Nan::New(event->source));
-  Nan::Set(eventObj, Nan::New("policyFlags").ToLocalChecked(), Nan::New(event->policyFlags));
-  Nan::Set(eventObj, Nan::New("action").ToLocalChecked(), Nan::New(event->action));
-  Nan::Set(eventObj, Nan::New("flags").ToLocalChecked(), Nan::New(event->flags));
-  Nan::Set(eventObj, Nan::New("keyCode").ToLocalChecked(), Nan::New(event->keyCode));
-  Nan::Set(eventObj, Nan::New("scanCode").ToLocalChecked(), Nan::New(event->scanCode));
-  Nan::Set(eventObj, Nan::New("metaState").ToLocalChecked(), Nan::New(event->metaState));
-  Nan::Set(eventObj, Nan::New("downTime").ToLocalChecked(), Nan::New(down_timestamp).ToLocalChecked());
+  Nan::Set(eventObj, Nan::New("deviceId").ToLocalChecked(), Nan::New<Int32>(event.deviceId));
+  Nan::Set(eventObj, Nan::New("action").ToLocalChecked(), Nan::New<Int32>(event.action));
+  Nan::Set(eventObj, Nan::New("keyCode").ToLocalChecked(), Nan::New<Int32>(event.keyCode));
+  // Nan::Set(eventObj, Nan::New("source").ToLocalChecked(), Nan::New<Uint32>(event.source));
+  // Nan::Set(eventObj, Nan::New("policyFlags").ToLocalChecked(), Nan::New<Uint32>(event.policyFlags));
+  // Nan::Set(eventObj, Nan::New("flags").ToLocalChecked(), Nan::New<Int32>(event.keyCode));
+  // Nan::Set(eventObj, Nan::New("scanCode").ToLocalChecked(), Nan::New<Int32>(event.flags));
+  // Nan::Set(eventObj, Nan::New("metaState").ToLocalChecked(), Nan::New<Int32>(event.metaState));
   argv[0] = eventObj;
   wrap->callback->Call(1, argv);
 }

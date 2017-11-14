@@ -1,5 +1,5 @@
 #include "src/VolumeWrap.h"
-#include <rokid/vol_ctrl/volumecontrol.h>
+#include <vol_ctrl/volumecontrol.h>
 
 using namespace v8;
 using namespace std;

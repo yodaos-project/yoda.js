@@ -32,8 +32,8 @@ class SkillHandler {
     try {
       if (context === '{}')
         throw new Error('empty nlp context');
-      this._context = JSON.parse(context);
-      this._action = JSON.parse(action);
+      this._context = context;
+      this._action = action;
       this._id = this._context.appId;
       if (!this._id) {
         throw new IntentRequestError('`appId` is required');

@@ -24,8 +24,9 @@ class Player extends EventEmitter {
   /**
    * @method constructor
    */
-  constructor() {
+  constructor(options) {
     super();
+
     this._onPrepared = null;
     this._state = null;
     this._handle = new PlayWrap((id) => {
@@ -37,6 +38,10 @@ class Player extends EventEmitter {
         else
           this._handle.start();
       } else if (this._state === 'finish') {
+        // FIXME(yazhong): `autoStop` means auto stop the handle
+        // default is `true`.
+        if (options.autoStop === false)
+          return;
         this._handle.stop();
       }
     });
@@ -126,9 +131,9 @@ class Player extends EventEmitter {
   }
 }
 
-function play(url, setup) {
+function play(url, setup, options) {
   stop();
-  var newInstance = new Player();
+  var newInstance = new Player(options || {});
   if (typeof setup === 'function')
     setup(newInstance);
   newInstance.play(url);

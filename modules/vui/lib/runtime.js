@@ -1,9 +1,11 @@
 'use strict';
 
-const AppDispatcher = require('bindings')('ams_down').AppDispatcher;
+// const AppDispatcher = require('bindings')('ams_down').AppDispatcher;
+const SpeechService = require('./server').SpeechService;
 const InputDispatcher = require('bindings')('inputdown').InputDispatcher;
 const SkillHandler = require('./handler').SkillHandler;
 const AppManager = require('./app').AppManager;
+const KeyEvents = require('./keyevents');
 
 const dbus = require('dbus');
 const tap = require('@rokid/tapdriver');
@@ -30,28 +32,44 @@ class Runtime {
     this._apps = null;
     this._skill2handler = {};
     this._input = new InputDispatcher((event) => {
-      const app = this._dispatcher.getCurrent();
-      const id = this._getAppId(app.appid, app.isCloud);
-      if (id) {
-        console.log(`<keyevent> code=${event.keyCode}`);
-        this._handleKeyEvent(id, event);
+      if (event.keyCode === 24 && event.action === 0) {
+        KeyEvents.onPressVolumeUp();
+      } else if (event.keyCode === 24 && event.action === 1) {
+        KeyEvents.afterPressVolumeUp();
+      } else if (event.keyCode === 25 && event.action === 0) {
+        KeyEvents.onPressVolumeDown();
+      } else if (event.keyCode === 25 && event.action === 1) {
+        KeyEvents.afterPressVolumeDown();
+      } else if (event.keyCode === 91 && event.action === 0) {
+        KeyEvents.onPressVolumeMute();
+      } else if (event.keyCode === 91 && event.action === 1) {
+        KeyEvents.afterPressVolumeMute();
+      } else {
+        // app keyevents
+        const app = this._dispatcher.getCurrent();
+        const id = this._getAppId(app.appid, app.isCloud);
+        if (id) {
+          console.log(`<keyevent> code=${event.keyCode}`);
+          this._handleKeyEvent(id, event);
+        }
       }
     });
-    this._dispatcher = new AppDispatcher((event, isCloud, isCut, appId, ...args) => {
-      console.log(`<${event}>`, appId, isCloud, args);
+    this._dispatcher = new SpeechService((event, data) => {
+      console.log(event, data.appId);
       if (this._testing)
         return;
-      const id = this._getAppId(appId, isCloud);
-      const form = isCut ? 'cut' : 'scene';
+      const id = this._getAppId(data.appId, data.cloud);
+      const form = data.form;
 
       if (event === 'pause') {
-        this._handlePause(id, { isCloud, form, appId });
+        this._handlePause(id, data);
       } else if (event === 'resume') {
-        this._handleResume(id, { isCloud, form, appId });
+        this._handleResume(id, data);
       } else if (event === 'voice_command') {
-        this._handleVoiceCommand.apply(this, args);
+        console.log(data.asr, data.nlp, data.action);
+        this._handleVoiceCommand(data.asr, data.nlp, data.action);
       } else {
-        this._handleVoiceEvent(id, event, { isCloud, form, appId });
+        this._handleVoiceEvent(id, event, data);
       }
     });
   }
@@ -112,7 +130,7 @@ class Runtime {
    * @param {Object} data
    */
   _handleResume(id, data) {
-    if (data.isCloud) {
+    if (data.cloud) {
       require('@rokid/player').resume();
     }
     const handler = this._appMgr.getHandlerById(id);

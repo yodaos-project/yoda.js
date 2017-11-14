@@ -10,7 +10,7 @@ let a2dp_is_opened = false;
  * @method open
  * @param {String} name - the bluetooth name
  */
-exports.open = function(name) {
+exports.open = function open(name) {
   if (ble_is_opened === true)
     ble.close();
   handle.open(name || 'Rokid DevBoard');
@@ -20,7 +20,7 @@ exports.open = function(name) {
 /**
  * @method close
  */
-exports.close = function() {
+exports.close = function close() {
   handle.close();
   a2dp_is_opened = false;
 };
@@ -28,7 +28,7 @@ exports.close = function() {
 /**
  * @method play
  */
-exports.play = function() {
+exports.play = function play() {
   if (a2dp_is_opened)
     handle.sendCommand(1);
 };
@@ -36,7 +36,7 @@ exports.play = function() {
 /**
  * @method pause
  */
-exports.pause = function() {
+exports.pause = function pause() {
   if (a2dp_is_opened)
     handle.sendCommand(2);
 };
@@ -44,7 +44,7 @@ exports.pause = function() {
 /**
  * @method playNext
  */
-exports.playNext = function() {
+exports.playNext = function playNext() {
   if (a2dp_is_opened)
     handle.sendCommand(3);
 };
@@ -52,7 +52,7 @@ exports.playNext = function() {
 /**
  * @method playPrev
  */
-exports.playPrev = function() {
+exports.playPrev = function playPrev() {
   if (a2dp_is_opened)
     handle.sendCommand(4);
 };
@@ -61,7 +61,7 @@ exports.playPrev = function() {
  * @method a2dp
  * @param {String} type - sink or link
  */
-exports.a2dp = function(type) {
+exports.a2dp = function a2dp(type) {
   if (type === 'sink')
     return handle.enableA2DPSink();
   else if (type === 'link')
@@ -79,7 +79,7 @@ class BluetoothLowEnergy {
    */
   open(name) {
     if (a2dp_is_opened === true)
-      clse();
+      close();
     handle.enableBLE(name || 'Rokid DevBoard');
     ble_is_opened = true;
     return this;

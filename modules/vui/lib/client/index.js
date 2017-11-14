@@ -136,6 +136,12 @@ class RokidApp extends EventEmitter {
       state: 'exit',
     });
   }
+  /**
+   * @method pickup
+   */
+  pickup() {
+    this._runtime.setPickup(true);
+  }
 }
 
 module.exports = function(options) {

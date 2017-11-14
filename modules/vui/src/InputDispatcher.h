@@ -18,7 +18,7 @@ class InputDispatcherWrap : public Nan::ObjectWrap {
   Nan::Callback* callback;
   uv_async_t async;
   uv_mutex_t async_locker;
-  input_keyevent_t* event;
+  input_keyevent_t event;
 
  public:
   static NAN_MODULE_INIT(Init);

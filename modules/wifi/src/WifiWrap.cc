@@ -3,6 +3,26 @@
 using namespace v8;
 using namespace std;
 
+class ConnectWorker : public Nan::AsyncWorker {
+ public:
+  ConnectWorker(Nan::Callback *callback, struct wifi_network network)
+    : AsyncWorker(callback), network_(network) {}
+  ~ConnectWorker() {}
+  void Execute () {
+    wifi_join_network(&network_);
+    dhcp_reset();
+  }
+  void HandleOKCallback () {
+    Nan::HandleScope scope;
+    Local<Value> argv[] = { 
+      Nan::Null()
+    };
+    callback->Call(1, argv);
+  }
+ private:
+  struct wifi_network network_;
+};
+
 WifiWrap::WifiWrap() {
   memset(network_.ssid, 0, 32);
   memset(network_.psk, 0, 64);
@@ -23,7 +43,9 @@ NAN_MODULE_INIT(WifiWrap::Init) {
   tmpl->SetClassName(Nan::New("WifiWrap").ToLocalChecked());
   tmpl->InstanceTemplate()->SetInternalFieldCount(1);
 
+  Nan::SetPrototypeMethod(tmpl, "save", Save);
   Nan::SetPrototypeMethod(tmpl, "connect", Connect);
+  Nan::SetPrototypeMethod(tmpl, "disconnect", Disconnect);
   Nan::SetPrototypeMethod(tmpl, "getStatus", GetStatus);
 
   Local<Function> func = Nan::GetFunction(tmpl).ToLocalChecked();
@@ -36,6 +58,11 @@ NAN_METHOD(WifiWrap::New) {
   info.GetReturnValue().Set(info.This());
 }
 
+NAN_METHOD(WifiWrap::Save) {
+  wifi_save_network();
+  info.GetReturnValue().Set(info.This());
+}
+
 NAN_METHOD(WifiWrap::Connect) {
   WifiWrap* handle = Nan::ObjectWrap::Unwrap<WifiWrap>(info.This());
   v8::String::Utf8Value ssid(info[0].As<String>());
@@ -44,21 +71,21 @@ NAN_METHOD(WifiWrap::Connect) {
 
   char* ssid_str = strdup(*ssid);
   char* psk_str = strdup(*psk);
-  printf("ssid: %s, psk: %s\n", ssid_str, psk_str);
+  fprintf(stdout, "ssid: %s, psk: %s\n", ssid_str, psk_str);
 
   memcpy(handle->network_.ssid, ssid_str, ssid.length());
   memcpy(handle->network_.psk, psk_str, psk.length());
   handle->network_.key_mgmt = method;
-  wifi_join_network(&handle->network_);
-  dhcp_reset();
 
-  int r = handle->status();
-  int connected = 0;
-  if (WIFI_CONNECTED == r) {
-    wifi_save_network();
-    connected = 1;
-  }
-  info.GetReturnValue().Set(Nan::New<Boolean>(connected));
+  Nan::Callback *callback = new Nan::Callback(info[3].As<Function>());
+  Nan::AsyncQueueWorker(new ConnectWorker(callback, handle->network_));
+}
+
+NAN_METHOD(WifiWrap::Disconnect) {
+  wifi_disable_all_network();
+  // FIXME(Yorkie): dont save network
+  // wifi_save_network();
+  info.GetReturnValue().Set(Nan::True());
 }
 
 NAN_METHOD(WifiWrap::GetStatus) {

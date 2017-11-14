@@ -21,6 +21,8 @@ private:
   struct wifi_network network_;
   // instance methods
   static NAN_METHOD(New);
+  static NAN_METHOD(Save);
   static NAN_METHOD(Connect);
+  static NAN_METHOD(Disconnect);
   static NAN_METHOD(GetStatus);
 };
