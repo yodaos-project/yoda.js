@@ -1,0 +1,21 @@
+{
+  "name": "@rokid/runtime",
+  "version": "1.0.0",
+  "description": "RokidOS Runtime for Node.js",
+  "main": "lib/index.js",
+  "bin": {
+    "vui-daemon": "./bin/daemon.js",
+    "vui-ping": "./bin/ping.js"
+  },
+  "keywords": [
+    "vui",
+    "runtime"
+  ],
+  "author": "Yazhong Liu <yazhong.liu@rokid.com>",
+  "license": "UNLICENSED",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "^1.3.0",
+    "nan": "^2.6.2"
+  }
+}

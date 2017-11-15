@@ -11,5 +11,8 @@
     "rokid"
   ],
   "author": "Yazhong Liu <yazhong.liu@rokid.com>",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "nan": "2.6.2"
+  }
 }

@@ -1,20 +1,18 @@
 {
   "targets": [{
-    "target_name": "ams",
+    "target_name": "input_down",
     "include_dirs": [
-      "dbus-c++-1",
       "<!(node -e \"require('nan')\")",
       "./src",
+      "./src/deps",
     ],
     "sources": [
-      "src/AmClientWrap.cc",
+      "src/InputDispatcher.cc",
     ],
     "cflags!": [ "-fno-exceptions" ],
     "cflags_cc!": [ "-fno-exceptions", "-std=c++11" ],
     "libraries": [
-      "-ldbus-c++-1",
-      "-ldbus-1",
-      "-lrknative",
+      "-linputflinger",
     ],
   }]
 }

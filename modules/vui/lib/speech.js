@@ -22,8 +22,8 @@ class SpeechContext {
    */
   enter(appId, form, cloud) {
     // FIXME(Yorkie): dont put stack when form is "service"
-    if (form === 'service')
-      return false;
+    // if (form === 'service')
+    //   return false;
 
     let isNew = !this.remove(appId);
     this._stack.push(appId);
@@ -148,7 +148,7 @@ class SpeechService {
     } else {
       const last = this._context.getCurrentApp();
       if (last) {
-        if (last.form === 'cut') {
+        if (last.form === 'cut' || last.form === 'service') {
           this.exitBy(last);
         } else {
           this.emit('pause', last);

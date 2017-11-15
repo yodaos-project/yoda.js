@@ -1,17 +1,19 @@
 'use strict';
 
-// const AppDispatcher = require('bindings')('ams_down').AppDispatcher;
-const SpeechService = require('./server').SpeechService;
-const InputDispatcher = require('bindings')('inputdown').InputDispatcher;
-const SkillHandler = require('./handler').SkillHandler;
-const AppManager = require('./app').AppManager;
-const KeyEvents = require('./keyevents');
-
 const dbus = require('dbus');
 const exec = require('child_process').execSync;
 const tap = require('@rokid/tapdriver');
 const tts = require('@rokid/tts');
+const wifi = require('@rokid/wifi');
 const player = require('@rokid/player');
+
+const InputDispatcher = require('@rokid/input').InputDispatcher;
+const {
+  SpeechService,
+  SkillHandler,
+  AppManager
+} = require('@rokid/vui');
+const KeyEvents = require('./keyevents');
 
 /**
  * @property {Object} ROKID
@@ -84,11 +86,18 @@ class Runtime {
     this._startMonitor(); 
     exec('touch /var/run/bootcomplete');
 
+    // check if network is connected
+    if (wifi.status() === 'connected')
+      this._startSpeech();
+
     // update process title
     process.title = 'vui';
     console.info(this._appMgr.toString());
   }
-  startSpeech() {
+  /**
+   * @method _startSpeech
+   */
+  _startSpeech() {
     player.play(__dirname + '/sounds/startup0.ogg');
     this._dispatcher.start();
   }
@@ -192,9 +201,11 @@ class Runtime {
       if (data.upgrade === true) {
         this._dispatcher.redirect('@upgrade');
       } else if (data['Wifi'] === false) {
+        this._online = false;
         this._dispatcher.redirect('@network');
-      } else if (data['Wifi'] === true) {
-        this.startSpeech();
+      } else if (data['Wifi'] === true && !this._online) {
+        this._online = true;
+        this._startSpeech();
       }
       done(null, true);
     } catch (err) {
