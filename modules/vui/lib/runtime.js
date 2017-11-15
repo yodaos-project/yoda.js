@@ -8,9 +8,10 @@ const AppManager = require('./app').AppManager;
 const KeyEvents = require('./keyevents');
 
 const dbus = require('dbus');
+const exec = require('child_process').execSync;
 const tap = require('@rokid/tapdriver');
 const tts = require('@rokid/tts');
-// const player = require('@rokid/player');
+const player = require('@rokid/player');
 
 /**
  * @property {Object} ROKID
@@ -26,6 +27,7 @@ class Runtime {
    * @param {Array} paths - the watch paths for apps
    */
   constructor(paths) {
+    this._online = false;
     this._paths = paths || ['/opt/apps'];
     this._testing = false;
     this._current = null;
@@ -78,11 +80,17 @@ class Runtime {
    */
   start() {
     this._appMgr = new AppManager(this._paths, this);
-    this._dispatcher.start();
     this._input.listen();
-    this._startMonitor();
+    this._startMonitor(); 
+    exec('touch /var/run/bootcomplete');
+
+    // update process title
     process.title = 'vui';
     console.info(this._appMgr.toString());
+  }
+  startSpeech() {
+    player.play(__dirname + '/sounds/startup0.ogg');
+    this._dispatcher.start();
   }
   /**
    * @method exitCurrent
@@ -185,6 +193,8 @@ class Runtime {
         this._dispatcher.redirect('@upgrade');
       } else if (data['Wifi'] === false) {
         this._dispatcher.redirect('@network');
+      } else if (data['Wifi'] === true) {
+        this.startSpeech();
       }
       done(null, true);
     } catch (err) {

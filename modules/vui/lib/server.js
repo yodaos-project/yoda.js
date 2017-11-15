@@ -2,7 +2,6 @@
 
 const SpeechWrap = require('bindings')('speech_down').SpeechWrap;
 const EventEmitter = require('events').EventEmitter;
-const exec = require('child_process').execSync;
 const volume = require('@rokid/volume');
 const light = require('@rokid/lumen');
 
@@ -245,7 +244,6 @@ class SpeechService {
    * @method start
    */
   start() {
-    exec('touch /var/run/bootcomplete');
     this._handle.start();
     setInterval(() => false, 5000);
   }

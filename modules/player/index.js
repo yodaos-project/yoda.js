@@ -52,7 +52,8 @@ class Player extends EventEmitter {
    * @method _onError
    */
   _onError(err) {
-    console.error('Error: player occurrs some unknown error');
+    this._handle.stop();
+    console.error('Error: player occurrs some unknown error', err);
   }
   /**
    * @method play
