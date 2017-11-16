@@ -16,7 +16,7 @@
     "local": [
       "modules/bluetooth:btflinger",
       "modules/dbus:dbus",
-      "modules/input:inputflinger",
+      "modules/input:android-fw-native",
       "modules/lumen:lumenflinger",
       "modules/player:librplayer",
       "modules/property",

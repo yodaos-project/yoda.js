@@ -1,5 +1,8 @@
 'use strict';
 
-exports.SpeechService = require('./speech').SpeechService;
-exports.SkillHandler = require('./handler').SkillHandler;
-exports.AppManager = require('./app').AppManager;
+let vui = require('./client/index.js');
+vui.SpeechService = require('./speech').SpeechService;
+vui.SkillHandler = require('./handler').SkillHandler;
+vui.AppManager = require('./app').AppManager;
+
+module.exports = vui;

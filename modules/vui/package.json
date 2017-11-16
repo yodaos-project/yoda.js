@@ -2,7 +2,7 @@
   "name": "@rokid/vui",
   "version": "1.2.0",
   "description": "VUI framework for Node.js",
-  "main": "lib/client/index.js",
+  "main": "lib/index.js",
   "scripts": {
     "install": "node-gyp rebuild"
   },
