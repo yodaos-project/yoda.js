@@ -224,7 +224,7 @@ class SpeechService {
   /**
    * @method redirect
    */
-  redirect(appId) {
+  redirect(appId, context) {
     // exit the last
     let current = this._context.getCurrentApp();
     if (current) {
@@ -239,6 +239,21 @@ class SpeechService {
       this.emit('restart', { appId });
       this.emit('resume', { appId });
     }
+
+    const voiceCmd = {
+      asr: '',
+      nlp: {
+        appId,
+        intent: '__mock__',
+        slots: {
+          context: context
+        },
+      },
+      action: {},
+      cloud: false,
+      form: 'cut',
+    };
+    this.emit('voice_command', voiceCmd);
   }
   /**
    * @method start

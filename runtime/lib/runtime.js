@@ -205,6 +205,7 @@ class Runtime {
         this._dispatcher.redirect('@network');
       } else if (data['Wifi'] === true && !this._online) {
         this._online = true;
+        this._dispatcher.exitCurrent();
         this._startSpeech();
       }
       done(null, true);
