@@ -1,0 +1,70 @@
+'use strict';
+
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const exec = require('child_process').execSync;
+const protobuf = require('protobufjs');
+const property = require('@rokid/property');
+
+const proto = protobuf.loadSync(path.join(__dirname, '../proto/Login.proto'));
+const Request = proto.lookupType('LoginReqPB');
+const Response = proto.lookupType('LoginResPB');
+
+const uuid = property.get('ro.boot.serialno');
+const seed = property.get('ro.boot.rokidseed');
+const secret = exec(`test-stupid ${seed} ${uuid}`).toString('base64');
+console.log(uuid, seed, secret);
+const buffer = Request.encode(
+  Request.create({
+    timestamp: Date.now() + '',
+    reqType: 1,
+    identity: 1,
+    uuid,
+    secret,
+  })
+).finish();
+
+function login(callback) {
+  const req = https.request({
+    method: 'POST',
+    host: 'account.service.rokid.com',
+    path: '/bcustomer_login_platform.do',
+    headers: {
+      'Content-Type': 'application/octet-stream',
+    }
+  }, (response) => {
+    let list = [];
+    response.on('data', (chunk) => list.push(chunk));
+    response.once('end', () => {
+      const pb = Buffer.concat(list);
+      try {
+        const location = '/data/system/openvoice_profile.json';
+        const data = JSON.parse(Response.decode(pb).result);
+        const config = require(location);
+        config['device_id'] = data.deviceId;
+        config['device_type_id'] = data.deviceTypeId;
+        config['key'] = data.key;
+        config['secret'] = data.secret;
+        console.log(config);
+        fs.writeFile(location, JSON.stringify(config, null, 2), (err) => {
+          console.info(`updated the ${location} with the following config %j`, config);
+          callback(err, data);
+        });
+      } catch (err) {
+        console.error(err && err.stack);
+        callback(err);
+      }
+    });
+  });
+  req.write(buffer);
+  req.end();
+}
+
+module.exports = function() {
+  return new Promise((resolve, reject) => {
+    login((err, data) => {
+      err ? reject(err) : resolve(data);
+    });
+  });
+};

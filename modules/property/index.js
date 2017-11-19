@@ -32,5 +32,11 @@ module.exports = {
    */
   get version() {
     return this.get('ro.rokid.build.version.release');
+  },
+  /**
+   * @getter {String} serialno
+   */
+  get serialno() {
+    return this.get('ro.boot.serialno') || 'invalid';
   }
 };

@@ -1,32 +1,49 @@
 'use strict';
 const volume = require('@rokid/volume');
 const Player = require('@rokid/player').Player;
-const keyPlayer = new Player({
+const sounder = new Player({
   autoStop: false
 });
 
-exports.onPressVolumeUp = function() {
-  keyPlayer.seek(0);
-  keyPlayer.play(__dirname + '/sounds/volume.ogg');
-};
+/**
+ * @module keyevents
+ */
+module.exports = {
 
-exports.afterPressVolumeUp = function() {
-  volume.volumeUp();
-};
+  /**
+   * @method keyup
+   */
+  keyup() {
+    sounder.seek(0);
+    sounder.play(`${__dirname}/sounds/volume.ogg`);
+  },
 
-exports.onPressVolumeDown = function() {
-  keyPlayer.seek(0);
-  keyPlayer.play(__dirname + '/sounds/volume.ogg');
-};
+  /**
+   * @method keydown
+   */
+  keydown() {
+    // TODO
+  },
 
-exports.afterPressVolumeDown = function() {
-  volume.volumeDown();
-};
+  /**
+   * @method volumeup
+   */
+  volumeup() {
+    volume.volumeUp();
+  },
 
-exports.onPressVolumeMute = function() {
-  // TODO
-};
+  /**
+   * @method volumedown
+   */
+  volumedown() {
+    volume.volumeDown();
+  },
 
-exports.afterPressVolumeMute = function() {
-  // TODO
+  /**
+   * @method mute
+   */
+  mute() {
+    // TODO
+  },
+
 };

@@ -2,7 +2,10 @@
   "name": "rokidos",
   "version": "1.0.0",
   "scripts": {
-    "postinstall": "gulp"
+    "build": "gulp"
+  },
+  "config": {
+    "unsafe-perm": true
   },
   "modules": {
     "remote": {

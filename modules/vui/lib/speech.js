@@ -1,9 +1,8 @@
 'use strict';
 
+const fs = require('fs');
 const SpeechWrap = require('bindings')('speech_down').SpeechWrap;
 const EventEmitter = require('events').EventEmitter;
-const volume = require('@rokid/volume');
-const light = require('@rokid/lumen');
 
 /**
  * @class SpeechContext
@@ -86,16 +85,15 @@ class SpeechContext {
 /**
  * @class SpeechService
  */
-class SpeechService {
+class SpeechService extends EventEmitter {
   /**
    * @method constructor
    */
-  constructor(callback) {
+  constructor() {
+    super();
     this._handle = new SpeechWrap();
     this._context = new SpeechContext(this._handle);
-    this._callback = callback;
     this._autoExitTimer = null;
-    this._vol = volume.volumeGet();
 
     // set handle events
     this._handle.onVoiceEvent = this._onVoiceEvent.bind(this);
@@ -107,30 +105,22 @@ class SpeechService {
    * @method _onVoiceEvent
    */
   _onVoiceEvent(id, event, sl, energy) {
-    console.log('voice event', event, sl, energy);
-    if (event === 'coming') {
-      this._vol = volume.volumeGet();
-      light._lumen.point(sl);
-    }
+    console.log('<VoiceEvent>', event, sl, energy);
+    this.emit('voice', id, event, sl, energy);
   }
   /**
    * @method _onVoiceEvent
    */
   _onIntermediateResult(id, type, asr) {
-    console.log('inter result', type, asr);
-    if (type === 0) {
-      volume.volumeSet(15);
-    } else {
-      light._lumen.round(0);
-    }
+    console.log('<IntermediateResult>', type, asr);
+    this.emit('speech', id, type, asr);
   }
   /**
    * @method _onVoiceEvent
    */
   _onVoiceCommand(id, asr, nlp, action) {
     clearTimeout(this._autoExitTimer);
-    volume.volumeSet(this._vol);
-    light._lumen.stopRound(0);
+    this.emit('nlp ready', asr, nlp);
 
     let data = { asr };
     try {
@@ -144,24 +134,24 @@ class SpeechService {
     data.form = data.action.response.action.form;
 
     if (appId === this._context.current) {
-      this.emit('voice_command', data);
+      this.lifecycle('voice_command', data);
     } else {
       const last = this._context.getCurrentApp();
       if (last) {
         if (last.form === 'cut' || last.form === 'service') {
           this.exitBy(last);
         } else {
-          this.emit('pause', last);
+          this.lifecycle('pause', last);
         }
       }
       const isNew = this._context.enter(appId, data.form, data.cloud);
       if (isNew) {
-        this.emit('create', data);
+        this.lifecycle('create', data);
       } else {
-        this.emit('restart', data);
-        this.emit('resume', data);
+        this.lifecycle('restart', data);
+        this.lifecycle('resume', data);
       }
-      this.emit('voice_command', data);
+      this.lifecycle('voice_command', data);
 
       if (data.form === 'cut') {
         // this._autoExitTimer = setTimeout(() => {
@@ -175,10 +165,9 @@ class SpeechService {
    * @method _onError
    */
   _onError(id, code) {
-    console.log('error', arguments);
+    console.error('speech error', id, code);
     clearTimeout(this._autoExitTimer);
-    volume.volumeSet(this._vol);
-    light._lumen.stopRound(0);
+    this.emit('error', id, code);
   }
   /**
    * @method _tryResume
@@ -186,23 +175,23 @@ class SpeechService {
   _tryResume() {
     const current = this._context.getCurrentApp();
     if (current) {
-      this.emit('restart', current);
-      this.emit('resume', current);
+      this.lifecycle('restart', current);
+      this.lifecycle('resume', current);
     }
   }
   /**
    * @method emit
    */
-  emit(event, data) {
-    this._callback(event, data);
+  lifecycle(event, data) {
+    this.emit('lifecycle', event, data);
   }
   /**
    * @method exitBy
    */
   exitBy(data) {
     clearTimeout(this._autoExitTimer);
-    this.emit('stop', data);
-    this.emit('destroy', data);
+    this.lifecycle('stop', data);
+    this.lifecycle('destroy', data);
     this._context.leave(data.appId);
   }
   /**
@@ -214,6 +203,16 @@ class SpeechService {
       this.exitBy(current);
     }
     this._tryResume();
+  }
+  /**
+   * @method exitAll
+   */
+  exitAll() {
+    let current = this._context.getCurrentApp();
+    if (current) {
+      this.exitBy(current);
+      this.exitAll();
+    }
   }
   /**
    * @method setPickup
@@ -234,10 +233,10 @@ class SpeechService {
     // enter the new by appId
     const isNew = this._context.enter(appId, 'cut', false);
     if (isNew) {
-      this.emit('create', { appId });
+      this.lifecycle('create', { appId });
     } else {
-      this.emit('restart', { appId });
-      this.emit('resume', { appId });
+      this.lifecycle('restart', { appId });
+      this.lifecycle('resume', { appId });
     }
 
     const voiceCmd = {
@@ -253,7 +252,7 @@ class SpeechService {
       cloud: false,
       form: 'cut',
     };
-    this.emit('voice_command', voiceCmd);
+    this.lifecycle('voice_command', voiceCmd);
   }
   /**
    * @method start
@@ -273,6 +272,15 @@ class SpeechService {
    */
   resume() {
     this._handle.resume();
+  }
+  /**
+   * @method reload
+   */
+  reload() {
+    const data = JSON.parse(
+      fs.readFileSync('/data/system/openvoice_profile.json'));
+    this._handle.updateConfig(
+      data.device_id, data.device_type_id, data.key, data.secret);
   }
 }
 

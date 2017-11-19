@@ -17,7 +17,7 @@ gulp.task('clean', () => {
 });
 
 gulp.task('install-remote', ['clean'], () => {
-  let cmd = 'npm install -g';
+  let cmd = 'npm install --global';
   for (let name in modules.remote) {
     let version = modules.remote[name];
     cmd += ` ${name}@${version}`;
@@ -40,7 +40,7 @@ gulp.task('install-local', ['clean'], () => {
   }).filter((pathname) => {
     return pathname !== false;
   });
-  return gulp.src(files).pipe(install({npm: '-g'}));
+  return gulp.src(files).pipe(install({npm: '--global'}));
 });
 
 gulp.task('default', ['install-remote', 'install-local'], () => {

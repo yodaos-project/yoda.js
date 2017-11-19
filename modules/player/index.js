@@ -14,7 +14,6 @@ const names = {
 };
 
 var defaultPlayer = null;
-var players = [];
 
 /**
  * @class Player
@@ -46,7 +45,6 @@ class Player extends EventEmitter {
       }
     });
     this.on('error', this._onError.bind(this));
-    players.push(this);
   }
   /**
    * @method _onError
@@ -132,45 +130,75 @@ class Player extends EventEmitter {
   }
 }
 
-function play(url, setup, options) {
-  stop();
-  var newInstance = new Player(options || {});
-  if (typeof setup === 'function')
-    setup(newInstance);
-  newInstance.play(url);
-  console.log('play', url);
-  tap.assert('media.play', url);
+/**
+ * @module player
+ */
+module.exports = {
 
-  defaultPlayer = newInstance;
-  return defaultPlayer;
-}
+  /**
+   * @method play
+   * @param {String} url
+   * @param {Function} preprocessor
+   * @param {Object} options
+   */
+  play(url, preprocessor, options) {
+    this.stop();
+    var newInstance = new Player(options || {});
+    if (typeof preprocessor === 'function') {
+      preprocessor(newInstance);
+    }
+    newInstance.play(url);
+    tap.assert('media.play', url);
+    defaultPlayer = newInstance;
+    return defaultPlayer;
+  },
 
-function stop() {
-  for (let i = 0; i < players.length; i++) {
-    players[i].stop();
-    delete players[i];
-  }
-  players.length = 0;
-  defaultPlayer = null;
-  tap.assert('media.stop', true);
-}
+  /**
+   * @method seek
+   * @param {Number} ms
+   */
+  seek(ms) {
+    if (!defaultPlayer)
+      return;
+    defaultPlayer.seek(ms || 0);
+    return defaultPlayer;
+  },
 
-function pause() {
-  for (let i = 0; i < players.length; i++) {
-    players[i].pause();
-  }
-  tap.assert('media.pause', true);
-}
+  /**
+   * @method stop
+   */
+  stop() {
+    if (!defaultPlayer)
+      return;
+    defaultPlayer.stop();
+    defaultPlayer = null;
+    return defaultPlayer;
+  },
 
-function resume() {
-  for (let i = 0; i < players.length; i++) {
-    players[i].resume();
-  }
-  tap.assert('media.resume', true);
-}
 
-exports.Player = Player;
-exports.play = play;
-exports.stop = stop;
-exports.pause = pause;
-exports.resume = resume;
+  /**
+   * @method pause
+   */
+  pause() {
+    if (!defaultPlayer)
+      return;
+    defaultPlayer.pause();
+    return defaultPlayer;
+  },
+
+  /**
+   * @method resume
+   */
+  resume() {
+    if (!defaultPlayer)
+      return;
+    defaultPlayer.resume();
+    return defaultPlayer;
+  },
+
+  /**
+   * @class Player
+   */
+  Player: Player
+
+};

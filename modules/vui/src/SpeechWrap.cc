@@ -270,6 +270,7 @@ NAN_MODULE_INIT(SpeechWrap::Init) {
   Nan::SetPrototypeMethod(tpl, "pause", Pause);
   Nan::SetPrototypeMethod(tpl, "resume", Resume);
   Nan::SetPrototypeMethod(tpl, "updateStack", UpdateStack);
+  Nan::SetPrototypeMethod(tpl, "updateConfig", UpdateConfig);
   Nan::SetPrototypeMethod(tpl, "setSirenState", SetSirenState);
 
   Local<Function> func = Nan::GetFunction(tpl).ToLocalChecked();
@@ -310,6 +311,16 @@ NAN_METHOD(SpeechWrap::UpdateStack) {
   SpeechWrap* speech = Nan::ObjectWrap::Unwrap<SpeechWrap>(info.This());
   String::Utf8Value appid(info[0]->ToString());
   speech->_handle->update_stack(std::string(*appid));
+  info.GetReturnValue().Set(info.This());
+}
+
+NAN_METHOD(SpeechWrap::UpdateConfig) {
+  SpeechWrap* speech = Nan::ObjectWrap::Unwrap<SpeechWrap>(info.This());
+  String::Utf8Value deviceId(info[0]->ToString());
+  String::Utf8Value deviceTypeId(info[1]->ToString());
+  String::Utf8Value key(info[2]->ToString());
+  String::Utf8Value secret(info[3]->ToString());
+  speech->_handle->update_config(*deviceId, *deviceTypeId, *key, *secret);
   info.GetReturnValue().Set(info.This());
 }
 

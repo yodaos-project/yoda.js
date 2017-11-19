@@ -201,7 +201,8 @@ class Light {
    * @private
    */
   get tick() {
-    return Math.floor(1000 / this._fps);
+    // return Math.floor(1000 / this._fps);
+    return 50;
   }
   /**
    * @method update
@@ -272,8 +273,9 @@ class Light {
     const step = Math.floor(ms / this.tick);
     const frames = [];
     const params = [];
+    let lastFrame = {};
 
-    for (let n = 0; n < step; n++) {
+    for (let n = 0; n <= step; n++) {
       const setsData = {};
       for (let id in dataWithSets) {
         if (!params[id]) {
@@ -297,8 +299,21 @@ class Light {
           from[1] + delta.g * n,
           from[2] + delta.b * n,
         ];
+
+        if (n === step) {
+          const to = params[id].to;
+          if (from[0] !== to[0] ||
+            from[1] !== to[1] ||
+            from[2] !== to[2]) {
+            lastFrame[id] = to;
+          }
+        }
       }
       frames.push(setsData);
+
+      // push the last frame if checked
+      if (Object.keys(lastFrame).length > 0)
+        frames.push(lastFrame);
     }
     let queue, frame;
     while (frame = frames.shift()) {

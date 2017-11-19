@@ -37,4 +37,6 @@ private:
   static NAN_METHOD(Point);
   static NAN_METHOD(Round);
   static NAN_METHOD(StopRound);
+  static NAN_METHOD(FadeIn);
+  static NAN_METHOD(FadeOut);
 };

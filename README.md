@@ -1,31 +1,44 @@
 # rokidos-node
 
-一个基于 Node.js 生态的语音交互运行时。
+A Node.js-based runtime for RokidOS, the Voice & Graphics UI integration OS.
 
-### 模块
+### What's this project?
 
-- 基础库
-  - [x] [`dbus`](modules/dbus) 进程间通讯模块；
-  - [x] [`property`](modules/property) 系统属性库；
-- 硬件
-  - [x] [`wifi`](modules/wifi) WIFI模块；
-  - [x] [`lumen`](modules/lumen) LED灯光控制模块；
-  - [x] [`volume`](modules/volume) 音量控制库；
-  - [x] [`bluetooth`](modules/bluetooth) 蓝牙模块；
-- 媒体控制
-  - [x] [`player`](medules/player) 媒体播放模块；
-  - [x] [`tts`](modules/tts) 语音合成库；
-- 框架
-  - [x] [`vui`](modules/vui) 语音交互应用框架；
-  - [ ] `gui` 图形交互框架
+In `rokidos-node`, we, the Rokid company build the complete AI framework includes:
 
-### 兼容性
+- [x] Voice User Interface
+- [ ] Graphics User Interface
 
-目前，该库支持在如下平台运行
+All are by Node.js and some are bindings.
 
-- [x] RokidOS/Linux
-- [ ] RokidOS/Android
-- [ ] 浏览器
+### modules
+
+- Common
+  - [x] [`dbus`](modules/dbus) The IPC messaging library.
+  - [x] [`property`](modules/property) The property library.
+- Hardware Interface
+  - [x] [`WIFI`](modules/wifi) The library to configure WIFI's status.
+  - [x] [`lumen`](modules/lumen) The light library to control your LED user interface.
+  - [x] [`volume`](modules/volume) The volume library.
+  - [x] [`bluetooth`](modules/bluetooth) The BlueTooth module support common and BLE functions.
+- Mutimedia
+  - [x] [`tts`](modules/tts) The TextToSpeech library based our openvoice cloud.
+  - [x] [`player`](modules/player) The media player to control audio and video's play.
+  - [ ] [`sounder`](modules/sounder) This module is to play simple and short sound effects.
+- Framework
+  - [x] [`vui`] The Voice User Interface framework which also is based on our openvoice cloud.
+  - [ ] [`gui`] The Graphics User Implementation for working with the whole system.
+
+### Compatiblities
+
+Basically, we are hoping the RokidOS for Node.js is able to run on:
+
+- [x] Linux
+- [ ] Android
+- [ ] Web Browser
+
+Anyone is very welcomed to run this runtime at anywhere that you want, feel free to open issue
+to share your thoughts, that's respects.
 
 ### License
 

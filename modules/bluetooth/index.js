@@ -1,19 +1,21 @@
 'use strict';
 
+const property = require('@rokid/property');
 const BluetoothWrap = require('bindings')('bluetooth').BluetoothWrap;
 const handle = new BluetoothWrap();
 
 let ble_is_opened = false;
 let a2dp_is_opened = false;
+const name = `Rokid-Devboard-${property.serialno}`;
 
 /**
  * @method open
  * @param {String} name - the bluetooth name
  */
-exports.open = function open(name) {
+exports.open = function open() {
   if (ble_is_opened === true)
     ble.close();
-  handle.open(name || 'Rokid DevBoard');
+  handle.open(name);
   a2dp_is_opened = true;
 };
 
@@ -77,10 +79,10 @@ class BluetoothLowEnergy {
   /**
    * @method open
    */
-  open(name) {
+  open() {
     if (a2dp_is_opened === true)
       close();
-    handle.enableBLE(name || 'Rokid DevBoard');
+    handle.enableBLE(name);
     ble_is_opened = true;
     return this;
   }
@@ -98,7 +100,10 @@ class BluetoothLowEnergy {
   onResp(callback) {
     if (typeof callback !== 'function')
       throw new TypeError('function is required');
-    this.getResp('', callback);
+    this.getResp('', (err, data) => {
+      callback(err, data);
+      this.onResp(callback);
+    });
   }
   /**
    * @method getResp

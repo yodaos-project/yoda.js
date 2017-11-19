@@ -1,0 +1,11 @@
+syntax = "proto2";
+package rokid.open.v1.device.deviceManager;
+
+message BindMasterRequest {
+  required string userId = 1;
+}
+
+message BindMasterResponse {
+  required int32 resultCode = 1;
+  required string message = 2;
+}

@@ -5,6 +5,8 @@ const exec = require('child_process').execSync;
 const tap = require('@rokid/tapdriver');
 const tts = require('@rokid/tts');
 const wifi = require('@rokid/wifi');
+const volume = require('@rokid/volume');
+const light = require('@rokid/lumen');
 const player = require('@rokid/player');
 
 const InputDispatcher = require('@rokid/input').InputDispatcher;
@@ -13,7 +15,9 @@ const {
   SkillHandler,
   AppManager
 } = require('@rokid/vui');
-const KeyEvents = require('./keyevents');
+
+const apis = require('./apis');
+const keyevents = require('./keyevents');
 
 /**
  * @property {Object} ROKID
@@ -30,35 +34,42 @@ class Runtime {
    */
   constructor(paths) {
     this._online = false;
+    this._vol = volume.volumeGet();
     this._paths = paths || ['/opt/apps'];
     this._testing = false;
     this._current = null;
     this._apps = null;
     this._skill2handler = {};
-    this._input = new InputDispatcher((event) => {
-      if (event.keyCode === 24 && event.action === 0) {
-        KeyEvents.onPressVolumeUp();
-      } else if (event.keyCode === 24 && event.action === 1) {
-        KeyEvents.afterPressVolumeUp();
-      } else if (event.keyCode === 25 && event.action === 0) {
-        KeyEvents.onPressVolumeDown();
-      } else if (event.keyCode === 25 && event.action === 1) {
-        KeyEvents.afterPressVolumeDown();
-      } else if (event.keyCode === 91 && event.action === 0) {
-        KeyEvents.onPressVolumeMute();
-      } else if (event.keyCode === 91 && event.action === 1) {
-        KeyEvents.afterPressVolumeMute();
-      } else {
-        // app keyevents
-        const app = this._dispatcher.getCurrent();
-        const id = this._getAppId(app.appid, app.isCloud);
-        if (id) {
-          console.log(`<keyevent> code=${event.keyCode}`);
-          this._handleKeyEvent(id, event);
-        }
+
+    // Input handle
+    this._input = new InputDispatcher(this._handleInputEvent.bind(this));
+
+    // Speech handle
+    this._speech = new SpeechService();
+    this._speech.on('voice', (id, event, sl, energy) => {
+      if (!this._online)
+        return;
+      if (event === 'coming') {
+        this._vol = volume.volumeGet();
+        light._lumen.point(sl);
       }
     });
-    this._dispatcher = new SpeechService((event, data) => {
+    this._speech.on('speech', (id, type, asr) => {
+      if (!this._online)
+        return;
+      if (type === 0) {
+        volume.volumeSet(5);
+      } else {
+        light._lumen.round(0);
+      }
+    });
+    this._speech.on('nlp ready', () => {
+      if (!this._online)
+        return;
+      volume.volumeSet(this._vol);
+      light._lumen.stopRound(0);
+    });
+    this._speech.on('lifecycle', (event, data) => {
       console.log(event, data.appId);
       if (this._testing)
         return;
@@ -76,6 +87,10 @@ class Runtime {
         this._handleVoiceEvent(id, event, data);
       }
     });
+    this._speech.on('error', (err) => {
+      volume.volumeSet(this._vol);
+      light._lumen.stopRound(0);
+    });
   }
   /**
    * @method start
@@ -86,33 +101,98 @@ class Runtime {
     this._startMonitor(); 
     exec('touch /var/run/bootcomplete');
 
-    // check if network is connected
-    if (wifi.status() === 'connected')
-      this._startSpeech();
-
+    setTimeout(() => {
+      // check if network is connected
+      if (wifi.status() === 'connected') {
+        this.setOnline();
+      } else {
+        this.setOffline();
+      }
+    }, 500);
+    
     // update process title
-    process.title = 'vui';
     console.info(this._appMgr.toString());
+  }
+  /**
+   * @method setOnline
+   */
+  setOnline() {
+    process.title = 'vui';
+    this._online = true;
+    this._speech.exitCurrent();
+    // login
+    Promise.resolve()
+      .then(apis.login())
+      .then(apis.bindDevice())
+      .then(() => {
+        this._startSpeech();
+      })
+      .catch((err) => {
+        console.error('occurrs error when online service');
+        console.error(err && err.stack);
+      });
+  }
+  /**
+   * @method setOffline
+   */
+  setOffline() {
+    process.title = 'vui(offline)';
+    this._online = false;
+    setTimeout(() => {
+      this._speech.exitAll();
+      this._speech.redirect('@network');
+    }, 2000);
+  }
+  /**
+   * @method _handleInputEvent
+   * @param {Object} event
+   * @param {Number} event.action - presents keyup or keydown
+   * @param {Number} event.keyCode - presents which key
+   */
+  _handleInputEvent(event) {
+    if (event.action === 0) {
+      keyevents.keyup();
+    } else if (event.action === 1) {
+      keyevents.keydown();
+      if (event.keyCode === 24) {
+        keyevents.volumeup();
+      } else if (event.keyCode === 25) {
+        keyevents.volumedown();
+      } else if (event.keyCode === 91) {
+        keyevents.mute();
+      } else {
+        // FIXME(Yorkie): we only exposes the keydown events for app
+        const app = this._speech.getCurrent() || {};
+        const id = this._getAppId(app.appid, app.isCloud);
+        if (id) {
+          console.info(`<keyevent> code=${event.keyCode}`);
+          this._handleKeyEvent(id, event);          
+        }
+      }
+    }
   }
   /**
    * @method _startSpeech
    */
   _startSpeech() {
-    player.play(__dirname + '/sounds/startup0.ogg');
-    this._dispatcher.start();
+    let id = Math.floor(Math.random() * 3);
+    id = id === 3 ? 2 : id;
+    player.play(`${__dirname}/sounds/startup${id}.ogg`);
+    this._speech.reload();
+    this._speech.start();
   }
   /**
    * @method exitCurrent
    */
   exitCurrent() {
-    this._dispatcher.exitCurrent();
+    this._speech.exitCurrent();
   }
   /**
    * @method setPickup
    * @param {Boolean} val - the value if pickup mic
    */
   setPickup(val) {
-    this._dispatcher.setPickup(val);
+    this._speech.setPickup(val);
     tap.assert('siren.statechange', val ? 'open' : 'close');
   }
   /**
@@ -199,14 +279,11 @@ class Runtime {
     try {
       const data = JSON.parse(status);
       if (data.upgrade === true) {
-        this._dispatcher.redirect('@upgrade');
+        this._speech.redirect('@upgrade');
       } else if (data['Wifi'] === false) {
-        this._online = false;
-        this._dispatcher.redirect('@network');
+        this.setOffline();
       } else if (data['Wifi'] === true && !this._online) {
-        this._online = true;
-        this._dispatcher.exitCurrent();
-        this._startSpeech();
+        this.setOnline();
       }
       done(null, true);
     } catch (err) {
