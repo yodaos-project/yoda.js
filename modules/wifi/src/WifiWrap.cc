@@ -34,7 +34,7 @@ WifiWrap::~WifiWrap() {
 
 int WifiWrap::status() {
   int v;
-  wifi_get_status(&v);
+  network_get_status(&v);
   return v;
 }
 

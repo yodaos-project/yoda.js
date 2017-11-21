@@ -13,19 +13,24 @@ const Response = proto.lookupType('LoginResPB');
 
 const uuid = property.get('ro.boot.serialno');
 const seed = property.get('ro.boot.rokidseed');
-const secret = exec(`test-stupid ${seed} ${uuid}`).toString('base64');
-console.log(uuid, seed, secret);
-const buffer = Request.encode(
-  Request.create({
-    timestamp: Date.now() + '',
-    reqType: 1,
-    identity: 1,
-    uuid,
-    secret,
-  })
-).finish();
+let secret, buffer;
+
+if (uuid && seed) {
+  secret = exec(`test-stupid ${seed} ${uuid}`).toString('base64');
+  buffer = Request.encode(
+    Request.create({
+      timestamp: Date.now() + '',
+      reqType: 1,
+      identity: 1,
+      uuid,
+      secret,
+    })
+  ).finish();
+}
 
 function login(callback) {
+  if (!secret || !buffer)
+    return callback(null);
   const req = https.request({
     method: 'POST',
     host: 'account.service.rokid.com',

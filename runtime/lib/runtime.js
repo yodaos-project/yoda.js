@@ -41,6 +41,10 @@ class Runtime {
     this._apps = null;
     this._skill2handler = {};
 
+    // timers
+    this._volumeTimer = null;
+    this._roundTimer = null;
+
     // Input handle
     this._input = new InputDispatcher(this._handleInputEvent.bind(this));
 
@@ -49,25 +53,31 @@ class Runtime {
     this._speech.on('voice', (id, event, sl, energy) => {
       if (!this._online)
         return;
-      if (event === 'coming') {
-        this._vol = volume.volumeGet();
-        light._lumen.point(sl);
+      switch (event) {
+        case 'coming':
+          light._lumen.point(sl);
+          break;
+        case 'accept':
+          this._doMute();
+          break;
+        case 'reject':
+        case 'local sleep':
+          this._doUnmute();
+          break;
       }
     });
     this._speech.on('speech', (id, type, asr) => {
       if (!this._online)
         return;
-      if (type === 0) {
-        volume.volumeSet(5);
-      } else {
-        light._lumen.round(0);
+      if (type === 2) {
+        this._doUnmute();
+        this._doRound();
       }
     });
     this._speech.on('nlp ready', () => {
       if (!this._online)
         return;
-      volume.volumeSet(this._vol);
-      light._lumen.stopRound(0);
+      this._stopRound();
     });
     this._speech.on('lifecycle', (event, data) => {
       console.log(event, data.appId);
@@ -101,15 +111,14 @@ class Runtime {
     this._startMonitor(); 
     exec('touch /var/run/bootcomplete');
 
-    setTimeout(() => {
-      // check if network is connected
-      if (wifi.status() === 'connected') {
-        this.setOnline();
-      } else {
-        this.setOffline();
-      }
-    }, 500);
-    
+    // check if network is connected
+    let s = wifi.status();
+    if (s === 'netserver_connected') {
+      this.setOnline();
+    } else if (s === 'netserver_disconnected' 
+      || s === 'disconnected') {
+      this.setOffline();
+    }
     // update process title
     console.info(this._appMgr.toString());
   }
@@ -117,6 +126,8 @@ class Runtime {
    * @method setOnline
    */
   setOnline() {
+    if (this._online)
+      return;
     process.title = 'vui';
     this._online = true;
     this._speech.exitCurrent();
@@ -136,6 +147,8 @@ class Runtime {
    * @method setOffline
    */
   setOffline() {
+    if (!this._online)
+      return;
     process.title = 'vui(offline)';
     this._online = false;
     setTimeout(() => {
@@ -182,9 +195,43 @@ class Runtime {
     this._speech.start();
   }
   /**
+   * @method _doMute
+   */
+  _doMute() {
+    this._vol = volume.volumeGet();
+    volume.volumeSet(5);
+    this._volumeTimer = setTimeout(() => {
+      volume.volumeSet(this._vol);
+    }, 6000);
+  }
+  /**
+   * @method _doUnmute
+   */
+  _doUnmute() {
+    clearTimeout(this._volumeTimer);
+    volume.volumeSet(this._vol);
+  }
+  /**
+   * @method _doRound
+   */
+  _doRound() {
+    light._lumen.round(0);
+    this._roundTimer = setTimeout(() => {
+      light._lumen.stopRound(0);
+    }, 6000);
+  }
+  /**
+   * @method _stopRound
+   */
+  _stopRound() {
+    clearTimeout(this._roundTimer);
+    light._lumen.stopRound(0);
+  }
+  /**
    * @method exitCurrent
    */
   exitCurrent() {
+    this.setPickup(false);
     this._speech.exitCurrent();
   }
   /**
@@ -194,6 +241,11 @@ class Runtime {
   setPickup(val) {
     this._speech.setPickup(val);
     tap.assert('siren.statechange', val ? 'open' : 'close');
+    if (val) {
+      this._doRound();
+    } else {
+      this._stopRound();
+    }
   }
   /**
    * @method _getAppId
@@ -300,7 +352,7 @@ class Runtime {
    * @param {Function} done - the callback
    */
   _onSendIntentRequest(asr, context, action, done) {
-    this._handleVoiceCommand.call(this, asr, context, action);
+    this._speech.mockRequest(asr, acontext, action);
     done(null, true);
   }
   /**

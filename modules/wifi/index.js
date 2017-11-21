@@ -14,6 +14,8 @@ const STATES = [
   'scanning',
   'connected',
   'disconnected',
+  'netserver_connected',
+  'netserver_disconnected',
 ];
 
 function connect(ssid, psk, method, callback) {

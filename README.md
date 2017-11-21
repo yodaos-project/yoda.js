@@ -26,8 +26,8 @@ All are by Node.js and some are bindings.
   - [x] [`player`](modules/player) The media player to control audio and video's play.
   - [ ] [`sounder`](modules/sounder) This module is to play simple and short sound effects.
 - Framework
-  - [x] [`vui`] The Voice User Interface framework which also is based on our openvoice cloud.
-  - [ ] [`gui`] The Graphics User Implementation for working with the whole system.
+  - [x] [`vui`](modules/vui) The Voice User Interface framework which also is based on our openvoice cloud.
+  - [ ] [`gui`](modules/gui) The Graphics User Implementation for working with the whole system.
 
 ### Compatiblities
 

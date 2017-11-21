@@ -215,6 +215,15 @@ class SpeechService extends EventEmitter {
     }
   }
   /**
+   * @method mockRequest
+   * @param {String} asr
+   * @param {Object} nlp
+   * @param {Object} action
+   */
+  mockRequest(asr, nlp, action) {
+    this._onVoiceCommand(-1, asr, nlp, action);
+  }
+  /**
    * @method setPickup
    */
   setPickup(val) {

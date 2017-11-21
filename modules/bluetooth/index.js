@@ -6,7 +6,9 @@ const handle = new BluetoothWrap();
 
 let ble_is_opened = false;
 let a2dp_is_opened = false;
-const name = `Rokid-Devboard-${property.serialno}`;
+
+const id = property.serialno ? property.serialno.slice(0, 6) : 'xxxxxx';
+const name = `Rokid-Devboard-${id}`;
 
 /**
  * @method open
@@ -31,6 +33,15 @@ exports.close = function close() {
  * @method play
  */
 exports.play = function play() {
+  if (a2dp_is_opened)
+    handle.sendCommand(0);
+};
+
+
+/**
+ * @method stop
+ */
+exports.stop = function stop() {
   if (a2dp_is_opened)
     handle.sendCommand(1);
 };
