@@ -16,6 +16,7 @@ public:
   string event;
   int id = 0;
   int err = 0;
+  bool initialized = false;
 
 private:
   explicit TtsWrap();

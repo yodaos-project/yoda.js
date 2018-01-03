@@ -52,11 +52,22 @@ void onerror(int id, int err, void* data) {
 }
 
 TtsWrap::TtsWrap() {
-  tts_init();
+  struct tts_callback func = { 
+    onstart,
+    oncancel,
+    oncomplete,
+    onerror
+  };
+  int r = tts_init();
+  if (r != -1) {
+    initialized = true;
+    tts_set(&func);
+  }
 }
 
 TtsWrap::~TtsWrap() {
   tts_destory();
+  initialized = false;
 }
 
 NAN_MODULE_INIT(TtsWrap::Init) {
@@ -73,11 +84,12 @@ NAN_MODULE_INIT(TtsWrap::Init) {
 
 NAN_METHOD(TtsWrap::New) {
   TtsWrap* tts = new TtsWrap();
+  if (!tts->initialized) {
+    return Nan::ThrowError("ttsflinger is not running");
+  }
+
   tts->callback = new Nan::Callback(info[0].As<Function>());
   tts->Wrap(info.This());
-
-  struct tts_callback func = { onstart, oncancel, oncomplete, onerror };
-  tts_set(&func);
 
   uv_mutex_init(&async_lock);
   uv_async_init(uv_default_loop(), &async, AsyncCallback);
@@ -88,12 +100,21 @@ NAN_METHOD(TtsWrap::New) {
 
 NAN_METHOD(TtsWrap::Say) {
   TtsWrap* tts = Nan::ObjectWrap::Unwrap<TtsWrap>(info.This());
+  if (!tts->initialized) {
+    return Nan::ThrowError("ttsflinger is not running");
+  }
+
   v8::String::Utf8Value text(info[0].As<String>());
   int id = tts_speak(*text, (void*)tts);
   info.GetReturnValue().Set(Nan::New(id));
 }
 
 NAN_METHOD(TtsWrap::Stop) {
+  TtsWrap* tts = Nan::ObjectWrap::Unwrap<TtsWrap>(info.This());
+  if (!tts->initialized) {
+    return Nan::ThrowError("ttsflinger is not running");
+  }
+  
   int id = info[0]->NumberValue();
   tts_cancel(id, nullptr);
   info.GetReturnValue().Set(Nan::New(id));

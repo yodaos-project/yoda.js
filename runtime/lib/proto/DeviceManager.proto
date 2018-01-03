@@ -6,6 +6,6 @@ message BindMasterRequest {
 }
 
 message BindMasterResponse {
-  required int32 resultCode = 1;
-  required string message = 2;
+  optional int32 resultCode = 1;
+  optional string message = 2;
 }

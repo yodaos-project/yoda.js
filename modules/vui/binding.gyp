@@ -11,6 +11,9 @@
     "defines": [
       "USE_EMBEDDABLE=true"
     ],
+    "cflags": [
+      "-include rokid/rokid_types.h",
+    ],
     "cflags!": [ "-fno-exceptions", "-fno-rtti" ],
     "cflags_cc!": [ "-fno-exceptions", "-fno-rtti", "-std=c++11" ],
     "libraries": [

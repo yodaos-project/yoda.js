@@ -8,7 +8,10 @@
     "sources": [
       "src/LumenWrap.cc",
     ],
-    "cflags!": [ "-fno-exceptions", "-include rokid/rokid_types.h" ],
+    "cflags": [
+      "-include rokid/rokid_types.h",
+    ],
+    "cflags!": [ "-fno-exceptions" ],
     "cflags_cc!": [ "-fno-exceptions", "-std=c++11" ],
     "libraries": [
       "-lrklumen_light",

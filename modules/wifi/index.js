@@ -28,23 +28,28 @@ function connect(ssid, psk, method, callback) {
     let times = 0;
     let check = setInterval(() => {
       const s = status();
-      console.log(s);
-      if (s === 'connected') {
+      console.log('network status:', s);
+      if (s === 'netserver_connected') {
         wifi.save();
         clearInterval(check);
         callback(null, 'connected');
-      } else if (times >= 10) {
+      } else if (times > 6) {
         clearInterval(check);
         callback(new Error('Network timeout'));
+        times = 0;
       } else {
         times += 1;
       }
-    }, 500);
+    }, 1000);
   });
 };
 
 function disconnect() {
   return wifi.disconnect();
+}
+
+function save() {
+  return wifi.save();
 }
 
 function status() {
@@ -53,4 +58,5 @@ function status() {
 
 exports.connect = connect;
 exports.disconnect = disconnect;
+exports.save = save;
 exports.status = exports.getStatus = status;

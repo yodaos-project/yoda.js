@@ -18,9 +18,11 @@ private:
 
   // instance methods
   static NAN_METHOD(New);
-  static NAN_METHOD(Set);
   static NAN_METHOD(Get);
-  static NAN_METHOD(SetAll);
-  static NAN_METHOD(GetAll);
+  static NAN_METHOD(Set);
+  static NAN_METHOD(GetMute);
+  static NAN_METHOD(SetMute);
+  static NAN_METHOD(GetByStream);
+  static NAN_METHOD(SetByStream);
 
 };

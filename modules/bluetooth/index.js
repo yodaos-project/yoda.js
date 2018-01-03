@@ -7,7 +7,7 @@ const handle = new BluetoothWrap();
 let ble_is_opened = false;
 let a2dp_is_opened = false;
 
-const id = property.serialno ? property.serialno.slice(0, 6) : 'xxxxxx';
+const id = property.serialno ? property.serialno.slice(-6) : 'xxxxxx';
 const name = `Rokid-Devboard-${id}`;
 
 /**
@@ -111,9 +111,24 @@ class BluetoothLowEnergy {
   onResp(callback) {
     if (typeof callback !== 'function')
       throw new TypeError('function is required');
-    this.getResp('', (err, data) => {
-      callback(err, data);
-      this.onResp(callback);
+    this.getHeader((_, size) => {
+      this.getResp('', size, (err, data) => {
+        callback(err, data);
+      });
+    });
+  }
+  /**
+   * @method getHeader
+   * @param {Function} callback
+   */
+  getHeader(callback) {
+    handle.getBleResp((err, data) => {
+      if (err)
+        return callback(err);
+
+      const headm = data.match(/^size:(\d+)/);
+      const size = headm ? parseInt(headm[1]) : 0;
+      callback(null, size);
     });
   }
   /**
@@ -121,12 +136,16 @@ class BluetoothLowEnergy {
    * @param {String} concated the concated string
    * @param {Function} callback
    */
-  getResp(concated, callback) {
+  getResp(concated, size, callback) {
+    if (!size)
+      return callback(null, concated);
+
     let done = false;
     handle.getBleResp((err, data) => {
       if (err)
         return callback(err);
 
+      console.log(`>>> ${data} <<<`);
       const buf = new Buffer(data || '');
       let endPos = buf.length;
       for (let i = 0; i < buf.length; i++) {
@@ -135,16 +154,12 @@ class BluetoothLowEnergy {
           buf[i+1] === 0xbf &&
           buf[i+2] === 0xbd) {
           endPos = i;
-          done = true;
+          // done = true;
           break;
         }
       }
       concated += buf.slice(0, endPos).toString();
-      if (!done) {
-        return this.getResp(concated, callback);
-      } else {
-        callback(null, concated);
-      }
+      return this.getResp(concated, size - 1, callback);
     });
   }
   /**

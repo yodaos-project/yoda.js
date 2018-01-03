@@ -6,7 +6,7 @@ const RokidRequest = require('rokid').RokidRequest;
 const host = require('/data/system/openvoice_profile.json').event_req_host;
 
 function bindDevice(callback) {
-  const userId = property.get('system.user.userId');
+  const userId = property.get('persist.system.user.userId');
   const syncReq = new RokidRequest({
     schemaPath: path.join(__dirname, '../proto/DeviceManager.proto'),
     requestKey: 'BindMasterRequest',

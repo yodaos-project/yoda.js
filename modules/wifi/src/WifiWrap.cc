@@ -10,7 +10,8 @@ class ConnectWorker : public Nan::AsyncWorker {
   ~ConnectWorker() {}
   void Execute () {
     wifi_join_network(&network_);
-    dhcp_reset();
+    // FIXME(Yorkie): dont reset
+    // dhcp_reset();
   }
   void HandleOKCallback () {
     Nan::HandleScope scope;

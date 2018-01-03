@@ -14,6 +14,8 @@ enum VoiceEventType {
   VOICE_REJECT,
   VOICE_CANCEL,
   VOICE_LOCAL_SLEEP,
+  VOICE_INFO,
+  VOICE_NONE, // voice accept event in "inactivity" state
 };
 
 /**
@@ -104,6 +106,9 @@ class VoiceCallback : public BnVoiceCallback {
     msg->sl = sl;
     msg->energy = energy;
     switch (event) {
+      case VOICE_INFO:
+        msg->event = "info";
+        break;
       case VOICE_COMING:
         msg->event = "coming";
         break;
@@ -272,6 +277,7 @@ NAN_MODULE_INIT(SpeechWrap::Init) {
   Nan::SetPrototypeMethod(tpl, "updateStack", UpdateStack);
   Nan::SetPrototypeMethod(tpl, "updateConfig", UpdateConfig);
   Nan::SetPrototypeMethod(tpl, "setSirenState", SetSirenState);
+  Nan::SetPrototypeMethod(tpl, "requestNlpByText", RequestNlpByText);
 
   Local<Function> func = Nan::GetFunction(tpl).ToLocalChecked();
   Nan::Set(target, Nan::New("SpeechWrap").ToLocalChecked(), func);
@@ -321,6 +327,7 @@ NAN_METHOD(SpeechWrap::UpdateConfig) {
   String::Utf8Value key(info[2]->ToString());
   String::Utf8Value secret(info[3]->ToString());
   speech->_handle->update_config(*deviceId, *deviceTypeId, *key, *secret);
+  speech->_handle->network_state_change(1);
   info.GetReturnValue().Set(info.This());
 }
 
@@ -328,6 +335,13 @@ NAN_METHOD(SpeechWrap::SetSirenState) {
   SpeechWrap* speech = Nan::ObjectWrap::Unwrap<SpeechWrap>(info.This());
   speech->_handle->set_siren_state(info[0]->Int32Value());
   info.GetReturnValue().Set(info.This());
+}
+
+NAN_METHOD(SpeechWrap::RequestNlpByText) {
+  SpeechWrap* speech = Nan::ObjectWrap::Unwrap<SpeechWrap>(info.This());
+  String::Utf8Value speechText(info[0]->ToString());
+  string nlp = speech->_handle->asr_to_nlp(*speechText);
+  info.GetReturnValue().Set(Nan::New<String>(nlp.c_str()).ToLocalChecked());
 }
 
 void InitModule(Handle<Object> target) {

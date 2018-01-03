@@ -22,6 +22,16 @@ PlayWrap::PlayWrap() {
   mPlayer = new MediaPlayer();
 }
 
+PlayWrap::PlayWrap(const char* type) {
+  uv_async_init(
+      uv_default_loop()
+    , &async
+    , EventHandler
+  );
+  async.data = (void*)this;
+  mPlayer = new MediaPlayer(type);
+}
+
 PlayWrap::~PlayWrap() {
   destroy();
 }
@@ -38,7 +48,6 @@ void PlayWrap::destroy() {
     return;
   uv_close(reinterpret_cast<uv_handle_t*>(&async), NULL);
   if (mPlayer) {
-    // FIXME(Yazhong): dont delete currently
     delete mPlayer;
     mPlayer = NULL;
   }
@@ -50,9 +59,6 @@ void PlayWrap::destroy() {
 }
 
 NAN_MODULE_INIT(PlayWrap::Init) {
-  av_register_all();
-  avformat_network_init();
-
   Local<FunctionTemplate> tmpl = Nan::New<FunctionTemplate>(New);
   tmpl->SetClassName(Nan::New("PlayWrap").ToLocalChecked());
   tmpl->InstanceTemplate()->SetInternalFieldCount(1);
@@ -76,11 +82,18 @@ NAN_MODULE_INIT(PlayWrap::Init) {
 }
 
 NAN_METHOD(PlayWrap::New) {
-  PlayWrap* play = new PlayWrap();
-  play->mPlayer->setListener((MediaPlayerListener *)play);
-  play->callback = new Nan::Callback(info[0].As<Function>());
-  play->Wrap(info.This());
-
+  PlayWrap* handle;
+  if (info.Length() >= 2) {
+    v8::String::Utf8Value type(info[0]);
+    handle = new PlayWrap((const char*)*type);
+    handle->mPlayer->setListener((MediaPlayerListener*)handle);
+    handle->callback = new Nan::Callback(info[1].As<Function>());
+  } else {
+    handle = new PlayWrap();
+    handle->mPlayer->setListener((MediaPlayerListener*)handle);
+    handle->callback = new Nan::Callback(info[0].As<Function>());
+  }
+  handle->Wrap(info.This());
   info.GetReturnValue().Set(info.This());
 }
 

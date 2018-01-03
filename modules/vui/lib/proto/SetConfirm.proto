@@ -1,0 +1,15 @@
+syntax = "proto2";
+package protocol;
+
+message SetConfirmRequest {
+  required string appId = 1;
+  required string confirmIntent = 2;
+  required string confirmSlot = 3;
+  repeated string confirmOptions = 4;
+  required string attributes = 5;
+}
+
+message SetConfirmResponse {
+  required bool success = 1;
+  required string message = 2;
+}

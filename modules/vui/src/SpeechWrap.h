@@ -49,6 +49,7 @@ class SpeechWrap : public Nan::ObjectWrap {
   static NAN_METHOD(UpdateStack);
   static NAN_METHOD(UpdateConfig);
   static NAN_METHOD(SetSirenState);
+  static NAN_METHOD(RequestNlpByText);
   // static NAN_METHOD(InsertVoiceTrigger);
   // static NAN_METHOD(DeleteVoiceTrigger);
 };

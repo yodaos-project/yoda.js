@@ -37,6 +37,6 @@ module.exports = {
    * @getter {String} serialno
    */
   get serialno() {
-    return this.get('ro.boot.serialno') || 'invalid';
+    return this.get('ro.boot.serialno');
   }
 };

@@ -22,29 +22,38 @@ var defaultPlayer = null;
 class Player extends EventEmitter {
   /**
    * @method constructor
+   * @param {Object} options
+   * @param {String} options.stream
+   * @param {Boolean} options.autoStop
    */
   constructor(options) {
     super();
-
     this._onPrepared = null;
     this._state = null;
-    this._handle = new PlayWrap((id) => {
-      this._state = names[id];
-      this.emit(this._state);
-      if (this._state === 'prepared') {
-        if (typeof this._onPrepared === 'function')
-          this._onPrepared();
-        else
-          this._handle.start();
-      } else if (this._state === 'finish') {
-        // FIXME(yazhong): `autoStop` means auto stop the handle
-        // default is `true`.
-        if (options.autoStop === false)
-          return;
-        this._handle.stop();
-      }
-    });
+    this._options = options || {};
+    // FIXME(Yorkie): currently only support alarm.
+    if (this._options.stream === 'alarm') {
+      this._handle = new PlayWrap('alarm', this._onCallback.bind(this));
+    } else {
+      this._handle = new PlayWrap(this._onCallback.bind(this));
+    }
     this.on('error', this._onError.bind(this));
+  }
+  _onCallback(id) {
+    this._state = names[id];
+    this.emit(this._state);
+    if (this._state === 'prepared') {
+      if (typeof this._onPrepared === 'function')
+        this._onPrepared();
+      else
+        this._handle.start();
+    } else if (this._state === 'finish') {
+      // FIXME(yazhong): `autoStop` means auto stop the handle
+      // default is `true`.
+      if (this._options && this._options.autoStop === false)
+        return;
+      this._handle.stop();
+    }
   }
   /**
    * @method _onError

@@ -217,7 +217,7 @@ class AppManager {
     this._paths = paths;
     this._runtime = runtime;
     this._skill2app = {};
-    this._list = this.reload();
+    this._list = this.load();
   }
   /**
    * @method toString
@@ -228,9 +228,9 @@ class AppManager {
     }).join('\n');
   }
   /**
-   * @method reload
+   * @method load
    */
-  reload() {
+  load() {
     return this._paths.reduce((apps, pathname) => {
       if (fs.existsSync(pathname)) {
         apps = apps.concat(
@@ -238,6 +238,13 @@ class AppManager {
       }
       return apps;
     }, []);
+  }
+  /**
+   * @method reload
+   */
+  reload() {
+    this._skill2app = {};
+    this._list = this.load();
   }
   /**
    * @method getApp
@@ -270,8 +277,19 @@ class AppManager {
    */
   getHandlerById(appid) {
     let app = this._skill2app[appid];
-    if (!app)
+    if (!app) {
+      // check extapp firstly
+      const extapp = this._skill2app['@extapp'];
+      if (extapp) {
+        const handler = extapp.createHandler(appid, this._runtime);
+        handler.emit('beforeCreate', appid);
+        if (handler._state === 'beforeCreate OK') {
+          return handler;
+        }
+      }
+      // use miss
       app = this._skill2app.miss || this._skill2app['@miss'];
+    }
     return app.createHandler(appid, this._runtime);
   }
 }

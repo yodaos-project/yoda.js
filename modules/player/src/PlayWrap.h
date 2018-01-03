@@ -3,7 +3,6 @@
 #include <node.h>
 #include <nan.h>
 #include <mediaplayer.h>
-#include <libavformat/avformat.h>
 
 using namespace v8;
 using namespace std;
@@ -24,6 +23,7 @@ public:
 
 private:
   explicit PlayWrap();
+  explicit PlayWrap(const char* type);
   ~PlayWrap();
 
   // instance methods

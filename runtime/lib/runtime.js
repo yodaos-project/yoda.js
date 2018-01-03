@@ -1,13 +1,15 @@
 'use strict';
 
 const dbus = require('dbus');
-const exec = require('child_process').execSync;
+const exec = require('child_process').exec;
+const cron = require('cron');
 const tap = require('@rokid/tapdriver');
 const tts = require('@rokid/tts');
 const wifi = require('@rokid/wifi');
 const volume = require('@rokid/volume');
 const light = require('@rokid/lumen');
 const player = require('@rokid/player');
+const context = require('@rokid/context');
 
 const InputDispatcher = require('@rokid/input').InputDispatcher;
 const {
@@ -33,7 +35,7 @@ class Runtime {
    * @param {Array} paths - the watch paths for apps
    */
   constructor(paths) {
-    this._online = false;
+    this._online = null;
     this._vol = volume.volumeGet();
     this._paths = paths || ['/opt/apps'];
     this._testing = false;
@@ -45,32 +47,56 @@ class Runtime {
     this._volumeTimer = null;
     this._roundTimer = null;
 
+    // crontabs
+    this._crontabs = [];
+
+    // mqtt connection
+    this._remoteChannel = null;
+
     // Input handle
     this._input = new InputDispatcher(this._handleInputEvent.bind(this));
 
     // Speech handle
     this._speech = new SpeechService();
     this._speech.on('voice', (id, event, sl, energy) => {
-      if (!this._online)
+      context.emitVoiceEvent(`voice ${event}`, { sl, energy });
+      if (!this._online) {
+        if (event === 'coming') {
+          this._speech.redirect('@network', {
+            isBackground: true,
+          });
+        }
         return;
+      }
       switch (event) {
         case 'coming':
-          light._lumen.point(sl);
+          light.point(sl);
+          this._doMute();
           break;
         case 'accept':
-          this._doMute();
+          // FIXME(Yorkie): move "mute" to "coming" event
+          // this._doMute();
+          context.emitVoiceEvent('pickup start');
           break;
         case 'reject':
         case 'local sleep':
           this._doUnmute();
+          light.rest();
           break;
+      }
+      if (event === 'local sleep') {
+        this._speech.exitAll();
       }
     });
     this._speech.on('speech', (id, type, asr) => {
+      context.emitVoiceEvent('speech', { 
+        state: type === 2 ? 'complete' : 'pending', 
+        text: asr
+      });
       if (!this._online)
         return;
       if (type === 2) {
-        this._doUnmute();
+        context.emitVoiceEvent('pickup end');
         this._doRound();
       }
     });
@@ -90,35 +116,77 @@ class Runtime {
         this._handlePause(id, data);
       } else if (event === 'resume') {
         this._handleResume(id, data);
+      } else if (event === 'stop') {
+        this._handleStop(id, data);
       } else if (event === 'voice_command') {
-        console.log(data.asr, data.nlp, data.action);
+        if (data && data.raw) {
+          console.info('asr:', data.asr);
+          console.info('nlp:', data.raw.nlp);
+          console.info('dat:', data.raw.action);
+        } else {
+          console.info('nlp:', JSON.stringify(data.nlp));
+        }
         this._handleVoiceCommand(data.asr, data.nlp, data.action);
       } else {
         this._handleVoiceEvent(id, event, data);
       }
+      this._doUnmute();
     });
     this._speech.on('error', (err) => {
-      volume.volumeSet(this._vol);
-      light._lumen.stopRound(0);
+      context.emitVoiceEvent('voice error', err);
+      volume.set(this._vol);
+      // light._lumen.stopRound(0);
+      light.rest();
     });
   }
   /**
    * @method start
    */
   start() {
+    exec('touch /var/run/bootcomplete');
+    this._speech.start();
     this._appMgr = new AppManager(this._paths, this);
     this._input.listen();
-    this._startMonitor(); 
-    exec('touch /var/run/bootcomplete');
+    this._startMonitor();
 
-    // check if network is connected
-    let s = wifi.status();
-    if (s === 'netserver_connected') {
-      this.setOnline();
-    } else if (s === 'netserver_disconnected' 
-      || s === 'disconnected') {
-      this.setOffline();
-    }
+    let checkTimer;
+    let checkRouterTimes = 0;
+    let checkNetworkTimes = 0;
+    checkTimer = setInterval(() => {
+      let action;
+      let s = wifi.status();
+
+      if (s === 'netserver_connected') {
+        action = 'online';
+      }
+      if (s === 'disconnected') {
+        if (checkRouterTimes >= 4) {
+          action = 'offline';
+        } else {
+          checkRouterTimes += 1;
+        }
+      }
+      if (s === 'netserver_disconnected') {
+        if (checkNetworkTimes >= 20) {
+          action = 'offline';
+        } else {
+          checkNetworkTimes += 1;
+        }
+      }
+
+      if (action === 'online') {
+        checkRouterTimes = 0;
+        checkNetworkTimes = 0;
+        clearInterval(checkTimer);
+        this.setOnline();
+      } else if (action === 'offline') {
+        checkRouterTimes = 0;
+        checkNetworkTimes = 0;
+        clearInterval(checkTimer);
+        this.setOffline();
+      }
+    }, 1000);
+
     // update process title
     console.info(this._appMgr.toString());
   }
@@ -126,15 +194,23 @@ class Runtime {
    * @method setOnline
    */
   setOnline() {
-    if (this._online)
+    if (this._online === true) {
       return;
+    }
     process.title = 'vui';
     this._online = true;
     this._speech.exitCurrent();
     // login
     Promise.resolve()
-      .then(apis.login())
-      .then(apis.bindDevice())
+      .then(() => apis.login())
+      .then(() => apis.bindDevice())
+      .then(() => {
+        this._remoteChannel = apis.connectMqtt();
+        if (this._remoteChannel) {
+          this._remoteChannel.on('cloud_forward', this._onRemoteForwardCloud.bind(this));
+          this._remoteChannel.on('reset_settings', this._onRemoteResetSettings.bind(this));
+        }
+      })
       .then(() => {
         this._startSpeech();
       })
@@ -145,15 +221,19 @@ class Runtime {
   }
   /**
    * @method setOffline
+   * @param {Boolean} isBackground
    */
-  setOffline() {
-    if (!this._online)
+  setOffline(isBackground) {
+    if (this._online === false) {
       return;
+    }
     process.title = 'vui(offline)';
     this._online = false;
     setTimeout(() => {
       this._speech.exitAll();
-      this._speech.redirect('@network');
+      this._speech.redirect('@network', {
+        isBackground,
+      });
     }, 2000);
   }
   /**
@@ -173,35 +253,77 @@ class Runtime {
         keyevents.volumedown();
       } else if (event.keyCode === 91) {
         keyevents.mute();
+      } else if (event.keyCode === 26) {
+        keyevents.incPower(() => {
+          this._online = true;
+          wifi.disconnect();
+        });
       } else {
         // FIXME(Yorkie): we only exposes the keydown events for app
-        const app = this._speech.getCurrent() || {};
+        const app = this._speech.getCurrentApp() || {};
         const id = this._getAppId(app.appid, app.isCloud);
         if (id) {
           console.info(`<keyevent> code=${event.keyCode}`);
-          this._handleKeyEvent(id, event);          
+          this._handleKeyEvent(id, event);
         }
       }
+    }
+  }
+  /**
+   * @method _onRemoteForwardCloud
+   */
+  _onRemoteForwardCloud(data) {
+    try {
+      const msg = JSON.parse(data);
+      const params = JSON.parse(msg.content.params);
+      this._speech.mockRequest('', params.nlp, params.action);
+    } catch (err) {
+      console.error(err && err.stack);
+    }
+  }
+  /**
+   * @method _onRemoteResetSettings
+   */
+  _onRemoteResetSettings(data) {
+    if (data === '1') {
+      this.say('当前不支持恢复出厂设置');
+      // TODO
     }
   }
   /**
    * @method _startSpeech
    */
   _startSpeech() {
-    let id = Math.floor(Math.random() * 3);
-    id = id === 3 ? 2 : id;
-    player.play(`${__dirname}/sounds/startup${id}.ogg`);
+    {
+      // light effects
+      light.removeAllLayers();
+      let layer = light.createLayer('*', { speed: 0.5 });
+      layer.fade('black', 'skyblue').then(() => {
+        return layer.fade('skyblue', 'black');
+      }).then(() => {
+        return light.removeAllLayers();
+      });
+    }
+    {
+      // hello rokid voice
+      let id = Math.floor(Math.random() * 3);
+      id = id === 3 ? 2 : id;
+      player.play(`${__dirname}/sounds/startup${id}.ogg`);
+    }
     this._speech.reload();
-    this._speech.start();
   }
   /**
    * @method _doMute
    */
   _doMute() {
-    this._vol = volume.volumeGet();
-    volume.volumeSet(5);
+    if (this._volumeTimer !== null) {
+      clearTimeout(this._volumeTimer);
+    } else {
+      this._vol = volume.get();
+      volume.set(5);
+    }
     this._volumeTimer = setTimeout(() => {
-      volume.volumeSet(this._vol);
+      volume.set(this._vol);
     }, 6000);
   }
   /**
@@ -209,15 +331,21 @@ class Runtime {
    */
   _doUnmute() {
     clearTimeout(this._volumeTimer);
-    volume.volumeSet(this._vol);
+    const curr = volume.get();
+    if (curr !== 5) {
+      volume.set(curr);
+    } else {
+      volume.set(this._vol);
+    }
+    this._volumeTimer = null;
   }
   /**
    * @method _doRound
    */
   _doRound() {
-    light._lumen.round(0);
+    light.startRound();
     this._roundTimer = setTimeout(() => {
-      light._lumen.stopRound(0);
+      light.stopRound();
     }, 6000);
   }
   /**
@@ -225,7 +353,9 @@ class Runtime {
    */
   _stopRound() {
     clearTimeout(this._roundTimer);
-    light._lumen.stopRound(0);
+    try {
+      light.stopRound();
+    } catch (err) {}
   }
   /**
    * @method exitCurrent
@@ -235,6 +365,25 @@ class Runtime {
     this._speech.exitCurrent();
   }
   /**
+   * @method crontab
+   * @param {String} appid
+   * @param {String} expr
+   * @param {Object} data
+   */
+  crontab(appid, expr, data) {
+    // this._crontabs.push({
+    //   expr, data
+    // });
+    new cron.CronJob({
+      cronTime: expr,
+      onTick: () => {
+        this._speech.redirect(appid, data);
+      },
+      start: true,
+    }).start();
+    console.log('expr:', expr);
+  }
+  /**
    * @method setPickup
    * @param {Boolean} val - the value if pickup mic
    */
@@ -242,8 +391,10 @@ class Runtime {
     this._speech.setPickup(val);
     tap.assert('siren.statechange', val ? 'open' : 'close');
     if (val) {
+      context.emitVoiceEvent('pickup start');
       this._doRound();
     } else {
+      context.emitVoiceEvent('pickup end');
       this._stopRound();
     }
   }
@@ -279,11 +430,23 @@ class Runtime {
    * @param {Object} data
    */
   _handleResume(id, data) {
-    if (data.cloud) {
-      require('@rokid/player').resume();
-    }
+    // FIXME(Yorkie): dont handle the cloud logic here
+    // if (data.cloud) {
+    //   require('@rokid/player').resume();
+    // }
     const handler = this._appMgr.getHandlerById(id);
     handler.emit('resume', data);
+  }
+  /**
+   * @method _handleStop
+   * @param {String} id - the appid to create
+   * @param {Object} data
+   */
+  _handleStop(id, data) {
+    const handler = this._appMgr.getHandlerById(id);
+    require('@rokid/tts').stop();
+    require('@rokid/player').pause();
+    handler.emit('stop', data);
   }
   /**
    * @method _handleVoiceEvent
@@ -352,7 +515,7 @@ class Runtime {
    * @param {Function} done - the callback
    */
   _onSendIntentRequest(asr, context, action, done) {
-    this._speech.mockRequest(asr, acontext, action);
+    this._speech.mockRequest(asr, context, action);
     done(null, true);
   }
   /**

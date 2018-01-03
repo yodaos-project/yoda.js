@@ -14,6 +14,7 @@ const Response = proto.lookupType('LoginResPB');
 const uuid = property.get('ro.boot.serialno');
 const seed = property.get('ro.boot.rokidseed');
 let secret, buffer;
+let retry = 0;
 
 if (uuid && seed) {
   secret = exec(`test-stupid ${seed} ${uuid}`).toString('base64');
@@ -29,8 +30,13 @@ if (uuid && seed) {
 }
 
 function login(callback) {
-  if (!secret || !buffer)
+  if (!secret || !buffer) {
     return callback(null);
+  }
+  const config = require('/data/system/openvoice_profile.json');
+  if (config && config.disableAutoRefresh) {
+    return callback(null);
+  }
   const req = https.request({
     method: 'POST',
     host: 'account.service.rokid.com',
@@ -51,9 +57,8 @@ function login(callback) {
         config['device_type_id'] = data.deviceTypeId;
         config['key'] = data.key;
         config['secret'] = data.secret;
-        console.log(config);
         fs.writeFile(location, JSON.stringify(config, null, 2), (err) => {
-          console.info(`updated the ${location} with the following config %j`, config);
+          console.info(`updated the ${location}`);
           callback(err, data);
         });
       } catch (err) {
@@ -61,6 +66,14 @@ function login(callback) {
         callback(err);
       }
     });
+  });
+  req.once('error', (err) => {
+    if (err.message === 'certificate is not yet valid' && retry <= 10) {
+      retry += 1;
+      console.info('invalid certificate, try again once');
+      return setTimeout(() => login(callback), 3000);
+    }
+    throw err;
   });
   req.write(buffer);
   req.end();

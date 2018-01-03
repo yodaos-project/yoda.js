@@ -97,12 +97,8 @@ class ActionComposer {
       // FIXME(Yazhong): This function only could be called once.
       return;
     }
-    if (this.response.intent === 'sleep') {
-      this._app.exit();
-    } else {
-      const data = Object.assign({from}, this._nlp);
-      this._app._options.onrequest.call(this._app, data, this);
-    }
+    const data = Object.assign({from}, this._nlp);
+    this._app._options.onrequest.call(this._app, data, this);
     this._fetched = true;
   }
 }

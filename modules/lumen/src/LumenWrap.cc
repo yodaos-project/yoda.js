@@ -5,7 +5,6 @@ using namespace std;
 
 LumenWrap::LumenWrap() {
   light = new LumenLight();
-  effects = new LumenEffects();
 }
 
 LumenWrap::~LumenWrap() {
@@ -32,11 +31,6 @@ NAN_MODULE_INIT(LumenWrap::Init) {
   Nan::SetPrototypeMethod(tmpl, "pause", Pause);
   Nan::SetPrototypeMethod(tmpl, "stop", Stop);
   Nan::SetPrototypeMethod(tmpl, "draw", Draw);
-
-  // effects
-  Nan::SetPrototypeMethod(tmpl, "point", Point);
-  Nan::SetPrototypeMethod(tmpl, "round", Round);
-  Nan::SetPrototypeMethod(tmpl, "stopRound", StopRound);
 
   Local<Function> func = Nan::GetFunction(tmpl).ToLocalChecked();
   Nan::Set(target, Nan::New("LumenWrap").ToLocalChecked(), func);
@@ -127,24 +121,6 @@ NAN_METHOD(LumenWrap::Draw) {
   }
   // lumen->light->lumen_set_enable(true);
   lumen->light->lumen_draw(data, sizeof(data));
-  info.GetReturnValue().Set(info.This());
-}
-
-NAN_METHOD(LumenWrap::Point) {
-  LumenWrap* lumen = Nan::ObjectWrap::Unwrap<LumenWrap>(info.This());
-  lumen->effects->EffectPoint(info[0]->Int32Value());
-  info.GetReturnValue().Set(info.This());
-}
-
-NAN_METHOD(LumenWrap::Round) {
-  LumenWrap* lumen = Nan::ObjectWrap::Unwrap<LumenWrap>(info.This());
-  lumen->effects->EffectStartRound(info[0]->Int32Value());
-  info.GetReturnValue().Set(info.This());
-}
-
-NAN_METHOD(LumenWrap::StopRound) {
-  LumenWrap* lumen = Nan::ObjectWrap::Unwrap<LumenWrap>(info.This());
-  lumen->effects->EffectEndRound(info[0]->Int32Value());
   info.GetReturnValue().Set(info.This());
 }
 

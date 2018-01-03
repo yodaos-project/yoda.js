@@ -13,6 +13,7 @@ class SpeechContext {
    */
   constructor(handle) {
     this._stack = [];
+    this._lastCut = null;
     this._apps = {};
     this._handle = handle;
   }
@@ -29,8 +30,12 @@ class SpeechContext {
     this._apps[appId] = {
       appId, form, cloud
     };
-    console.log(this._stack);
-    this.update();
+    console.info('current stack:', this._stack);
+    console.info('current cstack:', this._lastCut);
+    this.update(form);
+    if (form === 'cut' && appId !== 'ROKID.EXCEPTION') {
+      this._lastCut = appId;
+    }
     return isNew;
   }
   /**
@@ -49,8 +54,26 @@ class SpeechContext {
   /**
    * @method update
    */
-  update() {
-    return this._handle.updateStack(this.current);
+  update(form) {
+    const len = this._stack.length - 1;
+    const domain = {
+      scene: '',
+      cut: '',
+    };
+    for (let i = len; i >= 0; i--) {
+      const id = this._stack[i];
+      const ctx = this._apps[id];
+      if (!domain.scene && 
+        ctx.form === 'scene' && 
+        id !== 'ROKID.EXCEPTION' && 
+        id[0] !== '@') {
+        domain.scene = id;
+        break;
+      }
+    }
+    const stack = domain.scene + ':' + (this._lastCut || '');
+    console.info('upload the stack:', stack);
+    this._handle.updateStack(stack);
   }
   /**
    * @method remove
@@ -105,7 +128,8 @@ class SpeechService extends EventEmitter {
    * @method _onVoiceEvent
    */
   _onVoiceEvent(id, event, sl, energy) {
-    console.log('<VoiceEvent>', event, sl, energy);
+    if (event !== 'info')
+      console.log('<VoiceEvent>', event, sl, energy);
     this.emit('voice', id, event, sl, energy);
   }
   /**
@@ -122,11 +146,15 @@ class SpeechService extends EventEmitter {
     clearTimeout(this._autoExitTimer);
     this.emit('nlp ready', asr, nlp);
 
-    let data = { asr };
+    let data = { asr, nlp, action };
     try {
-      data.nlp = JSON.parse(nlp);
-      data.action = JSON.parse(action);
+      data.raw = { nlp, action };
+      if (typeof nlp === 'string')
+        data.nlp = JSON.parse(nlp);
+      if (typeof action === 'string')
+        data.action = JSON.parse(action);
     } catch (err) {
+      console.error(err && err.stack);
       return;
     }
     const appId = data.appId = data.nlp.appId;
@@ -138,10 +166,11 @@ class SpeechService extends EventEmitter {
     } else {
       const last = this._context.getCurrentApp();
       if (last) {
-        if (last.form === 'cut' || last.form === 'service') {
-          this.exitBy(last);
-        } else {
+        // FIXME(Yorkie): pause current is not scene and last is scene
+        if (last.form === 'scene' && data.form !== 'scene') {
           this.lifecycle('pause', last);
+        } else {
+          this.exitBy(last);
         }
       }
       const isNew = this._context.enter(appId, data.form, data.cloud);
@@ -178,6 +207,12 @@ class SpeechService extends EventEmitter {
       this.lifecycle('restart', current);
       this.lifecycle('resume', current);
     }
+  }
+  /**
+   * @method getCurrentApp
+   */
+  getCurrentApp() {
+    return this._context.getCurrentApp();
   }
   /**
    * @method emit
@@ -236,7 +271,11 @@ class SpeechService extends EventEmitter {
     // exit the last
     let current = this._context.getCurrentApp();
     if (current) {
-      this.exitBy(current.appId);
+      if (current.form === 'scene') {
+        this.lifecycle('pause', current);
+      } else {
+        this.exitBy(current);
+      }
     }
 
     // enter the new by appId

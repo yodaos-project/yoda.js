@@ -3,8 +3,7 @@
 #include <stdio.h>
 #include <node.h>
 #include <nan.h>
-#include "LumenLight.h"
-#include "lumenflinger/LumenEffects.h"
+#include "lumenflinger/LumenLight.h"
 
 using namespace v8;
 using namespace std;
@@ -15,7 +14,6 @@ public:
 	~LumenWrap();
   static NAN_MODULE_INIT(Init);
   LumenLight* light;
-  LumenEffects* effects;
   bool enabled = false;
 
 private:
@@ -32,11 +30,4 @@ private:
   static NAN_METHOD(Pause);
   static NAN_METHOD(Stop);
   static NAN_METHOD(Draw);
-
-  // effects
-  static NAN_METHOD(Point);
-  static NAN_METHOD(Round);
-  static NAN_METHOD(StopRound);
-  static NAN_METHOD(FadeIn);
-  static NAN_METHOD(FadeOut);
 };

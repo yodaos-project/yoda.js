@@ -3,6 +3,7 @@
 const TtsWrap = require('bindings')('tts').TtsWrap;
 const EventEmitter = require('events').EventEmitter;
 const tap = require('@rokid/tapdriver');
+const context = require('@rokid/context');
 
 /**
  * @class TextToSpeech
@@ -95,10 +96,15 @@ const _ttsdispatcher = new TTSDispatcher();
  */
 function say(text, callback) {
   const tts = _ttsdispatcher.say(text);
+  context.emitVoiceEvent('tts start', text);
+
   if (typeof callback === 'function') {
     // FIXME(Yazhong): should we move this event inside `stop()`?
     tts.once('cancel', (id) => callback('TTS has been canceled'));
-    tts.once('complete', (id) => callback(null));
+    tts.once('complete', (id) => {
+      context.emitVoiceEvent('tts end');
+      callback(null);
+    });
     tts.once('error', (id, err) => {
       if (!(err instanceof Error)) err = new Error(err);
       callback(err);

@@ -1,0 +1,23 @@
+syntax = "proto2";
+package rokid.open.v1.extended.ota;
+
+message OtaCheckRequest {
+  required string version = 1;
+}
+
+message OtaCheckResponse {
+  required string imageUrl = 1;
+  required bool authorize = 2;
+  optional string errorMessage = 3;
+  enum Code {
+    OK = 0;
+    NO_IMAGE = 1;
+    ERROR = 2;
+  }
+  optional Code code = 4;
+  optional string changelog = 5;
+  optional string checksum = 6;
+  optional bool isForceUpdate = 7;
+  optional string version = 8;
+  optional string packageChoice = 9;
+}
