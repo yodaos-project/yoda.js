@@ -7,7 +7,8 @@ const registry = require('./mqtt-registry').registry;
 const EventEmitter = require('events').EventEmitter;
 
 // FIXME(Yorkie): tweak to online?
-const endpoint = 'mqtt://mqtt-dev.rokid.com';
+// const endpoint = 'mqtt://mqtt-dev.rokid.com';
+const endpoint = 'mqtts:://wormhole.rokid.com:8885';
 let handle = null;
 
 /**
@@ -45,6 +46,7 @@ class MqttAgent extends EventEmitter {
       clientId: data.username,
       username: data.username,
       password: data.token,
+      rejectUnauthorized: true,
     });
     this._handle.on('connect', () => {
       const channelId = `u/${this._userId}/deviceType/${this._deviceTypeId}/deviceId/${this._deviceId}/rc`;
