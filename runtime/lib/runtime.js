@@ -144,7 +144,6 @@ class Runtime {
    */
   start() {
     exec('touch /var/run/bootcomplete');
-    this._speech.start();
     this._appMgr = new AppManager(this._paths, this);
     this._input.listen();
     this._startMonitor();
@@ -311,6 +310,10 @@ class Runtime {
       player.play(`${__dirname}/sounds/startup${id}.ogg`);
     }
     this._speech.reload();
+    const triggerWord = context.deviceConfig.triggerWord;
+    if (triggerWord) {
+      this._speech.insertVoiceTrigger(triggerWord.text, triggerWord.pinyin);
+    }
   }
   /**
    * @method _doMute

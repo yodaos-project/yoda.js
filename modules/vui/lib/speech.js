@@ -117,6 +117,7 @@ class SpeechService extends EventEmitter {
     this._handle = new SpeechWrap();
     this._context = new SpeechContext(this._handle);
     this._autoExitTimer = null;
+    this._started = false;
 
     // set handle events
     this._handle.onVoiceEvent = this._onVoiceEvent.bind(this);
@@ -306,7 +307,11 @@ class SpeechService extends EventEmitter {
    * @method start
    */
   start() {
+    if (this._started) {
+      return;
+    }
     this._handle.start();
+    this._started = true;
     setInterval(() => false, 5000);
   }
   /**
@@ -314,12 +319,25 @@ class SpeechService extends EventEmitter {
    */
   pause() {
     this._handle.pause();
+    this._started = false;
   }
   /**
    * @method resume
    */
   resume() {
     this._handle.resume();
+    this._started = true;
+  }
+  /**
+   * @method toggle
+   */
+  toggle() {
+    if (this._started) {
+      this.pause();
+    } else {
+      this.resume();
+    }
+    return this._started;
   }
   /**
    * @method reload
@@ -327,14 +345,17 @@ class SpeechService extends EventEmitter {
   reload() {
     const data = JSON.parse(
       fs.readFileSync('/data/system/openvoice_profile.json'));
+    this.start();
     this._handle.updateConfig(
       data.device_id, data.device_type_id, data.key, data.secret);
+    this._handle.initVoiceTrigger();
+  }
+  /**
+   * @method insertVoiceTrigger
+   */
+  insertVoiceTrigger(text, pinyin) {
+    return this._handle.insertVoiceTrigger(text, pinyin);
   }
 }
-
-// const service = new SpeechService((event, data) => {
-//   console.log(event, data);
-// });
-// service.start();
 
 exports.SpeechService = SpeechService;

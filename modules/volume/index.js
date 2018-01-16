@@ -35,7 +35,7 @@ module.exports = {
   /**
    * @method toggleMute
    */
-  toogleMute() {
+  toggleMute() {
     const m = handle.getMute();
     if (m) {
       this.unmute();

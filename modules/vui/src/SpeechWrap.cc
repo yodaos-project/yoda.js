@@ -1,11 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SpeechWrap.h>
+#include <vector>
 
 using namespace v8;
 using namespace std;
 
 uv_mutex_t mutex;
+
+enum VoiceTriggerType {
+  VT_TYPE_AWAKE = 1,
+  VT_TYPE_SLEEP,
+  VT_TYPE_HOTWORD,
+};
 
 enum VoiceEventType {
   VOICE_COMING = 0,
@@ -279,6 +286,12 @@ NAN_MODULE_INIT(SpeechWrap::Init) {
   Nan::SetPrototypeMethod(tpl, "setSirenState", SetSirenState);
   Nan::SetPrototypeMethod(tpl, "requestNlpByText", RequestNlpByText);
 
+  // trigger words
+  Nan::SetPrototypeMethod(tpl, "initVoiceTrigger", InitVoiceTrigger);
+  Nan::SetPrototypeMethod(tpl, "insertVoiceTrigger", InsertVoiceTrigger);
+  Nan::SetPrototypeMethod(tpl, "deleteVoiceTrigger", DeleteVoiceTrigger);
+
+  // wrap
   Local<Function> func = Nan::GetFunction(tpl).ToLocalChecked();
   Nan::Set(target, Nan::New("SpeechWrap").ToLocalChecked(), func);
   uv_mutex_init(&mutex);
@@ -294,7 +307,6 @@ NAN_METHOD(SpeechWrap::Start) {
   SpeechWrap* speech = Nan::ObjectWrap::Unwrap<SpeechWrap>(info.This());
   if (speech->_handle != NULL) {
     speech->_handle->init();
-    speech->_handle->network_state_change(1);
     speech->_handle->regist_callback(speech->_voiceCb);
     ProcessState::self()->startThreadPool();
   }
@@ -342,6 +354,38 @@ NAN_METHOD(SpeechWrap::RequestNlpByText) {
   String::Utf8Value speechText(info[0]->ToString());
   string nlp = speech->_handle->asr_to_nlp(*speechText);
   info.GetReturnValue().Set(Nan::New<String>(nlp.c_str()).ToLocalChecked());
+}
+
+NAN_METHOD(SpeechWrap::InitVoiceTrigger) {
+  SpeechWrap* speech = Nan::ObjectWrap::Unwrap<SpeechWrap>(info.This());
+  std::vector<vt_word_t> words;
+  speech->_handle->query_vt_word(words);
+  for (vt_word_t word: words) {
+    speech->_handle->delete_vt_word(word.vt_word());
+  }
+  info.GetReturnValue().Set(info.This());
+}
+
+NAN_METHOD(SpeechWrap::InsertVoiceTrigger) {
+  SpeechWrap* speech = Nan::ObjectWrap::Unwrap<SpeechWrap>(info.This());
+  String::Utf8Value text(info[0]->ToString());
+  String::Utf8Value pinyin(info[1]->ToString());
+  vt_word_t word;
+  word.set_vt_word(*text);
+  word.set_vt_pinyin(*pinyin);
+  word.set_vt_type(VT_TYPE_AWAKE);
+  word.set_use_default_config(true);
+  printf("%s\n", word.DebugString().c_str());
+
+  speech->_handle->insert_vt_word(word);
+  info.GetReturnValue().Set(info.This());
+}
+
+NAN_METHOD(SpeechWrap::DeleteVoiceTrigger) {
+  SpeechWrap* speech = Nan::ObjectWrap::Unwrap<SpeechWrap>(info.This());
+  String::Utf8Value text(info[0]->ToString());
+  speech->_handle->delete_vt_word(*text);
+  info.GetReturnValue().Set(info.This());
 }
 
 void InitModule(Handle<Object> target) {

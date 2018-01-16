@@ -1,6 +1,7 @@
 'use strict';
 
 const property = require('@rokid/property');
+const context = require('@rokid/context');
 const BluetoothWrap = require('bindings')('bluetooth').BluetoothWrap;
 const handle = new BluetoothWrap();
 
@@ -8,7 +9,7 @@ let ble_is_opened = false;
 let a2dp_is_opened = false;
 
 const id = property.serialno ? property.serialno.slice(-6) : 'xxxxxx';
-const name = `Rokid-Devboard-${id}`;
+const name = context.deviceConfig.namePrefix + id;
 
 /**
  * @method open

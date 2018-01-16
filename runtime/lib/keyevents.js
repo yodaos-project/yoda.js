@@ -49,8 +49,8 @@ module.exports = {
   /**
    * @method mute
    */
-  mute() {
-    volume.mute();
+  mute(speech) {
+    speech.toggle();
   },
 
   /**
