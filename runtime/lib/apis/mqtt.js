@@ -7,8 +7,12 @@ const registry = require('./mqtt-registry').registry;
 const EventEmitter = require('events').EventEmitter;
 
 // FIXME(Yorkie): tweak to online?
-const endpoint = 'mqtt://mqtt-dev.rokid.com';
+// const endpoint = 'mqtt://mqtt-dev.rokid.com';
+const endpoint = 'mqtts:://wormhole.rokid.com:8885';
 let handle = null;
+
+// ca pem str
+const CA_PEM_STR = fs.readFileSync(__dirname + '/mqtt.pem');
 
 /**
  * @class MqttAgent
@@ -45,6 +49,8 @@ class MqttAgent extends EventEmitter {
       clientId: data.username,
       username: data.username,
       password: data.token,
+      rejectUnauthorized: false,
+      ca: [ CA_PEM_STR ]
     });
     this._handle.on('connect', () => {
       const channelId = `u/${this._userId}/deviceType/${this._deviceTypeId}/deviceId/${this._deviceId}/rc`;
