@@ -6,7 +6,8 @@ const crypto = require('crypto');
 const context = require('@rokid/context');
 
 // TODO(Yorkie): move something where?
-const host = 'mqtt-dev-registry.rokid.com';
+// const host = 'mqtt-dev-registry.rokid.com';
+const host = 'wormhole-registry.rokid.com';
 
 function load() {
   const config = context.config;
