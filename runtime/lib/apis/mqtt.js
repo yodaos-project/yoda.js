@@ -11,9 +11,6 @@ const EventEmitter = require('events').EventEmitter;
 const endpoint = 'mqtts:://wormhole.rokid.com:8885';
 let handle = null;
 
-// ca pem str
-const CA_PEM_STR = fs.readFileSync(__dirname + '/mqtt.pem');
-
 /**
  * @class MqttAgent
  * @extends EventEmitter
@@ -49,8 +46,7 @@ class MqttAgent extends EventEmitter {
       clientId: data.username,
       username: data.username,
       password: data.token,
-      rejectUnauthorized: false,
-      ca: [ CA_PEM_STR ]
+      rejectUnauthorized: true,
     });
     this._handle.on('connect', () => {
       const channelId = `u/${this._userId}/deviceType/${this._deviceTypeId}/deviceId/${this._deviceId}/rc`;
