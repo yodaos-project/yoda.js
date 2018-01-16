@@ -11,7 +11,11 @@ module.exports = {
    * @method get
    */
   get() {
-    return handle.get();
+    if (handle.getMute()) {
+      return 0;
+    } else {
+      return handle.get();
+    }
   },
   /**
    * @method set

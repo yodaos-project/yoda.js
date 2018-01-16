@@ -323,7 +323,11 @@ class Runtime {
       clearTimeout(this._volumeTimer);
     } else {
       this._vol = volume.get();
-      volume.set(5);
+      if (this._vol <= 5) {
+        volume.set(0);
+      } else {
+        volume.set(5);
+      }
     }
     this._volumeTimer = setTimeout(() => {
       volume.set(this._vol);
