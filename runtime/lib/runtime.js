@@ -251,7 +251,7 @@ class Runtime {
       } else if (event.keyCode === 25) {
         keyevents.volumedown();
       } else if (event.keyCode === 91) {
-        keyevents.mute();
+        keyevents.mute(this._speech);
       } else if (event.keyCode === 26) {
         keyevents.incPower(() => {
           this._online = true;
