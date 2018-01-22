@@ -161,6 +161,12 @@ class RokidApp extends EventEmitter {
     });
   }
   /**
+   * @method redirect
+   */
+  redirect(appId, context) {
+    this._runtime._speech.redirect(appId, context);
+  }
+  /**
    * @method crontab
    * @param {String} expr
    * @param {Object} data
