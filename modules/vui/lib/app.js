@@ -204,6 +204,8 @@ class AppExecutor {
   }
 }
 
+var appMgr;
+
 /**
  * @class AppManager
  */
@@ -218,6 +220,7 @@ class AppManager {
     this._runtime = runtime;
     this._skill2app = {};
     this._list = this.load();
+    appMgr = this;
   }
   /**
    * @method toString
@@ -261,6 +264,7 @@ class AppManager {
         throw new Error('skill conflicts');
       let app = new AppExecutor(pkgInfo, prefix);
       if (app.valid) {
+        app.skills = pkgInfo.metadata.skills;
         this._skill2app[id] = app;
       } else {
         throw new Error(app.errmsg);
@@ -276,6 +280,16 @@ class AppManager {
    * @param {String} appid - the skill id to find the handler
    */
   getHandlerById(appid) {
+    if (appid[0] === '@') {
+      const skills = this._skill2app[appid].skills;
+      for (let i = 0; i < skills.length; i++) {
+        let s = skills[i];
+        if (s && s[0] !== '@' && s.length === 32) {
+          appid = s;
+          break;
+        }
+      }
+    }
     let app = this._skill2app[appid];
     if (!app) {
       // check extapp firstly
@@ -295,3 +309,6 @@ class AppManager {
 }
 
 exports.AppManager = AppManager;
+exports.getAppMgr = function() {
+  return appMgr;
+};

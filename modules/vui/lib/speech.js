@@ -3,6 +3,7 @@
 const fs = require('fs');
 const SpeechWrap = require('bindings')('speech_down').SpeechWrap;
 const EventEmitter = require('events').EventEmitter;
+const getAppMgr = require('./app').getAppMgr;
 
 /**
  * @class SpeechContext
@@ -18,12 +19,32 @@ class SpeechContext {
     this._handle = handle;
   }
   /**
+   * @method empty
+   */
+  empty() {
+    this._stack = [];
+    this._lastCut = null;
+    this._apps = {};
+    this._handle.updateStack(':');
+  }
+  /**
    * @method enter
    */
   enter(appId, form, cloud) {
     // FIXME(Yorkie): dont put stack when form is "service"
     // if (form === 'service')
     //   return false;
+    if (appId[0] === '@') {
+      const mgr = getAppMgr();
+      const skills = mgr._skill2app[appId].skills;
+      for (let i = 0; i < skills.length; i++) {
+        let s = skills[i];
+        if (s && s[0] !== '@' && s.length === 32) {
+          appId = s;
+          break;
+        }
+      }
+    }
 
     let isNew = !this.remove(appId);
     this._stack.push(appId);
@@ -248,6 +269,8 @@ class SpeechService extends EventEmitter {
     if (current) {
       this.exitBy(current);
       this.exitAll();
+    } else {
+      this._context.empty();
     }
   }
   /**
