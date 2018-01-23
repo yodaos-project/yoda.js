@@ -8,7 +8,7 @@ const EventEmitter = require('events').EventEmitter;
 
 // FIXME(Yorkie): tweak to online?
 // const endpoint = 'mqtt://mqtt-dev.rokid.com';
-const endpoint = 'mqtts:://wormhole.rokid.com:8885';
+const endpoint = 'mqtts://wormhole.rokid.com:8885';
 let handle = null;
 
 /**
