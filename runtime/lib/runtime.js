@@ -188,6 +188,7 @@ class Runtime {
 
     // update process title
     console.info(this._appMgr.toString());
+    context.emitEvent('init');
   }
   /**
    * @method setOnline
@@ -212,6 +213,7 @@ class Runtime {
       })
       .then(() => {
         this._startSpeech();
+        context.emitEvent('online');
       })
       .catch((err) => {
         console.error('occurrs error when online service');
@@ -228,6 +230,7 @@ class Runtime {
     }
     process.title = 'vui(offline)';
     this._online = false;
+    context.emitEvent('offline');
     setTimeout(() => {
       this._speech.exitAll();
       this._speech.redirect('@network', {
