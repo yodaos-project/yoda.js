@@ -25,8 +25,8 @@ class ConnectWorker : public Nan::AsyncWorker {
 };
 
 WifiWrap::WifiWrap() {
-  memset(network_.ssid, 0, 32);
-  memset(network_.psk, 0, 64);
+  memset(network_.ssid, 0, 36);
+  memset(network_.psk, 0, 68);
 }
 
 WifiWrap::~WifiWrap() {
