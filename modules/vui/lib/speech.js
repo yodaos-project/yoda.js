@@ -176,7 +176,8 @@ class SpeechService extends EventEmitter {
       if (typeof action === 'string')
         data.action = JSON.parse(action);
     } catch (err) {
-      console.error(err && err.stack);
+      console.log('invalid response body, just skip');
+      this.emit('error', err);
       return;
     }
     const appId = data.appId = data.nlp.appId;
