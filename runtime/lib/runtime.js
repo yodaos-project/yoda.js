@@ -107,8 +107,9 @@ class Runtime {
     });
     this._speech.on('lifecycle', (event, data) => {
       console.log(event, data.appId);
-      if (this._testing)
-        return;
+      // comment it for let ro test execute complete
+      // if (this._testing)
+      //   return;
       const id = this._getAppId(data.appId, data.cloud);
       const form = data.form;
 
