@@ -26,6 +26,12 @@ if (fs.existsSync('/data/plugins/EventHandler.js')) {
   voiceEventPlugin = require('/data/plugins/EventHandler.js');
 }
 
+function emitEvent(name, argv) {
+  if (voiceEventPlugin && voiceEventPlugin instanceof EventEmitter) {
+    voiceEventPlugin.emit(name, argv);
+  }
+}
+
 module.exports = {
   /**
    * @property config
@@ -52,9 +58,9 @@ module.exports = {
   /**
    * @method emitVoiceEvent
    */
-  emitVoiceEvent(name, argv) {
-    if (voiceEventPlugin && voiceEventPlugin instanceof EventEmitter) {
-      voiceEventPlugin.emit(name, argv);
-    }
-  }
+  emitVoiceEvent: emitEvent,
+  /**
+   * @method emitEvent
+   */
+  emitEvent: emitEvent,
 };
