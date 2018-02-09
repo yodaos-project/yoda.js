@@ -3,6 +3,18 @@
 const EventEmitter = require('events').EventEmitter;
 const handler = module.exports = new EventEmitter();
 
+handler.on('init', () => {
+  // init
+});
+
+handler.on('online', () => {
+  // system is online
+});
+
+handler.on('offline', () => {
+  // system is offline
+});
+
 handler.on('voice wakeup', (data) => {
   // 语音唤醒事件
 });
