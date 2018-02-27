@@ -7,8 +7,8 @@ using namespace std;
 BluetoothWrap::BluetoothWrap(const char* bt_name) {
   handle = rokidbt_create();
   rokidbt_init(handle, bt_name);
-  rokidbt_set_event_listener(handle, OnEvent, this);
-  rokidbt_set_discovery_cb(handle, AfterDiscovery, this);
+  rokidbt_set_event_listener(handle, BluetoothWrap::OnEvent, this);
+  rokidbt_set_discovery_cb(handle, BluetoothWrap::AfterDiscovery, this);
 }
 
 BluetoothWrap::~BluetoothWrap() {

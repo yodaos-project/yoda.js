@@ -15,8 +15,8 @@ public:
 
 private:
   RKBluetooth* handle;
-  void OnEvent(void* userdata, int what, int arg1, int arg2, void* data);
-  void AfterDiscovery(void* userdata, const char* bt_name, const char bt_addr[6], int is_completed);
+  static void OnEvent(void* userdata, int what, int arg1, int arg2, void* data);
+  static void AfterDiscovery(void* userdata, const char* bt_name, const char bt_addr[6], int is_completed);
 
   // instance methods
   static NAN_METHOD(New);
