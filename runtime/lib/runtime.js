@@ -10,6 +10,7 @@ const volume = require('@rokid/volume');
 const light = require('@rokid/lumen');
 const player = require('@rokid/player');
 const context = require('@rokid/context');
+const logger = require('@rokid/logger');
 
 const InputDispatcher = require('@rokid/input').InputDispatcher;
 const {
@@ -106,7 +107,7 @@ class Runtime {
       this._stopRound();
     });
     this._speech.on('lifecycle', (event, data) => {
-      console.log(event, data.appId);
+      logger.log(event, data.appId);
       // comment it for let ro test execute complete
       // if (this._testing)
       //   return;
@@ -121,11 +122,11 @@ class Runtime {
         this._handleStop(id, data);
       } else if (event === 'voice_command') {
         if (data && data.raw) {
-          console.info('asr:', data.asr);
-          console.info('nlp:', data.raw.nlp);
-          console.info('dat:', data.raw.action);
+          logger.info('asr:', data.asr);
+          logger.info('nlp:', data.raw.nlp);
+          logger.info('dat:', data.raw.action);
         } else {
-          console.info('nlp:', JSON.stringify(data.nlp));
+          logger.info('nlp:', JSON.stringify(data.nlp));
         }
         this._handleVoiceCommand(data.asr, data.nlp, data.action);
       } else {
@@ -188,7 +189,7 @@ class Runtime {
     }, 1000);
 
     // update process title
-    console.info(this._appMgr.toString());
+    logger.info(this._appMgr.toString());
     context.emitEvent('init');
   }
   /**
@@ -217,8 +218,8 @@ class Runtime {
         context.emitEvent('online');
       })
       .catch((err) => {
-        console.error('occurrs error when online service');
-        console.error(err && err.stack);
+        logger.error('occurrs error when online service');
+        logger.error(err && err.stack);
       });
   }
   /**
@@ -266,7 +267,7 @@ class Runtime {
         const app = this._speech.getCurrentApp() || {};
         const id = this._getAppId(app.appid, app.isCloud);
         if (id) {
-          console.info(`<keyevent> code=${event.keyCode}`);
+          logger.info(`<keyevent> code=${event.keyCode}`);
           this._handleKeyEvent(id, event);
         }
       }
@@ -281,7 +282,7 @@ class Runtime {
       const params = JSON.parse(msg.content.params);
       this._speech.mockRequest('', params.nlp, params.action);
     } catch (err) {
-      console.error(err && err.stack);
+      logger.error(err && err.stack);
     }
   }
   /**
@@ -392,7 +393,7 @@ class Runtime {
       },
       start: true,
     }).start();
-    console.log('expr:', expr);
+    logger.log('expr:', expr);
   }
   /**
    * @method setPickup
@@ -513,7 +514,7 @@ class Runtime {
       }
       done(null, true);
     } catch (err) {
-      console.error(err && err.stack);
+      logger.error(err && err.stack);
       done(null, false);
     }
   }
@@ -544,7 +545,7 @@ class Runtime {
    * @param {Function} done - the callback
    */
   _onPing(done) {
-    console.log('<vui> is alive...');
+    logger.log('<vui> is alive...');
     done(null, true);
   }
   /**

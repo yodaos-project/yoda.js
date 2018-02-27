@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const logger = require('@rokid/logger')('apis');
 const property = require('@rokid/property');
 const RokidRequest = require('rokid').RokidRequest;
 const host = require('/data/system/openvoice_profile.json').event_req_host;
@@ -20,7 +21,7 @@ function bindDevice(callback) {
 module.exports = function() {
   return new Promise((resolve, _) => {
     bindDevice((...args) => {
-      console.log(args);
+      logger.log(args);
       resolve();
     });
   });
