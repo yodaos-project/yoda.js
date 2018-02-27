@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const logger = require('@rokid/logger')('speech');
 const SpeechWrap = require('bindings')('speech_down').SpeechWrap;
 const EventEmitter = require('events').EventEmitter;
 const getAppMgr = require('./app').getAppMgr;
@@ -51,8 +52,8 @@ class SpeechContext {
     this._apps[appId] = {
       appId, form, cloud
     };
-    console.info('current stack:', this._stack);
-    console.info('current cstack:', this._lastCut);
+    logger.info('current stack:', this._stack);
+    logger.info('current cstack:', this._lastCut);
     this.update(form);
     if (form === 'cut' && appId !== 'ROKID.EXCEPTION') {
       this._lastCut = appId;
@@ -93,7 +94,7 @@ class SpeechContext {
       }
     }
     const stack = domain.scene + ':' + (this._lastCut || '');
-    console.info('upload the stack:', stack);
+    logger.info('upload the stack:', stack);
     this._handle.updateStack(stack);
   }
   /**
@@ -151,14 +152,14 @@ class SpeechService extends EventEmitter {
    */
   _onVoiceEvent(id, event, sl, energy) {
     if (event !== 'info')
-      console.log('<VoiceEvent>', event, sl, energy);
+      logger.log('<VoiceEvent>', event, sl, energy);
     this.emit('voice', id, event, sl, energy);
   }
   /**
    * @method _onVoiceEvent
    */
   _onIntermediateResult(id, type, asr) {
-    console.log('<IntermediateResult>', type, asr);
+    logger.log('<IntermediateResult>', type, asr);
     this.emit('speech', id, type, asr);
   }
   /**
@@ -176,7 +177,7 @@ class SpeechService extends EventEmitter {
       if (typeof action === 'string')
         data.action = JSON.parse(action);
     } catch (err) {
-      console.log('invalid response body, just skip');
+      logger.log('invalid response body, just skip');
       this.emit('error', err);
       return;
     }
@@ -217,7 +218,7 @@ class SpeechService extends EventEmitter {
    * @method _onError
    */
   _onError(id, code) {
-    console.error('speech error', id, code);
+    logger.error('speech error', id, code);
     clearTimeout(this._autoExitTimer);
     this.emit('error', id, code);
   }

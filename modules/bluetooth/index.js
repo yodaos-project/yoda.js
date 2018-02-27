@@ -2,6 +2,7 @@
 
 const property = require('@rokid/property');
 const context = require('@rokid/context');
+const logger = require('@rokid/logger')('bluetooth');
 const BluetoothWrap = require('bindings')('bluetooth').BluetoothWrap;
 const handle = new BluetoothWrap();
 
@@ -146,7 +147,7 @@ class BluetoothLowEnergy {
       if (err)
         return callback(err);
 
-      console.log(`>>> ${data} <<<`);
+      logger.log(`>>> ${data} <<<`);
       const buf = new Buffer(data || '');
       let endPos = buf.length;
       for (let i = 0; i < buf.length; i++) {

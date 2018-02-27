@@ -3,6 +3,7 @@
 const mqtt = require('mqtt');
 const context = require('@rokid/context');
 const property = require('@rokid/property');
+const logger = require('@rokid/logger')('mqtt');
 const registry = require('./mqtt-registry').registry;
 const EventEmitter = require('events').EventEmitter;
 
@@ -38,8 +39,8 @@ class MqttAgent extends EventEmitter {
    */
   _onTryConnect(err, data) {
     if (err) {
-      console.error('MQTT connecting error:');
-      console.error(err && err.stack);
+      logger.error('MQTT connecting error:');
+      logger.error(err && err.stack);
       return;
     }
     this._handle = handle = mqtt.connect(endpoint, {
@@ -51,12 +52,12 @@ class MqttAgent extends EventEmitter {
     this._handle.on('connect', () => {
       const channelId = `u/${this._userId}/deviceType/${this._deviceTypeId}/deviceId/${this._deviceId}/rc`;
       this._handle.subscribe(channelId);
-      console.info('subscribed', channelId);
+      logger.info('subscribed', channelId);
     });
     this._handle.on('message', this._onMessage.bind(this));
     this._handle.on('error', (err) => {
-      console.error('MQTT connecting error:');
-      console.error(err && err.stack);
+      logger.error('MQTT connecting error:');
+      logger.error(err && err.stack);
     });
   }
   /**
@@ -67,13 +68,13 @@ class MqttAgent extends EventEmitter {
     try {
       msg = JSON.parse(data + '');
     } catch (err) {
-      console.error('received the error message from channel:', data);
+      logger.error('received the error message from channel:', data);
     }
     if (msg.topic === 'version') {
       this.sendToApp('version', 'ok');
     } else {
       this.emit(msg.topic, msg.text);
-      console.log(msg.topic, msg.text);
+      logger.log(msg.topic, msg.text);
     }
   }
   /**

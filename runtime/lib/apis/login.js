@@ -6,6 +6,7 @@ const path = require('path');
 const exec = require('child_process').execSync;
 const protobuf = require('protobufjs');
 const property = require('@rokid/property');
+const logger = require('@rokid/logger')('apis');
 
 const proto = protobuf.loadSync(path.join(__dirname, '../proto/Login.proto'));
 const Request = proto.lookupType('LoginReqPB');
@@ -58,11 +59,11 @@ function login(callback) {
         config['key'] = data.key;
         config['secret'] = data.secret;
         fs.writeFile(location, JSON.stringify(config, null, 2), (err) => {
-          console.info(`updated the ${location}`);
+          logger.info(`updated the ${location}`);
           callback(err, data);
         });
       } catch (err) {
-        console.error(err && err.stack);
+        logger.error(err && err.stack);
         callback(err);
       }
     });
@@ -70,7 +71,7 @@ function login(callback) {
   req.once('error', (err) => {
     if (err.message === 'certificate is not yet valid' && retry <= 10) {
       retry += 1;
-      console.info('invalid certificate, try again once');
+      logger.info('invalid certificate, try again once');
       return setTimeout(() => login(callback), 3000);
     }
     throw err;
