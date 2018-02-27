@@ -11,7 +11,6 @@
     "cflags!": [ "-fno-exceptions", "-include rokid/rokid_types.h" ],
     "cflags_cc!": [ "-fno-exceptions", "-std=c++11" ],
     "libraries": [
-      "-lbtflinger_api",
       "-lrokid_bt",
       "-landroid_utils",
       "-landroid_cutils",

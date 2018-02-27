@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <node.h>
 #include <nan.h>
-#include "BluetoothWrap.h"
 
 using namespace v8;
 using namespace std;
@@ -15,23 +14,20 @@ public:
   static NAN_MODULE_INIT(Init);
 
 private:
+  RKBluetooth* handle;
+
   // instance methods
   static NAN_METHOD(New);
-  static NAN_METHOD(Open);
-  static NAN_METHOD(Close);
+  static NAN_METHOD(SetName);
+  static NAN_METHOD(Discovery);
+  static NAN_METHOD(Cancel);
 
   // a2dp
-  static NAN_METHOD(EnableA2DP);
-  static NAN_METHOD(EnableA2DPSink);
-  static NAN_METHOD(EnableA2DPLink);
-  static NAN_METHOD(SendCommand);
+  static NAN_METHOD(EnableA2dp);
+  static NAN_METHOD(CloseA2dp);
+  static NAN_METHOD(DisableA2dp);
 
   // ble methods
-  static NAN_METHOD(EnableBLE);
-  static NAN_METHOD(DisableBLE);
-  static NAN_METHOD(BLE_SendResp);
-  static NAN_METHOD(BLE_GetResp);
-
-  // a2dp
-  // TODO
+  static NAN_METHOD(EnableBle);
+  static NAN_METHOD(DisableBle);
 };
