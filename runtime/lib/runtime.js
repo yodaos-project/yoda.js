@@ -10,7 +10,7 @@ const volume = require('@rokid/volume');
 const light = require('@rokid/lumen');
 const player = require('@rokid/player');
 const context = require('@rokid/context');
-const logger = require('@rokid/logger');
+const logger = require('@rokid/logger')('main');
 
 const InputDispatcher = require('@rokid/input').InputDispatcher;
 const {
