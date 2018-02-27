@@ -38,17 +38,24 @@ void BluetoothWrap::OnEvent(void* userdata, int what, int arg1, int arg2, void* 
   async->data = (void*)event;
 
   uv_async_init(uv_default_loop(), async, BluetoothWrap::AfterEvent);
-  printf("ready to send\n");
   uv_async_send(async);
-  printf("send done");
 }
 
 void BluetoothWrap::AfterEvent(uv_async_t* async) {
-  printf("after event\n");
   bt_event_t* event = (bt_event_t*)async->data;
   BluetoothWrap* bluetooth = static_cast<BluetoothWrap*>(event->bt);
 
-  printf("what: %d length: %d data: %s\n", event->what, event->arg2, event->data);
+  Local<Function> onevent = Nan::Get(
+    bluetooth->handle(), Nan::New("onevent").ToLocalChecked());
+  Nan::Callback callback(onevent);
+
+  Local<Value> argv[4];
+  argv[0] = Nan::New<Number>(event->what);
+  argv[1] = Nan::New<Number>(event->arg1);
+  argv[2] = Nan::New<Number>(event->arg2);
+  argv[3] = Nan::New<String>(event->data).ToLocalChecked();
+  callback.Call(4, argv);
+
   free(event);
   uv_close((uv_handle_t*)async, NULL);
 }
