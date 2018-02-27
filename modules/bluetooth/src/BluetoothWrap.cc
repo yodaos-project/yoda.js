@@ -33,7 +33,7 @@ NAN_MODULE_INIT(BluetoothWrap::Init) {
 
   Nan::SetPrototypeMethod(tpl, "setName", SetName);
   Nan::SetPrototypeMethod(tpl, "discovery", Discovery);
-  Nan::SetPrototypeMethod(tpl, "cancelDiscovery", CancelDiscovery);
+  Nan::SetPrototypeMethod(tpl, "cancel", Cancel);
 
   // a2dp
   Nan::SetPrototypeMethod(tpl, "enableA2dp", EnableA2dp);
