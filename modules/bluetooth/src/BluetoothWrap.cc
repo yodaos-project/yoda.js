@@ -26,15 +26,15 @@ BluetoothWrap::~BluetoothWrap() {
 void BluetoothWrap::OnEvent(void* userdata, int what, int arg1, int arg2, void* data) {
   BluetoothWrap* bluetooth = static_cast<BluetoothWrap*>(userdata);
 
-  bt_event_t event;
-  event.what = what;
-  event.arg1 = arg1;
-  event.arg2 = arg2;
-  event.data = data;
-  event.bt = bluetooth;
+  bt_event_t* event = (bt_event_t*)malloc(sizeof(bt_event_t));
+  event->what = what;
+  event->arg1 = arg1;
+  event->arg2 = arg2;
+  event->data = data;
+  event->bt = bluetooth;
 
   uv_async_t async;
-  async.data = &event;
+  async.data = (void*)event;
 
   uv_async_init(uv_default_loop(), &async, BluetoothWrap::AfterEvent);
   uv_async_send(&async);
@@ -45,6 +45,7 @@ void BluetoothWrap::AfterEvent(uv_async_t* async) {
   BluetoothWrap* bluetooth = static_cast<BluetoothWrap*>(event->bt);
 
   printf("what: %d length: %d data: %s\n", event->what, event->arg2, event->data);
+  free(event);
 }
 
 void BluetoothWrap::AfterDiscovery(void* userdata, 
