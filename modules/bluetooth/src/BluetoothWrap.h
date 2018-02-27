@@ -15,6 +15,7 @@ public:
 
 private:
   RKBluetooth* handle;
+
   static void OnEvent(void* userdata, int what, int arg1, int arg2, void* data);
   static void AfterDiscovery(void* userdata, const char* bt_name, const char bt_addr[6], int is_completed);
 
