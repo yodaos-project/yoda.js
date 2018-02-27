@@ -56,8 +56,8 @@ void BluetoothWrap::AfterEvent(uv_async_t* async) {
   argv[2] = Nan::New<Number>(event->arg2);
 
   if (event->data != NULL) {
-    char msg[event->arg2];
-    memset(msg, 0, event->arg2);
+    char msg[event->arg2 + 1];
+    memset(msg, 0, event->arg2 + 1);
     memcpy(msg, event->data, event->arg2);
     argv[3] = Nan::New<String>(msg).ToLocalChecked();
   } else {
