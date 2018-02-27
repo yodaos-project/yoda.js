@@ -15,14 +15,14 @@ BluetoothWrap::~BluetoothWrap() {
   rokidbt_destroy(handle);
 }
 
-BluetoothWrap::OnEvent(void* userdata, int what, int arg1, int arg2, void *data) {
+void BluetoothWrap::OnEvent(void* userdata, int what, int arg1, int arg2, void *data) {
   printf("on event %d %d %d %s\n", what, arg1, arg2, data);
 }
 
-BluetoothWrap::AfterDiscovery(void* userdata, 
-                              const char* bt_name, 
-                              const char bt_addr[6], 
-                              int is_completed) {
+void BluetoothWrap::AfterDiscovery(void* userdata, 
+                                   const char* bt_name, 
+                                   const char bt_addr[6], 
+                                   int is_completed) {
   printf("discovery done\n");
 }
 
