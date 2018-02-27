@@ -1,8 +1,9 @@
 'use strict';
 
 var net = require('net');
-net.connect(19788, (socket) => {
-  socket.on('data', (chunk) => {
-    console.log(chunk + '');
-  });
+var socket = net.connect(19788, () => {
+  console.log('connected to vui process');
+});
+socket.on('data', function(chunk) {
+  console.log(chunk + '');
 });

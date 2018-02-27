@@ -21,7 +21,7 @@ LiveRemote.prototype.start = function() {
   this._server.listen(LOG_PORT);
 };
 
-LiveRemote.prototype.onsocket = function() {
+LiveRemote.prototype.onsocket = function(socket) {
   var obj = { id: id++, socket: socket };
   this._sockets.push(obj);
   socket.on('close', () => {
