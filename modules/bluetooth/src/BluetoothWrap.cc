@@ -24,6 +24,7 @@ BluetoothWrap::~BluetoothWrap() {
 }
 
 void BluetoothWrap::OnEvent(void* userdata, int what, int arg1, int arg2, void* data) {
+  printf("got event\n");
   BluetoothWrap* bluetooth = static_cast<BluetoothWrap*>(userdata);
 
   bt_event_t* event = (bt_event_t*)malloc(sizeof(bt_event_t));
@@ -37,10 +38,12 @@ void BluetoothWrap::OnEvent(void* userdata, int what, int arg1, int arg2, void* 
   async.data = (void*)event;
 
   uv_async_init(uv_default_loop(), &async, BluetoothWrap::AfterEvent);
+  printf("ready to send\n");
   uv_async_send(&async);
 }
 
 void BluetoothWrap::AfterEvent(uv_async_t* async) {
+  printf("after event\n");
   bt_event_t* event = (bt_event_t*)async->data;
   BluetoothWrap* bluetooth = static_cast<BluetoothWrap*>(event->bt);
 
