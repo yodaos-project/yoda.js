@@ -2,18 +2,30 @@
 
 const fs = require('fs');
 const EventEmitter = require('events').EventEmitter;
+const logger = require('@rokid/logger')('context');
 
 let config;
 let deviceConfig;
 let keyEventPlugin;
 let voiceEventPlugin;
 
+function parseSafely(pathname) {
+  var obj;
+  try {
+    obj = JSON.parse(fs.readFileSync(pathname));
+  } catch (err) {
+    obj = {};
+    logger.error('occurrs error on JSON');
+  }
+  return obj;
+}
+
 if (fs.existsSync('/data/system/openvoice_profile.json')) {
   config = JSON.parse(fs.readFileSync('/data/system/openvoice_profile.json'));
 }
 
 if (fs.existsSync('/data/system/device.json')) {
-  deviceConfig = JSON.parse(fs.readFileSync('/data/system/device.json'));
+  deviceConfig = parseSafely('/data/system/device.json');
 }
 
 if (fs.existsSync('/data/plugins/KeyHandler.json')) {
