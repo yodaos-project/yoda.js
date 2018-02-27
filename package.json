@@ -29,6 +29,7 @@
       "modules/vui:openvoice_proc",
       "modules/wifi:wpa_ctrl",
       "modules/context",
+      "modules/logger",
       "runtime",
       "homebase"
     ]
