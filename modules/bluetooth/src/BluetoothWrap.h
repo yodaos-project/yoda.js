@@ -14,7 +14,7 @@ public:
   static NAN_MODULE_INIT(Init);
 
 private:
-  RKBluetooth* handle;
+  RKBluetooth* bt_handle_;
 
   static void OnEvent(void* userdata, int what, int arg1, int arg2, void* data);
   static void AfterEvent(uv_async_t* async);

@@ -13,14 +13,14 @@ typedef struct bt_event_s {
 } bt_event_t;
 
 BluetoothWrap::BluetoothWrap(const char* bt_name) {
-  handle = rokidbt_create();
-  rokidbt_init(handle, bt_name);
-  rokidbt_set_event_listener(handle, BluetoothWrap::OnEvent, this);
-  rokidbt_set_discovery_cb(handle, BluetoothWrap::AfterDiscovery, this);
+  bt_handle_ = rokidbt_create();
+  rokidbt_init(bt_handle_, bt_name);
+  rokidbt_set_event_listener(bt_handle_, BluetoothWrap::OnEvent, this);
+  rokidbt_set_discovery_cb(bt_handle_, BluetoothWrap::AfterDiscovery, this);
 }
 
 BluetoothWrap::~BluetoothWrap() {
-  rokidbt_destroy(handle);
+  rokidbt_destroy(bt_handle_);
 }
 
 void BluetoothWrap::OnEvent(void* userdata, int what, int arg1, int arg2, void* data) {
@@ -45,6 +45,7 @@ void BluetoothWrap::AfterEvent(uv_async_t* async) {
   bt_event_t* event = (bt_event_t*)async->data;
   BluetoothWrap* bluetooth = static_cast<BluetoothWrap*>(event->bt);
 
+  Nan::HandleScope scope;
   Local<Function> onevent = Nan::Get(
     bluetooth->handle(), Nan::New("onevent").ToLocalChecked());
   Nan::Callback callback(onevent);
@@ -99,49 +100,49 @@ NAN_METHOD(BluetoothWrap::New) {
 NAN_METHOD(BluetoothWrap::SetName) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
   String::Utf8Value name(info[0]);
-  rokidbt_set_name(bluetooth->handle, *name);
+  rokidbt_set_name(bluetooth->bt_handle_, *name);
   info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(BluetoothWrap::Discovery) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
-  rokidbt_discovery(bluetooth->handle);
+  rokidbt_discovery(bluetooth->bt_handle_);
   info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(BluetoothWrap::Cancel) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
-  rokidbt_discovery_cancel(bluetooth->handle);
+  rokidbt_discovery_cancel(bluetooth->bt_handle_);
   info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(BluetoothWrap::EnableA2dp) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
-  rokidbt_a2dp_enable(bluetooth->handle);
+  rokidbt_a2dp_enable(bluetooth->bt_handle_);
   info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(BluetoothWrap::CloseA2dp) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
-  rokidbt_a2dp_close(bluetooth->handle);
+  rokidbt_a2dp_close(bluetooth->bt_handle_);
   info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(BluetoothWrap::DisableA2dp) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
-  rokidbt_a2dp_disable(bluetooth->handle);
+  rokidbt_a2dp_disable(bluetooth->bt_handle_);
   info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(BluetoothWrap::EnableBle) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
-  rokidbt_ble_enable(bluetooth->handle);
+  rokidbt_ble_enable(bluetooth->bt_handle_);
   info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(BluetoothWrap::DisableBle) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
-  rokidbt_ble_disable(bluetooth->handle);
+  rokidbt_ble_disable(bluetooth->bt_handle_);
   info.GetReturnValue().Set(info.This());
 }
 
