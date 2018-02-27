@@ -9,7 +9,7 @@ using namespace std;
 
 class BluetoothWrap : public Nan::ObjectWrap {
 public:
-  BluetoothWrap();
+  BluetoothWrap(const char* bt_name);
   ~BluetoothWrap();
   static NAN_MODULE_INIT(Init);
 

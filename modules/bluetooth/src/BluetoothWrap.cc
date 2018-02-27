@@ -4,15 +4,15 @@
 using namespace v8;
 using namespace std;
 
-BluetoothWrap::BluetoothWrap(const char *bt_name) {
+BluetoothWrap::BluetoothWrap(const char* bt_name) {
   handle = rokidbt_create();
   rokidbt_init(handle, bt_name);
+  rokidbt_set_event_listener(handle, OnEvent, this);
+  rokidbt_set_discovery_cb(handle, AfterDiscovery, this);
 }
 
 BluetoothWrap::~BluetoothWrap() {
   rokidbt_destroy(handle);
-  rokidbt_set_event_listener(handle, OnEvent, this);
-  rokidbt_set_discovery_cb(handle, AfterDiscovery, this);
 }
 
 BluetoothWrap::OnEvent(void *userdata, int what, int arg1, int arg2, void *data) {
@@ -46,9 +46,6 @@ NAN_MODULE_INIT(BluetoothWrap::Init) {
 
   Local<Function> func = Nan::GetFunction(tpl).ToLocalChecked();
   Nan::Set(target, Nan::New("BluetoothWrap").ToLocalChecked(), func);
-
-  bluetooth_create_queue();
-  bluetooth_create_rsp_queue();
 }
 
 NAN_METHOD(BluetoothWrap::New) {
