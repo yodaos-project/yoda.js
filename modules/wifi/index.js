@@ -1,6 +1,7 @@
 'use strict';
 
 const WifiWrap = require('bindings')('wifi').WifiWrap;
+const logger = require('@rokid/logger')('wifi');
 const wifi = new WifiWrap();
 const KEY_MGMT = {
   'WPA2PSK': 0,
@@ -28,7 +29,7 @@ function connect(ssid, psk, method, callback) {
     let times = 0;
     let check = setInterval(() => {
       const s = status();
-      console.log('network status:', s);
+      logger.log('network status:', s);
       if (s === 'netserver_connected') {
         wifi.save();
         clearInterval(check);

@@ -4,6 +4,7 @@ const https = require('https');
 const qs = require('querystring');
 const crypto = require('crypto');
 const context = require('@rokid/context');
+const logger = require('@rokid/logger')('mqtt');
 
 // TODO(Yorkie): move something where?
 // const host = 'mqtt-dev-registry.rokid.com';
@@ -51,7 +52,7 @@ function registry(userId, cb) {
       if (typeof cb === 'function') {
         cb(err, data);
       } else if (err) {
-        console.error(err && err.stack);
+        logger.error(err && err.stack);
       }
     });
   });
