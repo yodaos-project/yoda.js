@@ -50,12 +50,20 @@ void BluetoothWrap::AfterEvent(uv_async_t* async) {
     bluetooth->handle(), Nan::New("onevent").ToLocalChecked());
   Nan::Callback callback(onevent.ToLocalChecked().As<Function>());
 
-  Local<Value> argv[3];
+  Local<Value> argv[4];
   argv[0] = Nan::New<Number>(event->what);
   argv[1] = Nan::New<Number>(event->arg1);
   argv[2] = Nan::New<Number>(event->arg2);
-  // argv[3] = Nan::New<String>((char*)event->data).ToLocalChecked();
-  callback.Call(3, argv);
+
+  if (event->data != NULL) {
+    char msg[event->arg2];
+    memset(msg, 0, event->arg2);
+    memcpy(msg, event->data, event->arg2);
+    argv[3] = Nan::New<String>(msg).ToLocalChecked();
+  } else {
+    argv[3] = Nan::Null();
+  }
+  callback.Call(4, argv);
 
   free(event);
   uv_close((uv_handle_t*)async, NULL);
