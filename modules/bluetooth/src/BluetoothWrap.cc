@@ -48,7 +48,7 @@ void BluetoothWrap::AfterEvent(uv_async_t* async) {
   Nan::HandleScope scope;
   Nan::MaybeLocal<Value> onevent = Nan::Get(
     bluetooth->handle(), Nan::New("onevent").ToLocalChecked());
-  Nan::Callback callback(onevent.ToLocalChecked());
+  Nan::Callback callback(Nan::To<Function>(onevent.ToLocalChecked()));
 
   Local<Value> argv[4];
   argv[0] = Nan::New<Number>(event->what);
