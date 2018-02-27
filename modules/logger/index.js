@@ -8,7 +8,7 @@ var id = 0;
 function LiveRemote() {
   this._sockets = [];
   this._server = null;
-  this.startLiveRemote();
+  this.start();
 }
 
 LiveRemote.prototype.start = function() {
