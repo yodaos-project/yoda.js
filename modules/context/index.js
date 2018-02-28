@@ -53,6 +53,13 @@ module.exports = {
       throw new Error('config is exists');
     return config;
   },
+  set config(val) {
+    if (!config['device_id'] ||
+      !config['device_type_id']) {
+      throw new Error('invalid config');
+    }
+    config = val;
+  },
   /**
    * @property deviceConfig
    */
