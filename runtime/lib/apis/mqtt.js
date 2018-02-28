@@ -32,27 +32,43 @@ class MqttAgent extends EventEmitter {
     this._userId = userId;
     this._deviceId = deviceId;
     this._deviceTypeId = deviceTypeId;
-    registry(userId, this._onTryConnect.bind(this));
+    this._mqttOptions = {};
+    this._register(this._onTryConnect.bind(this));
+  }
+  /**
+   * @method _register
+   */
+  _register(cb) {
+    registry(this._userId, (err, data) => {
+      if (err) {
+        logger.error('MQTT connecting error:');
+        logger.error(err && err.stack);
+        return;
+      }
+      this._mqttOptions = data;
+      if (cb) {
+        cb();
+      }
+    });
   }
   /**
    * @method _onTryConnect
    */
-  _onTryConnect(err, data) {
-    if (err) {
-      logger.error('MQTT connecting error:');
-      logger.error(err && err.stack);
-      return;
-    }
+  _onTryConnect() {
     this._handle = handle = mqtt.connect(endpoint, {
       clientId: data.username,
       username: data.username,
       password: data.token,
       rejectUnauthorized: true,
+      reconnectPeriod: 5000,
     });
     this._handle.on('connect', () => {
       const channelId = `u/${this._userId}/deviceType/${this._deviceTypeId}/deviceId/${this._deviceId}/rc`;
       this._handle.subscribe(channelId);
       logger.info('subscribed', channelId);
+    });
+    this._handle.on('reconnect', () => {
+      this._register();
     });
     this._handle.on('message', this._onMessage.bind(this));
     this._handle.on('error', (err) => {
