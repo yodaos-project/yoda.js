@@ -6,6 +6,7 @@ const path = require('path');
 const exec = require('child_process').execSync;
 const protobuf = require('protobufjs');
 const property = require('@rokid/property');
+const context = require('@rokid/context');
 const logger = require('@rokid/logger')('apis');
 
 const proto = protobuf.loadSync(path.join(__dirname, '../proto/Login.proto'));
@@ -58,6 +59,7 @@ function login(callback) {
         config['device_type_id'] = data.deviceTypeId;
         config['key'] = data.key;
         config['secret'] = data.secret;
+        context.config = config;
         fs.writeFile(location, JSON.stringify(config, null, 2), (err) => {
           logger.info(`updated the ${location}`);
           callback(err, data);
