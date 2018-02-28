@@ -24,7 +24,6 @@ BluetoothWrap::~BluetoothWrap() {
 }
 
 void BluetoothWrap::OnEvent(void* userdata, int what, int arg1, int arg2, void* data) {
-  printf("got event\n");
   BluetoothWrap* bluetooth = static_cast<BluetoothWrap*>(userdata);
 
   bt_event_t* event = new bt_event_t;
@@ -66,7 +65,12 @@ void BluetoothWrap::AfterEvent(uv_async_t* async) {
   callback.Call(4, argv);
 
   free(event);
-  uv_close((uv_handle_t*)async, NULL);
+  uv_close((uv_handle_t*)async, BluetoothWrap::AfterCallback);
+}
+
+void BluetoothWrap::AfterCallback(uv_handle_t* handle) {
+  if (handle)
+    delete handle;
 }
 
 void BluetoothWrap::AfterDiscovery(void* userdata, 
@@ -122,6 +126,10 @@ NAN_METHOD(BluetoothWrap::Cancel) {
   BluetoothWrap* bluetooth = Nan::ObjectWrap::Unwrap<BluetoothWrap>(info.This());
   rokidbt_discovery_cancel(bluetooth->bt_handle_);
   info.GetReturnValue().Set(info.This());
+}
+
+NAN_METHOD(BluetoothWrap::GetDevices) {
+  
 }
 
 NAN_METHOD(BluetoothWrap::EnableA2dp) {
