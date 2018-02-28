@@ -56,9 +56,9 @@ class MqttAgent extends EventEmitter {
    */
   _onTryConnect() {
     this._handle = handle = mqtt.connect(endpoint, {
-      clientId: data.username,
-      username: data.username,
-      password: data.token,
+      clientId: this._mqttOptions.username,
+      username: this._mqttOptions.username,
+      password: this._mqttOptions.token,
       rejectUnauthorized: true,
       reconnectPeriod: 5000,
     });
