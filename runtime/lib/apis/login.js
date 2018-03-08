@@ -78,6 +78,11 @@ function login(callback) {
     }
     throw err;
   });
+  req.on('error', () => {
+    setTimeout(() => {
+      login(callback);
+    }, 5000);
+  });
   req.write(buffer);
   req.end();
 }
