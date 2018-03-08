@@ -66,6 +66,9 @@ function registry(userId, cb) {
     time: data.time + '',
     version: data.version,
   });
+  req.on('error', (err) => {
+    cb(err);
+  });
   req.write(msg);
   req.end();
 }
