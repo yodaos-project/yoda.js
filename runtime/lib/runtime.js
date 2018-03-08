@@ -324,15 +324,17 @@ class Runtime {
    * @method _doMute
    */
   _doMute() {
+    const triggerAction = context.deviceConfig.triggerAction;
+    if (triggerAction !== 'default') {
+      if (triggerAction === 'disable')
+        return;
+      // TODO(Yorkie): support more options
+    }
     if (this._volumeTimer !== null) {
       clearTimeout(this._volumeTimer);
     } else {
       this._vol = volume.get();
-      if (this._vol <= 5) {
-        volume.set(0);
-      } else {
-        volume.set(5);
-      }
+      volume.set(this._vol * 0.3);
     }
     this._volumeTimer = setTimeout(() => {
       volume.set(this._vol);
@@ -342,6 +344,12 @@ class Runtime {
    * @method _doUnmute
    */
   _doUnmute() {
+    const triggerAction = context.deviceConfig.triggerAction;
+    if (triggerAction !== 'default') {
+      if (triggerAction === 'disable')
+        return;
+      // TODO(Yorkie): support more options
+    }
     clearTimeout(this._volumeTimer);
     const curr = volume.get();
     if (curr !== 5) {
@@ -458,7 +466,9 @@ class Runtime {
     const handler = this._appMgr.getHandlerById(id);
     require('@rokid/tts').stop();
     require('@rokid/player').pause();
-    handler.emit('stop', data);
+    if (handler) {
+      handler.emit('stop', data);
+    }
   }
   /**
    * @method _handleVoiceEvent
@@ -467,7 +477,9 @@ class Runtime {
    */
   _handleVoiceEvent(id, event, data) {
     const handler = this._appMgr.getHandlerById(id);
-    handler.emit(event, data);
+    if (handler) {
+      handler.emit(event, data);
+    }
   }
   /**
    * @method _handleVoiceCommand
@@ -478,7 +490,7 @@ class Runtime {
       this._current = skill;
       const id = skill.isCloud ? '@cloud' : skill.id;
       const handler = this._appMgr.getHandlerById(id);
-      if (handler.constructor.name === 'NativeConnector') {
+      if (handler && handler.constructor.name === 'NativeConnector') {
         handler.emit('voice_command', _, context, action);
       } else {
         handler.emit('voice_command', skill.context, skill.action);
