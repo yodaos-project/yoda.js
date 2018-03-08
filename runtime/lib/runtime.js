@@ -101,13 +101,17 @@ class Runtime {
         this._doRound();
       }
     });
-    this._speech.on('nlp ready', () => {
+    this._speech.on('nlp ready', (asr, nlp) => {
+      context.emitVoiceEvent('nlp', nlp);
       if (!this._online)
         return;
       this._stopRound();
     });
     this._speech.on('lifecycle', (event, data) => {
       logger.log(event, data.appId);
+      if (context.deviceConfig.skill === 'disable') {
+        return;
+      }
       // comment it for let ro test execute complete
       // if (this._testing)
       //   return;

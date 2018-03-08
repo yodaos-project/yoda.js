@@ -67,6 +67,7 @@ module.exports = {
     return Object.assign({
       namePrefix: 'Rokid-Devboard-',
       triggerAction: 'default',
+      skill: 'default',
     }, deviceConfig);
   },
   /**
