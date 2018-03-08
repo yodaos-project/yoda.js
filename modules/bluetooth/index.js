@@ -1,187 +1,151 @@
 'use strict';
 
 const property = require('@rokid/property');
-const context = require('@rokid/context');
 const logger = require('@rokid/logger')('bluetooth');
+const context = require('@rokid/context');
 const BluetoothWrap = require('bindings')('bluetooth').BluetoothWrap;
-const handle = new BluetoothWrap();
-
-let ble_is_opened = false;
-let a2dp_is_opened = false;
+const EventEmitter = require('events').EventEmitter;
 
 const id = property.serialno ? property.serialno.slice(-6) : 'xxxxxx';
 const name = context.deviceConfig.namePrefix + id;
+let handle;
 
-/**
- * @method open
- * @param {String} name - the bluetooth name
- */
-exports.open = function open() {
-  if (ble_is_opened === true)
-    ble.close();
-  handle.open(name);
-  a2dp_is_opened = true;
+const BT_EVENTS = {
+  // a2dp source events
+  A2DP_SOURCE_OPEN: 1,
+  A2DP_SOURCE_CLOSE: 2,
+  A2DP_SOURCE_START: 3,
+  A2DP_SOURCE_STOP: 4,
+  // a2dp sink events
+  A2DP_SINK_OPEN: 21,
+  A2DP_SINK_CLOSE: 22,
+  A2DP_SINK_STREAM_OPEN: 23,
+  A2DP_SINK_STREAM_CLOSE: 24,
+  A2DP_SINK_CHANNEL_START: 25,
+  A2DP_SINK_CHANNEL_PAUSE: 26,
+  A2DP_SINK_CHANNEL_STOP: 27,
+  A2DP_SINK_RC_OPEN: 28,
+  A2DP_SINK_RC_PEER_OPEN: 29,
+  A2DP_SINK_RC_CLOSE: 30,
+  // ble
+  BLE_OPEN: 41,
+  BLE_CLOSE: 42,
+  BLE_WRITE: 43,
 };
 
-/**
- * @method close
- */
-exports.close = function close() {
-  handle.close();
-  a2dp_is_opened = false;
-};
+let sinkConnected = false;
+let bluetooth = module.exports = new EventEmitter();
+reinit();
 
-/**
- * @method play
- */
-exports.play = function play() {
-  if (a2dp_is_opened)
-    handle.sendCommand(0);
-};
-
-
-/**
- * @method stop
- */
-exports.stop = function stop() {
-  if (a2dp_is_opened)
-    handle.sendCommand(1);
-};
-
-/**
- * @method pause
- */
-exports.pause = function pause() {
-  if (a2dp_is_opened)
-    handle.sendCommand(2);
-};
-
-/**
- * @method playNext
- */
-exports.playNext = function playNext() {
-  if (a2dp_is_opened)
-    handle.sendCommand(3);
-};
-
-/**
- * @method playPrev
- */
-exports.playPrev = function playPrev() {
-  if (a2dp_is_opened)
-    handle.sendCommand(4);
-};
-
-/**
- * @method a2dp
- * @param {String} type - sink or link
- */
-exports.a2dp = function a2dp(type) {
-  if (type === 'sink')
-    return handle.enableA2DPSink();
-  else if (type === 'link')
-    return handle.enableA2DPLink();
-  else
-    return handle.enableA2DP();
-};
-
-/**
- * @class BluetoothLowEnergy
- */
-class BluetoothLowEnergy {
-  /**
-   * @method open
-   */
-  open() {
-    if (a2dp_is_opened === true)
-      close();
-    handle.enableBLE(name);
-    ble_is_opened = true;
-    return this;
+function reinit() {
+  if (handle) {
+    handle.destroy();
   }
-  /**
-   * @method close
-   */
-  close() {
-    handle.disableBLE();
-    ble_is_opened = false;
-  }
-  /**
-   * @method onResp
-   * @param {Function} callback
-   */
-  onResp(callback) {
-    if (typeof callback !== 'function')
-      throw new TypeError('function is required');
-    this.getHeader((_, size) => {
-      this.getResp('', size, (err, data) => {
-        callback(err, data);
-      });
-    });
-  }
-  /**
-   * @method getHeader
-   * @param {Function} callback
-   */
-  getHeader(callback) {
-    handle.getBleResp((err, data) => {
-      if (err)
-        return callback(err);
-
-      const headm = data.match(/^size:(\d+)/);
-      const size = headm ? parseInt(headm[1]) : 0;
-      callback(null, size);
-    });
-  }
-  /**
-   * @method getResp
-   * @param {String} concated the concated string
-   * @param {Function} callback
-   */
-  getResp(concated, size, callback) {
-    if (!size)
-      return callback(null, concated);
-
-    let done = false;
-    handle.getBleResp((err, data) => {
-      if (err)
-        return callback(err);
-
-      logger.log(`>>> ${data} <<<`);
-      const buf = new Buffer(data || '');
-      let endPos = buf.length;
-      for (let i = 0; i < buf.length; i++) {
-        // <ef bf bd> is for unknown chars, cut with this.
-        if (buf[i] === 0xef &&
-          buf[i+1] === 0xbf &&
-          buf[i+2] === 0xbd) {
-          endPos = i;
-          // done = true;
-          break;
-        }
-      }
-      concated += buf.slice(0, endPos).toString();
-      return this.getResp(concated, size - 1, callback);
-    });
-  }
-  /**
-   * @method write
-   * @param {String} data
-   */
-  write(data) {
-    handle.sendBleResp(data);
-  }
+  handle = new BluetoothWrap(name);
+  handle.onevent = onevent;
+  handle.ondiscovery = ondiscovery;
+  handle.setVisibility(true);
 }
 
-// we use a globally BLE instance
-let ble = new BluetoothLowEnergy();
+function onevent(event, arg1, arg2, data) {
+  switch (event) {
+    case BT_EVENTS.A2DP_SOURCE_OPEN:
+      bluetooth.emit('a2dp source open', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SOURCE_CLOSE:
+      bluetooth.emit('a2dp source close', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SOURCE_START:
+      bluetooth.emit('a2dp source start', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SOURCE_STOP:
+      bluetooth.emit('a2dp source stop', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SINK_OPEN:
+      bluetooth.emit('a2dp sink open', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SINK_CLOSE:
+      bluetooth.emit('a2dp sink close', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SINK_STREAM_OPEN:
+      bluetooth.emit('a2dp sink stream open', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SINK_STREAM_CLOSE:
+      bluetooth.emit('a2dp sink stream close', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SINK_CHANNEL_START:
+      bluetooth.emit('a2dp sink channel start', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SINK_CHANNEL_PAUSE:
+      bluetooth.emit('a2dp sink channel pause', arg1, arg2, data);
+      break;
+    case BT_EVENTS.A2DP_SINK_CHANNEL_STOP:
+      bluetooth.emit('a2dp sink channel stop', arg1, arg2, data);
+      break;
+    case BT_EVENTS.BLE_OPEN:
+      bluetooth.emit('ble open', arg1, arg2, data);
+      break;
+    case BT_EVENTS.BLE_CLOSE:
+      bluetooth.emit('ble close', arg1, arg2, data);
+      break;
+    case BT_EVENTS.BLE_WRITE:
+      bluetooth.emit('ble data', arg1, arg2, data);
+      break;
+  }
+};
 
-/**
- * @method ble
- * @param {String} name - the BLE name
- */
-exports.ble = function(name) {
-  if (ble_is_opened === true)
-    ble.close();
-  return ble.open(name);
+function ondiscovery(name, completed) {
+  if (completed) {
+    bluetooth.emit('discovery finished');
+  } else {
+    bluetooth.emit('discovery device', name);
+  }
+};
+
+bluetooth.connect = function(type) {
+  switch (type.toLowerCase()) {
+    case 'ble':
+      handle.enableBle();
+      break;
+    case 'a2dp_sink':
+      handle.enableA2dpSink();
+      sinkConnected = true;
+      break;
+    default:
+      throw new Error('unhandled error type ' + type);
+  }
+};
+
+bluetooth.disconnect = function(type) {
+  switch (type.toLowerCase()) {
+    case 'ble':
+      handle.disableBle();
+      // TODO(Yorkie) ble can not be reuse.
+      reinit();
+      break;
+    case 'a2dp_sink':
+      handle.disableA2dpSink();
+      sinkConnected = false;
+      break;
+    default:
+      throw new Error('unhandled error type ' + type)
+  }
+};
+
+bluetooth.send = function(command) {
+  if (!sinkConnected)
+    throw new Error('connect A2DP_SINK required before sending command');
+  if (command === 'play') {
+    handle.a2dpSinkSendPlay();
+  } else if (command === 'pause') {
+    handle.a2dpSinkSendPause();
+  } else if (command === 'stop') {
+    handle.a2dpSinkSendStop();
+  } else if (command === 'forward') {
+    handle.a2dpSinkSendForward();
+  } else if (command === 'backward') {
+    handle.a2dpSinkSendBackward();
+  } else {
+    throw new Error('invalid command ' + command);
+  }
 };

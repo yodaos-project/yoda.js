@@ -59,7 +59,7 @@ function createLoggerFunction(level) {
   return function() {
     var now = new Date();
     var line = `<${this.name}> :: ` + util.format.apply(this, arguments);
-    this.liveRemote.write(`[${now}] ${level} ${line}`);
+    this.liveRemote.write(`[${now}] ${level} ${line}\n`);
     console[level](line);
   };
 }
