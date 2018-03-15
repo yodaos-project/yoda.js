@@ -51,7 +51,7 @@ DBus.getBus = function(busName) {
 	if (!dbus_instance)
 		dbus_instance = new Bus(_dbus, DBus, busName);
 	return dbus_instance;
-}
+};
 
 /* Deprecated */
 DBus.prototype.getBus = function(busName) {
@@ -90,6 +90,7 @@ DBus.registerService = function(busName, serviceName) {
 
 	// Get a connection
 	var bus = DBus.getBus(busName);
+	// var bus = new Bus(_dbus, DBus, busName);
 
 	if (!serviceName)
 		_serviceName = bus.connection.uniqueName;
