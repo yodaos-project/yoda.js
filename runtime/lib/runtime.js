@@ -9,6 +9,7 @@ const wifi = require('@rokid/wifi');
 const volume = require('@rokid/volume');
 const light = require('@rokid/lumen');
 const player = require('@rokid/player');
+const property = require('@rokid/property');
 const context = require('@rokid/context');
 const logger = require('@rokid/logger')('main');
 
@@ -150,9 +151,14 @@ class Runtime {
    */
   start() {
     exec('touch /var/run/bootcomplete');
+    if (volume.get(volume.set) === 0) {
+      volume.set(60);
+      logger.log('已恢复默认音量');
+    }
+
     this._appMgr = new AppManager(this._paths, this);
     this._input.listen();
-    this._startMonitor();
+    this._startService();
 
     let checkTimer;
     let checkRouterTimes = 0;
@@ -349,18 +355,13 @@ class Runtime {
    */
   _doUnmute() {
     const triggerAction = context.deviceConfig.triggerAction;
-    if (triggerAction !== 'default') {
+    if (triggerAction && triggerAction !== 'default') {
       if (triggerAction === 'disable')
         return;
       // TODO(Yorkie): support more options
     }
     clearTimeout(this._volumeTimer);
-    const curr = volume.get();
-    if (curr !== 5) {
-      volume.set(curr);
-    } else {
-      volume.set(this._vol);
-    }
+    volume.set(this._vol);
     this._volumeTimer = null;
   }
   /**
@@ -565,13 +566,19 @@ class Runtime {
     done(null, true);
   }
   /**
-   * @method _startMonitor
+   * @method _startService
    */
-  _startMonitor() {
+  _startService() {
+    const self = this;
+    const dbusClient = dbus.getBus('session');
     const service = dbus.registerService('session', 'com.rokid.AmsExport');
-    const object = service.createObject('/rokid/openvoice');
-    const iface = object.createInterface(`rokid.openvoice.AmsExport`);
-    iface.addMethod(
+    let ttsId = 0;
+    let mediaId = 0;
+
+    // amsExport
+    const openvoiceObject = service.createObject('/rokid/openvoice');
+    const openvoiceApis = openvoiceObject.createInterface('rokid.openvoice.AmsExport');
+    openvoiceApis.addMethod(
       'ReportSysStatus',
       {
         in: [dbus.Define(String)],
@@ -579,7 +586,7 @@ class Runtime {
       },
       this._onReportSysStatus.bind(this)
     );
-    iface.addMethod(
+    openvoiceApis.addMethod(
       'SetTesting',
       {
         in: [dbus.Define(Boolean)],
@@ -587,7 +594,7 @@ class Runtime {
       },
       this._onSetTesting.bind(this)
     );
-    iface.addMethod(
+    openvoiceApis.addMethod(
       'SendIntentRequest',
       {
         in: [dbus.Define(String), dbus.Define(String), dbus.Define(String)],
@@ -595,7 +602,7 @@ class Runtime {
       },
       this._onSendIntentRequest.bind(this)
     );
-    iface.addMethod(
+    openvoiceApis.addMethod(
       'Reload',
       {
         in: [],
@@ -603,7 +610,7 @@ class Runtime {
       },
       this._onReload.bind(this)
     );
-    iface.addMethod(
+    openvoiceApis.addMethod(
       'Ping',
       {
         in: [],
@@ -611,7 +618,143 @@ class Runtime {
       },
       this._onPing.bind(this)
     );
-    iface.update();
+    openvoiceApis.update();
+
+    // prop object
+    const propObject = service.createObject('/activation/prop');
+    const propApis = propObject.createInterface('com.rokid.activation.prop');
+    propApis.addMethod(
+      'all',
+      {
+        in: [dbus.Define(String)],
+        out: dbus.Define(String),
+      },
+      function onGetPropAll(appId, callback) {
+        callback(null, JSON.stringify({
+          deviceId: context.config.device_id,
+          appSecret: context.config.secret,
+          masterId: property.get('persist.system.user.userId'),
+          deviceTypeId: context.config.device_type_id,
+          key: context.config.key,
+          secret: context.config.secret,
+        }));
+      }
+    );
+    propApis.update();
+    // extapp object
+    const extappObject = service.createObject('/activation/extapp');
+    const extappApis = extappObject.createInterface('com.rokid.activation.extapp');
+    extappApis.addMethod(
+      'register',
+      {
+        in: [
+          dbus.Define(String),  // appId
+          dbus.Define(String),  // objectPath
+          dbus.Define(String),  // ifaceName
+        ],
+      },
+      function onRegisterExtapp(appId, objectPath, ifaceName, callback) {
+        self._appMgr.register(appId, {
+          extapp: true,
+          dbus: {
+            objectPath, 
+            ifaceName,
+          },
+        });
+        callback(null);
+      }
+    );
+    extappApis.addMethod(
+      'destroy',
+      {
+        in: [dbus.Define(String)],
+      },
+      function onDestroyExtapp(appId, callback) {
+        self._appMgr.destroy(appId);
+        callback(null);
+      }
+    );
+    extappApis.addMethod(
+      'start',
+      {
+        in: [dbus.Define(String)],
+      },
+      function onStartExtapp(appId, callback) {
+        // self._speech.redirect(appId);
+        callback(null);
+      }
+    );
+    extappApis.addMethod(
+      'exit',
+      {
+        in: [dbus.Define(String)],
+      },
+      function onExitExtapp(appId, callback) {
+        let current = self._speech._context.getCurrentApp();
+        if (current.appId === appId) {
+          self._speech.exitCurrent();
+          callback(null);
+        } else {
+          callback(new Error('appid is not at stack'));
+        }
+      }
+    );
+    extappApis.addMethod(
+      'tts',
+      {
+        in: [dbus.Define(String), dbus.Define(String)],
+        out: dbus.Define(String),
+      },
+      function onPlayTts(appId, text, callback) {
+        const app = self._appMgr._skill2app[appId];
+        if (!app) {
+          return callback('register the app firstly');
+        }
+        const id = ttsId++;
+        tts.say(text, () => {
+          console.log('tts done');
+          const { objectPath, ifaceName } = app._profile.metadata.dbus;
+          dbusClient._dbus.emitSignal(
+            dbusClient.connection,
+            objectPath,
+            ifaceName,
+            'onTtsComplete',
+            [id],
+            ['s']
+          );
+        });
+        callback(null, id);
+      }
+    );
+    extappApis.addMethod(
+      'media',
+      {
+        in: [dbus.Define(String), dbus.Define(String)],
+        out: dbus.Define(String),
+      },
+      function onPlayMedia(appId, url, callback) {
+        const app = self._appMgr._skill2app[appId];
+        if (!app) {
+          return callback('register the app firstly');
+        }
+        const id = mediaId++;
+        const mediaPlayer = new player.Player();
+        mediaPlayer.play(url);
+        mediaPlayer.on('finish', () => {
+          const { objectPath, ifaceName } = app._profile.metadata.dbus;
+          dbusClient._dbus.emitSignal(
+            dbusClient.connection,
+            objectPath,
+            ifaceName,
+            'onMediaComplete',
+            [id],
+            ['s']
+          );
+        });
+        callback(null, id);
+      }
+    );
+    extappApis.update();
   }
 }
 

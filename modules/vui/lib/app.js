@@ -65,7 +65,6 @@ class NativeConnector extends EventEmitter {
         }, 2000);
         let socket = net.connect(10004/*zygote port*/, () => {
           const cmd = `${exec} com.rokid.X${this._appid} &`;
-          console.log('should fork the process', cmd);
           socket.write(cmd, () => {
             clearTimeout(timer);
             socket.end();
@@ -149,6 +148,76 @@ class NativeConnector extends EventEmitter {
 }
 
 /**
+ * @class ExtappConnector
+ */
+class ExtappConnector extends EventEmitter {
+  constructor(appid, runtime, executor) {
+    super();
+    this._appid = appid;
+    this._runtime = runtime;
+    this._executor = executor;
+    this.on('create', this._onEvent.bind(this, 'create'));
+    this.on('restart', this._onEvent.bind(this, 'restart'));
+    this.on('pause', this._onEvent.bind(this, 'pause'));
+    this.on('resume', this._onEvent.bind(this, 'resume'));
+    this.on('stop', this._onEvent.bind(this, 'stop'));
+    this.on('destroy', this._onEvent.bind(this, 'destroy'));
+    this.on('voice_command', this._onEvent.bind(this, 'voiceCommand'));
+    this.on('key_event', this._onEvent.bind(this, 'keyEvent'));
+  }
+  /**
+   * @method _onEvent
+   */
+  _onEvent(name, ...args) {
+    const { metadata } = this._executor._profile;
+    let eventName = null;
+    let params = args;
+    switch (name) {
+      case 'create': 
+        eventName = 'onCreate';
+        break;
+      case 'restart':
+        eventName = 'onRestart';
+        break;
+      case 'pause':
+        eventName = 'onPause';
+        break;
+      case 'resume':
+        eventName = 'onResume';
+        break;
+      case 'stop':
+        eventName = 'onStop';
+        break;
+      case 'destroy':
+        eventName = 'onDestroy';
+        break;
+      case 'voiceCommand':
+        eventName = 'nlp';
+        params = [
+          args[0].asr,
+          JSON.stringify(args[0]),
+        ];
+        break;
+      default:
+        eventName = null;
+        break;
+    }
+
+    if (!eventName) {
+      return;
+    }
+    dbus._dbus.emitSignal(
+      dbus.connection,
+      metadata.dbus.objectPath,
+      metadata.dbus.ifaceName,
+      eventName,
+      params,
+      params.map(i => 's')
+    );
+  }
+}
+
+/**
  * @class AppExecutor
  */
 class AppExecutor {
@@ -160,9 +229,15 @@ class AppExecutor {
     this._exec = null;
     this._errmsg = null;
     this._valid = false;
+    this._profile = profile;
+
     if (profile.metadata.native) {
       this._type = 'native';
       this._exec = `${prefix}/${profile.main || 'runtime'}`;
+      this._connector = null;
+    } else if (profile.metadata.extapp) {
+      this._type = 'extapp';
+      this._exec = __dirname + '/client/extapp.js';
       this._connector = null;
     } else {
       this._exec = `${prefix}/app.js`;
@@ -197,7 +272,9 @@ class AppExecutor {
         // FIXME(Yazhong): fresh would lost state
         this._connector = require(this._exec)(appid, runtime);
       } else if (this._type === 'native') {
-        this._connector = new NativeConnector(appid, runtime, this._exec);
+        this._connector = new NativeConnector(appid, runtime, this._exec, this);
+      } else if (this._type === 'extapp') {
+        this._connector = new ExtappConnector(appid, runtime, this);
       }
     }
     return this._connector;
@@ -305,6 +382,20 @@ class AppManager {
       app = this._skill2app.miss || this._skill2app['@miss'];
     }
     return app.createHandler(appid, this._runtime);
+  }
+  /**
+   * @method register
+   */
+  register(appId, config) {
+    this._skill2app[appId] = new AppExecutor({
+      metadata: config,
+    });
+  }
+  /**
+   * @method destroy
+   */
+  destroy(appId) {
+    delete this._skill2app[appId];
   }
 }
 
