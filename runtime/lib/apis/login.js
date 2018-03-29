@@ -70,13 +70,12 @@ function login(callback) {
       }
     });
   });
-  req.once('error', (err) => {
-    if (err.message === 'certificate is not yet valid' && retry <= 10) {
+  req.on('error', (err) => {
+    if (retry <= 10) {
       retry += 1;
       logger.info('invalid certificate, try again once');
       return setTimeout(() => login(callback), 3000);
     }
-    throw err;
   });
   req.on('error', () => {
     setTimeout(() => {
