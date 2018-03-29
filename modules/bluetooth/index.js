@@ -27,6 +27,7 @@ const BT_EVENTS = {
   A2DP_SINK_RC_OPEN: 28,
   A2DP_SINK_RC_PEER_OPEN: 29,
   A2DP_SINK_RC_CLOSE: 30,
+  BT_EVENT_AVK_SET_ABS_VOL: 31,
   // ble
   BLE_OPEN: 41,
   BLE_CLOSE: 42,
@@ -72,6 +73,9 @@ function onevent(event, arg1, arg2, data) {
       break;
     case BT_EVENTS.A2DP_SINK_STREAM_CLOSE:
       bluetooth.emit('a2dp sink stream close', arg1, arg2, data);
+      break;
+    case BT_EVENTS.BT_EVENT_AVK_SET_ABS_VOL:
+      bluetooth.emit('a2dp set volume', arg1, arg2, data);
       break;
     case BT_EVENTS.A2DP_SINK_CHANNEL_START:
       bluetooth.emit('a2dp sink channel start', arg1, arg2, data);

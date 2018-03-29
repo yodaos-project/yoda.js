@@ -2,6 +2,7 @@
 
 const VolumeWrap = require('bindings')('volume').VolumeWrap;
 const handle = new VolumeWrap();
+const logger = require('@rokid/logger')('volume');
 
 /**
  * @module volume
@@ -22,18 +23,21 @@ module.exports = {
    * @param {Number} vol
    */
   set(vol) {
+    logger.info('set volume', vol);
     return handle.set(vol);
   },
   /**
    * @method mute
    */
   mute() {
+    logger.info('mute volume');
     return handle.setMute(true);
   },
   /**
    * @method unmute
    */
   unmute() {
+    logger.info('unmute volume');
     return handle.setMute(false);
   },
   /**
