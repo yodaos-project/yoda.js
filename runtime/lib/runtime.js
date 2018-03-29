@@ -38,7 +38,7 @@ class Runtime {
    */
   constructor(paths) {
     this._online = null;
-    this._vol = volume.volumeGet();
+    this._vol = volume.get();
     this._paths = paths || ['/opt/apps'];
     this._testing = false;
     this._current = null;
@@ -107,6 +107,7 @@ class Runtime {
       if (!this._online)
         return;
       this._stopRound();
+      this._doUnmute();
     });
     this._speech.on('lifecycle', (event, data) => {
       logger.log(event, data.appId);
@@ -137,7 +138,6 @@ class Runtime {
       } else {
         this._handleVoiceEvent(id, event, data);
       }
-      this._doUnmute();
     });
     this._speech.on('error', (err) => {
       context.emitVoiceEvent('voice error', err);
@@ -151,7 +151,7 @@ class Runtime {
    */
   start() {
     exec('touch /var/run/bootcomplete');
-    if (volume.get(volume.set) === 0) {
+    if (volume.get() === 0) {
       volume.set(60);
       logger.log('已恢复默认音量');
     }
