@@ -495,10 +495,12 @@ class Runtime {
       this._current = skill;
       const id = skill.isCloud ? '@cloud' : skill.id;
       const handler = this._appMgr.getHandlerById(id);
-      if (handler && handler.constructor.name === 'NativeConnector') {
-        handler.emit('voice_command', _, context, action);
-      } else {
-        handler.emit('voice_command', skill.context, skill.action);
+      if (handler) {
+        if (handler.constructor.name === 'NativeConnector') {
+          handler.emit('voice_command', _, context, action);
+        } else {
+          handler.emit('voice_command', skill.context, skill.action);
+        }
       }
     }
   }
