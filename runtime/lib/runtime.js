@@ -691,7 +691,7 @@ class Runtime {
       },
       function onExitExtapp(appId, callback) {
         let current = self._speech._context.getCurrentApp();
-        if (current.appId === appId) {
+        if (current && current.appId === appId) {
           self._speech.exitCurrent();
           callback(null);
         } else {
