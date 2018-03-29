@@ -35,8 +35,8 @@ class SpeechContext {
     // FIXME(Yorkie): dont put stack when form is "service"
     // if (form === 'service')
     //   return false;
+    const mgr = getAppMgr();
     if (appId[0] === '@') {
-      const mgr = getAppMgr();
       const skills = mgr._skill2app[appId].skills;
       for (let i = 0; i < skills.length; i++) {
         let s = skills[i];
@@ -48,6 +48,11 @@ class SpeechContext {
     }
 
     let isNew = !this.remove(appId);
+    const appData = mgr._skill2app[appId];
+    if (appData && appData._profile) {
+      form = appData._profile.metadata.type || form;
+    }
+
     this._stack.push(appId);
     this._apps[appId] = {
       appId, form, cloud
@@ -76,7 +81,7 @@ class SpeechContext {
   /**
    * @method update
    */
-  update(form) {
+  update() {
     const len = this._stack.length - 1;
     const domain = {
       scene: '',
