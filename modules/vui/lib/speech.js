@@ -187,8 +187,14 @@ class SpeechService extends EventEmitter {
       return;
     }
     const appId = data.appId = data.nlp.appId;
-    data.cloud = data.nlp.cloud;
-    data.form = data.action.response.action.form;
+    try {
+      data.cloud = data.nlp.cloud;
+      data.form = data.action.response.action.form;
+    } catch (error) {
+      logger.log('invalid nlp action, ignore');
+      this.emit('error', error);
+      return;
+    }
 
     if (appId === this._context.current) {
       this.lifecycle('voice_command', data);
