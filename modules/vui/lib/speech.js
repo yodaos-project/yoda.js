@@ -192,6 +192,7 @@ class SpeechService extends EventEmitter {
       data.form = data.action.response.action.form;
     } catch (error) {
       logger.log('invalid nlp action, ignore');
+      this.emit('error', error);
       return;
     }
 
