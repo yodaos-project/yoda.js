@@ -1,6 +1,6 @@
 {
   "name": "@rokid/rokidos",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "scripts": {
     "build": "gulp"
   },
@@ -27,7 +27,7 @@
       "modules/tapdriver",
       "modules/tts:ttsflinger",
       "modules/volume:vol_ctrl",
-      "modules/vui:openvoice_proc",
+      "modules/vui",
       "modules/wifi:wpa_ctrl",
       "modules/context",
       "modules/logger",
