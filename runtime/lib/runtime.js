@@ -76,9 +76,11 @@ class Runtime {
           this._doMute();
           break;
         case 'accept':
+        case 'start':
           // FIXME(Yorkie): move "mute" to "coming" event
           // this._doMute();
           context.emitVoiceEvent('pickup start');
+          this._doRound();
           break;
         case 'reject':
         case 'local sleep':
@@ -368,6 +370,8 @@ class Runtime {
    * @method _doRound
    */
   _doRound() {
+    if (this._roundTimer)
+      return;
     light.startRound();
     this._roundTimer = setTimeout(() => {
       light.stopRound();
@@ -378,6 +382,7 @@ class Runtime {
    */
   _stopRound() {
     clearTimeout(this._roundTimer);
+    this._roundTimer = undefined;
     try {
       light.stopRound();
     } catch (err) {}
@@ -714,7 +719,6 @@ class Runtime {
         }
         const id = ttsId++;
         tts.say(text, () => {
-          console.log('tts done');
           const { objectPath, ifaceName } = app._profile.metadata.dbus;
           dbusClient._dbus.emitSignal(
             dbusClient.connection,
