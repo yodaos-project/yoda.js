@@ -1,6 +1,6 @@
 {
   "name": "@rokid/rokidos",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "scripts": {
     "build": "gulp"
   },

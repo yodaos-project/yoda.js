@@ -80,7 +80,6 @@ class Runtime {
           // FIXME(Yorkie): move "mute" to "coming" event
           // this._doMute();
           context.emitVoiceEvent('pickup start');
-          this._doRound();
           break;
         case 'reject':
         case 'local sleep':
