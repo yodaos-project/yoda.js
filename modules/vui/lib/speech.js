@@ -1,8 +1,8 @@
 'use strict';
 
 const fs = require('fs');
+const turen = require('turen');
 const logger = require('@rokid/logger')('speech');
-const SpeechWrap = require('bindings')('speech_down').SpeechWrap;
 const EventEmitter = require('events').EventEmitter;
 const getAppMgr = require('./app').getAppMgr;
 
@@ -26,7 +26,7 @@ class SpeechContext {
     this._stack = [];
     this._lastCut = null;
     this._apps = {};
-    this._handle.updateStack(':');
+    this._handle.setStack(':');
   }
   /**
    * @method enter
@@ -100,7 +100,7 @@ class SpeechContext {
     }
     const stack = domain.scene + ':' + (this._lastCut || '');
     logger.info('upload the stack:', stack);
-    this._handle.updateStack(stack);
+    this._handle.setStack(stack);
   }
   /**
    * @method remove
@@ -141,51 +141,51 @@ class SpeechService extends EventEmitter {
    */
   constructor() {
     super();
-    this._handle = new SpeechWrap();
+    this._handle = new turen.TurenSpeech();
     this._context = new SpeechContext(this._handle);
     this._autoExitTimer = null;
     this._started = false;
 
     // set handle events
-    this._handle.onVoiceEvent = this._onVoiceEvent.bind(this);
-    this._handle.onIntermediateResult = this._onIntermediateResult.bind(this);
-    this._handle.onVoiceCommand = this._onVoiceCommand.bind(this);
-    this._handle.onError = this._onError.bind(this);
+    this._handle.on('voice coming', (event) => {
+      this.emit('voice', event.turenId, 'coming', event.sl, event.energy);
+    });
+    this._handle.on('voice start', (event) => {
+      this.emit('voice', event.turenId, 'start');
+    });
+    // this._handle.on('voice accept', (event) => {
+    //   this.emit('voice', event.turenId, 'accept', event.sl, event.energy);
+    // });
+    this._handle.on('voice reject', (event) => {
+      this.emit('voice', event.turenId, 'reject', event.sl, event.energy);
+    });
+    this._handle.on('voice cancel', (event) => {
+      this.emit('voice', event.turenId, 'cancel', event.sl, event.energy);
+    });
+    this._handle.on('voice sleep', (event) => {
+      this.emit('voice', event.turenId, 'local sleep');
+    });
+    this._handle.on('asr begin', (asr, event) => {
+      this.emit('voice', event.turenId, 'accept');
+    });
+    this._handle.on('asr pending', (asr, event) => {
+      this.emit('speech', event.speakId, 0, asr);
+    });
+    this._handle.on('asr end', (asr, event) => {
+      this.emit('speech', event.speakId, 2, asr);
+    });
+    this._handle.on('nlp', (response, event) => {
+      this._onVoiceCommand(response);
+    });
+    this._handle.on('error', this._onError.bind(this));
   }
   /**
    * @method _onVoiceEvent
    */
-  _onVoiceEvent(id, event, sl, energy) {
-    if (event !== 'info')
-      logger.log('<VoiceEvent>', event, sl, energy);
-    this.emit('voice', id, event, sl, energy);
-  }
-  /**
-   * @method _onVoiceEvent
-   */
-  _onIntermediateResult(id, type, asr) {
-    logger.log('<IntermediateResult>', type, asr);
-    this.emit('speech', id, type, asr);
-  }
-  /**
-   * @method _onVoiceEvent
-   */
-  _onVoiceCommand(id, asr, nlp, action) {
+  _onVoiceCommand(data) {
     clearTimeout(this._autoExitTimer);
-    this.emit('nlp ready', asr, nlp);
+    this.emit('nlp ready', data.asr, data.nlp);
 
-    let data = { asr, nlp, action };
-    try {
-      data.raw = { nlp, action };
-      if (typeof nlp === 'string')
-        data.nlp = JSON.parse(nlp);
-      if (typeof action === 'string')
-        data.action = JSON.parse(action);
-    } catch (err) {
-      logger.log('invalid response body, just skip');
-      this.emit('error', err);
-      return;
-    }
     const appId = data.appId = data.nlp.appId;
     try {
       data.cloud = data.nlp.cloud;
@@ -299,7 +299,7 @@ class SpeechService extends EventEmitter {
    * @method setPickup
    */
   setPickup(val) {
-    this._handle.setSirenState(val);
+    this._handle.setPickup(val);
   }
   /**
    * @method redirect
@@ -381,16 +381,20 @@ class SpeechService extends EventEmitter {
   reload() {
     const data = JSON.parse(
       fs.readFileSync('/data/system/openvoice_profile.json'));
+    this._handle.setConfig({
+      key: data.key,
+      secret: data.secret,
+      deviceTypeId: data.device_type_id,
+      deviceId: data.device_id,
+    });
     this.start();
-    this._handle.updateConfig(
-      data.device_id, data.device_type_id, data.key, data.secret);
-    this._handle.initVoiceTrigger();
+    // this._handle.initVoiceTrigger();
   }
   /**
    * @method insertVoiceTrigger
    */
   insertVoiceTrigger(text, pinyin) {
-    return this._handle.insertVoiceTrigger(text, pinyin);
+    // return this._handle.insertVoiceTrigger(text, pinyin);
   }
 }
 
