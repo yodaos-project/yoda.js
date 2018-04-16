@@ -3,9 +3,7 @@
   "version": "1.2.0",
   "description": "VUI framework for Node.js",
   "main": "lib/index.js",
-  "scripts": {
-    "install": "node-gyp rebuild"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git@github.com/Rokid/rokidos"
@@ -16,10 +14,11 @@
   ],
   "author": "Yazhong Liu <yazhong.liu@rokid.com>",
   "license": "UNLICENSED",
-  "gypfile": true,
+  "gypfile": false,
   "dependencies": {
     "bindings": "^1.3.0",
     "import-fresh": "^2.0.0",
-    "nan": "^2.6.2"
+    "nan": "^2.6.2",
+    "turen": "1.2.2"
   }
 }
