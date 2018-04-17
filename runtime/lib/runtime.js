@@ -380,6 +380,9 @@ class Runtime {
    * @method _stopRound
    */
   _stopRound() {
+    if (!this._roundTimer)
+      return light.rest();
+
     clearTimeout(this._roundTimer);
     this._roundTimer = undefined;
     try {
