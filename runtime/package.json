@@ -7,7 +7,8 @@
     "vui-daemon": "./bin/daemon.js",
     "vui-login": "./bin/login.js",
     "vui-reload": "./bin/reload.sh",
-    "vui-ping": "./bin/ping.sh"
+    "vui-ping": "./bin/ping.sh",
+    "ctc-reload": "./bin/ctc-reload.js"
   },
   "keywords": [
     "vui",
