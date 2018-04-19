@@ -334,18 +334,16 @@ class AppManager {
   getApp(root, name) {
     const prefix = `${root}/${name}`;
     const pkgInfo = fresh(`${prefix}/package.json`);
+    const app = new AppExecutor(pkgInfo, prefix);
+    if (!app.valid)
+      throw new Error(app.errmsg);
+
     for (let i in pkgInfo.metadata.skills) {
       // FIXME(Yazhong): should we not throw error just skip this error?
       const id = pkgInfo.metadata.skills[i];
       if (this._skill2app[id])
         throw new Error('skill conflicts');
-      let app = new AppExecutor(pkgInfo, prefix);
-      if (app.valid) {
-        app.skills = pkgInfo.metadata.skills;
-        this._skill2app[id] = app;
-      } else {
-        throw new Error(app.errmsg);
-      }
+      this._skill2app[id] = app;
     }
     return {
       pathname: prefix,
