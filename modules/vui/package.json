@@ -16,6 +16,6 @@
   "dependencies": {
     "import-fresh": "^2.0.0",
     "nan": "^2.6.2",
-    "turen": "1.2.2"
+    "turen": "1.2.4"
   }
 }
