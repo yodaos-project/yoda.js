@@ -60,6 +60,7 @@ class Runtime {
 
     // Speech handle
     this._speech = new SpeechService();
+    this._speech.reload();
     this._speech.on('voice', (id, event, sl, energy) => {
       context.emitVoiceEvent(`voice ${event}`, { sl, energy });
       if (!this._online) {
