@@ -135,6 +135,7 @@ class Runtime {
           logger.info('dat:', data.raw.action);
         } else {
           logger.info('nlp:', JSON.stringify(data.nlp));
+          logger.info('dat:', JSON.stringify(data.action));
         }
         this._handleVoiceCommand(data.asr, data.nlp, data.action);
       } else {
@@ -478,7 +479,7 @@ class Runtime {
   _handleStop(id, data) {
     const handler = this._appMgr.getHandlerById(id);
     require('@rokid/tts').stop();
-    require('@rokid/player').pause();
+    require('@rokid/player').stop();
     if (handler) {
       handler.emit('stop', data);
     }
