@@ -335,8 +335,11 @@ class AppManager {
     const prefix = `${root}/${name}`;
     const pkgInfo = fresh(`${prefix}/package.json`);
     const app = new AppExecutor(pkgInfo, prefix);
-    if (!app.valid)
+    if (!app.valid) {
       throw new Error(app.errmsg);
+    } else {
+      app.skills = pkgInfo.metadata.skills;
+    }
 
     for (let i in pkgInfo.metadata.skills) {
       // FIXME(Yazhong): should we not throw error just skip this error?
