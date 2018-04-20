@@ -479,7 +479,10 @@ class Runtime {
   _handleStop(id, data) {
     const handler = this._appMgr.getHandlerById(id);
     require('@rokid/tts').stop();
-    require('@rokid/player').stop();
+
+    if (data && data.form === 'scene') {
+      require('@rokid/player').stop();
+    }
     if (handler) {
       handler.emit('stop', data);
     }
