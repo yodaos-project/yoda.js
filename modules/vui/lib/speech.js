@@ -141,7 +141,9 @@ class SpeechService extends EventEmitter {
    */
   constructor() {
     super();
-    this._handle = new turen.TurenSpeech();
+    this._handle = new turen.TurenSpeech(null, {
+      voiceEnergyPeriod: 500,
+    });
     this._context = new SpeechContext(this._handle);
     this._autoExitTimer = null;
     this._started = false;
@@ -152,6 +154,9 @@ class SpeechService extends EventEmitter {
     });
     this._handle.on('voice start', (event) => {
       this.emit('voice', event.turenId, 'start');
+    });
+    this._handle.on('voice info', (event) => {
+      this.emit('voice', null, 'info', null, event.energy);
     });
     // this._handle.on('voice accept', (event) => {
     //   this.emit('voice', event.turenId, 'accept', event.sl, event.energy);
