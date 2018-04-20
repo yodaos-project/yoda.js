@@ -298,7 +298,10 @@ class SpeechService extends EventEmitter {
    * @param {Object} action
    */
   mockRequest(asr, nlp, action) {
-    this._onVoiceCommand(-1, asr, nlp, action);
+    this._onVoiceCommand({
+      appId: -1,
+      asr, nlp, action,
+    });
   }
   /**
    * @method setPickup
