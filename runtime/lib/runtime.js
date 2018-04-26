@@ -213,6 +213,7 @@ class Runtime {
       return;
     }
     process.title = 'vui';
+    wifi.res_init();
     this._online = true;
     this._speech.exitCurrent();
     // login
