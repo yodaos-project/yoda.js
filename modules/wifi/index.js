@@ -1,6 +1,7 @@
 'use strict';
 
-const WifiWrap = require('bindings')('wifi').WifiWrap;
+const binding = require('bindings')('wifi');
+const WifiWrap = binding.WifiWrap;
 const logger = require('@rokid/logger')('wifi');
 const wifi = new WifiWrap();
 const KEY_MGMT = {
@@ -55,9 +56,14 @@ function save() {
 
 function status() {
   return STATES[wifi.getStatus()];
-};
+}
+
+function res_init() {
+  return wifi.res_init();
+}
 
 exports.connect = connect;
 exports.disconnect = disconnect;
 exports.save = save;
 exports.status = exports.getStatus = status;
+exports.res_init = res_init;

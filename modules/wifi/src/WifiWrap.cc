@@ -1,4 +1,7 @@
 #include "src/WifiWrap.h"
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 
 using namespace v8;
 using namespace std;
@@ -48,6 +51,7 @@ NAN_MODULE_INIT(WifiWrap::Init) {
   Nan::SetPrototypeMethod(tmpl, "connect", Connect);
   Nan::SetPrototypeMethod(tmpl, "disconnect", Disconnect);
   Nan::SetPrototypeMethod(tmpl, "getStatus", GetStatus);
+  Nan::SetPrototypeMethod(tmpl, "res_init", ResInit);
 
   Local<Function> func = Nan::GetFunction(tmpl).ToLocalChecked();
   Nan::Set(target, Nan::New("WifiWrap").ToLocalChecked(), func);
@@ -92,6 +96,11 @@ NAN_METHOD(WifiWrap::Disconnect) {
 NAN_METHOD(WifiWrap::GetStatus) {
   WifiWrap* handle = Nan::ObjectWrap::Unwrap<WifiWrap>(info.This());
   info.GetReturnValue().Set(Nan::New(handle->status()));
+}
+
+NAN_METHOD(WifiWrap::ResInit) {
+  res_init();
+  info.GetReturnValue().Set(info.This());
 }
 
 void InitModule(Handle<Object> target) {
