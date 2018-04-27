@@ -137,6 +137,7 @@ bluetooth.disconnect = function(type) {
 };
 
 bluetooth.send = function(command) {
+  console.log('<bluetooth> send command', command);
   if (!sinkConnected)
     throw new Error('connect A2DP_SINK required before sending command');
   if (command === 'play') {
