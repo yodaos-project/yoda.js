@@ -143,6 +143,7 @@ class SpeechService extends EventEmitter {
     super();
     this._handle = new turen.TurenSpeech(null, {
       voiceEnergyPeriod: 500,
+      reconnectTimeout: 2000,
     });
     this._context = new SpeechContext(this._handle);
     this._autoExitTimer = null;
