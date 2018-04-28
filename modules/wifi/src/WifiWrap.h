@@ -25,4 +25,5 @@ private:
   static NAN_METHOD(Connect);
   static NAN_METHOD(Disconnect);
   static NAN_METHOD(GetStatus);
+  static NAN_METHOD(ResInit);
 };
