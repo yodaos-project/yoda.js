@@ -88,7 +88,11 @@ class TTSDispatcher {
   }
 }
 
-const _ttsdispatcher = new TTSDispatcher();
+let _ttsdispatcher = false;
+
+function init() {
+  _ttsdispatcher = new TTSDispatcher();
+}
 
 /**
  * @method say
@@ -96,6 +100,9 @@ const _ttsdispatcher = new TTSDispatcher();
  * @param {Function} callback
  */
 function say(text, callback) {
+  if (!_ttsdispatcher) {
+    init();
+  }
   const tts = _ttsdispatcher.say(text);
   context.emitVoiceEvent('tts start', text);
 
@@ -116,6 +123,9 @@ function say(text, callback) {
 }
 
 function resume() {
+  if (!_ttsdispatcher) {
+    init();
+  }
   _ttsdispatcher.resume();
 }
 
@@ -123,9 +133,13 @@ function resume() {
  * @method stop - stop all tts tasks
  */
 function stop() {
+  if (!_ttsdispatcher) {
+    init();
+  }
   _ttsdispatcher.stopAll();
 }
 
+exports.init = init;
 exports.say = say;
 exports.stop = stop;
 exports.resume = resume;
