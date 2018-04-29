@@ -105,6 +105,7 @@ class Runtime {
       }
     });
     this._speech.on('nlp ready', (asr, nlp) => {
+      context.emitVoiceEvent('pickup end');
       context.emitVoiceEvent('nlp', nlp);
       if (!this._online)
         return;
