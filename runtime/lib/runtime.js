@@ -228,6 +228,9 @@ class Runtime {
         }
       })
       .then(() => {
+        tts.init();
+      })
+      .then(() => {
         this._startSpeech();
         context.emitEvent('online');
       })
