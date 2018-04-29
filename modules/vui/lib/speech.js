@@ -59,6 +59,8 @@ class SpeechContext {
     };
     logger.info('current stack:', this._stack);
     logger.info('current cstack:', this._lastCut);
+    logger.info('current app', this._apps[appId]);
+
     this.update(form);
     if (form === 'cut' && appId !== 'ROKID.EXCEPTION') {
       this._lastCut = appId;
@@ -314,6 +316,7 @@ class SpeechService extends EventEmitter {
    * @method redirect
    */
   redirect(appId, context) {
+    logger.info(`redirect to ${appId}`);
     // exit the last
     let current = this._context.getCurrentApp();
     if (current) {
