@@ -355,7 +355,7 @@ class Runtime {
       volume.set(this._vol * 0.3);
     }
     this._volumeTimer = setTimeout(() => {
-      volume.set(this._vol);
+      this._doUnmute();
     }, 6000);
   }
   /**
