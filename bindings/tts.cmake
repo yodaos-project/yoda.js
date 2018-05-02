@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.8.12)
-
 project(libtts C)
 add_library(libtts MODULE tts.c)
 set_target_properties(libtts PROPERTIES
