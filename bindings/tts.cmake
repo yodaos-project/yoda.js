@@ -6,6 +6,6 @@ set_target_properties(libtts PROPERTIES
   PREFIX ""
   SUFFIX ".node"
   OUTPUT_NAME "libtts"
-  LINK_FLAGS "-undefined dynamic_lookup"
+  LINK_FLAGS "-rdynamic"
 )
 target_include_directories(libtts PUBLIC ${SHADOW_NODE_HEADER_PATH})
