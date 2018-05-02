@@ -75,11 +75,10 @@ JS_FUNCTION(TtsSay) {
   return jerry_create_number(id);
 }
 
-void InitTts(jerry_value_t exports) {
-  jerry_value_t tts = jerry_create_object();
+void init(jerry_value_t exports) {
   jerry_value_t ttsConstructor =
       jerry_create_external_function(TtsConstructor);
-  iotjs_jval_set_property_jval(tts, "TtsWrap", ttsConstructor);
+  iotjs_jval_set_property_jval(exports, "TtsWrap", ttsConstructor);
 
   jerry_value_t proto = jerry_create_object();
   iotjs_jval_set_method(proto, "say", TtsSay);
@@ -87,7 +86,6 @@ void InitTts(jerry_value_t exports) {
 
   jerry_release_value(proto);
   jerry_release_value(ttsConstructor);
-  return tts;
 }
 
-NODE_MODULE(libtts, InitTts)
+NODE_MODULE(libtts, init)

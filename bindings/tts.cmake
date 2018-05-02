@@ -8,4 +8,6 @@ set_target_properties(libtts PROPERTIES
   OUTPUT_NAME "libtts"
   LINK_FLAGS "-rdynamic"
 )
+
+target_link_libraries(libtts rktts)
 target_include_directories(libtts PUBLIC ${SHADOW_NODE_HEADER_PATH})
