@@ -26,5 +26,6 @@ private:
   static NAN_METHOD(New);
   static NAN_METHOD(Say);
   static NAN_METHOD(Stop);
+  static NAN_METHOD(Reconnect);
 
 };

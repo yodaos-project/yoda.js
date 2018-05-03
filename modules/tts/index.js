@@ -88,10 +88,11 @@ class TTSDispatcher {
   }
 }
 
-let _ttsdispatcher = false;
+const _ttsdispatcher = new TTSDispatcher();
 
 function init() {
-  _ttsdispatcher = new TTSDispatcher();
+  if (_ttsdispatcher)
+    _ttsdispatcher.reconnect();
 }
 
 /**

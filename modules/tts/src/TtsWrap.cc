@@ -58,8 +58,6 @@ TtsWrap::TtsWrap() {
     oncomplete,
     onerror
   };
-  // FIXME(Yorkie): destroy before init
-  tts_destory();
   // start init
   int r = tts_init();
   if (r != -1) {
@@ -69,6 +67,8 @@ TtsWrap::TtsWrap() {
 }
 
 TtsWrap::~TtsWrap() {
+  if (!initialized)
+    return;
   tts_destory();
   initialized = false;
 }
@@ -80,6 +80,7 @@ NAN_MODULE_INIT(TtsWrap::Init) {
 
   Nan::SetPrototypeMethod(tmpl, "say", Say);
   Nan::SetPrototypeMethod(tmpl, "stop", Stop);
+  Nan::SetPrototypeMethod(tmpl, "reconnect", Reconnect);
 
   Local<Function> func = Nan::GetFunction(tmpl).ToLocalChecked();
   Nan::Set(target, Nan::New("TtsWrap").ToLocalChecked(), func);
@@ -121,6 +122,25 @@ NAN_METHOD(TtsWrap::Stop) {
   int id = info[0]->NumberValue();
   tts_cancel(id, nullptr);
   info.GetReturnValue().Set(Nan::New(id));
+}
+
+NAN_METHOD(TlsWrap::Reconnect) {
+  TtsWrap* tts = Nan::ObjectWrap::Unwrap<TtsWrap>(info.This());
+  if (!tts->initialized) {
+    tts_destory();
+  }
+  struct tts_callback func = { 
+    onstart,
+    oncancel,
+    oncomplete,
+    onerror
+  };
+  // start init
+  int r = tts_init();
+  if (r != -1) {
+    tts->initialized = true;
+    tts_set(&func);
+  }
 }
 
 void InitModule(Handle<Object> target) {
