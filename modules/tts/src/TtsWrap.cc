@@ -124,7 +124,7 @@ NAN_METHOD(TtsWrap::Stop) {
   info.GetReturnValue().Set(Nan::New(id));
 }
 
-NAN_METHOD(TlsWrap::Reconnect) {
+NAN_METHOD(TtsWrap::Reconnect) {
   TtsWrap* tts = Nan::ObjectWrap::Unwrap<TtsWrap>(info.This());
   if (!tts->initialized) {
     tts_destory();
