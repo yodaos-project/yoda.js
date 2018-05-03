@@ -70,6 +70,12 @@ class TTSDispatcher {
     }
   }
   /**
+   * @method reconnect
+   */
+  reconnect() {
+    this._tts.reconnect();
+  }
+  /**
    * @method _onEvent
    */
   _onEvent(event, id, err) {
