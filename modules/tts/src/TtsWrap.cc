@@ -126,7 +126,7 @@ NAN_METHOD(TtsWrap::Stop) {
 
 NAN_METHOD(TtsWrap::Reconnect) {
   TtsWrap* tts = Nan::ObjectWrap::Unwrap<TtsWrap>(info.This());
-  if (!tts->initialized) {
+  if (tts->initialized) {
     tts_destory();
   }
   struct tts_callback func = { 
