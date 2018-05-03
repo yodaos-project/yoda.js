@@ -58,6 +58,9 @@ TtsWrap::TtsWrap() {
     oncomplete,
     onerror
   };
+  // FIXME(Yorkie): destroy before init
+  tts_destory();
+  // start init
   int r = tts_init();
   if (r != -1) {
     initialized = true;
