@@ -78,7 +78,10 @@ NAN_METHOD(WifiWrap::Connect) {
   char* psk_str = strdup(*psk);
   fprintf(stdout, "ssid: %s, psk: %s\n", ssid_str, psk_str);
 
+  memset(handle->network_.ssid, 0, ssid.length());
   memcpy(handle->network_.ssid, ssid_str, ssid.length());
+
+  memset(handle->network_.psk, 0, psk.length());
   memcpy(handle->network_.psk, psk_str, psk.length());
   handle->network_.key_mgmt = method;
 

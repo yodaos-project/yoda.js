@@ -350,6 +350,7 @@ class Runtime {
     }
     if (this._volumeTimer !== null) {
       clearTimeout(this._volumeTimer);
+      this._doUnmute();
     } else {
       this._vol = volume.get();
       volume.set(this._vol * 0.3);
