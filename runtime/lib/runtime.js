@@ -85,7 +85,6 @@ class Runtime {
         case 'reject':
         case 'local sleep':
           this._doUnmute();
-          light.rest();
           break;
       }
       if (event === 'local sleep') {
@@ -370,6 +369,7 @@ class Runtime {
       // TODO(Yorkie): support more options
     }
     clearTimeout(this._volumeTimer);
+    light.rest();
     volume.set(this._vol);
     this._volumeTimer = null;
   }
