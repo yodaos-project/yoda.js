@@ -28,8 +28,8 @@ class ConnectWorker : public Nan::AsyncWorker {
 };
 
 WifiWrap::WifiWrap() {
-  memset(network_.ssid, 0, 36);
-  memset(network_.psk, 0, 68);
+  memset(network_.ssid, 0, sizeof(network_.ssid));
+  memset(network_.psk, 0, sizeof(network_.psk));
 }
 
 WifiWrap::~WifiWrap() {
@@ -77,11 +77,11 @@ NAN_METHOD(WifiWrap::Connect) {
   char* ssid_str = strdup(*ssid);
   char* psk_str = strdup(*psk);
 
-  memset(handle->network_.ssid, 0, 36);
+  memset(handle->network_.ssid, 0, sizeof(network_.ssid));
   memcpy(handle->network_.ssid, ssid_str, ssid.length());
-  memset(handle->network_.psk, 0, 68);
+  memset(handle->network_.psk, 0, sizeof(network_.psk));
   memcpy(handle->network_.psk, psk_str, psk.length());
-  
+
   fprintf(stdout, "connection wifi <ssid: %s, psk: %s>\n",
     handle->network_.ssid,
     handle->network_.psk);
