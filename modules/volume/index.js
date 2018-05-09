@@ -1,5 +1,6 @@
 'use strict';
 
+const property = require('@rokid/property');
 const VolumeWrap = require('bindings')('volume').VolumeWrap;
 const handle = new VolumeWrap();
 const logger = require('@rokid/logger')('volume');
@@ -24,6 +25,7 @@ module.exports = {
    */
   set(vol) {
     logger.info('set volume', vol);
+    property.set('persist.system.volume', vol);
     return handle.set(vol);
   },
   /**
@@ -96,5 +98,13 @@ module.exports = {
   volumeGet() {
     console.warn('warning: this method is deprecated, please use volume.get()');
     return this.get();
-  }
+  },
+  /**
+   * @method load
+   */
+  init() {
+    const vol = property.get('persist.system.volume');
+    this.set(vol);
+  },
 };
+

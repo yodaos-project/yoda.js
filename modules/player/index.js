@@ -1,5 +1,7 @@
 'use strict';
 
+const volume = require('@rokid/volume');
+const property = require('@rokid/property');
 const PlayWrap = require('bindings')('rplay').PlayWrap;
 const EventEmitter = require('events').EventEmitter;
 const tap = require('@rokid/tapdriver');
@@ -14,6 +16,7 @@ const names = {
 };
 
 var defaultPlayer = null;
+var volumeInitialized = false;
 
 /**
  * @class Player
@@ -68,6 +71,16 @@ class Player extends EventEmitter {
   play(url, onPrepared) {
     this._onPrepared = onPrepared;
     this._handle.setDataSource(url);
+
+    if (volumeInitialized)
+      return;
+
+    const actual = volume.get();
+    const expect = property.get('persist.system.volume');
+    if (actual !== expect) {
+      volume.set(expect);
+      volumeInitialized = true;
+    }
   }
   /**
    * @method stop
