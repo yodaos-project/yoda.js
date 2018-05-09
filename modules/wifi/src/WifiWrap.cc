@@ -76,13 +76,15 @@ NAN_METHOD(WifiWrap::Connect) {
 
   char* ssid_str = strdup(*ssid);
   char* psk_str = strdup(*psk);
-  fprintf(stdout, "ssid: %s, psk: %s\n", ssid_str, psk_str);
 
-  memset(handle->network_.ssid, 0, ssid.length());
+  memset(handle->network_.ssid, 0, 36);
   memcpy(handle->network_.ssid, ssid_str, ssid.length());
-
-  memset(handle->network_.psk, 0, psk.length());
+  memset(handle->network_.psk, 0, 68);
   memcpy(handle->network_.psk, psk_str, psk.length());
+  
+  fprintf(stdout, "connection wifi <ssid: %s, psk: %s>\n",
+    handle->network_.ssid,
+    handle->network_.psk);
   handle->network_.key_mgmt = method;
 
   Nan::Callback *callback = new Nan::Callback(info[3].As<Function>());
