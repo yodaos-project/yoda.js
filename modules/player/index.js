@@ -43,6 +43,11 @@ class Player extends EventEmitter {
     this.on('error', this._onError.bind(this));
   }
   _onCallback(id) {
+    if (this._state === 'finish') {
+      // if the before state is "finish", we dont handle any other state.
+      // just return
+      return;
+    }
     this._state = names[id];
     this.emit(this._state);
     if (this._state === 'prepared') {
