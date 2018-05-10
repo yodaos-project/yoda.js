@@ -544,9 +544,10 @@ class Runtime {
       const data = JSON.parse(status);
       if (data.upgrade === true) {
         this._speech.redirect('@upgrade');
-      } else if (data['Wifi'] === false) {
+      } else if (data['Wifi'] === false || 
+        data['Network'] === false) {
         this.setOffline();
-      } else if (data['Wifi'] === true && !this._online) {
+      } else if (data['Network'] === true && !this._online) {
         this.setOnline();
       }
       done(null, true);
