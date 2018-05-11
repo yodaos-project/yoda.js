@@ -154,7 +154,8 @@ class Runtime {
    */
   start() {
     exec('touch /var/run/bootcomplete');
-    if (volume.get() === 0) {
+    if (volume.get() === 0 ||
+      !property.get('persist.system.volume')) {
       volume.set(60);
       logger.log('已恢复默认音量');
     }
