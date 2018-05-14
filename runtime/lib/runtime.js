@@ -58,6 +58,9 @@ class Runtime {
     // Input handle
     this._input = new InputDispatcher(this._handleInputEvent.bind(this));
 
+    // flag if speech is initialized
+    this._ifSpeechInitialized = false;
+
     // Speech handle
     this._speech = new SpeechService();
     this._speech.reload();
@@ -332,7 +335,11 @@ class Runtime {
       id = id === 3 ? 2 : id;
       player.play(`${__dirname}/sounds/startup${id}.ogg`);
     }
-    this._speech.reload();
+    // if speech not initialized, start it
+    if (!this._ifSpeechInitialized) {
+      this._speech.reload();
+      this._ifSpeechInitialized = true;
+    }
     const triggerWord = context.deviceConfig.triggerWord;
     if (triggerWord) {
       this._speech.insertVoiceTrigger(triggerWord.text, triggerWord.pinyin);
