@@ -197,7 +197,7 @@ class SpeechService extends EventEmitter {
     const appId = data.appId = data.nlp.appId;
     try {
       data.cloud = data.nlp.cloud;
-      data.form = data.action.response.action.form;
+      data.form = data.action.response ? data.action.response.action.form : 'cut';
     } catch (err) {
       logger.log('invalid nlp action, ignore', err, data);
       this.emit('error', err);

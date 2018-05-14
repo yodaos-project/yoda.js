@@ -37,7 +37,9 @@ PlayWrap::~PlayWrap() {
 }
 
 void PlayWrap::notify(int msg, int ext1, int ext2, int from) {
-  fprintf(stdout, "mediaplayer: received event \"%d\"\n", msg);
+  fprintf(stdout, 
+    "mediaplayer: received event \"%d\" (%d %d %d)\n",
+    msg, ext1, ext2, from);
   PlayWrap* play = static_cast<PlayWrap*>(async.data);
   play->msg = msg;
   uv_async_send(&async);
