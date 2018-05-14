@@ -55,6 +55,20 @@ class Player extends EventEmitter {
         this._onPrepared();
       else
         this._handle.start();
+
+      if (volumeInitialized)
+        return;
+
+      const expect = property.get('persist.system.volume');
+      const actual = {
+        tts: volume.getByStream('tts'),
+        media: volume.getByStream('media'),
+      };
+      if (actual.tts !== expect ||
+        actual.media !== expect) {
+        volume.set(expect);
+        volumeInitialized = true;
+      }
     } else if (this._state === 'finish') {
       // FIXME(yazhong): `autoStop` means auto stop the handle
       // default is `true`.
@@ -76,16 +90,6 @@ class Player extends EventEmitter {
   play(url, onPrepared) {
     this._onPrepared = onPrepared;
     this._handle.setDataSource(url);
-
-    if (volumeInitialized)
-      return;
-
-    const actual = volume.get();
-    const expect = property.get('persist.system.volume');
-    if (actual !== expect) {
-      volume.set(expect);
-      volumeInitialized = true;
-    }
   }
   /**
    * @method stop
