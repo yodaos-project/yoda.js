@@ -196,6 +196,8 @@ class SpeechService extends EventEmitter {
 
     const appId = data.appId = data.nlp.appId;
     try {
+      if (!appId)
+        throw new Error('no appId found');
       data.cloud = data.nlp.cloud;
       data.form = data.action.response ? data.action.response.action.form : 'cut';
     } catch (err) {
