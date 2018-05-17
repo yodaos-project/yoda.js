@@ -3,13 +3,13 @@
 using namespace v8;
 using namespace std;
 
-struct player_notify_event_s {
+typedef struct player_notify_event_s {
   int msg;
   int ext1;
   int ext2;
   int from;
   PlayWrap* handle;
-} player_notify_event_t
+} player_notify_event_t;
 
 void EventHandler(uv_async_t* async) {
   Nan::HandleScope scope;
