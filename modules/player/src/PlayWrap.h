@@ -14,7 +14,7 @@ class PlayWrap
 public:
   static NAN_MODULE_INIT(Init);
   Nan::Callback* callback;
-  uv_async_t async;
+  // uv_async_t async;
 
   int msg;
   volatile int destroyed = 0;

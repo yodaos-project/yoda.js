@@ -10,25 +10,14 @@ void EventHandler(uv_async_t* handle) {
 
   Local<Value> argv[] = { Nan::New(msg) };
   play->callback->Call(1, argv);
+  uv_close(reinterpret_cast<uv_handle_t*>(handle), NULL);
 }
 
 PlayWrap::PlayWrap() {
-  uv_async_init(
-      uv_default_loop()
-    , &async
-    , EventHandler
-  );
-  async.data = (void*)this;
   mPlayer = new MediaPlayer();
 }
 
 PlayWrap::PlayWrap(const char* type) {
-  uv_async_init(
-      uv_default_loop()
-    , &async
-    , EventHandler
-  );
-  async.data = (void*)this;
   mPlayer = new MediaPlayer(type);
 }
 
@@ -40,15 +29,19 @@ void PlayWrap::notify(int msg, int ext1, int ext2, int from) {
   fprintf(stdout, 
     "mediaplayer: received event \"%d\" (%d %d %d)\n",
     msg, ext1, ext2, from);
-  PlayWrap* play = static_cast<PlayWrap*>(async.data);
-  play->msg = msg;
-  uv_async_send(&async);
+
+  uv_async_t* async = new uv_async_t;
+  async->data = (void*)this;
+  uv_async_init(uv_default_loop(), async, EventHandler);
+
+  this->msg = msg;
+  uv_async_send(async);
 }
 
 void PlayWrap::destroy() {
-  if (destroyed == 1)
+  if (destroyed == 1) {
     return;
-  uv_close(reinterpret_cast<uv_handle_t*>(&async), NULL);
+  }
   if (mPlayer) {
     delete mPlayer;
     mPlayer = NULL;
