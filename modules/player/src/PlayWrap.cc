@@ -3,14 +3,28 @@
 using namespace v8;
 using namespace std;
 
-void EventHandler(uv_async_t* handle) {
-  Nan::HandleScope scope;
-  PlayWrap* play = static_cast<PlayWrap*>(handle->data);
-  int msg = play->msg;
+struct player_notify_event_s {
+  int msg;
+  int ext1;
+  int ext2;
+  int from;
+  PlayWrap* handle;
+} player_notify_event_t
 
-  Local<Value> argv[] = { Nan::New(msg) };
+void EventHandler(uv_async_t* async) {
+  Nan::HandleScope scope;
+  player_notify_event_t* event = (player_notify_event_t*)(async->data);
+  PlayWrap* play = event->handle;
+
+  // concat the params for callback
+  Local<Value> argv[] = {
+    Nan::New(event->msg),
+  };
   play->callback->Call(1, argv);
-  uv_close(reinterpret_cast<uv_handle_t*>(handle), NULL);
+
+  // free and close async handle
+  delete event;
+  uv_close(reinterpret_cast<uv_handle_t*>(async), NULL);
 }
 
 PlayWrap::PlayWrap() {
@@ -31,10 +45,15 @@ void PlayWrap::notify(int msg, int ext1, int ext2, int from) {
     msg, ext1, ext2, from);
 
   uv_async_t* async = new uv_async_t;
-  async->data = (void*)this;
-  uv_async_init(uv_default_loop(), async, EventHandler);
+  player_notify_event_t* event = new player_notify_event_t;
+  event->msg = msg;
+  event->ext1 = ext1;
+  event->ext2 = ext2;
+  event->from = from;
+  event->handle = this;
 
-  this->msg = msg;
+  async->data = (void*)event;
+  uv_async_init(uv_default_loop(), async, EventHandler);
   uv_async_send(async);
 }
 
