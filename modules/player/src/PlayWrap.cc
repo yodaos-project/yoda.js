@@ -3,32 +3,35 @@
 using namespace v8;
 using namespace std;
 
-void EventHandler(uv_async_t* handle) {
-  Nan::HandleScope scope;
-  PlayWrap* play = static_cast<PlayWrap*>(handle->data);
-  int msg = play->msg;
+typedef struct player_notify_event_s {
+  int msg;
+  int ext1;
+  int ext2;
+  int from;
+  PlayWrap* handle;
+} player_notify_event_t;
 
-  Local<Value> argv[] = { Nan::New(msg) };
+void EventHandler(uv_async_t* async) {
+  Nan::HandleScope scope;
+  player_notify_event_t* event = (player_notify_event_t*)(async->data);
+  PlayWrap* play = event->handle;
+
+  // concat the params for callback
+  Local<Value> argv[] = {
+    Nan::New(event->msg),
+  };
   play->callback->Call(1, argv);
+
+  // free and close async handle
+  delete event;
+  uv_close(reinterpret_cast<uv_handle_t*>(async), NULL);
 }
 
 PlayWrap::PlayWrap() {
-  uv_async_init(
-      uv_default_loop()
-    , &async
-    , EventHandler
-  );
-  async.data = (void*)this;
   mPlayer = new MediaPlayer();
 }
 
 PlayWrap::PlayWrap(const char* type) {
-  uv_async_init(
-      uv_default_loop()
-    , &async
-    , EventHandler
-  );
-  async.data = (void*)this;
   mPlayer = new MediaPlayer(type);
 }
 
@@ -40,15 +43,24 @@ void PlayWrap::notify(int msg, int ext1, int ext2, int from) {
   fprintf(stdout, 
     "mediaplayer: received event \"%d\" (%d %d %d)\n",
     msg, ext1, ext2, from);
-  PlayWrap* play = static_cast<PlayWrap*>(async.data);
-  play->msg = msg;
-  uv_async_send(&async);
+
+  uv_async_t* async = new uv_async_t;
+  player_notify_event_t* event = new player_notify_event_t;
+  event->msg = msg;
+  event->ext1 = ext1;
+  event->ext2 = ext2;
+  event->from = from;
+  event->handle = this;
+
+  async->data = (void*)event;
+  uv_async_init(uv_default_loop(), async, EventHandler);
+  uv_async_send(async);
 }
 
 void PlayWrap::destroy() {
-  if (destroyed == 1)
+  if (destroyed == 1) {
     return;
-  uv_close(reinterpret_cast<uv_handle_t*>(&async), NULL);
+  }
   if (mPlayer) {
     delete mPlayer;
     mPlayer = NULL;
