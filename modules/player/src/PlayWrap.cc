@@ -14,13 +14,15 @@ typedef struct player_notify_event_s {
 void EventHandler(uv_async_t* async) {
   Nan::HandleScope scope;
   player_notify_event_t* event = (player_notify_event_t*)(async->data);
-  PlayWrap* play = event->handle;
+  PlayWrap* handle = event->handle;
 
-  // concat the params for callback
-  Local<Value> argv[] = {
-    Nan::New(event->msg),
-  };
-  play->callback->Call(1, argv);
+  if (handle && handle->callback != NULL) {
+    // concat the params for callback
+    Local<Value> argv[] = {
+      Nan::New(event->msg),
+    };
+    handle->callback->Call(1, argv);
+  }
 
   // free and close async handle
   delete event;
