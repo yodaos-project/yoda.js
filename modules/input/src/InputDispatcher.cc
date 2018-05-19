@@ -7,7 +7,7 @@ using namespace android;
 
 typedef struct input_data_s {
   input_keyevent_t event;
-  InputDispatcherWrap* wrap;
+  InputDispatcherWrap* jswrap;
 } input_data_t;
 
 class InputServer : public virtual InputServerInterface {
@@ -21,9 +21,9 @@ class InputServer : public virtual InputServerInterface {
     uv_async_init(uv_default_loop(),
                   async_handle,
                   InputDispatcherWrap::AsyncCallback);
-    
+
     input_data_t* data = new input_data_t;
-    data->wrap = wrap;
+    data->jswrap = wrap;
     data->event.deviceId = event->deviceId;
     data->event.action = event->action;
     data->event.keyCode = event->keyCode;
@@ -44,7 +44,7 @@ InputDispatcherWrap::InputDispatcherWrap() {
 }
 
 InputDispatcherWrap::~InputDispatcherWrap() {
-  uv_mutex_destroy(&async_locker);
+  // TODO
 }
 
 NAN_MODULE_INIT(InputDispatcherWrap::Init) {
@@ -107,10 +107,10 @@ void InputDispatcherWrap::AsyncCallback(uv_async_t* handle) {
   // Nan::Set(eventObj, Nan::New("metaState").ToLocalChecked(), Nan::New<Int32>(event.metaState));
 
   argv[0] = eventObj;
-  wrap->callback->Call(1, argv);
+  data->jswrap->callback->Call(1, argv);
 
   delete data;
-  uv_close(reinterpret_cast<uv_handle_t*>(async_handle), NULL);
+  uv_close(reinterpret_cast<uv_handle_t*>(handle), NULL);
 }
 
 void InitModule(Handle<Object> target) {
