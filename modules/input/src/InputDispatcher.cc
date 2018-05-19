@@ -5,16 +5,30 @@
 using namespace v8;
 using namespace android;
 
+typedef struct input_data_s {
+  input_keyevent_t event;
+  InputDispatcherWrap* wrap;
+} input_data_t;
+
 class InputServer : public virtual InputServerInterface {
  public:
   InputServer(InputDispatcherWrap* wrap_) : wrap(wrap_) {};
   void dispatchKey(input_keyevent_t* event) {
     if (!event)
       return;
-    wrap->event.deviceId = event->deviceId;
-    wrap->event.action = event->action;
-    wrap->event.keyCode = event->keyCode;
-    uv_async_send(&wrap->async);
+
+    uv_async_t* async_handle = new uv_async_t;
+    uv_async_init(uv_default_loop(),
+                  async_handle,
+                  InputDispatcherWrap::AsyncCallback);
+    
+    input_data_t* data = new input_data_t;
+    data->wrap = wrap;
+    data->event.deviceId = event->deviceId;
+    data->event.action = event->action;
+    data->event.keyCode = event->keyCode;
+    async_handle->data = data;
+    uv_async_send(async_handle);
   }
   void notifySwitch(nsecs_t when, uint32_t switchValues, uint32_t switchMask) {
     // TODO
@@ -26,13 +40,7 @@ class InputServer : public virtual InputServerInterface {
 };
 
 InputDispatcherWrap::InputDispatcherWrap() {
-  uv_async_init(
-      uv_default_loop()
-    , &async
-    , AsyncCallback
-  );
-  async.data = (void*)this;
-  uv_mutex_init(&async_locker);
+  // TODO
 }
 
 InputDispatcherWrap::~InputDispatcherWrap() {
@@ -82,10 +90,8 @@ void InputDispatcherWrap::AfterExecute(uv_work_t* handle, int status) {
 }
 
 void InputDispatcherWrap::AsyncCallback(uv_async_t* handle) {
-  InputDispatcherWrap* wrap = static_cast<InputDispatcherWrap*>(handle->data);
-  uv_mutex_lock(&wrap->async_locker);
-  input_keyevent_t event = wrap->event;
-  uv_mutex_unlock(&wrap->async_locker);
+  input_data_t* data = (input_data_t*)(handle->data);
+  input_keyevent_t event = data->event;
 
   Nan::HandleScope scope;
   Local<Value> argv[1];
@@ -99,8 +105,12 @@ void InputDispatcherWrap::AsyncCallback(uv_async_t* handle) {
   // Nan::Set(eventObj, Nan::New("flags").ToLocalChecked(), Nan::New<Int32>(event.keyCode));
   // Nan::Set(eventObj, Nan::New("scanCode").ToLocalChecked(), Nan::New<Int32>(event.flags));
   // Nan::Set(eventObj, Nan::New("metaState").ToLocalChecked(), Nan::New<Int32>(event.metaState));
+
   argv[0] = eventObj;
   wrap->callback->Call(1, argv);
+
+  delete data;
+  uv_close(reinterpret_cast<uv_handle_t*>(async_handle), NULL);
 }
 
 void InitModule(Handle<Object> target) {
