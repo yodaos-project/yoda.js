@@ -11,6 +11,11 @@ typedef struct player_notify_event_s {
   PlayWrap* handle;
 } player_notify_event_t;
 
+void AfterAsyncClose(uv_handle_t* handle) {
+  delete handle->data;
+  delete handle;
+}
+
 void EventHandler(uv_async_t* async) {
   Nan::HandleScope scope;
   player_notify_event_t* event = (player_notify_event_t*)(async->data);
@@ -25,8 +30,7 @@ void EventHandler(uv_async_t* async) {
   }
 
   // free and close async handle
-  delete event;
-  uv_close(reinterpret_cast<uv_handle_t*>(async), NULL);
+  uv_close(reinterpret_cast<uv_handle_t*>(async), AfterAsyncClose);
 }
 
 PlayWrap::PlayWrap() {

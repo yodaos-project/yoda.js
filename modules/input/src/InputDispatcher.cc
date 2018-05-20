@@ -10,6 +10,11 @@ typedef struct input_data_s {
   InputDispatcherWrap* jswrap;
 } input_data_t;
 
+void AfterAsyncClose(uv_handle_t* handle) {
+  delete handle->data;
+  delete handle;
+}
+
 class InputServer : public virtual InputServerInterface {
  public:
   InputServer(InputDispatcherWrap* wrap_) : wrap(wrap_) {};
@@ -109,8 +114,7 @@ void InputDispatcherWrap::AsyncCallback(uv_async_t* handle) {
   argv[0] = eventObj;
   data->jswrap->callback->Call(1, argv);
 
-  delete data;
-  uv_close(reinterpret_cast<uv_handle_t*>(handle), NULL);
+  uv_close(reinterpret_cast<uv_handle_t*>(handle), AfterAsyncClose);
 }
 
 void InitModule(Handle<Object> target) {
