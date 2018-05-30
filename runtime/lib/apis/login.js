@@ -41,6 +41,7 @@ function login(callback) {
   }
   const req = https.request({
     method: 'POST',
+    family: 4,
     host: 'account.service.rokid.com',
     path: '/bcustomer_login_platform.do',
     headers: {
