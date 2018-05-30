@@ -13,6 +13,7 @@ function check(callback) {
     responseKey: 'OtaCheckResponse',
     host: 'apigwrest-dev.open.rokid.com',
     pathname: '/v1/extended/ota/check',
+    socketFamily: 4,
   });
   syncReq.write({ version }, callback);
 }

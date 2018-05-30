@@ -13,7 +13,8 @@ function bindDevice(callback) {
     requestKey: 'BindMasterRequest',
     responseKey: 'BindMasterResponse',
     host,
-    pathname: '/v1/device/deviceManager/bindMaster'
+    pathname: '/v1/device/deviceManager/bindMaster',
+    socketFamily: 4,
   });
   syncReq.write({ userId }, callback);
 }

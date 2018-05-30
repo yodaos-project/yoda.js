@@ -34,6 +34,7 @@ function registry(userId, cb) {
   const data = load();
   const req = https.request({
     method: 'POST',
+    family: 4,
     host,
     path: '/api/registryByKey',
     headers: {
