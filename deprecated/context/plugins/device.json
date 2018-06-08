@@ -1,9 +1,0 @@
-{
-  "namePrefix": "Rokid-devboard",
-  "triggerWord": {
-    "text": "艾希",
-    "pinyin": "ai4xi1"
-  },
-  "triggerAction": "disable",
-  "skill": "disable",
-}
