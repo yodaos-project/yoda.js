@@ -2,37 +2,29 @@
 
 const https = require('https');
 const fs = require('fs');
-const path = require('path');
+const qs = require('querystring');
+const crypto = require('crypto');
 const exec = require('child_process').execSync;
-const protobuf = require('protobufjs');
 const property = require('@rokid/property');
 const context = require('@rokid/context');
 const logger = require('@rokid/logger')('apis');
-
-const proto = protobuf.loadSync(path.join(__dirname, '../proto/Login.proto'));
-const Request = proto.lookupType('LoginReqPB');
-const Response = proto.lookupType('LoginResPB');
 
 const uuid = property.get('ro.boot.serialno');
 const seed = property.get('ro.boot.rokidseed');
 let secret, buffer;
 let retry = 0;
 
+function md5(str) {
+  return crypto.createHash('md5').update(str).digest('hex').toUpperCase();
+}
+
 if (uuid && seed) {
-  secret = exec(`test-stupid ${seed} ${uuid}`).toString('base64');
-  buffer = Request.encode(
-    Request.create({
-      timestamp: Date.now() + '',
-      reqType: 1,
-      identity: 1,
-      uuid,
-      secret,
-    })
-  ).finish();
+  const _seed = exec(`test-stupid ${seed} ${uuid}`);
+  secret = md5(_seed.toString('base64'));
 }
 
 function login(callback) {
-  if (!secret || !buffer) {
+  if (!secret) {
     return callback(null);
   }
   const config = require('/data/system/openvoice_profile.json');
@@ -41,20 +33,19 @@ function login(callback) {
   }
   const req = https.request({
     method: 'POST',
-    family: 4,
-    host: 'account.service.rokid.com',
-    path: '/bcustomer_login_platform.do',
+    host: 'device-account.rokid.com',
+    path: '/device/login.do',
     headers: {
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': 'application/x-www-form-urlencoded',
     }
   }, (response) => {
-    let list = [];
+    const list = [];
     response.on('data', (chunk) => list.push(chunk));
     response.once('end', () => {
-      const pb = Buffer.concat(list);
+      const body = Buffer.concat(list).toString();
       try {
         const location = '/data/system/openvoice_profile.json';
-        const data = JSON.parse(Response.decode(pb).result);
+        const data = JSON.parse(JSON.parse(body).data);
         const config = require(location);
         config['device_id'] = data.deviceId;
         config['device_type_id'] = data.deviceTypeId;
@@ -78,12 +69,14 @@ function login(callback) {
       return setTimeout(() => login(callback), 3000);
     }
   });
-  req.on('error', () => {
-    setTimeout(() => {
-      login(callback);
-    }, 5000);
-  });
-  req.write(buffer);
+  
+  const time = Math.floor(Date.now() / 1000);
+  const sign = md5(`${secret}${uuid}${time}${secret}`);
+  req.write(qs.stringify({
+    deviceId: uuid,
+    time,
+    sign,
+  }));
   req.end();
 }
 
