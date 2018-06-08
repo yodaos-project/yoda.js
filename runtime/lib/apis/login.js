@@ -69,11 +69,15 @@ function login(callback) {
       return setTimeout(() => login(callback), 3000);
     }
   });
-  
+ 
+  let type = config['device_type_id'] || '';
+  if (type === 'rokid_test_type_id')
+    type = '';
   const time = Math.floor(Date.now() / 1000);
-  const sign = md5(`${secret}${uuid}${time}${secret}`);
+  const sign = md5(`${secret}${type}${uuid}${time}${secret}`);
   req.write(qs.stringify({
     deviceId: uuid,
+    deviceTypeId: type ? type : undefined,
     time,
     sign,
   }));
