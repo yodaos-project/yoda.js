@@ -380,7 +380,6 @@ class Runtime {
       // TODO(Yorkie): support more options
     }
     clearTimeout(this._volumeTimer);
-    light.rest();
     volume.set(this._vol);
     this._volumeTimer = null;
 
