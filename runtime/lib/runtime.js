@@ -79,6 +79,7 @@ class Runtime {
           context.emitVoiceEvent('pickup start');
           break;
         case 'local awake':
+          logger.info(`local_awake on ${sl}`);
           light.point(sl);
           this._doMute();
         case 'accept':
@@ -358,7 +359,7 @@ class Runtime {
     }
     if (this._volumeTimer !== null) {
       clearTimeout(this._volumeTimer);
-      this._doUnmute();
+      this._doUnmute(true);
     } else {
       this._vol = volume.get();
       volume.set(this._vol * 0.3);
@@ -369,8 +370,9 @@ class Runtime {
   }
   /**
    * @method _doUnmute
+   * @param {Boolean} disableLight
    */
-  _doUnmute() {
+  _doUnmute(disableLight) {
     const triggerAction = context.deviceConfig.triggerAction;
     if (triggerAction && triggerAction !== 'default') {
       if (triggerAction === 'disable')
@@ -381,6 +383,9 @@ class Runtime {
     light.rest();
     volume.set(this._vol);
     this._volumeTimer = null;
+
+    if (!disableLight)
+      light.rest();
   }
   /**
    * @method _doRound

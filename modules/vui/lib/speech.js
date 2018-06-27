@@ -155,6 +155,9 @@ class SpeechService extends EventEmitter {
     this._handle.on('voice coming', (event) => {
       this.emit('voice', event.turenId, 'coming', event.sl, event.energy);
     });
+    this._handle.on('voice local awake', (event) => {
+      this.emit('voice', event.turenId, 'local awake', event.sl, event.energy);
+    });
     this._handle.on('voice start', (event) => {
       this.emit('voice', event.turenId, 'start');
     });
