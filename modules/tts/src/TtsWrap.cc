@@ -145,18 +145,7 @@ NAN_METHOD(TtsWrap::Reconnect) {
   if (tts->initialized) {
     tts_destory();
   }
-  struct tts_callback func = { 
-    onstart,
-    oncancel,
-    oncomplete,
-    onerror
-  };
-  // start init
-  int r = tts_init();
-  if (r != -1) {
-    tts->initialized = true;
-    tts_set(&func);
-  }
+  tts->start();
 }
 
 void InitModule(Handle<Object> target) {
