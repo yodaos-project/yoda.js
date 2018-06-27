@@ -48,8 +48,8 @@ The `activation` is the main process, alternatively a D-BUS service `com.rokid.a
 #### NLP Dispatcher
 
 - [ ] Voice event: To view voice event, please click the [Rokid/node-turen](https://github.com/Rokid/node-turen/blob/master/lib/events.json) for details.
-- [ ] Skill Stack: See below.
-- [ ] App Lifecycle: See below.
+- [x] Skill Stack: See below.
+- [x] App Lifecycle: See below.
 - [ ] App Permission: See below.
 - [ ] Service: See below.
 
@@ -148,7 +148,7 @@ And the following are current services to be implemented:
   - [ ] `wifi` supports list available WIFI, connect and disconnect.
   - [ ] `input` supports an input key EventHub.
   - [ ] `battery` gets the battery status.
-- [ ] Speech
+- [x] Speech
   - [x] [`turen`](https://github.com/Rokid/node-turen) provides the elegant API for getting voice & NLP events.
 - [ ] User Interface
   - [ ] `light` is a engine to run our `.led` files.
