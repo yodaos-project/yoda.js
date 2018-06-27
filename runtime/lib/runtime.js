@@ -76,14 +76,15 @@ class Runtime {
       }
       switch (event) {
         case 'coming':
+          context.emitVoiceEvent('pickup start');
+          break;
+        case 'local awake':
           light.point(sl);
           this._doMute();
-          break;
         case 'accept':
         case 'start':
           // FIXME(Yorkie): move "mute" to "coming" event
           // this._doMute();
-          context.emitVoiceEvent('pickup start');
           break;
         case 'reject':
         case 'local sleep':
