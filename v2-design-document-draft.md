@@ -1,4 +1,19 @@
-## RokidOS v2.0.0 Design Document Draft
+## RokidOS v2 Design Document Draft
+
+The RokidOS v2's design principle is embrace the Web community mainly. We redesign most packages by embracing the Web API like:
+
+- `Event`, `KeyboardEvent`, `UIEvent`
+- `Bluetooth`
+- `SpeechSynthesis`
+- `SpeechRecognition`
+- `MediaSource`, `MediaStream`
+- `NetworkInformation`
+- `Storage`
+  - `window.localStorage`
+  - `window.sessionStorage`
+- `WebSocket`
+
+We chooses Web API than Node.js, which doesn't mean drop up the Node.js ecosystem, all modules are still a Node.js package, but we encapsulate them in the `activation` process in Web API, which means anyone are able to access modules by the global object `window` just like in browser what you do.
 
 ### Supported Apps
 
@@ -21,12 +36,38 @@ And the built-ins apps list is:
 
 ### Configuration
 
-- [ ] *Device Name Prefix*: the name rule is `${namePrefix}-${sn.slice(-6)}`.
-- [ ] *Trigger Words*: customize your trigger word.
-- [ ] *Skill System*: if enable the skill system.
-- [ ] *How to config light effect?*
-- [ ] *How to config sound effect?*
-- [ ] *How to config key input events?*
+- [ ] `namePrefix` the device name rule is `${namePrefix}-${sn.slice(-6)}`.
+- [ ] `triggerWords` customize your trigger words.
+  - [ ] `pinyin` the pinyin of your words.
+  - [ ] `text` the text of your words.
+- [ ] `tts` customize your tts features.
+  - [ ] `declaimer` the tts tone, like `rokid`, `xmly` and etc.
+  - [ ] `speecd` the default speaking speed.
+- [ ] `network`
+  - [ ] `autoConnectInterval` the interval to reconnect the networking auto.
+- [ ] `bluetooth`
+  - [ ] `ttl` time to live for BLE module.
+- [ ] `sounds`
+  - [ ] `BOOT_SETUP` When system is up.
+  - [ ] `BOOT_RESET_SETTINGS` When system is reset settings.
+  - [ ] `NETWORK_SETUP` When network is setup.
+  - [ ] `WIFI_PREPARED_INFO` When WI-FI is prepared and information ready.
+  - [ ] `WIFI_CONNECT_FAILED` When WI-FI connection failed.
+  - [ ] `BLUETOOTH_BLE_CONNECTED` When BLE is connected.
+  - [ ] `BLUETOOTH_OPEN` When bluetooth opens.
+  - [ ] `LOCAL_AWAKE` When local awake.
+
+**Customize key event handler**
+
+A script at `/data/system/event-handler.js` should be proceed like the following:
+
+```js
+window.onkeyup = function(event) {
+  if (event.code === 99) {
+    SpeechSynthesisUtterance.volume = 99; // this sets the volume of TTS channel.
+  }
+};
+```
 
 ### Activation Runtime
 
