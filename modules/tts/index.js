@@ -97,8 +97,10 @@ class TTSDispatcher {
 const _ttsdispatcher = new TTSDispatcher();
 
 function init() {
-  if (_ttsdispatcher)
-    _ttsdispatcher.reconnect();
+  _ttsdispatcher.reconnect();
+  return new Promise((resolve, reject) => {
+    _ttsdispatcher.once('ready', resolve);
+  });
 }
 
 /**
@@ -107,9 +109,6 @@ function init() {
  * @param {Function} callback
  */
 function say(text, callback) {
-  if (!_ttsdispatcher) {
-    init();
-  }
   const tts = _ttsdispatcher.say(text);
   context.emitVoiceEvent('tts start', text);
 
@@ -130,9 +129,6 @@ function say(text, callback) {
 }
 
 function resume() {
-  if (!_ttsdispatcher) {
-    init();
-  }
   _ttsdispatcher.resume();
 }
 
@@ -140,9 +136,6 @@ function resume() {
  * @method stop - stop all tts tasks
  */
 function stop() {
-  if (!_ttsdispatcher) {
-    init();
-  }
   _ttsdispatcher.stopAll();
 }
 

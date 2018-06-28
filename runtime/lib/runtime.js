@@ -218,6 +218,7 @@ class Runtime {
     }
     process.title = 'vui';
     wifi.res_init();
+
     this._online = true;
     this._speech.exitCurrent();
     // login
@@ -232,7 +233,7 @@ class Runtime {
         }
       })
       .then(() => {
-        tts.init();
+        return tts.init();
       })
       .then(() => {
         this._startSpeech();

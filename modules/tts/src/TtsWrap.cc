@@ -60,6 +60,7 @@ TtsWrap::~TtsWrap() {
 }
 
 void TtsWrap::start() {
+  this->initialized = false;
   this->worker.data = (void*)this;
   uv_queue_work(
     uv_default_loop(),
