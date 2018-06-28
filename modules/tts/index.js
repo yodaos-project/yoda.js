@@ -39,12 +39,14 @@ class TextToSpeech extends EventEmitter {
 
 /**
  * @class TTSDispatcher
+ * @extends EventEmitter
  */
-class TTSDispatcher {
+class TTSDispatcher extends EventEmitter {
   /**
    * @method constructor
    */
   constructor() {
+    super();
     this._tts = new TtsWrap(this._onEvent.bind(this));
     this._last = null;
     this._tasks = {};
@@ -79,6 +81,9 @@ class TTSDispatcher {
    * @method _onEvent
    */
   _onEvent(event, id, err) {
+    if (event === 'ready') {
+      return this.emit('ready');
+    }
     const task = this._tasks[id];
     if (!task) {
       console.error('could not find this task with id: ' + id + ' at event: ' + event);
