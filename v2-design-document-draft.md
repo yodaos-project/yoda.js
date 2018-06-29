@@ -92,6 +92,7 @@ The `activation` is the main process, alternatively a D-BUS service `com.rokid.a
 - [x] Skill Stack: See below.
 - [x] App Lifecycle: See below.
 - [ ] App Permission: See below.
+- [ ] Crontab: See below.
 - [ ] Service: See below.
 
 **Skill Stack**
@@ -139,6 +140,16 @@ The below table defines the available permissions:
 
 > The above list are not complete, and very straightforward.
 
+**Crontab**
+
+NLP Dispatcher exposes the API for Crontab service to provide reliable and persistent timer functions.
+
+- [ ] `enqueue(expr, data)` enqueue a task.
+  - `expr` {String} the crontab expr for when to trigger.
+  - `data` {Object} the context data.
+- [ ] `cancel(handle)` cancel a task.
+- [ ] `list()` list all tasks.
+
 **Service**
 
 The `service` context API has the following methods:
@@ -147,10 +158,6 @@ The `service` context API has the following methods:
 - `sleep()` pops the `service` and push to the bottom of stack.
 
 Services are used for running sensor handler in background. It requires the permission `ACCESS_SERVICE`.
-
-#### KeyEvent Manager
-
-> TODO
 
 #### Remote Channel
 
