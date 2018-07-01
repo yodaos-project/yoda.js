@@ -5,7 +5,7 @@ add_library(tts_nodejs MODULE binding)
 target_include_directories(tts_nodejs
   PRIVATE ${CMAKE_INCLUDE_DIR} ${CMAKE_INCLUDE_DIR}/shadow-node)
 
-target_link_libraries(tts_nodejs -lspeech)
+target_link_libraries(tts_nodejs speech opus pulse-simple)
 set_target_properties(tts_nodejs PROPERTIES
   PREFIX ""
   SUFFIX ".node"

@@ -4,60 +4,60 @@ project(rokidos_nodejs)
 include(ExternalProject)
 
 # Bluetooth
-ExternalProject_Add(bluetooth
-  SOURCE_DIR packages/bluetooth
-  CMAKE_ARGS
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+# ExternalProject_Add(bluetooth
+#   SOURCE_DIR packages/bluetooth
+#   CMAKE_ARGS
+#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # Input
-ExternalProject_Add(input
-  SOURCE_DIR packages/input
-  CMAKE_ARGS
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+# ExternalProject_Add(input
+#   SOURCE_DIR packages/input
+#   CMAKE_ARGS
+#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # Light
-ExternalProject_Add(light
-  SOURCE_DIR packages/light
-  CMAKE_ARGS
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+# ExternalProject_Add(light
+#   SOURCE_DIR packages/light
+#   CMAKE_ARGS
+#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # Multimedia
-ExternalProject_Add(multimedia
-  SOURCE_DIR packages/multimedia
-  CMAKE_ARGS
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+# ExternalProject_Add(multimedia
+#   SOURCE_DIR packages/multimedia
+#   CMAKE_ARGS
+#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # Network
-ExternalProject_Add(network
-  SOURCE_DIR packages/network
-  CMAKE_ARGS
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+# ExternalProject_Add(network
+#   SOURCE_DIR packages/network
+#   CMAKE_ARGS
+#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # Property
-ExternalProject_Add(property
-  SOURCE_DIR packages/property
-  CMAKE_ARGS
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+# ExternalProject_Add(property
+#   SOURCE_DIR packages/property
+#   CMAKE_ARGS
+#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # System
-ExternalProject_Add(system
-  SOURCE_DIR packages/system
-  CMAKE_ARGS
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+# ExternalProject_Add(system
+#   SOURCE_DIR packages/system
+#   CMAKE_ARGS
+#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # TextToSpeech
 ExternalProject_Add(tts
@@ -68,9 +68,9 @@ ExternalProject_Add(tts
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # Volume Controls
-ExternalProject_Add(volume
-  SOURCE_DIR packages/volume
-  CMAKE_ARGS
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+# ExternalProject_Add(volume
+#   SOURCE_DIR packages/volume
+#   CMAKE_ARGS
+#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
