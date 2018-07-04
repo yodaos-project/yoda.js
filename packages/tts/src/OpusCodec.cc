@@ -1,8 +1,8 @@
 #include "cutils/log.h"
-#include "RKTtsOpus.h"
 #include "utils/Log.h"
 #include "utils/misc.h"
 #include <cstdlib>
+#include "OpusCodec.h"
 
 typedef struct {
   OpusEncoder* enc;

@@ -7,8 +7,8 @@
 
 class OpusPlayer {
  public:
-  RKTtsPlayer();
-  ~RKTtsPlayer();
+  OpusPlayer();
+  ~OpusPlayer();
   
   void play(const char* data, size_t length);
   void reset();

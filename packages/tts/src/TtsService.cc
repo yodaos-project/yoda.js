@@ -16,7 +16,7 @@ TtsService::TtsService() {
 
 int TtsService::speak(const char* content) {
   if (!prepared) {
-    return -1007;
+    return TTS_NOT_PREPARED;
   }
   int id = tts_handle->speak(content);
   return id;
@@ -24,54 +24,61 @@ int TtsService::speak(const char* content) {
 
 int TtsService::cancel(int id) {
   if (!prepared) {
-    return -1007;
+    return TTS_NOT_PREPARED;
   }
-  _tts_sdk->cancel(id);
+  tts_handle->cancel(id);
   _player.reset();
 }
 
-static void* TtsService::PollEvent(void* params) {
+int TtsService::disconnect() {
+  if (!prepared) {
+    return 0;
+  }
+  if (tts_handle)
+    tts_handle->release();
+  _player.reset();
+  prepared = false;
+  return 0;
+}
+
+void* TtsService::PollEvent(void* params) {
   TtsResult res;
   TtsService* self = (TtsService*)params;
 
   while (true) {
     if (!self->tts_handle->poll(res) ) {
-      RKError("tts poll failed");
+      // RKError("tts poll failed");
       break;
     }
     switch (res.type) {
-      case 0:
+      case TTS_RES_VOICE: {
         size_t size = res.voice.get()->size();
         if (size > 0) {
-          _player.play( res.voice.get()->data(), size );
+          _player.play(res.voice.get()->data(), size);
         } else {
-          RKError("voice size==0");
+          // RKError("voice size==0");
         }
         break;
-      case 1:
-        context->post("onStartTTS", [=](RKLuaStream& args) {
-          args.Integer(res.id);
-        });
+      }
+      case TTS_RES_START: {
+        self->sendEvent(TTS_RES_START, res.id, NULL);
         break;
-      case 2:
-        context->post("onCompleteTTS", [=](RKLuaStream& args) {
-          args.Integer(res.id);
-        });
+      }
+      case TTS_RES_END: {
+        self->sendEvent(TTS_RES_END, res.id, NULL);
         break;
-      case 3:
-        context->post("onCancelTTS", [=](RKLuaStream& args) {
-          args.Integer(res.id);
-        });
+      }
+      case TTS_RES_CANCELLED: {
+        self->sendEvent(TTS_RES_CANCELLED, res.id, NULL);
         break;
-      case 4:
-        context->post("onErrorTTS", [=](RKLuaStream& args) {
-          args.Integer(res.id);
-          args.Integer(res.err);
-        });
+      }
+      case TTS_RES_ERROR: {
+        self->sendEvent(TTS_RES_ERROR, res.id, res.err);
         break;
+      }
     }
   }
-  tts->_tts_sdk->release();
+  self->tts_handle->release();
   return NULL;
 }
 
@@ -107,7 +114,7 @@ bool TtsService::prepare(const char* host,
     !tts_handle->prepare(options)) {
     goto terminate;
   }
-  tts_handle->set_codec(Codec::OPU2);
+  tts_options->set_codec(Codec::OPU2);
   tts_handle->config(tts_options);
 
   if (pthread_create(&polling, NULL, TtsService::PollEvent, this)) {
@@ -121,16 +128,4 @@ terminate:
   if (tts_handle)
     tts_handle->release();
   return false;
-}
-
-bool TtsService::stop() {
-  if (!prepared) {
-    return true;
-  }
-  if (tts_handle)
-    tts_handle->release();
-  if (_player)
-    _player.reset();
-  prepared = false;
-  return true;
 }

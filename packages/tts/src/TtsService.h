@@ -1,8 +1,7 @@
 #ifndef TTS_SERVICE_H
 #define TTS_SERVICE_H
 
-#include <pthread>
-#include <stdlib>
+#include <stdlib.h>
 #include <map>
 #include <list>
 #include <string>
@@ -13,9 +12,17 @@ using namespace std;
 using namespace rokid;
 using namespace speech;
 
+enum TtsStatusCode {
+  TTS_OK = 0,
+  TTS_NOT_PREPARED,
+  TTS_ERROR,
+};
+
 class TtsService {
  public:
   TtsService();
+  ~TtsService();
+
   bool prepare(const char* host,
                int port,
                const char* branch,
@@ -25,10 +32,13 @@ class TtsService {
                const char* secret,
                const char* declaimer);
   int speak(const char*);
-  void cancel(int id);
-  void disconnect();
+  int cancel(int id);
+  int disconnect();
 
   static void* PollEvent(void* params);
+
+ protected:
+  void sendEvent(TtsResultType event, int id, int code);
 
  private:
   bool prepared = false;
