@@ -1,15 +1,24 @@
 cmake_minimum_required(VERSION 3.0)
-project(tts_nodejs C)
+project(node-tts CXX)
+set(CMAKE_CXX_STANDARD 11)
 
-add_library(tts_nodejs MODULE binding)
-target_include_directories(tts_nodejs
-  PRIVATE ${CMAKE_INCLUDE_DIR} ${CMAKE_INCLUDE_DIR}/shadow-node)
+add_library(node-tts MODULE
+  src/TtsNative.cc
+  src/TtsService.cc
+  src/OpusCodec.cc
+  src/OpusPlayer.cc
+)
+target_include_directories(node-tts PRIVATE
+  ${CMAKE_INCLUDE_DIR}/include
+  ${CMAKE_INCLUDE_DIR}/usr/include
+  ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
+)
 
-target_link_libraries(tts_nodejs -lspeech)
-set_target_properties(tts_nodejs PROPERTIES
+target_link_libraries(node-tts pthread speech opus pulse-simple)
+set_target_properties(node-tts PROPERTIES
   PREFIX ""
   SUFFIX ".node"
-  OUTPUT_NAME "recovery"
+  OUTPUT_NAME "tts"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS tts_nodejs DESTINATION ${CMAKE_INSTALL_DIR})
+install(TARGETS node-tts DESTINATION ${CMAKE_INSTALL_DIR})
