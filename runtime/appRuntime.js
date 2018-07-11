@@ -27,7 +27,7 @@ function App(arr) {
   this.tts = new TTS(this.permission);
   // 加载APP
   this.loadApp(arr, function () {
-    console.log('load app complete');
+    logger.log('load app complete');
   });
   this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
@@ -184,7 +184,7 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
       action: action
     }
   } catch (error) {
-    console.log('invalid nlp/action, ignore');
+    logger.log('invalid nlp/action, ignore');
     return;
   }
   // 命中的是当前运行的App
@@ -193,18 +193,18 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
   } else {
     // 如果当前NLP是scene，则退出所有App
     if (data.form === 'scene') {
-      console.log('debug: destroy all app');
+      logger.log('debug: destroy all app');
       this.destroyAll();
     } else {
       var last = this.getCurrentAppData();
       if (last) {
         // 如果正在运行的App不是scene，则停止该App
         if (last.form !== 'scene') {
-          console.log('debug: destroy current app');
+          logger.log('debug: destroy current app');
           this.lifeCycle('destroy', last);
           // 否则暂停该App
         } else {
-          console.log('debug: pause current app');
+          logger.log('debug: pause current app');
           this.lifeCycle('pause', last);
         }
       }
@@ -293,7 +293,7 @@ App.prototype.destroyAll = function () {
  * @param {object} AppData 服务端返回的NLP
  */
 App.prototype.lifeCycle = function (name, AppData) {
-  console.log('lifeCycle: ', name);
+  logger.log('lifeCycle: ', name);
   // 注意：创建应用实例的时候，是使用@cloud的。后续操作都使用NLP的AppID
   var appId = AppData.cloud === true ? '@cloud' : AppData.appId;
   var app = null;
@@ -310,7 +310,7 @@ App.prototype.lifeCycle = function (name, AppData) {
         this.appDataMap[appId] = AppData;
       }
     } else {
-      console.log('not find appid: ', appId);
+      logger.log('not find appid: ', appId);
     }
   } else {
     app = this.getCurrentApp();
@@ -364,6 +364,14 @@ App.prototype.updateStack = function () {
 };
 
 /**
+ * 调用speech的pickup
+ * @param {boolean} isPickup 
+ */
+App.prototype.setPickup = function (isPickup) {
+  this.emit('setPickup', isPickup);
+};
+
+/**
  * 退出App。由应用自身在退出时手动调用，向系统表明该应用可以被销毁了
  * @param {string} appId extapp的AppID
  */
@@ -385,7 +393,7 @@ App.prototype.exitAppById = function (appId) {
  * @param {object} profile extapp的profile
  */
 App.prototype.registerExtApp = function (appId, profile) {
-  console.log('register extapp with id: ', appId);
+  logger.log('register extapp with id: ', appId);
   // 配置exitApp的默认权限
   this.permission.load(appId, ['tts', 'audio']);
   this.apps[appId] = new AppExecutor(profile);
@@ -436,6 +444,17 @@ App.prototype.startExtappService = function () {
   }, function (appId, cb) {
     cb(null);
   });
+  extappApis.addMethod('setPickup', {
+    in: ['s', 's'],
+    out: []
+  }, function (appId, isPickup, cb) {
+    if (appId !== self.getCurrentAppId()) {
+      cb(new Error('permission deny'));
+    } else {
+      self.setPickup(isPickup === 'true' ? true : false);
+      cb(null);
+    }
+  });
   extappApis.addMethod('exit', {
     in: ['s'],
     out: []
@@ -462,10 +481,10 @@ App.prototype.startExtappService = function () {
     var handle = self.tts.say(appId, text, function (err) {
       // 播放错误
       if (err) {
-        console.log('tts say error:', err);
+        logger.log('tts say error:', err);
         cb(err, '');
       } else {
-        console.log('tts say complete. signal');
+        logger.log('tts say complete. signal');
         // 播放完成
         self.dbusClient._dbus.emitSignal(
           self.dbusClient.connection,
@@ -479,7 +498,7 @@ App.prototype.startExtappService = function () {
     });
     // 如果开始播放，返回播放的句柄
     if (handle !== undefined) {
-      console.log('tts handle:', handle);
+      logger.log('tts handle:', handle);
       cb(null, handle);
     }
   })
