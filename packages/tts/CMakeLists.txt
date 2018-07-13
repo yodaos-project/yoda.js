@@ -14,7 +14,7 @@ target_include_directories(node-tts PRIVATE
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
 )
 
-target_link_libraries(node-tts pthread speech opus pulse-simple)
+target_link_libraries(node-tts iotjs pthread speech opus pulse-simple)
 set_target_properties(node-tts PROPERTIES
   PREFIX ""
   SUFFIX ".node"
