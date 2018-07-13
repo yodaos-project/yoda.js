@@ -2,8 +2,6 @@
 #define TTS_SERVICE_H
 
 #include <stdlib.h>
-#include <map>
-#include <list>
 #include <string>
 #include <speech/tts.h>
 #include "OpusPlayer.h"
