@@ -191,6 +191,12 @@ JS_FUNCTION(Disconnect) {
   return JS_GET_THIS();
 }
 
+JS_FUNCTION(IdGetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+  return jerry_create_number(_this->id);
+}
+
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(Player);
   iotjs_jval_set_property_jval(exports, "Player", jconstructor);
@@ -201,6 +207,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "stop", Stop);
   iotjs_jval_set_method(proto, "pause", Pause);
   iotjs_jval_set_method(proto, "resume", Resume);
+  // the following methods are for getters and setters internally
+  iotjs_jval_set_method(proto, "idGetter", IdGetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
   jerry_release_value(proto);
