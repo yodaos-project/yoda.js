@@ -2,6 +2,9 @@
 #include <cutils/properties.h>
 
 JS_FUNCTION(GetProperty) {
+  if (!jerry_value_is_string(jargv[0]))
+    return JS_CREATE_ERROR(COMMON, "key must be a string");
+
   jerry_size_t keylen = jerry_get_string_size(jargv[0]);
   char key[keylen];
   
@@ -15,8 +18,15 @@ JS_FUNCTION(GetProperty) {
 }
 
 JS_FUNCTION(SetProperty) {
+  if (!jerry_value_is_string(jargv[0]))
+    return JS_CREATE_ERROR(COMMON, "key must be a string");
+
+  jerry_value_t jval = jargv[1];
+  if (!jerry_value_is_string(jval)) {
+    jval = jerry_value_to_string(jval);
+  }
   jerry_size_t keylen = jerry_get_string_size(jargv[0]);
-  jerry_size_t vallen = jerry_get_string_size(jargv[1]);
+  jerry_size_t vallen = jerry_get_string_size(jval);
   if (vallen > PROP_VALUE_MAX)
     vallen = PROP_VALUE_MAX;
 
@@ -25,7 +35,7 @@ JS_FUNCTION(SetProperty) {
 
   jerry_string_to_char_buffer(jargv[0], (jerry_char_t*)key, keylen);
   key[keylen] = '\0';
-  jerry_string_to_char_buffer(jargv[1], (jerry_char_t*)val, vallen);
+  jerry_string_to_char_buffer(jval, (jerry_char_t*)val, vallen);
   val[vallen] = '\0';
   property_set((char*)&key, (char*)&val);
   return jerry_create_boolean(true);
