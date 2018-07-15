@@ -10,6 +10,7 @@ enum PlayerEventType {
 };
 
 void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
+  printf("got event %d thread %d\n", type, from);
   if (type == MULTIMEDIA_PLAYER_PREPARED) {
     this->prepared = true;
   }
@@ -41,12 +42,18 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
     return;
   }
 
-  iotjs_jargs_t jargv = iotjs_jargs_create(4);
-  iotjs_jargs_append_number(&jargv, (double)event->type);
-  iotjs_jargs_append_number(&jargv, (double)event->ext1);
-  iotjs_jargs_append_number(&jargv, (double)event->ext2);
-  iotjs_jargs_append_number(&jargv, (double)event->from);
-  iotjs_make_callback(notifyFn, jthis, &jargv);
+  uint32_t jargc = 4;
+  jerry_value_t jargv[jargc] = {
+    jerry_create_number((double)event->type),
+    jerry_create_number((double)event->ext1),
+    jerry_create_number((double)event->ext2),
+    jerry_create_number((double)event->from),
+  };
+  jerry_call_function(notifyFn, jerry_create_undefined(), jargv, jargc);
+  
+  for (int i = 0; i < jargc; i++) {
+    jerry_release_value(jargv[i]);
+  }
   delete handle;
   delete event;
 }
@@ -68,7 +75,8 @@ static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_player_t, player_wrap);
 
   static uint32_t global_id = 1000;
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jplayer, &this_module_native_info);
+  jerry_value_t jobjectref = jerry_acquire_value(jplayer); // TODO: find someway to release this
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jobjectref, &this_module_native_info);
   _this->handle = NULL;
   _this->listener = new MultimediaListener(player_wrap);
   _this->id = (global_id++);
@@ -76,6 +84,7 @@ static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
 }
 
 static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
+  fprintf(stdout, "player instance is destroyed\n");
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_player_t, player_wrap);
   delete _this->handle;
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
