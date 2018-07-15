@@ -1,12 +1,60 @@
 #include "MultimediaNative.h"
-#include <uv.h>
 
-void MultimediaListener::notify(int msg, int ext1, int ext2, int from) {
-  // TODO
+enum PlayerEventType {
+  MULTIMEDIA_PLAYER_NOOP		 = 0,
+  MULTIMEDIA_PLAYER_PREPARED 		 = 1,
+  MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE    = 2,
+  MULTIMEDIA_BUFFERING_UPDATE            = 3,
+  MULTIMEDIA_SEEK_COMPLETE 		 = 4,
+  MULTIMEDIA_ERROR             		 = 100,
+};
+
+void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
+  if (type == MULTIMEDIA_PLAYER_PREPARED) {
+    this.prepared = true;
+  }
+  if (this.prepared) {
+    // only if prepared, enables the notify
+    uv_async_t* async_handle = new uv_async_t;
+    iotjs_player_event_t* event = new iotjs_player_event_t;
+    event->player = this->getPlayer();
+    event->type = type;
+    event->ext1 = ext1;
+    event->ext2 = ext2;
+    event->from = from;
+    async_handle->data = (void*)event;
+    uv_async_init(uv_default_loop(), async_handle, MultimediaListener::DoNotify);
+    uv_async_send(async_handle);
+  }
+}
+
+static void MultimediaListener::DoNotify(uv_async_t* handle) {
+  iotjs_player_event_t* event = (iotjs_player_event_t*)handle->data;
+  iotjs_player_t* player_wrap = event->player;
+
+  jerry_value_t jthis = iotjs_jobjectwrap_jobject(player_wrap);
+  jerry_value_t notifyFn = iotjs_jval_get_property(jthis, "onevent");
+  if (!jerry_value_is_function(notifyFn) {
+    fprintf(stderr, "no onevent function is registered\n");
+    return JS_CREATE_ERROR(COMMON, "no onevent function is registered");
+  }
+
+  iotjs_jargs_t jargv = iotjs_jargs_create(4);
+  iotjs_jargs_append_number(&jargv, (double)event->type);
+  iotjs_jargs_append_number(&jargv, (double)event->ext1);
+  iotjs_jargs_append_number(&jargv, (double)event->ext2);
+  iotjs_jargs_append_number(&jargv, (double)event->from);
+  iotjs_make_callback(notifyFn, jthis, jargv);
+  delete handle;
+  delete event;
 }
 
 bool MultimediaListener::isPrepared() {
   return this->prepared;
+}
+
+iotjs_player_t* MultimediaListener::getPlayer() {
+  return this->player;
 }
 
 static JNativeInfoType this_module_native_info = {
@@ -17,9 +65,11 @@ static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
   iotjs_player_t* player_wrap = IOTJS_ALLOC(iotjs_player_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_player_t, player_wrap);
 
+  static uint32_t global_id = 1000;
   iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jplayer, &this_module_native_info);
   _this->handle = NULL;
-  _this->listener = new MultimediaListener();
+  _this->listener = new MultimediaListener(player_wrap);
+  _this->id = (global_id++);
   return player_wrap;
 }
 
@@ -112,6 +162,19 @@ JS_FUNCTION(Pause) {
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->pause();
+  return JS_GET_THIS();
+}
+
+JS_FUNCTION(Resume) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  if (_this->handle == NULL)
+    return JS_CREATE_ERROR(COMMON, "player native handle is not initialized");
+  if (!_this->listener->isPrepared())
+    return JS_CREATE_ERROR(COMMON, "player is not prepared");
+
+  _this->handle->resume();
   return JS_GET_THIS();
 }
 
