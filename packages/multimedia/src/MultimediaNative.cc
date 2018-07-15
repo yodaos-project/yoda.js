@@ -28,15 +28,17 @@ void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
   }
 }
 
-static void MultimediaListener::DoNotify(uv_async_t* handle) {
+void MultimediaListener::DoNotify(uv_async_t* handle) {
   iotjs_player_event_t* event = (iotjs_player_event_t*)handle->data;
   iotjs_player_t* player_wrap = event->player;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
 
-  jerry_value_t jthis = iotjs_jobjectwrap_jobject(player_wrap);
+  jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
   jerry_value_t notifyFn = iotjs_jval_get_property(jthis, "onevent");
-  if (!jerry_value_is_function(notifyFn) {
+  if (!jerry_value_is_function(notifyFn)) {
     fprintf(stderr, "no onevent function is registered\n");
-    return JS_CREATE_ERROR(COMMON, "no onevent function is registered");
+    JS_CREATE_ERROR(COMMON, "no onevent function is registered");
+    return;
   }
 
   iotjs_jargs_t jargv = iotjs_jargs_create(4);
@@ -44,7 +46,7 @@ static void MultimediaListener::DoNotify(uv_async_t* handle) {
   iotjs_jargs_append_number(&jargv, (double)event->ext1);
   iotjs_jargs_append_number(&jargv, (double)event->ext2);
   iotjs_jargs_append_number(&jargv, (double)event->from);
-  iotjs_make_callback(notifyFn, jthis, jargv);
+  iotjs_make_callback(notifyFn, jthis, &jargv);
   delete handle;
   delete event;
 }
@@ -184,7 +186,7 @@ JS_FUNCTION(Disconnect) {
 
   if (_this->handle == NULL)
     return JS_CREATE_ERROR(COMMON, "player native handle is not initialized");
-  if (!_this->handle->isPrepared())
+  if (!_this->listener->isPrepared())
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->disconnect();
