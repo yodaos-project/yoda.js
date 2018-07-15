@@ -27,7 +27,7 @@ typedef struct {
 
 typedef struct {
   iotjs_player_t* player;
-  int event;
+  int type;
   int ext1;
   int ext2;
   int from;
