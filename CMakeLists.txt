@@ -37,21 +37,15 @@ ExternalProject_Add(light
 #     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
 #     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
-# Network
-# ExternalProject_Add(network
-#   SOURCE_DIR packages/network
-#   CMAKE_ARGS
-#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
-
 # Property
-# ExternalProject_Add(property
-#   SOURCE_DIR packages/property
-#   CMAKE_ARGS
-#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+ExternalProject_Add(property
+  SOURCE_DIR packages/property
+  CMAKE_ARGS
+    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
 # System
 # ExternalProject_Add(system
