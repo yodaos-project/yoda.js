@@ -13,8 +13,10 @@ extern "C"
 #include <iotjs_def.h>
 #include <iotjs_binding.h>
 #include <iotjs_objectwrap.h>
-#include <mediaplayer.h>
+#include <librplayer/mediaplayer.h>
 #include <uv.h>
+
+class MultimediaListener;
 
 typedef struct {
   iotjs_jobjectwrap_t jobjectwrap;
@@ -29,7 +31,7 @@ typedef struct {
   int ext1;
   int ext2;
   int from;
-} iotjs_player_event_s iotjs_player_event_t;
+} iotjs_player_event_t;
 
 /**
  * @class MultimediaListener
@@ -54,7 +56,7 @@ class MultimediaListener : public MediaPlayerListener {
    * @param {Integer} from - the notify from thread
    */
   void notify(int msg, int ext1, int ext2, int from);
-  static DoNotify(uv_async_t* handle);
+  static void DoNotify(uv_async_t* handle);
   /**
    * @method isPrepared
    * @return {Boolean} if the player is prepared

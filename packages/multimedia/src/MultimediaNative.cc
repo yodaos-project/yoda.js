@@ -11,9 +11,9 @@ enum PlayerEventType {
 
 void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
   if (type == MULTIMEDIA_PLAYER_PREPARED) {
-    this.prepared = true;
+    this->prepared = true;
   }
-  if (this.prepared) {
+  if (this->prepared) {
     // only if prepared, enables the notify
     uv_async_t* async_handle = new uv_async_t;
     iotjs_player_event_t* event = new iotjs_player_event_t;
@@ -179,8 +179,8 @@ JS_FUNCTION(Resume) {
 }
 
 JS_FUNCTION(Disconnect) {
-  JS_DECLARE_THIS_PTR(tts, tts);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, tts);
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
 
   if (_this->handle == NULL)
     return JS_CREATE_ERROR(COMMON, "player native handle is not initialized");
