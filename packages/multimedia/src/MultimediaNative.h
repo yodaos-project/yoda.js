@@ -14,17 +14,37 @@ extern "C"
 #include <iotjs_binding.h>
 #include <iotjs_objectwrap.h>
 #include <mediaplayer.h>
+#include <uv.h>
+
+typedef struct {
+  iotjs_jobjectwrap_t jobjectwrap;
+  MediaPlayer* handle;
+  MultimediaListener* listener;
+  uint32_t id;
+} IOTJS_VALIDATED_STRUCT(iotjs_player_t);
+
+typedef struct {
+  iotjs_player_t* player;
+  int event;
+  int ext1;
+  int ext2;
+  int from;
+} iotjs_player_event_s iotjs_player_event_t;
 
 /**
  * @class MultimediaListener
  */
 class MultimediaListener : public MediaPlayerListener {
  public:
-  MultimediaListener() {
+  MultimediaListener(iotjs_player_t* player_) {
     prepared = false;
+    player = player_;
   };
-  ~MultimediaListener() {};
- 
+  ~MultimediaListener() {
+    prepared = false;
+    player = NULL;
+  };
+  
  public:
   /**
    * @method notify
@@ -34,22 +54,22 @@ class MultimediaListener : public MediaPlayerListener {
    * @param {Integer} from - the notify from thread
    */
   void notify(int msg, int ext1, int ext2, int from);
+  static DoNotify(uv_async_t* handle);
   /**
    * @method isPrepared
    * @return {Boolean} if the player is prepared
    */
   bool isPrepared();
+  /**
+   * @method getPlayer
+   * @return {iotjs_player_t*}
+   */
+  iotjs_player_t* getPlayer();
 
  private:
   bool prepared;
+  iotjs_player_t* player;
 };
-
-typedef struct {
-  iotjs_jobjectwrap_t jobjectwrap;
-  MediaPlayer* handle;
-  MultimediaListener* listener;
-  uint32_t id;
-} IOTJS_VALIDATED_STRUCT(iotjs_player_t);
 
 static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer);
 static void iotjs_player_destroy(iotjs_player_t* player);
