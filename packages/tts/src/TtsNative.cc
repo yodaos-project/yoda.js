@@ -1,5 +1,9 @@
 #include "TtsNative.h"
 
+void TtsNative::sendEvent(TtsResultType event, int id, int code) {
+  printf("event from ttsnative\n");
+}
+
 static JNativeInfoType this_module_native_info = {
   .free_cb = (jerry_object_native_free_callback_t)iotjs_tts_destroy
 };
