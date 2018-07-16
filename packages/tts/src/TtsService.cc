@@ -10,12 +10,10 @@ using namespace rokid;
 
 static OpusPlayer _player;
 
-TtsService::TtsService() {
-  // TODO
-}
+TtsService::TtsService() {}
 
 TtsService::~TtsService() {
-  // TODO
+  tts_handle->release();
 }
 
 int TtsService::speak(const char* content) {

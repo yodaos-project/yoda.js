@@ -1,0 +1,104 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/bin/nodejs',
+1 verbose cli   '/usr/bin/npm',
+1 verbose cli   'install',
+1 verbose cli   'esdoc',
+1 verbose cli   'esdoc-standard-plugin',
+1 verbose cli   '--save-dev' ]
+2 info using npm@1.3.10
+3 info using node@v0.10.25
+4 warn package.json rokidos@2.0.0 No repository field.
+5 verbose readDependencies using package.json deps
+6 verbose cache add [ 'esdoc', null ]
+7 verbose cache add name=undefined spec="esdoc" args=["esdoc",null]
+8 verbose parsed url { protocol: null,
+8 verbose parsed url   slashes: null,
+8 verbose parsed url   auth: null,
+8 verbose parsed url   host: null,
+8 verbose parsed url   port: null,
+8 verbose parsed url   hostname: null,
+8 verbose parsed url   hash: null,
+8 verbose parsed url   search: null,
+8 verbose parsed url   query: null,
+8 verbose parsed url   pathname: 'esdoc',
+8 verbose parsed url   path: 'esdoc',
+8 verbose parsed url   href: 'esdoc' }
+9 verbose cache add [ 'esdoc-standard-plugin', null ]
+10 verbose cache add name=undefined spec="esdoc-standard-plugin" args=["esdoc-standard-plugin",null]
+11 verbose parsed url { protocol: null,
+11 verbose parsed url   slashes: null,
+11 verbose parsed url   auth: null,
+11 verbose parsed url   host: null,
+11 verbose parsed url   port: null,
+11 verbose parsed url   hostname: null,
+11 verbose parsed url   hash: null,
+11 verbose parsed url   search: null,
+11 verbose parsed url   query: null,
+11 verbose parsed url   pathname: 'esdoc-standard-plugin',
+11 verbose parsed url   path: 'esdoc-standard-plugin',
+11 verbose parsed url   href: 'esdoc-standard-plugin' }
+12 silly lockFile 43bb62e7-esdoc esdoc
+13 verbose lock esdoc /home/yazhong.liu/.npm/43bb62e7-esdoc.lock
+14 silly lockFile 106ea589-esdoc-standard-plugin esdoc-standard-plugin
+15 verbose lock esdoc-standard-plugin /home/yazhong.liu/.npm/106ea589-esdoc-standard-plugin.lock
+16 silly lockFile 43bb62e7-esdoc esdoc
+17 silly lockFile 43bb62e7-esdoc esdoc
+18 silly lockFile 106ea589-esdoc-standard-plugin esdoc-standard-plugin
+19 silly lockFile 106ea589-esdoc-standard-plugin esdoc-standard-plugin
+20 verbose addNamed [ 'esdoc', '' ]
+21 verbose addNamed [ null, '*' ]
+22 silly lockFile ab0b9fda-esdoc esdoc@
+23 verbose lock esdoc@ /home/yazhong.liu/.npm/ab0b9fda-esdoc.lock
+24 verbose addNamed [ 'esdoc-standard-plugin', '' ]
+25 verbose addNamed [ null, '*' ]
+26 silly lockFile 70f15630-esdoc-standard-plugin esdoc-standard-plugin@
+27 verbose lock esdoc-standard-plugin@ /home/yazhong.liu/.npm/70f15630-esdoc-standard-plugin.lock
+28 silly addNameRange { name: 'esdoc', range: '*', hasData: false }
+29 silly addNameRange { name: 'esdoc-standard-plugin', range: '*', hasData: false }
+30 verbose url raw esdoc
+31 verbose url resolving [ 'https://registry.npmjs.org/', './esdoc' ]
+32 verbose url resolved https://registry.npmjs.org/esdoc
+33 info trying registry request attempt 1 at 19:11:44
+34 http GET https://registry.npmjs.org/esdoc
+35 verbose url raw esdoc-standard-plugin
+36 verbose url resolving [ 'https://registry.npmjs.org/', './esdoc-standard-plugin' ]
+37 verbose url resolved https://registry.npmjs.org/esdoc-standard-plugin
+38 info trying registry request attempt 1 at 19:11:44
+39 http GET https://registry.npmjs.org/esdoc-standard-plugin
+40 info retry will retry, error on last attempt: Error: CERT_UNTRUSTED
+41 info retry will retry, error on last attempt: Error: CERT_UNTRUSTED
+42 info trying registry request attempt 2 at 19:11:54
+43 http GET https://registry.npmjs.org/esdoc
+44 info trying registry request attempt 2 at 19:11:54
+45 http GET https://registry.npmjs.org/esdoc-standard-plugin
+46 info retry will retry, error on last attempt: Error: CERT_UNTRUSTED
+47 info retry will retry, error on last attempt: Error: CERT_UNTRUSTED
+48 info trying registry request attempt 3 at 19:12:54
+49 http GET https://registry.npmjs.org/esdoc
+50 info trying registry request attempt 3 at 19:12:54
+51 http GET https://registry.npmjs.org/esdoc-standard-plugin
+52 silly lockFile ab0b9fda-esdoc esdoc@
+53 silly lockFile ab0b9fda-esdoc esdoc@
+54 error Error: CERT_UNTRUSTED
+54 error     at SecurePair.<anonymous> (tls.js:1370:32)
+54 error     at SecurePair.EventEmitter.emit (events.js:92:17)
+54 error     at SecurePair.maybeInitFinished (tls.js:982:10)
+54 error     at CleartextStream.read [as _read] (tls.js:469:13)
+54 error     at CleartextStream.Readable.read (_stream_readable.js:320:10)
+54 error     at EncryptedStream.write [as _write] (tls.js:366:25)
+54 error     at doWrite (_stream_writable.js:223:10)
+54 error     at writeOrBuffer (_stream_writable.js:213:5)
+54 error     at EncryptedStream.Writable.write (_stream_writable.js:180:11)
+54 error     at write (_stream_readable.js:583:24)
+54 error     at flow (_stream_readable.js:592:7)
+54 error     at Socket.pipeOnReadable (_stream_readable.js:624:5)
+55 error If you need help, you may report this log at:
+55 error     <http://github.com/isaacs/npm/issues>
+55 error or email it to:
+55 error     <npm-@googlegroups.com>
+56 error System Linux 4.4.0-31-generic
+57 error command "/usr/bin/nodejs" "/usr/bin/npm" "install" "esdoc" "esdoc-standard-plugin" "--save-dev"
+58 error cwd /home/yazhong.liu/workspace/a113_linux/robot/external/jsruntime
+59 error node -v v0.10.25
+60 error npm -v 1.3.10
+61 verbose exit [ 1, true ]
