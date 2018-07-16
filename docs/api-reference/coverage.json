@@ -1,0 +1,54 @@
+{
+  "coverage": "62.85%",
+  "expectCount": 35,
+  "actualCount": 22,
+  "files": {
+    "packages/logger/index.js": {
+      "expectCount": 5,
+      "actualCount": 0,
+      "undocumentLines": [
+        2,
+        3,
+        5,
+        22,
+        35
+      ]
+    },
+    "packages/multimedia/index.js": {
+      "expectCount": 12,
+      "actualCount": 10,
+      "undocumentLines": [
+        8,
+        9
+      ]
+    },
+    "packages/multimedia/soundplayer.js": {
+      "expectCount": 10,
+      "actualCount": 6,
+      "undocumentLines": [
+        8,
+        9,
+        10,
+        12
+      ]
+    },
+    "packages/system/index.js": {
+      "expectCount": 3,
+      "actualCount": 3,
+      "undocumentLines": []
+    },
+    "packages/tts/index.js": {
+      "expectCount": 2,
+      "actualCount": 0,
+      "undocumentLines": [
+        3,
+        4
+      ]
+    },
+    "packages/volume/index.js": {
+      "expectCount": 3,
+      "actualCount": 3,
+      "undocumentLines": []
+    }
+  }
+}
