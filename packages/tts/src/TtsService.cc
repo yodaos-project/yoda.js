@@ -14,6 +14,10 @@ TtsService::TtsService() {
   // TODO
 }
 
+TtsService::~TtsService() {
+  // TODO
+}
+
 int TtsService::speak(const char* content) {
   if (!prepared) {
     return TTS_NOT_PREPARED;
@@ -41,13 +45,17 @@ int TtsService::disconnect() {
   return 0;
 }
 
+void TtsService::sendEvent(TtsResultType event, int id, int code) {
+  printf("got event %d with %d\n", id, code);
+}
+
 void* TtsService::PollEvent(void* params) {
   TtsResult res;
   TtsService* self = (TtsService*)params;
 
   while (true) {
-    if (!self->tts_handle->poll(res) ) {
-      // RKError("tts poll failed");
+    if (!self->tts_handle->poll(res)) {
+      fprintf(stderr, "tts poll failed\n");
       break;
     }
     switch (res.type) {
@@ -56,7 +64,7 @@ void* TtsService::PollEvent(void* params) {
         if (size > 0) {
           _player.play(res.voice.get()->data(), size);
         } else {
-          // RKError("voice size==0");
+          fprintf(stderr, "voice size=0\n");
         }
         break;
       }
@@ -101,7 +109,9 @@ bool TtsService::prepare(const char* host,
   options.device_type_id.assign(device_type);
   options.device_id.assign(device_id);
   options.secret.assign(secret);
-  options.reconn_interval = 3000;
+  //options.reconn_interval = 3000;
+  //options.ping_interval = 5000;
+  //options.no_resp_timeout = 3000;
 
   tts_handle = Tts::new_instance();
   tts_options = TtsOptions::new_instance();
@@ -127,5 +137,6 @@ bool TtsService::prepare(const char* host,
 terminate:
   if (tts_handle)
     tts_handle->release();
+  printf("release tts\n");
   return false;
 }
