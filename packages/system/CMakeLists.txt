@@ -1,15 +1,19 @@
 cmake_minimum_required(VERSION 3.0)
-project(system_nodejs C)
+project(node-system CXX)
+set(CMAKE_CXX_STANDARD 11)
 
-add_library(system_nodejs MODULE binding)
-target_include_directories(system_nodejs
-  PRIVATE ${CMAKE_INCLUDE_DIR} ${CMAKE_INCLUDE_DIR}/shadow-node)
+add_library(node-system MODULE src/SystemNative.cc)
+target_include_directories(node-system PRIVATE
+  ${CMAKE_INCLUDE_DIR}/include
+  ${CMAKE_INCLUDE_DIR}/usr/include
+  ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
+)
 
-target_link_libraries(system_nodejs -lrecovery)
-set_target_properties(system_nodejs PROPERTIES
+target_link_libraries(node-system iotjs recovery)
+set_target_properties(node-system PROPERTIES
   PREFIX ""
   SUFFIX ".node"
-  OUTPUT_NAME "recovery"
+  OUTPUT_NAME "system"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS system_nodejs DESTINATION ${CMAKE_INSTALL_DIR})
+install(TARGETS node-system DESTINATION ${CMAKE_INSTALL_DIR})
