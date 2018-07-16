@@ -22,7 +22,7 @@ inherits(MediaPlayer, EventEmitter);
  * @method onevent
  */
 MediaPlayer.prototype.onevent = function(type, ext1, ext2, from) {
-  var eventName = native.EVENTS[type];
+  var eventName = native.Events[type];
   if (!eventName) {
     this.emit('error', new Error(`cannot find event ${type}`));
     return;
