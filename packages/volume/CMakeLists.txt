@@ -16,4 +16,6 @@ set_target_properties(node-volume PROPERTIES
   OUTPUT_NAME "volume"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-volume DESTINATION ${CMAKE_INSTALL_DIR})
+install(TARGETS node-volume DESTINATION ${CMAKE_INSTALL_DIR}/packages/volume)
+install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR}/packages/volume)
+
