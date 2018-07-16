@@ -1,0 +1,1744 @@
+[
+  {
+    "__docId__": 1,
+    "kind": "external",
+    "name": "Infinity",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Infinity",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Infinity",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 2,
+    "kind": "external",
+    "name": "NaN",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NaN",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~NaN",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 3,
+    "kind": "external",
+    "name": "undefined",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~undefined",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 4,
+    "kind": "external",
+    "name": "null",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/null",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~null",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 5,
+    "kind": "external",
+    "name": "Object",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Object",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 6,
+    "kind": "external",
+    "name": "object",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~object",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 7,
+    "kind": "external",
+    "name": "Function",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Function",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 8,
+    "kind": "external",
+    "name": "function",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~function",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 9,
+    "kind": "external",
+    "name": "Boolean",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Boolean",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 10,
+    "kind": "external",
+    "name": "boolean",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~boolean",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 11,
+    "kind": "external",
+    "name": "Symbol",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Symbol",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 12,
+    "kind": "external",
+    "name": "Error",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Error",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 13,
+    "kind": "external",
+    "name": "EvalError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/EvalError",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~EvalError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 14,
+    "kind": "external",
+    "name": "InternalError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/InternalError",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~InternalError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 15,
+    "kind": "external",
+    "name": "RangeError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RangeError",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~RangeError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 16,
+    "kind": "external",
+    "name": "ReferenceError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ReferenceError",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~ReferenceError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 17,
+    "kind": "external",
+    "name": "SyntaxError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SyntaxError",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~SyntaxError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 18,
+    "kind": "external",
+    "name": "TypeError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypeError",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~TypeError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 19,
+    "kind": "external",
+    "name": "URIError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/URIError",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~URIError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 20,
+    "kind": "external",
+    "name": "Number",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Number",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 21,
+    "kind": "external",
+    "name": "number",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~number",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 22,
+    "kind": "external",
+    "name": "Date",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Date",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 23,
+    "kind": "external",
+    "name": "String",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~String",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 24,
+    "kind": "external",
+    "name": "string",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~string",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 25,
+    "kind": "external",
+    "name": "RegExp",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~RegExp",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 26,
+    "kind": "external",
+    "name": "Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 27,
+    "kind": "external",
+    "name": "Int8Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int8Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Int8Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 28,
+    "kind": "external",
+    "name": "Uint8Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Uint8Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 29,
+    "kind": "external",
+    "name": "Uint8ClampedArray",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8ClampedArray",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Uint8ClampedArray",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 30,
+    "kind": "external",
+    "name": "Int16Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int16Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Int16Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 31,
+    "kind": "external",
+    "name": "Uint16Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint16Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Uint16Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 32,
+    "kind": "external",
+    "name": "Int32Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int32Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Int32Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 33,
+    "kind": "external",
+    "name": "Uint32Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Uint32Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 34,
+    "kind": "external",
+    "name": "Float32Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float32Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Float32Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 35,
+    "kind": "external",
+    "name": "Float64Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float64Array",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Float64Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 36,
+    "kind": "external",
+    "name": "Map",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Map",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 37,
+    "kind": "external",
+    "name": "Set",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Set",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 38,
+    "kind": "external",
+    "name": "WeakMap",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~WeakMap",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 39,
+    "kind": "external",
+    "name": "WeakSet",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakSet",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~WeakSet",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 40,
+    "kind": "external",
+    "name": "ArrayBuffer",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~ArrayBuffer",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 41,
+    "kind": "external",
+    "name": "DataView",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~DataView",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 42,
+    "kind": "external",
+    "name": "JSON",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~JSON",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 43,
+    "kind": "external",
+    "name": "Promise",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Promise",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 44,
+    "kind": "external",
+    "name": "Generator",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Generator",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 45,
+    "kind": "external",
+    "name": "GeneratorFunction",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/GeneratorFunction",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~GeneratorFunction",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 46,
+    "kind": "external",
+    "name": "Reflect",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Reflect",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 47,
+    "kind": "external",
+    "name": "Proxy",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy",
+    "memberof": "packages/.external-ecmascript.js",
+    "static": true,
+    "longname": "packages/.external-ecmascript.js~Proxy",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 48,
+    "kind": "file",
+    "name": "packages/light/index.js",
+    "content": "'use strict';\n\n/**\n * @module light\n */\n\nmodule.exports = require('./light.node');\n\n",
+    "static": true,
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/packages/light/index.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 49,
+    "kind": "file",
+    "name": "packages/logger/index.js",
+    "content": "'use strict';\nvar util = require('util');\nvar id = 0;\n\nfunction Logger(name) {\n  if (!name) {\n    name = 'syst';\n  }\n  if (name.length > 4) {\n    name = name.slice(0, 4); \n  }\n\n  // map for 1/2/3\n  switch (name.length) {\n    case 1: name = ` :${name} `; break;\n    case 2: name = ` ${name} `; break;\n    case 3: name = `:${name}`; break;\n  }\n  this.name = name;\n}\n\nfunction createLoggerFunction(level) {\n  return function() {\n    var now = new Date();\n    var line = `<${this.name}> :: ` + util.format.apply(this, arguments);\n    console[level](line);\n  };\n}\n\nLogger.prototype.log = createLoggerFunction('info');\nLogger.prototype.info = createLoggerFunction('info');\nLogger.prototype.warn = createLoggerFunction('warn');\nLogger.prototype.error = createLoggerFunction('error');\n\nmodule.exports = function(name) {\n  var logger = new Logger(name);\n  // aliyun log?\n  return logger;\n};\n\n",
+    "static": true,
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/packages/logger/index.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 50,
+    "kind": "variable",
+    "name": "util",
+    "memberof": "packages/logger/index.js",
+    "static": true,
+    "longname": "packages/logger/index.js~util",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/logger/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 2,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 51,
+    "kind": "variable",
+    "name": "id",
+    "memberof": "packages/logger/index.js",
+    "static": true,
+    "longname": "packages/logger/index.js~id",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/logger/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 3,
+    "undocument": true,
+    "type": {
+      "types": [
+        "number"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 52,
+    "kind": "function",
+    "name": "Logger",
+    "memberof": "packages/logger/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/logger/index.js~Logger",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/logger/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 5,
+    "undocument": true,
+    "params": [
+      {
+        "name": "name",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null,
+    "ignore": true
+  },
+  {
+    "__docId__": 53,
+    "kind": "function",
+    "name": "createLoggerFunction",
+    "memberof": "packages/logger/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/logger/index.js~createLoggerFunction",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/logger/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 22,
+    "undocument": true,
+    "params": [
+      {
+        "name": "level",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 54,
+    "kind": "function",
+    "name": "exports",
+    "memberof": "packages/logger/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/logger/index.js~exports",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/logger/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 35,
+    "undocument": true,
+    "params": [
+      {
+        "name": "name",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 55,
+    "kind": "file",
+    "name": "packages/multimedia/index.js",
+    "content": "'use strict';\n\n/**\n * @module multimedia\n */\n\nvar native = require('./multimedia.node');\nvar inherits = require('util').inherits;\nvar EventEmitter = require('events').EventEmitter;\n\n/**\n * @class MediaPlayer\n */\nfunction MediaPlayer(tag, options) {\n  EventEmitter.call(this);\n  this._handle = new native.Player(tag);\n  this._handle.onevent = this.onevent.bind(this);\n}\ninherits(MediaPlayer, EventEmitter);\n\n/**\n * @method onevent\n */\nMediaPlayer.prototype.onevent = function(type, ext1, ext2, from) {\n  var eventName = native.Events[type];\n  if (!eventName) {\n    this.emit('error', new Error(`cannot find event ${type}`));\n    return;\n  }\n  if (eventName === 'prepared') {\n    this._handle.start();\n  } else {\n    this.emit(eventName, ext1, ext2, from);\n  }\n};\n\n/**\n * @method play\n * @param {String} url\n */\nMediaPlayer.prototype.play = function(url) {\n  if (!url)\n    throw new Error('url must be a valid string');\n  return this._handle.prepare(url);\n};\n\n/**\n * @method pause\n */\nMediaPlayer.prototype.pause = function() {\n  return this._handle.pause();\n};\n\n/**\n * @method resume\n */\nMediaPlayer.prototype.resume = function() {\n  return this._handle.resume();\n};\n\n/**\n * @method seek\n * @param {Number} pos\n */\nMediaPlayer.prototype.seek = function(pos) {\n  return this._handle.seek(pos);\n};\n\n/**\n * @method stop\n */\nMediaPlayer.prototype.stop = function() {\n  return this._handle.stop();\n};\n\n/**\n * @method reset\n */\nMediaPlayer.prototype.reset = function() {\n  return this._handle.reset();\n};\n\n/**\n * @method disconnect\n */\nMediaPlayer.prototype.disconnect = function() {\n  return this._handle.disconnect();\n};\n\n/**\n * @property {String} id\n * @readable\n */\nObject.defineProperty(MediaPlayer.prototype, 'id', {\n  get: function() {\n    return this.idGetter();\n  }\n});\n\n/**\n * @property {Boolean} playing\n * @readable\n */\nObject.defineProperty(MediaPlayer.prototype, 'playing', {\n  get: function() {\n    return this.playingStateGetter();\n  }\n});\n\n/**\n * @property {Number} duration\n * @readable\n */\nObject.defineProperty(MediaPlayer.prototype, 'duration', {\n  get: function() {\n    return this.durationGetter();\n  }\n});\n\n/**\n * @property {Number} position\n * @readable\n */\nObject.defineProperty(MediaPlayer.prototype, 'position', {\n  get: function() {\n    return this.positionGetter();\n  }\n});\n\n/**\n * @property {Boolean} loopMode\n * @readable\n * @writable\n */\nObject.defineProperty(MediaPlayer.prototype, 'loopMode', {\n  get: function() {\n    return this.loopModeGetter();\n  },\n  set: function(mode) {\n    return this.loopModeSetter(mode);\n  },\n});\n\n/**\n * @property {Number} volume\n * @readable\n * @writable\n */\nObject.defineProperty(MediaPlayer.prototype, 'volume', {\n  get: function() {\n    return this.volumeGetter();\n  },\n  set: function(vol) {\n    return this.volumeSetter(vol);\n  }\n});\n\n/**\n * @property {String} sessionId\n * @readable\n * @writable\n */\nObject.defineProperty(MediaPlayer.prototype, 'sessionId', {\n  get: function() {\n    return this.sessionIdGetter();\n  },\n  set: function(id) {\n    return this.sessionIdSetter(id);\n  }\n});\n\nexports.MediaPlayer = MediaPlayer;\n\n/**\n * @module multimedia.soundplayer\n */\nexports.soundplayer = require('./soundplayer');\n\n",
+    "static": true,
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/packages/multimedia/index.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 56,
+    "kind": "variable",
+    "name": "native",
+    "memberof": "packages/multimedia/index.js",
+    "static": true,
+    "longname": "packages/multimedia/index.js~native",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 7,
+    "unknown": [
+      {
+        "tagName": "@module",
+        "tagValue": "multimedia"
+      }
+    ],
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 57,
+    "kind": "variable",
+    "name": "inherits",
+    "memberof": "packages/multimedia/index.js",
+    "static": true,
+    "longname": "packages/multimedia/index.js~inherits",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 8,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 58,
+    "kind": "variable",
+    "name": "EventEmitter",
+    "memberof": "packages/multimedia/index.js",
+    "static": true,
+    "longname": "packages/multimedia/index.js~EventEmitter",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 9,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 59,
+    "kind": "function",
+    "name": "MediaPlayer",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~MediaPlayer",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 14,
+    "unknown": [
+      {
+        "tagName": "@class",
+        "tagValue": "MediaPlayer"
+      }
+    ],
+    "params": [
+      {
+        "name": "tag",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "options",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null,
+    "ignore": true
+  },
+  {
+    "__docId__": 60,
+    "kind": "function",
+    "name": "onevent",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~onevent",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 24,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "onevent"
+      }
+    ],
+    "params": [
+      {
+        "name": "type",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "ext1",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "ext2",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "from",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null,
+    "ignore": true
+  },
+  {
+    "__docId__": 61,
+    "kind": "function",
+    "name": "play",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~play",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 41,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "play"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "String"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "url",
+        "description": ""
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 62,
+    "kind": "function",
+    "name": "pause",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~pause",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 50,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "pause"
+      }
+    ],
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 63,
+    "kind": "function",
+    "name": "resume",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~resume",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 57,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "resume"
+      }
+    ],
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 64,
+    "kind": "function",
+    "name": "seek",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~seek",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 65,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "seek"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "Number"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "pos",
+        "description": ""
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 65,
+    "kind": "function",
+    "name": "stop",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~stop",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 72,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "stop"
+      }
+    ],
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 66,
+    "kind": "function",
+    "name": "reset",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~reset",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 79,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "reset"
+      }
+    ],
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 67,
+    "kind": "function",
+    "name": "disconnect",
+    "memberof": "packages/multimedia/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/index.js~disconnect",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 86,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "disconnect"
+      }
+    ],
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 68,
+    "kind": "file",
+    "name": "packages/multimedia/soundplayer.js",
+    "content": "'use strict';\n\n/**\n * @module soundplayer\n */\n\nvar child_process = require('child_process');\nvar url = require('url');\nvar path = require('path');\nvar PA_HOME_DIR = process.env.PULSEAUDIO_HOME || '/data/pulseaudio';\n\nfunction defaultCallback(err) {\n  if (err) throw err;\n}\n\n/**\n * @method set\n * @param {String} name - the config name\n * @param {any} val\n */\nfunction set(name, val) {\n  if (name === 'pulseaudio.homedir') {\n    PA_HOME_DIR = val;\n  } else {\n    throw new Error(`unknown property ${name}`);\n  }\n}\n\n/**\n * @class SoundPlayer\n * @constructor\n * @param {String} media - the media url to play\n */\nfunction SoundPlayer(media) {\n  this._media = media;\n  this._subprocess = null;\n  this._cmd = '';\n}\n\n/**\n * @method play\n * @param {Function} callback <optional> fired when play is done\n * @return {SoundPlayer}\n */\nSoundPlayer.prototype.play = function play(callback) {\n  var meta = url.parse(this._media);\n  if (meta.protocol !== null)\n    throw new Error('only support for no protocol url');\n  if (typeof callback !== 'function')\n    callback = defaultCallback;\n  \n  var extname = path.extname(meta.pathname);\n  if (extname === '.wav') {\n    this._cmd = `paplay ${meta.pathname}`;\n  } else if (['.ogg', '.mp3'].indexOf(extname) >= 0) {\n    this._cmd = `ffmpeg -i ${meta.pathname} -acodec pcm_s16le -ar 16000 -f wav - | paplay`;\n  } else {\n    throw new Error('only support for wav/ogg/mp3 formats');\n  }\n  this._subprocess = child_process.exec(this._cmd, {\n    env: { 'HOME': PA_HOME_DIR },\n  }, function ondone(err, stdout, stderr) {\n    if (err)\n      return callback(new Error(stderr));\n    callback(null, stdout);\n  });\n  return this;\n};\n\n/**\n * @method stop\n * @return {SoundPlayer}\n */\nSoundPlayer.prototype.stop = function stop() {\n  if (this._subprocess) {\n    this._subprocess.kill(0);\n    this._subprocess = null;\n  }\n  return this;\n};\n\n/**\n * @method play\n * @param {String} media - the media url to play\n * @return {SoundPlayer}\n */\nfunction play(media, callback) {\n  var splayer = new SoundPlayer(media);\n  return splayer.play(callback);\n}\n\nexports.set = set;\nexports.play = play;\n\n",
+    "static": true,
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/packages/multimedia/soundplayer.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 69,
+    "kind": "variable",
+    "name": "child_process",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~child_process",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 7,
+    "unknown": [
+      {
+        "tagName": "@module",
+        "tagValue": "soundplayer"
+      }
+    ],
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 70,
+    "kind": "variable",
+    "name": "url",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~url",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 8,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 71,
+    "kind": "variable",
+    "name": "path",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~path",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 9,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 72,
+    "kind": "variable",
+    "name": "PA_HOME_DIR",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~PA_HOME_DIR",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 10,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 73,
+    "kind": "function",
+    "name": "defaultCallback",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~defaultCallback",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 12,
+    "undocument": true,
+    "params": [
+      {
+        "name": "err",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null,
+    "ignore": true
+  },
+  {
+    "__docId__": 74,
+    "kind": "function",
+    "name": "set",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~set",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 21,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "set"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "String"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "name",
+        "description": "the config name"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "any"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "val",
+        "description": ""
+      }
+    ],
+    "return": null,
+    "ignore": true
+  },
+  {
+    "__docId__": 75,
+    "kind": "function",
+    "name": "SoundPlayer",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~SoundPlayer",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 34,
+    "unknown": [
+      {
+        "tagName": "@class",
+        "tagValue": "SoundPlayer"
+      },
+      {
+        "tagName": "@constructor",
+        "tagValue": ""
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "String"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "media",
+        "description": "the media url to play"
+      }
+    ],
+    "return": null,
+    "ignore": true
+  },
+  {
+    "__docId__": 76,
+    "kind": "function",
+    "name": "play",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~play",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 45,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "play"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "Function"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "callback",
+        "description": "<optional> fired when play is done"
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "SoundPlayer"
+      ],
+      "spread": false,
+      "description": ""
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 77,
+    "kind": "function",
+    "name": "stop",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~stop",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 74,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "stop"
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "SoundPlayer"
+      ],
+      "spread": false,
+      "description": ""
+    },
+    "params": [],
+    "ignore": true
+  },
+  {
+    "__docId__": 78,
+    "kind": "function",
+    "name": "play",
+    "memberof": "packages/multimedia/soundplayer.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/multimedia/soundplayer.js~play",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/multimedia/soundplayer.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 87,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "play"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "String"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "media",
+        "description": "the media url to play"
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "SoundPlayer"
+      ],
+      "spread": false,
+      "description": ""
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 79,
+    "kind": "file",
+    "name": "packages/property/index.js",
+    "content": "'use strict';\n\nmodule.exports = require('./property.node');\n\n",
+    "static": true,
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/packages/property/index.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 80,
+    "kind": "file",
+    "name": "packages/system/index.js",
+    "content": "'use strict';\n\n/**\n * @module system\n */\n\nvar native = require('./system.node');\n\n/**\n * @method set\n * @param {String} stream - <optional> the stream type, tts/audio/alarm.\n * @param {Number} vol - the volume to set\n */\nexports.reboot = native.reboot;\n\n/**\n * imageUtils\n */\nvar imageUtils = {\n  /**\n   * @method verify\n   */\n  verify: native.verifyImage,\n  /**\n   * @method prepare\n   */\n  prepare: native.prepareImage,\n};\n\n/**\n * @method getImage\n * @return {ImageUtils}\n */\nexports.getImage = function() {\n  return imageUtils;\n};\n\n",
+    "static": true,
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/packages/system/index.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 81,
+    "kind": "variable",
+    "name": "native",
+    "memberof": "packages/system/index.js",
+    "static": true,
+    "longname": "packages/system/index.js~native",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/system/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 7,
+    "unknown": [
+      {
+        "tagName": "@module",
+        "tagValue": "system"
+      }
+    ],
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 82,
+    "kind": "variable",
+    "name": "imageUtils",
+    "memberof": "packages/system/index.js",
+    "static": true,
+    "longname": "packages/system/index.js~imageUtils",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/system/index.js",
+    "importStyle": null,
+    "description": "imageUtils",
+    "lineNumber": 19,
+    "type": {
+      "types": [
+        "{\"verify\": *, \"prepare\": *}"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 83,
+    "kind": "function",
+    "name": "getImage",
+    "memberof": "packages/system/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/system/index.js~getImage",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/system/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 34,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "getImage"
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "ImageUtils"
+      ],
+      "spread": false,
+      "description": ""
+    },
+    "params": [],
+    "ignore": true
+  },
+  {
+    "__docId__": 84,
+    "kind": "file",
+    "name": "packages/tts/index.js",
+    "content": "'use strict';\n\nvar TtsWrap = require('./tts.node').TtsWrap;\nfunction createHandle(options) {\n  var handle = new TtsWrap();\n  handle.prepare(\n    options.host || 'apigwws.open.rokid.com', 443, '/api',\n    options.key,\n    options.deviceTypeId,\n    options.deviceId,\n    options.secret,\n    options.declaimer || 'zh');\n  return handle;\n}\n\nexports.createHandle = createHandle;\n\n",
+    "static": true,
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/packages/tts/index.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 85,
+    "kind": "variable",
+    "name": "TtsWrap",
+    "memberof": "packages/tts/index.js",
+    "static": true,
+    "longname": "packages/tts/index.js~TtsWrap",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/tts/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 3,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 86,
+    "kind": "function",
+    "name": "createHandle",
+    "memberof": "packages/tts/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/tts/index.js~createHandle",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/tts/index.js",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 4,
+    "undocument": true,
+    "params": [
+      {
+        "name": "options",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 87,
+    "kind": "file",
+    "name": "packages/volume/index.js",
+    "content": "'use strict';\n\n/**\n * @module volume\n */\n\nvar native = require('./volume.node');\n\n/**\n * @method set\n * @param {String} stream - <optional> the stream type, tts/audio/alarm.\n * @param {Number} vol - the volume to set\n */\nexports.set = function(stream, vol) {\n  if (arguments.length === 1 && typeof stream === 'number') {\n    vol = stream;\n    stream = null;\n  }\n  if (!vol) {\n    throw new TypeError('vol is required');\n  }\n\n  if (stream) {\n    native.setStreamVolume(stream, vol);\n  } else {\n    native.setVolume(vol);\n  }\n};\n\n/**\n * @method get\n * @param {String} stream - <optional> the stream type, tts/audio/alarm\n */\nexports.get = function(stream) {\n  if (stream) {\n    return native.getStreamVolume(stream);\n  } else {\n    return native.getVolume();\n  }\n};\n\n",
+    "static": true,
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/packages/volume/index.js",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 88,
+    "kind": "variable",
+    "name": "native",
+    "memberof": "packages/volume/index.js",
+    "static": true,
+    "longname": "packages/volume/index.js~native",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/volume/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 7,
+    "unknown": [
+      {
+        "tagName": "@module",
+        "tagValue": "volume"
+      }
+    ],
+    "type": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 89,
+    "kind": "function",
+    "name": "set",
+    "memberof": "packages/volume/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/volume/index.js~set",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/volume/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 14,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "set"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "String"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "stream",
+        "description": "<optional> the stream type, tts/audio/alarm."
+      },
+      {
+        "nullable": null,
+        "types": [
+          "Number"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "vol",
+        "description": "the volume to set"
+      }
+    ],
+    "return": null,
+    "ignore": true
+  },
+  {
+    "__docId__": 90,
+    "kind": "function",
+    "name": "get",
+    "memberof": "packages/volume/index.js",
+    "generator": false,
+    "async": false,
+    "static": true,
+    "longname": "packages/volume/index.js~get",
+    "access": "public",
+    "export": false,
+    "importPath": "rokidos/packages/volume/index.js",
+    "importStyle": null,
+    "description": "",
+    "lineNumber": 34,
+    "unknown": [
+      {
+        "tagName": "@method",
+        "tagValue": "get"
+      }
+    ],
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "String"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "stream",
+        "description": "<optional> the stream type, tts/audio/alarm"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "kind": "index",
+    "content": "# rokidos-node\n\n基于 JavaScript 开发的开源交互系统，也许你听说过“天猫精灵”、“小爱同学“亦或者是我们的”若琪“音箱，\n这些语音类产品，如何灵活地打造出一款拥有与上述语音交互类产品，一直是 Rokid 在探索的目标，而目前我们\n将拥抱 JavaScript，基于丰富的社区，我们将我们从前到后的能力，全部赋予 JavaScript 开发者，在这里\n开放。\n\n首先，rokidos-node 被寄予期望为一套跨平台的语音交互系统框架，他能够运行在任意的 Linux、Android 以及\n浏览器上。\n\n其次它本身也是一个操作系统，支持完善的网络管理、系统 SDK、多媒体播放等能力，除此之外，他还提供了与\n语音交互相关的语音识别、自然语义处理、语音合成等接口。\n\n上述的接口本身都将以类似应用的方式开放给任何 Rokid 开发者，我们称这类应用为本地应用。\n\n## 什么是语音识别\n\n说到语音识别，大家可能想到的就是耳熟能详的 ASR，其实对于语音识别，可远远不止于此，因为对于真实的识别环境，\n我们通过麦克风收集而来的语音是远远达不到能够让目前的人工智能算法识别的程度，因此，对于一段音频识别的好坏，\n往往最大的决定因素并非来源于识别算法，而是我们位于前端的语音预处理过程。\n\n**为什么要有激活词**\n\n绝大多数人，包括我在内，觉得激活词往往是一个很奇怪的设定，原因是我们日常交流中，可能大部分都不会使用激活词，\n除非特别正式的场所。比如跟恋人去逛街时，跟她说话时，并不会预先呼喊她的名字甚至是小名。因为在两人的思维中，\n已经默许了对方都是在跟我说话，然而对于我们的音箱、机顶盒或者车载设备，他们对于所听到的声音是一无所知的，甚至\n就算场景内只有你们两个存在，音箱也无法分辨什么时候你在跟她说话，而什么时候是在自言自语。\n\n因此，激活词就应运而生。\n\n**音箱的注意力**\n\n对于我们现在接触到的音箱类语音产品，都是同时由多个麦克风扮演着耳朵的角色，首先，我们通过激活词技术，可以方便地\n了解到说话的声音是从哪个方位过来的，此时，我们便将指定位置麦克风收集到的音频放大，而其他方向的音频减小，当然还有\n一些其他操作用于把激活方向上的音频噪音去掉，这项技术就是我们通常说的“波束成行”（BF, BeamForming），而我称他\n做“音箱的注意力”。\n\n**去掉自己的声音**\n\n在发送到语音识别模块之前，我们还需要进行一个步骤，专业名词叫做“自身音源消除”，英文叫：AEC。其实这也是属于我们集中\n注意力的一个表现，就跟我们在听别人说话时，倘如自己在说话时，而且可能会更容易听到其他人说话的声音，而把本身自己说\n的内容忽略，而 AEC 就是这么一门消灭自己输出音频的技术。\n\n最后，麦克风的数据在经历了多道工序，终于可以得出一个干净名了的音频，在压缩后，就可以发到云端识别服务，就能得到识别\n出来的文本结果了。\n\n> 未完待续\n\n## License\n\nApache v2.0\n",
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/README.md",
+    "name": "./README.md",
+    "static": true,
+    "access": "public"
+  },
+  {
+    "kind": "packageJSON",
+    "content": "{\n  \"name\": \"rokidos\",\n  \"version\": \"2.0.0\",\n  \"scripts\": {\n    \"build\": \"\"\n  },\n  \"config\": {\n    \"unsafe-perm\": true\n  },\n  \"modules\": {},\n  \"devDependencies\": {\n    \"esdoc\": \"^1.1.0\",\n    \"esdoc-standard-plugin\": \"^1.0.0\"\n  }\n}\n",
+    "longname": "/Users/yorkieliu/workspace/rokid/rokidos-node/package.json",
+    "name": "package.json",
+    "static": true,
+    "access": "public"
+  }
+]

@@ -7,5 +7,9 @@
   "config": {
     "unsafe-perm": true
   },
-  "modules": {}
+  "modules": {},
+  "devDependencies": {
+    "ink-docstrap": "^1.3.2",
+    "jsdoc": "^3.5.5"
+  }
 }
