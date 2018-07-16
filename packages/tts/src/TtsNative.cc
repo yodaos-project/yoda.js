@@ -12,13 +12,14 @@ static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
   iotjs_tts_t* ttswrap = IOTJS_ALLOC(iotjs_tts_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_tts_t, ttswrap);
 
-  jerry_value_t jobjectref = jerry_acquire_value(jtts); // TODO: find someway to release this  
+  jerry_value_t jobjectref = jerry_acquire_value(jtts);
   iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jobjectref, &this_module_native_info);
   _this->handle = new TtsNative();
   return ttswrap;
 }
 
 static void iotjs_tts_destroy(iotjs_tts_t* tts) {
+  fprintf(stdout, "iotjs tts is destroyed\n");
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_tts_t, tts);
   if (_this->handle) {
     delete _this->handle;
@@ -130,6 +131,8 @@ JS_FUNCTION(Disconnect) {
     return JS_CREATE_ERROR(COMMON, "tts is not initialized");
   }
   _this->handle->disconnect();
+  jerry_value_t jval = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_release_value(jval);
   return jerry_create_boolean(true);
 }
 
