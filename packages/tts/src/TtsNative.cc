@@ -11,15 +11,18 @@ static JNativeInfoType this_module_native_info = {
 static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
   iotjs_tts_t* ttswrap = IOTJS_ALLOC(iotjs_tts_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_tts_t, ttswrap);
-  
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jtts, &this_module_native_info);
+
+  jerry_value_t jobjectref = jerry_acquire_value(jtts); // TODO: find someway to release this  
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jobjectref, &this_module_native_info);
   _this->handle = new TtsNative();
   return ttswrap;
 }
 
 static void iotjs_tts_destroy(iotjs_tts_t* tts) {
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_tts_t, tts);
-  delete _this->handle;
+  if (_this->handle) {
+    delete _this->handle;
+  }
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
   IOTJS_RELEASE(tts);
 }
