@@ -262,7 +262,7 @@ JS_FUNCTION(PositionGetter) {
   if (_this->handle && _this->listener->isPrepared()) {
     _this->handle->getCurrentPosition(&ms);
   }
-  return jerry_create_number(&ms);
+  return jerry_create_number(ms);
 }
 
 JS_FUNCTION(LoopModeGetter) {
