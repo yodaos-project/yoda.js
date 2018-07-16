@@ -32,6 +32,8 @@ function App(arr) {
   this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
   this.startExtappService();
+  // 处理mqtt事件
+  this.handleMqttMessage();
 }
 inherits(App, EventEmitter);
 
@@ -405,6 +407,52 @@ App.prototype.registerExtApp = function (appId, profile) {
  */
 App.prototype.deleteExtApp = function (appId) {
 
+};
+
+/**
+ * 接收Mqtt的topic
+ * @param {string} topic 
+ * @param {string} message 
+ */
+App.prototype.onMqttMessage = function (topic, message) {
+  this.emit(topic, message);
+};
+
+/**
+ * 处理Mqtt的topic
+ */
+App.prototype.handleMqttMessage = function () {
+  this.on('cloud_forward', this.onCloudForward.bind(this));
+  this.on('reset_settings', this.onResetSettings.bind(this));
+};
+
+/**
+ * 处理App发送过来的模拟NLP
+ * @param {string} message 
+ */
+App.prototype.onCloudForward = function (message) {
+  try {
+    var msg = JSON.parse(message);
+    var params = JSON.parse(msg.content.params);
+    // 模拟nlp
+    this.onEvent('nlp', {
+      asr: '',
+      nlp: params.nlp,
+      action: params.action
+    });
+  } catch (err) {
+    logger.error(err && err.stack);
+  }
+};
+
+/**
+ * 处理App发送的恢复出厂设置
+ * @param {string} message 
+ */
+App.prototype.onResetSettings = function (message) {
+  if (data === '1') {
+    logger.log('当前不支持恢复出厂设置');
+  }
 };
 
 /**
