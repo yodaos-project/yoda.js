@@ -208,6 +208,12 @@ JS_FUNCTION(IdGetter) {
   return jerry_create_number(_this->id);
 }
 
+void iotjs_set_constant(jerry_value_t jobj, uint32_t idx, const char* v) {
+  jerry_value_t jval = jerry_create_string((const jerry_char_t*)v);
+  jerry_set_property_by_index(jobj, idx, jval);
+  jerry_release_value(jval);
+}
+
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(Player);
   iotjs_jval_set_property_jval(exports, "Player", jconstructor);
@@ -218,12 +224,36 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "stop", Stop);
   iotjs_jval_set_method(proto, "pause", Pause);
   iotjs_jval_set_method(proto, "resume", Resume);
+  iotjs_jval_set_method(proto, "seek", Seek);
+  iotjs_jval_set_method(proto, "reset", Reset);
+  iotjs_jval_set_method(proto, "disconnect", Disconnect);
+  
   // the following methods are for getters and setters internally
   iotjs_jval_set_method(proto, "idGetter", IdGetter);
+  iotjs_jval_set_method(proto, "playingStateGetter", PlayingStateGetter);
+  iotjs_jval_set_method(proto, "durationGetter", DurationGetter);
+  iotjs_jval_set_method(proto, "positionGetter", PositionGetter);
+  iotjs_jval_set_method(proto, "loopModeGetter", LoopModeGetter);
+  iotjs_jval_set_method(proto, "loopModeSetter", LoopModeSetter);
+  iotjs_jval_set_method(proto, "volumeGetter", VolumeGetter);
+  iotjs_jval_set_method(proto, "volumeSetter", VolumeSetter);
+  iotjs_jval_set_method(proto, "sessionIdGetter", SessionIdGetter);
+  iotjs_jval_set_method(proto, "sessionIdSetter", SessionIdSetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
+
+  // set events
+  jerry_value_t events = jerry_create_object();
+  iotjs_set_constant(events, MULTIMEDIA_PLAYER_NOOP, "noop");
+  iotjs_set_constant(events, MULTIMEDIA_PLAYER_PREPARED, "prepared");
+  iotjs_set_constant(events, MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE, "playback complete");
+  iotjs_set_constant(events, MULTIMEDIA_BUFFERING_UPDATE, "buffering update");
+  iotjs_set_constant(events, MULTIMEDIA_SEEK_COMPLETE, "seek complete");
+  iotjs_set_constant(events, MULTIMEDIA_ERROR, "error");
+  iotjs_jval_set_property_jval(exports, "Events", events);
 
   jerry_release_value(proto);
   jerry_release_value(jconstructor);
+  jerry_release_value(events);
 }
 
 NODE_MODULE(tts, init)
