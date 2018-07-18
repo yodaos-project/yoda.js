@@ -10,12 +10,6 @@ using namespace rokid;
 
 static OpusPlayer _player;
 
-TtsService::TtsService() {}
-
-TtsService::~TtsService() {
-  tts_handle->release();
-}
-
 int TtsService::speak(const char* content) {
   if (!prepared) {
     return TTS_NOT_PREPARED;
@@ -63,19 +57,19 @@ void* TtsService::PollEvent(void* params) {
         break;
       }
       case TTS_RES_START: {
-        self->sendEvent(TTS_RES_START, res.id, 0);
+        self->send_event(self, TTS_RES_START, res.id, 0);
         break;
       }
       case TTS_RES_END: {
-        self->sendEvent(TTS_RES_END, res.id, 0);
+        self->send_event(self, TTS_RES_END, res.id, 0);
         break;
       }
       case TTS_RES_CANCELLED: {
-        self->sendEvent(TTS_RES_CANCELLED, res.id, 0);
+        self->send_event(self, TTS_RES_CANCELLED, res.id, 0);
         break;
       }
       case TTS_RES_ERROR: {
-        self->sendEvent(TTS_RES_ERROR, res.id, res.err);
+        self->send_event(self, TTS_RES_ERROR, res.id, res.err);
         break;
       }
     }

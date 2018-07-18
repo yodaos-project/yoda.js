@@ -1,14 +1,13 @@
 #include "TtsNative.h"
 
-void TtsNative::sendEvent(TtsResultType event, int id, int code) {
-  fprintf(stdout, "event from ttsnative\n");
-
-  iotjs_tts_t* ttswrap = this->ttswrap;
+void TtsNative::SendEvent(void* self, TtsResultType event, int id, int code) {
+  TtsNative* native = (TtsNative*)self;
+  iotjs_tts_t* ttswrap = native->ttswrap;
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, ttswrap);
 
   jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
   jerry_value_t onevent = iotjs_jval_get_property(jthis, "onevent");
-  if (!jerry_value_is_function(eventFn)) {
+  if (!jerry_value_is_function(onevent)) {
     fprintf(stderr, "no onevent function is registered\n");
     JS_CREATE_ERROR(COMMON, "no onevent function is registered");
     return;
