@@ -1,7 +1,31 @@
 #include "TtsNative.h"
 
 void TtsNative::sendEvent(TtsResultType event, int id, int code) {
-  printf("event from ttsnative\n");
+  fprintf(stdout, "event from ttsnative\n");
+
+  iotjs_tts_t* ttswrap = this->ttswrap;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, ttswrap);
+
+  jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_value_t onevent = iotjs_jval_get_property(jthis, "onevent");
+  if (!jerry_value_is_function(eventFn)) {
+    fprintf(stderr, "no onevent function is registered\n");
+    JS_CREATE_ERROR(COMMON, "no onevent function is registered");
+    return;
+  }
+
+  uint32_t jargc = 3;
+  jerry_value_t jargv[jargc] = {
+    jerry_create_number((double)event),
+    jerry_create_number((double)id),
+    jerry_create_number((double)code),
+  };
+  jerry_call_function(onevent, jerry_create_undefined(), jargv, jargc);
+  for (int i = 0; i < jargc; i++) {
+    jerry_release_value(jargv[i]);
+  }
+  jerry_release_value(jthis);
+  jerry_release_value(onevent);
 }
 
 static JNativeInfoType this_module_native_info = {
@@ -14,15 +38,16 @@ static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
 
   jerry_value_t jobjectref = jerry_acquire_value(jtts);
   iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jobjectref, &this_module_native_info);
-  _this->handle = new TtsNative();
+  _this->handle = new TtsNative(ttswrap);
+  _this->prepared = false;
   return ttswrap;
 }
 
 static void iotjs_tts_destroy(iotjs_tts_t* tts) {
-  fprintf(stdout, "iotjs tts is destroyed\n");
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_tts_t, tts);
   if (_this->handle) {
     delete _this->handle;
+    _this->prepared = false;
   }
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
   IOTJS_RELEASE(tts);
@@ -33,7 +58,6 @@ JS_FUNCTION(TTS) {
   
   const jerry_value_t jtts = JS_GET_THIS();
   iotjs_tts_t* tts_instance = iotjs_tts_create(jtts);
-  //IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, tts_instance);
   return jerry_create_undefined(); 
 }
 
@@ -43,6 +67,9 @@ JS_FUNCTION(Prepare) {
 
   if (_this->handle == NULL) {
     return JS_CREATE_ERROR(COMMON, "tts is not initialized");
+  }
+  if (_this->prepared == true) {
+    return JS_CREATE_ERROR(COMMON, "instance has been prepared already");
   }
 
   char* host;
@@ -76,8 +103,10 @@ JS_FUNCTION(Prepare) {
     }
   }
 
-  printf("host: %s, port: %d, branch: %s\n", host, port, branch);
+  fprintf(stdout,
+    "host: %s, port: %d, branch: %s\n", host, port, branch);
 
+  _this->prepared = true;
   _this->handle->prepare(host, port, branch,
     key, device_type, device_id, secret, declaimer);
   
@@ -107,8 +136,9 @@ JS_FUNCTION(Speak) {
   jerry_char_t text_buf[size];
   jerry_string_to_char_buffer(jargv[0], text_buf, size);
   text = (char*)&text_buf;
-  _this->handle->speak(text);
-  return jerry_create_boolean(true);
+  
+  int32_t id = _this->handle->speak(text);
+  return jerry_create_number(id);
 }
 
 JS_FUNCTION(Cancel) {
