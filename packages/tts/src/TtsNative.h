@@ -29,13 +29,15 @@ typedef struct {
  */
 class TtsNative : public TtsService {
  public:
+  TtsNative() {};
   TtsNative(iotjs_tts_t* ttswrap_) {
     ttswrap = ttswrap_;
+    send_event = &TtsNative::SendEvent;
   };
   ~TtsNative() {};
 
  public:
-  void sendEvent(TtsResultType event, int id, int code);
+  static void SendEvent(void* self, TtsResultType event, int id, int code);
  
  protected:
   iotjs_tts_t* ttswrap;
