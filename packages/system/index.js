@@ -1,35 +1,38 @@
 'use strict';
 
 /**
- * @module system
+ * @namespace system
  */
 
 var native = require('./system.node');
 
 /**
- * @method set
+ * @memberof system
  * @param {String} stream - <optional> the stream type, tts/audio/alarm.
  * @param {Number} vol - the volume to set
  */
 exports.reboot = native.reboot;
 
 /**
- * imageUtils
+ * @memberof system
+ * @class imageUtils
  */
 var imageUtils = {
   /**
-   * @method verify
+   * @memberof system.imageUtils
+   * @function verify
    */
   verify: native.verifyImage,
   /**
-   * @method prepare
+   * @memberof system.imageUtils
+   * @function prepare
    */
   prepare: native.prepareImage,
 };
 
 /**
- * @method getImage
- * @return {ImageUtils}
+ * @memberof system
+ * get image
  */
 exports.getImage = function() {
   return imageUtils;

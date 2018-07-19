@@ -1,13 +1,13 @@
 'use strict';
 
 /**
- * @module volume
+ * @namespace volume
  */
 
 var native = require('./volume.node');
 
 /**
- * @method set
+ * @memberof volume
  * @param {String} stream - <optional> the stream type, tts/audio/alarm.
  * @param {Number} vol - the volume to set
  */
@@ -28,7 +28,7 @@ exports.set = function(stream, vol) {
 };
 
 /**
- * @method get
+ * @memberof volume
  * @param {String} stream - <optional> the stream type, tts/audio/alarm
  */
 exports.get = function(stream) {
