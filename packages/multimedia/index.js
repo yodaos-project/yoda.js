@@ -19,9 +19,6 @@ function MediaPlayer(tag, options) {
 }
 inherits(MediaPlayer, EventEmitter);
 
-/**
- * onevent
- */
 MediaPlayer.prototype.onevent = function(type, ext1, ext2, from) {
   var eventName = native.Events[type];
   if (!eventName) {
@@ -36,7 +33,7 @@ MediaPlayer.prototype.onevent = function(type, ext1, ext2, from) {
 };
 
 /**
- * play
+ * play a media with URL.
  * @param {String} url
  */
 MediaPlayer.prototype.play = function(url) {
@@ -46,43 +43,43 @@ MediaPlayer.prototype.play = function(url) {
 };
 
 /**
- * pause
+ * pause the playing media.
  */
 MediaPlayer.prototype.pause = function() {
   return this._handle.pause();
 };
 
 /**
- * resume
+ * resume the paused media.
  */
 MediaPlayer.prototype.resume = function() {
   return this._handle.resume();
 };
 
 /**
- * seek
- * @param {Number} pos
+ * seek to `pos`.
+ * @param {Number} pos - the position in ms.
  */
 MediaPlayer.prototype.seek = function(pos) {
   return this._handle.seek(pos);
 };
 
 /**
- * stop
+ * stop the player.
  */
 MediaPlayer.prototype.stop = function() {
   return this._handle.stop();
 };
 
 /**
- * reset
+ * reset the player.
  */
 MediaPlayer.prototype.reset = function() {
   return this._handle.reset();
 };
 
 /**
- * disconnect
+ * disconnect and cleanup the player.
  */
 MediaPlayer.prototype.disconnect = function() {
   return this._handle.disconnect();
