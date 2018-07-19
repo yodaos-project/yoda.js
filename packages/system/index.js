@@ -15,16 +15,16 @@ exports.reboot = native.reboot;
 
 /**
  * @memberof system
- * @class imageUtils
+ * @class ImageUtils
  */
-var imageUtils = {
+var ImageUtils = {
   /**
-   * @memberof system.imageUtils
+   * @memberof system.ImageUtils
    * @function verify
    */
   verify: native.verifyImage,
   /**
-   * @memberof system.imageUtils
+   * @memberof system.ImageUtils
    * @function prepare
    */
   prepare: native.prepareImage,
@@ -35,6 +35,6 @@ var imageUtils = {
  * get image
  */
 exports.getImage = function() {
-  return imageUtils;
+  return ImageUtils;
 };
 

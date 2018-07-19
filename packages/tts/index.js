@@ -17,6 +17,9 @@ var TTSEvents = [
 
 /**
  * @constructor
+ * @param {Object} handle
+ * @param {String} text - the text to speak
+ * @param {Function} callback
  */
 function TtsRequest(handle, text, callback) {
   this.id = handle.speak(text);
@@ -61,6 +64,8 @@ TtsRequest.prototype.end = function(errno) {
 
 /**
  * @constructor
+ * @augments EventEmitter
+ * @param {Object} handle
  */
 function TtsProxy(handle) {
   EventEmitter.call(this);
@@ -73,10 +78,6 @@ function TtsProxy(handle) {
 }
 inherits(TtsProxy, EventEmitter);
 
-/**
- * @param {String} name
- * @param {String} id
- */
 TtsProxy.prototype.onevent = function(name, id, errno) {
   var evt = TTSEvents[name];
   var req = this._requests[id];
@@ -93,6 +94,8 @@ TtsProxy.prototype.onevent = function(name, id, errno) {
 
 /**
  * @param {String} text
+ * @param {Function} cb - fired when tts is done
+ * @returns {TtsRequest}
  */
 TtsProxy.prototype.speak = function(text, cb) {
   var req = new TtsRequest(this._handle, text, cb);
@@ -116,12 +119,6 @@ TtsProxy.prototype.disconnect = function() {
   this._requests.length = 0;
 };
 
-/**
- * @memberof tts
- * @function createHandle
- * @param {Object} options
- * @return {TtsHandle}
- */
 function createHandle(options) {
   var handle = new TtsWrap();
   handle.prepare(
@@ -137,8 +134,12 @@ function createHandle(options) {
 /**
  * @memberof tts
  * @method createTts
- * @param {Object} options
- * @return {TtsProxy}
+ * @param {Object} options - the Rokid cloud options
+ * @param {String} options.key - the key
+ * @param {String} options.secret - the secret
+ * @param {String} options.deviceId - the device id
+ * @param {String} options.deviceTypeId - the device type id
+ * @returns {TtsProxy}
  */
 function createTts(options) {
   var handle = createHandle(options);
