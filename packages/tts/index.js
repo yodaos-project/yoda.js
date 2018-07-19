@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @module tts
+ * @namespace tts
  */
 
 var TtsWrap = require('./tts.node').TtsWrap;
@@ -16,7 +16,7 @@ var TTSEvents = [
 ];
 
 /**
- * @class TtsRequest
+ * @constructor
  */
 function TtsRequest(handle, text, callback) {
   this.id = handle.speak(text);
@@ -27,7 +27,7 @@ function TtsRequest(handle, text, callback) {
 }
 
 /**
- * @method cancel
+ * cancel
  */
 TtsRequest.prototype.cancel = function() {
   this.state = 'cancel';
@@ -35,14 +35,13 @@ TtsRequest.prototype.cancel = function() {
 };
 
 /**
- * @method onstart
+ * onstart
  */
 TtsRequest.prototype.onstart = function() {
   this.state = 'start';
 };
 
 /**
- * @method end
  * @param {Number} errno - the error code if something wrong.
  */
 TtsRequest.prototype.end = function(errno) {
@@ -61,8 +60,7 @@ TtsRequest.prototype.end = function(errno) {
 };
 
 /**
- * @class TtsProxy
- * @extends EventEmitter
+ * @constructor
  */
 function TtsProxy(handle) {
   EventEmitter.call(this);
@@ -76,7 +74,8 @@ function TtsProxy(handle) {
 inherits(TtsProxy, EventEmitter);
 
 /**
- * @method onevent
+ * @param {String} name
+ * @param {String} id
  */
 TtsProxy.prototype.onevent = function(name, id, errno) {
   var evt = TTSEvents[name];
@@ -93,8 +92,7 @@ TtsProxy.prototype.onevent = function(name, id, errno) {
 };
 
 /**
- * @method speak
- * @return {Number} the `id` of this tts task.
+ * @param {String} text
  */
 TtsProxy.prototype.speak = function(text, cb) {
   var req = new TtsRequest(this._handle, text, cb);
@@ -103,7 +101,7 @@ TtsProxy.prototype.speak = function(text, cb) {
 };
 
 /**
- * @method stopAll
+ * stop all task
  */
 TtsProxy.prototype.stopAll = function() {
   for (var i = 0; i < this._requests.length; i++)
@@ -111,7 +109,7 @@ TtsProxy.prototype.stopAll = function() {
 };
 
 /**
- * @method disconnect
+ * disconnect
  */
 TtsProxy.prototype.disconnect = function() {
   this._handle.disconnect();
@@ -119,7 +117,8 @@ TtsProxy.prototype.disconnect = function() {
 };
 
 /**
- * @method createHandle
+ * @memberof tts
+ * @function createHandle
  * @param {Object} options
  * @return {TtsHandle}
  */
@@ -136,6 +135,7 @@ function createHandle(options) {
 }
 
 /**
+ * @memberof tts
  * @method createTts
  * @param {Object} options
  * @return {TtsProxy}

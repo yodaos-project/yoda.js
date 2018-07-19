@@ -2,7 +2,7 @@
   "name": "rokidos",
   "version": "2.0.0",
   "scripts": {
-    "build-apidoc": "jsdoc -c jsdoc.config -t ./node_modules/ink-docstrap/template -R README.md -r . -d docs/apidoc"
+    "build-apidoc": "jsdoc -c jsdoc.config -R README.md -r . -d docs/apidoc"
   },
   "config": {
     "unsafe-perm": true

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @module multimedia
+ * @namespace multimedia
  */
 
 var native = require('./multimedia.node');
@@ -9,7 +9,8 @@ var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 
 /**
- * @class MediaPlayer
+ * @class
+ * @memberof multimedia
  */
 function MediaPlayer(tag, options) {
   EventEmitter.call(this);
@@ -19,7 +20,7 @@ function MediaPlayer(tag, options) {
 inherits(MediaPlayer, EventEmitter);
 
 /**
- * @method onevent
+ * onevent
  */
 MediaPlayer.prototype.onevent = function(type, ext1, ext2, from) {
   var eventName = native.Events[type];
@@ -35,7 +36,7 @@ MediaPlayer.prototype.onevent = function(type, ext1, ext2, from) {
 };
 
 /**
- * @method play
+ * play
  * @param {String} url
  */
 MediaPlayer.prototype.play = function(url) {
@@ -45,21 +46,21 @@ MediaPlayer.prototype.play = function(url) {
 };
 
 /**
- * @method pause
+ * pause
  */
 MediaPlayer.prototype.pause = function() {
   return this._handle.pause();
 };
 
 /**
- * @method resume
+ * resume
  */
 MediaPlayer.prototype.resume = function() {
   return this._handle.resume();
 };
 
 /**
- * @method seek
+ * seek
  * @param {Number} pos
  */
 MediaPlayer.prototype.seek = function(pos) {
@@ -67,21 +68,21 @@ MediaPlayer.prototype.seek = function(pos) {
 };
 
 /**
- * @method stop
+ * stop
  */
 MediaPlayer.prototype.stop = function() {
   return this._handle.stop();
 };
 
 /**
- * @method reset
+ * reset
  */
 MediaPlayer.prototype.reset = function() {
   return this._handle.reset();
 };
 
 /**
- * @method disconnect
+ * disconnect
  */
 MediaPlayer.prototype.disconnect = function() {
   return this._handle.disconnect();
@@ -170,9 +171,5 @@ Object.defineProperty(MediaPlayer.prototype, 'sessionId', {
 });
 
 exports.MediaPlayer = MediaPlayer;
-
-/**
- * @module multimedia.soundplayer
- */
 exports.soundplayer = require('./soundplayer');
 
