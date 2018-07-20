@@ -15,6 +15,9 @@ var TTSEvents = [
   'error'	// 4: error
 ];
 
+// reference to handle
+var refs = {};
+
 /**
  * @constructor
  * @param {Object} handle
@@ -120,7 +123,7 @@ TtsProxy.prototype.disconnect = function() {
 };
 
 function createHandle(options) {
-  var handle = new TtsWrap();
+  var handle = refs.handle = new TtsWrap();
   handle.prepare(
     options.host || 'apigwws.open.rokid.com', 443, '/api',
     options.key,
