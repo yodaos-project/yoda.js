@@ -35,8 +35,7 @@ static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
   iotjs_tts_t* ttswrap = IOTJS_ALLOC(iotjs_tts_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_tts_t, ttswrap);
 
-  jerry_value_t jobjectref = jerry_acquire_value(jtts);
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jobjectref, &this_module_native_info);
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jtts, &this_module_native_info);
   _this->handle = new TtsNative(ttswrap);
   _this->prepared = false;
   return ttswrap;
@@ -131,11 +130,12 @@ JS_FUNCTION(Speak) {
   }
 
   char* text = NULL;
-  jerry_size_t size = jerry_get_string_size(jargv[0]);
+  jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
   jerry_char_t text_buf[size];
-  jerry_string_to_char_buffer(jargv[0], text_buf, size);
+  jerry_string_to_utf8_char_buffer(jargv[0], text_buf, size);
+  text_buf[size] = '\0';
   text = (char*)&text_buf;
-  
+ 
   int32_t id = _this->handle->speak(text);
   return jerry_create_number(id);
 }
