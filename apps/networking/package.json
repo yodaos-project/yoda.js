@@ -1,0 +1,16 @@
+{
+  "name": "@rokid/bluetooth",
+  "version": "1.0.0",
+  "description": "Bluetooth Apps for Rokid",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bluetooth",
+    "rokid",
+    "skill"
+  ],
+  "author": "Yazhong Liu <yorkiefixer@gmail.com>",
+  "license": "MIT"
+}
