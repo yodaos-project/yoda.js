@@ -16,10 +16,17 @@ enum TtsStatusCode {
   TTS_ERROR,
 };
 
+typedef void (*send_event_callback)(void*, TtsResultType, int, int);
+
 class TtsService {
  public:
-  TtsService();
-  ~TtsService();
+  TtsService() {};
+  TtsService(send_event_callback send_event_) {
+    send_event = send_event_;
+  };
+  ~TtsService() {
+    tts_handle->release();
+  }
 
   bool prepare(const char* host,
                int port,
@@ -33,13 +40,13 @@ class TtsService {
   int cancel(int id);
   int disconnect();
 
-  static void* PollEvent(void* params);
+  static void* PollEvent(void*);
 
  protected:
-  void sendEvent(TtsResultType event, int id, int code);
+  send_event_callback send_event;
+  bool prepared = false;
 
  private:
-  bool prepared = false;
   PrepareOptions options;
   shared_ptr<TtsOptions> tts_options;
   shared_ptr<Tts> tts_handle;

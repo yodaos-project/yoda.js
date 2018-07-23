@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(rokidos_nodejs)
-
 include(ExternalProject)
 
 # Bluetooth
@@ -18,6 +17,18 @@ include(ExternalProject)
 #     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
 #     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
 #     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+
+# Runtime
+ExternalProject_Add(runtime
+  SOURCE_DIR runtime
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR})
+
+# Logger
+ExternalProject_Add(logger
+  SOURCE_DIR packages/logger
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR})
 
 # Light
 ExternalProject_Add(light

@@ -1,7 +1,17 @@
 'use strict';
+
+/**
+ * @namespace logger
+ */
+
 var util = require('util');
 var id = 0;
 
+/**
+ * @memberof logger
+ * @constructor
+ * @param {String} name - the logger name
+ */
 function Logger(name) {
   if (!name) {
     name = 'syst';
@@ -27,14 +37,33 @@ function createLoggerFunction(level) {
   };
 }
 
+/**
+ * log
+ */
 Logger.prototype.log = createLoggerFunction('info');
+
+/**
+ * info
+ */
 Logger.prototype.info = createLoggerFunction('info');
+
+/**
+ * warn
+ */
 Logger.prototype.warn = createLoggerFunction('warn');
+
+/**
+ * error
+ */
 Logger.prototype.error = createLoggerFunction('error');
 
+/**
+ * @memberof logger
+ * @function logger
+ * @param {String} name - the log tag
+ */
 module.exports = function(name) {
   var logger = new Logger(name);
   // aliyun log?
   return logger;
 };
-
