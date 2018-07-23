@@ -18,4 +18,5 @@ set_target_properties(node-multimedia PROPERTIES
   OUTPUT_NAME "multimedia"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-multimedia DESTINATION ${CMAKE_INSTALL_DIR})
+install(TARGETS node-multimedia DESTINATION ${CMAKE_INSTALL_DIR}/packages/multimedia)
+install(FILES index.js soundplayer.js DESTINATION ${CMAKE_INSTALL_DIR}/packages/multimedia)

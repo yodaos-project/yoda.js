@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * @module soundplayer
+ * @memberof multimedia
+ * @namespace soundplayer
  */
 
 var child_process = require('child_process');
@@ -14,21 +15,8 @@ function defaultCallback(err) {
 }
 
 /**
- * @method set
- * @param {String} name - the config name
- * @param {any} val
- */
-function set(name, val) {
-  if (name === 'pulseaudio.homedir') {
-    PA_HOME_DIR = val;
-  } else {
-    throw new Error(`unknown property ${name}`);
-  }
-}
-
-/**
- * @class SoundPlayer
- * @constructor
+ * @memberof multimedia.soundplayer
+ * @class
  * @param {String} media - the media url to play
  */
 function SoundPlayer(media) {
@@ -38,9 +26,7 @@ function SoundPlayer(media) {
 }
 
 /**
- * @method play
- * @param {Function} callback <optional> fired when play is done
- * @return {SoundPlayer}
+ * play the sound
  */
 SoundPlayer.prototype.play = function play(callback) {
   var meta = url.parse(this._media);
@@ -68,8 +54,7 @@ SoundPlayer.prototype.play = function play(callback) {
 };
 
 /**
- * @method stop
- * @return {SoundPlayer}
+ * stop the sound
  */
 SoundPlayer.prototype.stop = function stop() {
   if (this._subprocess) {
@@ -80,9 +65,21 @@ SoundPlayer.prototype.stop = function stop() {
 };
 
 /**
- * @method play
- * @param {String} media - the media url to play
- * @return {SoundPlayer}
+ * Set the global environment
+ * @memberof multimedia.soundplayer
+ * @function set
+ */
+function set(name, val) {
+  if (name === 'pulseaudio.homedir') {
+    PA_HOME_DIR = val;
+  } else {
+    throw new Error(`unknown property ${name}`);
+  }
+}
+
+/**
+ * @memberof multimedia.soundplayer
+ * @function play
  */
 function play(media, callback) {
   var splayer = new SoundPlayer(media);

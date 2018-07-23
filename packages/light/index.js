@@ -1,41 +1,33 @@
 'use strict';
 
 /**
- * @module volume
+ * @namespace light
  */
 
-var native = require('./volume.node');
+var native = require('./light.node');
 
-/**
- * @method set
- * @param {String} stream - <optional> the stream type, tts/audio/alarm.
- * @param {Number} vol - the volume to set
- */
-exports.set = function(stream, vol) {
-  if (arguments.length === 1 && typeof stream === 'number') {
-    vol = stream;
-    stream = null;
-  }
-  if (!vol) {
-    throw new TypeError('vol is required');
-  }
-
-  if (stream) {
-    native.setStreamVolume(stream, vol);
-  } else {
-    native.setVolume(vol);
-  }
+module.exports = {
+  /**
+   * Enable the light write
+   * @memberof light
+   * @function enable
+   */
+  enable: native.enable,
+  /**
+   * Disable the light write
+   * @memberof light
+   * @function disable
+   */
+  disable: native.disable,
+  /**
+   * @function write
+   * @memberof light
+   * @param {Buffer} buffer - the led buffer to write
+   */
+  write: native.write,
+  /**
+   * @memberof light
+   * @function getProfile
+   */
+  getProfile: native.getProfile,
 };
-
-/**
- * @method get
- * @param {String} stream - <optional> the stream type, tts/audio/alarm
- */
-exports.get = function(stream) {
-  if (stream) {
-    return native.getStreamVolume(stream);
-  } else {
-    return native.getVolume();
-  }
-};
-

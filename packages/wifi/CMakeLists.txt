@@ -16,4 +16,6 @@ set_target_properties(node-wifi PROPERTIES
   OUTPUT_NAME "wifi"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-wifi DESTINATION ${CMAKE_INSTALL_DIR})
+install(TARGETS node-wifi DESTINATION ${CMAKE_INSTALL_DIR}/packages/wifi)
+install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR}/packages/wifi)
+

@@ -189,6 +189,31 @@ JS_FUNCTION(Resume) {
   return JS_GET_THIS();
 }
 
+JS_FUNCTION(Seek) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  if (_this->handle == NULL)
+    return JS_CREATE_ERROR(COMMON, "player native handle is not initialized");
+  if (!_this->listener->isPrepared())
+    return JS_CREATE_ERROR(COMMON, "player is not prepared");
+
+  int ms = JS_GET_ARG(0, number);
+  _this->handle->seekTo(ms);
+  return JS_GET_THIS();
+}
+
+JS_FUNCTION(Reset) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  // FIXME(Yorkie): reset needs forcily to reset without any errors.
+  if (_this->handle) {
+    _this->handle->reset();
+  }
+  return JS_GET_THIS();
+}
+
 JS_FUNCTION(Disconnect) {
   JS_DECLARE_THIS_PTR(player, player);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
@@ -208,6 +233,109 @@ JS_FUNCTION(IdGetter) {
   return jerry_create_number(_this->id);
 }
 
+JS_FUNCTION(PlayingStateGetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+  
+  if (_this->handle && _this->listener->isPrepared())
+    return jerry_create_boolean(_this->handle->isPlaying());
+  else
+    return jerry_create_boolean(false);
+}
+
+JS_FUNCTION(DurationGetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  int ms = -1;
+  if (_this->handle && _this->listener->isPrepared()) {
+    _this->handle->getDuration(&ms);
+  }
+  return jerry_create_number(ms);
+}
+
+JS_FUNCTION(PositionGetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  int ms = -1;
+  if (_this->handle && _this->listener->isPrepared()) {
+    _this->handle->getCurrentPosition(&ms);
+  }
+  return jerry_create_number(ms);
+}
+
+JS_FUNCTION(LoopModeGetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  if (_this->handle && _this->listener->isPrepared()) {
+    return jerry_create_boolean(_this->handle->isLooping());
+  } else {
+    return jerry_create_boolean(false);
+  }
+}
+
+JS_FUNCTION(LoopModeSetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  int mode = JS_GET_ARG(0, number);
+  if (_this->handle && _this->listener->isPrepared()) {
+    _this->handle->setLooping(mode);
+    return jerry_create_boolean(true);
+  } else {
+    return JS_CREATE_ERROR(COMMON, "player is not ready");
+  }
+}
+
+JS_FUNCTION(VolumeGetter) {
+  return jerry_create_undefined();
+}
+
+JS_FUNCTION(VolumeSetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  float vol = JS_GET_ARG(0, number);
+  if (_this->handle) {
+    _this->handle->setVolume(vol/* left */, vol/* right */);
+    return jerry_create_boolean(true);
+  } else {
+    return JS_CREATE_ERROR(COMMON, "player is not ready");
+  }
+}
+
+JS_FUNCTION(SessionIdGetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  if (_this->handle) {
+    return jerry_create_boolean(_this->handle->getAudioSessionId());
+  } else {
+    return JS_CREATE_ERROR(COMMON, "player is not ready");
+  }
+}
+
+JS_FUNCTION(SessionIdSetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  int id = JS_GET_ARG(0, number);
+  if (_this->handle) {
+    _this->handle->setAudioSessionId(id);
+    return jerry_create_boolean(true);
+  } else {
+    return JS_CREATE_ERROR(COMMON, "player is not ready");
+  }
+}
+
+void iotjs_set_constant(jerry_value_t jobj, uint32_t idx, const char* v) {
+  jerry_value_t jval = jerry_create_string((const jerry_char_t*)v);
+  jerry_set_property_by_index(jobj, idx, jval);
+  jerry_release_value(jval);
+}
+
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(Player);
   iotjs_jval_set_property_jval(exports, "Player", jconstructor);
@@ -218,12 +346,36 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "stop", Stop);
   iotjs_jval_set_method(proto, "pause", Pause);
   iotjs_jval_set_method(proto, "resume", Resume);
+  iotjs_jval_set_method(proto, "seek", Seek);
+  iotjs_jval_set_method(proto, "reset", Reset);
+  iotjs_jval_set_method(proto, "disconnect", Disconnect);
+  
   // the following methods are for getters and setters internally
   iotjs_jval_set_method(proto, "idGetter", IdGetter);
+  iotjs_jval_set_method(proto, "playingStateGetter", PlayingStateGetter);
+  iotjs_jval_set_method(proto, "durationGetter", DurationGetter);
+  iotjs_jval_set_method(proto, "positionGetter", PositionGetter);
+  iotjs_jval_set_method(proto, "loopModeGetter", LoopModeGetter);
+  iotjs_jval_set_method(proto, "loopModeSetter", LoopModeSetter);
+  iotjs_jval_set_method(proto, "volumeGetter", VolumeGetter);
+  iotjs_jval_set_method(proto, "volumeSetter", VolumeSetter);
+  iotjs_jval_set_method(proto, "sessionIdGetter", SessionIdGetter);
+  iotjs_jval_set_method(proto, "sessionIdSetter", SessionIdSetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
+
+  // set events
+  jerry_value_t events = jerry_create_object();
+  iotjs_set_constant(events, MULTIMEDIA_PLAYER_NOOP, "noop");
+  iotjs_set_constant(events, MULTIMEDIA_PLAYER_PREPARED, "prepared");
+  iotjs_set_constant(events, MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE, "playback complete");
+  iotjs_set_constant(events, MULTIMEDIA_BUFFERING_UPDATE, "buffering update");
+  iotjs_set_constant(events, MULTIMEDIA_SEEK_COMPLETE, "seek complete");
+  iotjs_set_constant(events, MULTIMEDIA_ERROR, "error");
+  iotjs_jval_set_property_jval(exports, "Events", events);
 
   jerry_release_value(proto);
   jerry_release_value(jconstructor);
+  jerry_release_value(events);
 }
 
 NODE_MODULE(tts, init)

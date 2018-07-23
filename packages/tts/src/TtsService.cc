@@ -10,14 +10,6 @@ using namespace rokid;
 
 static OpusPlayer _player;
 
-TtsService::TtsService() {
-  // TODO
-}
-
-TtsService::~TtsService() {
-  // TODO
-}
-
 int TtsService::speak(const char* content) {
   if (!prepared) {
     return TTS_NOT_PREPARED;
@@ -45,10 +37,6 @@ int TtsService::disconnect() {
   return 0;
 }
 
-void TtsService::sendEvent(TtsResultType event, int id, int code) {
-  printf("got event %d with %d\n", id, code);
-}
-
 void* TtsService::PollEvent(void* params) {
   TtsResult res;
   TtsService* self = (TtsService*)params;
@@ -69,19 +57,19 @@ void* TtsService::PollEvent(void* params) {
         break;
       }
       case TTS_RES_START: {
-        self->sendEvent(TTS_RES_START, res.id, NULL);
+        self->send_event(self, TTS_RES_START, res.id, 0);
         break;
       }
       case TTS_RES_END: {
-        self->sendEvent(TTS_RES_END, res.id, NULL);
+        self->send_event(self, TTS_RES_END, res.id, 0);
         break;
       }
       case TTS_RES_CANCELLED: {
-        self->sendEvent(TTS_RES_CANCELLED, res.id, NULL);
+        self->send_event(self, TTS_RES_CANCELLED, res.id, 0);
         break;
       }
       case TTS_RES_ERROR: {
-        self->sendEvent(TTS_RES_ERROR, res.id, res.err);
+        self->send_event(self, TTS_RES_ERROR, res.id, res.err);
         break;
       }
     }
