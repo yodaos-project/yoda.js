@@ -56,7 +56,7 @@ JS_FUNCTION(TTS) {
   
   const jerry_value_t jtts = JS_GET_THIS();
   iotjs_tts_t* tts_instance = iotjs_tts_create(jtts);
-  return jerry_create_undefined(); 
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(Prepare) {
