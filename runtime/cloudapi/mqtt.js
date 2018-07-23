@@ -85,6 +85,10 @@ MqttAgent.prototype.sendToApp = function (topic, text) {
     reviceDevice: {
       accountId: this.userId,
     },
+    sourceDevice: {
+      deviceId: this.config.device_id,
+      deviceType: this.config.device_type_id
+    },
     topic: topic,
     text: text,
     messageId: Date.now() + '',
