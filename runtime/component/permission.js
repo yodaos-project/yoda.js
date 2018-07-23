@@ -1,4 +1,3 @@
-var dbus = require('dbus');
 var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 
@@ -22,7 +21,7 @@ Permission.prototype.load = function(appId, permission) {
             this.permission[appId][permission[i]] = true;
         }
     }
-}
+};
 
 /**
  * 检查是否具有某个权限
@@ -39,29 +38,6 @@ Permission.prototype.check = function(appId, name) {
         return appId === this.app_runtime.getCurrentAppId() || this.permission[appId]['interrupt'] === true;
     }
     return false;
-}
-
-/**
- * 启动dbus服务
- */
-Permission.prototype.startDbusService = function() {
-    var self = this;
-    var service = dbus.registerService('session', 'com.rokid.permission');
-    var permitObject = service.createObject('/com/permission');
-    var permitApis = permitObject.createInterface('com.rokid.permission');
-
-    permitApis.addMethod('check', {
-        in: ['s', 's'],
-        out: ['s']
-    }, function(appId, name, cb){
-        var permit = self.check(appId, name);
-        if (permit) {
-            cb(null, 'true');
-        }else{
-            cb(new Error('permission deny'), 'false');
-        }
-    });
-    permitApis.update();
-}
+};
 
 module.exports = Permission;

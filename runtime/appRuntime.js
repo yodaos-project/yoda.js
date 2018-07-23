@@ -29,7 +29,7 @@ function App(arr) {
   this.loadApp(arr, function () {
     logger.log('load app complete');
   });
-  this.dbusClient = dbus.getBus('session');
+  // this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
   this.startExtappService();
   // 处理mqtt事件
@@ -397,7 +397,7 @@ App.prototype.exitAppById = function (appId) {
 App.prototype.registerExtApp = function (appId, profile) {
   logger.log('register extapp with id: ', appId);
   // 配置exitApp的默认权限
-  this.permission.load(appId, ['tts', 'audio']);
+  this.permission.load(appId, ['ACCESS_TTS', 'ACCESS_MULTIMEDIA']);
   this.apps[appId] = new AppExecutor(profile);
 };
 
@@ -463,6 +463,8 @@ App.prototype.startExtappService = function () {
   var service = dbus.registerService('session', 'com.rokid.AmsExport');
   var extappObject = service.createObject('/activation/extapp');
   var extappApis = extappObject.createInterface('com.rokid.activation.extapp');
+  
+  this.service = service;
 
   extappApis.addMethod('register', {
     in: ['s', 's', 's'],
@@ -497,7 +499,8 @@ App.prototype.startExtappService = function () {
     out: []
   }, function (appId, isPickup, cb) {
     if (appId !== self.getCurrentAppId()) {
-      cb(new Error('permission deny'));
+      logger.log('set pickup permission deny');
+      cb(null);
     } else {
       self.setPickup(isPickup === 'true' ? true : false);
       cb(null);
@@ -508,7 +511,8 @@ App.prototype.startExtappService = function () {
     out: []
   }, function (appId, cb) {
     if (appId !== self.getCurrentAppId()) {
-      cb(new Error('appid is not at stack'));
+      logger.log('exit app permission deny');
+      cb(null);
     } else {
       self.lifeCycle('destroy', {
         appId: appId
@@ -534,7 +538,7 @@ App.prototype.startExtappService = function () {
       } else {
         logger.log('tts say complete. signal');
         // 播放完成
-        self.dbusClient._dbus.emitSignal(
+        service._dbus.emitSignal(
           self.dbusClient.connection,
           app.profile.metadata.dbusConn.objectPath,
           app.profile.metadata.dbusConn.ifaceName,
@@ -551,4 +555,21 @@ App.prototype.startExtappService = function () {
     }
   })
   extappApis.update();
+
+  var permitObject = service.createObject('/com/permission');
+  var permitApis = permitObject.createInterface('com.rokid.permission');
+
+  permitApis.addMethod('check', {
+    in: ['s', 's'],
+    out: ['s']
+  }, function (appId, name, cb) {
+    var permit = self.permission.check(appId, name);
+    logger.log('vui.permit', permit, appId, name);
+    if (permit) {
+      cb(null, 'true');
+    } else {
+      cb(new Error('permission deny'), 'false');
+    }
+  });
+  permitApis.update();
 };

@@ -16,37 +16,11 @@ var options = {
   deviceTypeId: config.device_type_id,
   deviceId: config.device_id,
 };
-/**
- * turen speech事件代理
- */
-function TurenProxy() {
-  var self = this;
-  EventEmitter.call(this);
-  this.service = dbus.registerService('session', 'com.vos.vui');
-  this.serviceObj = this.service.createObject('/vui/proxy');
-  this.voiceApi = this.serviceObj.createInterface('proxy.event');
-
-  // 接收speech事件
-  this.voiceApi.addMethod('notify', {
-    in: ['s', 's'],
-    out: ['s']
-  }, function (name, data, cb) {
-    // 发送通知
-    self.emit('notify', name, JSON.parse(data));
-    cb(null, 'ok');
-  });
-  this.voiceApi.update();
-}
-inherits(TurenProxy, EventEmitter);
 
 
 //------------------------------------------------------
-// var proxy = new TurenProxy();
-var app_runtime = new appRuntime(['/opt/test']);
 
-// proxy.on('notify', function(name, data){
-//     app_runtime.onEvent(name, data);
-// });
+var app_runtime = new appRuntime(['/opt/test']);
 
 var speech = new Turen.TurenSpeech();
 

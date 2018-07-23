@@ -1,4 +1,3 @@
-var dbus = require('dbus').getBus('session');
 var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 
@@ -46,7 +45,7 @@ ExtApp.prototype._onEvent = function (name) {
             params = [
                 params[0],
                 JSON.stringify(params[1]),
-                JSON.stringify(params[2]),
+                JSON.stringify(params[2])
             ];
             break;
         default:
@@ -57,16 +56,16 @@ ExtApp.prototype._onEvent = function (name) {
     if (!eventName) {
         return;
     }
-    dbus._dbus.emitSignal(
-        dbus.connection,
+    this.runtime.service._dbus.emitSignal(
         this.dbusConn.objectPath,
         this.dbusConn.ifaceName,
         eventName,
-        params,
-        params.map(function() {
+        params.map(() => {
             return 's'
-        })
+        }).join(''),
+        params
     );
+    console.log('vui: args',name, params);
 }
 
 module.exports = ExtApp;
