@@ -8,6 +8,7 @@ add_library(node-multimedia MODULE
 target_include_directories(node-multimedia PRIVATE
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
+  ${CMAKE_INCLUDE_DIR}/usr/include/librplayer
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
 )
 

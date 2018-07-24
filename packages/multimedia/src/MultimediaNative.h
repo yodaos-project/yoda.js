@@ -13,7 +13,7 @@ extern "C"
 #include <iotjs_def.h>
 #include <iotjs_binding.h>
 #include <iotjs_objectwrap.h>
-#include <librplayer/mediaplayer.h>
+#include <mediaplayer.h>
 #include <uv.h>
 
 class MultimediaListener;

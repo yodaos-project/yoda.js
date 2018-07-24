@@ -90,3 +90,5 @@ ExternalProject_Add(volume
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
+install(DIRECTORY apps DESTINATION ${CMAKE_INSTALL_DIR}/placeholder)
+
