@@ -13,9 +13,11 @@ MultiMedia.prototype.play = function (appId, url) {
       .then((res) => {
         logger.log('multimedia play', res, appId, url);
         if (res['0'] === 'true') {
+          logger.log('playing ->', this.options.multimedia.playing);
+          if (this.options.multimedia.playing) {
+            this.options.multimedia.stop();
+          }
           this.options.multimedia.play(url);
-          // var req = this.options.tts.speak(text);
-          // this.handle[appId] = req;
           resolve();
         } else {
           reject('permission deny');
@@ -29,8 +31,8 @@ MultiMedia.prototype.play = function (appId, url) {
 };
 
 MultiMedia.prototype.cancel = function (appId) {
-  if (this.handle[appId]) {
-    this.handle[appId].cancel();
+  if (this.options.multimedia.playing) {
+    this.options.multimedia.stop();
   }
 };
 

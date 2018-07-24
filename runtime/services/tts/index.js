@@ -24,6 +24,7 @@ var tts = TtsWrap.createTts({
   secret: CONFIG.secret
 });
 
+
 var service = new Service({
   tts: tts,
   permit: permit
@@ -78,11 +79,11 @@ dbusApis.addMethod('say', {
   if (appId && text) {
     service.say(appId, text)
       .then((id) => {
-        cb(null, ''+id);
+        cb(null, '' + id);
       })
       .catch((err) => {
         cb(null, '-1');
-      })
+      });
   } else {
     cb('permission deny', '-1');
   }
@@ -104,7 +105,3 @@ dbusApis.addMethod('cancel', {
 dbusApis.update();
 
 logger.log('service tts started');
-
-function noop () {};
-
-setInterval(noop, 1000);

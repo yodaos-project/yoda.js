@@ -25,11 +25,12 @@ MediaPlayer.prototype.onevent = function(type, ext1, ext2, from) {
     this.emit('error', new Error(`cannot find event ${type}`));
     return;
   }
+  console.log('package event name', eventName);
   if (eventName === 'prepared') {
     this._handle.start();
-  } else {
-    this.emit(eventName, ext1, ext2, from);
   }
+  // fixed by sudo: prepared 事件需要上报给云端
+  this.emit(eventName, ext1, ext2, from);
 };
 
 /**
@@ -91,7 +92,7 @@ MediaPlayer.prototype.disconnect = function() {
  */
 Object.defineProperty(MediaPlayer.prototype, 'id', {
   get: function() {
-    return this.idGetter();
+    return this._handle.idGetter();
   }
 });
 
@@ -101,7 +102,7 @@ Object.defineProperty(MediaPlayer.prototype, 'id', {
  */
 Object.defineProperty(MediaPlayer.prototype, 'playing', {
   get: function() {
-    return this.playingStateGetter();
+    return this._handle.playingStateGetter();
   }
 });
 
@@ -111,7 +112,7 @@ Object.defineProperty(MediaPlayer.prototype, 'playing', {
  */
 Object.defineProperty(MediaPlayer.prototype, 'duration', {
   get: function() {
-    return this.durationGetter();
+    return this._handle.durationGetter();
   }
 });
 
@@ -121,7 +122,7 @@ Object.defineProperty(MediaPlayer.prototype, 'duration', {
  */
 Object.defineProperty(MediaPlayer.prototype, 'position', {
   get: function() {
-    return this.positionGetter();
+    return this._handle.positionGetter();
   }
 });
 
@@ -132,10 +133,10 @@ Object.defineProperty(MediaPlayer.prototype, 'position', {
  */
 Object.defineProperty(MediaPlayer.prototype, 'loopMode', {
   get: function() {
-    return this.loopModeGetter();
+    return this._handle.loopModeGetter();
   },
   set: function(mode) {
-    return this.loopModeSetter(mode);
+    return this._handle.loopModeSetter(mode);
   },
 });
 
@@ -146,10 +147,10 @@ Object.defineProperty(MediaPlayer.prototype, 'loopMode', {
  */
 Object.defineProperty(MediaPlayer.prototype, 'volume', {
   get: function() {
-    return this.volumeGetter();
+    return this._handle.volumeGetter();
   },
   set: function(vol) {
-    return this.volumeSetter(vol);
+    return this._handle.volumeSetter(vol);
   }
 });
 
@@ -160,10 +161,10 @@ Object.defineProperty(MediaPlayer.prototype, 'volume', {
  */
 Object.defineProperty(MediaPlayer.prototype, 'sessionId', {
   get: function() {
-    return this.sessionIdGetter();
+    return this._handle.sessionIdGetter();
   },
   set: function(id) {
-    return this.sessionIdSetter(id);
+    return this._handle.sessionIdSetter(id);
   }
 });
 
