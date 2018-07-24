@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(rokidos_nodejs)
 include(ExternalProject)
+find_package(Git REQUIRED)
 
 # Bluetooth
 # ExternalProject_Add(bluetooth
@@ -17,6 +18,23 @@ include(ExternalProject)
 #     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
 #     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
 #     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+
+# shadow-ffi
+ExternalProject_Add(shadow-ffi
+    PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/shadow-ffi
+    GIT_REPOSITORY https://github.com/shadow-node/ffi.git
+    GIT_TAG master
+    TIMEOUT 10
+    UPDATE_COMMAND ${GIT_EXECUTABLE} pull
+    LOG_DOWNLOAD ON
+    CMAKE_ARGS
+      -DLIBFFI_LINK_EXTERNAL=YES
+      -DCMAKE_EXTERNAL_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+      -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+      -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
+      -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
 # Runtime
 ExternalProject_Add(runtime
