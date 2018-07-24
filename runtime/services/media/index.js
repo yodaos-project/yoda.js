@@ -23,21 +23,42 @@ var service = new Service({
   permit: permit
 });
 
-multimedia.on('start', function (ext1, ext2, from) {
-  logger.log('ttsd start', Array.prototype.slice.call(arguments, 0));
+multimedia.on('prepared', function (id) {
+  logger.log('multimediad prepared', Array.prototype.slice.call(arguments, 0));
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    's',
+    ['start']
+  );
+})
+multimedia.on('playback complete', function (ext1, ext2, from) {
+  logger.log('multimediad playback complete', Array.prototype.slice.call(arguments, 0));
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    's',
+    ['end']
+  );
+});
+multimedia.on('buffering update', function (ext1, ext2, from) {
+  logger.log('multimediad buffering update', Array.prototype.slice.call(arguments, 0));
   
 });
-multimedia.on('end', function (id, errno) {
-  logger.log('ttsd end', Array.prototype.slice.call(arguments, 0));
-  
+multimedia.on('seek complete', function (ext1, ext2, from) {
+  logger.log('multimediad seek complete', Array.prototype.slice.call(arguments, 0));
 });
-multimedia.on('cancel', function (id, errno) {
-  logger.log('ttsd cancel', Array.prototype.slice.call(arguments, 0));
-  
-});
-multimedia.on('error', function (id, errno) {
-  logger.log('ttsd error', Array.prototype.slice.call(arguments, 0));
-  
+multimedia.on('error', function (ext1, ext2, from) {
+  logger.log('multimediad error', Array.prototype.slice.call(arguments, 0));
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    's',
+    ['error']
+  );
 });
 
 dbusApis.addMethod('play', {

@@ -13,9 +13,11 @@ Tts.prototype.say = function (appId, text) {
       .then((res) => {
         logger.log('ttsd say', res, appId, text);
         if (res['0'] === 'true') {
+          // if (this.handle[appId]) {
+          //   this.handle[appId].cancel();
+          // }
           var req = this.options.tts.speak(text);
-          // var req = this.options.tts.speak(text);
-          // this.handle[appId] = req;
+
           resolve(req.id);
         } else {
           reject('permission deny');
