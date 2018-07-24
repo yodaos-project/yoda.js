@@ -54,8 +54,9 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
   for (int i = 0; i < jargc; i++) {
     jerry_release_value(jargv[i]);
   }
-  delete handle;
   delete event;
+  //delete handle;
+  uv_close((uv_handle_t*)handle, NULL);
 }
 
 bool MultimediaListener::isPrepared() {
