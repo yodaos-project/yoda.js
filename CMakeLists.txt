@@ -20,8 +20,8 @@ find_package(Git REQUIRED)
 #     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
 
 # shadow-ffi
-ExternalProject_Add(shadow-ffi
-    PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/shadow-ffi
+ExternalProject_Add(ffi
+    PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/ffi
     GIT_REPOSITORY https://github.com/shadow-node/ffi.git
     GIT_TAG master
     TIMEOUT 10

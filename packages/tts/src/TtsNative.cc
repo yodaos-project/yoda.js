@@ -23,7 +23,6 @@ void TtsNative::SendEvent(void* self, TtsResultType event, int id, int code) {
   for (int i = 0; i < jargc; i++) {
     jerry_release_value(jargv[i]);
   }
-  jerry_release_value(jthis);
   jerry_release_value(onevent);
 }
 
