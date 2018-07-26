@@ -3,7 +3,7 @@
 var mqtt = require('mqtt');
 var EventEmitter = require('events').EventEmitter;
 var inherits = require('util').inherits;
-var property = require('@rokid/rokidos/packages/property/property.node');
+var property = require('/opt/packages/property/property.node');
 var mqttRegister = require('./mqtt-register');
 var logger = console;
 
@@ -12,7 +12,8 @@ var handle = null;
 
 function MqttAgent(config) {
   EventEmitter.call(this);
-  this.userId = property.get('persist.system.user.userId');
+  // for dev: kamino开发阶段使用
+  this.userId = property.get('persist.system.user.userId') || 'C12E2A054F3C4D519D516A6032B530CF';
   this.config = config;
   this.register().then(() => {
     this.reConnect();

@@ -3,7 +3,7 @@
 var https = require('https');
 var crypto = require('crypto');
 var logger = console;
-var property = require('@rokid/rokidos/packages/property/property.node');
+var property = require('/opt/packages/property/property.node');
 
 function md5(str) {
   return crypto.createHash('md5').update(str).digest('hex').toUpperCase();
@@ -18,16 +18,16 @@ function deviceManager (cf, path, cb) {
     cb(new Error(path + 'failed after retry 10'));
     return;
   }
-  logger.log('start' + path);
-  logger.log('config: ', cf);
+  logger.log('start request', path);
+  logger.log('config:', cf);
   var time = Math.floor(Date.now() / 1000);
   var userId = property.get('persist.system.user.userId');
   var sign = md5(`key=${cf.key}&device_type_id=${cf.device_type_id}&device_id=${cf.device_id}&service=bindMaster&version=1.0&time=${time}&secret=${cf.secret}`);
   var auth = `version=1.0;time=${time};sign=${sign};key=${cf.key};device_type_id=${cf.device_type_id};device_id=${cf.device_id};service=bindMaster`;
-  var params = `{"userId":"${userId}"}`;
-  logger.log('sign: ', sign);
-  logger.log('auth: ', auth);
-  logger.log('params: ', params);
+  var params = `{"userId":"${userId || 'C12E2A054F3C4D519D516A6032B530CF'}"}`;
+  logger.log('sign:', sign);
+  logger.log('auth:', auth);
+  logger.log('params:', params);
   var req = https.request({
     method: 'POST',
     host: 'apigwrest.open.rokid.com',
@@ -44,14 +44,14 @@ function deviceManager (cf, path, cb) {
     });
     response.on('end', () => {
       var result = Buffer.concat(list).toString();
-      logger.log(path + ' response: ', result);
+      logger.log(path + ' response:', result);
       try {
         result = JSON.parse(result);
         if (result.resultCode === 0) {
           logger.log(path + ' -> response ok');
           cb(null, cf);
         } else {
-          logger.log(path + ' -> response ', result.message, result.resultCode);
+          logger.log(path + ' -> response', result.message, result.resultCode);
           cb(new Error(result.message));
         }
       } catch (error) {
@@ -75,10 +75,8 @@ function loginAndBindDevice (cb) {
   
   login().then((config) => {
     CONFIG = config;
-    logger.log('登录成功');
     deviceManager(config, '/v1/device/deviceManager/bindMaster', cb);
   }).catch((err) => {
-    logger.error('登录失败：', err);
     cb(err);
   });
 
