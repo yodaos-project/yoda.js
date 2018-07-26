@@ -57,6 +57,7 @@ class MultimediaListener : public MediaPlayerListener {
    */
   void notify(int msg, int ext1, int ext2, int from);
   static void DoNotify(uv_async_t* handle);
+  static void AfterNotify(uv_handle_t* handle);
   /**
    * @method isPrepared
    * @return {Boolean} if the player is prepared
