@@ -16,5 +16,5 @@ set_target_properties(node-system PROPERTIES
   OUTPUT_NAME "system"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-system DESTINATION ${CMAKE_INSTALL_DIR}/packages/system)
-install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR}/packages/system)
+install(TARGETS node-system DESTINATION ${CMAKE_INSTALL_DIR})
+install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR})

@@ -21,5 +21,5 @@ set_target_properties(node-tts PROPERTIES
   OUTPUT_NAME "tts"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-tts DESTINATION ${CMAKE_INSTALL_DIR}/packages/tts)
-install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR}/packages/tts)
+install(TARGETS node-tts DESTINATION ${CMAKE_INSTALL_DIR})
+install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR})
