@@ -68,6 +68,12 @@ ExternalProject_Add(multimedia
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
+# PowerCtrl
+ExternalProject_Add(power_ctrl
+  SOURCE_DIR packages/power_ctrl
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/power_ctrl)
+
 # Property
 ExternalProject_Add(property
   SOURCE_DIR packages/property
