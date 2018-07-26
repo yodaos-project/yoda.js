@@ -35,28 +35,41 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
 
   jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
-  jerry_value_t notifyFn = iotjs_jval_get_property(jthis, "onevent");
-  if (!jerry_value_is_function(notifyFn)) {
-    fprintf(stderr, "no onevent function is registered\n");
-    JS_CREATE_ERROR(COMMON, "no onevent function is registered");
+  jerry_value_t notifyFn;
+
+  if (event->type == MEDIA_PREPARED) {
+    notifyFn = iotjs_jval_get_property(jthis, "onprepared");
+  } else if (event->type == MEDIA_PLAYBACK_COMPLETE) {
+    notifyFn = iotjs_jval_get_property(jthis, "onplaybackcomplete");
+  } else if (event->type == MEDIA_BUFFERING_UPDATE) {
+    notifyFn = iotjs_jval_get_property(jthis, "onbufferingupdate");
+  } else if (event->type == MEDIA_SEEK_COMPLETE) {
+    notifyFn = iotjs_jval_get_property(jthis, "onseekcomplete");
+  } else if (event->type == MEDIA_ERROR) {
+    fprintf(stderr, "[jsruntime] player occurrs an error %d %d %d",
+     	    event->ext1, event->ext2, event->from);
+    notifyFn = iotjs_jval_get_property(jthis, "onerror");
+  } else {
     return;
   }
 
-  uint32_t jargc = 4;
-  jerry_value_t jargv[jargc] = {
-    jerry_create_number((double)event->type),
-    jerry_create_number((double)event->ext1),
-    jerry_create_number((double)event->ext2),
-    jerry_create_number((double)event->from),
-  };
-  jerry_call_function(notifyFn, jerry_create_undefined(), jargv, jargc);
-  
-  for (int i = 0; i < jargc; i++) {
-    jerry_release_value(jargv[i]);
+  if (!jerry_value_is_function(notifyFn)) {
+    fprintf(stderr, "no function is registered\n");
+    return;
   }
+
+  jerry_call_function(notifyFn, jerry_create_undefined(), NULL, 0);
+  jerry_release_value(notifyFn);
+  if (event->type == MEDIA_PREPARED) {
+    _this->handle->start();
+  }
+  
   delete event;
-  //delete handle;
-  uv_close((uv_handle_t*)handle, NULL);
+  uv_close((uv_handle_t*)handle, MultimediaListener::AfterNotify);
+}
+
+void MultimediaListener::AfterNotify(uv_handle_t* handle) {
+  delete handle;
 }
 
 bool MultimediaListener::isPrepared() {
@@ -85,7 +98,6 @@ static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
 }
 
 static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
-  fprintf(stdout, "player instance is destroyed\n");
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_player_t, player_wrap);
   delete _this->handle;
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
@@ -135,7 +147,7 @@ JS_FUNCTION(Prepare) {
 
   _this->handle->setDataSource(source);
   _this->handle->prepareAsync();
-  return JS_GET_THIS();
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(Start) {
@@ -148,7 +160,7 @@ JS_FUNCTION(Start) {
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->start();
-  return JS_GET_THIS();
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(Stop) {
@@ -161,7 +173,7 @@ JS_FUNCTION(Stop) {
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->stop();
-  return JS_GET_THIS();
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(Pause) {
@@ -174,7 +186,7 @@ JS_FUNCTION(Pause) {
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->pause();
-  return JS_GET_THIS();
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(Resume) {
@@ -187,7 +199,7 @@ JS_FUNCTION(Resume) {
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->resume();
-  return JS_GET_THIS();
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(Seek) {
@@ -201,7 +213,7 @@ JS_FUNCTION(Seek) {
 
   int ms = JS_GET_ARG(0, number);
   _this->handle->seekTo(ms);
-  return JS_GET_THIS();
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(Reset) {
@@ -212,7 +224,7 @@ JS_FUNCTION(Reset) {
   if (_this->handle) {
     _this->handle->reset();
   }
-  return JS_GET_THIS();
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(Disconnect) {
@@ -225,7 +237,7 @@ JS_FUNCTION(Disconnect) {
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->disconnect();
-  return JS_GET_THIS();
+  return jerry_create_undefined();
 }
 
 JS_FUNCTION(IdGetter) {

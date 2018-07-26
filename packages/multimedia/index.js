@@ -14,23 +14,39 @@ var EventEmitter = require('events').EventEmitter;
  */
 function MediaPlayer(tag, options) {
   EventEmitter.call(this);
-  this._handle = new native.Player(tag);
-  this._handle.onevent = this.onevent.bind(this);
+  this._tag = tag;
+  this._handle = null;
+  this._initialize();
 }
 inherits(MediaPlayer, EventEmitter);
 
-MediaPlayer.prototype.onevent = function(type, ext1, ext2, from) {
-  var eventName = native.Events[type];
-  if (!eventName) {
-    this.emit('error', new Error(`cannot find event ${type}`));
-    return;
-  }
-  console.log('package event name', eventName);
-  if (eventName === 'prepared') {
-    this._handle.start();
-  }
-  // fixed by sudo: prepared 事件需要上报给云端
-  this.emit(eventName, ext1, ext2, from);
+MediaPlayer.prototype._initialize = function() {
+  this._handle = new native.Player(this._tag);
+  this._handle.onprepared = this.onprepared.bind(this);
+  this._handle.onplaybackcomplete = this.onplaybackcomplete.bind(this);
+  this._handle.onbufferingupdate = this.onbufferingupdate.bind(this);
+  this._handle.onseekcomplete = this.onseekcomplete.bind(this);
+  this._handle.onerror = this.onerror.bind(this);
+};
+
+MediaPlayer.prototype.onprepared = function() {
+  this.emit('prepared');
+};
+
+MediaPlayer.prototype.onplaybackcomplete = function() {
+  this.emit('playbackcomplete');
+};
+
+MediaPlayer.prototype.onbufferingupdate = function() {
+  this.emit('bufferingupdate');
+};
+
+MediaPlayer.prototype.onseekcomplete = function() {
+  this.emit('seekcomplete');
+};
+
+MediaPlayer.prototype.onerror = function() {
+  this.emit('error', new Error('something went wrong'));
 };
 
 /**
