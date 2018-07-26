@@ -18,6 +18,6 @@ set_target_properties(node-property PROPERTIES
   OUTPUT_NAME "property"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-property DESTINATION ${CMAKE_INSTALL_DIR}/packages/property)
-install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR}/packages/property)
+install(TARGETS node-property DESTINATION ${CMAKE_INSTALL_DIR})
+install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR})
 
