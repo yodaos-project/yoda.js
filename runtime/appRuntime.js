@@ -296,7 +296,7 @@ App.prototype.destroyAll = function () {
  */
 App.prototype.lifeCycle = function (name, AppData) {
   logger.log('lifeCycle: ', name);
-  // 注意：创建应用实例的时候，是使用@cloud的。后续操作都使用NLP的AppID
+  
   var appId = AppData.cloud === true ? '@cloud' : AppData.appId;
   var app = null;
   if (name === 'create') {
@@ -410,6 +410,25 @@ App.prototype.deleteExtApp = function (appId) {
 };
 
 /**
+ * mock nlp response
+ * @param {object} nlp 
+ * @param {object} action 
+ */
+App.prototype.mockNLPResponse = function (nlp, action) {
+  var AppData;
+  if (nlp.appId === this.getCurrentAppId()) {
+    AppData = {
+      appId: nlp.appId,
+      cloud: nlp.cloud,
+      form: action.response.action.form,
+      nlp: nlp,
+      action: action
+    };
+    this.lifeCycle('onrequest', AppData);
+  }
+};
+
+/**
  * 接收Mqtt的topic
  * @param {string} topic 
  * @param {string} message 
@@ -520,40 +539,20 @@ App.prototype.startExtappService = function () {
       cb(null);
     }
   });
-  extappApis.addMethod('tts', {
-    in: ['s', 's'],
-    out: ['s']
-  }, function (appId, text, cb) {
-    var app = self.apps[appId];
-    // 检查是否注册了extapp
-    if (app === undefined) {
-      cb(new Error('register your app firstly'), '');
+  extappApis.addMethod('mockNLPResponse', {
+    in: ['s', 's', 's'],
+    out: []
+  }, function (appId, nlp, action, cb) {
+    cb(null);
+    try {
+      nlp = JSON.parse(nlp);
+      action = JSON.parse(action);
+    } catch (error) {
+      logger.log('mockNLPResponse, invalid nlp or action');
       return;
     }
-    var handle = self.tts.say(appId, text, function (err) {
-      // 播放错误
-      if (err) {
-        logger.log('tts say error:', err);
-        cb(err, '');
-      } else {
-        logger.log('tts say complete. signal');
-        // 播放完成
-        service._dbus.emitSignal(
-          self.dbusClient.connection,
-          app.profile.metadata.dbusConn.objectPath,
-          app.profile.metadata.dbusConn.ifaceName,
-          'onTtsComplete',
-          [handle],
-          ['s']
-        );
-      }
-    });
-    // 如果开始播放，返回播放的句柄
-    if (handle !== undefined) {
-      logger.log('tts handle:', handle);
-      cb(null, handle);
-    }
-  })
+    self.mockNLPResponse(nlp, action);
+  });
   extappApis.update();
 
   var permitObject = service.createObject('/com/permission');

@@ -5,7 +5,7 @@ var fs = require('fs');
 var qs = require('querystring');
 var crypto = require('crypto');
 var spawn = require('child_process').spawn;
-var property = require('@rokid/rokidos/packages/property/property.node');
+var property = require('/opt/packages/property/property.node');
 // var context = require('@rokid/context');
 var logger = console;
 
@@ -24,6 +24,7 @@ function login(callback) {
     callback(new Error('expect uuid and seed'));
     return;
   }
+  logger.log('exe test-stupid', seed, uuid);
   var testStupid = spawn('test-stupid', [seed, uuid]);
   testStupid.stdout.on('data', (data) => {
     var _seed = data;
@@ -48,7 +49,7 @@ function login(callback) {
       time: time,
       sign: sign,
     });
-
+    logger.log('start /login request');
     var req = https.request({
       method: 'POST',
       host: 'device-account.rokid.com',
@@ -62,7 +63,7 @@ function login(callback) {
       response.on('data', (chunk) => list.push(chunk));
       response.once('end', () => {
         var body = Buffer.concat(list).toString();
-        logger.log('login res: ', body);
+        logger.log('request /login response: ', body);
         try {
           var location = '/data/system/openvoice_profile.json';
           var data = JSON.parse(JSON.parse(body).data);
@@ -83,6 +84,7 @@ function login(callback) {
       });
     });
     req.on('error', (err) => {
+      logger.log('login request error', err);
       if (retry <= 10) {
         retry += 1;
         logger.info('invalid certificate, try again once');
