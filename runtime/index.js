@@ -1,21 +1,10 @@
-var EventEmitter = require('events').EventEmitter;
-var inherits = require('util').inherits;
-var Turen = require('turen');
-var dbus = require('dbus');
+// var EventEmitter = require('events').EventEmitter;
+// var inherits = require('util').inherits;
+var Turen = require('/opt/packages/turen');
+// var dbus = require('dbus');
+// var cloudApi = require('./cloudapi/index');
 
 var appRuntime = require('./appRuntime');
-
-// 系统配置文件
-var config = require('/data/system/openvoice_profile.json');
-
-var options = {
-  host: config.host,
-  port: config.port,
-  key: config.key,
-  secret: config.secret,
-  deviceTypeId: config.device_type_id,
-  deviceId: config.device_id,
-};
 
 
 //------------------------------------------------------
@@ -42,6 +31,9 @@ speech.on('voice accept', function (event) {
   console.log('voice accept');
   app_runtime.onEvent('voice accept', {});
 });
+speech.on('asr pending', function (asr) {
+  console.log('asr pending', asr);
+});
 speech.on('asr end', function (asr, event) {
   console.log('asr end', asr);
   app_runtime.onEvent('asr end', {
@@ -54,4 +46,21 @@ speech.on('nlp', function (response, event) {
   app_runtime.onEvent('nlp', response);
 });
 
+var config = require('/data/system/openvoice_profile.json');
+
+var options = {
+  host: config.host,
+  port: config.port,
+  key: config.key,
+  secret: config.secret,
+  deviceTypeId: config.device_type_id,
+  deviceId: config.device_id,
+};
 speech.start(options);
+
+// // 登录、绑定、注册mqtt
+// cloudApi.connect().then((mqttAgent) => {
+//   // 系统配置文件
+// }).catch((err) => {
+//   console.error(err);
+// });
