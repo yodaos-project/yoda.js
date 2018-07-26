@@ -1,20 +1,19 @@
-'use strict'
+'use strict';
 
 /**
- * @namespace power_ctrl
+ * @namespace battery
  */
 
-var ffi = require('ffi')
-
-var powerCtrl = ffi.Library('libpower_ctrl.so', {
+var ffi = require('ffi');
+var battery = ffi.Library('libpower_ctrl.so', {
   /**
-   * @memberof power_ctrl
-   * @function power_get_property
-   * @param {PowerState} powerState a pre-allocated PowerState memory block
+   * @memberof battery
+   * @function get
+   * @param {BatteryState} powerState a pre-allocated PowerState memory block
    * @returns {number} status code, 0 if success, non-zero code otherwise
    */
-  'power_get_property': [ 'int', [ 'pointer' ] ]
-})
+  'get': [ 'int', [ 'pointer' ] ]
+});
 
 var fields = [
   [ 'status', 'int' ],
@@ -34,10 +33,10 @@ var fields = [
   [ 'time_to_full', 'int' ],
   [ 'charge_full', 'int' ],
   [ 'energy_avg', 'int' ]
-]
+];
 
 /**
- * @memberof power_ctrl
+ * @memberof battery
  * @constructor
  * @param {Object} [fields] initialized with given fields, leaves unspecified fields uninitialized
  * @param {number} [fields.status]
@@ -58,7 +57,7 @@ var fields = [
  * @param {number} [fields.charge_full]
  * @param {number} [fields.energy_avg]
  */
-var PowerState = ffi.Struct(fields)
+var BatteryState = ffi.Struct(fields)
+batter.BatteryState = BatteryState;
+module.exports = battery;
 
-module.exports = powerCtrl
-module.exports.PowerState = PowerState

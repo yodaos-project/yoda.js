@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(rokidos_nodejs)
+project(rokidos_nodejs CXX)
 include(ExternalProject)
 find_package(Git REQUIRED)
 
@@ -21,39 +21,37 @@ find_package(Git REQUIRED)
 
 # shadow-ffi
 ExternalProject_Add(ffi
-    PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/ffi
-    GIT_REPOSITORY https://github.com/shadow-node/ffi.git
-    GIT_TAG master
-    TIMEOUT 10
-    UPDATE_COMMAND ${GIT_EXECUTABLE} pull
-    LOG_DOWNLOAD ON
-    CMAKE_ARGS
-      -DLIBFFI_LINK_EXTERNAL=YES
-      -DCMAKE_EXTERNAL_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
-      -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-      -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/ffi
-      -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
-
-# Runtime
-ExternalProject_Add(runtime
-  SOURCE_DIR runtime
+  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/ffi
+  GIT_REPOSITORY https://github.com/shadow-node/ffi.git
+  GIT_TAG master
+  TIMEOUT 10
+  INSTALL_COMMAND ""
+  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
+  LOG_DOWNLOAD ON
   CMAKE_ARGS
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/runtime)
+    -DLIBFFI_LINK_EXTERNAL=YES
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_EXTERNAL_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INCLUDE_DIR}/usr/lib/node_modules/ffi
+    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
 # Logger
 ExternalProject_Add(logger
   SOURCE_DIR packages/logger
   CMAKE_ARGS
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/logger)
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/logger)
 
 # Light
 ExternalProject_Add(light
   SOURCE_DIR packages/light
   CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/light
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/light
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
@@ -62,24 +60,27 @@ ExternalProject_Add(light
 ExternalProject_Add(multimedia
   SOURCE_DIR packages/multimedia
   CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/multimedia
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/multimedia
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
 # PowerCtrl
-ExternalProject_Add(power_ctrl
-  SOURCE_DIR packages/power_ctrl
+ExternalProject_Add(battery
+  SOURCE_DIR packages/battery
   CMAKE_ARGS
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/power_ctrl)
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/battery)
 
 # Property
 ExternalProject_Add(property
   SOURCE_DIR packages/property
   CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/property
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/property
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
@@ -88,8 +89,9 @@ ExternalProject_Add(property
 ExternalProject_Add(system
   SOURCE_DIR packages/system
   CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/system
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/system
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
@@ -98,8 +100,9 @@ ExternalProject_Add(system
 ExternalProject_Add(tts
   SOURCE_DIR packages/tts
   CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/tts
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/tts
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
@@ -108,11 +111,12 @@ ExternalProject_Add(tts
 ExternalProject_Add(volume
   SOURCE_DIR packages/volume
   CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/packages/volume
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/volume
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
-install(DIRECTORY apps DESTINATION ${CMAKE_INSTALL_DIR}/placeholder)
-
+install(DIRECTORY ./apps DESTINATION /opt)
+install(DIRECTORY ./runtime DESTINATION /etc)
