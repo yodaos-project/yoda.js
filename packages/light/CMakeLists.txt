@@ -16,5 +16,5 @@ set_target_properties(node-light PROPERTIES
   OUTPUT_NAME "light"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-light DESTINATION ${CMAKE_INSTALL_DIR}/packages/light)
-install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR}/packages/light)
+install(TARGETS node-light DESTINATION ${CMAKE_INSTALL_DIR})
+install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR})
