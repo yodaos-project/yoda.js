@@ -25,7 +25,6 @@ ExternalProject_Add(ffi
   GIT_REPOSITORY https://github.com/shadow-node/ffi.git
   GIT_TAG master
   TIMEOUT 10
-  INSTALL_COMMAND ""
   UPDATE_COMMAND ${GIT_EXECUTABLE} pull
   LOG_DOWNLOAD ON
   CMAKE_ARGS
