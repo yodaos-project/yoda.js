@@ -17,10 +17,8 @@ JS_FUNCTION(Disable) {
 JS_FUNCTION(Write) {
   iotjs_bufferwrap_t* buffer = iotjs_bufferwrap_from_jbuffer(jargv[0]);
   int srclen = (int)iotjs_bufferwrap_length(buffer);
-  if (srclen > light.m_frameSize) {
-    srclen = light.m_frameSize;
-  }
-  int r = light.lumen_draw((unsigned char*)iotjs_bufferwrap_buffer(buffer), srclen);
+  unsigned char* bytes = (unsigned char*)iotjs_bufferwrap_buffer(buffer);
+  int r = light.lumen_draw(bytes, srclen + 1);
   if (r != 0) {
     return JS_CREATE_ERROR(COMMON, "light value write error");
   }
