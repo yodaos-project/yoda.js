@@ -23,7 +23,7 @@ exports.set = function(stream, vol) {
   if (stream) {
     native.setStreamVolume(stream, vol);
   } else {
-    native.setVolume(vol);
+    native.setMediaVolume(vol);
   }
 };
 
@@ -35,7 +35,7 @@ exports.get = function(stream) {
   if (stream) {
     return native.getStreamVolume(stream);
   } else {
-    return native.getVolume();
+    return native.getMediaVolume();
   }
 };
 
