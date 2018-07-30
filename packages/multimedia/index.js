@@ -9,10 +9,11 @@ var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 
 /**
- * @class
+ * @constructor
  * @memberof multimedia
+ * @param {String} tag - the tag for player
  */
-function MediaPlayer(tag, options) {
+function MediaPlayer(tag) {
   EventEmitter.call(this);
   this._tag = tag;
   this._handle = null;
@@ -103,8 +104,8 @@ MediaPlayer.prototype.disconnect = function() {
 };
 
 /**
- * @property {String} id
- * @readable
+ * @peoperty {String} id
+ * @readonly
  */
 Object.defineProperty(MediaPlayer.prototype, 'id', {
   get: function() {

@@ -20,12 +20,18 @@ module.exports = {
    */
   disable: native.disable,
   /**
+   * @example <caption>example for write</caption>
+   * var buf = new Buffer(36);
+   * buf.fill(0, 36);
+   * light.write(buf);
+   *
    * @function write
    * @memberof light
    * @param {Buffer} buffer - the led buffer to write
    */
   write: native.write,
   /**
+   * Get the hardware profile data
    * @memberof light
    * @function getProfile
    */
