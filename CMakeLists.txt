@@ -4,12 +4,15 @@ include(ExternalProject)
 find_package(Git REQUIRED)
 
 # Bluetooth
-# ExternalProject_Add(bluetooth
-#   SOURCE_DIR packages/bluetooth
-#   CMAKE_ARGS
-#     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-#     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}
-#     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER})
+ExternalProject_Add(bluetooth
+  SOURCE_DIR packages/bluetooth
+  CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/bluetooth
+    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
 # Input
 # ExternalProject_Add(input
