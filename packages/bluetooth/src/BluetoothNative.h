@@ -3,17 +3,18 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <librokid-bt/librokid-bt.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
 
+#include <librokid-bt/librokid-bt.h>
 #include <iotjs.h>
 #include <iotjs_def.h>
 #include <iotjs_binding.h>
 #include <iotjs_objectwrap.h>
+#include <uv.h>
 
 typedef struct {
   iotjs_jobjectwrap_t jobjectwrap;
@@ -38,7 +39,7 @@ class BluetoothEvent {
   int arg2;
   void* data;
   iotjs_bluetooth_t* handle;
-}
+};
 
 static iotjs_bluetooth_t* iotjs_bluetooth_create(const jerry_value_t jbluetooth,
                                                  const jerry_char_t* name);

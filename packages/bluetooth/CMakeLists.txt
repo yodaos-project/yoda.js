@@ -9,7 +9,7 @@ target_include_directories(node-bluetooth PRIVATE
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
 )
 
-target_link_libraries(node-bluetooth iotjs rklumen_light)
+target_link_libraries(node-bluetooth iotjs rokid-bt)
 set_target_properties(node-bluetooth PROPERTIES
   PREFIX ""
   SUFFIX ".node"

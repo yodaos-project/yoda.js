@@ -11,13 +11,13 @@ iotjs_bluetooth_t* iotjs_bluetooth_create(const jerry_value_t jbluetooth,
   iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jbluetooth, 
                                &this_module_native_info);
   _this->bt_status = -1;
-  _this->bt_handle = NULL;
+  _this->bt_handle = rokidbt_create();
 
   int r = rokidbt_init(_this->bt_handle, (char*)name);
   if (r != 0) {
     _this->bt_status = r;
   } else {
-    _this->bt_handle = rokidbt_create();
+    _this->bt_status = 0;
     rokidbt_set_event_listener(_this->bt_handle,
                                iotjs_bluetooth_onevent,
                                (void*)bluetooth);
@@ -37,6 +37,7 @@ void iotjs_bluetooth_destroy(iotjs_bluetooth_t* bluetooth) {
 }
 
 void iotjs_bluetooth_onevent(void* self, int what, int arg1, int arg2, void* data) {
+  fprintf(stdout, "got the bluetooth event %d %d %d\n", what, arg1, arg2);
   iotjs_bluetooth_t* bluetooth = (iotjs_bluetooth_t*)self;
   BluetoothEvent* event = new BluetoothEvent(bluetooth);
   event->send(what, arg1, arg2, data);
@@ -49,7 +50,7 @@ void BluetoothEvent::send(int what_, int arg1_, int arg2_, void* data_) {
   this->data = data_;
 
   // create async handle
-  uv_async_t* async = new async;
+  uv_async_t* async = new uv_async_t;
   async->data = (void*)this;
   uv_async_init(uv_default_loop(), async, BluetoothEvent::OnCallback);
   uv_async_send(async);
@@ -70,13 +71,12 @@ void BluetoothEvent::OnCallback(uv_async_t* handle) {
       jerry_create_number((double)event->what),
       jerry_create_number((double)event->arg1),
       jerry_create_number((double)event->arg2),
-      NULL
     };
     if (event->data != NULL) {
       char msg[event->arg2 + 1];
       memset(msg, 0, event->arg2 + 1);
       memcpy(msg, event->data, event->arg2);
-      jargv[3] = jerry_create_string_from_utf8(msg);
+      jargv[3] = jerry_create_string_from_utf8((const jerry_char_t*)msg);
     } else {
       jargv[3] = jerry_create_null();
     }
@@ -158,6 +158,26 @@ JS_FUNCTION(SetName) {
   return jerry_create_boolean(true);
 }
 
+JS_FUNCTION(BleWrite) {
+  JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
+  IOTJS_BLUETOOTH_CHECK_INSTANCE();
+
+  uint16_t uuid = JS_GET_ARG(0, number);
+  // read the buffer
+  jerry_size_t size = jerry_get_string_size(jargv[1]);
+  jerry_char_t buf[size];
+  jerry_string_to_char_buffer(jargv[1], buf, size);
+  buf[size] = '\0';
+  
+  int r = rokidbt_ble_send_buf(_this->bt_handle, (uint16_t)uuid, (char*)buf, size);
+  if (r != 0) {
+    return JS_CREATE_ERROR(COMMON, "BLE send buffer failed.");
+  } else {
+    return jerry_create_boolean(true);
+  }
+}
+
 JS_FUNCTION(BleEnabledGetter) {
   JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
@@ -173,6 +193,7 @@ void init(jerry_value_t exports) {
   jerry_value_t proto = jerry_create_object();
   iotjs_jval_set_method(proto, "enableBle", EnableBle);
   iotjs_jval_set_method(proto, "disableBle", DisableBle);
+  iotjs_jval_set_method(proto, "bleWrite", BleWrite);
   iotjs_jval_set_method(proto, "setName", SetName);
   iotjs_jval_set_method(proto, "bleEnabledGetter", BleEnabledGetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
