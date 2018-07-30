@@ -38,26 +38,30 @@ function createLoggerFunction(level) {
 }
 
 /**
- * log
+ * log level: log
  */
 Logger.prototype.log = createLoggerFunction('info');
 
 /**
- * info
+ * log level: info
  */
 Logger.prototype.info = createLoggerFunction('info');
 
 /**
- * warn
+ * log level: warn
  */
 Logger.prototype.warn = createLoggerFunction('warn');
 
 /**
- * error
+ * log level: error
  */
 Logger.prototype.error = createLoggerFunction('error');
 
 /**
+ * @example
+ * var logger = require('logger')('some tag');
+ * logger.log('test');
+ *
  * @memberof logger
  * @function logger
  * @param {String} name - the log tag

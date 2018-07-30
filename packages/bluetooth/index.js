@@ -15,6 +15,7 @@ var BT_EVENT_BLE_CLOSE = 42;
 var BT_EVENT_BLE_WRITE = 43;
 
 /**
+ * @memberof bluetooth
  * @constructor
  * @param {Object} name - the bluetooth name
  */
