@@ -54,6 +54,8 @@ function login(callback) {
         context.config = config;
         fs.writeFile(location, JSON.stringify(config, null, 2), (err) => {
           logger.info(`updated the ${location}`);
+          // fsync for update
+          execSync(`fsync ${location}`);
           callback(err, data);
         });
       } catch (err) {
