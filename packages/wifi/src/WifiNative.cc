@@ -6,25 +6,41 @@
 #include <wpa_command.h>
 
 JS_FUNCTION(JoinNetwork) {
-  char* ssid;
-  char* psk;
-  for (int i = 0; i < 2; i++) {
-    jerry_size_t size = jerry_get_string_size(jargv[i]);
-    jerry_char_t text_buf[size];
-    jerry_string_to_char_buffer(jargv[i], text_buf, size);
-    text_buf[size] = '\0';
-    switch (i) {
-      case 0: ssid = strdup((char*)&text_buf); break;
-      case 1: psk = strdup((char*)&text_buf); break;
-      default:
-        break;
-    }
-  }
-  
   static wifi_network config = { 0 };
   memset(&config, 0, sizeof(config));
-  strncpy(config.ssid, ssid, sizeof(ssid));
-  strncpy(config.psk, psk, sizeof(psk));
+
+  jerry_size_t ssidlen = -1;
+  jerry_size_t psklen = -1;
+  int key_mgmt = JS_GET_ARG(2, number);
+  
+  // parse the ssid
+  if (jerry_value_is_string(jargv[0])) {
+    ssidlen = jerry_get_string_size(jargv[0]);
+    jerry_char_t ssid_buf[ssidlen];
+    jerry_string_to_char_buffer(jargv[0], ssid_buf, ssidlen);
+    ssid_buf[ssidlen] = '\0';
+    strncpy(config.ssid, ssid_buf, sizeof(ssid_buf));
+  } else {
+    return JS_CREATE_ERROR(COMMON, "ssid must be a string");
+  }
+
+  // parse the psk
+  if (jerry_value_is_string(jargv[1])) {
+    psklen = jerry_get_string_size(jargv[1]);
+    // if psk is empty string or key_mgmt is none, pass 
+    // WIFI_KEY_NONE as key_mgmt.
+    if (psklen == 0 || key_mgmt == WIFI_KEY_NONE) {
+      config.key_mgmt = WIFI_KEY_NONE;
+    } else {
+      jerry_char_t psk_buf[psklen];
+      jerry_string_to_char_buffer(jargv[1], psk_buf, psklen);
+      psk_buf[psklen] = '\0';
+      strncpy(config.psk, psk_buf, sizeof(psk_buf));
+      config.key_mgmt = key_mgmt;
+    }
+  } else {
+    config.key_mgmt = WIFI_KEY_NONE;
+  }
   
   int r = wifi_join_network(&config);
   if (r != 0)

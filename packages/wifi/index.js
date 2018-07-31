@@ -5,6 +5,13 @@
  */
 
 var native = require('./wifi.node');
+var keyMethods = {
+  'WPA2PSK': 0,
+  'WPAPSK': 1,
+  'WEP': 2,
+  'NONE': 3,
+  'OTHER': 4,
+};
 
 module.exports = {
   /**
@@ -41,10 +48,14 @@ module.exports = {
    * Connect a WI-FI via ssid, psk and method.
    * @memberof wifi
    * @function joinNetwork
-   * @param {String} ssid
-   * @param {String} psk
+   * @param {String} ssid - the wifi name
+   * @param {String} psk - the wifi psk
+   * @param {String} method - the key method
    */
-  joinNetwork: native.joinNetwork,
+  joinNetwork: function joinNetwork(ssid, psk, method) {
+    var m = keyMethods[method] || keyMethods.WPA2PSK;
+    return native.joinNetwork(ssid, psk, m);
+  },
   /**
    * Get current wifi state.
    * @memberof wifi
