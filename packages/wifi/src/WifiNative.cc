@@ -19,7 +19,7 @@ JS_FUNCTION(JoinNetwork) {
     jerry_char_t ssid_buf[ssidlen];
     jerry_string_to_char_buffer(jargv[0], ssid_buf, ssidlen);
     ssid_buf[ssidlen] = '\0';
-    strncpy(config.ssid, ssid_buf, sizeof(ssid_buf));
+    strncpy(config.ssid, (const char*)ssid_buf, ssidlen);
   } else {
     return JS_CREATE_ERROR(COMMON, "ssid must be a string");
   }
@@ -35,7 +35,7 @@ JS_FUNCTION(JoinNetwork) {
       jerry_char_t psk_buf[psklen];
       jerry_string_to_char_buffer(jargv[1], psk_buf, psklen);
       psk_buf[psklen] = '\0';
-      strncpy(config.psk, psk_buf, sizeof(psk_buf));
+      strncpy(config.psk, (const char*)psk_buf, psklen);
       config.key_mgmt = key_mgmt;
     }
   } else {
