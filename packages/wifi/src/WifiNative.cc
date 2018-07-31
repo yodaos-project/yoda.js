@@ -1,4 +1,7 @@
 #include "WifiNative.h"
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 #include <unistd.h>
 #include <wpa_command.h>
 
@@ -46,12 +49,24 @@ JS_FUNCTION(DisableAll) {
   return jerry_create_number(r);
 }
 
+JS_FUNCTION(ResetDns) {
+  res_init();
+  return jerry_create_boolean(true);
+}
+
+JS_FUNCTION(Save) {
+  wifi_save_network();
+  return jerry_create_boolean(true);
+}
+
 void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "joinNetwork", JoinNetwork);
   iotjs_jval_set_method(exports, "getWifiState", GetWifiState);
   iotjs_jval_set_method(exports, "getNetworkState", GetNetworkState);
   iotjs_jval_set_method(exports, "disableAll", DisableAll);
+  iotjs_jval_set_method(exports, "resetDns", ResetDns);
+  iotjs_jval_set_method(exports, "save", Save);
 }
 
-NODE_MODULE(volume, init)
+NODE_MODULE(wifi, init)
 

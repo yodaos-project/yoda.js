@@ -22,5 +22,13 @@ module.exports = {
   /**
    * @memberof wifi
    */
-  disableAll: disableAll,
+  disableAll: native.disableAll,
+  /**
+   * @memberof wifi
+   */
+  resetDns: native.resetDns,
+  /**
+   * @memberof wifi
+   */
+  save: native.save,
 };
