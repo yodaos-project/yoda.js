@@ -243,7 +243,7 @@ JS_FUNCTION(SendA2dpCmd) {
       rokidbt_a2dp_sink_send_backward(_this->bt_handle);
       break;
     default:
-      fprintf("unknown command (%d)\n", cmd);
+      fprintf(stderr, "unknown command (%d)\n", cmd);
       break;
   }
   return jerry_create_boolean(true);

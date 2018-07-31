@@ -16,6 +16,12 @@ extern "C"
 #include <iotjs_objectwrap.h>
 #include <uv.h>
 
+#define A2DP_SINK_CMD_PLAY      1
+#define A2DP_SINK_CMD_STOP      2
+#define A2DP_SINK_CMD_PAUSE     3
+#define A2DP_SINK_CMD_FORWARD   4
+#define A2DP_SINK_CMD_BACKWARD  5
+
 typedef struct {
   iotjs_jobjectwrap_t jobjectwrap;
   RKBluetooth* bt_handle;
