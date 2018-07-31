@@ -178,6 +178,77 @@ JS_FUNCTION(BleWrite) {
   }
 }
 
+JS_FUNCTION(EnableA2dp) {
+  JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
+  IOTJS_BLUETOOTH_CHECK_INSTANCE();
+
+  bool is_sink = JS_GET_ARG(0, boolean);
+  if (is_sink) {
+    rokidbt_a2dp_sink_enable(_this->bt_handle);
+  } else {
+    rokidbt_a2dp_enable(_this->bt_handle);
+  }
+  return jerry_create_boolean(true);
+}
+
+JS_FUNCTION(DisableA2dp) {
+  JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
+  IOTJS_BLUETOOTH_CHECK_INSTANCE();
+
+  bool is_sink = JS_GET_ARG(0, boolean);
+  if (is_sink) {
+    rokidbt_a2dp_sink_disable(_this->bt_handle);
+  } else {
+    rokidbt_a2dp_disable(_this->bt_handle);
+  }
+  return jerry_create_boolean(true);
+}
+
+JS_FUNCTION(CloseA2dp) {
+  JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
+  IOTJS_BLUETOOTH_CHECK_INSTANCE();
+
+  bool is_sink = JS_GET_ARG(0, boolean);
+  if (is_sink) {
+    rokidbt_a2dp_sink_close(_this->bt_handle);
+  } else {
+    rokidbt_a2dp_close(_this->bt_handle);
+  }
+  return jerry_create_boolean(true);
+}
+
+JS_FUNCTION(SendA2dpCmd) {
+  JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
+  IOTJS_BLUETOOTH_CHECK_INSTANCE();
+
+  int cmd = JS_GET_ARG(0, number);
+  switch (cmd) {
+    case A2DP_SINK_CMD_PLAY:
+      rokidbt_a2dp_sink_send_play(_this->bt_handle);
+      break;
+    case A2DP_SINK_CMD_STOP:
+      rokidbt_a2dp_sink_send_stop(_this->bt_handle);
+      break;
+    case A2DP_SINK_CMD_PAUSE:
+      rokidbt_a2dp_sink_send_pause(_this->bt_handle);
+      break;
+    case A2DP_SINK_CMD_FORWARD:
+      rokidbt_a2dp_sink_send_forward(_this->bt_handle);
+      break;
+    case A2DP_SINK_CMD_BACKWARD:
+      rokidbt_a2dp_sink_send_backward(_this->bt_handle);
+      break;
+    default:
+      fprintf("unknown command (%d)\n", cmd);
+      break;
+  }
+  return jerry_create_boolean(true);
+}
+
 JS_FUNCTION(SetBleVisibility) {
   JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
@@ -204,6 +275,10 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "enableBle", EnableBle);
   iotjs_jval_set_method(proto, "disableBle", DisableBle);
   iotjs_jval_set_method(proto, "bleWrite", BleWrite);
+  iotjs_jval_set_method(proto, "enableA2dp", EnableA2dp);
+  iotjs_jval_set_method(proto, "disableA2dp", DisableA2dp);
+  iotjs_jval_set_method(proto, "closeA2dp", CloseA2dp);
+  iotjs_jval_set_method(proto, "sendA2dpCmd", SendA2dpCmd);
   iotjs_jval_set_method(proto, "setName", SetName);
   iotjs_jval_set_method(proto, "setBleVisibility", SetBleVisibility);
   iotjs_jval_set_method(proto, "bleEnabledGetter", BleEnabledGetter);

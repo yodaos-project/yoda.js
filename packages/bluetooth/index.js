@@ -14,6 +14,15 @@ var BT_EVENT_BLE_OPEN = 41;
 var BT_EVENT_BLE_CLOSE = 42;
 var BT_EVENT_BLE_WRITE = 43;
 
+// sink commands
+var A2DP_SINK_CMD = {
+  play: 1,
+  stop: 2,
+  pause: 3,
+  forward: 4,
+  backward: 5,
+};
+
 /**
  * @memberof bluetooth
  * @constructor
@@ -60,6 +69,10 @@ BluetoothAgent.prototype.ondiscovery = function() {
 BluetoothAgent.prototype.enable = function(name) {
   if (name === 'ble') {
     this._handle.enableBle();
+  } else if (name === 'a2dp') {
+    this._handle.enableA2dp();
+  } else if (name === 'a2dp sink') {
+    this._handle.enableA2dp('sink');
   } else {
     this.emit('error', new Error(`bluetooth module ${name} not support`));
   }
@@ -72,6 +85,10 @@ BluetoothAgent.prototype.enable = function(name) {
 BluetoothAgent.prototype.disable = function(name) {
   if (name === 'ble') {
     this._handle.disableBle();
+  } else if (name === 'a2dp') {
+    this._handle.disableA2dp();
+  } else if (name === 'a2dp sink') {
+    this._handle.disableA2dp('sink');
   } else {
     this.emit('error', new Error(`bluetooth module ${name} not support`));
   }
@@ -86,6 +103,14 @@ BluetoothAgent.prototype.setName = function(val) {
 };
 
 /**
+ * get the default player, only works when enable "a2dp sink"
+ * @returns {BluetoothPlayer}
+ */
+BluetoothAgent.prototype.createPlayer = function() {
+  return new BluetoothPlayer(this);
+};
+
+/**
  * @property {Object} enabled
  * @readable
  */
@@ -96,6 +121,52 @@ Object.defineProperty(BluetoothAgent.prototype, 'enabled', {
     };
   }
 });
+
+/**
+ * @constructor
+ * @memberof bluetooth
+ * @param {BluetoothAgent} agent
+ */
+function BluetoothPlayer(agent) {
+  this._agent = agent;
+  if (!(this._agent instanceof BluetoothAgent))
+    throw new TypeError('agent must be an instance of BluetoothAgent');
+}
+
+/**
+ * play the music
+ */
+BluetoothPlayer.prototype.play = function play() {
+  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.play);
+};
+
+/**
+ * pause the music
+ */
+BluetoothPlayer.prototype.pause = function pause() {
+  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.pause);
+};
+
+/**
+ * stop the music
+ */
+BluetoothPlayer.prototype.stop = function stop() {
+  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.stop);
+};
+
+/**
+ * play next
+ */
+BluetoothPlayer.prototype.forward = function forward() {
+  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.forward);
+};
+
+/**
+ * play previous
+ */
+BluetoothPlayer.prototype.backward = function backward() {
+  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.backward);
+};
 
 /**
  * @memberof bluetooth
