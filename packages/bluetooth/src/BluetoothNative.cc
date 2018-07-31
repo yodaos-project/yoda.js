@@ -178,6 +178,16 @@ JS_FUNCTION(BleWrite) {
   }
 }
 
+JS_FUNCTION(SetBleVisibility) {
+  JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
+  IOTJS_BLUETOOTH_CHECK_INSTANCE();
+
+  bool visible = JS_GET_ARG(0, boolean);
+  rokidbt_set_ble_visibility(visible);
+  return jerry_create_boolean(true);
+}
+
 JS_FUNCTION(BleEnabledGetter) {
   JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
@@ -195,6 +205,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "disableBle", DisableBle);
   iotjs_jval_set_method(proto, "bleWrite", BleWrite);
   iotjs_jval_set_method(proto, "setName", SetName);
+  iotjs_jval_set_method(proto, "setBleVisibility", SetBleVisibility);
   iotjs_jval_set_method(proto, "bleEnabledGetter", BleEnabledGetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
