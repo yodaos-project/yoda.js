@@ -13,11 +13,17 @@ Tts.prototype.say = function (appId, text) {
       .then((res) => {
         logger.log('ttsd say', res, appId, text);
         if (res['0'] === 'true') {
-          // if (this.handle[appId]) {
-          //   this.handle[appId].cancel();
-          // }
-          var req = this.options.tts.speak(text);
-
+          var req;
+          req = this.options.tts.speak(text);
+          if (this.handle[appId]) {
+            setTimeout(() => {
+              this.handle[appId].cancel();
+              delete this.handle[appId];
+              this.handle[appId] = req;
+            }, 0);
+          } else {
+            this.handle[appId] = req;
+          }
           resolve(req.id);
         } else {
           reject('permission deny');
@@ -33,6 +39,7 @@ Tts.prototype.say = function (appId, text) {
 Tts.prototype.cancel = function (appId) {
   if (this.handle[appId]) {
     this.handle[appId].cancel();
+    delete this.handle[appId];
   }
 };
 

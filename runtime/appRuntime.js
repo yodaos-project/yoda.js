@@ -7,7 +7,7 @@ var Permission = require('./component/permission');
 var TTS = require('./component/tts');
 var AppExecutor = require('./app/executor');
 
-var logger = console;
+var logger = require('/opt/packages/logger')('ROS');
 
 module.exports = App;
 
@@ -19,9 +19,16 @@ function App(arr) {
   this.appIdStack = [];
   // 保存正在运行的App Map, 以AppID为key
   this.appMap = {};
+  // save the real appid
+  this.appIdOriginStack = [];
   // 保存正在运行的App的data, 以AppID为key
   this.appDataMap = {};
-  // 权限管理模块
+  // save the skill's id domain
+  this.domain = {
+    cut: '',
+    scene: ''
+  };
+  // manager app's permission
   this.permission = new Permission(this);
   // component
   this.tts = new TTS(this.permission);
@@ -29,6 +36,8 @@ function App(arr) {
   this.loadApp(arr, function () {
     logger.log('load app complete');
   });
+  this.volume = null;
+  this.handle = {};
   // this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
   this.startExtappService();
@@ -155,14 +164,45 @@ App.prototype.load = function (root, name, cb) {
  * @param {object} data 
  */
 App.prototype.onEvent = function (name, data) {
+  console.log(name);
+  var min = 30;
+  var volume = this.volume.get();
   if (name === 'voice coming') {
-
-  } else if (name === 'voice accept') {
+    if (volume > min) {
+      this.prevVolume = volume;
+      this.volume.set(min);
+      this.handle.setVolume = setTimeout(() => {
+        this.volume.set(volume);
+      }, 6000);
+    }
+    this.lightMethod('setAwake', ['']);
+  } else if (name === 'voice local awake') {
+    this.lightMethod('setDegree', ['', '' + (data.sl || 0)]);
+  } else if (name === 'asr pending') {
 
   } else if (name === 'asr end') {
-
+    this.lightMethod('setLoading', ['']);
   } else if (name === 'nlp') {
+    clearTimeout(this.handle.setVolume);
+    this.volume.set(this.prevVolume);
+    this.lightMethod('setHide', ['']);
     this.onVoiceCommand(data.asr, data.nlp, data.action);
+  } else if (name === 'connected') {
+    clearTimeout(this.handle.networkApp);
+  } else if (name === 'disconnected') {
+    clearTimeout(this.handle.networkApp);
+    var self = this;
+    var tryStart = function () {
+      if (self.apps['@network']) {
+        self.startApp('@network', {}, {});
+      } else {
+        logger.log('not found app named @network');
+        self.handle.networkApp = setTimeout(() => {
+          tryStart();
+        }, 2000);
+      }
+    };
+    tryStart();
   }
 };
 
@@ -177,6 +217,7 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
   var appId;
   try {
     // for appDataMap
+    console.log(nlp.cloud);
     appId = nlp.cloud === true ? '@cloud' : nlp.appId;
     data = {
       appId: nlp.appId,
@@ -286,6 +327,7 @@ App.prototype.destroyAll = function () {
   // 清空正在运行的所有App
   this.appIdStack = [];
   this.appMap = {};
+  this.appIdOriginStack = [];
   this.appDataMap = {};
 };
 
@@ -296,7 +338,6 @@ App.prototype.destroyAll = function () {
  */
 App.prototype.lifeCycle = function (name, AppData) {
   logger.log('lifeCycle: ', name);
-  
   var appId = AppData.cloud === true ? '@cloud' : AppData.appId;
   var app = null;
   if (name === 'create') {
@@ -312,6 +353,7 @@ App.prototype.lifeCycle = function (name, AppData) {
         this.appDataMap[appId] = AppData;
       }
     } else {
+      // fix: should create miss app here
       logger.log('not find appid: ', appId);
     }
   } else {
@@ -343,26 +385,35 @@ App.prototype.lifeCycle = function (name, AppData) {
     delete this.appMap[AppData.appId];
     delete this.appDataMap[AppData.appId];
   }
-  this.updateStack();
+  this.updateStack(AppData);
 };
 
 /**
  * 更新App stack
  */
-App.prototype.updateStack = function () {
-  var scene = '';
-  var cut = '';
-  var AppData;
-  for (var i = this.appIdStack.length - 1; i >= 0; i--) {
-    AppData = this.getAppDataById(this.appIdStack[i]);
-    if (scene === '' && AppData.form === 'scene') {
-      scene = AppData.appId;
-    }
-    if (cut === '' && AppData.form !== 'scene') {
-      cut = AppData.appId;
-    }
+App.prototype.updateStack = function (AppData) {
+  // var scene = '';
+  // var cut = '';
+
+  // logger.log('stack', this.appIdStack);
+  // for (var i = this.appIdOriginStack.length - 1; i >= 0; i--) {
+  //   AppData = this.getAppDataById(this.appIdOriginStack[i]);
+  //   if (scene === '' && AppData.form === 'scene') {
+  //     scene = AppData.appId;
+  //   }
+  //   if (cut === '' && AppData.form !== 'scene') {
+  //     cut = AppData.appId;
+  //   }
+  // }
+  logger.log('AppData.appId: ' + AppData.appId + ' form: ' + AppData.form);
+  if (AppData.form === 'cut') {
+    this.domain.cut = AppData.appId;
   }
-  this.emit('setStack', scene + ':' + cut);
+  if (AppData.form === 'scene') {
+    this.domain.scene = AppData.appId;
+  }
+  logger.log('domain', this.domain);
+  this.emit('setStack', this.domain.scene + ':' + this.domain.cut);
 };
 
 /**
@@ -428,10 +479,25 @@ App.prototype.mockNLPResponse = function (nlp, action) {
   }
 };
 
+App.prototype.startApp = function (appId, nlp, action) {
+  nlp.cloud = false;
+  nlp.appId = appId;
+  action = {
+    appId: appId,
+    startWithActiveWord: false,
+    response: {
+      action: action || {}
+    }
+  };
+  action.response.action.appId = appId;
+  action.response.action.form = 'cut';
+  this.onVoiceCommand('', nlp, action);
+};
+
 /**
  * 接收Mqtt的topic
- * @param {string} topic 
- * @param {string} message 
+ * @param {string} topic
+ * @param {string} message
  */
 App.prototype.onMqttMessage = function (topic, message) {
   this.emit(topic, message);
@@ -474,6 +540,19 @@ App.prototype.onResetSettings = function (message) {
   }
 };
 
+App.prototype.lightMethod = function (name, args) {
+  return new Promise((resolve, reject) => {
+    var sig = args.map(() => 's').join('');
+    this.service._dbus.callMethod(
+      'com.service.light',
+      '/rokid/light',
+      'com.rokid.light.key',
+      name, sig, args, function (res) {
+        resolve(res);
+      });
+  });
+};
+
 /**
  * 启动extApp dbus接口
  */
@@ -482,7 +561,7 @@ App.prototype.startExtappService = function () {
   var service = dbus.registerService('session', 'com.rokid.AmsExport');
   var extappObject = service.createObject('/activation/extapp');
   var extappApis = extappObject.createInterface('com.rokid.activation.extapp');
-  
+
   this.service = service;
 
   extappApis.addMethod('register', {

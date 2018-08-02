@@ -3,22 +3,25 @@ var inherits = require('util').inherits;
 var logger = console;
 
 function MultiMedia(options) {
+  EventEmitter.call(this);
   this.handle = {};
   this.options = options;
 }
+inherits(MultiMedia, EventEmitter);
 
 MultiMedia.prototype.play = function (appId, url) {
   return new Promise((resolve, reject) => {
     this.options.permit.invoke('check', [appId, 'ACCESS_MULTIMEDIA'])
       .then((res) => {
-        logger.log('multimedia play', res, appId, url);
         if (res['0'] === 'true') {
-          logger.log('playing ->', this.options.multimedia.playing);
-          if (this.options.multimedia.playing) {
-            this.options.multimedia.stop();
+          if (this.handle[appId]) {
+            this.handle[appId].stop();
           }
-          this.options.multimedia.play(url);
-          resolve();
+          var player = new this.options.multimedia();
+          this.listenEvent(player);
+          player.play(url);
+          this.handle[appId] = player;
+          resolve('' + player.id);
         } else {
           reject('permission deny');
         }
@@ -31,9 +34,39 @@ MultiMedia.prototype.play = function (appId, url) {
 };
 
 MultiMedia.prototype.cancel = function (appId) {
-  if (this.options.multimedia.playing) {
-    this.options.multimedia.stop();
+  if (this.handle[appId]) {
+    this.handle[appId].stop();
   }
+};
+
+MultiMedia.prototype.pause = function (appId) {
+  if (this.handle[appId]) {
+    this.handle[appId].pause();
+  }
+};
+
+MultiMedia.prototype.resume = function (appId) {
+  if (this.handle[appId] && !this.handle[appId].playing) {
+    this.handle[appId].resume();
+  }
+};
+
+MultiMedia.prototype.listenEvent = function (player) {
+  player.on('prepared', () => {
+    this.emit('prepared', '' + player.id, '' + player.duration, '' + player.position);
+  });
+  player.on('playbackcomplete', () => {
+    this.emit('playbackcomplete', '' + player.id);
+  });
+  player.on('bufferingupdate', () => {
+    this.emit('bufferingupdate', '' + player.id);
+  });
+  player.on('seekcomplete', () => {
+    this.emit('seekcomplete', '' + player.id);
+  });
+  player.on('error', () => {
+    this.emit('error', '' + player.id);
+  });
 };
 
 module.exports = MultiMedia;

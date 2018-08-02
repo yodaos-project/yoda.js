@@ -32,7 +32,7 @@ function Logger(name) {
 function createLoggerFunction(level) {
   return function() {
     var now = new Date();
-    var line = `<${this.name}> :: ` + util.format.apply(this, arguments);
+    var line = `[${now}] <${this.name}> :: ` + util.format.apply(this, arguments);
     console[level](line);
   };
 }
