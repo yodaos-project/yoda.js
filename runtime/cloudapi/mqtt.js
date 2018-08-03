@@ -69,7 +69,9 @@ MqttAgent.prototype.onMessage = function (channel, message) {
     msg = JSON.parse(message + '');
   } catch (error) {
     msg = {};
-    logger.error('parse error with message: ', channel, message);
+    logger.log(error);
+    logger.log('parse error with message: ', channel, message);
+    logger.log(message.toString('hex'));
     return;
   }
   logger.log('mqtt message with topic ->', msg.topic, '; text ->', msg.text);

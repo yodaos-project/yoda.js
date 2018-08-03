@@ -72,6 +72,14 @@ dbusApis.addMethod('appSound', {
   cb(null);
 });
 
+dbusApis.addMethod('setWelcome', {
+  in: [],
+  out: []
+}, function (cb) {
+  service.setWelcome();
+  cb(null);
+});
+
 dbusApis.update();
 
 logger.log('light service started');
