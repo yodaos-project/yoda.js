@@ -36,13 +36,18 @@ function App(arr) {
   this.loadApp(arr, function () {
     logger.log('load app complete');
   });
+  // volume module
   this.volume = null;
+  this.prevVolume = -1;
   this.handle = {};
+  this.online = false;
+  this.onGetPropAll = function noop() { return {} };
   // this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
   this.startExtappService();
   // 处理mqtt事件
   this.handleMqttMessage();
+
 }
 inherits(App, EventEmitter);
 
@@ -184,19 +189,31 @@ App.prototype.onEvent = function (name, data) {
     this.lightMethod('setLoading', ['']);
   } else if (name === 'nlp') {
     clearTimeout(this.handle.setVolume);
-    this.volume.set(this.prevVolume);
+    if (this.prevVolume > 0) {
+      this.volume.set(this.prevVolume);
+    }
     this.lightMethod('setHide', ['']);
     this.onVoiceCommand(data.asr, data.nlp, data.action);
   } else if (name === 'connected') {
     clearTimeout(this.handle.networkApp);
+    if (this.online === false) {
+      // need to play startup music
+      logger.log('first startup');
+      this.lightMethod('setWelcome', []);
+    }
+    this.online = true;
   } else if (name === 'disconnected') {
     clearTimeout(this.handle.networkApp);
     var self = this;
+    this.online = false;
+    // try to start @network app
     var tryStart = function () {
       if (self.apps['@network']) {
         self.startApp('@network', {}, {});
       } else {
         logger.log('not found app named @network');
+        // it won't stop until it's started.
+        // todo: start network app
         self.handle.networkApp = setTimeout(() => {
           tryStart();
         }, 2000);
@@ -520,11 +537,7 @@ App.prototype.onCloudForward = function (message) {
     var msg = JSON.parse(message);
     var params = JSON.parse(msg.content.params);
     // 模拟nlp
-    this.onEvent('nlp', {
-      asr: '',
-      nlp: params.nlp,
-      action: params.action
-    });
+    this.onVoiceCommand('', params.nlp, params.action);
   } catch (err) {
     logger.error(err && err.stack);
   }
@@ -553,6 +566,7 @@ App.prototype.lightMethod = function (name, args) {
   });
 };
 
+
 /**
  * 启动extApp dbus接口
  */
@@ -561,7 +575,7 @@ App.prototype.startExtappService = function () {
   var service = dbus.registerService('session', 'com.rokid.AmsExport');
   var extappObject = service.createObject('/activation/extapp');
   var extappApis = extappObject.createInterface('com.rokid.activation.extapp');
-
+  // used for extapp type
   this.service = service;
 
   extappApis.addMethod('register', {
@@ -650,4 +664,80 @@ App.prototype.startExtappService = function () {
     }
   });
   permitApis.update();
+
+  // amsExport
+  var openvoiceObject = service.createObject('/rokid/openvoice');
+  var openvoiceApis = openvoiceObject.createInterface('rokid.openvoice.AmsExport');
+  openvoiceApis.addMethod('ReportSysStatus', {
+    in: ['s'],
+    out: ['b'],
+  }, function (status, cb) {
+    try {
+      logger.log(status);
+      var data = JSON.parse(status);
+      if (data.upgrade === true) {
+        self.startApp('@upgrade', {}, {});
+      } else if (data['Wifi'] === false || data['Network'] === false) {
+        self.onEvent('disconnected', {});
+      } else if (data['Network'] === true && !self.online) {
+        self.onEvent('connected', {});
+      }
+      cb(null, true);
+    } catch (err) {
+      logger.error(err && err.stack);
+      cb(null, false);
+    }
+  });
+  openvoiceApis.addMethod('SetTesting', {
+    in: ['s'],
+    out: ['b'],
+  }, function (testing, cb) {
+    logger.log('set testing' + testing);
+    cb(null, true);
+  });
+  openvoiceApis.addMethod('SendIntentRequest', {
+    in: ['s', 's', 's'],
+    out: ['b']
+  }, function (asr, nlp, action, cb) {
+    console.log('sendintent', asr, nlp, action);
+    self.onEvent('nlp', {
+      asr: asr,
+      nlp: nlp,
+      action: action
+    });
+    cb(null, true);
+  });
+  openvoiceApis.addMethod('Reload', {
+    in: [],
+    out: ['b']
+  }, function (cb) {
+    cb(null, true);
+  });
+  openvoiceApis.addMethod('Ping', {
+    in: [],
+    out: ['b']
+  }, function (cb) {
+    logger.log('YodaOS is alive');
+    cb(null, true);
+  });
+  openvoiceApis.update();
+
+  // prop object
+  var propObject = service.createObject('/activation/prop');
+  var propApis = propObject.createInterface('com.rokid.activation.prop');
+  propApis.addMethod('all', {
+    in: ['s'],
+    out: ['s'],
+  }, function (appId, cb) {
+    var config = self.onGetPropAll();
+    cb(null, JSON.stringify({
+      deviceId: config.device_id,
+      appSecret: config.secret,
+      masterId: property.get('persist.system.user.userId'),
+      deviceTypeId: config.device_type_id,
+      key: config.key,
+      secret: config.secret,
+    }));
+  });
+  propApis.update();
 };

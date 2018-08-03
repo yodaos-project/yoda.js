@@ -117,6 +117,18 @@ Light.prototype.lightDegree = function (pos) {
   this.buffer.writeUInt8(this.color.degree.b, pos * 3 + 2);
 };
 
+Light.prototype.setWelcome = function () {
+  var rand = Math.round(Math.random() * 2);
+  this.appSound('@YodaOS', 'startup' + rand +  '.ogg');
+  setTimeout(() => {
+    this.transition('b', 0, 255, 2400, 80, () => {
+      setTimeout(() => {
+        this.transition('b', 255, 0, 1000, 30);
+      }, 1000);
+    });
+  }, 1400);
+};
+
 Light.prototype.transition = function (pass, from, to, duration, fps, cb) {
   clearTimeout(this.handle.transition);
   pass = {
@@ -152,7 +164,7 @@ Light.prototype.transition = function (pass, from, to, duration, fps, cb) {
       cb && cb();
     }
   }
-  self.buffer.fill(30);
+  // self.buffer.fill(30);
   render(from);
 };
 
