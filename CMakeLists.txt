@@ -40,6 +40,45 @@ ExternalProject_Add(ffi
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
+# tape: test framework
+ExternalProject_Add(tape
+  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/tape
+  GIT_REPOSITORY https://github.com/shadow-node/tape.git
+  GIT_TAG master
+  TIMEOUT 10
+  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
+  LOG_DOWNLOAD ON
+  CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/tape
+    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT})
+
+# turen
+ExternalProject_Add(turen
+  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/turen
+  GIT_REPOSITORY https://github.com/Rokid/node-turen.git
+  GIT_TAG master
+  TIMEOUT 10
+  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
+  LOG_DOWNLOAD ON
+  CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/turen
+    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT})
+
+# extapp client
+ExternalProject_Add(extapp
+  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/extapp
+  GIT_REPOSITORY https://github.com/Rokid/node-extapp.git
+  GIT_TAG master
+  TIMEOUT 10
+  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
+  LOG_DOWNLOAD ON
+  CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/extapp
+    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT})
+
 # Logger
 ExternalProject_Add(logger
   SOURCE_DIR packages/logger
