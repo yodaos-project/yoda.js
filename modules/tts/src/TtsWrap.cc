@@ -51,26 +51,46 @@ void onerror(int id, int err, void* data) {
   uv_async_send(&async);
 }
 
-TtsWrap::TtsWrap() {
-  struct tts_callback func = { 
-    onstart,
-    oncancel,
-    oncomplete,
-    onerror
-  };
-  // start init
-  int r = tts_init();
-  if (r != -1) {
-    initialized = true;
-    tts_set(&func);
-  }
-}
-
+TtsWrap::TtsWrap() {}
 TtsWrap::~TtsWrap() {
   if (!initialized)
     return;
   tts_destory();
   initialized = false;
+}
+
+void TtsWrap::start() {
+  this->initialized = false;
+  this->worker.data = (void*)this;
+  uv_queue_work(
+    uv_default_loop(),
+    &this->worker,
+    DoInit,
+    AfterInit);
+}
+
+void TtsWrap::DoInit(uv_work_t* handle) {
+  struct tts_callback func = {
+    onstart, oncancel, oncomplete, onerror
+  };
+  // start init
+  TtsWrap* tts = static_cast<TtsWrap*>(handle->data);
+  int r = tts_init();
+  if (r != -1) {
+    tts->initialized = true;
+    tts_set(&func);
+  } else {
+    tts->initialized = false;
+  }
+}
+
+void TtsWrap::AfterInit(uv_work_t* handle, int status) {
+  Nan::HandleScope scope;
+  TtsWrap* tts = static_cast<TtsWrap*>(handle->data);
+  Local<Value> argv[] = {
+    Nan::New("ready").ToLocalChecked(),
+  };
+  tts->callback->Call(1, argv);
 }
 
 NAN_MODULE_INIT(TtsWrap::Init) {
@@ -88,12 +108,9 @@ NAN_MODULE_INIT(TtsWrap::Init) {
 
 NAN_METHOD(TtsWrap::New) {
   TtsWrap* tts = new TtsWrap();
-  if (!tts->initialized) {
-    return Nan::ThrowError("ttsflinger is not running");
-  }
-
   tts->callback = new Nan::Callback(info[0].As<Function>());
   tts->Wrap(info.This());
+  tts->start();
 
   uv_mutex_init(&async_lock);
   uv_async_init(uv_default_loop(), &async, AsyncCallback);
@@ -129,18 +146,7 @@ NAN_METHOD(TtsWrap::Reconnect) {
   if (tts->initialized) {
     tts_destory();
   }
-  struct tts_callback func = { 
-    onstart,
-    oncancel,
-    oncomplete,
-    onerror
-  };
-  // start init
-  int r = tts_init();
-  if (r != -1) {
-    tts->initialized = true;
-    tts_set(&func);
-  }
+  tts->start();
 }
 
 void InitModule(Handle<Object> target) {
