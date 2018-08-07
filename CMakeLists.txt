@@ -170,5 +170,7 @@ ExternalProject_Add(wifi
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
-install(DIRECTORY ./apps DESTINATION /opt)
+install(DIRECTORY ./apps    DESTINATION /opt)
+install(DIRECTORY ./media   DESTINATION /opt)
 install(DIRECTORY ./runtime DESTINATION /usr/lib/yoda)
+
