@@ -1,5 +1,5 @@
-var EventEmitter = require('events').EventEmitter;
-var inherits = require('util').inherits;
+// var EventEmitter = require('events').EventEmitter;
+// var inherits = require('util').inherits;
 var logger = console;
 
 function Light(options) {
@@ -189,10 +189,6 @@ Light.prototype.pixel = function (pos, r, g, b, shading) {
     this.buffer.writeUInt8(Math.floor(r * 0.1), 0 + pos * 3);
     this.buffer.writeUInt8(Math.floor(g * 0.1), 1 + pos * 3);
     this.buffer.writeUInt8(Math.floor(b * 0.1), 2 + pos * 3);
-    // pos = pos === 0 ? 11 : pos - 1;
-    // this.buffer.writeUInt8(Math.floor(r * 0.05), 0 + pos * 3);
-    // this.buffer.writeUInt8(Math.floor(g * 0.05), 1 + pos * 3);
-    // this.buffer.writeUInt8(Math.floor(b * 0.05), 2 + pos * 3);
   }
 };
 
@@ -212,7 +208,7 @@ Light.prototype.sound = function (name) {
 };
 
 Light.prototype.appSound = function (appId, name) {
-  var base = '/usr/lua/applications/activation/res/';
+  var base = '/opt/media/';
   if (this.playerHandle[appId]) {
     this.playerHandle[appId].stop();
   }

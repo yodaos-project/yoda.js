@@ -1,8 +1,8 @@
 var Service = require('./service');
 var Dbus = require('dbus');
 var Remote = require('../../lib/dbus-remote-call.js');
-var Light = require('/opt/packages/light');
-var soundplayer = require('/opt/packages/multimedia').MediaPlayer;
+var Light = require('light');
+var soundplayer = require('multimedia').MediaPlayer;
 var logger = console;
 
 
@@ -16,8 +16,8 @@ var permit = new Remote(dbusService._dbus, {
   dbusInterface: 'com.rokid.permission'
 });
 
-Light.enable();
 
+Light.enable();
 var service = new Service({
   light: Light,
   soundplayer: soundplayer,

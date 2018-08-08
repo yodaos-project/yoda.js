@@ -7,7 +7,7 @@ var Permission = require('./component/permission');
 var TTS = require('./component/tts');
 var AppExecutor = require('./app/executor');
 
-var logger = require('/opt/packages/logger')('ROS');
+var logger = require('logger')('ROS');
 
 module.exports = App;
 
@@ -30,8 +30,7 @@ function App(arr) {
   };
   // manager app's permission
   this.permission = new Permission(this);
-  // component
-  this.tts = new TTS(this.permission);
+
   // 加载APP
   this.loadApp(arr, function () {
     logger.log('load app complete');
@@ -40,7 +39,7 @@ function App(arr) {
   this.volume = null;
   this.prevVolume = -1;
   this.handle = {};
-  this.online = false;
+  this.online = undefined;
   this.onGetPropAll = function noop() { return {} };
   // this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
@@ -105,7 +104,7 @@ App.prototype.loadApp = function (paths, cb) {
     var loadApp = function (index) {
       self.load(apps[index], function (err, metadata) {
         if (err) {
-          logger.log('load app error: ', err);
+          // logger.log('load app error: ', err);
         }
         index++;
         if (index < apps.length) {
@@ -127,8 +126,8 @@ App.prototype.loadApp = function (paths, cb) {
  * @param {function} cb 加载完成的回调: (err, metadata)
  * @return {object} 应用的appMetaData
  */
-App.prototype.load = function (root, name, cb) {
-  var prefix = root + '/' + name;
+App.prototype.load = function (root, cb) {
+  var prefix = root;
   var pkgInfo;
   var app;
   fs.readFile(prefix + '/package.json', 'utf8', (err, data) => {
@@ -136,29 +135,33 @@ App.prototype.load = function (root, name, cb) {
       cb(err);
     } else {
       pkgInfo = JSON.parse(data);
-      for (var i in pkgInfo.metadata.skills) {
-        var id = pkgInfo.metadata.skills[i];
-        // 加载权限配置
-        this.permission.load(id, pkgInfo.metadata.permission || []);
-        if (this.apps[id]) {
-          // 打印调试信息
-          logger.log('load app path: ', prefix);
-          logger.log('skill id: ', id);
-          throw new Error('skill conflicts');
+      if (pkgInfo.metadata && pkgInfo.metadata.skills) {
+        for (var i in pkgInfo.metadata.skills) {
+          var id = pkgInfo.metadata.skills[i];
+          // 加载权限配置
+          this.permission.load(id, pkgInfo.metadata.permission || []);
+          if (this.apps[id]) {
+            // 打印调试信息
+            logger.log('load app path: ', prefix);
+            logger.log('skill id: ', id);
+            throw new Error('skill conflicts');
+          }
+          app = new AppExecutor(pkgInfo, prefix);
+          if (app.valid) {
+            app.skills = pkgInfo.metadata.skills;
+            this.apps[id] = app;
+          } else {
+            cb(app.errmsg);
+            return;
+          }
         }
-        app = new AppExecutor(pkgInfo, prefix);
-        if (app.valid) {
-          app.skills = pkgInfo.metadata.skills;
-          this.apps[id] = app;
-        } else {
-          cb(app.errmsg);
-          return;
-        }
+        cb(null, {
+          pathname: prefix,
+          metadata: pkgInfo.metadata
+        });
+      } else {
+        cb(new Error('invalid app format: ' + root));
       }
-      cb(null, {
-        pathname: prefix,
-        metadata: pkgInfo.metadata
-      });
     }
   });
 };
@@ -199,12 +202,18 @@ App.prototype.onEvent = function (name, data) {
     if (this.online === false) {
       // need to play startup music
       logger.log('first startup');
+      this.emit('reconnected');
       this.lightMethod('setWelcome', []);
     }
     this.online = true;
   } else if (name === 'disconnected') {
     clearTimeout(this.handle.networkApp);
     var self = this;
+    // trigger disconnected event when network state is switched or when it is first activated.
+    if (this.online === true || this.online === undefined) {
+      // todo: start network app here
+      this.emit('disconnected');
+    }
     this.online = false;
     // try to start @network app
     var tryStart = function () {
@@ -213,7 +222,6 @@ App.prototype.onEvent = function (name, data) {
       } else {
         logger.log('not found app named @network');
         // it won't stop until it's started.
-        // todo: start network app
         self.handle.networkApp = setTimeout(() => {
           tryStart();
         }, 2000);

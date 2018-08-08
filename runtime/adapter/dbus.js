@@ -24,9 +24,14 @@ var DBUS_MULTIMEDIA_SERVER = 'com.service.multimedia';
 var DBUS_MULTIMEDIA_PATH = '/multimedia/service';
 var DBUS_MULTIMEDIA_INTERFACE = 'multimedia.service';
 
+// light
+var DBUS_LIGHT_SERVER = 'com.service.light';
+var DBUS_LIGHT_PATH = '/rokid/light';
+var DBUS_LIGHT_INTERFACE = 'com.rokid.light.key';
+
 function Adapter(service) {
   EventEmitter.call(this);
-  this.service = dbus.registerService('session', service);
+  this.service = service;
 }
 inherits(Adapter, EventEmitter);
 
@@ -51,6 +56,11 @@ Adapter.prototype.ttsMethod = function (name, args) {
 Adapter.prototype.multiMediaMethod = function (name, args) {
   return this.remoteCall(name, args, DBUS_MULTIMEDIA_SERVER, DBUS_MULTIMEDIA_PATH, DBUS_MULTIMEDIA_INTERFACE);
 };
+
+Adapter.prototype.lightMethod = function (name, args) {
+  return this.remoteCall(name, args, DBUS_LIGHT_SERVER, DBUS_LIGHT_PATH, DBUS_LIGHT_INTERFACE);
+};
+
 /**
  * 调用dbus的远程方法
  * @param {string} method 要调用的方法名
