@@ -36,6 +36,7 @@ MultiMedia.prototype.play = function (appId, url) {
 MultiMedia.prototype.cancel = function (appId) {
   if (this.handle[appId]) {
     this.handle[appId].stop();
+    delete this.handle[appId];
   }
 };
 

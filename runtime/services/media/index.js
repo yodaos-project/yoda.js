@@ -1,7 +1,7 @@
 var Service = require('./service');
 var Dbus = require('dbus');
 var Remote = require('../../lib/dbus-remote-call.js');
-var Media = require('../../../packages/multimedia');
+var Media = require('multimedia');
 var logger = console;
 
 

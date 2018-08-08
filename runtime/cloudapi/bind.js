@@ -3,7 +3,7 @@
 var https = require('https');
 var crypto = require('crypto');
 var logger = console;
-var property = require('/opt/packages/property/property.node');
+var property = require('property');
 
 function md5(str) {
   return crypto.createHash('md5').update(str).digest('hex').toUpperCase();
