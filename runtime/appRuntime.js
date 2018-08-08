@@ -39,6 +39,7 @@ function App(arr) {
   this.volume = null;
   this.prevVolume = -1;
   this.handle = {};
+  // to identify the first start
   this.online = undefined;
   this.onGetPropAll = function noop() { return {} };
   // this.dbusClient = dbus.getBus('session');
@@ -199,7 +200,7 @@ App.prototype.onEvent = function (name, data) {
     this.onVoiceCommand(data.asr, data.nlp, data.action);
   } else if (name === 'connected') {
     clearTimeout(this.handle.networkApp);
-    if (this.online === false) {
+    if (this.online === false || this.online === undefined) {
       // need to play startup music
       logger.log('first startup');
       this.emit('reconnected');

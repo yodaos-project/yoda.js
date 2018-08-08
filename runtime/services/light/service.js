@@ -198,7 +198,7 @@ Light.prototype.render = function (buffer) {
 
 var init = false;
 Light.prototype.sound = function (name) {
-  var base = '/usr/lua/applications/activation/res/';
+  var base = '/opt/media/';
   if (!init) {
     this.player.play(base + name);
     init = true;
