@@ -3,7 +3,7 @@
 var mqtt = require('mqtt');
 var EventEmitter = require('events').EventEmitter;
 var inherits = require('util').inherits;
-var property = require('/opt/packages/property/property.node');
+var property = require('property');
 var mqttRegister = require('./mqtt-register');
 var logger = console;
 

@@ -1,7 +1,7 @@
 var Service = require('./service');
 var Dbus = require('dbus');
 var Remote = require('../../lib/dbus-remote-call.js');
-var TtsWrap = require('../../../packages/tts/index.js');
+var TtsWrap = require('tts');
 var logger = console;
 
 var CONFIG = require('/data/system/openvoice_profile.json');
