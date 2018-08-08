@@ -65,7 +65,6 @@ ExtApp.prototype._onEvent = function (name) {
         }).join(''),
         params
     );
-    console.log('vui: args',name, params);
 }
 
 module.exports = ExtApp;

@@ -4,10 +4,10 @@ var https = require('https');
 var fs = require('fs');
 var qs = require('querystring');
 var crypto = require('crypto');
-var spawn = require('child_process').spawn;
-var property = require('/opt/packages/property/property.node');
+var exec = require('child_process').exec;
+var property = require('property');
 // var context = require('@rokid/context');
-var logger = console;
+var logger = require('logger')('login');
 
 var uuid = property.get('ro.boot.serialno');
 var seed = property.get('ro.boot.rokidseed');
@@ -25,14 +25,27 @@ function login(callback) {
     return;
   }
   logger.log('exe test-stupid', seed, uuid);
-  var testStupid = spawn('test-stupid', [seed, uuid]);
-  testStupid.stdout.on('data', (data) => {
-    var _seed = data;
+
+  exec('test-stupid ' + seed + ' ' + uuid, {
+    encoding: 'buffer'
+  }, function(error, stdout, stderr){
+    if (error) {
+      logger.error('exe error', error);
+      callback(error);
+      return;
+    }
+    var _seed = stdout;
+    logger.log('exec result: ' + _seed.toString('base64'));
     secret = md5(_seed.toString('base64'));
     if (!secret) {
-      return callback(null);
+      return callback(new Error('can not get secret'));
     }
-    var config = require('/data/system/openvoice_profile.json');
+    var config = {};
+    try {
+      config = require('/data/system/openvoice_profile.json');
+    } catch (error) {
+      logger.error('no such file: /data/system/openvoice_profile.json, please create it');
+    }
     if (config && config.disableAutoRefresh) {
       return callback(null);
     }
@@ -67,7 +80,7 @@ function login(callback) {
         try {
           var location = '/data/system/openvoice_profile.json';
           var data = JSON.parse(JSON.parse(body).data);
-          var config = require(location);
+
           config['device_id'] = data.deviceId;
           config['device_type_id'] = data.deviceTypeId;
           config['key'] = data.key;
@@ -93,9 +106,6 @@ function login(callback) {
     });
     req.write(params);
     req.end();
-  });
-  testStupid.stderr.on('data', (data) => {
-    logger.log('std error: ', data.toString());
   });
 }
 
