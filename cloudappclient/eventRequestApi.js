@@ -5,7 +5,6 @@ var crypto = require('crypto');
 var qs = require('querystring');
 var logger = require('logger')('eventReq');
 
-
 var config = require('/data/system/openvoice_profile.json');
 var DEFAULT_HOST = config.event_req_host;
 var DEFAULT_URI = '/v1/skill/dispatch/sendEvent';
