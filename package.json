@@ -2,7 +2,8 @@
   "name": "yodaos",
   "version": "7.27.0",
   "scripts": {
-    "build-apidoc": "jsdoc -c jsdoc.config -R README.md -r . -d docs/apidoc"
+    "build-apidoc": "jsdoc -c jsdoc.config -R README.md -r . -d docs/apidoc",
+    "test": "scripts/unittests"
   },
   "config": {
     "unsafe-perm": true
