@@ -181,7 +181,8 @@ ExternalProject_Add(rklogger
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
-install(DIRECTORY ./apps    	DESTINATION /opt)
-install(DIRECTORY ./res/media   DESTINATION /opt)
-install(DIRECTORY ./runtime 	DESTINATION /usr/lib/yoda)
+install(DIRECTORY ./apps            DESTINATION /opt)
+install(DIRECTORY ./res/media       DESTINATION /opt)
+install(DIRECTORY ./runtime         DESTINATION /usr/lib/yoda)
+install(DIRECTORY ./cloudappclient  DESTINATION /usr/lib/yoda)
 

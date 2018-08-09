@@ -1,0 +1,27 @@
+{
+  "name": "cloudappclient",
+  "version": "1.0.0",
+  "description": "to parse cloud nlp",
+  "main": "app.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "iotjs ./tests/index.js",
+    "travis": "node ./tests/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "extapp",
+    "vui"
+  ],
+  "author": "sudo",
+  "license": "ISC",
+  "bugs": {
+    "url": ""
+  },
+  "homepage": ""
+}
