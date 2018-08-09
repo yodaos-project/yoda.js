@@ -12,6 +12,14 @@ YodaOS Framework is the JavaScript layer in YodaOS. It provides the main functio
 
 The Jenkins Project: [kamino-universal-node](http://ci-s.rokid-inc.com/job/kamino_universal_node_gx8010_openai_corp)
 
+## Test
+
+To run the unit tests on device, just try:
+
+```shell
+$ npm test
+```
+
 ## License
 
 Apache v2.0
