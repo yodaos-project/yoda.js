@@ -1,5 +1,5 @@
 {
-  "name": "@rokid/bluetooth",
+  "name": "@yoda/volume",
   "version": "1.0.0",
   "description": "Bluetooth Apps for Rokid",
   "main": "index.js",
