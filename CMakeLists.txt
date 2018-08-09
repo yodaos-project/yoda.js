@@ -170,7 +170,18 @@ ExternalProject_Add(wifi
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
-install(DIRECTORY ./apps    DESTINATION /opt)
-install(DIRECTORY ./media   DESTINATION /opt)
-install(DIRECTORY ./runtime DESTINATION /usr/lib/yoda)
+# Tools
+ExternalProject_Add(rklogger
+  SOURCE_DIR tools/rklogger
+  CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_DIR}/usr
+    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+
+install(DIRECTORY ./apps    	DESTINATION /opt)
+install(DIRECTORY ./res/media   DESTINATION /opt)
+install(DIRECTORY ./runtime 	DESTINATION /usr/lib/yoda)
 
