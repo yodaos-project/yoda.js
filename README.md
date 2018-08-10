@@ -20,6 +20,14 @@ To run the unit tests on device, just try:
 $ npm test
 ```
 
+## Tools
+
+How to configure to a device:
+
+```shell
+$ scripts/execute add_network <SSID> <PSK>
+```
+
 ## License
 
 Apache v2.0

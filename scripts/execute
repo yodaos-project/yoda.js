@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+
+adb push scripts/js/$1.js /data/temp_script.js
+CMD="NODE_PRIORITIZED_PATH=/usr/lib/node_modules iotjs /data/temp_script.js $2 $3"
+echo $CMD
+
+adb shell $CMD
+adb shell "rm -rf /data/temp_script.js"
