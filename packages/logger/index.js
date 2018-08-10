@@ -5,7 +5,72 @@
  */
 
 var util = require('util');
-var id = 0;
+var net = require('net');
+var loggingServer = createLoggingServer(process.env.LOG_PORT);
+
+/**
+ * @memberof logger
+ * @constructor
+ * @param {Number} port - the logger port
+ */
+function LoggingServer(port) {
+  // only support single socket
+  this._port = port;
+  this._socket = null;
+  if (typeof port === 'number') {
+    this._server = net.createServer({
+      allowHalfOpen: true,
+    }, (socket) => {
+      if (this._socket) {
+        socket.end('connection refused');
+      } else {
+        this._socket = socket;
+        socket.on('end', () => this._socket = null);
+      }
+    });
+  }
+}
+
+/**
+ * send the message.
+ * @param {String} msg - the message string
+ */
+LoggingServer.prototype.send = function(msg) {
+  this._socket.send(msg);
+};
+
+/**
+ * start the logger server.
+ */
+LoggingServer.prototype.start = function() {
+  if (this._server) {
+    this._server.listen(this._port);
+  }
+  return this;
+};
+
+/**
+ * check if the logging socket is available.
+ */
+LoggingServer.prototype.isAvailable = function() {
+  return this._socket instanceof net.Socket;
+};
+
+/**
+ * close the logging server, only use for testing
+ */
+LoggingServer.prototype.destroy = function() {
+  if (this._server) {
+    this._server.close();
+  }
+  return this;
+};
+
+// logger socket
+function createLoggingServer(port) {
+  var server = new LoggingServer(port);
+  return server.start();
+}
 
 /**
  * @memberof logger
@@ -33,7 +98,11 @@ function createLoggerFunction(level) {
   return function() {
     var now = new Date();
     var line = `[${now}] <${this.name}> :: ` + util.format.apply(this, arguments);
-    console[level](line);
+    if (loggingServer.isAvailable()) {
+      loggingServer.send(line);
+    } else {
+      console[level](line);
+    }
   };
 }
 
@@ -56,6 +125,13 @@ Logger.prototype.warn = createLoggerFunction('warn');
  * log level: error
  */
 Logger.prototype.error = createLoggerFunction('error');
+
+/**
+ * close the logging server
+ */
+Logger.prototype.closeServer = function closeServer() {
+  loggingServer.destroy();
+};
 
 /**
  * @example
