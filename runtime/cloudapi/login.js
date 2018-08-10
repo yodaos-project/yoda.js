@@ -6,7 +6,6 @@ var qs = require('querystring');
 var crypto = require('crypto');
 var exec = require('child_process').exec;
 var property = require('property');
-// var context = require('@rokid/context');
 var logger = require('logger')('login');
 
 var uuid = property.get('ro.boot.serialno');
