@@ -212,23 +212,11 @@ App.prototype.onEvent = function (name, data) {
     var self = this;
     // trigger disconnected event when network state is switched or when it is first activated.
     if (this.online === true || this.online === undefined) {
-      // todo: start network app here
+      // start network app here
+      self.startApp('@network', {}, {});
       this.emit('disconnected');
     }
     this.online = false;
-    // try to start @network app
-    var tryStart = function () {
-      if (self.apps['@network']) {
-        self.startApp('@network', {}, {});
-      } else {
-        logger.log('not found app named @network');
-        // it won't stop until it's started.
-        self.handle.networkApp = setTimeout(() => {
-          tryStart();
-        }, 2000);
-      }
-    };
-    tryStart();
   }
 };
 
@@ -243,7 +231,6 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
   var appId;
   try {
     // for appDataMap
-    console.log(nlp.cloud);
     appId = nlp.cloud === true ? '@cloud' : nlp.appId;
     data = {
       appId: nlp.appId,
@@ -279,8 +266,12 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
       }
     }
     // 启动App
-    this.lifeCycle('create', data);
-    this.lifeCycle('onrequest', data);
+    this.lifeCycle('create', data).then((app) => {
+      this.lifeCycle('onrequest', data);
+    }).catch((error) => {
+      logger.error('create app error with appId:' + appId);
+      logger.error(error);
+    });
   }
 };
 
@@ -361,6 +352,7 @@ App.prototype.destroyAll = function () {
  * 执行App的生命周期
  * @param {string} name 生命周期名字
  * @param {object} AppData 服务端返回的NLP
+ * @returns {promise} Lifecycle events may be asynchronous
  */
 App.prototype.lifeCycle = function (name, AppData) {
   logger.log('lifeCycle: ', name);
@@ -369,15 +361,17 @@ App.prototype.lifeCycle = function (name, AppData) {
   if (name === 'create') {
     // 启动应用
     if (this.apps[appId]) {
-      app = this.apps[appId].create(appId, this);
-      if (app) {
-        // 执行create生命周期
-        app.emit('create', AppData.nlp, AppData.action);
-        // 当前App正在运行
-        this.appIdStack.push(appId);
-        this.appMap[appId] = app;
-        this.appDataMap[appId] = AppData;
-      }
+      return this.apps[appId].create(appId, this)
+        .then((app) => {
+          if (app) {
+            // 执行create生命周期
+            app.emit('create', AppData.nlp, AppData.action);
+            // 当前App正在运行
+            this.appIdStack.push(appId);
+            this.appMap[appId] = app;
+            this.appDataMap[appId] = AppData;
+          }
+        });
     } else {
       // fix: should create miss app here
       logger.log('not find appid: ', appId);
@@ -385,7 +379,7 @@ App.prototype.lifeCycle = function (name, AppData) {
   } else {
     app = this.getCurrentApp();
     if (app === false) {
-      return;
+      return Promise.reject(new Error('app instance not found, you should wait for creation of a lifecycle event to complete'));
     }
   }
 
@@ -412,6 +406,7 @@ App.prototype.lifeCycle = function (name, AppData) {
     delete this.appDataMap[AppData.appId];
   }
   this.updateStack(AppData);
+  return Promise.resolve();
 };
 
 /**
