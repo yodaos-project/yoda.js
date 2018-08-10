@@ -186,5 +186,3 @@ Object.defineProperty(MediaPlayer.prototype, 'sessionId', {
 });
 
 exports.MediaPlayer = MediaPlayer;
-exports.soundplayer = require('./soundplayer');
-
