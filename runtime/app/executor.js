@@ -1,4 +1,5 @@
-var fs = require('fs');
+'use strict'
+
 var fork = require('child_process').fork;
 var ExtApp = require('./extappServer.js');
 var logger = require('logger')('executor');
@@ -27,14 +28,11 @@ function Executor(profile, prefix) {
     this.exec = prefix + '/app.js';
     this.connector = lightApp(this.exec);
   }
-
-  // 加载静态APP，此时APP还没运行，只是个定义。实现多实例，互不干扰
-  console.log('executor ', this.exec);
 }
 // 创建实例。runtime是Appruntime实例
 Executor.prototype.create = function (appid, runtime) {
   if (!this.valid) {
-    console.log('app ' + appid + ' invalid');
+    logger.log(`app ${appid} invalid`);
     return false;
   }
   var app = null;
@@ -46,7 +44,7 @@ Executor.prototype.create = function (appid, runtime) {
     // create extapp's sender
     app = new ExtApp(appid, this.profile.metadata.dbusConn, runtime);
     // run real extapp
-    logger.log('fork extapp ' + this.exec);
+    logger.log(`fork extapp ${this.exec}`);
     var handle = fork('/usr/lib/yoda/runtime/app/extappProxy.js', [this.exec], {
       env: {
         NODE_PATH: '/usr/lib'
