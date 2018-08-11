@@ -1,7 +1,8 @@
 var fs = require('fs');
 var fork = require('child_process').fork;
-var ExtApp = require('./extapp.js');
+var ExtApp = require('./extappServer.js');
 var logger = require('logger')('executor');
+var lightApp = require('./lightAppProxy.js');
 
 // 应用执行器
 function Executor(profile, prefix) {
@@ -9,7 +10,7 @@ function Executor(profile, prefix) {
   this.daemon = false;
   this.exec = null;
   this.errmsg = null;
-  this.valid = false;
+  this.valid = true;
   this.connector = null;
   this.profile = profile;
 
@@ -21,17 +22,12 @@ function Executor(profile, prefix) {
       this.daemon = true;
     }
     this.type = 'extapp';
-    this.exec = prefix + '/' + (profile.main || 'index.js');
+    this.exec = prefix;
   } else {
     this.exec = prefix + '/app.js';
-    this.connector = require(this.exec);
+    this.connector = lightApp(this.exec);
   }
-  if (!fs.existsSync(this.exec)) {
-    this.valid = false;
-    this.errmsg = this.exec + ' not found';
-  } else {
-    this.valid = true;
-  }
+
   // 加载静态APP，此时APP还没运行，只是个定义。实现多实例，互不干扰
   console.log('executor ', this.exec);
 }
@@ -51,7 +47,7 @@ Executor.prototype.create = function (appid, runtime) {
     app = new ExtApp(appid, this.profile.metadata.dbusConn, runtime);
     // run real extapp
     logger.log('fork extapp ' + this.exec);
-    var handle = fork(this.exec, {
+    var handle = fork('/usr/lib/yoda/runtime/app/extappProxy.js', [this.exec], {
       env: {
         NODE_PATH: '/usr/lib'
       }
@@ -59,6 +55,9 @@ Executor.prototype.create = function (appid, runtime) {
     logger.log('fork complete');
     handle.on('exit', () => {
       logger.log(appid + ' exit');
+    });
+    handle.on('error', () => {
+      logger.log(appid + ' error');
     });
     return new Promise((resolve, reject) => {
       // a message will received after extapp is startup
