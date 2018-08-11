@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "Bluetooth Apps for Rokid",
   "main": "app.js",
+  "metadata": {
+    "skills": [
+      "@network"
+    ]
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
