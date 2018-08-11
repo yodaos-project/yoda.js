@@ -6,7 +6,6 @@ var qs = require('querystring');
 var crypto = require('crypto');
 var exec = require('child_process').exec;
 var property = require('property');
-// var context = require('@rokid/context');
 var logger = require('logger')('login');
 
 var uuid = property.get('ro.boot.serialno');
@@ -17,7 +16,6 @@ var retry = 0;
 function md5(str) {
   return crypto.createHash('md5').update(str).digest('hex').toUpperCase();
 }
-
 
 function login(callback) {
   if (!uuid || !seed) {
