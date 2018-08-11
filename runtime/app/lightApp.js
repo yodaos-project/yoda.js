@@ -1,12 +1,7 @@
+'use strict'
+
 var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
-
-function Application() {
-  EventEmitter.call(this);
-}
-inherits(Application, EventEmitter);
-
-
 
 function Client(appId, runtime) {
   var self = this;
@@ -14,7 +9,7 @@ function Client(appId, runtime) {
   this.runtime = runtime;
   this.appId = appId;
   // 创建隔离的App
-  var app = new Application();
+  var app = new EventEmitter();
   this.app = app;
 
   this.on('create', this._onCreate.bind(this));
