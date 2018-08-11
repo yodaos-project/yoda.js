@@ -1,17 +1,14 @@
-'use strict';
-
+var logger = require('logger')('@network');
 var DbusAdapter = require('extapp').DbusAdapter;
 var ExtAppService = require('extapp').ExtAppService;
 var bluetooth = require('bluetooth');
 var wifi = require('wifi');
 var property = require('property');
-var logger = require('logger')('@network');
-
 // 创建一个service
 var service = new ExtAppService(DbusAdapter, {
   dbusService: 'com.rokid.AmsExport',
   dbusObjectPath: '/extapp/network',
-  dbusInterface: 'com.test.interface'
+  dbusInterface: 'com.extapp.network'
 });
 
 var app = service.create('@network');
