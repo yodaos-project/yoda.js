@@ -17,58 +17,74 @@ var permit = new Remote(dbusService._dbus, {
 });
 
 
-var tts = TtsWrap.createTts({
-  key: CONFIG.key,
-  deviceTypeId: CONFIG.device_type_id,
-  deviceId: CONFIG.device_id,
-  secret: CONFIG.secret
-});
-
+var tts = null;
 
 var service = new Service({
   tts: tts,
   permit: permit
 });
 
-tts.on('start', function (id, errno) {
-  logger.log('ttsd start', id);
-  dbusService._dbus.emitSignal(
-    '/tts/service',
-    'tts.service',
-    'ttsdevent',
-    'ss',
-    [''+id, 'start']
-  );
-});
-tts.on('end', function (id, errno) {
-  logger.log('ttsd end', id);
-  dbusService._dbus.emitSignal(
-    '/tts/service',
-    'tts.service',
-    'ttsdevent',
-    'ss',
-    [''+id, 'end']
-  );
-});
-tts.on('cancel', function (id, errno) {
-  logger.log('ttsd cancel', id);
-  dbusService._dbus.emitSignal(
-    '/tts/service',
-    'tts.service',
-    'ttsdevent',
-    'ss',
-    [''+id, 'cancel']
-  );
-});
-tts.on('error', function (id, errno) {
-  logger.log('ttsd error', id);
-  dbusService._dbus.emitSignal(
-    '/tts/service',
-    'tts.service',
-    'ttsdevent',
-    'ss',
-    [''+id, 'error']
-  );
+function reConnect(CONFIG) {
+  if (tts) {
+    tts.disconnect();
+  }
+  tts = TtsWrap.createTts({
+    key: CONFIG.key,
+    deviceTypeId: CONFIG.device_type_id,
+    deviceId: CONFIG.device_id,
+    secret: CONFIG.secret
+  });
+
+  tts.on('start', function (id, errno) {
+    logger.log('ttsd start', id);
+    dbusService._dbus.emitSignal(
+      '/tts/service',
+      'tts.service',
+      'ttsdevent',
+      'ss',
+      ['' + id, 'start']
+    );
+  });
+  tts.on('end', function (id, errno) {
+    logger.log('ttsd end', id);
+    dbusService._dbus.emitSignal(
+      '/tts/service',
+      'tts.service',
+      'ttsdevent',
+      'ss',
+      ['' + id, 'end']
+    );
+  });
+  tts.on('cancel', function (id, errno) {
+    logger.log('ttsd cancel', id);
+    dbusService._dbus.emitSignal(
+      '/tts/service',
+      'tts.service',
+      'ttsdevent',
+      'ss',
+      ['' + id, 'cancel']
+    );
+  });
+  tts.on('error', function (id, errno) {
+    logger.log('ttsd error', id);
+    dbusService._dbus.emitSignal(
+      '/tts/service',
+      'tts.service',
+      'ttsdevent',
+      'ss',
+      ['' + id, 'error']
+    );
+  });
+}
+
+reConnect(CONFIG);
+
+dbusApis.addMethod('connect', {
+  in: ['s'],
+  out: ['b']
+}, function (config, cb) {
+  reConnect(config);
+  cb(null, true);
 });
 
 dbusApis.addMethod('say', {

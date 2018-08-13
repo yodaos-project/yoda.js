@@ -63,6 +63,9 @@ function Client(appId, runtime) {
   app.exit = function () {
     return self.runtime.exitAppById(appId);
   };
+  app.destroyAll = function () {
+    return self.runtime.destroyAll();
+  };
   app.setPickup = function (isPickup) {
     return self.runtime.setPickup(isPickup === true ? true : false);
   };
