@@ -13,7 +13,7 @@ var handle = null;
 function MqttAgent(config) {
   EventEmitter.call(this);
   // for dev: kamino开发阶段使用
-  this.userId = property.get('persist.system.user.userId') || 'C12E2A054F3C4D519D516A6032B530CF';
+  this.userId = property.get('persist.system.user.userId');
   this.config = config;
   this.register().then(() => {
     this.reConnect();
