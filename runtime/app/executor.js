@@ -1,9 +1,9 @@
 'use strict'
 
 var fork = require('child_process').fork;
-var ExtApp = require('./extappServer.js');
+var ExtApp = require('./extappServer');
 var logger = require('logger')('executor');
-var lightApp = require('./lightAppProxy.js');
+var lightApp = require('./lightAppProxy');
 
 // 应用执行器
 function Executor(profile, prefix) {
@@ -30,37 +30,42 @@ function Executor(profile, prefix) {
   }
 }
 // 创建实例。runtime是Appruntime实例
-Executor.prototype.create = function (appid, runtime) {
+Executor.prototype.create = function (appId, runtime) {
   if (!this.valid) {
-    logger.log(`app ${appid} invalid`);
+    logger.log(`app ${appId} invalid`);
     return false;
   }
   var app = null;
   if (this.type === 'light') {
     // 创建实例
-    app = this.connector(appid, runtime);
+    app = this.connector(appId, runtime);
     return Promise.resolve(app);
   } else if (this.type === 'extapp') {
     // create extapp's sender
-    app = new ExtApp(appid, this.profile.metadata.dbusConn, runtime);
+    app = new ExtApp(appId, this.profile.metadata.dbusConn, runtime);
+    if (this.daemon === true) {
+      return Promise.resolve(app);
+    }
     // run real extapp
     logger.log(`fork extapp ${this.exec}`);
-    var handle = fork('/usr/lib/yoda/runtime/app/extappProxy.js', [this.exec], {
+    var handle = fork(`${__dirname}/extappProxy.js`, [this.exec], {
       env: {
         NODE_PATH: '/usr/lib'
       }
     });
     logger.log('fork complete');
     handle.on('exit', () => {
-      logger.log(appid + ' exit');
+      logger.log(appId + ' exit');
+      runtime.exitAppByIdForce(appId);
     });
     handle.on('error', () => {
-      logger.log(appid + ' error');
+      logger.log(appId + ' error');
     });
     return new Promise((resolve, reject) => {
       // a message will received after extapp is startup
       handle.on('message', (message, sender) => {
         if (message.ready === true) {
+          logger.log(`extapp ${this.exec} run`);
           resolve(app);
         } else {
           reject(new Error('an error occurred when starting the extapp'));

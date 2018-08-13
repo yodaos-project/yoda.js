@@ -199,6 +199,7 @@ App.prototype.onEvent = function (name, data) {
     this.lightMethod('setHide', ['']);
     this.onVoiceCommand(data.asr, data.nlp, data.action);
   } else if (name === 'connected') {
+    this.destroyAll();
     clearTimeout(this.handle.networkApp);
     if (this.online === false || this.online === undefined) {
       // need to play startup music
@@ -394,16 +395,7 @@ App.prototype.lifeCycle = function (name, AppData) {
   }
   if (name === 'destroy') {
     app.emit('destroy');
-    // 删除指定AppID
-    for (var i = 0; i < this.appIdStack.length; i++) {
-      if (this.appIdStack[i] === AppData.appId) {
-        this.appIdStack.splice(i, 1);
-        break;
-      }
-    }
-    // 释放该应用
-    delete this.appMap[AppData.appId];
-    delete this.appDataMap[AppData.appId];
+    this.deleteAppById(AppData.appId);
   }
   this.updateStack(AppData);
   return Promise.resolve();
@@ -459,6 +451,27 @@ App.prototype.exitAppById = function (appId) {
   if (last && last.form === 'scene') {
     this.lifeCycle('resume', last);
   }
+};
+
+App.prototype.exitAppByIdForce = function (appId) {
+  this.deleteAppById(appId);
+  var last = this.getCurrentAppData();
+  if (last && last.form === 'scene') {
+    this.lifeCycle('resume', last);
+  }
+};
+
+App.prototype.deleteAppById = function (appId) {
+  // 删除指定AppID
+  for (var i = 0; i < this.appIdStack.length; i++) {
+    if (this.appIdStack[i] === appId) {
+      this.appIdStack.splice(i, 1);
+      break;
+    }
+  }
+  // 释放该应用
+  delete this.appMap[appId];
+  delete this.appDataMap[appId];
 };
 
 /**
@@ -630,9 +643,7 @@ App.prototype.startExtappService = function () {
       logger.log('exit app permission deny');
       cb(null);
     } else {
-      self.lifeCycle('destroy', {
-        appId: appId
-      });
+      self.exitAppByIdForce(appId);
       cb(null);
     }
   });
