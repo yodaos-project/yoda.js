@@ -3,17 +3,6 @@
   "version": "1.0.0",
   "description": "config wifi",
   "main": "app.js",
-  "metadata": {
-    "extapp": true,
-    "daemon": false,
-    "dbusConn": {
-      "objectPath": "/extapp/network",
-      "ifaceName": "com.extapp.network"
-    },
-    "skills": [
-      "@network"
-    ]
-  },
   "directories": {
     "test": "tests"
   },
