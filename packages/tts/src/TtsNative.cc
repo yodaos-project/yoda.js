@@ -102,6 +102,7 @@ JS_FUNCTION(Prepare) {
 
   fprintf(stdout,
     "host: %s, port: %d, branch: %s\n", host, port, branch);
+  fprintf(stdout, "key<%s>\n", key);
 
   _this->prepared = true;
   _this->handle->prepare(host, port, branch,
