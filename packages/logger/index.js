@@ -6,7 +6,6 @@
 
 var util = require('util');
 var net = require('net');
-var loggingServer = createLoggingServer(process.env.LOG_PORT);
 
 /**
  * @memberof logger
@@ -71,6 +70,8 @@ function createLoggingServer(port) {
   var server = new LoggingServer(port);
   return server.start();
 }
+
+var loggingServer = createLoggingServer(process.env.LOG_PORT);
 
 /**
  * @memberof logger
