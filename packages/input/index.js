@@ -6,7 +6,12 @@
 
 var InputWrap = require('./input.node').InputWrap;
 var EventEmitter = require('events').EventEmitter;
-var inherits = require('utils').inherits;
+var inherits = require('util').inherits;
+
+var handler = null;
+var events = [
+  'keyup', 'keydown', 'longpress'
+];
 
 /**
  * @constructor
@@ -28,8 +33,23 @@ function InputEvent(options) {
 }
 inherits(InputEvent, EventEmitter);
 
-InputEvent.prototype.onevent = function(name, data) {
-  // TODO
+/**
+ * event trigger
+ * @param {Number} state - the event state
+ * @param {Number} action - the event action
+ * @param {Number} code - the event code
+ * @param {Number} time - the event time
+ */
+InputEvent.prototype.onevent = function(state, action, code, time) {
+  var name = events[state];
+  if (!name) {
+    this.emit('error', new Error(`unknown event name ${state}`);
+    return;
+  }
+  this.emit(name, {
+    keyCode: code,
+    keyTime: time,
+  });
 };
 
 /**
@@ -45,3 +65,22 @@ InputEvent.prototype.start = function() {
 InputEvent.prototype.disconnect = function() {
   return this._handle.disconnect();
 };
+
+/**
+ * get the event handler
+ * @memberof input
+ */
+function getHandler(options) {
+  if (handler) {
+    if (options)
+      console.error('skip options setting because already init done');
+    return handler;
+  }
+
+  handler = new InputEvent(options);
+  handler.start();
+  return handler;
+}
+
+module.exports = getHandler;
+
