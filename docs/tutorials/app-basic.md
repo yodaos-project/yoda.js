@@ -11,7 +11,7 @@ This tutorial shows how to create a voice-enabled skill application.
 - Initialize the project via `npm init`.
 - Create `app.js`.
 
-### `package.json`
+### Manifest
 
 After `npm init`, you would get the following fields:
 
