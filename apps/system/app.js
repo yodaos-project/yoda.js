@@ -14,7 +14,7 @@ module.exports = function(app) {
       nlp.intent === 'dormancy' || 
       nlp.intent === 'usersleep' ||
       nlp.intent === 'ROKID.SYSTEM.EXIT') {
-      app.exit();
+      app.destroyAll();
     } else {
       app.tts.say('什么设置', function() {
         app.exit();
