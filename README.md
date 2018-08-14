@@ -1,6 +1,6 @@
-# YodaOS Framework
+# YodaRT
 
-YodaOS Framework is the JavaScript layer in YodaOS. It provides the main functionalities includes:
+YodaRT is the JavaScript layer in YodaOS. It provides the main functionalities includes:
 
 - Getting and handling NLP request
 - Playing music and TTS
