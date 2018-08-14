@@ -75,7 +75,7 @@ module.exports = function(app) {
   app.on('destroyed', () => {
     console.log('app destroyed');
   });
-}
+};
 ```
 
 The above function receives an argument `app`, which includes the following methods:
