@@ -1,20 +1,21 @@
 cmake_minimum_required(VERSION 3.0)
-project(node-input CXX)
+project(shadow-input CXX)
 set(CMAKE_CXX_STANDARD 11)
 
-add_library(node-input MODULE src/InputNative.cc)
-target_include_directories(node-input PRIVATE
+add_library(shadow-input MODULE src/InputNative.cc)
+target_include_directories(shadow-input PRIVATE
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
 )
 
-target_link_libraries(node-light iotjs input-event)
-set_target_properties(node-light PROPERTIES
+target_link_libraries(shadow-input iotjs input-event)
+set_target_properties(shadow-input PROPERTIES
   PREFIX ""
   SUFFIX ".node"
   OUTPUT_NAME "input"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-light DESTINATION ${CMAKE_INSTALL_DIR})
+install(TARGETS shadow-input DESTINATION ${CMAKE_INSTALL_DIR})
 install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR})
+
