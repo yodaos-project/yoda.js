@@ -13,26 +13,6 @@ module.exports = function (app) {
   var connecting = false;
   var connectTimeout, pooling;
 
-  // app.on('ready', function () {
-  //   console.log(this.getAppId() + ' app ready');
-  // });
-
-  // app.on('error', function (err) {
-  //   console.log('app error: ', err);
-  // });
-
-  // app.on('created', function () {
-  //   console.log(this.getAppId() + ' created');
-  // });
-
-  // app.on('paused', function () {
-  //   console.log(this.getAppId() + ' paused');
-  // });
-
-  // app.on('resumed', function () {
-  //   console.log(this.getAppId() + ' resumed');
-  // });
-
   app.on('onrequest', function (nlp, action) {
     if (this.started === true) {
       return;

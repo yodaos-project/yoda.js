@@ -77,8 +77,6 @@ function reConnect(CONFIG) {
   });
 }
 
-reConnect(CONFIG);
-
 dbusApis.addMethod('connect', {
   in: ['s'],
   out: ['b']
@@ -119,5 +117,8 @@ dbusApis.addMethod('cancel', {
 });
 
 dbusApis.update();
-
 logger.log('service tts started');
+
+setTimeout(function() {
+  reConnect(CONFIG)
+}, 1000);
