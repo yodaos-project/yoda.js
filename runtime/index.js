@@ -61,7 +61,7 @@ app_runtime.on('reconnected', function () {
   // 登录、绑定、注册mqtt
   cloudApi.connect().then((mqttAgent) => {
     // 系统配置文件
-    var config = require('/data/system/openvoice_profile.json');
+    var config = mqttAgent.config;
 
     var options = {
       host: config.host,
@@ -72,7 +72,8 @@ app_runtime.on('reconnected', function () {
       deviceId: config.device_id,
     };
     speech.start(options);
-
+    
+    // Implementation interface
     app_runtime.onGetPropAll = function () {
       return {
         masterId: property.get('persist.system.user.userId'),
@@ -84,6 +85,9 @@ app_runtime.on('reconnected', function () {
         deviceId: config.device_id
       };
     };
+
+    app_runtime.onReLogin();
+
     mqttAgent.on('cloud_forward', function (data) {
       app_runtime.onCloudForward(data);
     });
