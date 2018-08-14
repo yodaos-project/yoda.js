@@ -1,5 +1,5 @@
 {
-  "name": "yodaos",
+  "name": "yodart",
   "version": "7.27.0",
   "scripts": {
     "build-apidoc": "jsdoc -c jsdoc.config -R README.md -r . -d docs/apidoc",
