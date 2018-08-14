@@ -39,11 +39,7 @@ function login(callback) {
       return callback(new Error('can not get secret'));
     }
     var config = {};
-    try {
-      config = require('/data/system/openvoice_profile.json');
-    } catch (error) {
-      logger.error('no such file: /data/system/openvoice_profile.json, please create it');
-    }
+
     if (config && config.disableAutoRefresh) {
       return callback(null);
     }
@@ -76,18 +72,13 @@ function login(callback) {
         var body = Buffer.concat(list).toString();
         logger.log('request /login response: ', body);
         try {
-          var location = '/data/system/openvoice_profile.json';
           var data = JSON.parse(JSON.parse(body).data);
 
           config['device_id'] = data.deviceId;
           config['device_type_id'] = data.deviceTypeId;
           config['key'] = data.key;
           config['secret'] = data.secret;
-          // context.config = config;
-          fs.writeFile(location, JSON.stringify(config, null, 2), (err) => {
-            logger.info(`updated the ${location}`);
-            callback(err, config);
-          });
+          callback(null, config);
         } catch (err) {
           logger.error(err && err.stack);
           callback(err);

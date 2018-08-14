@@ -4,8 +4,6 @@ var Remote = require('../../lib/dbus-remote-call.js');
 var TtsWrap = require('tts');
 var logger = console;
 
-var CONFIG = require('/data/system/openvoice_profile.json');
-
 var dbusService = Dbus.registerService('session', 'com.service.tts');
 var dbusObject = dbusService.createObject('/tts/service');
 var dbusApis = dbusObject.createInterface('tts.service');
@@ -81,7 +79,8 @@ dbusApis.addMethod('connect', {
   in: ['s'],
   out: ['b']
 }, function (config, cb) {
-  reConnect(config);
+  logger.log('ttsd restart trigger by upadte config');
+  reConnect(JSON.parse(config));
   cb(null, true);
 });
 

@@ -24,7 +24,7 @@ function deviceManager (cf, path, cb) {
   var userId = property.get('persist.system.user.userId');
   var sign = md5(`key=${cf.key}&device_type_id=${cf.device_type_id}&device_id=${cf.device_id}&service=bindMaster&version=1.0&time=${time}&secret=${cf.secret}`);
   var auth = `version=1.0;time=${time};sign=${sign};key=${cf.key};device_type_id=${cf.device_type_id};device_id=${cf.device_id};service=bindMaster`;
-  var params = `{"userId":"${userId || 'C12E2A054F3C4D519D516A6032B530CF'}"}`;
+  var params = `{"userId":"${userId || ''}"}`;
   logger.log('sign:', sign);
   logger.log('auth:', auth);
   logger.log('params:', params);

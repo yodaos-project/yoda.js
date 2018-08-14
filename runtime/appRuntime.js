@@ -41,7 +41,7 @@ function App(arr) {
   this.handle = {};
   // to identify the first start
   this.online = undefined;
-  this.onGetPropAll = function noop() { return {} };
+
   // this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
   this.startExtappService();
@@ -204,17 +204,18 @@ App.prototype.onEvent = function (name, data) {
     if (this.online === false || this.online === undefined) {
       // need to play startup music
       logger.log('first startup');
+      this.onReconnected();
       this.emit('reconnected');
-      this.lightMethod('setWelcome', []);
     }
     this.online = true;
   } else if (name === 'disconnected') {
+    logger.log('network disconnected, please connect to wifi first');
     clearTimeout(this.handle.networkApp);
     var self = this;
     // trigger disconnected event when network state is switched or when it is first activated.
     if (this.online === true || this.online === undefined) {
       // start network app here
-      self.startApp('@network', {}, {});
+      this.onDisconnected();
       this.emit('disconnected');
     }
     this.online = false;
@@ -583,6 +584,43 @@ App.prototype.lightMethod = function (name, args) {
   });
 };
 
+App.prototype.ttsMethod = function (name, args) {
+  return new Promise((resolve, reject) => {
+    var sig = args.map(() => 's').join('');
+    this.service._dbus.callMethod(
+      'com.service.tts',
+      '/tts/service',
+      'tts.service',
+      name, sig, args, function (res) {
+        resolve(res);
+      });
+  });
+}
+
+/** interface  */
+
+App.prototype.onGetPropAll = function () {
+  return {};
+};
+
+
+App.prototype.onReconnected = function () {
+
+};
+
+App.prototype.onDisconnected = function () {
+  self.startApp('@network', {}, {});
+};
+
+App.prototype.onReLogin = function () {
+  this.lightMethod('setWelcome', []);
+
+  var config = JSON.stringify(this.onGetPropAll());
+  this.ttsMethod('connect', [config])
+    .then((res) => {
+      logger.log(`send CONFIG to ttsd: ${res[0]}`);
+    });
+};
 
 /**
  * 启动extApp dbus接口
@@ -602,6 +640,7 @@ App.prototype.startExtappService = function () {
     self.registerExtApp(appId, {
       metadata: {
         extapp: true,
+        daemon: true,
         dbusConn: {
           objectPath: objectPath,
           ifaceName: ifaceName
