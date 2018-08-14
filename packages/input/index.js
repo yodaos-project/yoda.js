@@ -2,6 +2,7 @@
 
 /**
  * @namespace input
+ * @description input event handler.
  */
 
 var InputWrap = require('./input.node').InputWrap;
@@ -14,7 +15,9 @@ var events = [
 ];
 
 /**
+ * @memberof input
  * @constructor
+ * @augments EventEmitter
  * @param {Object} options - the options to input event
  * @param {Number} options.selectTimeout
  * @param {Number} options.dbclickTimeout
@@ -46,6 +49,20 @@ InputEvent.prototype.onevent = function(state, action, code, time) {
     this.emit('error', new Error(`unknown event name ${state}`));
     return;
   }
+  /**
+   * keyup event
+   * @event input.InputEvent#keyup
+   * @type {Object}
+   * @property {Number} keyCode - the key code
+   * @property {Number} keyTime - the key time
+   */
+  /**
+   * keydown event
+   * @event input.InputEvent#keydown
+   * @type {Object}
+   * @property {Number} keyCode - the key code
+   * @property {Number} keyTime - the key time
+   */
   this.emit(name, {
     keyCode: code,
     keyTime: time,
@@ -54,6 +71,8 @@ InputEvent.prototype.onevent = function(state, action, code, time) {
 
 /**
  * start handling event
+ * @fires input.InputEvent#keyup
+ * @fires input.InputEvent#keydown
  */
 InputEvent.prototype.start = function() {
   return this._handle.start(this._options);
@@ -69,6 +88,18 @@ InputEvent.prototype.disconnect = function() {
 /**
  * get the event handler
  * @memberof input
+ * @function defaults
+ * @fires input.InputEvent#keyup
+ * @fires input.InputEvent#keydown
+ * @example
+ * var inputEvent = require('input')();
+ * inputEvent.on('keyup', (event) => {
+ *   console.log('keyup', event.keyCode);
+ * });
+ * inputEvent.on('keydown', (event) => {
+ *   console.log('keydown', event.keyCode);
+ * });
+ * @returns {InputEvent}
  */
 function getHandler(options) {
   if (handler) {

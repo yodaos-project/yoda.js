@@ -2,6 +2,14 @@
 
 /**
  * @namespace multimedia
+ * @description The multimedia includes support for playing variety of common
+ * media types, so that you can easily integrate audio into your applications.
+ *
+ * ```js
+ * var MediaPlayer = require('multimedia').MediaPlayer;
+ * var player = new MediaPlayer('tag');
+ * player.play('/res/play.ogg');
+ * ```
  */
 
 var native = require('./multimedia.node');
@@ -12,6 +20,11 @@ var EventEmitter = require('events').EventEmitter;
  * @constructor
  * @memberof multimedia
  * @param {String} tag - the tag for player
+ * @fires multimedia.MediaPlayer#prepared
+ * @fires multimedia.MediaPlayer#playbackcomplete
+ * @fires multimedia.MediaPlayer#bufferingupdate
+ * @fires multimedia.MediaPlayer#seekcomplete
+ * @fires multimedia.MediaPlayer#error
  */
 function MediaPlayer(tag) {
   EventEmitter.call(this);
@@ -31,28 +44,49 @@ MediaPlayer.prototype._initialize = function() {
 };
 
 MediaPlayer.prototype.onprepared = function() {
+  /**
+   * Prepared event, media resource is loaded
+   * @event multimedia.MediaPlayer#prepared
+   */
   this.emit('prepared');
 };
 
 MediaPlayer.prototype.onplaybackcomplete = function() {
+  /**
+   * Fired when media playback is complete.
+   * @event multimedia.MediaPlayer#playbackcomplete
+   */
   this.emit('playbackcomplete');
 };
 
 MediaPlayer.prototype.onbufferingupdate = function() {
+  /**
+   * Fired when media buffer is update.
+   * @event multimedia.MediaPlayer#bufferingupdate
+   */
   this.emit('bufferingupdate');
 };
 
 MediaPlayer.prototype.onseekcomplete = function() {
+  /**
+   * Fired when media seek is complete.
+   * @event multimedia.MediaPlayer#seekcomplete
+   */
   this.emit('seekcomplete');
 };
 
 MediaPlayer.prototype.onerror = function() {
+  /**
+   * Fired when something went wrong.
+   * @event multimedia.MediaPlayer#error
+   * @type {Error}
+   */
   this.emit('error', new Error('something went wrong'));
 };
 
 /**
  * play a media with URL.
- * @param {String} url
+ * @param {String} url - The url to play
  */
 MediaPlayer.prototype.play = function(url) {
   if (!url)

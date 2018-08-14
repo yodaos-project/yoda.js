@@ -2,6 +2,17 @@
 
 /**
  * @namespace logger
+ * @description logger functionalities.
+ *
+ * It also supports transfering logs into another socket connection. It reads
+ * the port number from the environment variable `LOG_PORT`, and send data
+ * via tcp socket by the given port.
+ *
+ * For example,
+ * ```shell
+ * $ LOG_PORT=9000 iotjs test-logger-port.js
+ * ```
+ * The above command would starts a tcp server on the port 8000 for logs.
  */
 
 var util = require('util');
@@ -138,6 +149,7 @@ Logger.prototype.closeServer = function closeServer() {
  * @example
  * var logger = require('logger')('some tag');
  * logger.log('test');
+ * logger.error('something went wrong');
  *
  * @memberof logger
  * @function logger
