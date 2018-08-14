@@ -108,7 +108,74 @@ Light.prototype.setLoading = function () {
 };
 
 Light.prototype.setStandby = function () {
-  this.appSound('@network', 'wifi/setup_network.ogg');
+  // this.appSound('@network', 'wifi/setup_network.ogg');
+  this.circleAnimation(255, 50, 0, 1000, 15);
+};
+
+Light.prototype.setConfigFree = function () {
+  clearTimeout(this.handle.circleAnimation);
+  clearTimeout(this.handle.circleBreathing);
+  this.buffer.fill(0);
+  this.render(this.buffer);
+};
+
+Light.prototype.circleAnimation = function (r, g, b, interval, fps) {
+  var self = this;
+  var index = 0;
+  var circle = function (pos, r, g, b) {
+    self.breathing(pos, r, g, b, interval, fps, () => {
+      index = index === 2 ? 0 : index + 1;
+      self.handle.circleAnimation = setTimeout(() => {
+        circle(index, r, g, b);
+      }, 15);
+    });
+  }
+  circle(index, r, g, b);
+};
+
+Light.prototype.breathing = function (pos, or, og, ob, duration, fps, cb) {
+  var self = this;
+  var times = Math.floor(duration / fps / 2);
+  var stepR = Math.floor(or / fps);
+  var stepG = Math.floor(og / fps);
+  var stepB = Math.floor(ob / fps);
+  var colorR = 0;
+  var colorG = 0;
+  var colorB = 0;
+  var render = function (r, g, b) {
+    self.buffer.fill(0);
+    self.pixel(pos, r, g, b);
+    self.pixel(pos + 3, r, g, b);
+    self.pixel(pos + 6, r, g, b);
+    self.pixel(pos + 9, r, g, b);
+    self.render(self.buffer);
+    if (stepR <= 0 && r === 0) {
+      cb();
+      return;
+    }
+
+    colorR += stepR;
+    colorG += stepG;
+    colorB += stepB;
+    if (stepR > 0) {
+      colorR = colorR > or ? or : colorR;
+      colorG = colorG > og ? og : colorG;
+      colorB = colorB > ob ? ob : colorB;
+    } else {
+      colorR = colorR < 0 ? 0 : colorR;
+      colorG = colorG < 0 ? 0 : colorG;
+      colorB = colorB < 0 ? 0 : colorB;
+    }
+    if (colorR >= or) {
+      stepR = -stepR;
+      stepG = - stepG;
+      stepB = - stepB;
+    }
+    self.handle.circleBreathing = setTimeout(() => {
+      render(colorR, colorG, colorB);
+    }, times);
+  };
+  render(colorR, colorG, colorB);
 };
 
 Light.prototype.lightDegree = function (pos) {
