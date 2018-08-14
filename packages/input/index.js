@@ -43,7 +43,7 @@ inherits(InputEvent, EventEmitter);
 InputEvent.prototype.onevent = function(state, action, code, time) {
   var name = events[state];
   if (!name) {
-    this.emit('error', new Error(`unknown event name ${state}`);
+    this.emit('error', new Error(`unknown event name ${state}`));
     return;
   }
   this.emit(name, {
