@@ -13,25 +13,25 @@ module.exports = function (app) {
   var connecting = false;
   var connectTimeout, pooling;
 
-  app.on('ready', function () {
-    console.log(this.getAppId() + ' app ready');
-  });
+  // app.on('ready', function () {
+  //   console.log(this.getAppId() + ' app ready');
+  // });
 
-  app.on('error', function (err) {
-    console.log('app error: ', err);
-  });
+  // app.on('error', function (err) {
+  //   console.log('app error: ', err);
+  // });
 
-  app.on('created', function () {
-    console.log(this.getAppId() + ' created');
-  });
+  // app.on('created', function () {
+  //   console.log(this.getAppId() + ' created');
+  // });
 
-  app.on('paused', function () {
-    console.log(this.getAppId() + ' paused');
-  });
+  // app.on('paused', function () {
+  //   console.log(this.getAppId() + ' paused');
+  // });
 
-  app.on('resumed', function () {
-    console.log(this.getAppId() + ' resumed');
-  });
+  // app.on('resumed', function () {
+  //   console.log(this.getAppId() + ' resumed');
+  // });
 
   app.on('onrequest', function (nlp, action) {
     if (this.started === true) {
@@ -44,7 +44,7 @@ module.exports = function (app) {
     ble.enable('ble');
     bleEnable = true;
     ble.on('ble data', function (data) {
-      logger.log('length:' + chunk.length + ' data:' + data.data);
+      logger.log(`length: ${chunk.length} data: ${data.data}`);
       if (chunk.length === 0 || data.protocol === 10759) {
         chunk = [];
         canReceive = true;
@@ -65,6 +65,7 @@ module.exports = function (app) {
         connectWIFI((connect) => {
           if (connect) {
             ble.disable('ble');
+            wifi.save();
           } else {
             logger.log('wifi connect failed');
             app.light.sound('wifi/connect_common_failure.ogg');
