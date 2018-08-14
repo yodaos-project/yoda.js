@@ -4,5 +4,8 @@
   },
   "sysroot-overview": {
     "title": "Sysroot Overview"
+  },
+  "testing": {
+    "title": "Testing Introduction"
   }
 }
