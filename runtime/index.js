@@ -9,7 +9,6 @@ var appRuntime = require('./appRuntime');
 var wifi = require('wifi');
 var logger = require('logger')('main');
 
-
 //------------------------------------------------------
 
 var app_runtime = new appRuntime(['/opt/apps']);
