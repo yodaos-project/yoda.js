@@ -64,6 +64,14 @@ dbusApis.addMethod('setStandby', {
   cb(null);
 });
 
+dbusApis.addMethod('setConfigFree', {
+  in: ['s'],
+  out: []
+}, function (appId, cb) {
+  service.setConfigFree();
+  cb(null);
+});
+
 dbusApis.addMethod('appSound', {
   in: ['s', 's'],
   out: []
