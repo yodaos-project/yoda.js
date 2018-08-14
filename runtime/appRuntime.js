@@ -688,7 +688,6 @@ App.prototype.startExtappService = function () {
     out: ['b'],
   }, function (status, cb) {
     try {
-      logger.log(status);
       var data = JSON.parse(status);
       if (data.upgrade === true) {
         self.startApp('@upgrade', {}, {});
