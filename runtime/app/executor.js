@@ -1,11 +1,17 @@
 'use strict'
 
+/**
+ * @namespace yodart.app.executor
+ */
+
 var fork = require('child_process').fork;
 var ExtApp = require('./extappServer');
 var logger = require('logger')('executor');
 var lightApp = require('./lightAppProxy');
 
-// 应用执行器
+/**
+ * @constructor
+ */
 function Executor(profile, prefix) {
   this.type = 'light';
   this.daemon = false;
@@ -15,10 +21,7 @@ function Executor(profile, prefix) {
   this.connector = null;
   this.profile = profile;
 
-  if (profile.metadata.native === true) {
-    this.type = 'native';
-    this.exec = prefix + '/' + (profile.main || 'index.js');
-  } else if (profile.metadata.extapp === true) {
+  if (profile.metadata.extapp === true) {
     if (profile.metadata.daemon === true) {
       this.daemon = true;
     }
@@ -29,15 +32,19 @@ function Executor(profile, prefix) {
     this.connector = lightApp(this.exec);
   }
 }
-// 创建实例。runtime是Appruntime实例
-Executor.prototype.create = function (appId, runtime) {
+
+/**
+ * create instance
+ * @param {String} appId - the app id
+ * @param {AppRuntime} runtime
+ */
+Executor.prototype.create = function(appId, runtime) {
   if (!this.valid) {
     logger.log(`app ${appId} invalid`);
     return false;
   }
   var app = null;
   if (this.type === 'light') {
-    // 创建实例
     app = this.connector(appId, runtime);
     return Promise.resolve(app);
   } else if (this.type === 'extapp') {
@@ -73,5 +80,6 @@ Executor.prototype.create = function (appId, runtime) {
       });
     });
   }
-}
+};
+
 module.exports = Executor;
