@@ -2,6 +2,7 @@
 
 /**
  * @namespace wifi
+ * @description Provides classes to manage Wi-Fi functionality on the device.
  */
 
 var native = require('./wifi.node');
@@ -50,7 +51,7 @@ module.exports = {
    * @function joinNetwork
    * @param {String} ssid - the wifi name
    * @param {String} psk - the wifi psk
-   * @param {String} method - the key method
+   * @param {String} [method=WPA2PSK] - the key method
    */
   joinNetwork: function joinNetwork(ssid, psk, method) {
     var m = keyMethods[method] || keyMethods.WPA2PSK;
@@ -81,7 +82,7 @@ module.exports = {
    */
   resetDns: native.resetDns,
   /**
-   * Save the current WI-FI config in local file.
+   * Save the current WI-FI config in local file, `/etc/wpa_supplicant`.
    * @memberof wifi
    * @function save
    */
