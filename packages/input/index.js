@@ -99,7 +99,7 @@ InputEvent.prototype.disconnect = function() {
  * inputEvent.on('keydown', (event) => {
  *   console.log('keydown', event.keyCode);
  * });
- * @returns {InputEvent}
+ * @returns {input.InputEvent}
  */
 function getHandler(options) {
   if (handler) {
