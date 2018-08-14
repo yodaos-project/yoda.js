@@ -2,16 +2,37 @@
 
 /**
  * @namespace tts
+ * @description Synthesizes speech from text for immediate playback.
  */
 
 var TtsWrap = require('./tts.node').TtsWrap;
 var EventEmitter = require('events').EventEmitter;
 var inherits = require('util').inherits;
 var TTSEvents = [
+  /**
+   * tts voice event.
+   * @event tts.TtsProxy#voice
+   */
   'voice', 	// 0: not used
+  /**
+   * tts start event.
+   * @event tts.TtsProxy#start
+   */
   'start', 	// 1: start
+  /**
+   * tts end event
+   * @event tts.TtsProxy#end
+   */
   'end', 	// 2: end
+  /**
+   * tts cancel event
+   * @event tts.TtsProxy#cancel
+   */
   'cancel', 	// 3: cancel
+  /**
+   * tts error event
+   * @event tts.TtsProxy#error
+   */
   'error'	// 4: error
 ];
 
@@ -20,6 +41,7 @@ var refs = {};
 
 /**
  * @constructor
+ * @memberof tts
  * @param {Object} handle
  * @param {String} text - the text to speak
  * @param {Function} callback
@@ -67,6 +89,7 @@ TtsRequest.prototype.end = function(errno) {
 
 /**
  * @constructor
+ * @memberof tts
  * @augments EventEmitter
  * @param {Object} handle
  */
@@ -146,6 +169,7 @@ function createHandle(options) {
 }
 
 /**
+ * Create a TTS instance by the given config.
  * @memberof tts
  * @method createTts
  * @param {Object} options - the Rokid cloud options
@@ -154,6 +178,17 @@ function createHandle(options) {
  * @param {String} options.deviceId - the device id
  * @param {String} options.deviceTypeId - the device type id
  * @returns {TtsProxy}
+ * @fires tts.TtsProxy#voice
+ * @fires tts.TtsProxy#start
+ * @fires tts.TtsProxy#end
+ * @fires tts.TtsProxy#cancel
+ * @fires tts.TtsProxy#error
+ * @example
+ * var tts = require('tts').createTts({ ... });
+ * tts.speak('hello yoda!', () => {
+ *   console.log('tts is complete');
+ * });
+ *
  */
 function createTts(options) {
   var handle = createHandle(options);

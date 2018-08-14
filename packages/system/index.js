@@ -7,9 +7,9 @@
 var native = require('./system.node');
 
 /**
+ * Reboot the system.
  * @memberof system
- * @param {String} stream - <optional> the stream type, tts/audio/alarm.
- * @param {Number} vol - the volume to set
+ * @function reboot
  */
 exports.reboot = native.reboot;
 

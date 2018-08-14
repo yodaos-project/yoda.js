@@ -8,7 +8,8 @@ var native = require('./volume.node');
 
 /**
  * @memberof volume
- * @param {String} stream - <optional> the stream type, tts/audio/alarm.
+ * @function set
+ * @param {String} [stream] - the stream type, tts/audio/alarm.
  * @param {Number} vol - the volume to set
  */
 exports.set = function(stream, vol) {
@@ -29,7 +30,8 @@ exports.set = function(stream, vol) {
 
 /**
  * @memberof volume
- * @param {String} stream - <optional> the stream type, tts/audio/alarm
+ * @function get
+ * @param {String} [stream] - the stream type, tts/audio/alarm
  */
 exports.get = function(stream) {
   if (stream) {
