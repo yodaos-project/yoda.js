@@ -55,9 +55,10 @@ function TtsRequest(handle, text, callback) {
 }
 
 /**
- * cancel
+ * stop this tts request.
+ * @fires tts.TtsProxy#cancel
  */
-TtsRequest.prototype.cancel = function() {
+TtsRequest.prototype.stop = function() {
   this.state = 'cancel';
   return this.handle.cancel(this.id);
 };
@@ -72,10 +73,9 @@ TtsRequest.prototype.onstart = function() {
 
 /**
  * @param {Number} errno - the error code if something wrong.
- * @throws {Error} if `callback` is not provided in constructor, 
- *                 throws if errno sets.
+ * @private
  */
-TtsRequest.prototype.end = function(errno) {
+TtsRequest.prototype.onend = function(errno) {
   if (errno) {
     var err = new Error('tts is occurring error');
     err.code = errno;
@@ -115,7 +115,7 @@ TtsProxy.prototype.onevent = function(name, id, errno) {
   } else if (evt === 'start') {
     req.onstart();
   } else if (evt === 'end' || evt === 'error') {
-    req.end(errno);
+    req.onend(errno);
     delete this._requests[id];
   }
   this.emit(TTSEvents[name], id, errno);
@@ -184,7 +184,6 @@ function createHandle(options) {
  * @fires tts.TtsProxy#voice
  * @fires tts.TtsProxy#start
  * @fires tts.TtsProxy#end
- * @fires tts.TtsProxy#cancel
  * @fires tts.TtsProxy#error
  * @example
  * var tts = require('tts').createTts({ ... });
