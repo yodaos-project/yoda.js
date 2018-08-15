@@ -63,7 +63,6 @@ module.exports = function (app) {
       connectWIFI((connect) => {
         if (!connect) {
           app.sound('wifi/connect_common_failure.ogg');
-          ble.enable('ble');
           connecting = false;
         }
       });

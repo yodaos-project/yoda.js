@@ -595,7 +595,7 @@ App.prototype.ttsMethod = function (name, args) {
         resolve(res);
       });
   });
-}
+};
 
 /** interface  */
 
@@ -605,11 +605,11 @@ App.prototype.onGetPropAll = function () {
 
 
 App.prototype.onReconnected = function () {
-
+  this.lightMethod('setConfigFree', []);
 };
 
 App.prototype.onDisconnected = function () {
-  self.startApp('@network', {}, {});
+  this.startApp('@network', {}, {});
 };
 
 App.prototype.onReLogin = function () {
