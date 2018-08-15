@@ -2,6 +2,14 @@
 
 /**
  * @namespace bluetooth
+ * @description The YodaOS includes support for the Bluetooth network
+ * stack, which allows a device to wirelessly exchange data with other
+ * Bluetooth devices. Using the Bluetooth APIs, your application can
+ * perform the followings:
+ *
+ * - Scan for other devices.
+ * - Control Bluetooth playback.
+ * - Transfer data to and from other devices.
  */
 
 var Bluetooth = require('./bluetooth.node').Bluetooth;
@@ -26,7 +34,10 @@ var A2DP_SINK_CMD = {
 /**
  * @memberof bluetooth
  * @constructor
- * @param {Object} name - the bluetooth name
+ * @param {String} [name=yoda] - the device name
+ * @fires bluetooth.BluetoothAgent#ble open
+ * @fires bluetooth.BluetoothAgent#ble close
+ * @fires bluetooth.BluetoothAgent#ble data
  */
 function BluetoothAgent(name) {
   EventEmitter.call(this);
@@ -39,13 +50,29 @@ inherits(BluetoothAgent, EventEmitter);
 
 /**
  * onevent
+ * @private
  */
 BluetoothAgent.prototype.onevent = function(what, arg1, arg2, data) {
   if (what === BT_EVENT_BLE_OPEN) {
+    /**
+     * ble open event
+     * @event bluetooth.BluetoothAgent#ble open
+     */
     this.emit('ble open');
   } else if (what === BT_EVENT_BLE_CLOSE) {
+    /**
+     * ble close event
+     * @event bluetooth.BluetoothAgent#ble close
+     */
     this.emit('ble close');
   } else if (what === BT_EVENT_BLE_WRITE) {
+    /**
+     * ble data event
+     * @event bluetooth.BluetoothAgent#ble data
+     * @type {Object}
+     * @property {Number} protocol - the procotol.
+     * @property {String} data - the transfering data.
+     */
     this.emit('ble data', {
       protocol: arg1,
       data: data,
@@ -57,14 +84,21 @@ BluetoothAgent.prototype.onevent = function(what, arg1, arg2, data) {
 
 /**
  * ondiscovery
+ * @private
  */
 BluetoothAgent.prototype.ondiscovery = function() {
   // TODO
 };
 
 /**
- * enable
+ * enable the given bluetooth module
  * @param {String} name - the bluetooth module name, like "ble", "a2dp".
+ * @example
+ * var bt = require('bluetooth').getBluetooth('mydevice');
+ * bt.enable('ble');
+ * bt.on('ble data', (message) => {
+ *   console.log(message.protocol, message.data);
+ * });
  */
 BluetoothAgent.prototype.enable = function(name) {
   if (name === 'ble') {
@@ -104,7 +138,7 @@ BluetoothAgent.prototype.setName = function(val) {
 
 /**
  * get the default player, only works when enable "a2dp sink"
- * @returns {BluetoothPlayer}
+ * @returns {bluetooth.BluetoothPlayer}
  */
 BluetoothAgent.prototype.createPlayer = function() {
   return new BluetoothPlayer(this);
@@ -171,8 +205,8 @@ BluetoothPlayer.prototype.backward = function backward() {
 /**
  * @memberof bluetooth
  * @method getBluetooth
- * @param {Object} name - the bluetooth name
- * @returns {BluetoothAgent}
+ * @param {String} [name=yoda] - the device name
+ * @returns {bluetooth.BluetoothAgent}
  */
 exports.getBluetooth = function getBluetooth(name) {
   if (!global_bt) {

@@ -2,7 +2,9 @@
 
 /**
  * @namespace input
- * @description input event handler.
+ * @description Input events handler. On YodaOS, every input events
+ * are treated as an event and handled by InputEvent. Currently, 
+ * we support `keyup`, `keydown` and `longpress` events.
  */
 
 var InputWrap = require('./input.node').InputWrap;
@@ -15,6 +17,7 @@ var events = [
 ];
 
 /**
+ * Common base class for input events.
  * @memberof input
  * @constructor
  * @augments EventEmitter
@@ -42,6 +45,7 @@ inherits(InputEvent, EventEmitter);
  * @param {Number} action - the event action
  * @param {Number} code - the event code
  * @param {Number} time - the event time
+ * @private
  */
 InputEvent.prototype.onevent = function(state, action, code, time) {
   var name = events[state];
