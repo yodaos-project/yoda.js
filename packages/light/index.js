@@ -63,6 +63,8 @@ module.exports = {
    * @param {Number} green - the green number 0-255.
    * @param {Number} blue - the blue number 0-255.
    * @param {Number} [alpha=1] - the alpha number.
+   * @example
+   * light.fill(255, 255, 233, 0.3); // this will render rgba(255,255,233,0.3)
    */
   fill: function fillColor(red, green, blue, alpha) {
     if (red === green && green === blue) {
@@ -85,6 +87,8 @@ module.exports = {
    * @param {Number} blue - the blue number 0-255.
    * @param {Number} [alpha=1] - the alpha number.
    * @param {Number} [shading=false] - show shadow.
+   * @example
+   * light.pixel(3, 255, 255, 255) // this will light black on 3rd led.
    */
   pixel: function pixelColor(index, red, green, blue, alpha, shading) {
     this._pixel(index, red, green, blue, alpha);
