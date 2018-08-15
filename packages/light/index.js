@@ -6,6 +6,15 @@
 
 var native = require('./light.node');
 
+/**
+ * Describe the hardware features for the current light.
+ * @typedef {Object} light.LightProfile
+ * @property {Number} leds - the number of LEDs.
+ * @property {Number} format - the color format, commonly 3 means rgb.
+ * @property {Number} maximumFps - the maximum fps.
+ * @property {Number} micAngle - the mic angle at zero.
+ */
+
 module.exports = {
   /**
    * Enable the light write
@@ -34,6 +43,7 @@ module.exports = {
    * Get the hardware profile data
    * @memberof light
    * @function getProfile
+   * @returns {light.LightProfile}
    */
   getProfile: native.getProfile,
 };

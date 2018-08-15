@@ -2,6 +2,7 @@
 
 /**
  * @namespace battery
+ * @description provide the battery state management.
  */
 
 var ffi = require('ffi');
