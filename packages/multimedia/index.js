@@ -7,8 +7,8 @@
  *
  * ```js
  * var MediaPlayer = require('multimedia').MediaPlayer;
- * var player = new MediaPlayer('tag');
- * player.play('/res/play.ogg');
+ * var player = new MediaPlayer('some-tag');
+ * player.start('/res/play.ogg');
  * ```
  */
 
