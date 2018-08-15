@@ -34,6 +34,10 @@ function MediaPlayer(tag) {
 }
 inherits(MediaPlayer, EventEmitter);
 
+/**
+ * Initialize the media player, set callbacks
+ * @private
+ */
 MediaPlayer.prototype._initialize = function() {
   this._handle = new native.Player(this._tag);
   this._handle.onprepared = this.onprepared.bind(this);
@@ -43,6 +47,10 @@ MediaPlayer.prototype._initialize = function() {
   this._handle.onerror = this.onerror.bind(this);
 };
 
+/**
+ * Prepare is ready
+ * @private
+ */
 MediaPlayer.prototype.onprepared = function() {
   /**
    * Prepared event, media resource is loaded
@@ -85,13 +93,13 @@ MediaPlayer.prototype.onerror = function() {
 };
 
 /**
- * play a media with URL.
- * @param {String} url - The url to play
+ * prepare with the given resource(URI) and start asynchronously.
+ * @param {String} uri - The resource uri to play
  */
-MediaPlayer.prototype.play = function(url) {
-  if (!url)
+MediaPlayer.prototype.start = function(uri) {
+  if (!uri)
     throw new Error('url must be a valid string');
-  return this._handle.prepare(url);
+  return this._handle.prepare(uri);
 };
 
 /**
