@@ -9,7 +9,7 @@ function MultiMedia(options) {
 }
 inherits(MultiMedia, EventEmitter);
 
-MultiMedia.prototype.play = function (appId, url) {
+MultiMedia.prototype.start = function (appId, url) {
   return new Promise((resolve, reject) => {
     this.options.permit.invoke('check', [appId, 'ACCESS_MULTIMEDIA'])
       .then((res) => {
@@ -19,7 +19,7 @@ MultiMedia.prototype.play = function (appId, url) {
           }
           var player = new this.options.multimedia();
           this.listenEvent(player);
-          player.play(url);
+          player.start(url);
           this.handle[appId] = player;
           resolve('' + player.id);
         } else {
@@ -33,7 +33,7 @@ MultiMedia.prototype.play = function (appId, url) {
   });
 };
 
-MultiMedia.prototype.cancel = function (appId) {
+MultiMedia.prototype.stop = function (appId) {
   if (this.handle[appId]) {
     this.handle[appId].stop();
     delete this.handle[appId];
