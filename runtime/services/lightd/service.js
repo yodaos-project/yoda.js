@@ -108,7 +108,8 @@ Light.prototype.setLoading = function () {
 };
 
 Light.prototype.setStandby = function () {
-  // this.appSound('@network', 'wifi/setup_network.ogg');
+  this.setConfigFree();
+  this.appSound('@network', 'wifi/setup_network.ogg');
   this.circleAnimation(255, 50, 0, 1000, 15);
 };
 
