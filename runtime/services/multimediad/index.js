@@ -58,13 +58,13 @@ service.on('error', function (id) {
   );
 });
 
-dbusApis.addMethod('play', {
+dbusApis.addMethod('start', {
   in: ['s', 's'],
   out: ['s']
 }, function (appId, url, cb) {
   console.log('multimedia play', appId, url);
   if (appId && url) {
-    service.play(appId, url)
+    service.start(appId, url)
       .then((id) => {
         logger.log('return', id, typeof id);
         cb(null, id);
@@ -77,13 +77,13 @@ dbusApis.addMethod('play', {
   }
 });
 
-dbusApis.addMethod('cancel', {
+dbusApis.addMethod('stop', {
   in: ['s'],
   out: []
 }, function (appId, cb) {
   console.log('multimedia cancel', appId);
   if (appId) {
-    service.cancel(appId);
+    service.stop(appId);
     cb(null);
   } else {
     cb('permission deny');

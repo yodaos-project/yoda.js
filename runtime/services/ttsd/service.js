@@ -7,7 +7,7 @@ function Tts(options) {
   this.options = options;
 }
 
-Tts.prototype.say = function (appId, text) {
+Tts.prototype.speak = function (appId, text) {
   return new Promise((resolve, reject) => {
     this.options.permit.invoke('check', [appId, 'ACCESS_TTS'])
       .then((res) => {
@@ -17,7 +17,7 @@ Tts.prototype.say = function (appId, text) {
           req = this.options.tts.speak(text);
           if (this.handle[appId]) {
             setTimeout(() => {
-              this.handle[appId].cancel();
+              this.handle[appId].stop();
               delete this.handle[appId];
               this.handle[appId] = req;
             }, 0);
@@ -36,9 +36,9 @@ Tts.prototype.say = function (appId, text) {
   });
 };
 
-Tts.prototype.cancel = function (appId) {
+Tts.prototype.stop = function (appId) {
   if (this.handle[appId]) {
-    this.handle[appId].cancel();
+    this.handle[appId].stop();
     delete this.handle[appId];
   }
 };
