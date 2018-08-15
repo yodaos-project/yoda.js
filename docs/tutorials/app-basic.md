@@ -80,18 +80,26 @@ module.exports = function(app) {
 
 The above function receives an argument `app`, which includes the following methods:
 
-- `exit()` exits the current application.
-- `destroyAll()` cleans the applications stack.
-- `setPickup(f)` set if the pickup state.
 - `tts`
-  - `tts.say(text)`: speak the text.
-  - `tts.cancel()`: cancel the speaking.
+  - `speak(text)`: speak the text.
+  - `stop()`: cancel the speaking.
 - `media`
-  - `media.play(url, cb)` play the url.
-  - `media.pause()` pause the playback.
-  - `media.resume()` resume the playback.
-  - `media.cancel()` stop the playback.
+  - `start(url, cb)` play the url.
+  - `pause()` pause the playback.
+  - `resume()` resume the playback.
+  - `stop()` stop the playback.
 - `light`
-  - `light.setStandby()` play standby light.
-  - `light.sound(name)` play the sound by the given name.
+  - `play(name)` play the light by the given name.
+  - `stop()` stop the current light.
+- `localStorage` the local storage.
+  - `getItem(key)` get the value by the given key.
+  - `setItem(key)` set the value by the given key.
+- `setPickup(f)` set if the pickup state.
+- `setConfirm(intent, slot, options)` set if the confirm state.
+- `exit()` exits the current application.
+- `exitAll()` exits the current application and clean up others.
+
+The following are convenient methods:
+
+- `playSound(name)` play the local sound effect by the given name.
 
