@@ -84,13 +84,13 @@ dbusApis.addMethod('connect', {
   cb(null, true);
 });
 
-dbusApis.addMethod('say', {
+dbusApis.addMethod('speak', {
   in: ['s', 's'],
   out: ['s']
 }, function (appId, text, cb) {
   console.log('tts speak', appId, text);
   if (appId && text) {
-    service.say(appId, text)
+    service.speak(appId, text)
       .then((id) => {
         cb(null, '' + id);
       })
@@ -102,13 +102,13 @@ dbusApis.addMethod('say', {
   }
 });
 
-dbusApis.addMethod('cancel', {
+dbusApis.addMethod('stop', {
   in: ['s'],
   out: []
 }, function (appId, cb) {
   console.log('tts cancel', appId);
   if (appId) {
-    service.cancel(appId);
+    service.stop(appId);
     cb(null);
   } else {
     cb('permission deny');
