@@ -64,6 +64,7 @@ TtsRequest.prototype.cancel = function() {
 
 /**
  * onstart
+ * @private
  */
 TtsRequest.prototype.onstart = function() {
   this.state = 'start';
@@ -71,6 +72,8 @@ TtsRequest.prototype.onstart = function() {
 
 /**
  * @param {Number} errno - the error code if something wrong.
+ * @throws {Error} if `callback` is not provided in constructor, 
+ *                 throws if errno sets.
  */
 TtsRequest.prototype.end = function(errno) {
   if (errno) {
@@ -121,7 +124,7 @@ TtsProxy.prototype.onevent = function(name, id, errno) {
 /**
  * @param {String} text
  * @param {Function} cb - fired when tts is done
- * @returns {TtsRequest}
+ * @returns {tts.TtsRequest}
  */
 TtsProxy.prototype.speak = function(text, cb) {
   var req = new TtsRequest(this._handle, text, cb);
@@ -177,7 +180,7 @@ function createHandle(options) {
  * @param {String} options.secret - the secret
  * @param {String} options.deviceId - the device id
  * @param {String} options.deviceTypeId - the device type id
- * @returns {TtsProxy}
+ * @returns {tts.TtsProxy}
  * @fires tts.TtsProxy#voice
  * @fires tts.TtsProxy#start
  * @fires tts.TtsProxy#end
