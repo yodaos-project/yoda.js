@@ -2,6 +2,7 @@
 
 var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
+var property = require('property');
 
 function Client(appId, runtime) {
   var self = this;
@@ -74,8 +75,8 @@ function Client(appId, runtime) {
   };
   // tts module
   app.tts = {
-    say: function (text, cb) {
-      self.adapter.ttsMethod('say', [appId, text])
+    speak: function (text, cb) {
+      self.adapter.ttsMethod('speak', [appId, text])
         .then((args) => {
           // 返回的参数是一个数组，按顺序
           logger.log('tts register', args[0]);
@@ -85,8 +86,8 @@ function Client(appId, runtime) {
           logger.error(err);
         });
     },
-    cancel: function (cb) {
-      self.adapter.ttsMethod('cancel', [appId])
+    stop: function (cb) {
+      self.adapter.ttsMethod('stop', [appId])
         .then((args) => {
           cb.call(app, null);
         })
@@ -97,8 +98,8 @@ function Client(appId, runtime) {
   };
   // media模块
   app.media = {
-    play: function (url, cb) {
-      self.adapter.multiMediaMethod('play', [appId, url])
+    start: function (url, cb) {
+      self.adapter.multiMediaMethod('start', [appId, url])
         .then((args) => {
           logger.log('media register', args);
           self.multiMediaCallback['mediacb:' + args[0]] = cb.bind(app);
@@ -125,8 +126,8 @@ function Client(appId, runtime) {
           cb.call(app, null);
         });
     },
-    cancel: function (cb) {
-      self.adapter.multiMediaMethod('cancel', [appId])
+    stop: function (cb) {
+      self.adapter.multiMediaMethod('stop', [appId])
         .then((args) => {
           cb.call(app, null);
         })
@@ -137,11 +138,22 @@ function Client(appId, runtime) {
   };
   // light module
   app.light = {
-    setStandby: function () {
-      return self.adapter.lightMethod('setStandby', [appId]);
+    play: function (name, args) {
+      return self.adapter.lightMethod('play', [appId, name, JSON.stringify(args || [])]);
     },
-    sound: function (name) {
-      return self.adapter.lightMethod('appSound', [appId, name]);
+    stop: function () {
+      return self.adapter.lightMethod('stop', [appId]);
+    }
+  };
+  app.playSound = function (name) {
+    return self.adapter.lightMethod('appSound', [appId, name]);
+  };
+  app.localStorage = {
+    getItem: function (key) {
+      return property.get();
+    },
+    setItem: function (key, value) {
+      return property.set(key, value);
     }
   };
 }
