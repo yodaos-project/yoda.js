@@ -95,7 +95,7 @@ The above function receives an argument `app`, which includes the following meth
   - `getItem(key)` get the value by the given key.
   - `setItem(key)` set the value by the given key.
 - `setPickup(f)` set if the pickup state.
-- `setConfirm(intent, slot, options)` set if the confirm state.
+- `setConfirm(intent, slot, options, attrs)` set if the confirm state.
 - `exit()` exits the current application.
 - `exitAll()` exits the current application and clean up others.
 
