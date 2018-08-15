@@ -199,7 +199,6 @@ App.prototype.onEvent = function (name, data) {
     this.lightMethod('setHide', ['']);
     this.onVoiceCommand(data.asr, data.nlp, data.action);
   } else if (name === 'connected') {
-    this.destroyAll();
     clearTimeout(this.handle.networkApp);
     if (this.online === false || this.online === undefined) {
       // need to play startup music
@@ -348,6 +347,7 @@ App.prototype.destroyAll = function () {
   this.appMap = {};
   this.appIdOriginStack = [];
   this.appDataMap = {};
+  this.resetStack();
 };
 
 /**
@@ -427,6 +427,12 @@ App.prototype.updateStack = function (AppData) {
     this.domain.scene = AppData.appId;
   }
   logger.log('domain', this.domain);
+  this.emit('setStack', this.domain.scene + ':' + this.domain.cut);
+};
+
+App.prototype.resetStack = function () {
+  this.domain.cut = '';
+  this.domain.scene = '';
   this.emit('setStack', this.domain.scene + ':' + this.domain.cut);
 };
 
@@ -605,6 +611,7 @@ App.prototype.onGetPropAll = function () {
 
 
 App.prototype.onReconnected = function () {
+  this.destroyAll();
   this.lightMethod('setConfigFree', []);
 };
 

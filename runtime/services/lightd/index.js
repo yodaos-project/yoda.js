@@ -24,6 +24,18 @@ var service = new Service({
   permit: permit
 });
 
+dbusApis.addMethod('play', {
+  in: ['s', 's', 's'],
+  out: ['b']
+}, function (appId, name, args, cb) {
+  if (typeof service[name] === 'function') {
+    service[name].apply(service, JSON.parse(args));
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+});
+
 dbusApis.addMethod('setAwake', {
   in: ['s'],
   out: []
