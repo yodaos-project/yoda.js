@@ -1,6 +1,8 @@
 // var EventEmitter = require('events').EventEmitter;
 // var inherits = require('util').inherits;
-var logger = console;
+var logger = require('logger')('lightService');
+
+var MEDIA_SOURCE = '/opt/media/';
 
 function Light(options) {
   this.playerHandle = {};
@@ -60,7 +62,7 @@ Light.prototype.setDegree = function (degree) {
   this.pos = Math.floor((degree / 360) * this.ledConfig.leds);
   this.lightDegree(this.pos);
   this.options.light.write(this.buffer);
-  this.sound('wakeup.ogg');
+  this.wakeupSound();
 };
 
 Light.prototype.setHide = function () {
@@ -109,7 +111,7 @@ Light.prototype.setLoading = function () {
 
 Light.prototype.setStandby = function () {
   this.setConfigFree();
-  this.appSound('@network', 'wifi/setup_network.ogg');
+  this.appSound('@network', `${MEDIA_SOURCE}wifi/setup_network.ogg`);
   this.circleAnimation(255, 50, 0, 1000, 15);
 };
 
@@ -187,7 +189,7 @@ Light.prototype.lightDegree = function (pos) {
 
 Light.prototype.setWelcome = function () {
   var rand = Math.round(Math.random() * 2);
-  this.appSound('@YodaOS', 'startup' + rand +  '.ogg');
+  this.appSound('@YodaOS', `${MEDIA_SOURCE}startup${rand}.ogg`);
   setTimeout(() => {
     this.transition('b', 0, 255, 2400, 80, () => {
       setTimeout(() => {
@@ -265,10 +267,9 @@ Light.prototype.render = function (buffer) {
 };
 
 var init = false;
-Light.prototype.sound = function (name) {
-  var base = '/opt/media/';
+Light.prototype.wakeupSound = function () {
   if (!init) {
-    this.player.play(base + name);
+    this.player.play(`${MEDIA_SOURCE}wakeup.ogg`);
     init = true;
   } else {
     this.player.seek(0);
@@ -276,13 +277,12 @@ Light.prototype.sound = function (name) {
 };
 
 Light.prototype.appSound = function (appId, name) {
-  var base = '/opt/media/';
   if (this.playerHandle[appId]) {
     this.playerHandle[appId].stop();
   }
   var player = new this.options.soundplayer();
   this.playerHandle[appId] = player;
-  player.play(base + name);
+  player.play(name);
 };
 
 module.exports = Light;
