@@ -37,6 +37,7 @@ var A2DP_SINK_CMD = {
 function BluetoothAgent(name) {
   EventEmitter.call(this);
   this._name = name || 'yoda';
+  this._player = null;
   this._handle = new Bluetooth(this._name);
   this._handle.onevent = this.onevent.bind(this);
   this._handle.ondiscovery = this.ondiscovery.bind(this);
@@ -78,12 +79,24 @@ BluetoothAgent.prototype.onevent = function(what, arg1, arg2, data) {
      * @event bluetooth.BluetoothAgent#avk open
      */
     this.emit('avk open');
-  } else if (what === Bluetooth.BT_EVENT_A2DP_CLOSE) {
+  } else if (what === Bluetooth.BT_EVENT_AVK_CLOSE) {
     /**
      * avk close event
      * @event bluetooth.BluetoothAgent#avk close
      */
     this.emit('avk close');
+  } else if (what === Bluetooth.BT_EVENT_AVK_RC_OPEN) {
+    /**
+     * avk open event from remote channel
+     * @event bluetooth.BluetoothAgent#avk close
+     */
+    this.emit('avk rc open');
+  } else if (what === Bluetooth.BT_EVENT_AVK_RC_CLOSE) {
+    /**
+     * avk close event from remote channel
+     * @event bluetooth.BluetoothAgent#avk close
+     */
+    this.emit('avk rc close');
   } else if (what === Bluetooth.BT_EVENT_AVK_START) {
     /**
      * avk close event
@@ -163,7 +176,7 @@ BluetoothAgent.prototype.enable = function(name) {
   } else if (name === 'a2dp') {
     this._handle.enableA2dp();
   } else if (name === 'a2dp sink') {
-    this._handle.enableA2dp('sink');
+    this._handle.enableA2dp(true);
   } else {
     this.emit('error', new Error(`bluetooth module ${name} not support`));
   }
@@ -179,7 +192,7 @@ BluetoothAgent.prototype.disable = function(name) {
   } else if (name === 'a2dp') {
     this._handle.disableA2dp();
   } else if (name === 'a2dp sink') {
-    this._handle.disableA2dp('sink');
+    this._handle.disableA2dp(true);
   } else {
     this.emit('error', new Error(`bluetooth module ${name} not support`));
   }
@@ -198,7 +211,11 @@ BluetoothAgent.prototype.setName = function(val) {
  * @returns {bluetooth.BluetoothPlayer}
  */
 BluetoothAgent.prototype.createPlayer = function() {
-  return new BluetoothPlayer(this);
+  if (!this._player) {
+    this._player = new BluetoothPlayer(this);
+  }
+  this._player.connect();
+  return this._player;
 };
 
 /**
@@ -215,15 +232,100 @@ Object.defineProperty(BluetoothAgent.prototype, 'enabled', {
 
 /**
  * @constructor
+ * @augments EventEmitter
  * @memberof bluetooth
- * @param {BluetoothAgent} agent
+ * @param {bluetooth.BluetoothAgent} agent
+ * @fires bluetooth.BluetoothPlayer#open
+ * @fires bluetooth.BluetoothPlayer#close
+ * @fires bluetooth.BluetoothPlayer#start
+ * @fires bluetooth.BluetoothPlayer#pause
+ * @fires bluetooth.BluetoothPlayer#stop
+ * @example
+ * var bt = require('bluetooth').getBluetooth('mydevice');
+ * var player = bt.createPlayer();
+ * player.on('start', () => {
+ *   player.play();
+ * });
+ * player.on('stop', () => {
+ *   player.disconnect();
+ * });
  */
 function BluetoothPlayer(agent) {
   this._agent = agent;
+  this._isOpened = false;
+  this._isRemoteOpened = false;
+  this._gettingState = null;
+  this._playingState = null;
   if (!(this._agent instanceof BluetoothAgent))
     throw new TypeError('agent must be an instance of BluetoothAgent');
+
+  this._agent.enable('a2dp sink');
+  this._agent.on('avk open', () => {
+    this.isOpened = true;
+  });
+  this._agent.on('avk close', () => {
+    this._isOpened = false;
+    this._isRemoteOpened = false;
+  });
+  this._agent.on('avk rc open', () => {
+    this._isOpened = true;
+    this._isRemoteOpened = true;
+    /**
+     * player is opened
+     * @event bluetooth.BluetoothPlayer#open
+     */
+    this.emit('open');
+  });
+  this._agent.on('avk rc close', () => {
+    this._isRemoteOpened = false;
+    this._gettingState = null;
+    this._playingState = null;
+    /**
+     * player is closed
+     * @event bluetooth.BluetoothPlayer#close
+     */
+    this.emit('close');
+  });
+  this._agent.on('avk start', () => {
+    this._playingState = 'start';
+    /**
+     * player is starting
+     * @event bluetooth.BluetoothPlayer#start
+     */
+    this.emit('start');
+  });
+  this._agent.on('avk pause', () => {
+    this._playingState = 'pause';
+    /**
+     * player is paused
+     * @event bluetooth.BluetoothPlayer#pause
+     */
+    this.emit('pause');
+  });
+  this._agent.on('avk stop', () => {
+    this._playingState = 'stop';
+    /**
+     * player is stoped
+     * @event bluetooth.BluetoothPlayer#stop
+     */
+    this.emit('stop');
+  });
 }
 inherits(BluetoothPlayer, EventEmitter);
+
+/**
+ * connect the a2dp sink
+ */
+BluetoothPlayer.prototype.connect = function connect() {
+  return this._agent.enable('a2dp sink');
+};
+
+/**
+ * disconnect the a2dp sink
+ */
+BluetoothPlayer.prototype.disconnect = function connect() {
+  return this._agent.disable('a2dp sink');
+};
 
 /**
  * play the music
@@ -261,12 +363,42 @@ BluetoothPlayer.prototype.backward = function backward() {
 };
 
 /**
- * get player state
+ * get the local state
  */
-BluetoothPlayer.prototype.getState = function getState(cb) {
+BluetoothPlayer.prototype.getLocalPlaying = function getLocalPlaying() {
+  return this._playingState;
+};
+
+/**
+ * get the remote state
+ * @param {Function} cb - the remote playing state callback.
+ * @throws {TypeError} remote state callback should be a function.
+ * @throws {Error} still getting state.
+ */
+BluetoothPlayer.prototype.getRemotePlaying = function getRemotePlaying(cb) {
+  if (typeof cb !== 'function')
+    throw new TypeError('remote state callback should be a function');
+  if (this._gettingState)
+    throw new Error('still getting state');
+
+  this._gettingState = true;
   this._agent._handle.getAvkState();
   this._agent.once('avk state', (arg1, arg2) => {
-    cb(null, arg1, arg2);
+    if (!this._isRemoteOpened) {
+      // if the remote closed, just skip
+      return cb(new Error('player has been closed'));
+    }
+    this._gettingState = false;
+    if (arg1 === 0) {
+      this._playingState = 'stop';
+    } else if (arg1 === 1) {
+      this._playingState = 'start';
+    } else if (arg1 === 2) {
+      this._playingState = 'pause';
+    } else {
+      return cb(new Error('unknown state'));
+    }
+    cb(null, this._playingState);
   });
 };
 
@@ -312,3 +444,4 @@ exports.getBluetooth = function getBluetooth(name) {
   }
   return global_bt;
 };
+
