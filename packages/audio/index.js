@@ -2,6 +2,14 @@
 
 /**
  * @namespace audio
+ * @description The `audio` module exports `AudioManager`, which provides APIs to
+ * to control volume of audio.
+ *
+ * ```js
+ * var AudioManager = require('audio').AudioManager;
+ * AudioManager.setVolume(AudioManager.STREAM_TTS, 30); // this sets the tts vol to 30.
+ * AudioManager.getVolume(AudioManager.STREAM_AUDIO); // get the audio tts.
+ * ```
  */
 
 var native = require('./audio.node');
@@ -16,18 +24,21 @@ function AudioManager() {
 exports.AudioManager = AudioManager;
 
 /**
+ * @memberof audio.AudioManager
  * @var STREAM_AUDIO {Number} - Used to identify the volume of audio streams for audio.
  * @static
  */
 AudioManager.STREAM_AUDIO = native.STREAM_AUDIO;
 
 /**
+ * @memberof audio.AudioManager
  * @var STREAM_TTS {Number} - Used to identify the volume of audio streams for tts.
  * @static
  */
 AudioManager.STREAM_TTS = native.STREAM_TTS;
 
 /**
+ * @memberof audio.AudioManager
  * @var STREAM_PLAYBACK {Number} - Used to identify the volume of audio streams for
  *                                 multimedia.
  * @static
@@ -35,34 +46,21 @@ AudioManager.STREAM_TTS = native.STREAM_TTS;
 AudioManager.STREAM_PLAYBACK = native.STREAM_PLAYBACK;
 
 /**
+ * @memberof audio.AudioManager
  * @var STREAM_ALARM {Number} - Used to identify the volume of audio streams for alarm.
  * @static
  */
 AudioManager.STREAM_ALARM = native.STREAM_ALARM;
 
 /**
+ * @memberof audio.AudioManager
  * @var STREAM_SYSTEM {Number} - Used to identify the volume of audio streams for system.
  * @static
  */
 AudioManager.STREAM_SYSTEM = native.STREAM_SYSTEM;
 
 /**
- * @var STREAM_VOICE_CALL {Number} - Used to identify the volume of audio streams 
- *                                   for voice call.
- * @static
- * @private
- */
-AudioManager.STREAM_VOICE_CALL = -1;
-
-/**
- * @var STREAM_NOTIFICATION {Number} - Used to identify the volume of audio streams for
- *                                     notification.
- * @static
- * @private
- */
-AudioManager.STREAM_NOTIFICATION = -1
-
-/**
+ * @memberof audio.AudioManager
  * @function setVolume
  * @param {Number} [stream=STREAM_AUDIO] - The stream type.
  * @param {Number} vol - The volume to set
@@ -86,8 +84,9 @@ AudioManager.setVolume = function(stream, vol) {
 };
 
 /**
+ * @memberof audio.AudioManager
  * @function getVolume
- * @param {String} [stream] - the stream type, tts/audio/alarm
+ * @param {Number} [stream=STREAM_AUDIO] - The stream type.
  * @static
  */
 AudioManager.getVolume = function(stream) {
@@ -97,3 +96,4 @@ AudioManager.getVolume = function(stream) {
     return native.getMediaVolume();
   }
 };
+
