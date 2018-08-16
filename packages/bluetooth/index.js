@@ -17,36 +17,6 @@ var EventEmitter = require('events').EventEmitter;
 var inherits = require('util').inherits;
 var global_bt = null;
 
-// a2dp events
-var BT_EVENT_A2DP_OPEN = 1;
-var BT_EVENT_A2DP_CLOSE = 2;
-var BT_EVENT_A2DP_START = 3;
-var BT_EVENT_A2DP_STOP  = 4;
-var BT_EVENT_A2DP_RC_OPEN = 5;
-var BT_EVENT_A2DP_RC_CLOSE = 6;
-var BT_EVENT_A2DP_REMOTE_CMD = 7;
-var BT_EVENT_A2DP_REMOTE_RSP = 8;
-
-// avk events
-var BT_EVENT_AVK_OPEN = 21;
-var BT_EVENT_AVK_CLOSE = 22;
-var BT_EVENT_AVK_STR_OPEN = 23;
-var BT_EVENT_AVK_STR_CLOSE = 24;
-var BT_EVENT_AVK_START = 25;
-var BT_EVENT_AVK_PAUSE = 26;
-var BT_EVENT_AVK_STOP = 28;
-var BT_EVENT_AVK_RC_OPEN = 29;
-var BT_EVENT_AVK_RC_PEER_OPEN = 30;
-var BT_EVENT_AVK_RC_CLOSE = 31;
-var BT_EVENT_AVK_SET_ABS_VOL = 32;
-var BT_EVENT_AVK_GET_PLAY_STATUS = 33;
-
-// ble events
-var BT_EVENT_BLE_OPEN  = 41;
-var BT_EVENT_BLE_CLOSE = 42;
-var BT_EVENT_BLE_WRITE = 43;
-var BT_EVENT_BLE_CON   = 44;
-
 // sink commands
 var A2DP_SINK_CMD = {
   play: 1,
@@ -78,67 +48,79 @@ inherits(BluetoothAgent, EventEmitter);
  * @private
  */
 BluetoothAgent.prototype.onevent = function(what, arg1, arg2, data) {
-  if (what === BT_EVENT_A2DP_OPEN) {
+  if (what === Bluetooth.BT_EVENT_A2DP_OPEN) {
     /**
      * a2dp open event
      * @event bluetooth.BluetoothAgent#a2dp open
      */
     this.emit('a2dp open');
-  } else if (what === BT_EVENT_A2DP_CLOSE) {
+  } else if (what === Bluetooth.BT_EVENT_A2DP_CLOSE) {
     /**
      * a2dp close event
      * @event bluetooth.BluetoothAgent#a2dp close
      */
     this.emit('a2dp close');
-  } else if (what === BT_EVENT_A2DP_START) {
+  } else if (what === Bluetooth.BT_EVENT_A2DP_START) {
     /**
      * a2dp start event
      * @event bluetooth.BluetoothAgent#a2dp start
      */
     this.emit('a2dp start');
-  } else if (what === BT_EVENT_A2DP_STOP) {
+  } else if (what === Bluetooth.BT_EVENT_A2DP_STOP) {
     /**
      * a2dp stop event
      * @event bluetooth.BluetoothAgent#a2dp stop
      */
     this.emit('a2dp stop');
-  } else if (what === BT_EVENT_AVK_OPEN) {
+  } else if (what === Bluetooth.BT_EVENT_AVK_OPEN) {
     /**
      * avk open event
      * @event bluetooth.BluetoothAgent#avk open
      */
     this.emit('avk open');
-  } else if (what === BT_EVENT_A2DP_CLOSE) {
+  } else if (what === Bluetooth.BT_EVENT_A2DP_CLOSE) {
     /**
      * avk close event
      * @event bluetooth.BluetoothAgent#avk close
      */
-     this.emit('avk close');
-  } else if (what === BT_EVENT_AVK_START) {
+    this.emit('avk close');
+  } else if (what === Bluetooth.BT_EVENT_AVK_START) {
     /**
      * avk close event
      * @event bluetooth.BluetoothAgent#avk close
      */
-     this.emit('avk start');
-  } else if (what === BT_EVENT_AVK_START) {
+    this.emit('avk start');
+  } else if (what === Bluetooth.BT_EVENT_AVK_PAUSE) {
+    /**
+     * avk pause event
+     * @event bluetooth.BluetoothAgent#avk pause
+     */
+    this.emit('avk pause');
+  } else if (what === Bluetooth.BT_EVENT_AVK_STOP) {
     /**
      * avk close event
      * @event bluetooth.BluetoothAgent#avk stop
      */
-     this.emit('avk stop');
-  } else if (what === BT_EVENT_BLE_OPEN) {
+    this.emit('avk stop');
+  } else if (what === Bluetooth.BT_EVENT_AVK_GET_PLAY_STATUS) {
+    /**
+     * avk state event
+     * @event bluetooth.BluetoothAgent#avk state
+     */
+    this.emit('avk state', arg1, arg2);
+  } else if (what === Bluetooth.BT_EVENT_BLE_OPEN) {
     /**
      * ble open event
      * @event bluetooth.BluetoothAgent#ble open
      */
     this.emit('ble open');
-  } else if (what === BT_EVENT_BLE_CLOSE) {
+  } else if (what === Bluetooth.BT_EVENT_BLE_CLOSE) {
     /**
      * ble close event
      * @event bluetooth.BluetoothAgent#ble close
      */
     this.emit('ble close');
-  } else if (what === BT_EVENT_BLE_WRITE) {
+  } else if (what === Bluetooth.BT_EVENT_BLE_WRITE) {
     /**
      * ble data event
      * @event bluetooth.BluetoothAgent#ble data
@@ -241,40 +223,51 @@ function BluetoothPlayer(agent) {
   if (!(this._agent instanceof BluetoothAgent))
     throw new TypeError('agent must be an instance of BluetoothAgent');
 }
+inherits(BluetoothPlayer, EventEmitter);
 
 /**
  * play the music
  */
 BluetoothPlayer.prototype.play = function play() {
-  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.play);
+  return this._agent._handle.sendCommand(A2DP_SINK_CMD.play);
 };
 
 /**
  * pause the music
  */
 BluetoothPlayer.prototype.pause = function pause() {
-  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.pause);
+  return this._agent._handle.sendCommand(A2DP_SINK_CMD.pause);
 };
 
 /**
  * stop the music
  */
 BluetoothPlayer.prototype.stop = function stop() {
-  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.stop);
+  return this._agent._handle.sendCommand(A2DP_SINK_CMD.stop);
 };
 
 /**
  * play next
  */
 BluetoothPlayer.prototype.forward = function forward() {
-  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.forward);
+  return this._agent._handle.sendCommand(A2DP_SINK_CMD.forward);
 };
 
 /**
  * play previous
  */
 BluetoothPlayer.prototype.backward = function backward() {
-  return this._agent._handle.sendA2dpCmd(A2DP_SINK_CMD.backward);
+  return this._agent._handle.sendCommand(A2DP_SINK_CMD.backward);
+};
+
+/**
+ * get player state
+ */
+BluetoothPlayer.prototype.getState = function getState(cb) {
+  this._agent._handle.getAvkState();
+  this._agent.once('avk state', (arg1, arg2) => {
+    cb(null, arg1, arg2);
+  });
 };
 
 /**
