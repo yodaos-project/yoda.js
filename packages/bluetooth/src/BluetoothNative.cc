@@ -185,10 +185,18 @@ JS_FUNCTION(EnableA2dp) {
 
   bool is_sink = JS_GET_ARG(0, boolean);
   if (is_sink) {
-    rokidbt_a2dp_sink_enable(_this->bt_handle);
+    rokidbt_a2dp_sink_disable(_this->bt_handle);
+    if (0 != rokidbt_a2dp_sink_enable(_this->bt_handle)) {
+      // a2dp sink enable failed.
+      return jerry_create_boolean(false);
+    }
   } else {
-    rokidbt_a2dp_enable(_this->bt_handle);
+    if (0 != rokidbt_a2dp_enable(_this->bt_handle)) {
+      // a2dp enabled failed
+      return jerry_create_boolean(false);
+    }
   }
+  rokidbt_set_visibility(1);
   return jerry_create_boolean(true);
 }
 
