@@ -4,9 +4,13 @@ var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 var property = require('property');
 
+var MEDIA_SOURCE = '/opt/media/';
+
 function Client(appId, runtime) {
   var self = this;
   EventEmitter.call(this);
+
+  this.appHome = '';
   this.runtime = runtime;
   this.appId = appId;
   // 创建隔离的App
@@ -146,11 +150,23 @@ function Client(appId, runtime) {
     }
   };
   app.playSound = function (name) {
-    return self.adapter.lightMethod('appSound', [appId, name]);
+    var len = name.length;
+    var absPath;
+    // etc.. system://path/to/sound.ogg
+    if (len > 9 && name.substr(0, 9) === 'system://') {
+      absPath = MEDIA_SOURCE + name.substr(9);
+    // etc.. self://path/to/sound.ogg
+    } else if (len > 7 && name.substr(0, 7) === 'self://') {
+      absPath = self.appHome + '/' + name.substr(7);
+    // etc.. path/to/sound.ogg
+    } else {
+      absPath = self.appHome + '/' + name;
+    }
+    return self.adapter.lightMethod('appSound', [appId, absPath]);
   };
   app.localStorage = {
     getItem: function (key) {
-      return property.get();
+      return property.get(key);
     },
     setItem: function (key, value) {
       return property.set(key, value);
