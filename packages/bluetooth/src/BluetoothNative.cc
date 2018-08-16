@@ -220,7 +220,16 @@ JS_FUNCTION(CloseA2dp) {
   return jerry_create_boolean(true);
 }
 
-JS_FUNCTION(SendA2dpCmd) {
+JS_FUNCTION(GetAvkState) {
+  JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
+  IOTJS_BLUETOOTH_CHECK_INSTANCE();
+
+  int r = rokidbt_a2dp_sink_getplay(_this->bt_handle);
+  return jerry_create_boolean(r);
+}
+
+JS_FUNCTION(SendCommand) {
   JS_DECLARE_THIS_PTR(bluetooth, bluetooth);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
   IOTJS_BLUETOOTH_CHECK_INSTANCE();
@@ -269,6 +278,56 @@ JS_FUNCTION(BleEnabledGetter) {
 
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(Bluetooth);
+
+  /**
+   * Start define constants
+   */
+#define IOTJS_SET_CONSTANT(jobj, name) do {                             \
+  jerry_value_t jkey = jerry_create_string((const jerry_char_t*)#name); \
+  jerry_value_t jval = jerry_create_number(name);                       \
+  jerry_set_property(jobj, jkey, jval);                                 \
+  jerry_release_value(jkey);                                            \
+  jerry_release_value(jval);                                            \
+} while (0)
+
+  // a2dp events
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_OPEN);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_CLOSE);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_START);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_STOP);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_RC_OPEN);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_RC_CLOSE);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_REMOTE_CMD);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_REMOTE_RSP);
+
+  // avk events
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_OPEN);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_CLOSE);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_STR_OPEN);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_STR_CLOSE);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_START);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_PAUSE);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_STOP);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_RC_OPEN);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_RC_PEER_OPEN);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_RC_CLOSE);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_SET_ABS_VOL);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_AVK_GET_PLAY_STATUS);
+
+  // ble events
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_BLE_OPEN);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_BLE_CLOSE);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_BLE_WRITE);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_BLE_CON);
+
+  // manager events
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_MGR_CONNECT);
+  IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_MGR_DISCONNECT);
+#undef IOTJS_SET_CONSTANT
+  /**
+   * Stop constants
+   */
+
   iotjs_jval_set_property_jval(exports, "Bluetooth", jconstructor);
   
   jerry_value_t proto = jerry_create_object();
@@ -278,7 +337,9 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "enableA2dp", EnableA2dp);
   iotjs_jval_set_method(proto, "disableA2dp", DisableA2dp);
   iotjs_jval_set_method(proto, "closeA2dp", CloseA2dp);
-  iotjs_jval_set_method(proto, "sendA2dpCmd", SendA2dpCmd);
+  iotjs_jval_set_method(proto, "getAvkState", GetAvkState);
+  iotjs_jval_set_method(proto, "sendCommand", SendCommand);
+
   iotjs_jval_set_method(proto, "setName", SetName);
   iotjs_jval_set_method(proto, "setBleVisibility", SetBleVisibility);
   iotjs_jval_set_method(proto, "bleEnabledGetter", BleEnabledGetter);
