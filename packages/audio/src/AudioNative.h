@@ -1,5 +1,5 @@
-#ifndef VOL_NATIVE_H
-#define VOL_NATIVE_H
+#ifndef AUDIO_NATIVE_H
+#define AUDIO_NATIVE_H
 
 #include <stdio.h>
 

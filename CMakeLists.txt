@@ -152,12 +152,12 @@ ExternalProject_Add(tts
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
 # Volume Controls
-ExternalProject_Add(volume
-  SOURCE_DIR packages/volume
+ExternalProject_Add(audio
+  SOURCE_DIR packages/audio
   CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/volume
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/audio
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
