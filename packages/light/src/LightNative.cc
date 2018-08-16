@@ -41,8 +41,8 @@ JS_FUNCTION(GetProfile) {
 void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "enable", Enable);
   iotjs_jval_set_method(exports, "disable", Disable);
-  iotjs_jval_set_method(exports, "write", Write);
   iotjs_jval_set_method(exports, "getProfile", GetProfile);
+  iotjs_jval_set_method(exports, "write", Write);
 }
 
 NODE_MODULE(light, init)

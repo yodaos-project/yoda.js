@@ -2,6 +2,21 @@
 
 /**
  * @namespace light
+ * @description Use `light` module to control your LEDs.
+ *
+ * ```js
+ * var light = require('light');
+ * light
+ *   .fill(20, 20, 20, 0.7)
+ *   .pixel(3, 255, 255, 255)
+ *   .pixel(3, 233, 233, 200)
+ *   .write();
+ * ```
+ *
+ * As you can seen, this module provides the following main methods:
+ * - `fill()`: fill the color on all the lights, and write immediately.
+ * - `pixel()`: fill the color on the given light by index.
+ * - `write()`: write the current buffer.
  */
 
 var native = require('./light.node');
@@ -18,34 +33,49 @@ var native = require('./light.node');
 var config = native.getProfile();
 var length = config.leds * (config.format || 3);
 var buffer = new Buffer(length);
+var enabled = false;
+
+(function bootstrap() {
+  native.enable();
+  enabled = true;
+})();
 
 module.exports = {
-  
+
   /**
    * Enable the light write
    * @memberof light
    * @function enable
+   * @private
    */
-  enable: native.enable,
-  
+  enable: function() {
+    if (!enabled) {
+      native.enable();
+    }
+  },
+
   /**
    * Disable the light write
    * @memberof light
    * @function disable
+   * @private
    */
-  disable: native.disable,
-  
+  disable: function() {
+    if (enabled) {
+      native.disable();
+    }
+  },
+
   /**
-   * @example <caption>example for write</caption>
-   * var buf = new Buffer(36);
-   * buf.fill(0, 36);
-   * light.write(buf);
-   *
-   * @function write
+   * Render the current buffer
    * @memberof light
-   * @param {Buffer} buffer - the led buffer to write
+   * @function write
+   * @param {Buffer} [explict] - if present, use the given buffer to write.
    */
-  write: native.write,
+  write: function writeBuffer(explict) {
+    native.write(explict || buffer);
+    return this;
+  },
   
   /**
    * Get the hardware profile data
@@ -54,7 +84,7 @@ module.exports = {
    * @returns {light.LightProfile}
    */
   getProfile: native.getProfile,
-  
+
   /**
    * Fill all lights with the same color.
    * @memberof light
@@ -67,14 +97,15 @@ module.exports = {
   fill: function fillColor(red, green, blue, alpha) {
     if (red === green && green === blue) {
       buffer.fill(red, length);
-      return;
+    } else {
+      for (var i = 0; i < config.leds; i++) {
+        this._pixel(i, red, green, blue, alpha);
+      }
     }
-    for (var i = 0; i < config.leds; i++) {
-      this._pixel(i, red, green, blue, alpha);
-    }
-    return this.write(buffer);
+    this.write();
+    return this;
   },
-  
+
   /**
    * Render a pixel with the a color
    * @memberof light
@@ -94,7 +125,7 @@ module.exports = {
       index = (index === 0) ? (config.leds - 1) : index - 1;
       this._pixel(index, red, green, blue, 0.1);
     }
-    return this.write(buffer);
+    return this;
   },
   
   /**
@@ -113,4 +144,15 @@ module.exports = {
     buffer.writeUInt8(green,  1 + index * 3);
     buffer.writeUInt8(blue,   2 + index * 3);
   },
+
+  /**
+   * Clear the light
+   * @memberof light
+   * @function clear
+   */
+  clear: function clearColor() {
+    this.fill(0, 0, 0);
+    return this;
+  },
+
 };
