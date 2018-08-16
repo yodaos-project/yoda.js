@@ -6,29 +6,32 @@
  * media types, so that you can easily integrate audio into your applications.
  *
  * ```js
+ * var AudioManager = require('audio').AudioManager;
  * var MediaPlayer = require('multimedia').MediaPlayer;
- * var player = new MediaPlayer('some-tag');
+ *
+ * var player = new MediaPlayer(AudioManager.STREAM_PLAYBACK);
  * player.start('/res/play.ogg');
  * ```
  */
 
 var native = require('./multimedia.node');
+var audio = require('audio');
 var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 
 /**
  * @constructor
  * @memberof multimedia
- * @param {String} tag - the tag for player
+ * @param {Number} [stream=STREAM_PLAYBACK] - the stream type of the player.
  * @fires multimedia.MediaPlayer#prepared
  * @fires multimedia.MediaPlayer#playbackcomplete
  * @fires multimedia.MediaPlayer#bufferingupdate
  * @fires multimedia.MediaPlayer#seekcomplete
  * @fires multimedia.MediaPlayer#error
  */
-function MediaPlayer(tag) {
+function MediaPlayer(stream) {
   EventEmitter.call(this);
-  this._tag = tag;
+  this._stream = stream || audio.STREAM_PLAYBACK;
   this._handle = null;
   this._initialize();
 }
