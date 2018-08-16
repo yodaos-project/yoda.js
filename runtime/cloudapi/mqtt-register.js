@@ -3,8 +3,7 @@
 var https = require('https');
 var qs = require('querystring');
 var crypto = require('crypto');
-var logger = console;
-
+var logger = require('logger')('mqtt');
 var host = 'wormhole-registry.rokid.com';
 
 function load(config) {

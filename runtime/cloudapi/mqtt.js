@@ -5,7 +5,7 @@ var EventEmitter = require('events').EventEmitter;
 var inherits = require('util').inherits;
 var property = require('property');
 var mqttRegister = require('./mqtt-register');
-var logger = console;
+var logger = require('logger')('mqtt');
 
 var endpoint = 'mqtts://wormhole.rokid.com:8885';
 var handle = null;
@@ -23,7 +23,7 @@ function MqttAgent(config) {
 }
 inherits(MqttAgent, EventEmitter);
 
-MqttAgent.prototype.register = function () {
+MqttAgent.prototype.register = function() {
   var self = this;
   return new Promise((resolve, reject) => {
     mqttRegister.registry(this.userId, this.config, function (err, data) {
@@ -37,7 +37,7 @@ MqttAgent.prototype.register = function () {
   });
 };
 
-MqttAgent.prototype.reConnect = function () {
+MqttAgent.prototype.reConnect = function() {
   if (handle) {
     handle.end(true);
   }
@@ -63,7 +63,7 @@ MqttAgent.prototype.reConnect = function () {
   });
 };
 
-MqttAgent.prototype.onMessage = function (channel, message) {
+MqttAgent.prototype.onMessage = function(channel, message) {
   var msg;
   try {
     msg = JSON.parse(message + '');
@@ -82,7 +82,7 @@ MqttAgent.prototype.onMessage = function (channel, message) {
   }
 };
 
-MqttAgent.prototype.sendToApp = function (topic, text) {
+MqttAgent.prototype.sendToApp = function(topic, text) {
   logger.log('mqtt send channel:', `u/${this.userId}/rc`);
   handle.publish(`u/${this.userId}/rc`, JSON.stringify({
     reviceDevice: {

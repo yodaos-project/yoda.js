@@ -1,7 +1,9 @@
+'use strict';
+
 var device = require('./bind');
 var mqttAgent = require('./mqtt');
 
-exports.connect = function () {
+exports.connect = function() {
   return new Promise((resolve, reject) => {
     device.bindDevice()
       .then((config) => {

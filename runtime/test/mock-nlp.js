@@ -1,5 +1,6 @@
-var appRuntime = require('../appRuntime');
+'use strict';
 
+var appRuntime = require('../appRuntime');
 var app_runtime = new appRuntime(['/opt/test']);
 
 // 模拟的NLP
