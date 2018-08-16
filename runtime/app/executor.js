@@ -28,7 +28,7 @@ function Executor(profile, prefix) {
     this.type = 'extapp';
     this.exec = prefix;
   } else {
-    this.exec = prefix + '/app.js';
+    this.exec = prefix;
     this.connector = lightApp(this.exec);
   }
 }

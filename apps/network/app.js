@@ -29,7 +29,7 @@ module.exports = function (app) {
         chunk = [];
         canReceive = true;
         chunk.push(data.data);
-        app.playSound('wifi/ble_connected.ogg');
+        app.playSound('system://wifi/ble_connected.ogg');
         logger.log('ready to receive wifi config');
       } else if (canReceive && chunk.length === 1) {
         total = +data.data.substr(5);
@@ -48,7 +48,7 @@ module.exports = function (app) {
             wifi.save();
           } else {
             logger.log('wifi connect failed');
-            app.playSound('wifi/connect_common_failure.ogg');
+            app.playSound('system://wifi/connect_common_failure.ogg');
             connecting = false;
           }
         });
@@ -62,7 +62,7 @@ module.exports = function (app) {
       logger.log('ble closed. receive data: ' + data);
       connectWIFI((connect) => {
         if (!connect) {
-          app.playSound('wifi/connect_common_failure.ogg');
+          app.playSound('system://wifi/connect_common_failure.ogg');
           connecting = false;
         } else {
           wifi.save();
@@ -85,7 +85,7 @@ module.exports = function (app) {
     data = JSON.parse(data);
     logger.log(`start connect to wifi with SSID: ${data.S} PSK: ${data.P} UserId: ${data.U}`);
     property.set('persist.system.user.userId', data.U);
-    app.playSound('wifi/prepare_connect_wifi.ogg');
+    app.playSound('system://wifi/prepare_connect_wifi.ogg');
     wifi.joinNetwork(data.S, data.P, '');
     getWIFIState(cb);
     connectTimeout = setTimeout(() => {
