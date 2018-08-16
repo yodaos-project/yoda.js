@@ -175,13 +175,13 @@ App.prototype.load = function (root, cb) {
 App.prototype.onEvent = function (name, data) {
   console.log(name);
   var min = 30;
-  var volume = this.volume.get();
+  var volume = this.volume.getVolume();
   if (name === 'voice coming') {
     if (volume > min) {
       this.prevVolume = volume;
-      this.volume.set(min);
+      this.volume.setVolume(min);
       this.handle.setVolume = setTimeout(() => {
-        this.volume.set(volume);
+        this.volume.setVolume(volume);
       }, 6000);
     }
     this.lightMethod('setAwake', ['']);
