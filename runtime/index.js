@@ -4,7 +4,7 @@ var Turen = require('turen');
 var Adapter = require('./adapter/dbus');
 var cloudApi = require('./cloudapi/index');
 var property = require('property');
-var Volume = require('volume');
+var AudioManager = require('audio').AudioManager;
 var appRuntime = require('./appRuntime');
 var wifi = require('wifi');
 var logger = require('logger')('main');
@@ -12,9 +12,9 @@ var logger = require('logger')('main');
 //------------------------------------------------------
 
 var app_runtime = new appRuntime(['/opt/apps']);
-app_runtime.volume = Volume;
+app_runtime.volume = AudioManager;
 app_runtime.adapter = Adapter;
-Volume.set(60);
+AudioManager.set(60);
 
 var speech = new Turen.TurenSpeech();
 
@@ -95,9 +95,9 @@ app_runtime.on('reconnected', function () {
         type: "Volume",
         event: "ON_VOLUME_CHANGE",
         template: JSON.stringify({
-          mediaCurrent: '' + Volume.get('audio'),
+          mediaCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_AUDIO),
           mediaTotal: "100",
-          alarmCurrent: '' + Volume.get('alarm'),
+          alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
           alarmTotal: "100"
         }),
         appid: ""
@@ -108,15 +108,15 @@ app_runtime.on('reconnected', function () {
     mqttAgent.on('set_volume', function (data) {
       var msg = JSON.parse(data);
       if (msg.music !== undefined) {
-        Volume.set('audio', msg.music);
+        AudioManager.setVolume('audio', msg.music);
       }
       var res = {
         type: "Volume",
         event: "ON_VOLUME_CHANGE",
         template: JSON.stringify({
-          mediaCurrent: '' + Volume.get('audio'),
+          mediaCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_AUDIO),
           mediaTotal: '100',
-          alarmCurrent: '' + Volume.get('alarm'),
+          alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
           alarmTotal: '100'
         }),
         appid: ""
@@ -128,8 +128,6 @@ app_runtime.on('reconnected', function () {
     logger.error(err);
   });
 });
-
-
 
 // var netStatus = wifi.getNetworkState();
 // if (netStatus === 3) {
