@@ -11,8 +11,6 @@ rk_stream_type_t iotjs_audiomgr_get_stream_type(int stream) {
     return STREAM_PLAYBACK;
   } else if (stream == STREAM_SYSTEM) {
     return STREAM_SYSTEM;
-  } else if (stream == STREAM_TYPE_NUM) {
-    return STREAM_TYPE_NUM;
   } else {
     return STREAM_AUDIO;
   }
@@ -63,7 +61,6 @@ void init(jerry_value_t exports) {
   IOTJS_SET_CONSTANT(exports, STREAM_ALARM);
   IOTJS_SET_CONSTANT(exports, STREAM_PLAYBACK);
   IOTJS_SET_CONSTANT(exports, STREAM_SYSTEM);
-  IOTJS_SET_CONSTANT(exports, STREAM_TYPE_NUM);
 #undef IOTJS_SET_CONSTANT
 }
 
