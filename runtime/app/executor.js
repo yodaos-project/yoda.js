@@ -1,17 +1,10 @@
 'use strict'
 
-/**
- * @namespace yodart.app.executor
- */
-
 var fork = require('child_process').fork;
 var ExtApp = require('./extappServer');
 var logger = require('logger')('executor');
 var lightApp = require('./lightAppProxy');
 
-/**
- * @constructor
- */
 function Executor(profile, prefix) {
   this.type = 'light';
   this.daemon = false;
@@ -33,11 +26,6 @@ function Executor(profile, prefix) {
   }
 }
 
-/**
- * create instance
- * @param {String} appId - the app id
- * @param {AppRuntime} runtime
- */
 Executor.prototype.create = function(appId, runtime) {
   if (!this.valid) {
     logger.log(`app ${appId} invalid`);

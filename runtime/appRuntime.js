@@ -1,3 +1,9 @@
+'use strict';
+
+/**
+ * @namespace yodaRT
+ */
+
 var fs = require('fs');
 var dbus = require('dbus');
 var inherits = require('util').inherits;
@@ -6,11 +12,15 @@ var EventEmitter = require('events').EventEmitter;
 var Permission = require('./component/permission');
 var TTS = require('./component/tts');
 var AppExecutor = require('./app/executor');
-
-var logger = require('logger')('ROS');
+var logger = require('logger')('YODA');
 
 module.exports = App;
 
+/**
+ * @memberof yodaRT
+ * @constructor
+ * @param {Array} arr - the pathname
+ */
 function App(arr) {
   EventEmitter.call(this);
   // App Executor
@@ -53,14 +63,15 @@ inherits(App, EventEmitter);
 
 /**
  * 根据应用包安装目录加载所有应用
- * @param {string[]} paths 应用包的安装目录
- * @param {function} cb 加载完成的回调，回调没有参数
+ * @param {String[]} paths 应用包的安装目录
+ * @param {Function} cb 加载完成的回调，回调没有参数
+ * @private
  */
-App.prototype.loadApp = function (paths, cb) {
+App.prototype.loadApp = function(paths, cb) {
   var self = this;
 
   // 根据目录读取目录下所有的App包，返回的是App的包路径
-  var loadAppDir = function (dirs, cb) {
+  var loadAppDir = function(dirs, cb) {
     // 检查参数
     if (dirs.length <= 0) {
       cb([]);
@@ -69,12 +80,12 @@ App.prototype.loadApp = function (paths, cb) {
     // 保存所有的App目录
     var appRoot = [];
     // 读取文件夹，递归调用，不读取子目录
-    var readDir = function (index) {
-      fs.readdir(dirs[index], function (err, files) {
+    var readDir = function(index) {
+      fs.readdir(dirs[index], function(err, files) {
         if (err) {
           logger.log('read dir error: ', dirs[index]);
         } else {
-          files.map(function (name) {
+          files.map(function(name) {
             if (name === '.' || name === '..') {
               return;
             }
@@ -93,7 +104,7 @@ App.prototype.loadApp = function (paths, cb) {
     readDir(0);
   };
   // 读取目录并加载APP
-  loadAppDir(paths, function (apps) {
+  loadAppDir(paths, function(apps) {
     // 检查目录下是否有App包
     if (apps.length <= 0) {
       logger.log('no app load');
@@ -102,8 +113,8 @@ App.prototype.loadApp = function (paths, cb) {
     }
     logger.log('load app num: ', apps.length);
     // 加载APP
-    var loadApp = function (index) {
-      self.load(apps[index], function (err, metadata) {
+    var loadApp = function(index) {
+      self.load(apps[index], function(err, metadata) {
         if (err) {
           // logger.log('load app error: ', err);
         }
@@ -126,8 +137,9 @@ App.prototype.loadApp = function (paths, cb) {
  * @param {string} name 应用的包名字
  * @param {function} cb 加载完成的回调: (err, metadata)
  * @return {object} 应用的appMetaData
+ * @private
  */
-App.prototype.load = function (root, cb) {
+App.prototype.load = function(root, cb) {
   var prefix = root;
   var pkgInfo;
   var app;
@@ -171,8 +183,9 @@ App.prototype.load = function (root, cb) {
  * 接收turen的speech事件
  * @param {string} name 
  * @param {object} data 
+ * @private
  */
-App.prototype.onEvent = function (name, data) {
+App.prototype.onEvent = function(name, data) {
   console.log(name);
   var min = 30;
   var volume = this.volume.getVolume();
@@ -226,8 +239,9 @@ App.prototype.onEvent = function (name, data) {
  * @param {string} asr 语音识别后的文字
  * @param {object} nlp 服务端返回的NLP
  * @param {object} action 服务端返回的action
+ * @private
  */
-App.prototype.onVoiceCommand = function (asr, nlp, action) {
+App.prototype.onVoiceCommand = function(asr, nlp, action) {
   var data = {};
   var appId;
   try {
@@ -279,9 +293,10 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
 /**
  * 返回App是否在运行栈中
  * @param {string} appId App的AppID
- * @return {boolean} 在appIdStack中返回true，否则false
+ * @returns {boolean} 在appIdStack中返回true，否则false
+ * @private
  */
-App.prototype.isAppAlive = function (appId) {
+App.prototype.isAppAlive = function(appId) {
   for (var i = 0; i < this.appIdStack.length; i++) {
     if (appId === this.appIdStack[i]) {
       return true;
@@ -292,9 +307,10 @@ App.prototype.isAppAlive = function (appId) {
 
 /**
  * 获取当前运行的appId，如果没有则返回false
- * @return {string} appId
+ * @returns {string} appId
+ * @private
  */
-App.prototype.getCurrentAppId = function () {
+App.prototype.getCurrentAppId = function() {
   if (this.appIdStack.length <= 0) {
     return false;
   }
@@ -303,9 +319,10 @@ App.prototype.getCurrentAppId = function () {
 
 /**
  * 获取当前App的data，如果没有则返回false
- * @return {object} App的appData
+ * @returns {object} App的appData
+ * @private
  */
-App.prototype.getCurrentAppData = function () {
+App.prototype.getCurrentAppData = function() {
   if (this.appIdStack.length <= 0) {
     return false;
   }
@@ -315,17 +332,19 @@ App.prototype.getCurrentAppData = function () {
 /**
  * 获取指定的AppData，如果没有则返回false
  * @param {string} appId App的AppID
- * @return {object} App的appData
+ * @returns {object} App的appData
+ * @private
  */
-App.prototype.getAppDataById = function (appId) {
+App.prototype.getAppDataById = function(appId) {
   return this.appDataMap[appId] || false;
 };
 
 /**
  * 获取当前运行的App，如果没有则返回false
- * @return {object} App实例
+ * @returns {object} App实例
+ * @private
  */
-App.prototype.getCurrentApp = function () {
+App.prototype.getCurrentApp = function() {
   if (this.appIdStack.length <= 0) {
     return false;
   }
@@ -334,8 +353,9 @@ App.prototype.getCurrentApp = function () {
 
 /**
  * 给所有App发送destroy事件，销毁所有App
+ * @private
  */
-App.prototype.destroyAll = function () {
+App.prototype.destroyAll = function() {
   // 依次给正在运行的App发送destroy命令
   for (var i = 0; i < this.appIdStack.length; i++) {
     if (this.appMap[this.appIdStack[i]]) {
@@ -355,8 +375,9 @@ App.prototype.destroyAll = function () {
  * @param {string} name 生命周期名字
  * @param {object} AppData 服务端返回的NLP
  * @returns {promise} Lifecycle events may be asynchronous
+ * @private
  */
-App.prototype.lifeCycle = function (name, AppData) {
+App.prototype.lifeCycle = function(name, AppData) {
   logger.log('lifeCycle: ', name);
   var appId = AppData.cloud === true ? '@cloud' : AppData.appId;
   var app = null;
@@ -404,8 +425,9 @@ App.prototype.lifeCycle = function (name, AppData) {
 
 /**
  * 更新App stack
+ * @private
  */
-App.prototype.updateStack = function (AppData) {
+App.prototype.updateStack = function(AppData) {
   // var scene = '';
   // var cut = '';
 
@@ -439,16 +461,18 @@ App.prototype.resetStack = function () {
 /**
  * 调用speech的pickup
  * @param {boolean} isPickup 
+ * @private
  */
-App.prototype.setPickup = function (isPickup) {
+App.prototype.setPickup = function(isPickup) {
   this.emit('setPickup', isPickup);
 };
 
 /**
  * 退出App。由应用自身在退出时手动调用，向系统表明该应用可以被销毁了
  * @param {string} appId extapp的AppID
+ * @private
  */
-App.prototype.exitAppById = function (appId) {
+App.prototype.exitAppById = function(appId) {
   // 调用生命周期结束该应用
   this.lifeCycle('destroy', {
     appId: appId
@@ -460,7 +484,11 @@ App.prototype.exitAppById = function (appId) {
   }
 };
 
-App.prototype.exitAppByIdForce = function (appId) {
+/**
+ * @param {string} appId extapp的AppID
+ * @private
+ */
+App.prototype.exitAppByIdForce = function(appId) {
   this.deleteAppById(appId);
   var last = this.getCurrentAppData();
   if (last && last.form === 'scene') {
@@ -468,7 +496,11 @@ App.prototype.exitAppByIdForce = function (appId) {
   }
 };
 
-App.prototype.deleteAppById = function (appId) {
+/**
+ * @param {string} appId extapp的AppID
+ * @private
+ */
+App.prototype.deleteAppById = function(appId) {
   // 删除指定AppID
   for (var i = 0; i < this.appIdStack.length; i++) {
     if (this.appIdStack[i] === appId) {
@@ -485,8 +517,9 @@ App.prototype.deleteAppById = function (appId) {
  * 通过dbus注册extapp
  * @param {string} appId extapp的AppID
  * @param {object} profile extapp的profile
+ * @private
  */
-App.prototype.registerExtApp = function (appId, profile) {
+App.prototype.registerExtApp = function(appId, profile) {
   logger.log('register extapp with id: ', appId);
   // 配置exitApp的默认权限
   this.permission.load(appId, ['ACCESS_TTS', 'ACCESS_MULTIMEDIA']);
@@ -495,9 +528,10 @@ App.prototype.registerExtApp = function (appId, profile) {
 
 /**
  * 删除extapp
- * @param {string} appId 
+ * @param {string} appId
+ * @private
  */
-App.prototype.deleteExtApp = function (appId) {
+App.prototype.deleteExtApp = function(appId) {
 
 };
 
@@ -505,8 +539,9 @@ App.prototype.deleteExtApp = function (appId) {
  * mock nlp response
  * @param {object} nlp 
  * @param {object} action 
+ * @private
  */
-App.prototype.mockNLPResponse = function (nlp, action) {
+App.prototype.mockNLPResponse = function(nlp, action) {
   var AppData;
   if (nlp.appId === this.getCurrentAppId()) {
     AppData = {
@@ -520,7 +555,10 @@ App.prototype.mockNLPResponse = function (nlp, action) {
   }
 };
 
-App.prototype.startApp = function (appId, nlp, action) {
+/**
+ * @private
+ */
+App.prototype.startApp = function(appId, nlp, action) {
   nlp.cloud = false;
   nlp.appId = appId;
   action = {
@@ -539,15 +577,17 @@ App.prototype.startApp = function (appId, nlp, action) {
  * 接收Mqtt的topic
  * @param {string} topic
  * @param {string} message
+ * @private
  */
-App.prototype.onMqttMessage = function (topic, message) {
+App.prototype.onMqttMessage = function(topic, message) {
   this.emit(topic, message);
 };
 
 /**
  * 处理Mqtt的topic
+ * @private
  */
-App.prototype.handleMqttMessage = function () {
+App.prototype.handleMqttMessage = function() {
   this.on('cloud_forward', this.onCloudForward.bind(this));
   this.on('reset_settings', this.onResetSettings.bind(this));
 };
@@ -555,8 +595,9 @@ App.prototype.handleMqttMessage = function () {
 /**
  * 处理App发送过来的模拟NLP
  * @param {string} message 
+ * @private
  */
-App.prototype.onCloudForward = function (message) {
+App.prototype.onCloudForward = function(message) {
   try {
     var msg = JSON.parse(message);
     var params = JSON.parse(msg.content.params);
@@ -570,14 +611,18 @@ App.prototype.onCloudForward = function (message) {
 /**
  * 处理App发送的恢复出厂设置
  * @param {string} message 
+ * @private
  */
-App.prototype.onResetSettings = function (message) {
+App.prototype.onResetSettings = function(message) {
   if (data === '1') {
     logger.log('当前不支持恢复出厂设置');
   }
 };
 
-App.prototype.lightMethod = function (name, args) {
+/**
+ * @private
+ */
+App.prototype.lightMethod = function(name, args) {
   return new Promise((resolve, reject) => {
     var sig = args.map(() => 's').join('');
     this.service._dbus.callMethod(
@@ -590,7 +635,10 @@ App.prototype.lightMethod = function (name, args) {
   });
 };
 
-App.prototype.ttsMethod = function (name, args) {
+/**
+ * @private
+ */
+App.prototype.ttsMethod = function(name, args) {
   return new Promise((resolve, reject) => {
     var sig = args.map(() => 's').join('');
     this.service._dbus.callMethod(
@@ -603,23 +651,32 @@ App.prototype.ttsMethod = function (name, args) {
   });
 };
 
-/** interface  */
-
-App.prototype.onGetPropAll = function () {
+/**
+ * @private
+ */
+App.prototype.onGetPropAll = function() {
   return {};
 };
 
-
-App.prototype.onReconnected = function () {
+/**
+ * @private
+ */
+App.prototype.onReconnected = function() {
   this.destroyAll();
   this.lightMethod('setConfigFree', []);
 };
 
-App.prototype.onDisconnected = function () {
+/**
+ * @private
+ */
+App.prototype.onDisconnected = function() {
   this.startApp('@network', {}, {});
 };
 
-App.prototype.onReLogin = function () {
+/**
+ * @private
+ */
+App.prototype.onReLogin = function() {
   this.lightMethod('setWelcome', []);
 
   var config = JSON.stringify(this.onGetPropAll());
@@ -631,8 +688,9 @@ App.prototype.onReLogin = function () {
 
 /**
  * 启动extApp dbus接口
+ * @private
  */
-App.prototype.startExtappService = function () {
+App.prototype.startExtappService = function() {
   var self = this;
   var service = dbus.registerService('session', 'com.rokid.AmsExport');
   var extappObject = service.createObject('/activation/extapp');

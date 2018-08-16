@@ -13,7 +13,7 @@ var CONFIG = null;
 var login = require('./login');
 var retry = 0;
 
-function deviceManager (cf, path, cb) {
+function deviceManager(cf, path, cb) {
   if (retry > 10) {
     cb(new Error(path + 'failed after retry 10'));
     return;
@@ -71,18 +71,16 @@ function deviceManager (cf, path, cb) {
   req.end();
 }
 
-function loginAndBindDevice (cb) {
-  
+function loginAndBindDevice(cb) {
   login().then((config) => {
     CONFIG = config;
     deviceManager(config, '/v1/device/deviceManager/bindMaster', cb);
   }).catch((err) => {
     cb(err);
   });
-
 }
 
-module.exports.bindDevice = function () {
+exports.bindDevice = function bindDevice() {
   return new Promise((resolve, reject) => {
     loginAndBindDevice((err, config) => {
       if (err) {
@@ -94,8 +92,7 @@ module.exports.bindDevice = function () {
   });
 };
 
-// 解绑设备
-module.exports.unBindDevice = function () {
+exports.unBindDevice = function unBindDevice() {
   return new Promise((resolve, reject) => {
     if (CONFIG) {
       deviceManager(CONFIG, '/v1/device/deviceManager/unBindMaster', (err, config) => {

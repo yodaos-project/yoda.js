@@ -1,5 +1,5 @@
-// var EventEmitter = require('events').EventEmitter;
-// var inherits = require('util').inherits;
+'use strict';
+
 var Turen = require('turen');
 var Adapter = require('./adapter/dbus');
 var cloudApi = require('./cloudapi/index');
