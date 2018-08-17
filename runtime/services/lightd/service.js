@@ -3,116 +3,68 @@
 var logger = require('logger')('lightService');
 
 var MEDIA_SOURCE = '/opt/media/';
+var LIGHT_SOURCE = '/opt/light/';
+
+var setAwake = require(`${LIGHT_SOURCE}awake.js`);
 
 function Light(options) {
-  this.playerHandle = {};
-  this.duration = 130;
-  this.handle = {};
-  this.opened = false;
-  this.loading = false;
-  this.pos = -1;
   this.options = options;
-  this.ledConfig = this.options.light.getProfile();
-  this.buffer = new Buffer(this.ledConfig.leds * 3);
-  // this.fps = this.ledConfig.maximumFps || 30;
-  this.fps = 4;
-  this.color = {
-    degree: {
-      r: 255,
-      g: 255,
-      b: 255
-    },
-    wakeup: {
-      r: 30,
-      g: 30,
-      b: 255
-    }
-  };
+  this.prev;
   this.init();
 }
 
 Light.prototype.init = function () {
-  this.player = new this.options.soundplayer('sudo');
-  this.options.light.enable();
-  this.buffer.fill(0);
-  this.options.light.write(this.buffer);
+
+};
+
+Light.prototype.stopPrev = function (keep) {
+  if (this.prev) {
+    if (typeof this.prev === 'function') {
+      this.prev(keep);
+    } else if (this.prev && typeof this.prev.stop === 'function') {
+      this.prev.stop(keep);
+    }
+    this.prev = null;
+  }
 };
 
 Light.prototype.setAwake = function () {
-  this.pos = -1;
-  clearTimeout(this.handle.awake);
-  this.opened = true;
-  this.transition('b', 0, 150, this.duration, this.fps);
-  this.handle.awake = setTimeout(() => {
-    this.opened = true;
-    this.transition('b', 150, 0, this.duration, this.fps, () => {
-      this.pos = -1;
-      this.opened = false;
-      this.buffer.fill(0);
-      this.options.light.write(this.buffer);
-    });
-  }, 6000);
+  this.stopPrev();
+  this.prev = setAwake(this.options.effect);
+  this.prev.name = 'setAwake';
 };
 
 Light.prototype.setDegree = function (degree) {
-  if (!this.opened) {
-    return;
+  if (this.prev && this.prev.name === 'setAwake') {
+    this.degree = +degree;
+    this.prev.setDegree(+degree);
   }
-  degree = degree % 360;
-  this.pos = Math.floor((degree / 360) * this.ledConfig.leds);
-  this.lightDegree(this.pos);
-  this.options.light.write(this.buffer);
-  this.wakeupSound();
 };
 
 Light.prototype.setHide = function () {
-  clearTimeout(this.handle.awake);
-  clearTimeout(this.handle.transition);
-  if (this.loading) {
-    this.opened = false;
-    clearTimeout(this.handle.loading);
-    clearTimeout(this.handle.unsetLoading);
-    this.buffer.fill(0);
-    this.options.light.write(this.buffer);
-    this.loading = false;
-  } else if (this.opened) {
-    this.transition('b', 150, 0, this.duration, this.fps, () => {
-      this.pos = -1;
-      this.opened = false;
-      this.buffer.fill(0);
-      this.options.light.write(this.buffer);
-    });
-  }
+  this.stopPrev();
+  this.options.effect.clear();
+  this.options.effect.render();
 };
 
 Light.prototype.setLoading = function () {
-  var self = this;
-  console.log('pos', this.pos);
-  if (this.pos > -1) {
-    var pos = this.pos;
-    var render = function () {
-      self.fill(self.color.wakeup.r, self.color.wakeup.g, self.color.wakeup.b);
-      // self.buffer.fill(0);
-      self.pixel(pos, self.color.degree.r, self.color.degree.g, self.color.degree.b);
-      self.render(self.buffer);
-      pos = pos === 11 ? 0 : pos + 1;
-      self.handle.loading = setTimeout(() => {
-        render();
-      }, 60);
-    };
-    clearTimeout(this.handle.awake);
-    this.loading = true;
-    render();
-    this.handle.unsetLoading = setTimeout(() => {
-      this.setHide();
-    }, 6000);
+  if (this.prev) {
+    if (typeof this.prev === 'object' && this.prev.name === 'setAwake') {
+      this.stopPrev(true);
+    } else {
+      this.stopPrev();
+    }
   }
+  var hook = require(`${LIGHT_SOURCE}loading.js`);
+  this.prev = hook(this.options.effect, {
+    degree: this.degree || 0
+  });
 };
 
 Light.prototype.setStandby = function () {
-  this.setConfigFree();
-  this.appSound('@network', `${MEDIA_SOURCE}wifi/setup_network.ogg`);
-  this.circleAnimation(255, 50, 0, 1000, 15);
+  this.stopPrev();
+  var hook = require(`${LIGHT_SOURCE}setStandby.js`);
+  this.prev = hook(this.options.effect);
 };
 
 Light.prototype.setConfigFree = function () {
