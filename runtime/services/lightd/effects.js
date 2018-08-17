@@ -4,6 +4,14 @@ var MEDIA_SOURCE = '/opt/media/';
 var init = false;
 
 /**
+ * @typedef Color
+ * @memberof yodaRT
+ * @property {Number} r - the red channel.
+ * @property {Number} g - the green channel.
+ * @property {Number} b - the blue channel.
+ */
+
+/**
  * @memberof yodaRT
  * @constructor
  * @param {light} light - the light instance
@@ -172,6 +180,11 @@ LightRenderingContext.prototype.breathing = function(pos, or, og, ob, duration, 
 
 /**
  * make a transition.
+ * @param {yodaRT.Color} from
+ * @param {yodaRT.Color} to
+ * @param {Number} duration
+ * @param {Number} fps
+ * @param {Function} cb
  */
 LightRenderingContext.prototype.transition = function(from, to, duration, fps, cb) {
   var self = this;
