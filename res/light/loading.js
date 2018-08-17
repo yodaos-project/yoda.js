@@ -1,3 +1,5 @@
+'use strict'
+
 module.exports = function loading(light, data, callback) {
   var pos = 0;
   if (data.degree) {
