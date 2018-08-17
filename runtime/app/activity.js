@@ -62,12 +62,25 @@ function createActivity(appId, parent) {
       return parent.runtime.setPickup(pickup);
     },
     /**
+     * Set the app is confirmed
+     * @function setConfirm
+     * @param {String} intent
+     * @param {String} slot
+     * @param {Object} options
+     * @param {Object} attrs
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     */
+    setConfirm: function setConfirm(intent, slot, options, attrs) {
+      throw new Error('not implemented');
+    },
+    /**
      * @function mockNLPResponse
      * @memberof yodaRT.activity.Activity
      * @instance
      * @private
      */
-    mockNLPResponse: function(nlp, action) {
+    mockNLPResponse: function mockNLPResponse(nlp, action) {
       parent._onVoiceCommand(nlp, action);
     },
     /**
@@ -91,10 +104,10 @@ function createActivity(appId, parent) {
        * @param {Function} callback
        */
       speak: function(text, callback) {
-        parent.adapter.ttsMethod('speak', [appId, text])
+        return parent.adapter.ttsMethod('speak', [appId, text])
           .then((args) => {
             logger.log(`tts register ${args[0]}`);
-            parent.ttsCallback[`ttscb:${args[0]}`] = callback;
+            parent.ttsCallback[`ttscb:${args[0]}`] = callback.bind(activity);
           })
           .catch((err) => {
             logger.error(err);
@@ -108,7 +121,7 @@ function createActivity(appId, parent) {
        * @param {Function} callback
        */
       stop: function(callback) {
-        parent.adapter.ttsMethod('stop', [appId])
+        return parent.adapter.ttsMethod('stop', [appId])
           .then((args) => {
             callback(null);
           })
@@ -127,6 +140,7 @@ function createActivity(appId, parent) {
       /**
        * @memberof yodaRT.activity.Activity
        * @class MediaClient
+       * @augments EventEmitter
        */
 
       /**
@@ -134,14 +148,14 @@ function createActivity(appId, parent) {
        * @memberof yodaRT.activity.Activity.MediaClient
        * @instance
        * @function start
-       * @param {String} uri
-       * @param {Function} callback
+       * @param {string} uri
+       * @returns {Promise}
        */
-      start: function (url, callback) {
-        parent.adapter.multiMediaMethod('start', [appId, url])
+      start: function(url, callback) {
+        return parent.adapter.multiMediaMethod('start', [appId, url])
           .then((args) => {
             logger.log('media register', args);
-            parent.multiMediaCallback['mediacb:' + args[0]] = callback.bind(activity);
+            parent.multiMediaCallback[`mediacb:${args[0]}`] = callback.bind(activity);
           })
           .catch((err) => {
             logger.error(err);
@@ -152,15 +166,15 @@ function createActivity(appId, parent) {
        * @memberof yodaRT.activity.Activity.MediaClient
        * @instance
        * @function pause
-       * @param {Function} callback
+       * @returns {Promise}
        */
-      pause: function (cb) {
-        parent.adapter.multiMediaMethod('pause', [appId])
+      pause: function(callback) {
+        return parent.adapter.multiMediaMethod('pause', [appId])
           .then((args) => {
-            cb.call(activity, null);
+            callback.call(activity, null);
           })
           .catch((err) => {
-            cb.call(activity, null);
+            callback.call(activity, null);
           });
       },
       /**
@@ -168,15 +182,15 @@ function createActivity(appId, parent) {
        * @memberof yodaRT.activity.Activity.MediaClient
        * @instance
        * @function resume
-       * @param {Function} callback
+       * @returns {Promise}
        */
-      resume: function (cb) {
-        parent.adapter.multiMediaMethod('resume', [appId])
+      resume: function(callback) {
+        return parent.adapter.multiMediaMethod('resume', [appId])
           .then((args) => {
-            cb.call(activity, null);
+            callback.call(activity, null);
           })
           .catch((err) => {
-            cb.call(activity, null);
+            callback.call(activity, null);
           });
       },
       /**
@@ -184,17 +198,28 @@ function createActivity(appId, parent) {
        * @memberof yodaRT.activity.Activity.MediaClient
        * @instance
        * @function stop
-       * @param {Function} callback
+       * @returns {Promise}
        */
-      stop: function (cb) {
-        parent.adapter.multiMediaMethod('stop', [appId])
+      stop: function(callback) {
+        return parent.adapter.multiMediaMethod('stop', [appId])
           .then((args) => {
-            cb.call(activity, null);
+            callback.call(activity, null);
           })
           .catch((err) => {
-            cb.call(activity, null);
+            callback.call(activity, null);
           });
-      }
+      },
+      /**
+       * Seek the given position.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function seek
+       * @param {Number} pos
+       * @returns {Promise}
+       */
+      seek: function(pos, callback) {
+        throw new Error('not implemented');
+      },
     },
     /**
      * @memberof yodaRT.activity.Activity
@@ -211,21 +236,23 @@ function createActivity(appId, parent) {
        * @memberof yodaRT.activity.Activity.LightClient
        * @instance
        * @function play
-       * @param {Function} callback
+       * @param {String} uri - the light resource uri.
+       * @param {Object} args - the args.
+       * @returns {Promise}
        */
-      play: function (name, args) {
+      play: function(uri, args) {
+        args = JSON.stringify(args || []);
         return parent.adapter
-          .lightMethod('play', [appId, name, JSON.stringify(args || [])]);
+          .lightMethod('play', [appId, uri, args]);
       },
       /**
        * @memberof yodaRT.activity.Activity.LightClient
        * @instance
        * @function stop
-       * @param {Function} callback
+       * @returns {Promise}
        */
-      stop: function () {
-        return parent.adapter
-          .lightMethod('stop', [appId]);
+      stop: function() {
+        return parent.adapter.lightMethod('stop', [appId]);
       },
     },
     /**
@@ -244,7 +271,7 @@ function createActivity(appId, parent) {
        * @instance
        * @function getItem
        */
-      getItem: function (key) {
+      getItem: function(key) {
         return property.get(key);
       },
       /**
@@ -252,7 +279,7 @@ function createActivity(appId, parent) {
        * @instance
        * @function setItem
        */
-      setItem: function (key, value) {
+      setItem: function(key, value) {
         return property.set(key, value);
       },
     },
@@ -260,19 +287,21 @@ function createActivity(appId, parent) {
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function playSound
+     * @param {String} uri - the sound resource uri.
+     * @returns {Promise}
      */
-    playSound: function (name) {
-      var len = name.length;
+    playSound: function(uri) {
+      var len = uri.length;
       var absPath;
       // etc.. system://path/to/sound.ogg
-      if (len > 9 && name.substr(0, 9) === 'system://') {
-        absPath = MEDIA_SOURCE + name.substr(9);
+      if (len > 9 && uri.substr(0, 9) === 'system://') {
+        absPath = MEDIA_SOURCE + uri.substr(9);
       // etc.. self://path/to/sound.ogg
-      } else if (len > 7 && name.substr(0, 7) === 'self://') {
-        absPath = parent.appHome + '/' + name.substr(7);
+      } else if (len > 7 && uri.substr(0, 7) === 'self://') {
+        absPath = parent.appHome + '/' + uri.substr(7);
       // etc.. path/to/sound.ogg
       } else {
-        absPath = parent.appHome + '/' + name;
+        absPath = parent.appHome + '/' + uri;
       }
       return parent.adapter.lightMethod('appSound', [appId, absPath]);
     },

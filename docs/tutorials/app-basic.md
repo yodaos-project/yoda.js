@@ -59,26 +59,26 @@ manifest: {
 Next, we will see how to write the logic:
 
 ```js
-module.exports = function(app) {
-  app.on('created', () => {
-    console.log('app created');
+module.exports = function(activity) {
+  activity.on('created', () => {
+    console.log('activity created');
   });
-  app.on('paused', () => {
-    console.log('app paused');
+  activity.on('paused', () => {
+    console.log('activity paused');
   });
-  app.on('resumed', () => {
-    console.log('app resumed');
+  activity.on('resumed', () => {
+    console.log('activity resumed');
   });
-  app.on('onrequest', (nlp, action) => {
+  activity.on('onrequest', (nlp, action) => {
     console.log(nlp, action);
   });
-  app.on('destroyed', () => {
-    console.log('app destroyed');
+  activity.on('destroyed', () => {
+    console.log('activity destroyed');
   });
 };
 ```
 
-The above function receives an argument `app`, which includes the following methods:
+The above function receives an argument `activity`, which includes the following methods:
 
 - `tts`
   - `speak(text)`: speak the text.
@@ -102,4 +102,7 @@ The above function receives an argument `app`, which includes the following meth
 The following are convenient methods:
 
 - `playSound(name)` play the local sound effect by the given name.
+
+For the complete API reference, see [yodaRT.activity.Activity](yodaRT.activity.Activity.html).
+
 
