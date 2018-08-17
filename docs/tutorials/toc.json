@@ -2,6 +2,9 @@
   "app-basic": {
     "title": "App Basic"
   },
+  "app-resources": {
+    "title": "App Resources"
+  },
   "sysroot-overview": {
     "title": "Sysroot Overview"
   },

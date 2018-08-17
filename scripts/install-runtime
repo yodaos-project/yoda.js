@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+adb shell "mount -o remount,rw /"
+
+adb shell "rm -rf /usr/lib/yoda/runtime"
+adb push ./runtime /usr/lib/yoda/
