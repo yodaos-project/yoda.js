@@ -1,12 +1,14 @@
 var Service = require('../service');
 var Light = require('light');
-var soundplayer = require('multimedia').MediaPlayer;
+var MediaPlayer = require('multimedia').MediaPlayer;
+var Effects = require('../effects');
 
 console.log(JSON.stringify(Light.getProfile()));
 
+var effect = new Effects(Light, MediaPlayer);
+
 var light = new Service({
-  light: Light,
-  soundplayer: soundplayer
+  effect: effect
 });
 
 // light.setAwake();
@@ -30,9 +32,18 @@ var light = new Service({
 
 light.setStandby();
 
-setTimeout(() => {
-  light.setConfigFree();
-}, 6000);
+effect.requestAnimationFrame(() => {
+  light.setAwake();
+  effect.requestAnimationFrame(() => {
+    light.setDegree(120);
+    effect.requestAnimationFrame(() => {
+      light.setLoading(120);
+    }, 2000);
+  }, 2000);
+}, 4000);
+// setTimeout(() => {
+//   light.setConfigFree();
+// }, 6000);
 // light.breathing(0, 255, 120, 0, 1400, 20,() => {
 //   console.log('complete');
 // });
