@@ -1,15 +1,28 @@
-var MEDIA_SOURCE = '/opt/media/';
+'use strict';
 
-function Effect(Light, multimedia) {
-  this.leds = Light;
+var MEDIA_SOURCE = '/opt/media/';
+var init = false;
+
+/**
+ * @memberof yodaRT
+ * @constructor
+ * @param {light} light - the light instance
+ * @param {Object} multimedia
+ */
+function LightRenderingContext(light, multimedia) {
+  this.leds = light;
   this.multimedia = multimedia;
-  this.ledsConfig = Light.getProfile();
+  this.ledsConfig = light.getProfile();
   this.handle = {};
   this.id = 0;
   this.player = new multimedia();
 }
 
-Effect.prototype.sound = function (name) {
+/**
+ * play sound
+ * @param {String} uri - the sound resource uri
+ */
+LightRenderingContext.prototype.sound = function(name) {
   var len = name.length;
   // etc.. system://path/to/sound.ogg
   if (len > 9 && name.substr(0, 9) === 'system://') {
@@ -26,8 +39,10 @@ Effect.prototype.sound = function (name) {
   return player;
 };
 
-var init = false;
-Effect.prototype.wakeupSound = function () {
+/**
+ * play wakeup sound
+ */
+LightRenderingContext.prototype.wakeupSound = function() {
   if (!init) {
     this.player.play(`${MEDIA_SOURCE}wakeup.ogg`);
     init = true;
@@ -36,7 +51,10 @@ Effect.prototype.wakeupSound = function () {
   }
 };
 
-Effect.prototype.requestAnimationFrame = function (cb, interval) {
+/**
+ * request an animation frame, this will call the function `cb` after `interval`.
+ */
+LightRenderingContext.prototype.requestAnimationFrame = function(cb, interval) {
   var handle = this.id++;
   this.handle[handle] = setTimeout(() => {
     clearTimeout(this.handle[handle]);
@@ -45,7 +63,10 @@ Effect.prototype.requestAnimationFrame = function (cb, interval) {
   }, interval);
 };
 
-Effect.prototype.stop = function (keep) {
+/**
+ * stop the effect
+ */
+LightRenderingContext.prototype.stop = function(keep) {
   for (var i in this.handle) {
     clearTimeout(this.handle[i]);
   }
@@ -55,23 +76,38 @@ Effect.prototype.stop = function (keep) {
   }
 };
 
-Effect.prototype.render = function () {
+/**
+ * render the effect.
+ */
+LightRenderingContext.prototype.render = function() {
   this.leds.write();
 };
 
-Effect.prototype.clear = function () {
+/**
+ * clear the effect.
+ */
+LightRenderingContext.prototype.clear = function() {
   this.leds.clear();
 };
 
-Effect.prototype.pixel = function (pos, r, g, b, a) {
+/**
+ * write single position.
+ */
+LightRenderingContext.prototype.pixel = function(pos, r, g, b, a) {
   this.leds.pixel(pos, r, g, b, a);
 };
 
-Effect.prototype.fill = function (r, g, b, a) {
+/**
+ * write all lights.
+ */
+LightRenderingContext.prototype.fill = function(r, g, b, a) {
   this.leds.fill(r, g, b, a);
 };
 
-Effect.prototype.breathing = function (pos, or, og, ob, duration, fps, cb) {
+/**
+ * make a breathing effect.
+ */
+LightRenderingContext.prototype.breathing = function(pos, or, og, ob, duration, fps, cb) {
   var self = this;
   var transformed = false;
   var times = Math.floor(duration / fps / 2);
@@ -134,7 +170,10 @@ Effect.prototype.breathing = function (pos, or, og, ob, duration, fps, cb) {
   render(colorR, colorG, colorB);
 };
 
-Effect.prototype.transition = function (from, to, duration, fps, cb) {
+/**
+ * make a transition.
+ */
+LightRenderingContext.prototype.transition = function(from, to, duration, fps, cb) {
   var self = this;
   var times = Math.floor(duration / fps);
   var stepR = (to.r - from.r) / fps;
@@ -189,4 +228,4 @@ Effect.prototype.transition = function (from, to, duration, fps, cb) {
   render(colorR, colorG, colorB);
 };
 
-module.exports = Effect;
+module.exports = LightRenderingContext;
