@@ -186,6 +186,7 @@ ExternalProject_Add(rklogger
 
 install(DIRECTORY ./apps            DESTINATION /opt)
 install(DIRECTORY ./res/media       DESTINATION /opt)
+install(DIRECTORY ./res/light       DESTINATION /opt)
 install(DIRECTORY ./runtime         DESTINATION /usr/lib/yoda)
 install(DIRECTORY ./cloudappclient  DESTINATION /usr/lib/yoda)
 

@@ -67,6 +67,21 @@ Light.prototype.setStandby = function () {
   this.prev = hook(this.options.effect);
 };
 
+Light.prototype.setVolume = function (volume) {
+  if (this.prev) {
+    if (typeof this.prev === 'object' && this.prev.name === 'setVolume') {
+      this.stopPrev(true);
+    } else {
+      this.stopPrev();
+    }
+  }
+  var hook = require(`${LIGHT_SOURCE}setVolume.js`);
+  this.prev = hook(this.options.effect, {
+    volume: +volume
+  });
+  this.prev.name = 'setVolume';
+};
+
 Light.prototype.setConfigFree = function () {
   clearTimeout(this.handle.circleAnimation);
   clearTimeout(this.handle.circleBreathing);
