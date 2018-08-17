@@ -21,7 +21,7 @@ function createActivity(appId, parent) {
    *   activity.on('request', (nlp) => {
    *     // handle nlp
    *   });
-   * }
+   * };
    */
   return Object.assign(activity, {
     /**

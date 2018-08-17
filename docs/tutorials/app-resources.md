@@ -64,6 +64,8 @@ The `context` provides all the convient write functions:
 - `fill` is to write to all the lights.
 - `requestAnimationFrame` is the same function at browser, but within an explict timeout after callback.
 
+See [yodaRT.LightRenderingContext](yodaRT.LightRenderingContext.html) for the complete APIs on the `context`.
+
 The `params` is passed through the `activity.light.play()`, it could be used to control what the effect should
 be. And `callback` is the function which should be called, when the light is finished.
 
