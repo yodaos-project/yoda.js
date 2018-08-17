@@ -7,7 +7,7 @@ var MEDIA_SOURCE = '/opt/media/';
 
 function Client(appId, runtime) {
   EventEmitter.call(this);
-  
+
   var self = this;
   this.appHome = '';
   this.runtime = runtime;
