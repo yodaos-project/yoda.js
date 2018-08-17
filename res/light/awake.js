@@ -1,8 +1,10 @@
+'use strict'
+
 module.exports = function awake(light, data, callback) {
   var end = false;
-  light.transition({r: 0, g: 0, b: 0}, {r: 0, g: 0, b: 150}, 130, 4, () => {
+  light.transition({ r: 0, g: 0, b: 0 }, { r: 0, g: 0, b: 150 }, 130, 4, () => {
     light.requestAnimationFrame(() => {
-      light.transition({r: 0, g: 0, b: 150}, {r: 0, g: 0, b: 0}, 130, 4, () => {
+      light.transition({ r: 0, g: 0, b: 150 }, { r: 0, g: 0, b: 0 }, 130, 4, () => {
         end = true;
       });
     }, 6000);
@@ -19,5 +21,5 @@ module.exports = function awake(light, data, callback) {
     stop: function (keep) {
       light.stop(keep);
     }
-  }
+  };
 };

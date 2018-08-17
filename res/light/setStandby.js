@@ -1,3 +1,5 @@
+'use strict'
+
 module.exports = function setStandby(light, data, callback) {
   var index = 0;
   var circle = function () {
@@ -14,5 +16,5 @@ module.exports = function setStandby(light, data, callback) {
   return function stop(keep) {
     player.stop();
     light.stop(keep);
-  }
+  };
 };

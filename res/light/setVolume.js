@@ -1,3 +1,5 @@
+'use strict'
+
 module.exports = function (light, data, callback) {
   var pos = Math.floor((data.volume / 100) * light.ledsConfig.leds);
   light.clear();
