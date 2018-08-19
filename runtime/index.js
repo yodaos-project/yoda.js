@@ -14,7 +14,7 @@ var logger = require('logger')('main');
 var app_runtime = new appRuntime(['/opt/apps']);
 app_runtime.volume = AudioManager;
 app_runtime.adapter = Adapter;
-AudioManager.set(60);
+AudioManager.setVolume(60);
 
 var speech = new Turen.TurenSpeech();
 

@@ -6,6 +6,7 @@
 
 var property = require('property');
 var logger = require('logger')('activity');
+var EventEmitter = require('events').EventEmitter;
 
 function createActivity(appId, parent) {
   var activity = new EventEmitter();
