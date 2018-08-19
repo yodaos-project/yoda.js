@@ -2,5 +2,14 @@
 
 adb shell "mount -o remount,rw /"
 
+echo "installing runtime..."
 adb shell "rm -rf /usr/lib/yoda/runtime"
 adb push ./runtime /usr/lib/yoda/
+
+echo "installing cloudappclient..."
+adb shell "rm -rf /usr/lib/yoda/cloudappclient"
+adb push ./cloudappclient /usr/lib/yoda/
+
+echo "installing system apps..."
+adb shell "rm -rf /opt/apps/*"
+adb push ./apps/* /opt/apps/
