@@ -148,7 +148,7 @@ function createActivity(appId, parent) {
        * @memberof yodaRT.activity.Activity.MediaClient
        * @instance
        * @function start
-       * @param {string} uri
+       * @param {String} uri
        * @returns {Promise}
        */
       start: function(url, callback) {
