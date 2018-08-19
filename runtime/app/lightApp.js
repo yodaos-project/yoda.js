@@ -3,7 +3,6 @@
 var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 var createActivity = require('./activity').createActivity;
-var MEDIA_SOURCE = '/opt/media/';
 
 function Client(appId, runtime) {
   EventEmitter.call(this);
