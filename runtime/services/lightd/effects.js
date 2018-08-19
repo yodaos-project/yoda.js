@@ -32,6 +32,7 @@ function LightRenderingContext(light, multimedia) {
  */
 LightRenderingContext.prototype.sound = function(name) {
   var len = name.length;
+  var absPath = '';
   // etc.. system://path/to/sound.ogg
   if (len > 9 && name.substr(0, 9) === 'system://') {
     absPath = MEDIA_SOURCE + name.substr(9);
@@ -40,7 +41,7 @@ LightRenderingContext.prototype.sound = function(name) {
     absPath = appHome + '/' + name.substr(7);
   // etc.. path/to/sound.ogg
   } else {
-    absPath = appHome + '/' + name;
+    absPath = name;
   }
   var player = new this.multimedia();
   player.play(absPath);

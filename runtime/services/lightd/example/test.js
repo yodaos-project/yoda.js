@@ -27,6 +27,9 @@ effect.requestAnimationFrame(() => {
           light.setVolume(20);
           effect.requestAnimationFrame(() => {
             light.setVolume(30);
+            effect.requestAnimationFrame(() => {
+              light.setWelcome();
+            }, 2000);
           }, 1000);
         }, 1000);
       }, 4000);
