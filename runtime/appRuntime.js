@@ -207,7 +207,7 @@ App.prototype.onEvent = function(name, data) {
   } else if (name === 'nlp') {
     clearTimeout(this.handle.setVolume);
     if (this.prevVolume > 0) {
-      this.volume.set(this.prevVolume);
+      this.volume.setVolume(this.prevVolume);
     }
     this.lightMethod('setHide', ['']);
     this.onVoiceCommand(data.asr, data.nlp, data.action);
