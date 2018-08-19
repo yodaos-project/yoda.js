@@ -53,7 +53,7 @@ LightRenderingContext.prototype.sound = function(name) {
  */
 LightRenderingContext.prototype.wakeupSound = function() {
   if (!init) {
-    this.player.play(`${MEDIA_SOURCE}wakeup.ogg`);
+    this.player.start(`${MEDIA_SOURCE}wakeup.ogg`);
     init = true;
   } else {
     this.player.seek(0);
