@@ -8,7 +8,10 @@ YodaRT is the JavaScript layer in YodaOS. It provides the main functionalities i
 - Controling the network state
 - Providing basic SDK for application development
 
-> API Level: 0.1
+And it is powered by [ShadowNode](https://github.com/Rokid/ShadowNode), which provides the basic system API,
+you could visit [API Documentation](https://github.com/Rokid/ShadowNode/tree/master/docs/api) for details.
+
+<!-- {project.manifest.apilevel} -->
 
 ## Getting Started
 
