@@ -7,6 +7,7 @@
 var property = require('property');
 var logger = require('logger')('activity');
 var EventEmitter = require('events').EventEmitter;
+var MEDIA_SOURCE = '/opt/media/';
 
 function createActivity(appId, parent) {
   var activity = new EventEmitter();
