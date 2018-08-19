@@ -25,53 +25,58 @@ var service = new Service({
 function reConnect(CONFIG) {
   if (tts) {
     tts.disconnect();
+    tts.removeAllEventListeners();
+    tts = null;
   }
-  tts = TtsWrap.createTts({
-    key: CONFIG.key,
-    deviceTypeId: CONFIG.device_type_id,
-    deviceId: CONFIG.device_id,
-    secret: CONFIG.secret
-  });
 
-  tts.on('start', function (id, errno) {
-    logger.log('ttsd start', id);
-    dbusService._dbus.emitSignal(
-      '/tts/service',
-      'tts.service',
-      'ttsdevent',
-      'ss',
-      ['' + id, 'start']
-    );
-  });
-  tts.on('end', function (id, errno) {
-    logger.log('ttsd end', id);
-    dbusService._dbus.emitSignal(
-      '/tts/service',
-      'tts.service',
-      'ttsdevent',
-      'ss',
-      ['' + id, 'end']
-    );
-  });
-  tts.on('cancel', function (id, errno) {
-    logger.log('ttsd cancel', id);
-    dbusService._dbus.emitSignal(
-      '/tts/service',
-      'tts.service',
-      'ttsdevent',
-      'ss',
-      ['' + id, 'cancel']
-    );
-  });
-  tts.on('error', function (id, errno) {
-    logger.log('ttsd error', id);
-    dbusService._dbus.emitSignal(
-      '/tts/service',
-      'tts.service',
-      'ttsdevent',
-      'ss',
-      ['' + id, 'error']
-    );
+  process.nextTick(function() {
+    tts = TtsWrap.createTts({
+      key: CONFIG.key,
+      deviceTypeId: CONFIG.deviceTypeId,
+      deviceId: CONFIG.deviceId,
+      secret: CONFIG.secret
+    });
+
+    tts.on('start', function (id, errno) {
+      logger.log('ttsd start', id);
+      dbusService._dbus.emitSignal(
+        '/tts/service',
+        'tts.service',
+        'ttsdevent',
+        'ss',
+        ['' + id, 'start']
+      );
+    });
+    tts.on('end', function (id, errno) {
+      logger.log('ttsd end', id);
+      dbusService._dbus.emitSignal(
+        '/tts/service',
+        'tts.service',
+        'ttsdevent',
+        'ss',
+        ['' + id, 'end']
+      );
+    });
+    tts.on('cancel', function (id, errno) {
+      logger.log('ttsd cancel', id);
+      dbusService._dbus.emitSignal(
+        '/tts/service',
+        'tts.service',
+        'ttsdevent',
+        'ss',
+        ['' + id, 'cancel']
+      );
+    });
+    tts.on('error', function (id, errno) {
+      logger.log('ttsd error', id);
+      dbusService._dbus.emitSignal(
+        '/tts/service',
+        'tts.service',
+        'ttsdevent',
+        'ss',
+        ['' + id, 'error']
+      );
+    });
   });
 }
 
@@ -80,7 +85,9 @@ dbusApis.addMethod('connect', {
   out: ['b']
 }, function (config, cb) {
   logger.log('ttsd restart trigger by upadte config');
-  reConnect(JSON.parse(config));
+  setTimeout(() => {
+    reConnect(JSON.parse(config));
+  }, 1000);
   cb(null, true);
 });
 

@@ -663,7 +663,7 @@ App.prototype.onGetPropAll = function() {
  */
 App.prototype.onReconnected = function() {
   this.destroyAll();
-  this.lightMethod('setConfigFree', []);
+  this.lightMethod('setConfigFree', ['system']);
 };
 
 /**

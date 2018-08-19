@@ -9,12 +9,12 @@ var setAwake = require(`${LIGHT_SOURCE}awake.js`);
 
 function Light(options) {
   this.options = options;
-  this.prev;
+  this.prev = null;
   this.init();
 }
 
 Light.prototype.init = function () {
-
+  // TODO
 };
 
 Light.prototype.stopPrev = function (keep) {
@@ -84,22 +84,22 @@ Light.prototype.setVolume = function (volume) {
 
 Light.prototype.setConfigFree = function () {
   this.stopPrev();
-  this.options.light.stop();
-  this.options.light.clear();
-  this.options.light.render();
+  this.options.effect.stop();
+  this.options.effect.clear();
+  this.options.effect.render();
 };
 
 Light.prototype.setWelcome = function () {
   this.stopPrev();
   var hook = require(`${LIGHT_SOURCE}setWelcome.js`);
-  this.prev = hook(this.options.light);
+  this.prev = hook(this.options.effect);
 };
 
 Light.prototype.appSound = function (appId, name) {
   if (this.playerHandle[appId]) {
     this.playerHandle[appId].stop();
   }
-  var player = this.options.light.sound(name);
+  var player = this.options.effect.sound(name);
   this.playerHandle[appId] = player;
   player.play(name);
 };
