@@ -44,7 +44,7 @@ LightRenderingContext.prototype.sound = function(name) {
     absPath = name;
   }
   var player = new this.multimedia();
-  player.play(absPath);
+  player.start(absPath);
   return player;
 };
 
