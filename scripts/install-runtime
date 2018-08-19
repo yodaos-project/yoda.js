@@ -13,3 +13,9 @@ adb push ./cloudappclient /usr/lib/yoda/
 echo "installing system apps..."
 adb shell "rm -rf /opt/apps/*"
 adb push ./apps/* /opt/apps/
+
+echo "installing resource..."
+adb shell "rm -rf /opt/media"
+adb shell "rm -rf /opt/light"
+adb push ./res/light /opt/
+adb push ./res/media /opt/

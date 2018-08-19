@@ -117,7 +117,3 @@ dbusApis.addMethod('stop', {
 
 dbusApis.update();
 logger.log('service tts started');
-
-setTimeout(function() {
-  reConnect(CONFIG)
-}, 1000);
