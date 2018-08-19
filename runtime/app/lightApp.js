@@ -3,6 +3,7 @@
 var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 var createActivity = require('./activity').createActivity;
+var logger = require('logger')('lightApp');
 
 function Client(appId, runtime) {
   EventEmitter.call(this);
@@ -25,7 +26,7 @@ function Client(appId, runtime) {
   adapter.listenTtsdEvent((name, args) => {
     // ttsd的event事件
     if (name === 'ttsdevent') {
-      logger.log('ttsevent', args);
+      logger.log('tts-event', args);
       if (typeof this.ttsCallback['ttscb:' + args[0]] === 'function') {
         this.ttsCallback['ttscb:' + args[0]](args[1], args.slice(2));
         // 下面事件完成后不会再触发其它事件，也不应该触发，删除对应cb，防止内存泄漏
@@ -36,23 +37,17 @@ function Client(appId, runtime) {
       }
     }
   }).catch((err) => {
-    console.log('ttsd listen error', err);
+    logger.log('ttsd listen error', err);
   });
 
   this.multiMediaCallback = {};
   adapter.listenMultimediadEvent((name, args) => {
     if (name === 'multimediadevent') {
-      logger.log('mediaevent', args);
-      if (typeof this.multiMediaCallback['mediacb:' + args[0]] === 'function') {
-        this.multiMediaCallback['mediacb:' + args[0]](args[1], args.slice(2));
-        if (args[1] === 'end' || args[1] === 'error') {
-          logger.log('unregister', args[0]);
-          delete this.multiMediaCallback['mediacb:' + args[0]];
-        }
-      }
+      logger.log('media-event', args);
+      this.app.media.emit.apply(this.app.media, args.slice(1));
     }
   }).catch((err) => {
-    console.log('mediad listen error', err);
+    logger.log('mediad listen error', err);
   });
 
   // 创建隔离的App

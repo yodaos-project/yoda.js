@@ -1,8 +1,10 @@
+'use strict'
+
 var Service = require('./service');
 var Dbus = require('dbus');
 var Remote = require('../../lib/dbus-remote-call.js');
 var TtsWrap = require('tts');
-var logger = console;
+var logger = require('logger')('ttsd');
 
 var dbusService = Dbus.registerService('session', 'com.service.tts');
 var dbusObject = dbusService.createObject('/tts/service');
@@ -95,7 +97,7 @@ dbusApis.addMethod('speak', {
   in: ['s', 's'],
   out: ['s']
 }, function (appId, text, cb) {
-  console.log('tts speak', appId, text);
+  logger.log('tts speak', appId, text);
   if (appId && text) {
     service.speak(appId, text)
       .then((id) => {
@@ -113,7 +115,7 @@ dbusApis.addMethod('stop', {
   in: ['s'],
   out: []
 }, function (appId, cb) {
-  console.log('tts cancel', appId);
+  logger.log('tts cancel', appId);
   if (appId) {
     service.stop(appId);
     cb(null);

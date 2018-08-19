@@ -1,6 +1,8 @@
+'use strict'
+
 var EventEmitter = require('events').EventEmitter;
 var inherits = require('util').inherits;
-var logger = console;
+var logger = require('logger')('ttsdService');
 
 function Tts(options) {
   this.handle = {};

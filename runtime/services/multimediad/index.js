@@ -28,7 +28,7 @@ service.on('prepared', function (id, dur, pos) {
     'multimedia.service',
     'multimediadevent',
     'ssss',
-    [id ,'start', dur, pos]
+    [id ,'prepared', dur, pos]
   );
 });
 service.on('playbackcomplete', function (id) {
@@ -38,7 +38,7 @@ service.on('playbackcomplete', function (id) {
     'multimedia.service',
     'multimediadevent',
     'ss',
-    [id, 'end']
+    [id, 'playbackcomplete']
   );
 });
 service.on('bufferingupdate', function (id) {
