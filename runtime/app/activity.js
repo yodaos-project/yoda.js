@@ -25,6 +25,8 @@ function createActivity(appId, parent) {
    *   });
    * };
    */
+  var media = new EventEmitter();
+
   return Object.assign(activity, {
     /**
      * Exits the current application.
@@ -138,7 +140,7 @@ function createActivity(appId, parent) {
      * @instance
      * @type {yodaRT.activity.Activity.MediaClient}
      */
-    media: {
+    media: Object.assign(media, {
       /**
        * @memberof yodaRT.activity.Activity
        * @class MediaClient
@@ -153,11 +155,10 @@ function createActivity(appId, parent) {
        * @param {String} uri
        * @returns {Promise}
        */
-      start: function(url, callback) {
+      start: function(url) {
         return parent.adapter.multiMediaMethod('start', [appId, url])
           .then((args) => {
-            logger.log('media register', args);
-            parent.multiMediaCallback[`mediacb:${args[0]}`] = callback.bind(activity);
+            logger.log('create media player', args);
           })
           .catch((err) => {
             logger.error(err);
@@ -170,14 +171,8 @@ function createActivity(appId, parent) {
        * @function pause
        * @returns {Promise}
        */
-      pause: function(callback) {
-        return parent.adapter.multiMediaMethod('pause', [appId])
-          .then((args) => {
-            callback.call(activity, null);
-          })
-          .catch((err) => {
-            callback.call(activity, null);
-          });
+      pause: function() {
+        return parent.adapter.multiMediaMethod('pause', [appId]);
       },
       /**
        * Resume the playing.
@@ -186,14 +181,8 @@ function createActivity(appId, parent) {
        * @function resume
        * @returns {Promise}
        */
-      resume: function(callback) {
-        return parent.adapter.multiMediaMethod('resume', [appId])
-          .then((args) => {
-            callback.call(activity, null);
-          })
-          .catch((err) => {
-            callback.call(activity, null);
-          });
+      resume: function() {
+        return parent.adapter.multiMediaMethod('resume', [appId]);
       },
       /**
        * Stop the playing.
@@ -202,14 +191,8 @@ function createActivity(appId, parent) {
        * @function stop
        * @returns {Promise}
        */
-      stop: function(callback) {
-        return parent.adapter.multiMediaMethod('stop', [appId])
-          .then((args) => {
-            callback.call(activity, null);
-          })
-          .catch((err) => {
-            callback.call(activity, null);
-          });
+      stop: function() {
+        return parent.adapter.multiMediaMethod('stop', [appId]);
       },
       /**
        * Seek the given position.
@@ -219,10 +202,10 @@ function createActivity(appId, parent) {
        * @param {Number} pos
        * @returns {Promise}
        */
-      seek: function(pos, callback) {
-        throw new Error('not implemented');
+      seek: function(pos) {
+        return Promise.reject(new Error('not implemented'));
       },
-    },
+    }),
     /**
      * @memberof yodaRT.activity.Activity
      * @instance

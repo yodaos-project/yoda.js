@@ -24,6 +24,41 @@ var exe = new execute();
 // skill os
 var sos = new Manager(exe);
 
+var prevMediaItemData = null;
+var mediaNextFn = null;
+app.media.on('prepared', function (duration, position) {
+  if (!prevMediaItemData) {
+    return;
+  }
+  if (prevMediaItemData.disableEvent === false) {
+    eventRequest.mediaEvent('Media.STARTED', prevMediaItemData.appId, {
+      itemId: prevMediaItemData.item.itemId,
+      duration: duration,
+      progress: position
+    }, (response) => {
+      // console.log('media response', response);
+    });
+  }
+});
+app.media.on('playbackcomplete', function () {
+  if (!prevMediaItemData) {
+    return;
+  }
+  if (typeof mediaNextFn === 'function') {
+    mediaNextFn();
+  }
+  if (prevMediaItemData.disableEvent === false) {
+    eventRequest.mediaEvent('Media.FINISHED', prevMediaItemData.appId, {
+      itemId: prevMediaItemData.item.itemId,
+      token: prevMediaItemData.item.token
+    }, (response) => {
+      // console.log('media response', response);
+      var action = JSON.parse(response);
+      app.mockNLPResponse(null, action);
+    });
+  }
+});
+
 exe.do('frontend', 'tts', function (dt, next) {
   if (dt.action === 'say') {
     app.media.pause();
@@ -69,31 +104,9 @@ exe.do('frontend', 'tts', function (dt, next) {
 });
 exe.do('frontend', 'media', function (dt, next) {
   if (dt.action === 'play') {
-    app.media.play(dt.data.item.url, function (name, args) {
-      if (name === 'start') {
-        if (dt.data.disableEvent === false) {
-          eventRequest.mediaEvent('Media.STARTED', dt.data.appId, {
-            itemId: dt.data.item.itemId,
-            duration: args[0],
-            progress: args[1]
-          }, (response) => {
-            // console.log('media response', response);
-          });
-        }
-      } else if (name === 'end') {
-        next();
-        if (dt.data.disableEvent === false) {
-          eventRequest.mediaEvent('Media.FINISHED', dt.data.appId, {
-            itemId: dt.data.item.itemId,
-            token: dt.data.item.token
-          }, (response) => {
-            // console.log('media response', response);
-            var action = JSON.parse(response);
-            app.mockNLPResponse(null, action);
-          });
-        }
-      }
-    });
+    prevMediaItemData = dt.data || {};
+    mediaNextFn = next;
+    app.media.play(dt.data.item.url);
   } else if (dt.action === 'pause') {
     app.media.pause(function (error) {
       next();
