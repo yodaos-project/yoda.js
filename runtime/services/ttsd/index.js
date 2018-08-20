@@ -6,12 +6,17 @@ var Remote = require('../../lib/dbus-remote-call.js');
 var TtsWrap = require('tts');
 var logger = require('logger')('ttsd');
 
+// vui prop接口
+var VUI_SERVICE = 'com.rokid.AmsExport';
+var DBUS_PROP_PATH = '/activation/prop';
+var DBUS_PROP_INTERFACE = 'com.rokid.activation.prop';
+
 var dbusService = Dbus.registerService('session', 'com.service.tts');
 var dbusObject = dbusService.createObject('/tts/service');
 var dbusApis = dbusObject.createInterface('tts.service');
 
 var permit = new Remote(dbusService._dbus, {
-  dbusService: 'com.rokid.AmsExport',
+  dbusService: VUI_SERVICE,
   dbusObjectPath: '/com/permission',
   dbusInterface: 'com.rokid.permission'
 });
@@ -28,13 +33,25 @@ var service = new Service({
   },
 });
 
+function retryGetConfig(cb) {
+  dbusService._dbus.callMethod(
+    VUI_SERVICE,
+    DBUS_PROP_PATH,
+    DBUS_PROP_INTERFACE,
+    'all', 's', ['@ttsd'], function (res) {
+      if (res !== null) {
+        cb(res[0]);
+      }
+    });
+}
+
 function reConnect(CONFIG) {
   if (tts) {
     tts.disconnect();
     tts = null;
   }
 
-  process.nextTick(function() {
+  process.nextTick(function () {
     tts = TtsWrap.createTts({
       key: CONFIG.key,
       deviceTypeId: CONFIG.deviceTypeId,
@@ -120,3 +137,7 @@ dbusApis.addMethod('stop', {
 
 dbusApis.update();
 logger.log('service tts started');
+
+retryGetConfig((config) => {
+  reConnect(JSON.parse(config));
+});
