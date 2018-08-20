@@ -6,7 +6,7 @@ var Remote = require('../../lib/dbus-remote-call.js');
 var TtsWrap = require('tts');
 var logger = require('logger')('ttsd');
 
-// vui prop接口
+// vui prop definitions
 var VUI_SERVICE = 'com.rokid.AmsExport';
 var DBUS_PROP_PATH = '/activation/prop';
 var DBUS_PROP_INTERFACE = 'com.rokid.activation.prop';
@@ -15,18 +15,17 @@ var dbusService = Dbus.registerService('session', 'com.service.tts');
 var dbusObject = dbusService.createObject('/tts/service');
 var dbusApis = dbusObject.createInterface('tts.service');
 
+var _TTS = null;
+var _CONFIG = null;
 var permit = new Remote(dbusService._dbus, {
   dbusService: VUI_SERVICE,
   dbusObjectPath: '/com/permission',
   dbusInterface: 'com.rokid.permission'
 });
 
-
-var tts = null;
-
 var service = new Service({
   get tts() {
-    return tts;
+    return _TTS;
   },
   get permit() {
     return permit;
@@ -46,23 +45,26 @@ function retryGetConfig(cb) {
 }
 
 function reConnect(CONFIG) {
-  if (tts) {
-    tts.disconnect();
-    tts = null;
+  if (_CONFIG &&
+    _CONFIG.deviceId === CONFIG.deviceId &&
+    _CONFIG.deviceTypeId === CONFIG.deviceTypeId &&
+    _CONFIG.key === CONFIG.key &&
+    _CONFIG.secret === CONFIG.secret) {
+    logger.log('skip this connect, because the same config');
+    return;
   }
 
-  process.nextTick(function () {
-    tts = TtsWrap.createTts({
-      key: CONFIG.key,
-      deviceTypeId: CONFIG.deviceTypeId,
-      deviceId: CONFIG.deviceId,
-      secret: CONFIG.secret
-    });
+  if (_TTS)
+    _TTS.disconnect();
 
-    tts.on('start', function (id, errno) {
+  process.nextTick(function () {
+    _TTS = TtsWrap.createTts(CONFIG);
+    _CONFIG = CONFIG;
+
+    _TTS.on('start', function (id, errno) {
       logger.log('ttsd start', id);
     });
-    tts.on('end', function (id, errno) {
+    _TTS.on('end', function (id, errno) {
       logger.log('ttsd end', id);
       dbusService._dbus.emitSignal(
         '/tts/service',
@@ -72,7 +74,7 @@ function reConnect(CONFIG) {
         ['' + id, 'end']
       );
     });
-    tts.on('cancel', function (id, errno) {
+    _TTS.on('cancel', function (id, errno) {
       logger.log('ttsd cancel', id);
       dbusService._dbus.emitSignal(
         '/tts/service',
@@ -82,7 +84,7 @@ function reConnect(CONFIG) {
         ['' + id, 'cancel']
       );
     });
-    tts.on('error', function (id, errno) {
+    _TTS.on('error', function (id, errno) {
       logger.log('ttsd error', id);
       dbusService._dbus.emitSignal(
         '/tts/service',
