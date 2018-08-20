@@ -7,7 +7,25 @@
 var property = require('property');
 var logger = require('logger')('activity');
 var EventEmitter = require('events').EventEmitter;
+
 var MEDIA_SOURCE = '/opt/media/';
+var LIGHT_SOURCE = '/opt/light/';
+
+function pathTransform(name, prefix, home) {
+  var len = name.length;
+  var absPath = '';
+  // etc.. system://path/to/sound.ogg
+  if (len > 9 && name.substr(0, 9) === 'system://') {
+    absPath = prefix + name.substr(9);
+    // etc.. self://path/to/sound.ogg
+  } else if (len > 7 && name.substr(0, 7) === 'self://') {
+    absPath = home + '/' + name.substr(7);
+    // etc.. path/to/sound.ogg
+  } else {
+    absPath = home + '/' + name;
+  }
+  return absPath;
+}
 
 function createActivity(appId, parent) {
   var activity = new EventEmitter();
@@ -107,7 +125,7 @@ function createActivity(appId, parent) {
        * @param {String} text
        * @param {Function} callback
        */
-      speak: function(text, callback) {
+      speak: function (text, callback) {
         return parent.adapter.ttsMethod('speak', [appId, text])
           .then((args) => {
             logger.log(`tts register ${args[0]}`);
@@ -124,7 +142,7 @@ function createActivity(appId, parent) {
        * @function stop
        * @param {Function} callback
        */
-      stop: function(callback) {
+      stop: function (callback) {
         return parent.adapter.ttsMethod('stop', [appId])
           .then((args) => {
             callback(null);
@@ -155,7 +173,7 @@ function createActivity(appId, parent) {
        * @param {String} uri
        * @returns {Promise}
        */
-      start: function(url) {
+      start: function (url) {
         return parent.adapter.multiMediaMethod('start', [appId, url])
           .then((result) => {
             logger.log('create media player', args);
@@ -174,7 +192,7 @@ function createActivity(appId, parent) {
        * @function pause
        * @returns {Promise}
        */
-      pause: function() {
+      pause: function () {
         return parent.adapter.multiMediaMethod('pause', [appId]);
       },
       /**
@@ -184,7 +202,7 @@ function createActivity(appId, parent) {
        * @function resume
        * @returns {Promise}
        */
-      resume: function() {
+      resume: function () {
         return parent.adapter.multiMediaMethod('resume', [appId]);
       },
       /**
@@ -194,7 +212,7 @@ function createActivity(appId, parent) {
        * @function stop
        * @returns {Promise}
        */
-      stop: function() {
+      stop: function () {
         return parent.adapter.multiMediaMethod('stop', [appId]);
       },
       /**
@@ -205,7 +223,7 @@ function createActivity(appId, parent) {
        * @param {Number} pos
        * @returns {Promise}
        */
-      seek: function(pos) {
+      seek: function (pos) {
         return Promise.reject(new Error('not implemented'));
       },
     }),
@@ -228,10 +246,11 @@ function createActivity(appId, parent) {
        * @param {Object} args - the args.
        * @returns {Promise}
        */
-      play: function(uri, args) {
-        args = JSON.stringify(args || []);
+      play: function (uri, args) {
+        var argString = JSON.stringify(args || {});
+        var absPath = pathTransform(uri, LIGHT_SOURCE, parent.appHome + '/light');
         return parent.adapter
-          .lightMethod('play', [appId, uri, args]);
+          .lightMethod('play', [appId, absPath, argString]);
       },
       /**
        * @memberof yodaRT.activity.Activity.LightClient
@@ -239,7 +258,7 @@ function createActivity(appId, parent) {
        * @function stop
        * @returns {Promise}
        */
-      stop: function() {
+      stop: function () {
         return parent.adapter.lightMethod('stop', [appId]);
       },
     },
@@ -259,7 +278,7 @@ function createActivity(appId, parent) {
        * @instance
        * @function getItem
        */
-      getItem: function(key) {
+      getItem: function (key) {
         return property.get(key);
       },
       /**
@@ -267,7 +286,7 @@ function createActivity(appId, parent) {
        * @instance
        * @function setItem
        */
-      setItem: function(key, value) {
+      setItem: function (key, value) {
         return property.set(key, value);
       },
     },
@@ -278,19 +297,8 @@ function createActivity(appId, parent) {
      * @param {String} uri - the sound resource uri.
      * @returns {Promise}
      */
-    playSound: function(uri) {
-      var len = uri.length;
-      var absPath;
-      // etc.. system://path/to/sound.ogg
-      if (len > 9 && uri.substr(0, 9) === 'system://') {
-        absPath = MEDIA_SOURCE + uri.substr(9);
-      // etc.. self://path/to/sound.ogg
-      } else if (len > 7 && uri.substr(0, 7) === 'self://') {
-        absPath = parent.appHome + '/' + uri.substr(7);
-      // etc.. path/to/sound.ogg
-      } else {
-        absPath = parent.appHome + '/' + uri;
-      }
+    playSound: function (uri) {
+      var absPath = pathTransform(uri, MEDIA_SOURCE, parent.appHome + '/media');
       return parent.adapter.lightMethod('appSound', [appId, absPath]);
     },
   });

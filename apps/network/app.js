@@ -20,7 +20,7 @@ module.exports = function (app) {
       return;
     }
     this.started = true;
-    this.light.play('setStandby');
+    this.light.play('system://setStandby.js');
 
     ble.enable('ble');
     bleEnable = true;
