@@ -3,11 +3,16 @@
 
 #define UPGRADE_OTA_PATH "/data/upgrade/upgrade.img"
 
-JS_FUNCTION(VerifyImage) {
+JS_FUNCTION(Reboot) {
+  system("reboot");
   return jerry_create_boolean(true);
 }
 
-JS_FUNCTION(PrepareImage) {
+JS_FUNCTION(VerifyOtaImage) {
+  return jerry_create_boolean(true);
+}
+
+JS_FUNCTION(PrepareOtaImage) {
   struct boot_cmd cmd;
   memset(&cmd, 0, sizeof(cmd));
   strncpy(cmd.boot_mode, BOOTMODE_RECOVERY, strlen(BOOTMODE_RECOVERY));
@@ -17,14 +22,9 @@ JS_FUNCTION(PrepareImage) {
   return jerry_create_boolean(true);
 }
 
-JS_FUNCTION(Reboot) {
-  system("reboot");
-  return jerry_create_boolean(true);
-}
-
 void init(jerry_value_t exports) {
-  iotjs_jval_set_method(exports, "verifyImage", VerifyImage);
-  iotjs_jval_set_method(exports, "prepareImage", PrepareImage);
+  iotjs_jval_set_method(exports, "verifyOtaImage", VerifyOtaImage);
+  iotjs_jval_set_method(exports, "prepareOtaImage", PrepareOtaImage);
   iotjs_jval_set_method(exports, "reboot", Reboot);
 }
 
