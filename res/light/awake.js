@@ -13,6 +13,8 @@ module.exports = function awake(light, data, callback) {
     setDegree: function (degree) {
       if (!end) {
         light.wakeupSound();
+        light.stop(keep);
+        light.fill(0, 0, 150);
         var pos = Math.floor((degree / 360) * light.ledsConfig.leds);
         light.pixel(pos, 255, 255, 255);
         light.render();
