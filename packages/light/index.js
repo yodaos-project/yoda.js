@@ -104,7 +104,6 @@ module.exports = {
         this._pixel(i, red, green, blue, alpha);
       }
     }
-    this.write();
     return this;
   },
 
