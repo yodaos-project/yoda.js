@@ -28,12 +28,11 @@ module.exports = function(activity) {
     if (vol < 0 || vol > 10) {
       return speakAndExit(STRING_RANGE_ERROR);
     } else {
-      // activity.light.play('system://setVolume', {
-      //   volume: vol * 10,
-      // });
-      AudioManager.setVolume(vol * 10);
-      // TODO: use light instead.
-      return speakAndExit('已设置音量');
+      var target = vol * 10;
+      AudioManager.setVolume(target);
+      return activity.light.play('system://setVolume', {
+        volume: target,
+      });
     }
   }
 
