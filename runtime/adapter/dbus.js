@@ -90,7 +90,7 @@ Adapter.prototype.remoteCall = function (method, args, dbusService, dbusObjectPa
  */
 Adapter.prototype.listen = function (serviceName, objectPath, ifaceName, cb) {
   return new Promise((resolve, reject) => {
-    this.service._dbus.getUniqueServiceName(serviceName, (err, uniqueName) => {
+    this.service._bus.getUniqueServiceName(serviceName, (err, uniqueName) => {
       if (err) return reject(err);
       resolve(uniqueName);
     })
@@ -102,7 +102,7 @@ Adapter.prototype.listen = function (serviceName, objectPath, ifaceName, cb) {
     // 监听signal
     var uniqueName = names[0];
     var channel = `${uniqueName}:${objectPath}:${ifaceName}`;
-    this.service._dbus.on(channel, (message) => {
+    this.service._bus.on(channel, (message) => {
       var name = message.name;
       var args = message.args;
       cb.call(this, name, args);
@@ -119,7 +119,7 @@ Adapter.prototype.listen = function (serviceName, objectPath, ifaceName, cb) {
  */
 Adapter.prototype.addSignalFilter = function (uniqueName, objectPath, ifaceName) {
   return new Promise((resolve, reject) => {
-    this.service._dbus.addSignalFilter(uniqueName, objectPath, ifaceName, (err) => {
+    this.service._bus.addSignalFilter(uniqueName, objectPath, ifaceName, (err) => {
       if (err) return reject(err);
       resolve(uniqueName);
     });
