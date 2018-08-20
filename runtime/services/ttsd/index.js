@@ -20,8 +20,12 @@ var permit = new Remote(dbusService._dbus, {
 var tts = null;
 
 var service = new Service({
-  tts: tts,
-  permit: permit
+  get tts() {
+    return tts;
+  },
+  get permit() {
+    return permit;
+  },
 });
 
 function reConnect(CONFIG) {
@@ -87,9 +91,7 @@ dbusApis.addMethod('connect', {
   out: ['b']
 }, function (config, cb) {
   logger.log('ttsd restart trigger by upadte config');
-  setTimeout(() => {
-    reConnect(JSON.parse(config));
-  }, 1000);
+  reConnect(JSON.parse(config));
   cb(null, true);
 });
 
