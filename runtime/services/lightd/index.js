@@ -27,12 +27,14 @@ dbusApis.addMethod('play', {
   in: ['s', 's', 's'],
   out: ['b']
 }, function (appId, name, args, cb) {
-  if (typeof service[name] === 'function') {
-    service[name].apply(service, JSON.parse(args));
-    cb(null, true);
-  } else {
-    cb(null, false);
+  var data = {};
+  try {
+    data = JSON.parse(args);
+  } catch (error) {
+    logger.log(`parse args error: ${args}, appId: ${appId}`);
   }
+  var result = service.loadfile(name, data);
+  cb(null, result);
 });
 
 dbusApis.addMethod('setAwake', {

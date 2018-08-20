@@ -29,6 +29,19 @@ Light.prototype.stopPrev = function (keep) {
   }
 };
 
+Light.prototype.loadfile = function (uri, data) {
+  var handle;
+  try {
+    handle = require(uri);
+    this.stopPrev();
+    this.prev = handle(this.options.effect, data || {});
+  } catch (error) {
+    logger.error(`load effect file error from path: ${uri}`);
+    return false;
+  }
+  return true;
+};
+
 Light.prototype.setAwake = function () {
   this.stopPrev();
   this.prev = setAwake(this.options.effect);
