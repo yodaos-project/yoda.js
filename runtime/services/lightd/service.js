@@ -8,6 +8,7 @@ var LIGHT_SOURCE = '/opt/light/';
 var setAwake = require(`${LIGHT_SOURCE}awake.js`);
 
 function Light(options) {
+  this.playerHandle = {};
   this.options = options;
   this.prev = null;
   this.init();
@@ -101,7 +102,6 @@ Light.prototype.appSound = function (appId, name) {
   }
   var player = this.options.effect.sound(name);
   this.playerHandle[appId] = player;
-  player.play(name);
 };
 
 module.exports = Light;
