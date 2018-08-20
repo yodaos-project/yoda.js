@@ -83,7 +83,7 @@ JS_FUNCTION(Prepare) {
     if (i == 1)
       continue;
     jerry_size_t size = jerry_get_string_size(jargv[i]);
-    jerry_char_t text_buf[size];
+    jerry_char_t text_buf[size + 1];
     jerry_string_to_char_buffer(jargv[i], text_buf, size);
     text_buf[size] = '\0';
 
@@ -102,7 +102,6 @@ JS_FUNCTION(Prepare) {
 
   fprintf(stdout,
     "host: %s, port: %d, branch: %s\n", host, port, branch);
-  fprintf(stdout, "key<%s>\n", key);
 
   _this->prepared = true;
   _this->handle->prepare(host, port, branch,
