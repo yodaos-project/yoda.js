@@ -6,15 +6,17 @@
 
 var fs = require('fs');
 var dbus = require('dbus');
-var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
+var inherits = require('util').inherits;
+var perf = require('./lib/performance');
 
 var Permission = require('./component/permission');
 var TTS = require('./component/tts');
 var AppExecutor = require('./app/executor');
-var logger = require('logger')('YODA');
+var logger = require('logger')('yoda');
 
 module.exports = App;
+perf.stub('init');
 
 /**
  * @memberof yodaRT
@@ -684,6 +686,7 @@ App.prototype.onDisconnected = function() {
  * @private
  */
 App.prototype.onReLogin = function() {
+  perf.stub('started');
   this.lightMethod('setWelcome', []);
 
   var config = JSON.stringify(this.onGetPropAll());
