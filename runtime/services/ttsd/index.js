@@ -31,7 +31,6 @@ var service = new Service({
 function reConnect(CONFIG) {
   if (tts) {
     tts.disconnect();
-    tts.removeAllEventListeners();
     tts = null;
   }
 
