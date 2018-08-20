@@ -16,6 +16,29 @@ rk_stream_type_t iotjs_audiomgr_get_stream_type(int stream) {
   }
 }
 
+JS_FUNCTION(IsMuted) {
+  return jerry_create_boolean(rk_is_mute());
+}
+
+JS_FUNCTION(SetMute) {
+  bool v = JS_GET_ARG(0, boolean);
+  return jerry_create_number(rk_set_mute(v));
+}
+
+JS_FUNCTION(SetCurveForVolume) {
+  static int curve[101];
+  int level = JS_GET_ARG(0, number);
+  int vol = JS_GET_ARG(1, number);
+  if (level > 100) {
+    return jerry_create_boolean(false);
+  }
+  curve[level] = vol;
+  if (level == 100) {
+    rk_setCustomVolumeCurve(sizeof(curve), curve);
+  }
+  return jerry_create_boolean(true);
+}
+
 JS_FUNCTION(SetMediaVolume) {
   int vol = JS_GET_ARG(0, number);
   rk_set_volume(vol);
@@ -43,6 +66,9 @@ JS_FUNCTION(GetStreamVolume) {
 }
 
 void init(jerry_value_t exports) {
+  iotjs_jval_set_method(exports, "isMuted", IsMuted);
+  iotjs_jval_set_method(exports, "setMute", SetMute);
+  iotjs_jval_set_method(exports, "setCurveForVolume", SetCurveForVolume);
   iotjs_jval_set_method(exports, "setMediaVolume", SetMediaVolume);
   iotjs_jval_set_method(exports, "getMediaVolume", GetMediaVolume);
   iotjs_jval_set_method(exports, "setStreamVolume", SetStreamVolume);
