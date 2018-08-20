@@ -856,10 +856,10 @@ App.prototype.startExtappService = function() {
   }, function (appId, cb) {
     var config = self.onGetPropAll();
     cb(null, JSON.stringify({
-      deviceId: config.device_id,
+      deviceId: config.deviceId,
       appSecret: config.secret,
       masterId: config.masterId,
-      deviceTypeId: config.device_type_id,
+      deviceTypeId: config.deviceTypeId,
       key: config.key,
       secret: config.secret,
     }));
