@@ -682,7 +682,7 @@ App.prototype.onReLogin = function() {
   var config = JSON.stringify(this.onGetPropAll());
   this.ttsMethod('connect', [config])
     .then((res) => {
-      logger.log(`send CONFIG to ttsd: ${res[0]}`);
+      logger.log(`send CONFIG to ttsd: ${res && res[0]}`);
     });
 };
 

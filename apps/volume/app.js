@@ -1,19 +1,17 @@
 'use strict';
 
-var volume = require('@rokid/volume');
+var AudioManager = require('audio').AudioManager;
 
-module.exports = function(app) {
-  app.on('ready', function () {
-    console.log(this.getAppId() + ' app ready');
-  });
-  app.on('onrequest', function (nlp, action) {
+module.exports = function(activity) {
+  activity.on('onrequest', function(nlp, action) {
     if (nlp.intent === 'showvolume') {
-      var vol = parseInt(volume.get() / 10);
-      app.tts.say(`当前音量${vol}`, function() {
-        app.exit();
+      var vol = Math.floor(AudioManager.getVolume() / 10);
+      activity.tts.speak(`当前音量为${vol}`, () => {
+        console.log('exit volume');
+        activity.exit();
       });
     } else {
-      app.exit();
+      activity.exit();
     }
   });
 };
