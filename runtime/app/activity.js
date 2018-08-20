@@ -157,8 +157,11 @@ function createActivity(appId, parent) {
        */
       start: function(url) {
         return parent.adapter.multiMediaMethod('start', [appId, url])
-          .then((args) => {
+          .then((result) => {
             logger.log('create media player', args);
+            parent.multiMediaCallback['mediacb:' + result[0]] = function (args) {
+              media.emit.apply(media, args);
+            };
           })
           .catch((err) => {
             logger.error(err);

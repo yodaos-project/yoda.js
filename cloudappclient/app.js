@@ -62,7 +62,7 @@ app.media.on('playbackcomplete', function () {
 exe.do('frontend', 'tts', function (dt, next) {
   if (dt.action === 'say') {
     app.media.pause();
-    app.tts.say(dt.data.item.tts, function (name) {
+    app.tts.speak(dt.data.item.tts, function (name) {
       if (name === 'start') {
         if (dt.data.disableEvent === false) {
           eventRequest.ttsEvent('Voice.STARTED', dt.data.appId, dt.data.item.itemId);
@@ -92,7 +92,7 @@ exe.do('frontend', 'tts', function (dt, next) {
       }
     });
   } else if (dt.action === 'cancel') {
-    app.tts.cancel(function (error) {
+    app.tts.stop(function (error) {
       next();
       if (dt.data.disableEvent === false) {
         eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
@@ -106,7 +106,7 @@ exe.do('frontend', 'media', function (dt, next) {
   if (dt.action === 'play') {
     prevMediaItemData = dt.data || {};
     mediaNextFn = next;
-    app.media.play(dt.data.item.url);
+    app.media.start(dt.data.item.url);
   } else if (dt.action === 'pause') {
     app.media.pause(function (error) {
       next();
@@ -128,7 +128,7 @@ exe.do('frontend', 'media', function (dt, next) {
       }
     });
   } else if (dt.action === 'cancel') {
-    app.media.cancel(function (error) {
+    app.media.stop(function (error) {
       next();
       if (dt.data.disableEvent === false) {
         eventRequest.mediaEvent('Media.FINISHED', dt.data.appId, {
@@ -142,6 +142,14 @@ exe.do('frontend', 'media', function (dt, next) {
 
 app.on('ready', function () {
   console.log(this.getAppId() + ' app ready');
+  app.get('all')
+    .then((result) => {
+      console.log('get prop success', result[0]);
+      eventRequest.setConfig(JSON.parse(result[0] || {}));
+    })
+    .catch((error) => {
+      console.log('get prop error', error);
+    });
 });
 
 app.on('error', function (err) {

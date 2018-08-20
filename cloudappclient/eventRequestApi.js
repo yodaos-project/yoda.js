@@ -5,8 +5,8 @@ var crypto = require('crypto');
 var qs = require('querystring');
 var logger = require('logger')('eventReq');
 
-var config = require('/data/system/openvoice_profile.json');
-var DEFAULT_HOST = config.event_req_host;
+var CONFIG = null;
+var DEFAULT_HOST = 'apigwrest.open.rokid.com';
 var DEFAULT_URI = '/v1/skill/dispatch/sendEvent';
 
 function gensigh(data) {
@@ -17,14 +17,17 @@ function gensigh(data) {
 }
 
 function getAuth() {
+  if (CONFIG === null) {
+    return '';
+  }
   var data = {
-    key: config.key,
-    device_type_id: config.device_type_id,
-    device_id: config.device_id,
+    key: CONFIG.key,
+    device_type_id: CONFIG.deviceTypeId,
+    device_id: CONFIG.deviceId,
     service: 'rest',
-    version: config.api_version,
+    version: '1',
     time: Math.floor(Date.now() / 1000),
-    secret: config.secret
+    secret: CONFIG.secret
   };
   return [
     `version=${data.version}`,
@@ -36,6 +39,10 @@ function getAuth() {
     `service=${data.service}`,
   ].join(';');
 }
+
+function setConfig (config) {
+  CONFIG = config;
+};
 
 function request(event, appId, options, onaction) {
   var data = {
@@ -95,3 +102,4 @@ function mediaEvent (name, appId, extra, cb) {
 exports.request = request;
 exports.ttsEvent = ttsEvent;
 exports.mediaEvent = mediaEvent;
+exports.setConfig = setConfig;
