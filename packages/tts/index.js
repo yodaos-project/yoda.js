@@ -146,6 +146,7 @@ TtsProxy.prototype.stopAll = function() {
 TtsProxy.prototype.disconnect = function() {
   this._handle.disconnect();
   this._requests.length = 0;
+  this.removeAllListeners();
 };
 
 function createHandle(options) {
