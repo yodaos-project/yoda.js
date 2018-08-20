@@ -851,7 +851,7 @@ App.prototype.startExtappService = function() {
     cb(null, JSON.stringify({
       deviceId: config.device_id,
       appSecret: config.secret,
-      masterId: property.get('persist.system.user.userId'),
+      masterId: config.masterId,
       deviceTypeId: config.device_type_id,
       key: config.key,
       secret: config.secret,
