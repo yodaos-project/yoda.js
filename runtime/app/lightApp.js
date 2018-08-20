@@ -44,7 +44,9 @@ function Client(appId, runtime) {
   adapter.listenMultimediadEvent((name, args) => {
     if (name === 'multimediadevent') {
       logger.log('media-event', args);
-      this.app.media.emit.apply(this.app.media, args.slice(1));
+      if (typeof this.multiMediaCallback['mediacb:' + args[0]] === 'function') {
+        this.multiMediaCallback['mediacb:' + args[0]](args.slice(1));
+      }
     }
   }).catch((err) => {
     logger.log('mediad listen error', err);
