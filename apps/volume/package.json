@@ -2,13 +2,16 @@
   "name": "@yoda/volume",
   "version": "1.0.0",
   "description": "Bluetooth Apps for Rokid",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "metadata": {
     "skills": [
       "7D0F5E5D57CD496B940654D7C8963AE0"
+    ],
+    "permission": [
+      "ACCESS_TTS"
     ]
   },
   "keywords": [
