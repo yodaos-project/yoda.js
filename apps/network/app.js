@@ -14,10 +14,11 @@ module.exports = function (app) {
   var connectTimeout, pooling;
 
   app.on('onrequest', function (nlp, action) {
+    console.log(this.getAppId() + ' onrequest');
     if (this.started === true) {
+      this.playSound('system://wifi/setup_network.ogg');
       return;
     }
-    console.log(this.getAppId() + ' onrequest');
     this.started = true;
     this.light.play('setStandby');
 

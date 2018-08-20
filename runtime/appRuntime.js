@@ -186,10 +186,13 @@ App.prototype.load = function(root, cb) {
  * @private
  */
 App.prototype.onEvent = function(name, data) {
-  console.log(name);
   var min = 30;
   var volume = this.volume.getVolume();
   if (name === 'voice coming') {
+    if (this.online !== true) {
+      // Do noting when there is no network
+      return;
+    }
     if (volume > min) {
       this.prevVolume = volume;
       this.volume.setVolume(min);
@@ -199,6 +202,12 @@ App.prototype.onEvent = function(name, data) {
     }
     this.lightMethod('setAwake', ['']);
   } else if (name === 'voice local awake') {
+    if (this.online !== true) {
+      // start @network app
+      this.startApp('@network', {}, {});
+      // Do noting when there is no network
+      return;
+    }
     this.lightMethod('setDegree', ['', '' + (data.sl || 0)]);
   } else if (name === 'asr pending') {
 
@@ -212,7 +221,6 @@ App.prototype.onEvent = function(name, data) {
     this.lightMethod('setHide', ['']);
     this.onVoiceCommand(data.asr, data.nlp, data.action);
   } else if (name === 'connected') {
-    clearTimeout(this.handle.networkApp);
     if (this.online === false || this.online === undefined) {
       // need to play startup music
       logger.log('first startup');
@@ -221,8 +229,6 @@ App.prototype.onEvent = function(name, data) {
     }
     this.online = true;
   } else if (name === 'disconnected') {
-    logger.log('network disconnected, please connect to wifi first');
-    clearTimeout(this.handle.networkApp);
     var self = this;
     // trigger disconnected event when network state is switched or when it is first activated.
     if (this.online === true || this.online === undefined) {
@@ -670,6 +676,7 @@ App.prototype.onReconnected = function() {
  * @private
  */
 App.prototype.onDisconnected = function() {
+  logger.log('network disconnected, please connect to wifi first');
   this.startApp('@network', {}, {});
 };
 

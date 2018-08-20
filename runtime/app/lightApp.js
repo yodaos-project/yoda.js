@@ -30,10 +30,8 @@ function Client(appId, runtime) {
       if (typeof this.ttsCallback['ttscb:' + args[0]] === 'function') {
         this.ttsCallback['ttscb:' + args[0]](args[1], args.slice(2));
         // 下面事件完成后不会再触发其它事件，也不应该触发，删除对应cb，防止内存泄漏
-        if (args[1] === 'end' || args[1] === 'cancel' || args[1] === 'error') {
-          logger.log('unregister', args[0]);
-          delete this.ttsCallback['ttscb:' + args[0]];
-        }
+        logger.log('unregister', args[0]);
+        delete this.ttsCallback['ttscb:' + args[0]];
       }
     }
   }).catch((err) => {

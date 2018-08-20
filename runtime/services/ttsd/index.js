@@ -44,13 +44,6 @@ function reConnect(CONFIG) {
 
     tts.on('start', function (id, errno) {
       logger.log('ttsd start', id);
-      dbusService._dbus.emitSignal(
-        '/tts/service',
-        'tts.service',
-        'ttsdevent',
-        'ss',
-        ['' + id, 'start']
-      );
     });
     tts.on('end', function (id, errno) {
       logger.log('ttsd end', id);

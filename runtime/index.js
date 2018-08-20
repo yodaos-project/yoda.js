@@ -55,6 +55,8 @@ speech.on('nlp', function (response, event) {
   app_runtime.onEvent('nlp', response);
 });
 
+speech.start();
+
 app_runtime.on('reconnected', function () {
   logger.log('yoda reconnected')
   // 登录、绑定、注册mqtt
