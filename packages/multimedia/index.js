@@ -33,6 +33,7 @@ function MediaPlayer(stream) {
   EventEmitter.call(this);
   this._stream = stream || audio.STREAM_PLAYBACK;
   this._handle = null;
+  this._seekcompleteCb = null;
   this._initialize();
 }
 inherits(MediaPlayer, EventEmitter);
@@ -79,6 +80,10 @@ MediaPlayer.prototype.onbufferingupdate = function() {
 };
 
 MediaPlayer.prototype.onseekcomplete = function() {
+  if (typeof this._seekcompleteCb === 'function') {
+    this._seekcompleteCb();
+    this._seekcompleteCb = null;
+  }
   /**
    * Fired when media seek is complete.
    * @event multimedia.MediaPlayer#seekcomplete
@@ -122,8 +127,12 @@ MediaPlayer.prototype.resume = function() {
 /**
  * seek to `pos`.
  * @param {Number} pos - the position in ms.
+ * @param {Function} callback - get called when seek complete
  */
-MediaPlayer.prototype.seek = function(pos) {
+MediaPlayer.prototype.seek = function(pos, callback) {
+  if (typeof callback === 'function') {
+    this._seekcompleteCb = callback;
+  }
   return this._handle.seek(pos);
 };
 
