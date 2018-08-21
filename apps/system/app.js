@@ -1,19 +1,19 @@
-'use strict';
+'use strict'
 
-var wifi = require('wifi');
+var wifi = require('wifi')
 
-module.exports = function(activity) {
+module.exports = function (activity) {
   activity.on('onrequest', function (nlp, action) {
     if (nlp.intent === 'disconnect_network') {
-      wifi.disableAll();
-      activity.exit();
+      wifi.disableAll()
+      activity.exit()
     } else if (nlp.intent === 'sleep' ||
-      nlp.intent === 'dormancy' || 
+      nlp.intent === 'dormancy' ||
       nlp.intent === 'usersleep' ||
       nlp.intent === 'ROKID.SYSTEM.EXIT') {
-      activity.destroyAll();
+      activity.destroyAll()
     } else {
-      activity.tts.speak('什么设置', () => activity.exit());
+      activity.tts.speak('什么设置', () => activity.exit())
     }
-  });
-};
+  })
+}

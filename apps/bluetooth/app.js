@@ -1,56 +1,54 @@
-'use strict';
+'use strict'
 
-var bluetooth = require('bluetooth');
-var property = require('property');
+var bluetooth = require('bluetooth')
 
-module.exports = function(activity) {
+module.exports = function (activity) {
+  var agent = null
+  var player = null
+  var name = 'Rokid-Me-072'
+  var STRING_BROADCAST = '蓝牙已打开，请使用手机搜索设备'
+  var STRING_CLOSED = '蓝牙已关闭'
 
-  var agent = null;
-  var player = null;
-  var name = 'Rokid-Me-072';
-  var STRING_BROADCAST = '蓝牙已打开，请使用手机搜索设备';
-  var STRING_CLOSED = '蓝牙已关闭';
-
-  function broadcast() {
-    speakAndExit(STRING_BROADCAST + name);
+  function broadcast () {
+    speakAndExit(STRING_BROADCAST + name)
     if (agent === null) {
-      agent = bluetooth.getBluetooth(name);
+      agent = bluetooth.getBluetooth(name)
     }
     if (player === null) {
-      player = agent.createPlayer();
+      player = agent.createPlayer()
       player.on('open', () => {
         // auto play when open
-        player.play();
-      });
+        player.play()
+      })
     }
   }
 
-  function disconnect() {
-    speakAndExit(STRING_CLOSED);
+  function disconnect () {
+    speakAndExit(STRING_CLOSED)
     if (agent) {
       // TODO
-      agent = null;
-      player = null;
+      agent = null
+      player = null
     }
   }
 
-  function speakAndExit(text) {
+  function speakAndExit (text) {
     return activity.tts.speak(text, () => {
-      activity.exit();
-    });
+      activity.exit()
+    })
   }
 
-  activity.on('onrequest', function(nlp, action) {
+  activity.on('onrequest', function (nlp, action) {
     switch (nlp.intent) {
-    case 'bluetooth_broadcast':
-      broadcast();
-      break;
-    case 'bluetooth_disconnect':
-      disconnect();
-      break;
-    default:
-      activity.exit();
-      break;
+      case 'bluetooth_broadcast':
+        broadcast()
+        break
+      case 'bluetooth_disconnect':
+        disconnect()
+        break
+      default:
+        activity.exit()
+        break
     }
-  });
-};
+  })
+}
