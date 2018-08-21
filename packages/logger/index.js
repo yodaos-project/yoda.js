@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 
 /**
  * @namespace logger
@@ -15,29 +15,31 @@
  * The above command would starts a tcp server on the port 8000 for logs.
  */
 
-var util = require('util');
-var net = require('net');
+var util = require('util')
+var net = require('net')
 
 /**
  * @memberof logger
  * @constructor
  * @param {Number} port - the logger port
  */
-function LoggingServer(port) {
+function LoggingServer (port) {
   // only support single socket
-  this._port = port;
-  this._socket = null;
+  this._port = port
+  this._socket = null
   if (typeof port === 'number') {
     this._server = net.createServer({
-      allowHalfOpen: true,
+      allowHalfOpen: true
     }, (socket) => {
       if (this._socket) {
-        socket.end('connection refused');
+        socket.end('connection refused')
       } else {
-        this._socket = socket;
-        socket.on('end', () => this._socket = null);
+        this._socket = socket
+        socket.on('end', () => {
+          this._socket = null
+        })
       }
-    });
+    })
   }
 }
 
@@ -45,105 +47,105 @@ function LoggingServer(port) {
  * send the message.
  * @param {String} msg - the message string
  */
-LoggingServer.prototype.send = function(msg) {
-  this._socket.send(msg);
-};
+LoggingServer.prototype.send = function (msg) {
+  this._socket.send(msg)
+}
 
 /**
  * start the logger server.
  */
-LoggingServer.prototype.start = function() {
+LoggingServer.prototype.start = function () {
   if (this._server) {
-    this._server.listen(this._port);
+    this._server.listen(this._port)
   }
-  return this;
-};
+  return this
+}
 
 /**
  * check if the logging socket is available.
  */
-LoggingServer.prototype.isAvailable = function() {
-  return this._socket instanceof net.Socket;
-};
+LoggingServer.prototype.isAvailable = function () {
+  return this._socket instanceof net.Socket
+}
 
 /**
  * close the logging server, only use for testing
  */
-LoggingServer.prototype.destroy = function() {
+LoggingServer.prototype.destroy = function () {
   if (this._server) {
-    this._server.close();
+    this._server.close()
   }
-  return this;
-};
-
-// logger socket
-function createLoggingServer(port) {
-  var server = new LoggingServer(port);
-  return server.start();
+  return this
 }
 
-var loggingServer = createLoggingServer(process.env.LOG_PORT);
+// logger socket
+function createLoggingServer (port) {
+  var server = new LoggingServer(port)
+  return server.start()
+}
+
+var loggingServer = createLoggingServer(process.env.LOG_PORT)
 
 /**
  * @memberof logger
  * @constructor
  * @param {String} name - the logger name
  */
-function Logger(name) {
+function Logger (name) {
   if (!name) {
-    name = 'syst';
+    name = 'syst'
   }
   if (name.length > 4) {
-    name = name.slice(0, 4); 
+    name = name.slice(0, 4)
   }
 
   // map for 1/2/3
   switch (name.length) {
-    case 1: name = ` :${name} `; break;
-    case 2: name = ` ${name} `; break;
-    case 3: name = `:${name}`; break;
+    case 1: name = ` :${name} `; break
+    case 2: name = ` ${name} `; break
+    case 3: name = `:${name}`; break
   }
-  this.name = name;
+  this.name = name
 }
 
-function createLoggerFunction(level) {
-  return function() {
-    var now = new Date();
-    var line = `[${now}] <${this.name}> :: ` + util.format.apply(this, arguments);
+function createLoggerFunction (level) {
+  return function () {
+    var now = new Date()
+    var line = `[${now}] <${this.name}> :: ` + util.format.apply(this, arguments)
     if (loggingServer.isAvailable()) {
-      loggingServer.send(line);
+      loggingServer.send(line)
     } else {
-      console[level](line);
+      console[level](line)
     }
-  };
+  }
 }
 
 /**
  * log level: log
  */
-Logger.prototype.log = createLoggerFunction('info');
+Logger.prototype.log = createLoggerFunction('info')
 
 /**
  * log level: info
  */
-Logger.prototype.info = createLoggerFunction('info');
+Logger.prototype.info = createLoggerFunction('info')
 
 /**
  * log level: warn
  */
-Logger.prototype.warn = createLoggerFunction('warn');
+Logger.prototype.warn = createLoggerFunction('warn')
 
 /**
  * log level: error
  */
-Logger.prototype.error = createLoggerFunction('error');
+Logger.prototype.error = createLoggerFunction('error')
 
 /**
  * close the logging server
  */
-Logger.prototype.closeServer = function closeServer() {
-  loggingServer.destroy();
-};
+Logger.prototype.closeServer = function closeServer () {
+  loggingServer.destroy()
+}
 
 /**
  * @example
@@ -155,8 +157,8 @@ Logger.prototype.closeServer = function closeServer() {
  * @function logger
  * @param {String} name - the log tag
  */
-module.exports = function(name) {
-  var logger = new Logger(name);
+module.exports = function (name) {
+  var logger = new Logger(name)
   // aliyun log?
-  return logger;
-};
+  return logger
+}

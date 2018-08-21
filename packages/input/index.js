@@ -1,20 +1,20 @@
-'use strict';
+'use strict'
 
 /**
  * @namespace input
  * @description Input events handler. On YodaOS, every input events
- * are treated as an event and handled by InputEvent. Currently, 
+ * are treated as an event and handled by InputEvent. Currently,
  * we support `keyup`, `keydown` and `longpress` events.
  */
 
-var InputWrap = require('./input.node').InputWrap;
-var EventEmitter = require('events').EventEmitter;
-var inherits = require('util').inherits;
+var InputWrap = require('./input.node').InputWrap
+var EventEmitter = require('events').EventEmitter
+var inherits = require('util').inherits
 
-var handler = null;
+var handler = null
 var events = [
   'keyup', 'keydown', 'longpress'
-];
+]
 
 /**
  * Common base class for input events.
@@ -26,18 +26,18 @@ var events = [
  * @param {Number} options.dbclickTimeout
  * @param {Number} options.slideTimeout
  */
-function InputEvent(options) {
-  EventEmitter.call(this);
+function InputEvent (options) {
+  EventEmitter.call(this)
 
   this._options = options || {
     selectTimeout: 300,
     dbclickTimeout: 300,
-    slideTimeout: 300,
-  };
-  this._handle = new InputWrap();
-  this._handle.onevent = this.onevent.bind(this);
+    slideTimeout: 300
+  }
+  this._handle = new InputWrap()
+  this._handle.onevent = this.onevent.bind(this)
 }
-inherits(InputEvent, EventEmitter);
+inherits(InputEvent, EventEmitter)
 
 /**
  * event trigger
@@ -47,11 +47,11 @@ inherits(InputEvent, EventEmitter);
  * @param {Number} time - the event time
  * @private
  */
-InputEvent.prototype.onevent = function(state, action, code, time) {
-  var name = events[state];
+InputEvent.prototype.onevent = function (state, action, code, time) {
+  var name = events[state]
   if (!name) {
-    this.emit('error', new Error(`unknown event name ${state}`));
-    return;
+    this.emit('error', new Error(`unknown event name ${state}`))
+    return
   }
   /**
    * keyup event
@@ -69,25 +69,25 @@ InputEvent.prototype.onevent = function(state, action, code, time) {
    */
   this.emit(name, {
     keyCode: code,
-    keyTime: time,
-  });
-};
+    keyTime: time
+  })
+}
 
 /**
  * start handling event
  * @fires input.InputEvent#keyup
  * @fires input.InputEvent#keydown
  */
-InputEvent.prototype.start = function() {
-  return this._handle.start(this._options);
-};
+InputEvent.prototype.start = function () {
+  return this._handle.start(this._options)
+}
 
 /**
  * disconnect from event handler
  */
-InputEvent.prototype.disconnect = function() {
-  return this._handle.disconnect();
-};
+InputEvent.prototype.disconnect = function () {
+  return this._handle.disconnect()
+}
 
 /**
  * get the event handler
@@ -105,17 +105,15 @@ InputEvent.prototype.disconnect = function() {
  * });
  * @returns {input.InputEvent}
  */
-function getHandler(options) {
+function getHandler (options) {
   if (handler) {
-    if (options)
-      console.error('skip options setting because already init done');
-    return handler;
+    if (options) { console.error('skip options setting because already init done') }
+    return handler
   }
 
-  handler = new InputEvent(options);
-  handler.start();
-  return handler;
+  handler = new InputEvent(options)
+  handler.start()
+  return handler
 }
 
-module.exports = getHandler;
-
+module.exports = getHandler

@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 
 /**
  * @namespace light
@@ -19,7 +19,7 @@
  * - `write()`: write the current buffer.
  */
 
-var native = require('./light.node');
+var native = require('./light.node')
 
 /**
  * Describe the hardware features for the current light.
@@ -30,15 +30,15 @@ var native = require('./light.node');
  * @property {Number} micAngle - the mic angle at zero.
  */
 
-var config = native.getProfile();
-var length = config.leds * (config.format || 3);
-var buffer = new Buffer(length);
+var config = native.getProfile()
+var length = config.leds * (config.format || 3)
+var buffer = Buffer.from(length)
 var enabled = false;
 
-(function bootstrap() {
-  native.enable();
-  enabled = true;
-})();
+(function bootstrap () {
+  native.enable()
+  enabled = true
+})()
 
 module.exports = {
 
@@ -48,9 +48,9 @@ module.exports = {
    * @function enable
    * @private
    */
-  enable: function() {
+  enable: function () {
     if (!enabled) {
-      native.enable();
+      native.enable()
     }
   },
 
@@ -60,9 +60,9 @@ module.exports = {
    * @function disable
    * @private
    */
-  disable: function() {
+  disable: function () {
     if (enabled) {
-      native.disable();
+      native.disable()
     }
   },
 
@@ -72,11 +72,11 @@ module.exports = {
    * @function write
    * @param {Buffer} [explict] - if present, use the given buffer to write.
    */
-  write: function writeBuffer(explict) {
-    native.write(explict || buffer);
-    return this;
+  write: function writeBuffer (explict) {
+    native.write(explict || buffer)
+    return this
   },
-  
+
   /**
    * Get the hardware profile data
    * @memberof light
@@ -96,15 +96,15 @@ module.exports = {
    * @example
    * light.fill(255, 255, 233, 0.3); // this will render rgba(255,255,233,0.3)
    */
-  fill: function fillColor(red, green, blue, alpha) {
+  fill: function fillColor (red, green, blue, alpha) {
     if (red === green && green === blue) {
-      buffer.fill(red, length);
+      buffer.fill(red, length)
     } else {
       for (var i = 0; i < config.leds; i++) {
-        this._pixel(i, red, green, blue, alpha);
+        this._pixel(i, red, green, blue, alpha)
       }
     }
-    return this;
+    return this
   },
 
   /**
@@ -120,32 +120,32 @@ module.exports = {
    * @example
    * light.pixel(3, 255, 255, 255) // this will light black on 3rd led.
    */
-  pixel: function pixelColor(index, red, green, blue, alpha, shading) {
-    this._pixel(index, red, green, blue, alpha);
+  pixel: function pixelColor (index, red, green, blue, alpha, shading) {
+    this._pixel(index, red, green, blue, alpha)
     if (shading) {
-      index = (index === 0) ? (config.leds - 1) : index - 1;
-      this._pixel(index, red, green, blue, 0.3);
-      index = (index === 0) ? (config.leds - 1) : index - 1;
-      this._pixel(index, red, green, blue, 0.1);
+      index = (index === 0) ? (config.leds - 1) : index - 1
+      this._pixel(index, red, green, blue, 0.3)
+      index = (index === 0) ? (config.leds - 1) : index - 1
+      this._pixel(index, red, green, blue, 0.1)
     }
-    return this;
+    return this
   },
-  
+
   /**
    * Render a pixel with the a color
    * @memberof light
    * @function _pixel
    * @private
    */
-  _pixel: function(index, red, green, blue, alpha) {
+  _pixel: function (index, red, green, blue, alpha) {
     if (typeof alpha === 'number' && alpha >= 0 && alpha < 1) {
-      red = Math.floor(alpha * red);
-      green = Math.floor(alpha * green);
-      blue = Math.floor(alpha * blue);
+      red = Math.floor(alpha * red)
+      green = Math.floor(alpha * green)
+      blue = Math.floor(alpha * blue)
     }
-    buffer.writeUInt8(red,    0 + index * 3);
-    buffer.writeUInt8(green,  1 + index * 3);
-    buffer.writeUInt8(blue,   2 + index * 3);
+    buffer.writeUInt8(red, 0 + index * 3)
+    buffer.writeUInt8(green, 1 + index * 3)
+    buffer.writeUInt8(blue, 2 + index * 3)
   },
 
   /**
@@ -153,9 +153,9 @@ module.exports = {
    * @memberof light
    * @function clear
    */
-  clear: function clearColor() {
-    this.fill(0, 0, 0);
-    return this;
-  },
+  clear: function clearColor () {
+    this.fill(0, 0, 0)
+    return this
+  }
 
-};
+}

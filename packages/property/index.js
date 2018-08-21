@@ -1,11 +1,11 @@
-'use strict';
+'use strict'
 
 /**
  * @namespace property
  * @description
  * A property is an abstraction that can be used to represent a mutable
  * value that is held in a host object.
- * 
+ *
  * ```js
  * var prop = require('property');
  * prop.get('ro.boot.serialno');
@@ -20,7 +20,7 @@
  * - normal key: otherwise are read and write, but in-memory.
  */
 
-var native = require('./property.node');
+var native = require('./property.node')
 
 module.exports = {
   /**
@@ -36,5 +36,5 @@ module.exports = {
    * @param {String} key - the property key.
    * @param {String} val - the property val to set.
    */
-  set: native.set,
-};
+  set: native.set
+}
