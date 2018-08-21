@@ -22,10 +22,10 @@ After `npm init`, you would get the following fields:
   - `extapp` {Boolean} if this application is extapp.
   - `daemon` {Boolean} if this application is running in daemon.
   - `dbusConn` {Object} dbus connection config.
+  - `permission` {Array} the permissions in this application.
 - `engine` {Object} specify the engine dependencies.
   - `shadow` {String} the version range of ShadowNode.
   - `yodaos` {String} the api level of YodaOS.
-- `permissions` {Array} the permissions in this application.
 
 ### How to write app.js
 
@@ -44,6 +44,11 @@ manifest: {
   },
   "skills": [
     "your appId"
+  ],
+  "permission": [
+    "ACCESS_TTS",
+    "ACCESS_SOUND",
+    "ACCESS_LIGHT"
   ]
 }
 ```
@@ -105,4 +110,18 @@ The following are convenient methods:
 
 For the complete API reference, see [yodaRT.activity.Activity](yodaRT.activity.Activity.html).
 
+### Permissions
 
+The following is the permission table:
+
+| Permission              | Description                   | Is default |
+|-------------------------|-------------------------------|------------|
+| `ACCESS_NETWORK_STATE`  | ability to use network.       | No         |
+| `ACCESS_SERVICE`        | ability to use service.       | No         |
+| `ACCESS_TTS`            | ability to use tts.           | Yes        |
+| `ACCESS_MULTIMEDIA`     | ability to play remote music. | Yes        |
+| `ACCESS_SOUND`          | ability to play local music.  | Yes        |
+| `ACCESS_LIGHT`          | ability to use light.         | Yes        |
+| `BLUETOOTH`             | ability to use bluetooth.     | Yes        |
+| `GET_SYSTEM_VOLUME`     | ability to get volume.        | Yes        |
+| `SET_SYSTEM_VOLUME`     | ability to set system volume. | Yes        |
