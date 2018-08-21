@@ -6,9 +6,18 @@ module.exports = function(activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次';
   var STRING_RANGE_ERROR = '音量调节范围为0-10';
   var STRING_SHOW_VOLUME = '当前音量为';
+  var STRING_SHOW_MUTED = '设备已静音';
 
   function speakAndExit(text) {
-    return activity.tts.speak(text, () => activity.exit());
+    var ismuted = AudioManager.isMuted();
+    if (ismuted) {
+      AudioManager.setMute(false);
+    }
+    return activity.tts.speak(text, () => {
+      if (ismuted)
+        AudioManager.setMute(true);
+      activity.exit();
+    });
   }
 
   function format(slots) {
@@ -46,10 +55,22 @@ module.exports = function(activity) {
     return setVolume({ number: vol });
   }
 
+  function setMute() {
+    AudioManager.setMute(true);
+  }
+
+  function setUnmute() {
+    AudioManager.setMute(false);
+  }
+
   activity.on('onrequest', function(nlp, action) {
     switch (nlp.intent) {
     case 'showvolume':
-      speakAndExit(STRING_SHOW_VOLUME + getVolume());
+      if (AudioManager.isMuted()) {
+        speakAndExit(STRING_SHOW_MUTED);
+      } else {
+        speakAndExit(STRING_SHOW_VOLUME + getVolume());
+      }
       break;
     case 'set_volume_percent':
       speakAndExit(STRING_RANGE_ERROR);
@@ -78,7 +99,11 @@ module.exports = function(activity) {
       setVolume({ number: 10 });
       break;
     case 'volumemute':
+      setMute();
+      break;
     case 'cancelmute':
+      setUnmute();
+      break;
     default:
       activity.exit();
       break;
