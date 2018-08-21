@@ -15,6 +15,7 @@ JS_FUNCTION(VerifyOtaImage) {
 JS_FUNCTION(PrepareOtaImage) {
   struct boot_cmd cmd;
   memset(&cmd, 0, sizeof(cmd));
+  get_recovery_cmd_status(&cmd);
   strncpy(cmd.boot_mode, BOOTMODE_RECOVERY, strlen(BOOTMODE_RECOVERY));
   strncpy(cmd.recovery_path, UPGRADE_OTA_PATH, strlen(UPGRADE_OTA_PATH));
   strncpy(cmd.recovery_state, BOOTSTATE_READY, strlen(BOOTSTATE_READY));
