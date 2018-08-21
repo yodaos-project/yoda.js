@@ -1,18 +1,18 @@
-'use strict';
+'use strict'
 
 /**
  * @namespace wifi
  * @description Provides classes to manage Wi-Fi functionality on the device.
  */
 
-var native = require('./wifi.node');
+var native = require('./wifi.node')
 var keyMethods = {
   'WPA2PSK': 0,
   'WPAPSK': 1,
   'WEP': 2,
   'NONE': 3,
-  'OTHER': 4,
-};
+  'OTHER': 4
+}
 
 module.exports = {
   /**
@@ -53,9 +53,9 @@ module.exports = {
    * @param {String} psk - the wifi psk
    * @param {String} [method=WPA2PSK] - the key method
    */
-  joinNetwork: function joinNetwork(ssid, psk, method) {
-    var m = keyMethods[method] || keyMethods.WPA2PSK;
-    return native.joinNetwork(ssid, psk, m);
+  joinNetwork: function joinNetwork (ssid, psk, method) {
+    var m = keyMethods[method] || keyMethods.WPA2PSK
+    return native.joinNetwork(ssid, psk, m)
   },
   /**
    * Get current wifi state.
@@ -86,6 +86,5 @@ module.exports = {
    * @memberof wifi
    * @function save
    */
-  save: native.save,
-};
-
+  save: native.save
+}

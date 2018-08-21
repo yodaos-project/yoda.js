@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 
 /**
  * @namespace audio
@@ -12,30 +12,30 @@
  * ```
  */
 
-var native = require('./audio.node');
+var native = require('./audio.node')
 
 /**
  * @memberof audio
  * @constructor
  */
-function AudioManager() {
-  throw new TypeError('should not call this function');
+function AudioManager () {
+  throw new TypeError('should not call this function')
 }
-exports.AudioManager = AudioManager;
+exports.AudioManager = AudioManager
 
 /**
  * @memberof audio.AudioManager
  * @var STREAM_AUDIO {Number} - Used to identify the volume of audio streams for audio.
  * @static
  */
-AudioManager.STREAM_AUDIO = native.STREAM_AUDIO;
+AudioManager.STREAM_AUDIO = native.STREAM_AUDIO
 
 /**
  * @memberof audio.AudioManager
  * @var STREAM_TTS {Number} - Used to identify the volume of audio streams for tts.
  * @static
  */
-AudioManager.STREAM_TTS = native.STREAM_TTS;
+AudioManager.STREAM_TTS = native.STREAM_TTS
 
 /**
  * @memberof audio.AudioManager
@@ -43,34 +43,34 @@ AudioManager.STREAM_TTS = native.STREAM_TTS;
  *                                 multimedia.
  * @static
  */
-AudioManager.STREAM_PLAYBACK = native.STREAM_PLAYBACK;
+AudioManager.STREAM_PLAYBACK = native.STREAM_PLAYBACK
 
 /**
  * @memberof audio.AudioManager
  * @var STREAM_ALARM {Number} - Used to identify the volume of audio streams for alarm.
  * @static
  */
-AudioManager.STREAM_ALARM = native.STREAM_ALARM;
+AudioManager.STREAM_ALARM = native.STREAM_ALARM
 
 /**
  * @memberof audio.AudioManager
  * @var STREAM_SYSTEM {Number} - Used to identify the volume of audio streams for system.
  * @static
  */
-AudioManager.STREAM_SYSTEM = native.STREAM_SYSTEM;
+AudioManager.STREAM_SYSTEM = native.STREAM_SYSTEM
 
 /**
  * @memberof audio.AudioManager
  * @var LINEAR_RAMP {Function} - The linear curve function for `setVolumeShaper`.
  * @static
  */
-AudioManager.LINEAR_RAMP = function(len) {
-  var shape = [];
+AudioManager.LINEAR_RAMP = function (len) {
+  var shape = []
   for (var i = 0; i <= len; i++) {
-    shape[i] = i;
+    shape[i] = i
   }
-  return shape;
-};
+  return shape
+}
 
 /**
  * Set the volume of the given stream.
@@ -81,21 +81,21 @@ AudioManager.LINEAR_RAMP = function(len) {
  * @static
  * @throws {TypeError} `vol` is required.
  */
-AudioManager.setVolume = function(stream, vol) {
+AudioManager.setVolume = function (stream, vol) {
   if (arguments.length === 1) {
-    vol = stream;
-    stream = null;
+    vol = stream
+    stream = null
   }
   if (!vol) {
-    throw new TypeError('vol is required');
+    throw new TypeError('vol is required')
   }
 
   if (stream !== null) {
-    native.setStreamVolume(stream, vol);
+    native.setStreamVolume(stream, vol)
   } else {
-    native.setMediaVolume(vol);
+    native.setMediaVolume(vol)
   }
-};
+}
 
 /**
  * Get the volume of the given stream.
@@ -104,13 +104,13 @@ AudioManager.setVolume = function(stream, vol) {
  * @param {Number} [stream=STREAM_AUDIO] - The stream type.
  * @static
  */
-AudioManager.getVolume = function(stream) {
+AudioManager.getVolume = function (stream) {
   if (stream) {
-    return native.getStreamVolume(stream);
+    return native.getStreamVolume(stream)
   } else {
-    return native.getMediaVolume();
+    return native.getMediaVolume()
   }
-};
+}
 
 /**
  * Get if the volume is muted.
@@ -119,9 +119,9 @@ AudioManager.getVolume = function(stream) {
  * @returns {Boolean} if muted.
  * @static
  */
-AudioManager.isMuted = function() {
-  return native.isMuted();
-};
+AudioManager.isMuted = function () {
+  return native.isMuted()
+}
 
 /**
  * Set the volume to be mute or not.
@@ -130,9 +130,9 @@ AudioManager.isMuted = function() {
  * @param {Boolean} val - If muted.
  * @static
  */
-AudioManager.setMute = function(val) {
-  return native.setMute(!!val);
-};
+AudioManager.setMute = function (val) {
+  return native.setMute(!!val)
+}
 
 /**
  * Set the shaper of the volume.
@@ -145,16 +145,15 @@ AudioManager.setMute = function(val) {
  * @example
  * AudioManager.setVolumeShaper(AudioManager.LINEAR_RAMP);
  */
-AudioManager.setVolumeShaper = function(shaper) {
-  var max = 100;
-  var shape = shaper(max);
-  if (!Array.isArray(shape) || shape.length !== max)
-    throw new Error('shaper function should return an array with 100 elements.');
+AudioManager.setVolumeShaper = function (shaper) {
+  var max = 100
+  var shape = shaper(max)
+  if (!Array.isArray(shape) || shape.length !== max) { throw new Error('shaper function should return an array with 100 elements.') }
 
   for (var i = 0; i <= max; i++) {
     if (!native.setCurveForVolume(i, shape[i])) {
-      throw new RangeError('out of range when set volume shape.');
+      throw new RangeError('out of range when set volume shape.')
     }
   }
-  return true;
-};
+  return true
+}
