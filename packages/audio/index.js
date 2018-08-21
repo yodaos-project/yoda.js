@@ -64,7 +64,7 @@ AudioManager.STREAM_SYSTEM = native.STREAM_SYSTEM;
  * @var LINEAR_RAMP {Function} - The linear curve function for `setVolumeShaper`.
  * @static
  */
-AudioManager.LINEAR_RAMP = function(len, ) {
+AudioManager.LINEAR_RAMP = function(len) {
   var shape = [];
   for (var i = 0; i <= len; i++) {
     shape[i] = i;
