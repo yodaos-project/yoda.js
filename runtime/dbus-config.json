@@ -1,0 +1,19 @@
+{
+  "service": "com.rokid.AmsExport",
+  "extapp": {
+    "objectPath": "/activation/extapp",
+    "interface": "com.rokid.activation.extapp"
+  },
+  "prop": {
+    "objectPath": "/activation/prop",
+    "interface": "com.rokid.activation.prop"
+  },
+  "permission": {
+    "objectPath": "/com/permission",
+    "interface": "com.rokid.permission"
+  },
+  "amsexport": {
+    "objectPath": "/rokid/openvoice",
+    "interface": "rokid.openvoice.AmsExport"
+  }
+}

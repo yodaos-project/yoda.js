@@ -9,6 +9,7 @@ var dbus = require('dbus');
 var EventEmitter = require('events').EventEmitter;
 var inherits = require('util').inherits;
 var perf = require('./lib/performance');
+var dbusConfig = require('./dbus-config.json');
 
 var Permission = require('./component/permission');
 var TTS = require('./component/tts');
@@ -702,13 +703,19 @@ App.prototype.onReLogin = function() {
  */
 App.prototype.startExtappService = function() {
   var self = this;
-  var service = dbus.registerService('session', 'com.rokid.AmsExport');
-  var extappObject = service.createObject('/activation/extapp');
-  var extappApis = extappObject.createInterface('com.rokid.activation.extapp');
-  // used for extapp type
+  var service = dbus.registerService('session', dbusConfig.service);
   this.service = service;
 
-  extappApis.addMethod('register', {
+  function createInterface(name) {
+    var object = service.createObject(dbusConfig[name].objectPath);
+    return object.createInterface(dbusConfig[name].interface);
+  }
+
+  /**
+   * Create extapp service
+   */
+  var extapp = createInterface('extapp');
+  extapp.addMethod('register', {
     in: ['s', 's', 's'],
     out: []
   }, function (appId, objectPath, ifaceName, cb) {
@@ -724,20 +731,20 @@ App.prototype.startExtappService = function() {
     });
     cb(null);
   });
-  extappApis.addMethod('destroy', {
+  extapp.addMethod('destroy', {
     in: ['s'],
     out: []
   }, function (appId, cb) {
     self.deleteExtApp(appId);
     cb(null);
   });
-  extappApis.addMethod('start', {
+  extapp.addMethod('start', {
     in: ['s'],
     out: []
   }, function (appId, cb) {
     cb(null);
   });
-  extappApis.addMethod('setPickup', {
+  extapp.addMethod('setPickup', {
     in: ['s', 's'],
     out: []
   }, function (appId, isPickup, cb) {
@@ -749,7 +756,7 @@ App.prototype.startExtappService = function() {
       cb(null);
     }
   });
-  extappApis.addMethod('exit', {
+  extapp.addMethod('exit', {
     in: ['s'],
     out: []
   }, function (appId, cb) {
@@ -761,7 +768,7 @@ App.prototype.startExtappService = function() {
       cb(null);
     }
   });
-  extappApis.addMethod('mockNLPResponse', {
+  extapp.addMethod('mockNLPResponse', {
     in: ['s', 's', 's'],
     out: []
   }, function (appId, nlp, action, cb) {
@@ -775,12 +782,31 @@ App.prototype.startExtappService = function() {
     }
     self.mockNLPResponse(nlp, action);
   });
-  extappApis.update();
 
-  var permitObject = service.createObject('/com/permission');
-  var permitApis = permitObject.createInterface('com.rokid.permission');
+  /**
+   * Create prop service
+   */
+  var prop = createInterface('prop');
+  prop.addMethod('all', {
+    in: ['s'],
+    out: ['s'],
+  }, function (appId, cb) {
+    var config = self.onGetPropAll();
+    cb(null, JSON.stringify({
+      deviceId: config.deviceId,
+      appSecret: config.secret,
+      masterId: config.masterId,
+      deviceTypeId: config.deviceTypeId,
+      key: config.key,
+      secret: config.secret,
+    }));
+  });
 
-  permitApis.addMethod('check', {
+  /**
+   * Create permission service
+   */
+  var permission = createInterface('permission');
+  permission.addMethod('check', {
     in: ['s', 's'],
     out: ['s']
   }, function (appId, name, cb) {
@@ -792,12 +818,12 @@ App.prototype.startExtappService = function() {
       cb(new Error('permission deny'), 'false');
     }
   });
-  permitApis.update();
 
-  // amsExport
-  var openvoiceObject = service.createObject('/rokid/openvoice');
-  var openvoiceApis = openvoiceObject.createInterface('rokid.openvoice.AmsExport');
-  openvoiceApis.addMethod('ReportSysStatus', {
+  /**
+   * Create amsexport service
+   */
+  var amsexport = createInterface('amsexport');
+  amsexport.addMethod('ReportSysStatus', {
     in: ['s'],
     out: ['b'],
   }, function (status, cb) {
@@ -816,14 +842,14 @@ App.prototype.startExtappService = function() {
       cb(null, false);
     }
   });
-  openvoiceApis.addMethod('SetTesting', {
+  amsexport.addMethod('SetTesting', {
     in: ['s'],
     out: ['b'],
   }, function (testing, cb) {
     logger.log('set testing' + testing);
     cb(null, true);
   });
-  openvoiceApis.addMethod('SendIntentRequest', {
+  amsexport.addMethod('SendIntentRequest', {
     in: ['s', 's', 's'],
     out: ['b']
   }, function (asr, nlp, action, cb) {
@@ -835,37 +861,18 @@ App.prototype.startExtappService = function() {
     });
     cb(null, true);
   });
-  openvoiceApis.addMethod('Reload', {
+  amsexport.addMethod('Reload', {
     in: [],
     out: ['b']
   }, function (cb) {
     cb(null, true);
   });
-  openvoiceApis.addMethod('Ping', {
+  amsexport.addMethod('Ping', {
     in: [],
     out: ['b']
   }, function (cb) {
     logger.log('YodaOS is alive');
     cb(null, true);
   });
-  openvoiceApis.update();
 
-  // prop object
-  var propObject = service.createObject('/activation/prop');
-  var propApis = propObject.createInterface('com.rokid.activation.prop');
-  propApis.addMethod('all', {
-    in: ['s'],
-    out: ['s'],
-  }, function (appId, cb) {
-    var config = self.onGetPropAll();
-    cb(null, JSON.stringify({
-      deviceId: config.deviceId,
-      appSecret: config.secret,
-      masterId: config.masterId,
-      deviceTypeId: config.deviceTypeId,
-      key: config.key,
-      secret: config.secret,
-    }));
-  });
-  propApis.update();
 };
