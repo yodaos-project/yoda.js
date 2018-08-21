@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace light
+ * @module light
  * @description Use `light` module to control your LEDs.
  *
  * ```js
@@ -44,7 +44,6 @@ module.exports = {
 
   /**
    * Enable the light write
-   * @memberof light
    * @function enable
    * @private
    */
@@ -56,7 +55,6 @@ module.exports = {
 
   /**
    * Disable the light write
-   * @memberof light
    * @function disable
    * @private
    */
@@ -68,7 +66,6 @@ module.exports = {
 
   /**
    * Render the current buffer
-   * @memberof light
    * @function write
    * @param {Buffer} [explict] - if present, use the given buffer to write.
    */
@@ -79,7 +76,6 @@ module.exports = {
 
   /**
    * Get the hardware profile data
-   * @memberof light
    * @function getProfile
    * @returns {light.LightProfile}
    */
@@ -87,7 +83,6 @@ module.exports = {
 
   /**
    * Fill all lights with the same color.
-   * @memberof light
    * @function fill
    * @param {Number} red - the red number 0-255.
    * @param {Number} green - the green number 0-255.
@@ -109,7 +104,6 @@ module.exports = {
 
   /**
    * Render a pixel with the a color
-   * @memberof light
    * @function pixel
    * @param {Number} index - the index of the light LEDs.
    * @param {Number} red - the red number 0-255.
@@ -133,7 +127,6 @@ module.exports = {
 
   /**
    * Render a pixel with the a color
-   * @memberof light
    * @function _pixel
    * @private
    */
@@ -150,7 +143,6 @@ module.exports = {
 
   /**
    * Clear the light
-   * @memberof light
    * @function clear
    */
   clear: function clearColor () {

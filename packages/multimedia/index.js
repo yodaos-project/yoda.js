@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace multimedia
+ * @module multimedia
  * @description The multimedia includes support for playing variety of common
  * media types, so that you can easily integrate audio into your applications.
  *
@@ -21,7 +21,6 @@ var EventEmitter = require('events').EventEmitter
 
 /**
  * @constructor
- * @memberof multimedia
  * @param {Number} [stream=STREAM_PLAYBACK] - the stream type of the player.
  * @fires multimedia.MediaPlayer#prepared
  * @fires multimedia.MediaPlayer#playbackcomplete
