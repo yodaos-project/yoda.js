@@ -3,33 +3,23 @@ project(rokidos_nodejs CXX)
 include(ExternalProject)
 find_package(Git REQUIRED)
 
-# Bluetooth
-ExternalProject_Add(bluetooth
-  SOURCE_DIR packages/bluetooth
+macro(YodaLocalPackage NAME)
+ExternalProject_Add(${NAME}
+  SOURCE_DIR packages/${NAME}
   CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/bluetooth
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/${NAME}
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+endmacro()
 
-# Input
-ExternalProject_Add(input
-  SOURCE_DIR packages/input
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/input
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
-
-# shadow-ffi
-ExternalProject_Add(ffi
-  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/ffi
-  GIT_REPOSITORY https://github.com/shadow-node/ffi.git
-  GIT_TAG master
+macro(YodaGitPackage NAME REPO TAG)
+ExternalProject_Add(${NAME}
+  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/${NAME}
+  GIT_REPOSITORY ${REPO}
+  GIT_TAG ${TAG}
   TIMEOUT 10
   UPDATE_COMMAND ${GIT_EXECUTABLE} pull
   LOG_DOWNLOAD ON
@@ -38,140 +28,57 @@ ExternalProject_Add(ffi
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_EXTERNAL_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/ffi
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/${NAME}
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+endmacro()
+
+
+# Bluetooth
+YodaLocalPackage(bluetooth)
+
+# Input
+YodaLocalPackage(input)
+
+# shadow-ffi
+YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
 
 # tape: test framework
-ExternalProject_Add(tape
-  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/tape
-  GIT_REPOSITORY https://github.com/shadow-node/tape.git
-  GIT_TAG master
-  TIMEOUT 10
-  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
-  LOG_DOWNLOAD ON
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/tape
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT})
+YodaGitPackage(tape https://github.com/shadow-node/tape.git master)
 
 # turen
-ExternalProject_Add(turen
-  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/turen
-  GIT_REPOSITORY https://github.com/Rokid/node-turen.git
-  GIT_TAG master
-  TIMEOUT 10
-  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
-  LOG_DOWNLOAD ON
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/turen
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT})
+YodaGitPackage(turen https://github.com/Rokid/node-turen.git master)
 
 # extapp client
-ExternalProject_Add(extapp
-  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/extapp
-  GIT_REPOSITORY https://github.com/Rokid/node-extapp.git
-  GIT_TAG master
-  TIMEOUT 10
-  UPDATE_COMMAND ${GIT_EXECUTABLE} pull
-  LOG_DOWNLOAD ON
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/extapp
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT})
+YodaGitPackage(extapp https://github.com/Rokid/node-extapp.git master)
 
 # Logger
-ExternalProject_Add(logger
-  SOURCE_DIR packages/logger
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/logger)
+YodaLocalPackage(logger)
 
 # Light
-ExternalProject_Add(light
-  SOURCE_DIR packages/light
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/light
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+YodaLocalPackage(light)
 
 # Multimedia
-ExternalProject_Add(multimedia
-  SOURCE_DIR packages/multimedia
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/multimedia
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+YodaLocalPackage(multimedia)
 
 # PowerCtrl
-ExternalProject_Add(battery
-  SOURCE_DIR packages/battery
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/battery)
+YodaLocalPackage(battery)
 
 # Property
-ExternalProject_Add(property
-  SOURCE_DIR packages/property
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/property
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+YodaLocalPackage(property)
 
 # System
-ExternalProject_Add(system
-  SOURCE_DIR packages/system
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/system
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+YodaLocalPackage(system)
 
 # TextToSpeech
-ExternalProject_Add(tts
-  SOURCE_DIR packages/tts
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/tts
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+YodaLocalPackage(tts)
 
 # Volume Controls
-ExternalProject_Add(audio
-  SOURCE_DIR packages/audio
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/audio
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+YodaLocalPackage(audio)
 
 # Wifi Controls
-ExternalProject_Add(wifi
-  SOURCE_DIR packages/wifi
-  CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/wifi
-    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+YodaLocalPackage(wifi)
 
 # Tools
 ExternalProject_Add(rklogger
