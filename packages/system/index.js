@@ -22,6 +22,7 @@ exports.verifyOtaImage = native.verifyOtaImage
 /**
  * Prepare the OTA procedure. It should be called before start upgrading.
  * @function prepareOta
+ * @private
  * @param {string} path the image path to be installed, **empty string** if resetting ota
  * @returns {Number} native method status code, 0 on success, non-0 otherwise
  */

@@ -42,6 +42,12 @@ endmacro()
 # @yoda/util
 YodaLocalPackage(yoda-util @yoda/util)
 
+# @yoda/cloudgw
+YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
+
+# @yoda/ota
+YodaLocalPackage(yoda-ota @yoda/ota)
+
 # Bluetooth
 YodaLocalPackage(bluetooth)
 
