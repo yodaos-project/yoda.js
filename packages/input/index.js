@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace input
+ * @module input
  * @description Input events handler. On YodaOS, every input events
  * are treated as an event and handled by InputEvent. Currently,
  * we support `keyup`, `keydown` and `longpress` events.
@@ -18,7 +18,6 @@ var events = [
 
 /**
  * Common base class for input events.
- * @memberof input
  * @constructor
  * @augments EventEmitter
  * @param {Object} options - the options to input event
@@ -91,7 +90,6 @@ InputEvent.prototype.disconnect = function () {
 
 /**
  * get the event handler
- * @memberof input
  * @function defaults
  * @fires input.InputEvent#keyup
  * @fires input.InputEvent#keydown
