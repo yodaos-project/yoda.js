@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -e
+
+help="
+Usage:
+  -s <ssid> WiFi ssid
+  -p <psk> WiFi Password
+  -m <masterId> UserId/MasterId the device is regstered with
+
+Example:
+  $ ./scripts/configure-network -s <ssid> -p <psk> -m <masterId>
+"
+
+ssid=""
+psk=""
+masterId=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -s)
+      ssid="$2"
+      shift
+      ;;
+    -p)
+      psk="$2"
+      shift
+      ;;
+    -m)
+      masterId="$2"
+      shift
+      ;;
+    --help)
+      printf "$help"
+      ;;
+    -h)
+      printf "$help"
+      ;;
+    --*)
+      echo "Illegal option $1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+
+adb shell "mount -o remount,rw /"
+
+
+# MARK: - Setup Network
+if ! test -z "$ssid" && ! test -z "$psk"; then
+  set +e
+  content="$(adb shell cat /etc/wpa_supplicant.conf | grep ssid)"
+  set -e
+  if test -z "$content"; then
+    adb shell << EOC
+cat >> /etc/wpa_supplicant.conf <<- EOS
+network={
+  ssid="$ssid"
+  psk="$psk"
+}
+EOS
+EOC
+  else
+    printf "Device already configured WiFi connection. No network modification was made."
+  fi
+else
+  printf "No network modification was made for no ssid or psk specified.\n$help\n"
+fi
+
+# MARK: - Setup MasterId
+if test -z "$masterId"; then
+  printf "Tips:
+  script can automatically setup masterId on device! try:
+
+  $ bash ./scripts/configure-network -m <masterId>
+"
+else
+  adb shell setprop persist.system.user.userId "$masterId"
+fi
+
+adb shell reboot
