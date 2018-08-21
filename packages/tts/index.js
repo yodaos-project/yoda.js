@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace tts
+ * @module tts
  * @description Synthesizes speech from text for immediate playback.
  */
 
@@ -41,7 +41,6 @@ var refs = {}
 
 /**
  * @constructor
- * @memberof tts
  * @param {Object} handle
  * @param {String} text - the text to speak
  * @param {Function} callback
@@ -90,7 +89,6 @@ TtsRequest.prototype.onend = function (errno) {
 
 /**
  * @constructor
- * @memberof tts
  * @augments EventEmitter
  * @param {Object} handle
  */
@@ -165,7 +163,6 @@ function createHandle (options) {
 
 /**
  * Create a TTS instance by the given config.
- * @memberof tts
  * @method createTts
  * @param {Object} options - the Rokid cloud options
  * @param {String} options.key - the key

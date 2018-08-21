@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace bluetooth
+ * @module bluetooth
  * @description The YodaOS includes support for the Bluetooth network
  * stack, which allows a device to wirelessly exchange data with other
  * Bluetooth devices. Using the Bluetooth APIs, your application can
@@ -27,7 +27,6 @@ var A2DP_SINK_CMD = {
 }
 
 /**
- * @memberof bluetooth
  * @constructor
  * @param {String} [name=yoda] - the device name
  * @fires bluetooth.BluetoothAgent#ble open
@@ -233,7 +232,6 @@ Object.defineProperty(BluetoothAgent.prototype, 'enabled', {
 /**
  * @constructor
  * @augments EventEmitter
- * @memberof bluetooth
  * @param {bluetooth.BluetoothAgent} agent
  * @fires bluetooth.BluetoothPlayer#open
  * @fires bluetooth.BluetoothPlayer#close
@@ -401,7 +399,6 @@ BluetoothPlayer.prototype.getRemotePlaying = function getRemotePlaying (cb) {
 
 /**
  * @constructor
- * @memberof bluetooth
  * @param {bluetooth.BluetoothAgent} agent
  * @param {Number} uuid
  */
@@ -430,7 +427,6 @@ BluetoothLowEnergyWritable.prototype.getUuid = function () {
 }
 
 /**
- * @memberof bluetooth
  * @method getBluetooth
  * @param {String} [name=yoda] - the device name
  * @returns {bluetooth.BluetoothAgent}
