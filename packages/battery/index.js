@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace battery
+ * @module battery
  * @description provide the battery state management.
  */
 
@@ -33,14 +33,12 @@ var BatteryState = ffi.Struct(fields)
 
 module.exports = {
   /**
-   * @memberof battery
    * @function get
    * @param {BatteryState} powerState a pre-allocated PowerState memory block
    * @returns {Number} status code, 0 if success, non-zero code otherwise
    */
   get: lib.power_get_property,
   /**
-   * @memberof battery
    * @constructor
    * @param {Object} [fields] initialized with given fields, leaves unspecified fields uninitialized
    * @param {Number} [fields.status]

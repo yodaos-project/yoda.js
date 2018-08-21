@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace property
+ * @module property
  * @description
  * A property is an abstraction that can be used to represent a mutable
  * value that is held in a host object.
@@ -24,14 +24,12 @@ var native = require('./property.node')
 
 module.exports = {
   /**
-   * @memberof property
    * @function get
    * @param {String} key - the property key.
    */
   get: native.get,
 
   /**
-   * @memberof property
    * @function set
    * @param {String} key - the property key.
    * @param {String} val - the property val to set.

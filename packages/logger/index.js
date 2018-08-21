@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace logger
+ * @module logger
  * @description logger functionalities.
  *
  * It also supports transfering logs into another socket connection. It reads
@@ -19,7 +19,6 @@ var util = require('util')
 var net = require('net')
 
 /**
- * @memberof logger
  * @constructor
  * @param {Number} port - the logger port
  */
@@ -87,7 +86,6 @@ function createLoggingServer (port) {
 var loggingServer = createLoggingServer(process.env.LOG_PORT)
 
 /**
- * @memberof logger
  * @constructor
  * @param {String} name - the logger name
  */
@@ -153,8 +151,7 @@ Logger.prototype.closeServer = function closeServer () {
  * logger.log('test');
  * logger.error('something went wrong');
  *
- * @memberof logger
- * @function logger
+ * @function defaults
  * @param {String} name - the log tag
  */
 module.exports = function (name) {
