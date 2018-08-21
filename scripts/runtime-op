@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+adb shell "mount -o remount,rw /"
+
+adb shell /etc/init.d/ttsd $1
+adb shell /etc/init.d/lightd $1
+adb shell /etc/init.d/multimediad $1
+adb shell /etc/init.d/vui-daemon $1
+adb shell /etc/init.d/cloudappclient $1
