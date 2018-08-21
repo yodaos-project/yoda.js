@@ -1,16 +1,24 @@
 {
   "name": "@yoda/guidance",
   "version": "1.0.0",
-  "description": "Bluetooth Apps for Rokid",
-  "main": "index.js",
+  "description": "Guidance Apps for Rokid",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "metadata": {
+    "skills": [
+      "3C5AF934560C46CA968AA7AD067C8B9A"
+    ],
+    "permission": [
+      "ACCESS_TTS"
+    ]
+  },
   "keywords": [
-    "bluetooth",
+    "guidance",
     "rokid",
     "skill"
   ],
-  "author": "Yazhong Liu <yorkiefixer@gmail.com>",
+  "author": "Weigang Xu <weigang.xu@rokid.com>",
   "license": "MIT"
 }
