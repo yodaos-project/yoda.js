@@ -1,37 +1,28 @@
-'use strict';
+'use strict'
 
 /**
- * @namespace system
+ * @module system
  */
 
-var native = require('./system.node');
-
-/**
- * @var {String} OTA_IMAGE_URI - The uri of your ota image, "/data/upgrade/upgrade.img".
- * @memberof system
- */
-exports.OTA_IMAGE_URI = '/data/upgrade/upgrade.img';
-
+var native = require('./system.node')
 /**
  * Reboot the system.
- * @memberof system
  * @function reboot
  * @returns {Boolean}
  */
-exports.reboot = native.reboot;
+exports.reboot = native.reboot
 
 /**
  * Verify the OTA image, including hash(md5) check, section check and header check.
- * @memberof system
  * @function verifyOtaImage
  * @returns {Boolean}
  */
-exports.verifyOtaImage = native.verifyOtaImage;
+exports.verifyOtaImage = native.verifyOtaImage
 
 /**
- * Prepare the OTA image. It should be called before start upgrading.
- * @memberof system
- * @function prepareOtaImage
- * @returns {Boolean}
+ * Prepare the OTA procedure. It should be called before start upgrading.
+ * @function prepareOta
+ * @param {string} path the image path to be installed, **empty string** if resetting ota
+ * @returns {Number} native method status code, 0 on success, non-0 otherwise
  */
-exports.prepareOtaImage = native.prepareOtaImage;
+exports.prepareOta = native.prepareOta
