@@ -1,120 +1,125 @@
-// var EventEmitter = require('events').EventEmitter;
-// var inherits = require('util').inherits;
-var logger = require('logger')('lightService');
+'use strict'
 
-var MEDIA_SOURCE = '/opt/media/';
-var LIGHT_SOURCE = '/opt/light/';
+var logger = require('logger')('lightService')
 
-var setAwake = require(`${LIGHT_SOURCE}awake.js`);
+var LIGHT_SOURCE = '/opt/light/'
 
-function Light(options) {
-  this.playerHandle = {};
-  this.options = options;
-  this.prev = null;
-  this.init();
+var setAwake = require(`${LIGHT_SOURCE}awake.js`)
+var setSpeaking = require(`${LIGHT_SOURCE}setSpeaking.js`)
+
+function Light (options) {
+  this.playerHandle = {}
+  this.options = options
+  this.prev = null
+  this.init()
 }
 
 Light.prototype.init = function () {
   // TODO
-};
+}
 
 Light.prototype.stopPrev = function (keep) {
   if (this.prev) {
     if (typeof this.prev === 'function') {
-      this.prev(keep);
+      this.prev(keep)
     } else if (this.prev && typeof this.prev.stop === 'function') {
-      this.prev.stop(keep);
+      this.prev.stop(keep)
     }
-    this.prev = null;
+    this.prev = null
   }
-};
+}
 
 Light.prototype.loadfile = function (uri, data) {
-  var handle;
+  var handle
   try {
-    handle = require(uri);
-    this.stopPrev();
-    this.prev = handle(this.options.effect, data || {});
+    handle = require(uri)
+    this.stopPrev()
+    this.prev = handle(this.options.effect, data || {})
   } catch (error) {
-    logger.error(`load effect file error from path: ${uri}`);
-    return false;
+    logger.error(`load effect file error from path: ${uri}`)
+    return false
   }
-  return true;
-};
+  return true
+}
 
 Light.prototype.setAwake = function () {
-  this.stopPrev();
-  this.prev = setAwake(this.options.effect);
-  this.prev.name = 'setAwake';
-};
+  this.stopPrev()
+  this.prev = setAwake(this.options.effect)
+  this.prev.name = 'setAwake'
+}
 
 Light.prototype.setDegree = function (degree) {
   if (this.prev && this.prev.name === 'setAwake') {
-    this.degree = +degree;
-    this.prev.setDegree(+degree);
+    this.degree = +degree
+    this.prev.setDegree(+degree)
   }
-};
+}
 
 Light.prototype.setHide = function () {
-  this.stopPrev();
-  this.options.effect.clear();
-  this.options.effect.render();
-};
+  this.stopPrev()
+  this.options.effect.clear()
+  this.options.effect.render()
+}
 
 Light.prototype.setLoading = function () {
   if (this.prev) {
     if (typeof this.prev === 'object' && this.prev.name === 'setAwake') {
-      this.stopPrev(true);
+      this.stopPrev(true)
     } else {
-      this.stopPrev();
+      this.stopPrev()
     }
   }
-  var hook = require(`${LIGHT_SOURCE}loading.js`);
+  var hook = require(`${LIGHT_SOURCE}loading.js`)
   this.prev = hook(this.options.effect, {
     degree: this.degree || 0
-  });
-};
+  })
+}
 
 Light.prototype.setStandby = function () {
-  this.stopPrev();
-  var hook = require(`${LIGHT_SOURCE}setStandby.js`);
-  this.prev = hook(this.options.effect);
-};
+  this.stopPrev()
+  var hook = require(`${LIGHT_SOURCE}setStandby.js`)
+  this.prev = hook(this.options.effect)
+}
 
 Light.prototype.setVolume = function (volume) {
   if (this.prev) {
     if (typeof this.prev === 'object' && this.prev.name === 'setVolume') {
-      this.stopPrev(true);
+      this.stopPrev(true)
     } else {
-      this.stopPrev();
+      this.stopPrev()
     }
   }
-  var hook = require(`${LIGHT_SOURCE}setVolume.js`);
+  var hook = require(`${LIGHT_SOURCE}setVolume.js`)
   this.prev = hook(this.options.effect, {
     volume: +volume
-  });
-  this.prev.name = 'setVolume';
-};
+  })
+  this.prev.name = 'setVolume'
+}
 
 Light.prototype.setConfigFree = function () {
-  this.stopPrev();
-  this.options.effect.stop();
-  this.options.effect.clear();
-  this.options.effect.render();
-};
+  this.stopPrev()
+  this.options.effect.stop()
+  this.options.effect.clear()
+  this.options.effect.render()
+}
 
 Light.prototype.setWelcome = function () {
-  this.stopPrev();
-  var hook = require(`${LIGHT_SOURCE}setWelcome.js`);
-  this.prev = hook(this.options.effect);
-};
+  this.stopPrev()
+  var hook = require(`${LIGHT_SOURCE}setWelcome.js`)
+  this.prev = hook(this.options.effect)
+}
 
 Light.prototype.appSound = function (appId, name) {
   if (this.playerHandle[appId]) {
-    this.playerHandle[appId].stop();
+    this.playerHandle[appId].stop()
   }
-  var player = this.options.effect.sound(name);
-  this.playerHandle[appId] = player;
-};
+  var player = this.options.effect.sound(name)
+  this.playerHandle[appId] = player
+}
 
-module.exports = Light;
+Light.prototype.setSpeaking = function () {
+  this.stopPrev(true)
+  this.prev = setSpeaking(this.options.effect)
+}
+
+module.exports = Light
