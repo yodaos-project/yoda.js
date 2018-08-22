@@ -3,17 +3,22 @@ project(rokidos_nodejs CXX)
 include(ExternalProject)
 find_package(Git REQUIRED)
 
-macro(YodaLocalPackage NAME)
+function(YodaLocalPackage NAME)
+set(PATH ${NAME})
+if(ARGC GREATER 1)
+set(PATH ${ARGV1})
+endif()
+
 ExternalProject_Add(${NAME}
-  SOURCE_DIR packages/${NAME}
+  SOURCE_DIR packages/${PATH}
   CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/${NAME}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/${PATH}
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
-endmacro()
+endfunction()
 
 macro(YodaGitPackage NAME REPO TAG)
 ExternalProject_Add(${NAME}
@@ -34,6 +39,8 @@ ExternalProject_Add(${NAME}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 endmacro()
 
+# @yoda/util
+YodaLocalPackage(yoda-util @yoda/util)
 
 # Bluetooth
 YodaLocalPackage(bluetooth)
