@@ -56,6 +56,9 @@ YodaGitPackage(extapp https://github.com/Rokid/node-extapp.git master)
 # Logger
 YodaLocalPackage(logger)
 
+# lockfile
+YodaLocalPackage(lockfile)
+
 # Light
 YodaLocalPackage(light)
 
