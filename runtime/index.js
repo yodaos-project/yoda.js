@@ -1,70 +1,69 @@
-'use strict';
+'use strict'
 
-var Turen = require('turen');
-var Adapter = require('./adapter/dbus');
-var cloudApi = require('./cloudapi/index');
-var property = require('property');
-var AudioManager = require('audio').AudioManager;
-var appRuntime = require('./appRuntime');
-var wifi = require('wifi');
-var logger = require('logger')('main');
+var Turen = require('turen')
+var Adapter = require('./adapter/dbus')
+var cloudApi = require('./cloudapi/index')
+var property = require('property')
+var AudioManager = require('audio').AudioManager
+var AppRuntime = require('./appRuntime')
+var logger = require('logger')('main')
 
-//------------------------------------------------------
+// ------------------------------------------------------
 
-var app_runtime = new appRuntime(['/opt/apps']);
-app_runtime.volume = AudioManager;
-app_runtime.adapter = Adapter;
+var runtime = new AppRuntime(['/opt/apps'])
+runtime.volume = AudioManager
+runtime.adapter = Adapter
 
-AudioManager.setMute(false);
-AudioManager.setVolume(60);
+AudioManager.setMute(false)
+AudioManager.setVolume(60)
 
-var speech = new Turen.TurenSpeech();
+var speech = new Turen.TurenSpeech()
 
 // 监听代理事件。代理执行turen API
-app_runtime.on('setStack', function (stack) {
-  speech.setStack(stack);
-  logger.log('setStack ', stack);
-});
-app_runtime.on('setPickup', function (isPickup) {
-  speech.setPickup(isPickup);
-  logger.log('setPickup ', isPickup);
-});
+runtime.on('setStack', function (stack) {
+  speech.setStack(stack)
+  logger.log('setStack ', stack)
+})
+runtime.on('setPickup', function (isPickup) {
+  speech.setPickup(isPickup)
+  logger.log('setPickup ', isPickup)
+})
 
 speech.on('voice coming', function (event) {
-  logger.log('voice coming');
-  app_runtime.onEvent('voice coming', {});
-});
+  logger.log('voice coming')
+  runtime.onEvent('voice coming', {})
+})
 speech.on('voice local awake', function (event) {
-  logger.log('voice local awake');
-  app_runtime.onEvent('voice local awake', event);
-});
+  logger.log('voice local awake')
+  runtime.onEvent('voice local awake', event)
+})
 speech.on('asr pending', function (asr) {
-  logger.log('asr pending', asr);
-  app_runtime.onEvent('asr pending', asr);
-});
+  logger.log('asr pending', asr)
+  runtime.onEvent('asr pending', asr)
+})
 speech.on('asr end', function (asr, event) {
-  logger.log('asr end', asr);
-  app_runtime.onEvent('asr end', {
+  logger.log('asr end', asr)
+  runtime.onEvent('asr end', {
     asr: asr
-  });
-});
+  })
+})
 // speech.on('raw event', (event) => {
 //   logger.log(JSON.stringify(event));
 // });
 // 监听turen NLP事件
 speech.on('nlp', function (response, event) {
-  logger.log('nlp', response);
-  app_runtime.onEvent('nlp', response);
-});
+  logger.log('nlp', response)
+  runtime.onEvent('nlp', response)
+})
 
-speech.start();
+speech.start()
 
-app_runtime.on('reconnected', function () {
+runtime.on('reconnected', function () {
   logger.log('yoda reconnected')
   // 登录、绑定、注册mqtt
   cloudApi.connect().then((mqttAgent) => {
     // 系统配置文件
-    var config = mqttAgent.config;
+    var config = mqttAgent.config
 
     var options = {
       host: config.host,
@@ -72,12 +71,12 @@ app_runtime.on('reconnected', function () {
       key: config.key,
       secret: config.secret,
       deviceTypeId: config.device_type_id,
-      deviceId: config.device_id,
-    };
-    speech.start(options);
-    
+      deviceId: config.device_id
+    }
+    speech.start(options)
+
     // Implementation interface
-    app_runtime.onGetPropAll = function () {
+    runtime.onGetPropAll = function () {
       return {
         masterId: property.get('persist.system.user.userId'),
         host: config.host,
@@ -86,54 +85,54 @@ app_runtime.on('reconnected', function () {
         secret: config.secret,
         deviceTypeId: config.device_type_id,
         deviceId: config.device_id
-      };
-    };
+      }
+    }
 
-    app_runtime.onReLogin();
+    runtime.onReLogin()
 
     mqttAgent.on('cloud_forward', function (data) {
-      app_runtime.onCloudForward(data);
-    });
+      runtime.onCloudForward(data)
+    })
     mqttAgent.on('get_volume', function (data) {
       var res = {
-        type: "Volume",
-        event: "ON_VOLUME_CHANGE",
-        template: JSON.stringify({
-          mediaCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_AUDIO),
-          mediaTotal: "100",
-          alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
-          alarmTotal: "100"
-        }),
-        appid: ""
-      };
-      logger.log('response topic get_volume ->', res);
-      mqttAgent.sendToApp('event', JSON.stringify(res));
-    });
-    mqttAgent.on('set_volume', function (data) {
-      var msg = JSON.parse(data);
-      if (msg.music !== undefined) {
-        AudioManager.setVolume('audio', msg.music);
-      }
-      var res = {
-        type: "Volume",
-        event: "ON_VOLUME_CHANGE",
+        type: 'Volume',
+        event: 'ON_VOLUME_CHANGE',
         template: JSON.stringify({
           mediaCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_AUDIO),
           mediaTotal: '100',
           alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
           alarmTotal: '100'
         }),
-        appid: ""
-      };
-      logger.log('response topic set_volume ->', res);
-      mqttAgent.sendToApp('event', JSON.stringify(res));
-    });
+        appid: ''
+      }
+      logger.log('response topic get_volume ->', res)
+      mqttAgent.sendToApp('event', JSON.stringify(res))
+    })
+    mqttAgent.on('set_volume', function (data) {
+      var msg = JSON.parse(data)
+      if (msg.music !== undefined) {
+        AudioManager.setVolume('audio', msg.music)
+      }
+      var res = {
+        type: 'Volume',
+        event: 'ON_VOLUME_CHANGE',
+        template: JSON.stringify({
+          mediaCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_AUDIO),
+          mediaTotal: '100',
+          alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
+          alarmTotal: '100'
+        }),
+        appid: ''
+      }
+      logger.log('response topic set_volume ->', res)
+      mqttAgent.sendToApp('event', JSON.stringify(res))
+    })
   }).catch((err) => {
-    logger.error(err);
-  });
-});
+    logger.error(err)
+  })
+})
 
 // var netStatus = wifi.getNetworkState();
 // if (netStatus === 3) {
-//   app_runtime.onEvent('disconnected', {});
+//   runtime.onEvent('disconnected', {});
 // }
