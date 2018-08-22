@@ -54,6 +54,7 @@ function App(arr) {
   this.handle = {};
   // to identify the first start
   this.online = undefined;
+  this.login = undefined;
 
   // this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
@@ -679,6 +680,7 @@ App.prototype.onReconnected = function() {
  * @private
  */
 App.prototype.onDisconnected = function() {
+  this.login = false;
   logger.log('network disconnected, please connect to wifi first');
   this.startApp('@network', {}, {});
 };
@@ -687,13 +689,14 @@ App.prototype.onDisconnected = function() {
  * @private
  */
 App.prototype.onReLogin = function() {
+  this.login = true;
   perf.stub('started');
   this.lightMethod('setWelcome', []);
 
   var config = JSON.stringify(this.onGetPropAll());
   this.ttsMethod('connect', [config])
     .then((res) => {
-      logger.log(`send CONFIG to ttsd: ${res && res[0]}`);
+      logger.log(`send CONFIG to ttsd: ${res[0]}`);
     });
 };
 
@@ -717,19 +720,24 @@ App.prototype.startExtappService = function() {
   var extapp = createInterface('extapp');
   extapp.addMethod('register', {
     in: ['s', 's', 's'],
-    out: []
+    out: ['b']
   }, function (appId, objectPath, ifaceName, cb) {
-    self.registerExtApp(appId, {
-      metadata: {
-        extapp: true,
-        daemon: true,
-        dbusConn: {
-          objectPath: objectPath,
-          ifaceName: ifaceName
+    if (self.login === true) {
+      self.registerExtApp(appId, {
+        metadata: {
+          extapp: true,
+          daemon: true,
+          dbusConn: {
+            objectPath: objectPath,
+            ifaceName: ifaceName
+          }
         }
-      }
-    });
-    cb(null);
+      });
+      cb(null, true);
+    } else {
+      cb(null, false);
+      return;
+    }
   });
   extapp.addMethod('destroy', {
     in: ['s'],
