@@ -1,22 +1,22 @@
 'use strict'
 
-module.exports = function awake(light, data, callback) {
-  var base = 120;
-  var adjustable = 135;
-  var final;
+module.exports = function awake (light, data, callback) {
+  var base = 120
+  var adjustable = 135
+  var final
   var render = function () {
-    final = base + Math.floor(Math.random() * adjustable);
-    light.fill(final, final, final);
-    light.render();
+    final = base + Math.floor(Math.random() * adjustable)
+    light.fill(final, final, final)
+    light.render()
     light.requestAnimationFrame(() => {
-      render();
-    }, 45);
-  };
-  render();
+      render()
+    }, 45)
+  }
+  render()
 
   return {
     stop: function (keep) {
-      light.stop(keep);
+      light.stop(keep)
     }
-  };
-};
+  }
+}
