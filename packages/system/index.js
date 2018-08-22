@@ -26,3 +26,19 @@ exports.verifyOtaImage = native.verifyOtaImage
  * @returns {Number} native method status code, 0 on success, non-0 otherwise
  */
 exports.prepareOta = native.prepareOta
+
+/**
+ * @typedef DiskUsage
+ * @property {number} available
+ * @property {number} free
+ * @property {number} total
+ */
+
+/**
+ * Get disk usage at a path.
+ *
+ * @function diskUsage
+ * @param {string} path - the path to be analyzed
+ * @returns {module:system~DiskUsage}
+ */
+exports.diskUsage = native.diskUsage
