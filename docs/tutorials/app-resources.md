@@ -47,15 +47,15 @@ API about `media`, see [yodaRT.activity.Activity.MediaClient](yodaRT.activity.Ac
 Every light effect could be writtern as a JavaScript file:
 
 ```js
-module.exports = function(context, params, callback) {
-  context.pixel(10, 255, 255, 255, .7);
-  context.render();
+module.exports = function (context, params, callback) {
+  context.pixel(10, 255, 255, 255, .7)
+  context.render()
   context.requestAnimationFrame(() => {
-    context.fill(100, 100, 100, .7);
-    context.render();
-    callback();
-  });
-};
+    context.fill(100, 100, 100, .7)
+    context.render()
+    callback()
+  })
+}
 ```
 
 The `context` provides all the convient write functions:
@@ -73,7 +73,7 @@ The system light scripts are stored at `/opt/light`, and the application's is at
 example:
 
 ```js
-activity.light.play('self://test/e1.js');
+activity.light.play('self://test/e1.js')
 ```
 
 This would requires from `${APP_DIRECTORY}/light/test/e1.js`, and start the function in script.

@@ -143,7 +143,7 @@ AudioManager.setMute = function (val) {
  * @throws {Error} shaper function should return an array with 100 elements.
  * @throws {RangeError} out of range when set volume shape.
  * @example
- * AudioManager.setVolumeShaper(AudioManager.LINEAR_RAMP);
+ * AudioManager.setVolumeShaper(AudioManager.LINEAR_RAMP)
  */
 AudioManager.setVolumeShaper = function (shaper) {
   var max = 100

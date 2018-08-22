@@ -163,11 +163,11 @@ BluetoothAgent.prototype.ondiscovery = function () {
  * enable the given bluetooth module
  * @param {String} name - the bluetooth module name, like "ble", "a2dp".
  * @example
- * var bt = require('bluetooth').getBluetooth('mydevice');
- * bt.enable('ble');
+ * var bt = require('bluetooth').getBluetooth('mydevice')
+ * bt.enable('ble')
  * bt.on('ble data', (message) => {
- *   console.log(message.protocol, message.data);
- * });
+ *   console.log(message.protocol, message.data)
+ * })
  */
 BluetoothAgent.prototype.enable = function (name) {
   if (name === 'ble') {
@@ -239,14 +239,14 @@ Object.defineProperty(BluetoothAgent.prototype, 'enabled', {
  * @fires bluetooth.BluetoothPlayer#pause
  * @fires bluetooth.BluetoothPlayer#stop
  * @example
- * var bt = require('bluetooth').getBluetooth('mydevice');
- * var player = bt.createPlayer();
+ * var bt = require('bluetooth').getBluetooth('mydevice')
+ * var player = bt.createPlayer()
  * player.on('start', () => {
- *   player.play();
- * });
+ *   player.play()
+ * })
  * player.on('stop', () => {
- *   player.disconnect();
- * });
+ *   player.disconnect()
+ * })
  */
 function BluetoothPlayer (agent) {
   this._agent = agent
