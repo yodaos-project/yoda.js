@@ -175,10 +175,10 @@ function createHandle (options) {
  * @fires tts.TtsProxy#end
  * @fires tts.TtsProxy#error
  * @example
- * var tts = require('tts').createTts({ ... });
+ * var tts = require('tts').createTts({ ... })
  * tts.speak('hello yoda!', () => {
- *   console.log('tts is complete');
- * });
+ *   console.log('tts is complete')
+ * })
  *
  */
 function createTts (options) {

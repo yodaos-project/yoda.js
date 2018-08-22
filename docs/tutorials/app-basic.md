@@ -64,23 +64,23 @@ manifest: {
 Next, we will see how to write the logic:
 
 ```js
-module.exports = function(activity) {
+module.exports = function (activity) {
   activity.on('created', () => {
-    console.log('activity created');
-  });
+    console.log('activity created')
+  })
   activity.on('paused', () => {
-    console.log('activity paused');
-  });
+    console.log('activity paused')
+  })
   activity.on('resumed', () => {
-    console.log('activity resumed');
-  });
-  activity.on('onrequest', (nlp, action) => {
+    console.log('activity resumed')
+  })
+  activity.on('request', (nlp, action) => {
     console.log(nlp, action);
-  });
+  })
   activity.on('destroyed', () => {
     console.log('activity destroyed');
-  });
-};
+  })
+}
 ```
 
 The above function receives an argument `activity`, which includes the following methods:

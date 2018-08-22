@@ -94,13 +94,13 @@ InputEvent.prototype.disconnect = function () {
  * @fires input.InputEvent#keyup
  * @fires input.InputEvent#keydown
  * @example
- * var inputEvent = require('input')();
+ * var inputEvent = require('input')()
  * inputEvent.on('keyup', (event) => {
- *   console.log('keyup', event.keyCode);
- * });
+ *   console.log('keyup', event.keyCode)
+ * })
  * inputEvent.on('keydown', (event) => {
- *   console.log('keydown', event.keyCode);
- * });
+ *   console.log('keydown', event.keyCode)
+ * })
  * @returns {input.InputEvent}
  */
 function getHandler (options) {

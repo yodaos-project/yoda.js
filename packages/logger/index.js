@@ -147,9 +147,9 @@ Logger.prototype.closeServer = function closeServer () {
 
 /**
  * @example
- * var logger = require('logger')('some tag');
- * logger.log('test');
- * logger.error('something went wrong');
+ * var logger = require('logger')('some tag')
+ * logger.log('test')
+ * logger.error('something went wrong')
  *
  * @function defaults
  * @param {String} name - the log tag

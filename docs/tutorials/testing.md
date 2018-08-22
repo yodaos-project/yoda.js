@@ -32,16 +32,16 @@ YodaRT uses [shadow-tape](https://github.com/shadow-node/tape) to make you write
 A dead simple example are following:
 
 ```js
-var test = require('tape');
-var light = require('light');
+var test = require('tape')
+var light = require('light')
 test('light get profile', (t) => {
-  var profile = light.getProfile();
-  t.equal(typeof profile.leds, 'number');
-  t.equal(typeof profile.format, 'number');
-  t.equal(typeof profile.maximumFps, 'number');
-  t.equal(typeof profile.micAngle, 'number');
-  t.end();
-});
+  var profile = light.getProfile()
+  t.equal(typeof profile.leds, 'number')
+  t.equal(typeof profile.format, 'number')
+  t.equal(typeof profile.maximumFps, 'number')
+  t.equal(typeof profile.micAngle, 'number')
+  t.end()
+})
 ```
 
 ### Run your tests
