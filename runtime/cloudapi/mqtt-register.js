@@ -1,12 +1,12 @@
-'use strict';
+'use strict'
 
-var https = require('https');
-var qs = require('querystring');
-var crypto = require('crypto');
-var logger = require('logger')('mqtt');
-var host = 'wormhole-registry.rokid.com';
+var https = require('https')
+var qs = require('querystring')
+var crypto = require('crypto')
+var logger = require('logger')('mqtt')
+var host = 'wormhole-registry.rokid.com'
 
-function load(config) {
+function load (config) {
   return {
     key: config.key,
     device_type_id: config.device_type_id,
@@ -14,20 +14,20 @@ function load(config) {
     service: 'mqtt',
     version: '1',
     time: Math.floor(Date.now() / 1000),
-    secret: config.secret,
-  };
+    secret: config.secret
+  }
 }
 
-function getSign(data) {
+function getSign (data) {
   return crypto.createHash('md5')
     .update(qs.stringify(data))
     .digest('hex')
-    .toUpperCase();
+    .toUpperCase()
 }
 
-function registry(userId, config, cb) {
-  logger.log('start request /api/registryByKey with userId:', userId, 'config:', config);
-  var data = load(config);
+function registry (userId, config, cb) {
+  logger.log('start request /api/registryByKey with userId:', userId, 'config:', config)
+  var data = load(config)
   var msg = JSON.stringify({
     appKey: data.key,
     requestSign: getSign(data),
@@ -36,8 +36,8 @@ function registry(userId, config, cb) {
     accountId: userId,
     service: data.service,
     time: data.time + '',
-    version: data.version,
-  });
+    version: data.version
+  })
   var req = https.request({
     method: 'POST',
     family: 4,
@@ -48,33 +48,33 @@ function registry(userId, config, cb) {
       'Content-Length': msg.length
     }
   }, (response) => {
-    var list = [];
-    response.on('data', (chunk) => list.push(chunk));
+    var list = []
+    response.on('data', (chunk) => list.push(chunk))
     response.once('end', () => {
-      var data, err, msg;
-      msg = Buffer.concat(list).toString();
-      logger.log('request /api/registryByKey response', msg);
+      var data, err, msg
+      msg = Buffer.concat(list).toString()
+      logger.log('request /api/registryByKey response', msg)
       try {
-        data = JSON.parse(msg);
+        data = JSON.parse(msg)
         // 判断是否注册成功
         if (data && data.error) {
-          err = new Error(data.error);
+          err = new Error(data.error)
         }
       } catch (e) {
-        err = e;
+        err = e
       }
       if (typeof cb === 'function') {
-        cb(err, data);
+        cb(err, data)
       } else if (err) {
-        logger.error(err && err.stack);
+        logger.error(err && err.stack)
       }
-    });
-  });
+    })
+  })
   req.on('error', (err) => {
-    cb(err);
-  });
-  req.write(msg);
-  req.end();
+    cb(err)
+  })
+  req.write(msg)
+  req.end()
 }
 
-exports.registry = registry;
+exports.registry = registry

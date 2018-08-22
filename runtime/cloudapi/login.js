@@ -1,62 +1,61 @@
-'use strict';
+'use strict'
 
-var https = require('https');
-var fs = require('fs');
-var qs = require('querystring');
-var crypto = require('crypto');
-var exec = require('child_process').exec;
-var property = require('property');
-var logger = require('logger')('login');
+var https = require('https')
+var qs = require('querystring')
+var crypto = require('crypto')
+var exec = require('child_process').exec
+var property = require('property')
+var logger = require('logger')('login')
 
-var uuid = property.get('ro.boot.serialno');
-var seed = property.get('ro.boot.rokidseed');
-var secret, buffer;
-var retry = 0;
+var uuid = property.get('ro.boot.serialno')
+var seed = property.get('ro.boot.rokidseed')
+var secret
+var retry = 0
 
-function md5(str) {
-  return crypto.createHash('md5').update(str).digest('hex').toUpperCase();
+function md5 (str) {
+  return crypto.createHash('md5').update(str).digest('hex').toUpperCase()
 }
 
-function login(callback) {
+function login (callback) {
   if (!uuid || !seed) {
-    callback(new Error('expect uuid and seed'));
-    return;
+    callback(new Error('expect uuid and seed'))
+    return
   }
-  logger.log('exe test-stupid', seed, uuid);
+  logger.log('exe test-stupid', seed, uuid)
 
   exec('test-stupid ' + seed + ' ' + uuid, {
     encoding: 'buffer'
-  }, function(error, stdout, stderr){
+  }, function (error, stdout, stderr) {
     if (error) {
-      logger.error('exe error', error);
-      callback(error);
-      return;
+      logger.error('exe error', error)
+      callback(error)
+      return
     }
-    var _seed = stdout;
-    logger.log('exec result: ' + _seed.toString('base64'));
-    secret = md5(_seed.toString('base64'));
+    var _seed = stdout
+    logger.log('exec result: ' + _seed.toString('base64'))
+    secret = md5(_seed.toString('base64'))
     if (!secret) {
-      return callback(new Error('can not get secret'));
+      return callback(new Error('can not get secret'))
     }
-    var config = {};
+    var config = {}
 
     if (config && config.disableAutoRefresh) {
-      return callback(null);
+      return callback(null)
     }
 
-    var type = config['device_type_id'] || '';
+    var type = config['device_type_id'] || ''
     if (type === 'rokid_test_type_id') {
-      type = '';
+      type = ''
     }
-    var time = Math.floor(Date.now() / 1000);
-    var sign = md5(`${secret}${type}${uuid}${time}${secret}`);
+    var time = Math.floor(Date.now() / 1000)
+    var sign = md5(`${secret}${type}${uuid}${time}${secret}`)
     var params = qs.stringify({
       deviceId: uuid,
-      deviceTypeId: type ? type : undefined,
+      deviceTypeId: type || undefined,
       time: time,
-      sign: sign,
-    });
-    logger.log('start /login request');
+      sign: sign
+    })
+    logger.log('start /login request')
     var req = https.request({
       method: 'POST',
       host: 'device-account.rokid.com',
@@ -66,42 +65,42 @@ function login(callback) {
         'Content-Length': params.length
       }
     }, (response) => {
-      var list = [];
-      response.on('data', (chunk) => list.push(chunk));
+      var list = []
+      response.on('data', (chunk) => list.push(chunk))
       response.once('end', () => {
-        var body = Buffer.concat(list).toString();
-        logger.log('request /login response: ', body);
+        var body = Buffer.concat(list).toString()
+        logger.log('request /login response: ', body)
         try {
-          var data = JSON.parse(JSON.parse(body).data);
+          var data = JSON.parse(JSON.parse(body).data)
 
-          config['device_id'] = data.deviceId;
-          config['device_type_id'] = data.deviceTypeId;
-          config['key'] = data.key;
-          config['secret'] = data.secret;
-          callback(null, config);
+          config['device_id'] = data.deviceId
+          config['device_type_id'] = data.deviceTypeId
+          config['key'] = data.key
+          config['secret'] = data.secret
+          callback(null, config)
         } catch (err) {
-          logger.error(err && err.stack);
-          callback(err);
+          logger.error(err && err.stack)
+          callback(err)
         }
-      });
-    });
+      })
+    })
     req.on('error', (err) => {
-      logger.log('login request error', err);
+      logger.log('login request error', err)
       if (retry <= 10) {
-        retry += 1;
-        logger.info('invalid certificate, try again once');
-        return setTimeout(() => login(callback), 3000);
+        retry += 1
+        logger.info('invalid certificate, try again once')
+        return setTimeout(() => login(callback), 3000)
       }
-    });
-    req.write(params);
-    req.end();
-  });
+    })
+    req.write(params)
+    req.end()
+  })
 }
 
 module.exports = function () {
   return new Promise((resolve, reject) => {
     login((err, data) => {
-      err ? reject(err) : resolve(data);
-    });
-  });
-};
+      err ? reject(err) : resolve(data)
+    })
+  })
+}
