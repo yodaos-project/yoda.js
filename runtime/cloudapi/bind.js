@@ -1,33 +1,33 @@
-'use strict';
+'use strict'
 
-var https = require('https');
-var crypto = require('crypto');
-var logger = console;
-var property = require('property');
+var https = require('https')
+var crypto = require('crypto')
+var logger = console
+var property = require('property')
 
-function md5(str) {
-  return crypto.createHash('md5').update(str).digest('hex').toUpperCase();
+function md5 (str) {
+  return crypto.createHash('md5').update(str).digest('hex').toUpperCase()
 }
 
-var CONFIG = null;
-var login = require('./login');
-var retry = 0;
+var CONFIG = null
+var login = require('./login')
+var retry = 0
 
-function deviceManager(cf, path, cb) {
+function deviceManager (cf, path, cb) {
   if (retry > 10) {
-    cb(new Error(path + 'failed after retry 10'));
-    return;
+    cb(new Error(path + 'failed after retry 10'))
+    return
   }
-  logger.log('start request', path);
-  logger.log('config:', cf);
-  var time = Math.floor(Date.now() / 1000);
-  var userId = property.get('persist.system.user.userId');
-  var sign = md5(`key=${cf.key}&device_type_id=${cf.device_type_id}&device_id=${cf.device_id}&service=bindMaster&version=1.0&time=${time}&secret=${cf.secret}`);
-  var auth = `version=1.0;time=${time};sign=${sign};key=${cf.key};device_type_id=${cf.device_type_id};device_id=${cf.device_id};service=bindMaster`;
-  var params = `{"userId":"${userId || ''}"}`;
-  logger.log('sign:', sign);
-  logger.log('auth:', auth);
-  logger.log('params:', params);
+  logger.log('start request', path)
+  logger.log('config:', cf)
+  var time = Math.floor(Date.now() / 1000)
+  var userId = property.get('persist.system.user.userId')
+  var sign = md5(`key=${cf.key}&device_type_id=${cf.device_type_id}&device_id=${cf.device_id}&service=bindMaster&version=1.0&time=${time}&secret=${cf.secret}`)
+  var auth = `version=1.0;time=${time};sign=${sign};key=${cf.key};device_type_id=${cf.device_type_id};device_id=${cf.device_id};service=bindMaster`
+  var params = `{"userId":"${userId || ''}"}`
+  logger.log('sign:', sign)
+  logger.log('auth:', auth)
+  logger.log('params:', params)
   var req = https.request({
     method: 'POST',
     host: 'apigwrest.open.rokid.com',
@@ -38,80 +38,83 @@ function deviceManager(cf, path, cb) {
       'Authorization': auth
     }
   }, (response) => {
-    var list = [];
+    var list = []
     response.on('data', (chunk) => {
-      list.push(chunk);
-    });
+      list.push(chunk)
+    })
     response.on('end', () => {
-      var result = Buffer.concat(list).toString();
-      logger.log(path + ' response:', result);
+      var result = Buffer.concat(list).toString()
+      logger.log(path + ' response:', result)
       try {
-        result = JSON.parse(result);
+        result = JSON.parse(result)
         if (result.resultCode === 0) {
-          logger.log(path + ' -> response ok');
-          cb(null, cf);
+          logger.log(path + ' -> response ok')
+          cb(null, cf)
         } else {
-          logger.log(path + ' -> response', result.message, result.resultCode);
-          cb(new Error(result.message));
+          logger.log(path + ' -> response', result.message, result.resultCode)
+          cb(new Error(result.message))
         }
       } catch (error) {
-        logger.log(path + ' -> parse error', error);
-        cb(error);
+        logger.log(path + ' -> parse error', error)
+        cb(error)
       }
-    });
-  });
+    })
+  })
   req.on('error', (err) => {
-    logger.log(path + ' fail, retry', err);
-    retry++;
+    logger.log(path + ' fail, retry', err)
+    retry++
     setTimeout(() => {
-      bindDevice(cf, cb);
-    }, 3000);
-  });
-  req.write(params);
-  req.end();
+      bindDevice(cf, cb)
+    }, 3000)
+  })
+  req.write(params)
+  req.end()
 }
 
-function loginAndBindDevice(cb) {
+function loginAndBindDevice (cb) {
   login().then((config) => {
-    CONFIG = config;
-    deviceManager(config, '/v1/device/deviceManager/bindMaster', cb);
+    CONFIG = config
+    deviceManager(config, '/v1/device/deviceManager/bindMaster', cb)
   }).catch((err) => {
-    cb(err);
-  });
+    cb(err)
+  })
 }
 
-exports.bindDevice = function bindDevice() {
+function bindDevice () {
   return new Promise((resolve, reject) => {
     loginAndBindDevice((err, config) => {
       if (err) {
-        reject(err);
+        reject(err)
       } else {
-        resolve(config);
+        resolve(config)
       }
-    });
-  });
-};
+    })
+  })
+}
 
-exports.unBindDevice = function unBindDevice() {
+function unBindDevice () {
   return new Promise((resolve, reject) => {
     if (CONFIG) {
       deviceManager(CONFIG, '/v1/device/deviceManager/unBindMaster', (err, config) => {
         if (err) {
-          reject(err);
+          reject(err)
         } else {
-          resolve(config);
+          resolve(config)
         }
-      });
+      })
     } else {
       login().then((config) => {
         deviceManager(config, '/v1/device/deviceManager/unBindMaster', (err, config) => {
           if (err) {
-            reject(err);
+            reject(err)
           } else {
-            resolve(config);
+            resolve(config)
           }
-        });
-      });
+        })
+      })
     }
-  });
-};
+  })
+}
+
+exports.bindDevice = bindDevice
+exports.unBindDevice = unBindDevice
