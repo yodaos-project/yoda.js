@@ -11,6 +11,7 @@ var logger = require('logger')('main')
 // ------------------------------------------------------
 
 var runtime = new AppRuntime(['/opt/apps'])
+
 runtime.volume = AudioManager
 runtime.adapter = Adapter
 
@@ -69,7 +70,6 @@ runtime.on('reconnected', function () {
   cloudApi.connect().then((mqttAgent) => {
     // 系统配置文件
     var config = mqttAgent.config
-
     var options = {
       host: config.host,
       port: config.port,
@@ -82,8 +82,9 @@ runtime.on('reconnected', function () {
 
     // Implementation interface
     runtime.onGetPropAll = function () {
+      var masterId = property.get('persist.system.user.userId')
       return {
-        masterId: property.get('persist.system.user.userId'),
+        masterId: masterId,
         host: config.host,
         port: config.port,
         key: config.key,
