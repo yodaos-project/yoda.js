@@ -46,4 +46,3 @@ void init(jerry_value_t exports) {
 }
 
 NODE_MODULE(light, init)
-

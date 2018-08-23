@@ -1,5 +1,5 @@
-#include <unistd.h>
 #include "InputNative.h"
+#include <unistd.h>
 
 #ifdef HAS_TOUCHPAD
 #define IOTJS_INPUT_HAS_TOUCH true
@@ -13,13 +13,15 @@ static JNativeInfoType this_module_native_info = {
 
 class InputInitializer {
  public:
-  InputInitializer() {}
+  InputInitializer() {
+  }
   InputInitializer(iotjs_input_t* inputwrap_) {
     inputwrap = inputwrap_;
     initialized = false;
     req.data = this;
   }
-  ~InputInitializer() {}
+  ~InputInitializer() {
+  }
 
  public:
   int start(int timeout_select_, int timeout_dbclick_, int timeout_slide_) {
@@ -27,8 +29,8 @@ class InputInitializer {
     timeout_dbclick = timeout_dbclick_;
     timeout_slide = timeout_slide_;
 
-    return uv_queue_work(uv_default_loop(), &req,
-      InputInitializer::DoStart, InputInitializer::AfterStart);
+    return uv_queue_work(uv_default_loop(), &req, InputInitializer::DoStart,
+                         InputInitializer::AfterStart);
   }
   int stop() {
     return uv_cancel((uv_req_t*)&req);
@@ -38,10 +40,10 @@ class InputInitializer {
   static void DoStart(uv_work_t* req) {
     InputInitializer* initializer = (InputInitializer*)req->data;
     while (true) {
-      bool r = init_input_key(IOTJS_INPUT_HAS_TOUCH,
-                              initializer->timeout_select,
-                              initializer->timeout_dbclick,
-                              initializer->timeout_slide);
+      bool r =
+          init_input_key(IOTJS_INPUT_HAS_TOUCH, initializer->timeout_select,
+                         initializer->timeout_dbclick,
+                         initializer->timeout_slide);
       if (r)
         break;
       sleep(1);
@@ -52,7 +54,7 @@ class InputInitializer {
     iotjs_input_t* inputwrap = initializer->inputwrap;
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_input_t, inputwrap);
 
-    if (!status/* success */) {
+    if (!status /* success */) {
       _this->event_handler->start();
     } else {
       // iotjs_input_onerror(_this);
@@ -61,7 +63,7 @@ class InputInitializer {
 
  public:
   bool initialized;
- 
+
  private:
   iotjs_input_t* inputwrap;
   uv_work_t req;
@@ -98,8 +100,7 @@ InputEventHandler::~InputEventHandler() {
 }
 
 int InputEventHandler::start() {
-  return uv_queue_work(uv_default_loop(), &req,
-                       InputEventHandler::DoStart,
+  return uv_queue_work(uv_default_loop(), &req, InputEventHandler::DoStart,
                        InputEventHandler::AfterStart);
 }
 
@@ -110,8 +111,7 @@ int InputEventHandler::stop() {
 void InputEventHandler::DoStart(uv_work_t* req) {
   InputEventHandler* handler = (InputEventHandler*)req->data;
   while (true) {
-    daemon_start_listener(&handler->keyevent_,
-                          &handler->gesture_);
+    daemon_start_listener(&handler->keyevent_, &handler->gesture_);
     // Send InputKeyEvent
     if (handler->keyevent_.new_action) {
       uv_async_t* async = new uv_async_t;
@@ -123,8 +123,7 @@ void InputEventHandler::DoStart(uv_work_t* req) {
       event->data.key_code = handler->keyevent_.key_code;
       event->data.key_time = handler->keyevent_.key_time;
       async->data = (void*)event;
-      uv_async_init(uv_default_loop(), async,
-                    InputEventHandler::OnKeyEvent);
+      uv_async_init(uv_default_loop(), async, InputEventHandler::OnKeyEvent);
       uv_async_send(async);
     }
     // Send InputGestureEvent
@@ -183,7 +182,8 @@ iotjs_input_t* iotjs_input_create(const jerry_value_t jinput) {
   iotjs_input_t* inputwrap = IOTJS_ALLOC(iotjs_input_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_input_t, inputwrap);
 
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jinput, &this_module_native_info);
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jinput,
+                               &this_module_native_info);
   _this->initializer = new InputInitializer(inputwrap);
   _this->event_handler = new InputEventHandler(inputwrap);
   return inputwrap;
@@ -197,7 +197,7 @@ void iotjs_input_destroy(iotjs_input_t* input) {
 
 JS_FUNCTION(Input) {
   DJS_CHECK_THIS();
-  
+
   const jerry_value_t jinput = JS_GET_THIS();
   iotjs_input_t* input_instance = iotjs_input_create(jinput);
   return jerry_create_undefined();
@@ -210,9 +210,8 @@ JS_FUNCTION(Start) {
   int timeout_select = JS_GET_ARG(0, number);
   int timeout_dbclick = JS_GET_ARG(1, number);
   int timeout_slide = JS_GET_ARG(2, number);
-  int r = _this->initializer->start(timeout_select,
-                                    timeout_dbclick,
-                                    timeout_slide);
+  int r =
+      _this->initializer->start(timeout_select, timeout_dbclick, timeout_slide);
   return jerry_create_number(r);
 }
 
@@ -241,4 +240,3 @@ void init(jerry_value_t exports) {
 }
 
 NODE_MODULE(light, init)
-

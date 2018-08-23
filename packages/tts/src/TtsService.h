@@ -1,9 +1,9 @@
 #ifndef TTS_SERVICE_H
 #define TTS_SERVICE_H
 
+#include <speech/tts.h>
 #include <stdlib.h>
 #include <string>
-#include <speech/tts.h>
 #include "OpusPlayer.h"
 
 using namespace std;
@@ -20,7 +20,7 @@ typedef void (*send_event_callback)(void*, TtsResultType, int, int);
 
 class TtsService {
  public:
-  TtsService() {};
+  TtsService(){};
   TtsService(send_event_callback send_event_) {
     send_event = send_event_;
   };
@@ -28,13 +28,9 @@ class TtsService {
     tts_handle->release();
   }
 
-  bool prepare(const char* host,
-               int port,
-               const char* branch,
-               const char* auth_key,
-               const char* device_type,
-               const char* device_id,
-               const char* secret,
+  bool prepare(const char* host, int port, const char* branch,
+               const char* auth_key, const char* device_type,
+               const char* device_id, const char* secret,
                const char* declaimer);
   int speak(const char*);
   int cancel(int id);

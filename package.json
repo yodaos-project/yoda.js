@@ -2,7 +2,7 @@
   "name": "yodart",
   "version": "7.27.0",
   "scripts": {
-    "lint": "standard",
+    "lint": "standard && scripts/clang-format",
     "docs": "jsdoc -c jsdoc.config -R README.md -r . -d docs/docs -u docs/tutorials",
     "test": "scripts/unittests"
   },

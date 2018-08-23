@@ -1,8 +1,7 @@
 #include "AudioNative.h"
 #include <vol_ctrl/volumecontrol.h>
 
-static inline 
-rk_stream_type_t iotjs_audiomgr_get_stream_type(int stream) {
+static inline rk_stream_type_t iotjs_audiomgr_get_stream_type(int stream) {
   if (stream == STREAM_TTS) {
     return STREAM_TTS;
   } else if (stream == STREAM_ALARM) {
@@ -74,13 +73,14 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "setStreamVolume", SetStreamVolume);
   iotjs_jval_set_method(exports, "getStreamVolume", GetStreamVolume);
 
-#define IOTJS_SET_CONSTANT(jobj, name) do {                             \
-  jerry_value_t jkey = jerry_create_string((const jerry_char_t*)#name); \
-  jerry_value_t jval = jerry_create_number(name);                       \
-  jerry_set_property(jobj, jkey, jval);                                 \
-  jerry_release_value(jkey);                                            \
-  jerry_release_value(jval);                                            \
-} while (0)
+#define IOTJS_SET_CONSTANT(jobj, name)                                    \
+  do {                                                                    \
+    jerry_value_t jkey = jerry_create_string((const jerry_char_t*)#name); \
+    jerry_value_t jval = jerry_create_number(name);                       \
+    jerry_set_property(jobj, jkey, jval);                                 \
+    jerry_release_value(jkey);                                            \
+    jerry_release_value(jval);                                            \
+  } while (0)
 
   IOTJS_SET_CONSTANT(exports, STREAM_AUDIO);
   IOTJS_SET_CONSTANT(exports, STREAM_TTS);
@@ -91,4 +91,3 @@ void init(jerry_value_t exports) {
 }
 
 NODE_MODULE(volume, init)
-
