@@ -283,8 +283,19 @@ function createActivity (appId, parent) {
       play: function (uri, args) {
         var argString = JSON.stringify(args || {})
         var absPath = pathTransform(uri, LIGHT_SOURCE, parent.appHome + '/light')
-        return parent.adapter
-          .lightMethod('play', [appId, absPath, argString])
+        return new Promise((resolve, reject) => {
+          parent.adapter.lightMethod('play', [appId, absPath, argString])
+            .then((res) => {
+              if (res && res[0] === true) {
+                resolve()
+              } else {
+                reject(new Error('lighting effect throw an error'))
+              }
+            })
+            .catch((error) => {
+              reject(error)
+            })
+        })
       },
       /**
        * @memberof yodaRT.activity.Activity.LightClient

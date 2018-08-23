@@ -13,6 +13,9 @@ module.exports = function setStandby (light, data, callback) {
   var player = light.sound('system://wifi/setup_network.ogg')
   circle()
 
+  if (typeof callback === 'function') {
+    callback()
+  }
   return function stop (keep) {
     player.stop()
     light.stop(keep)
