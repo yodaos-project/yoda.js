@@ -51,6 +51,8 @@ function App (arr) {
   this.volume = null
   this.prevVolume = -1
   this.handle = {}
+
+  this.cloudApi = null
   // to identify the first start
   this.online = undefined
   this.login = undefined
@@ -475,6 +477,21 @@ App.prototype.setPickup = function (isPickup) {
   this.emit('setPickup', isPickup)
 }
 
+App.prototype.setConfirm = function (appId, intent, slot, options, attrs, callback) {
+  if (this.cloudApi) {
+    this.cloudApi.sendConfirm(appId, intent, slot, options, attrs, (error) => {
+      if (error) {
+        callback(error)
+      } else {
+        this.setPickup(true)
+        callback()
+      }
+    })
+  } else {
+    callback(new Error('cloudApi not found'))
+  }
+}
+
 /**
  * 退出App。由应用自身在退出时手动调用，向系统表明该应用可以被销毁了
  * @param {string} appId extapp的AppID
@@ -694,7 +711,14 @@ App.prototype.onReLogin = function () {
   var config = JSON.stringify(this.onGetPropAll())
   this.ttsMethod('connect', [config])
     .then((res) => {
-      logger.log(`send CONFIG to ttsd: ${res[0]}`)
+      if (!res) {
+        logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
+      } else {
+        logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
+      }
+    })
+    .catch((error) => {
+      logger.log('send CONFIG to ttsd failed: call method failed', error)
     })
 }
 
@@ -759,6 +783,19 @@ App.prototype.startExtappService = function () {
       self.setPickup(isPickup === 'true')
       cb(null)
     }
+  })
+  extapp.addMethod('setConfirm', {
+    in: ['s', 's', 's', 's', 's'],
+    out: ['b']
+  }, function (appId, intent, slot, options, attrs, cb) {
+    self.setConfirm(appId, intent, slot, options, attrs, (error) => {
+      if (error) {
+        logger.log(error)
+        cb(null, false)
+      } else {
+        cb(null, true)
+      }
+    })
   })
   extapp.addMethod('exit', {
     in: ['s'],
