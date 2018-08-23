@@ -10,6 +10,10 @@ echo "installing cloudappclient..."
 adb shell "rm -rf /usr/lib/yoda/cloudappclient"
 adb push ./cloudappclient /usr/lib/yoda/
 
+echo "installing ota..."
+adb shell "rm -rf /usr/lib/yoda/ota"
+adb push ./ota /usr/lib/yoda/
+
 echo "installing system apps..."
 adb shell "rm -rf /opt/apps/*"
 adb push ./apps/* /opt/apps/
@@ -19,3 +23,10 @@ adb shell "rm -rf /opt/media"
 adb shell "rm -rf /opt/light"
 adb push ./res/light /opt/
 adb push ./res/media /opt/
+
+adb shell mkdir -p /usr/lib/node_modules/@yoda
+adb push packages/* /usr/lib/node_modules
+
+adb shell 'rm -rf /data/workspace/test/*'
+adb shell mkdir -p /data/workspace/test
+adb push tests/* /data/workspace/test
