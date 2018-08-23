@@ -7,8 +7,9 @@ JS_FUNCTION(GetProperty) {
 
   jerry_size_t keylen = jerry_get_string_size(jargv[0]);
   char key[keylen];
-  
-  size_t check = jerry_string_to_char_buffer(jargv[0], (jerry_char_t*)key, keylen);
+
+  size_t check =
+      jerry_string_to_char_buffer(jargv[0], (jerry_char_t*)key, keylen);
   IOTJS_ASSERT(check == keylen);
   key[keylen] = '\0';
 
@@ -52,4 +53,3 @@ void init(jerry_value_t exports) {
 }
 
 NODE_MODULE(volume, init)
-

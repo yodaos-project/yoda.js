@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <utils/String8.h>
-#include <fstream>
-#include <string>
-#include <map>
 #include "TtsService.h"
+#include <fstream>
+#include <map>
+#include <stdio.h>
+#include <string>
+#include <utils/String8.h>
 
 using namespace std;
 using namespace rokid;
@@ -78,18 +78,14 @@ void* TtsService::PollEvent(void* params) {
   return NULL;
 }
 
-bool TtsService::prepare(const char* host, 
-                         int port, 
-                         const char* branch,
-                         const char* auth_key, 
-                         const char* device_type,
-                         const char* device_id, 
-                         const char* secret,
+bool TtsService::prepare(const char* host, int port, const char* branch,
+                         const char* auth_key, const char* device_type,
+                         const char* device_id, const char* secret,
                          const char* declaimer) {
   if (prepared) {
     return true;
   }
-  
+
   options.host.assign(host);
   options.port = port;
   options.branch.assign(branch);
@@ -97,9 +93,9 @@ bool TtsService::prepare(const char* host,
   options.device_type_id.assign(device_type);
   options.device_id.assign(device_id);
   options.secret.assign(secret);
-  //options.reconn_interval = 3000;
-  //options.ping_interval = 5000;
-  //options.no_resp_timeout = 3000;
+  // options.reconn_interval = 3000;
+  // options.ping_interval = 5000;
+  // options.no_resp_timeout = 3000;
 
   tts_handle = Tts::new_instance();
   tts_options = TtsOptions::new_instance();
@@ -107,9 +103,7 @@ bool TtsService::prepare(const char* host,
     tts_options->set_declaimer(std::string(declaimer));
   }
 
-  if (!tts_options ||
-    !tts_handle ||
-    !tts_handle->prepare(options)) {
+  if (!tts_options || !tts_handle || !tts_handle->prepare(options)) {
     goto terminate;
   }
   tts_options->set_codec(Codec::OPU2);

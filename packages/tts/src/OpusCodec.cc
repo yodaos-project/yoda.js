@@ -1,8 +1,8 @@
+#include "OpusCodec.h"
+#include <cstdlib>
 #include "cutils/log.h"
 #include "utils/Log.h"
 #include "utils/misc.h"
-#include "OpusCodec.h"
-#include <cstdlib>
 
 typedef struct {
   OpusEncoder* enc;
@@ -17,23 +17,26 @@ typedef struct {
   int opus_frame_size;
 } opus_st;
 
-OpusCodec::OpusCodec(int sample_rate, int channels, int bitrate, int application) {
-  if ((decoder = native_opus_decoder_create(sample_rate, channels, bitrate)) == 0) {
+OpusCodec::OpusCodec(int sample_rate, int channels, int bitrate,
+                     int application) {
+  if ((decoder = native_opus_decoder_create(sample_rate, channels, bitrate)) ==
+      0) {
     ALOGW("decoder create failed");
   }
-  if ((encoder = native_opus_encoder_create(sample_rate, channels, bitrate, application)) == 0) {
+  if ((encoder = native_opus_encoder_create(sample_rate, channels, bitrate,
+                                            application)) == 0) {
     ALOGW("endecoder create failed");
   }
 }
 
 long OpusCodec::native_opus_encoder_create(int sample_rate, int channels,
-                                           int bitrate,
-                                           int application) {
+                                           int bitrate, int application) {
   int error;
   opus_st* encoder = (opus_st*)calloc(1, sizeof(opus_st));
   // TODO(Yorkie): check if this allocation is valid.
 
-  encoder->enc = opus_encoder_create(sample_rate, channels, application, &error);
+  encoder->enc =
+      opus_encoder_create(sample_rate, channels, application, &error);
   if (error != OPUS_OK) {
     ALOGW("encoder create error %s\n", opus_strerror(error));
     free(encoder);
@@ -47,15 +50,16 @@ long OpusCodec::native_opus_encoder_create(int sample_rate, int channels,
     encoder->application = application;
     encoder->duration = 20;
     encoder->opus_bitrate = bitrate;
-    encoder->pcm_bitrate = sample_rate*channels*sizeof(opus_int16)*8;
+    encoder->pcm_bitrate = sample_rate * channels * sizeof(opus_int16) * 8;
     encoder->pcm_frame_size = encoder->duration * sample_rate / 1000;
-    encoder->opus_frame_size = sizeof(opus_int16) * encoder->pcm_frame_size
-                                                  * bitrate / encoder->pcm_bitrate;
+    encoder->opus_frame_size = sizeof(opus_int16) * encoder->pcm_frame_size *
+                               bitrate / encoder->pcm_bitrate;
     return (long)encoder;
   }
 }
 
-long OpusCodec::native_opus_decoder_create(int sample_rate, int channels, int bitrate) {
+long OpusCodec::native_opus_decoder_create(int sample_rate, int channels,
+                                           int bitrate) {
   int error;
   opus_st* decoder = (opus_st*)calloc(1, sizeof(opus_st));
   // TODO(Yorkie): check if this allocation is valid.
@@ -72,8 +76,8 @@ long OpusCodec::native_opus_decoder_create(int sample_rate, int channels, int bi
     decoder->opus_bitrate = bitrate;
     decoder->pcm_bitrate = sample_rate * channels * sizeof(opus_int16) * 8;
     decoder->pcm_frame_size = decoder->duration * sample_rate / 1000;
-    decoder->opus_frame_size = sizeof(opus_int16) * decoder->pcm_frame_size 
-                                                  * bitrate / decoder->pcm_bitrate;
+    decoder->opus_frame_size = sizeof(opus_int16) * decoder->pcm_frame_size *
+                               bitrate / decoder->pcm_bitrate;
 
     opus_decoder_ctl(decoder->dec, OPUS_SET_BITRATE(bitrate));
     opus_decoder_ctl(decoder->dec, OPUS_SET_VBR(0));
@@ -81,31 +85,37 @@ long OpusCodec::native_opus_decoder_create(int sample_rate, int channels, int bi
   }
 }
 
-uint32_t OpusCodec::native_opus_encode(long enc, const char* in, 
-                                       size_t length, unsigned char* &opus) {
-  opus_st* encoder = (opus_st *)enc;
-  opus_int16* pcm = (opus_int16 *)in;
+uint32_t OpusCodec::native_opus_encode(long enc, const char* in, size_t length,
+                                       unsigned char*& opus) {
+  opus_st* encoder = (opus_st*)enc;
+  opus_int16* pcm = (opus_int16*)in;
   const uint32_t len = (uint32_t)length;
   uint32_t pcm_frame_size = encoder->pcm_frame_size;
   uint32_t opus_frame_size = encoder->opus_frame_size;
-  uint32_t opus_length = len*opus_frame_size * sizeof(opus_int16) / pcm_frame_size;
+  uint32_t opus_length =
+      len * opus_frame_size * sizeof(opus_int16) / pcm_frame_size;
   opus = new unsigned char[opus_length];
-  ALOGV("encode len(%d), pcm_frame_size(%d) opus_frame_size(%d)", len, pcm_frame_size, opus_frame_size);
+  ALOGV("encode len(%d), pcm_frame_size(%d) opus_frame_size(%d)", len,
+        pcm_frame_size, opus_frame_size);
 
   uint32_t total_len = 0;
   int out_len = 0;
-  unsigned char *opus_buf = opus;
+  unsigned char* opus_buf = opus;
   uint32_t encoded_size = 0;
-  opus_int16 *pcm_orig = pcm;
-  while (encoded_size < (len/sizeof(opus_int16)/pcm_frame_size)) {
-    out_len = opus_encode(encoder->enc, pcm, pcm_frame_size, opus_buf, opus_frame_size);
+  opus_int16* pcm_orig = pcm;
+  while (encoded_size < (len / sizeof(opus_int16) / pcm_frame_size)) {
+    out_len = opus_encode(encoder->enc, pcm, pcm_frame_size, opus_buf,
+                          opus_frame_size);
     if (out_len < 0) {
-      ALOGW("frame_size(%d) failed: %s", pcm_frame_size, opus_strerror(out_len));
+      ALOGW("frame_size(%d) failed: %s", pcm_frame_size,
+            opus_strerror(out_len));
       out_len = 0;
       break;
     } else if (out_len != (int)opus_frame_size) {
-      ALOGW("Something abnormal happened out_len(%d) pcm_frame_size(%d), check it!!!",
-            out_len, pcm_frame_size);
+      ALOGW(
+          "Something abnormal happened out_len(%d) pcm_frame_size(%d), check "
+          "it!!!",
+          out_len, pcm_frame_size);
     }
 
     pcm += pcm_frame_size;
@@ -113,37 +123,43 @@ uint32_t OpusCodec::native_opus_encode(long enc, const char* in,
     total_len += out_len;
     encoded_size++;
   }
-  //delete[] opus; //need release opus
+  // delete[] opus; //need release opus
   return opus_length;
 }
 
-uint32_t OpusCodec::native_opus_decode(long dec, const char* in, 
-                                       size_t length, char* &pcm_out) {
+uint32_t OpusCodec::native_opus_decode(long dec, const char* in, size_t length,
+                                       char*& pcm_out) {
   opus_st* decoder = (opus_st*)dec;
-  unsigned char* opus = (unsigned char *)in;
+  unsigned char* opus = (unsigned char*)in;
   const int len = (const int)length;
 
   int opus_frame_size = decoder->opus_frame_size;
   int pcm_frame_size = decoder->pcm_frame_size;
-  int compress_ratio = sizeof(opus_int16) * decoder->pcm_frame_size / decoder->opus_frame_size;
-  uint32_t pcm_length = len*compress_ratio;
+  int compress_ratio =
+      sizeof(opus_int16) * decoder->pcm_frame_size / decoder->opus_frame_size;
+  uint32_t pcm_length = len * compress_ratio;
   opus_int16* pcm = new int16_t[pcm_length];
 
-  ALOGD("decode len(%d), compress_ratio(%d), opus_frame_size(%d), pcm_frame_size(%d)",
-        len, compress_ratio, opus_frame_size, pcm_frame_size);
+  ALOGD(
+      "decode len(%d), compress_ratio(%d), opus_frame_size(%d), "
+      "pcm_frame_size(%d)",
+      len, compress_ratio, opus_frame_size, pcm_frame_size);
 
   int total_len = 0;
   int decoded_size = 0;
   int out_len = 0;
   unsigned char* opus_orig = opus;
-  opus_int16 *pcm_buf = pcm;
-  while (decoded_size++ < (len/opus_frame_size)) {
-    out_len = opus_decode(decoder->dec, opus, opus_frame_size, pcm_buf, pcm_frame_size, 0);
+  opus_int16* pcm_buf = pcm;
+  while (decoded_size++ < (len / opus_frame_size)) {
+    out_len = opus_decode(decoder->dec, opus, opus_frame_size, pcm_buf,
+                          pcm_frame_size, 0);
     if (out_len < 0) {
-      ALOGW("opus decode len(%d) opus_len(%d) %s", len, opus_frame_size, opus_strerror(out_len));
+      ALOGW("opus decode len(%d) opus_len(%d) %s", len, opus_frame_size,
+            opus_strerror(out_len));
       break;
     } else if (out_len != pcm_frame_size) {
-      ALOGW("VBS not support!! out_len(%d) pcm_frame_size(%d)", out_len, pcm_frame_size);
+      ALOGW("VBS not support!! out_len(%d) pcm_frame_size(%d)", out_len,
+            pcm_frame_size);
       break;
     }
     opus += opus_frame_size;
@@ -153,6 +169,6 @@ uint32_t OpusCodec::native_opus_decode(long dec, const char* in,
 
   ALOGD("opus decoded data total len = %d", total_len);
   pcm_out = (char*)pcm;
-  //return sizeof(opus_int16)*pcm_length;
+  // return sizeof(opus_int16)*pcm_length;
   return pcm_length;
 }

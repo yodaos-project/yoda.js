@@ -4,13 +4,12 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
 #include <iotjs.h>
-#include <iotjs_def.h>
 #include <iotjs_binding.h>
+#include <iotjs_def.h>
 #include <iotjs_objectwrap.h>
 
 typedef struct {
@@ -19,7 +18,8 @@ typedef struct {
   size_t length;
 } IOTJS_VALIDATED_STRUCT(iotjs_bufferwrap_t);
 
-extern iotjs_bufferwrap_t* iotjs_bufferwrap_from_jbuffer(const jerry_value_t jbuffer);
+extern iotjs_bufferwrap_t* iotjs_bufferwrap_from_jbuffer(
+    const jerry_value_t jbuffer);
 extern char* iotjs_bufferwrap_buffer(iotjs_bufferwrap_t* bufferwrap);
 extern size_t iotjs_bufferwrap_length(iotjs_bufferwrap_t* bufferwrap);
 

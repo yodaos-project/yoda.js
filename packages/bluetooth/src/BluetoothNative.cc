@@ -8,7 +8,7 @@ iotjs_bluetooth_t* iotjs_bluetooth_create(const jerry_value_t jbluetooth,
                                           const jerry_char_t* name) {
   iotjs_bluetooth_t* bluetooth = IOTJS_ALLOC(iotjs_bluetooth_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_bluetooth_t, bluetooth);
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jbluetooth, 
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jbluetooth,
                                &this_module_native_info);
   _this->bt_status = -1;
   _this->bt_handle = rokidbt_create();
@@ -18,8 +18,7 @@ iotjs_bluetooth_t* iotjs_bluetooth_create(const jerry_value_t jbluetooth,
     _this->bt_status = r;
   } else {
     _this->bt_status = 0;
-    rokidbt_set_event_listener(_this->bt_handle,
-                               iotjs_bluetooth_onevent,
+    rokidbt_set_event_listener(_this->bt_handle, iotjs_bluetooth_onevent,
                                (void*)bluetooth);
   }
   return bluetooth;
@@ -36,7 +35,8 @@ void iotjs_bluetooth_destroy(iotjs_bluetooth_t* bluetooth) {
   IOTJS_RELEASE(bluetooth);
 }
 
-void iotjs_bluetooth_onevent(void* self, int what, int arg1, int arg2, void* data) {
+void iotjs_bluetooth_onevent(void* self, int what, int arg1, int arg2,
+                             void* data) {
   fprintf(stdout, "got the bluetooth event %d %d %d\n", what, arg1, arg2);
   iotjs_bluetooth_t* bluetooth = (iotjs_bluetooth_t*)self;
   BluetoothEvent* event = new BluetoothEvent(bluetooth);
@@ -98,11 +98,12 @@ void BluetoothEvent::AfterCallback(uv_handle_t* handle) {
   }
 }
 
-#define IOTJS_BLUETOOTH_CHECK_INSTANCE() do {                         \
-  if (_this->bt_status != 0 || _this->bt_handle == NULL) {            \
-    return JS_CREATE_ERROR(COMMON, "bluetooth handle init failed.");  \
-  }                                                                   \
-} while (0)
+#define IOTJS_BLUETOOTH_CHECK_INSTANCE()                               \
+  do {                                                                 \
+    if (_this->bt_status != 0 || _this->bt_handle == NULL) {           \
+      return JS_CREATE_ERROR(COMMON, "bluetooth handle init failed."); \
+    }                                                                  \
+  } while (0)
 
 JS_FUNCTION(Bluetooth) {
   DJS_CHECK_THIS();
@@ -113,8 +114,8 @@ JS_FUNCTION(Bluetooth) {
   jerry_string_to_char_buffer(jargv[0], bt_name, size);
   bt_name[size] = '\0';
 
-  iotjs_bluetooth_t* bluetooth = iotjs_bluetooth_create(
-    jbluetooth, (const jerry_char_t*)bt_name);
+  iotjs_bluetooth_t* bluetooth =
+      iotjs_bluetooth_create(jbluetooth, (const jerry_char_t*)bt_name);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_bluetooth_t, bluetooth);
   IOTJS_BLUETOOTH_CHECK_INSTANCE();
 
@@ -169,8 +170,9 @@ JS_FUNCTION(BleWrite) {
   jerry_char_t buf[size];
   jerry_string_to_char_buffer(jargv[1], buf, size);
   buf[size] = '\0';
-  
-  int r = rokidbt_ble_send_buf(_this->bt_handle, (uint16_t)uuid, (char*)buf, size);
+
+  int r =
+      rokidbt_ble_send_buf(_this->bt_handle, (uint16_t)uuid, (char*)buf, size);
   if (r != 0) {
     return JS_CREATE_ERROR(COMMON, "BLE send buffer failed.");
   } else {
@@ -290,13 +292,14 @@ void init(jerry_value_t exports) {
   /**
    * Start define constants
    */
-#define IOTJS_SET_CONSTANT(jobj, name) do {                             \
-  jerry_value_t jkey = jerry_create_string((const jerry_char_t*)#name); \
-  jerry_value_t jval = jerry_create_number(name);                       \
-  jerry_set_property(jobj, jkey, jval);                                 \
-  jerry_release_value(jkey);                                            \
-  jerry_release_value(jval);                                            \
-} while (0)
+#define IOTJS_SET_CONSTANT(jobj, name)                                    \
+  do {                                                                    \
+    jerry_value_t jkey = jerry_create_string((const jerry_char_t*)#name); \
+    jerry_value_t jval = jerry_create_number(name);                       \
+    jerry_set_property(jobj, jkey, jval);                                 \
+    jerry_release_value(jkey);                                            \
+    jerry_release_value(jval);                                            \
+  } while (0)
 
   // a2dp events
   IOTJS_SET_CONSTANT(jconstructor, BT_EVENT_A2DP_OPEN);
@@ -337,7 +340,7 @@ void init(jerry_value_t exports) {
    */
 
   iotjs_jval_set_property_jval(exports, "Bluetooth", jconstructor);
-  
+
   jerry_value_t proto = jerry_create_object();
   iotjs_jval_set_method(proto, "enableBle", EnableBle);
   iotjs_jval_set_method(proto, "disableBle", DisableBle);
