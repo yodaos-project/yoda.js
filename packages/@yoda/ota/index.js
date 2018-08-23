@@ -6,17 +6,26 @@
 
 /**
  * @typedef {Object} OtaInfo
- * @property {string} imageUrl -
- * @property {string} authorize -
- * @property {string} changelog -
- * @property {string} checksum -
- * @property {boolean} isForceUpdate -
- * @property {string} version -
+ * @property {string} imageUrl - fetched from cloudgw
+ * @property {string} authorize - fetched from cloudgw
+ * @property {string} changelog - fetched from cloudgw
+ * @property {string} checksum - fetched from cloudgw
+ * @property {boolean} isForceUpdate - fetched from cloudgw
+ * @property {string} version - fetched from cloudgw
+ * @property {string} imagePath - generated field
+ * @property {string} status - generated field, enum for `downloaded`, `downloading`
+ */
+
+/**
+ * @callback OtaInfoCallback
+ * @param {Error} error
+ * @param {module:@yoda/ota~OtaInfo} info
  */
 
 var fs = require('fs')
 var path = require('path')
 var crypto = require('crypto')
+var childProcess = require('child_process')
 
 var yodaUtil = require('@yoda/util')
 var lockfile = require('lockfile')
@@ -34,6 +43,11 @@ var infoLock = upgradeDir + '/info.lock'
 var infoFile = upgradeDir + '/info.json'
 var systemVersionProp = 'ro.build.version.release'
 
+/**
+ * @private
+ * @param {string} dir
+ * @param {Function} callback
+ */
 function mkdirp (dir, callback) {
   fs.mkdir(dir, function onMkdir (err) {
     if (err == null) {
@@ -63,6 +77,11 @@ function mkdirp (dir, callback) {
   }) /** fs.mkdir */
 }
 
+/**
+ * @private
+ * @param {string[]} files
+ * @param {Function} callback
+ */
 function unlinkFiles (files, callback) {
   if (files.length === 0) {
     process.nextTick(callback)
@@ -81,13 +100,15 @@ function getImagePath (info) {
 }
 
 /**
+ * @private
  * @callback lockCallback
  * @param {err} error
  * @param {Function} unlock
  */
 
 /**
- *
+ * Lock info file lock.
+ * @private
  * @param {module:@yoda/ota~lockCallback} callback
  */
 function lockInfo (callback) {
@@ -106,40 +127,59 @@ function lockInfo (callback) {
   }) /** mkdirp */
 }
 
+/**
+ * Read local info file.
+ * @private
+ * @param {module:@yoda/ota~OtaInfoCallback} callback
+ */
 function readInfo (callback) {
-  lockInfo(function onInfoLocked (err, unlock) {
+  fs.stat(infoFile, function onStat (err) {
     if (err) {
+      if (err.code === 'ENOENT') {
+        return callback(null, null)
+      }
       return callback(err)
     }
 
-    fs.stat(infoFile, function onStat (err) {
-      if (err) {
-        if (err.code === 'ENOENT') {
-          return unlock(function onUnlock () {
-            callback(null, null)
-          })
-        }
-        return unlock(function onUnlock () {
-          callback(err)
-        })
-      }
-
-      var info
-      try {
-        info = require(infoFile)
-      } catch (err) {
-        return unlock(function onUnlock () {
-          callback(err)
-        })
-      }
-
-      unlock(function onUnlock () {
-        callback(null, info)
-      })
-    }) /** END: fs.stat */
-  }) /** END: lockInfo */
+    var info
+    try {
+      info = require(infoFile)
+    } catch (err) {
+      return callback(err)
+    }
+    return callback(info)
+  }) /** END: fs.stat */
 }
 
+/**
+ * Read local info file and remove it.
+ *
+ * Commonly used to check if it is first boot after upgrade.
+ * @private
+ * @param {module:@yoda/ota~OtaInfoCallback} callback
+ */
+function readInfoAndClear (callback) {
+  readInfo(function onRead (err, info) {
+    if (err) {
+      return callback(err)
+    }
+    if (info == null) {
+      callback(null, null)
+    }
+    fs.unlink(infoFile, () => {
+      /** ignore unlink error */
+      callback(null, info)
+    }) /** fs.unlink */
+  }) /** readInfo */
+}
+
+/**
+ * Write ota info to local disk.
+ *
+ * @private
+ * @param {module:@yoda/ota~OtaInfo} info
+ * @param {Function} callback
+ */
 function writeInfo (info, callback) {
   lockInfo(function onInfoLocked (err, unlock) {
     if (err) {
@@ -161,45 +201,20 @@ function writeInfo (info, callback) {
 }
 
 /**
- *
- * @param {module:yoda@ota~OtaInfo} info
- * @param {Function} callback
+ * Reset Ota status to prevent system updates on reboot.
+ * @private
  */
-function prepareOta (info, callback) {
-  // TODO: if image is downloading?
-  var imagePath = getImagePath(info)
-  fs.stat(imagePath, function onStat (err, stat) {
-    if (err) {
-      return callback(err)
-    }
-    var size = stat.size
-    if (info.size !== size) {
-      return callback(new Error('image size is not aligned with info.size'))
-    }
-    var ret = system.prepareOta(imagePath)
-    if (ret !== 0) {
-      return callback(new Error(`set_recovery_cmd_status(${ret})`))
-    }
-    callback(null)
-  }) /** fs.stat */
+function resetOta () {
+  var ret = system.prepareOta('')
+  if (ret !== 0) {
+    throw new Error(`set_recovery_cmd_status(${ret})`)
+  }
 }
 
 /**
+ * Clean downloaded images.
  *
- * @param {Function} callback
- */
-function resetOta (callback) {
-  process.nextTick(function onResetOtaNextTick () {
-    var ret = system.prepareOta('')
-    if (ret !== 0) {
-      return callback(new Error(`set_recovery_cmd_status(${ret})`))
-    }
-    callback(null)
-  }) /** process.nextTick */
-}
-
-/**
- *
+ * @private
  * @param {Function} callback
  */
 function cleanImages (callback) {
@@ -216,6 +231,13 @@ function cleanImages (callback) {
   }) /** fs.readdir */
 }
 
+/**
+ * calculate md5 hash of given file.
+ *
+ * @private
+ * @param {string} file - file path
+ * @param {Function} callback - a callback with hash string as second argument
+ */
 function calculateFileHash (file, callback) {
   var hash = crypto.createHash('md5')
   var stream = fs.createReadStream(file)
@@ -231,7 +253,9 @@ function calculateFileHash (file, callback) {
 }
 
 /**
+ * Calculate if there is available disk space left for pending image to be downloaded.
  *
+ * @private
  * @param {number} imageSize - expected image size
  * @param {string} destPath - image path to be downloaded to
  * @param {Function} callback
@@ -258,7 +282,9 @@ function checkDiskAvailability (imageSize, destPath, callback) {
 }
 
 /**
+ * Downloads OTA image and check file validity. Also updates local OTA info status on disk.
  *
+ * @private
  * @param {module:@yoda/ota~OtaInfo} info
  * @param {Function} callback
  */
@@ -267,7 +293,15 @@ function downloadImage (info, callback) {
   compose([
     cb => otaNetwork.fetchImageSize(info.imageUrl, cb),
     (cb, imageSize) => checkDiskAvailability(imageSize, dest, cb),
+    cb => {
+      info.status = 'downloading'
+      writeInfo(info, cb)
+    },
     cb => otaNetwork.doDownloadImage(info.imageUrl, dest, { noCheckCertificate: true }, cb),
+    cb => {
+      info.status = 'downloaded'
+      writeInfo(info, cb)
+    },
     cb => calculateFileHash(dest, cb),
     (cb, hash) => {
       if (hash !== info.checksum) {
@@ -279,7 +313,23 @@ function downloadImage (info, callback) {
   ], callback)
 }
 
-function run (callback) {
+/**
+ * Run OTA procedure in current process context.
+ *
+ * 1. make working directory;
+ * 2. lock program to prevent from concurrent multiple OTA processes;
+ * 3. fetch OTA info;
+ * 4. check if new version available;
+ * 5. check if local image exists;
+ *   - if image exists:
+ *     - if image hash matches, exit 0;
+ *     - if image hash does not match, download image;
+ *   - if image not exists, download image;
+ * 6. write download status to info file on local disk.
+ *
+ * @param {module:@yoda/ota~OtaInfoCallback} callback
+ */
+function runInCurrentContext (callback) {
   var localVersion = property.get(systemVersionProp)
   var info
   var destPath
@@ -307,6 +357,7 @@ function run (callback) {
     },
     cb => {
       destPath = getImagePath(info)
+      info.imagePath = destPath
       /** check if target path exists */
       fs.stat(destPath, function onStat (err, stat) {
         logger.info('check if target path exists', stat != null)
@@ -330,15 +381,19 @@ function run (callback) {
         ncb => calculateFileHash(destPath, ncb),
         (ncb, hash) => {
           if (hash === info.checksum) {
+            /** if checksum matches */
             logger.info('image exists, hash matched')
-            /** if checksum matches, exit compose */
-            return compose.Break()
+            info.status = 'downloaded'
+            writeInfo(info, ncb)
+            return
           }
           logger.info('image exists, yet hash not matched', hash)
           /** checksum doesn't match, clean up work dir and download image */
-          cleanImages(ncb)
-        },
-        ncb => downloadImage(info, ncb)
+          compose([
+            cleanImages,
+            downloadImage.bind(null, info)
+          ], ncb)
+        }
       ], cb)
     }
   ],
@@ -354,19 +409,56 @@ function run (callback) {
       if (ran === false) {
         return callback(null)
       }
-      callback(err, destPath)
+      callback(err, info)
     })
   })
 }
 
+/**
+ * Run OTA procedure in background process.
+ */
+function runInBackground () {
+  var cp = childProcess.spawn('iotjs', [ '/usr/lib/yoda/ota/index.js' ], { env: process.env })
+  cp.unref()
+}
+
+/**
+ * Fetch OTA info, if update available, check if local OTA is running and return status.
+ * @param {module:@yoda/ota~OtaInfoCallback} callback
+ */
+function getAvailableInfo (callback) {
+  var localVersion = property.get(systemVersionProp)
+  var newInfo
+  compose([
+    cb => otaNetwork.fetchOtaInfo(localVersion, cb),
+    (cb, info) => {
+      newInfo = info
+      logger.info('got ota info', JSON.stringify(info))
+      if (info.code === 'NO_IMAGE' || !info.version) {
+        /** no available updates */
+        return compose.Break(null)
+      }
+      readInfo(cb)
+    },
+    (cb, info) => {
+      if (info == null) {
+        return cb(newInfo)
+      }
+      return cb(info)
+    }
+  ], callback)
+}
+
 module.exports.getImagePath = getImagePath
 module.exports.readInfo = readInfo
+module.exports.readInfoAndClear = readInfoAndClear
 module.exports.writeInfo = writeInfo
-module.exports.prepareOta = prepareOta
 module.exports.resetOta = resetOta
 module.exports.cleanImages = cleanImages
 module.exports.calculateFileHash = calculateFileHash
 module.exports.checkDiskAvailability = checkDiskAvailability
 module.exports.downloadImage = downloadImage
-module.exports.run = run
+module.exports.runInCurrentContext = runInCurrentContext
+module.exports.runInBackground = runInBackground
+module.exports.getAvailableInfo = getAvailableInfo
 Object.assign(module.exports, otaNetwork)

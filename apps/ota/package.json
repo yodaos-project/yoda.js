@@ -1,0 +1,24 @@
+{
+  "name": "@yoda/ota",
+  "version": "1.0.0",
+  "description": "OTA Apps for Rokid",
+  "main": "app.js",
+  "metadata": {
+    "skills": [
+      "R07D6E0137294FFBBFEF623315220FD4"
+    ],
+    "permission": [
+      "ACCESS_TTS"
+    ]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ota",
+    "rokid",
+    "skill"
+  ],
+  "author": "Chengzhong Wu <chengzhong.wu@rokid.com>",
+  "license": "UNLICENSED"
+}
