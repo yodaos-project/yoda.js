@@ -14,7 +14,7 @@ var runtime = new AppRuntime(['/opt/apps'])
 runtime.volume = AudioManager
 runtime.adapter = Adapter
 
-// AudioManager.setMute(false);
+AudioManager.setMute(false)
 AudioManager.setVolume(60)
 
 var speech = new Turen.TurenSpeech()
