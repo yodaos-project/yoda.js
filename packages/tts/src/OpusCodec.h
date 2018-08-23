@@ -1,10 +1,10 @@
 #ifndef TTS_OPUS_CODEC_H
 #define TTS_OPUS_CODEC_H
 
-#include <stdio.h>
 #include <opus/opus.h>
-#include <opus/opus_types.h>
 #include <opus/opus_multistream.h>
+#include <opus/opus_types.h>
+#include <stdio.h>
 #include <utils/String8.h>
 
 typedef enum {
@@ -24,11 +24,14 @@ class OpusCodec {
   OpusCodec(int sample_rate, int channels, int bitrate, int application);
   long encoder;
   long decoder;
-  
-  long native_opus_encoder_create(int sample_rate, int channels, int bitrate, int application);
+
+  long native_opus_encoder_create(int sample_rate, int channels, int bitrate,
+                                  int application);
   long native_opus_decoder_create(int sample_rate, int channels, int bitrate);
-  uint32_t native_opus_encode(long enc, const char* in, size_t length, unsigned char* &opus);
-  uint32_t native_opus_decode(long dec, const char* in, size_t length, char* &pcm_out);
+  uint32_t native_opus_encode(long enc, const char* in, size_t length,
+                              unsigned char*& opus);
+  uint32_t native_opus_decode(long dec, const char* in, size_t length,
+                              char*& pcm_out);
 };
 
 #endif

@@ -1,18 +1,17 @@
 #ifndef TTS_NATIVE_H
 #define TTS_NATIVE_H
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "TtsService.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
 #include <iotjs.h>
-#include <iotjs_def.h>
 #include <iotjs_binding.h>
+#include <iotjs_def.h>
 #include <iotjs_objectwrap.h>
 
 class TtsNative;
@@ -29,16 +28,16 @@ typedef struct {
  */
 class TtsNative : public TtsService {
  public:
-  TtsNative() {};
+  TtsNative(){};
   TtsNative(iotjs_tts_t* ttswrap_) {
     ttswrap = ttswrap_;
     send_event = &TtsNative::SendEvent;
   };
-  ~TtsNative() {};
+  ~TtsNative(){};
 
  public:
   static void SendEvent(void* self, TtsResultType event, int id, int code);
- 
+
  protected:
   iotjs_tts_t* ttswrap;
 };

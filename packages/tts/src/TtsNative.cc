@@ -34,7 +34,8 @@ static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
   iotjs_tts_t* ttswrap = IOTJS_ALLOC(iotjs_tts_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_tts_t, ttswrap);
 
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jtts, &this_module_native_info);
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jtts,
+                               &this_module_native_info);
   _this->handle = new TtsNative(ttswrap);
   _this->prepared = false;
   return ttswrap;
@@ -52,7 +53,7 @@ static void iotjs_tts_destroy(iotjs_tts_t* tts) {
 
 JS_FUNCTION(TTS) {
   DJS_CHECK_THIS();
-  
+
   const jerry_value_t jtts = JS_GET_THIS();
   iotjs_tts_t* tts_instance = iotjs_tts_create(jtts);
   return jerry_create_undefined();
@@ -88,25 +89,38 @@ JS_FUNCTION(Prepare) {
     text_buf[size] = '\0';
 
     switch (i) {
-      case 0: host = strdup((char*)&text_buf); break;
-      case 2: branch = strdup((char*)&text_buf); break;
-      case 3: key = strdup((char*)&text_buf); break;
-      case 4: device_type = strdup((char*)&text_buf); break;
-      case 5: device_id = strdup((char*)&text_buf); break;
-      case 6: secret = strdup((char*)&text_buf); break;
-      case 7: declaimer = strdup((char*)&text_buf); break;
+      case 0:
+        host = strdup((char*)&text_buf);
+        break;
+      case 2:
+        branch = strdup((char*)&text_buf);
+        break;
+      case 3:
+        key = strdup((char*)&text_buf);
+        break;
+      case 4:
+        device_type = strdup((char*)&text_buf);
+        break;
+      case 5:
+        device_id = strdup((char*)&text_buf);
+        break;
+      case 6:
+        secret = strdup((char*)&text_buf);
+        break;
+      case 7:
+        declaimer = strdup((char*)&text_buf);
+        break;
       default:
         break;
     }
   }
 
-  fprintf(stdout,
-    "host: %s, port: %d, branch: %s\n", host, port, branch);
+  fprintf(stdout, "host: %s, port: %d, branch: %s\n", host, port, branch);
 
   _this->prepared = true;
-  _this->handle->prepare(host, port, branch,
-    key, device_type, device_id, secret, declaimer);
-  
+  _this->handle->prepare(host, port, branch, key, device_type, device_id,
+                         secret, declaimer);
+
   free(host);
   free(branch);
   free(key);
@@ -134,7 +148,7 @@ JS_FUNCTION(Speak) {
   jerry_string_to_utf8_char_buffer(jargv[0], text_buf, size);
   text_buf[size] = '\0';
   text = (char*)&text_buf;
- 
+
   int32_t id = _this->handle->speak(text);
   return jerry_create_number(id);
 }
@@ -167,7 +181,7 @@ JS_FUNCTION(Disconnect) {
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(TTS);
   iotjs_jval_set_property_jval(exports, "TtsWrap", jconstructor);
-  
+
   jerry_value_t proto = jerry_create_object();
   iotjs_jval_set_method(proto, "prepare", Prepare);
   iotjs_jval_set_method(proto, "speak", Speak);

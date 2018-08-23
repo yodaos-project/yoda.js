@@ -4,16 +4,15 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
 #include <iotjs.h>
-#include <iotjs_def.h>
 #include <iotjs_binding.h>
+#include <iotjs_def.h>
 #include <iotjs_objectwrap.h>
-#include <input-event/input-event.h>
 #include <uv.h>
+#include <input-event/input-event.h>
 
 class InputInitializer;
 class InputEventHandler;
