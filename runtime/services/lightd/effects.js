@@ -19,7 +19,7 @@ var init = false
  */
 function LightRenderingContext (light, Multimedia) {
   this.leds = light
-  this.multimedia = Multimedia
+  this.Multimedia = Multimedia
   this.ledsConfig = light.getProfile()
   this.handle = {}
   this.id = 0
