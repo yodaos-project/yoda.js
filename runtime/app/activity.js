@@ -94,7 +94,23 @@ function createActivity (appId, parent) {
      * @instance
      */
     setConfirm: function setConfirm (intent, slot, options, attrs) {
-      throw new Error('not implemented')
+      return new Promise((resolve, reject) => {
+        if (intent === undefined || intent === '') {
+          reject(new Error('intent required'))
+          return
+        }
+        if (slot === undefined) {
+          reject(new Error('slot required'))
+          return
+        }
+        parent.runtime.setConfirm(appId, intent, slot, options || '[]', attrs || '', (error) => {
+          if (error) {
+            reject(error)
+          } else {
+            resolve()
+          }
+        })
+      })
     },
     /**
      * @function mockNLPResponse
