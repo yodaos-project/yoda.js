@@ -15,12 +15,23 @@ var dbusService = Dbus.registerService('session', 'com.service.tts')
 var dbusObject = dbusService.createObject('/tts/service')
 var dbusApis = dbusObject.createInterface('tts.service')
 
+var LIGHTD_SERVICE = 'com.service.light'
+var LIGHTD_PATH = '/rokid/light'
+var LIGHTD_INTERFACE = 'com.rokid.light.key'
+
 var _TTS = null
 var _CONFIG = null
+
 var permit = new Remote(dbusService._dbus, {
   dbusService: VUI_SERVICE,
   dbusObjectPath: '/com/permission',
   dbusInterface: 'com.rokid.permission'
+})
+
+var lightd = new Remote(dbusService._dbus, {
+  dbusService: LIGHTD_SERVICE,
+  dbusObjectPath: LIGHTD_PATH,
+  dbusInterface: LIGHTD_INTERFACE
 })
 
 var service = new Service({
@@ -62,9 +73,11 @@ function reConnect (CONFIG) {
 
     _TTS.on('start', function (id, errno) {
       logger.log('ttsd start', id)
+      lightd.invoke('setSpeaking')
     })
     _TTS.on('end', function (id, errno) {
       logger.log('ttsd end', id)
+      lightd.invoke('unsetSpeaking')
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',

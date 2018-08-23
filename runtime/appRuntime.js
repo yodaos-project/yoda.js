@@ -145,6 +145,7 @@ App.prototype.load = function (root, cb) {
   var prefix = root
   var pkgInfo
   var app
+  logger.log('load app: ' + root)
   fs.readFile(prefix + '/package.json', 'utf8', (err, data) => {
     if (err) {
       cb(err)
@@ -710,7 +711,6 @@ App.prototype.startExtappService = function () {
     var object = service.createObject(dbusConfig[name].objectPath)
     return object.createInterface(dbusConfig[name].interface)
   }
-
   /**
    * Create extapp service
    */
