@@ -2,7 +2,7 @@
 
 var cloudgw = require('@yoda/cloudgw')
 var ota = require('@yoda/ota')
-var system = require('system')
+var system = require('@yoda/system')
 var logger = require('logger')('otad')
 
 // TODO: await network available

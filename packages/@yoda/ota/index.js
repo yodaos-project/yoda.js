@@ -20,7 +20,7 @@ var crypto = require('crypto')
 
 var yodaUtil = require('@yoda/util')
 var lockfile = require('lockfile')
-var system = require('system')
+var system = require('@yoda/system')
 var property = require('property')
 var logger = require('logger')('ota')
 
