@@ -39,14 +39,17 @@ ExternalProject_Add(${NAME}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 endmacro()
 
-# @yoda/util
-YodaLocalPackage(yoda-util @yoda/util)
-
 # @yoda/cloudgw
 YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
 
 # @yoda/ota
 YodaLocalPackage(yoda-ota @yoda/ota)
+
+# @yoda/system
+YodaLocalPackage(yoda-system @yoda/system)
+
+# @yoda/util
+YodaLocalPackage(yoda-util @yoda/util)
 
 # Bluetooth
 YodaLocalPackage(bluetooth)
@@ -84,9 +87,6 @@ YodaLocalPackage(battery)
 # Property
 YodaLocalPackage(property)
 
-# System
-YodaLocalPackage(system)
-
 # TextToSpeech
 YodaLocalPackage(tts)
 
@@ -110,6 +110,6 @@ ExternalProject_Add(rklogger
 install(DIRECTORY ./apps            DESTINATION /opt)
 install(DIRECTORY ./res/media       DESTINATION /opt)
 install(DIRECTORY ./res/light       DESTINATION /opt)
+install(DIRECTORY ./ota             DESTINATION /usr/lib/yoda)
 install(DIRECTORY ./runtime         DESTINATION /usr/lib/yoda)
 install(DIRECTORY ./cloudappclient  DESTINATION /usr/lib/yoda)
-
