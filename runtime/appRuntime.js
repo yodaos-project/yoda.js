@@ -200,7 +200,7 @@ App.prototype.onEvent = function (name, data) {
       this.volume.setVolume(min)
       this.handle.setVolume = setTimeout(() => {
         this.volume.setVolume(volume)
-      }, 6000)
+      }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
     }
     this.lightMethod('setAwake', [''])
   } else if (name === 'voice local awake') {
