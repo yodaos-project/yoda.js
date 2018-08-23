@@ -76,7 +76,7 @@ function compose (monads, callback) {
   if (!Array.isArray(monads)) {
     throw TypeError('Expect array of functions on first argument of compose.')
   }
-  monads.forEach(monad => {
+  monads.forEach((monad, idx) => {
     if (typeof monad !== 'function') {
       throw TypeError(`Expect functions on compose, but got ${typeof monad} on index ${idx}.`)
     }

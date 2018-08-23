@@ -6,6 +6,7 @@ var system = require('system')
 var logger = require('logger')('otad')
 
 // TODO: await network available
+cloudgw.config = null
 ota.run(function onOTA (err, imagePath) {
   logger.info('ota ran')
   if (err) {
