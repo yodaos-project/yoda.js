@@ -10,17 +10,13 @@ var cloudgw = require('@yoda/cloudgw')
 var otaEndpoint = '/v1/extended/ota/check'
 
 /**
+ * @private
  * @module @yoda/ota
  */
 
 /**
- * @callback OtaInfoCallback
- * @param {Error} error
- * @param {module:@yoda/ota~OtaInfo} info
- */
-
-/**
  *
+ * @private
  * @param {string} localVersion
  * @param {module:@yoda/ota~OtaInfoCallback} callback
  */
@@ -37,6 +33,7 @@ function fetchOtaInfo (localVersion, callback) {
 }
 
 /**
+ * @private
  * @typedef DownloadOptions
  * @property {boolean} [noCheckCertificate]
  * @property {boolean} [continue]
@@ -44,6 +41,7 @@ function fetchOtaInfo (localVersion, callback) {
 
 /**
  *
+ * @private
  * @param {string} url
  * @param {string} dest
  * @param {module:@yoda/ota~DownloadOptions} options
@@ -84,6 +82,7 @@ function doDownloadImage (url, dest, options, callback) {
 }
 
 /**
+ * @private
  * @callback FetchImageSizeCallback
  * @param {Error} error
  * @param {number} size
@@ -91,6 +90,7 @@ function doDownloadImage (url, dest, options, callback) {
 
 /**
  *
+ * @private
  * @param {string} urlStr
  * @param {module:@yoda/ota~FetchImageSizeCallback} callback
  */

@@ -9,7 +9,7 @@ test('should calculate file hash', t => {
   var file = path.join(__dirname, '..', '..', 'fixture', 'calc-hash.txt')
   ota.calculateFileHash(file, (err, hash) => {
     t.error(err)
-    t.strictEqual(hash, '0085c0086e6c7786a35a5bbd058e8353')
+    t.strictEqual(hash, '9fe0f5901125ace23de80738b720b6ea')
     t.end()
   })
 })

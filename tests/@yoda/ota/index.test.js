@@ -20,9 +20,9 @@ tryUnlinkSync(imgFile)
 
 test('should ship ota if no updates available', t => {
   mock.mockCallback(otaNetwork, 'fetchOtaInfo', null, { code: 'NO_IMAGE' })
-  ota.run(function onOTA (err, imagePath) {
+  ota.runInCurrentContext(function onOTA (err, info) {
     t.error(err)
-    t.assert(imagePath == null)
+    t.assert(info == null)
 
     mock.restore()
     t.end()
@@ -36,7 +36,7 @@ test('should throw if disk space not available', t => {
     checksum: '99d7bdf3ecf03f3fd081d7b835c7347f'
   })
   mock.mockCallback(otaNetwork, 'fetchImageSize', null, 1024 * 1024 * 1024 * 1024 /** 1T */)
-  ota.run(function onOTA (err, imagePath) {
+  ota.runInCurrentContext(function onOTA (err, info) {
     t.ok(err)
     t.ok(err.message.match('Disk space not available'))
 
@@ -101,9 +101,10 @@ test('should skip download if image already exists', t => {
     mock.mockCallback(otaNetwork, 'doDownloadImage', () => {
       t.fail('unreachable path')
     })
-    ota.run(function onOTA (err, imagePath) {
+    ota.runInCurrentContext(function onOTA (err, info) {
       t.error(err)
-      t.strictEqual(imagePath, imgFile)
+      t.strictEqual(info && info.imagePath, imgFile)
+      t.strictEqual(info && info.status, 'downloaded')
 
       mock.restore()
       tryUnlinkSync(imgFile)
