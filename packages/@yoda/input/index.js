@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @module input
+ * @module @yoda/input
  * @description Input events handler. On YodaOS, every input events
  * are treated as an event and handled by InputEvent. Currently,
  * we support `keyup`, `keydown` and `longpress` events.

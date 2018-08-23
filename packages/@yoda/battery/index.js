@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @module battery
+ * @module @yoda/battery
  * @description provide the battery state management.
  */
 
