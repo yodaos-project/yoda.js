@@ -35,8 +35,13 @@ dbusApis.addMethod('play', {
   } catch (error) {
     logger.log(`parse args error: ${args}, appId: ${appId}`)
   }
-  var result = service.loadfile(name, data)
-  cb(null, result)
+  service.loadfile(name, data, (error) => {
+    if (error) {
+      cb(null, false)
+    } else {
+      cb(null, true)
+    }
+  })
 })
 
 dbusApis.addMethod('setAwake', {
