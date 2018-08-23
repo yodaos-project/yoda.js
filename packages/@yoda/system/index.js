@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @module system
+ * @module @yoda/system
  */
 
 var native = require('./system.node')
@@ -40,6 +40,6 @@ exports.prepareOta = native.prepareOta
  *
  * @function diskUsage
  * @param {string} path - the path to be analyzed
- * @returns {module:system~DiskUsage}
+ * @returns {module:@yoda/system~DiskUsage}
  */
 exports.diskUsage = native.diskUsage
