@@ -1,12 +1,12 @@
 #include "MultimediaNative.h"
 
 enum PlayerEventType {
-  MULTIMEDIA_PLAYER_NOOP		 = 0,
-  MULTIMEDIA_PLAYER_PREPARED 		 = 1,
-  MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE    = 2,
-  MULTIMEDIA_BUFFERING_UPDATE            = 3,
-  MULTIMEDIA_SEEK_COMPLETE 		 = 4,
-  MULTIMEDIA_ERROR             		 = 100,
+  MULTIMEDIA_PLAYER_NOOP = 0,
+  MULTIMEDIA_PLAYER_PREPARED = 1,
+  MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE = 2,
+  MULTIMEDIA_BUFFERING_UPDATE = 3,
+  MULTIMEDIA_SEEK_COMPLETE = 4,
+  MULTIMEDIA_ERROR = 100,
 };
 
 void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
@@ -24,7 +24,8 @@ void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
     event->ext2 = ext2;
     event->from = from;
     async_handle->data = (void*)event;
-    uv_async_init(uv_default_loop(), async_handle, MultimediaListener::DoNotify);
+    uv_async_init(uv_default_loop(), async_handle,
+                  MultimediaListener::DoNotify);
     uv_async_send(async_handle);
   }
 }
@@ -46,8 +47,8 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
   } else if (event->type == MEDIA_SEEK_COMPLETE) {
     notifyFn = iotjs_jval_get_property(jthis, "onseekcomplete");
   } else if (event->type == MEDIA_ERROR) {
-    fprintf(stderr, "[jsruntime] player occurrs an error %d %d %d",
-     	    event->ext1, event->ext2, event->from);
+    fprintf(stderr, "[jsruntime] player occurrs an error %d %d %d", event->ext1,
+            event->ext2, event->from);
     notifyFn = iotjs_jval_get_property(jthis, "onerror");
   } else {
     return;
@@ -63,7 +64,7 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
   if (event->type == MEDIA_PREPARED) {
     _this->handle->start();
   }
-  
+
   delete event;
   uv_close((uv_handle_t*)handle, MultimediaListener::AfterNotify);
 }
@@ -89,8 +90,10 @@ static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_player_t, player_wrap);
 
   static uint32_t global_id = 1000;
-  jerry_value_t jobjectref = jerry_acquire_value(jplayer); // TODO: find someway to release this
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jobjectref, &this_module_native_info);
+  jerry_value_t jobjectref =
+      jerry_acquire_value(jplayer); // TODO: find someway to release this
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jobjectref,
+                               &this_module_native_info);
   _this->handle = NULL;
   _this->listener = new MultimediaListener(player_wrap);
   _this->id = (global_id++);
@@ -106,7 +109,7 @@ static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
 
 JS_FUNCTION(Player) {
   DJS_CHECK_THIS();
-  
+
   const jerry_value_t jplayer = JS_GET_THIS();
   iotjs_player_t* player_wrap = iotjs_player_create(jplayer);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
@@ -249,7 +252,7 @@ JS_FUNCTION(IdGetter) {
 JS_FUNCTION(PlayingStateGetter) {
   JS_DECLARE_THIS_PTR(player, player);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
-  
+
   if (_this->handle && _this->listener->isPrepared())
     return jerry_create_boolean(_this->handle->isPlaying());
   else
@@ -312,7 +315,7 @@ JS_FUNCTION(VolumeSetter) {
 
   float vol = JS_GET_ARG(0, number);
   if (_this->handle) {
-    _this->handle->setVolume(vol/* left */, vol/* right */);
+    _this->handle->setVolume(vol /* left */, vol /* right */);
     return jerry_create_boolean(true);
   } else {
     return JS_CREATE_ERROR(COMMON, "player is not ready");
@@ -352,7 +355,7 @@ void iotjs_set_constant(jerry_value_t jobj, uint32_t idx, const char* v) {
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(Player);
   iotjs_jval_set_property_jval(exports, "Player", jconstructor);
-  
+
   jerry_value_t proto = jerry_create_object();
   iotjs_jval_set_method(proto, "prepare", Prepare);
   iotjs_jval_set_method(proto, "start", Start);
@@ -362,7 +365,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "seek", Seek);
   iotjs_jval_set_method(proto, "reset", Reset);
   iotjs_jval_set_method(proto, "disconnect", Disconnect);
-  
+
   // the following methods are for getters and setters internally
   iotjs_jval_set_method(proto, "idGetter", IdGetter);
   iotjs_jval_set_method(proto, "playingStateGetter", PlayingStateGetter);
@@ -380,7 +383,8 @@ void init(jerry_value_t exports) {
   jerry_value_t events = jerry_create_object();
   iotjs_set_constant(events, MULTIMEDIA_PLAYER_NOOP, "noop");
   iotjs_set_constant(events, MULTIMEDIA_PLAYER_PREPARED, "prepared");
-  iotjs_set_constant(events, MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE, "playback complete");
+  iotjs_set_constant(events, MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE,
+                     "playback complete");
   iotjs_set_constant(events, MULTIMEDIA_BUFFERING_UPDATE, "buffering update");
   iotjs_set_constant(events, MULTIMEDIA_SEEK_COMPLETE, "seek complete");
   iotjs_set_constant(events, MULTIMEDIA_ERROR, "error");

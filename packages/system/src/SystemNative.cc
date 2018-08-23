@@ -1,7 +1,6 @@
 #include "SystemNative.h"
-#include <sys/statvfs.h>
 #include <recovery/recovery.h>
-
+#include <sys/statvfs.h>
 
 JS_FUNCTION(Reboot) {
   int ret = system("reboot");
@@ -54,11 +53,13 @@ JS_FUNCTION(DiskUsage) {
   iotjs_string_destroy(&iotjs_path);
   if (ret) {
     int errnum = errno;
-    return jerry_create_error(JERRY_ERROR_COMMON, (jerry_char_t*)strerror(errnum));
+    return jerry_create_error(JERRY_ERROR_COMMON,
+                              (jerry_char_t*)strerror(errnum));
   }
 
   jerry_value_t res = jerry_create_object();
-  iotjs_jval_set_property_number(res, "available", info.f_bavail * info.f_frsize);
+  iotjs_jval_set_property_number(res, "available",
+                                 info.f_bavail * info.f_frsize);
   iotjs_jval_set_property_number(res, "free", info.f_bfree * info.f_frsize);
   iotjs_jval_set_property_number(res, "total", info.f_blocks * info.f_frsize);
   return res;

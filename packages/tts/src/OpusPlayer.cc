@@ -1,19 +1,19 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-#include <pulse/simple.h>
-#include <pulse/error.h>
 #include <pulse/def.h>
+#include <pulse/error.h>
 #include <pulse/sample.h>
+#include <pulse/simple.h>
 
 #include "OpusPlayer.h"
 #include "utils/Log.h"
 
-#include <thread>   // std::thread
-#include <mutex>    // std::mutex, std::unique_lock
+#include <mutex>  // std::mutex, std::unique_lock
+#include <thread> // std::thread
 
 static std::mutex ttsPlayerMutex;
 
@@ -22,7 +22,8 @@ OpusPlayer::OpusPlayer() {
 
   int error;
   /* Create a new playback stream */
-  if (!(s = pa_simple_new(NULL, "ttsplayer", PA_STREAM_PLAYBACK, NULL, "tts", &ss, NULL, NULL, &error))) {
+  if (!(s = pa_simple_new(NULL, "ttsplayer", PA_STREAM_PLAYBACK, NULL, "tts",
+                          &ss, NULL, NULL, &error))) {
     ALOGW("pa_simple_new() failed: %s\n", pa_strerror(error));
     pa_simple_free(s);
     s = NULL;
@@ -46,7 +47,8 @@ void OpusPlayer::play(const char* data, size_t length) {
   char* pcm_out;
   uint32_t pcm_out_length;
 
-  pcm_out_length = _opus->native_opus_decode(_opus->decoder, data, length, pcm_out);
+  pcm_out_length =
+      _opus->native_opus_decode(_opus->decoder, data, length, pcm_out);
   if (s) {
     pa_simple_write(s, pcm_out, pcm_out_length, &error);
   }
@@ -64,7 +66,8 @@ void OpusPlayer::reset() {
   int error;
 
   /* Create a new playback stream */
-  if (!(s = pa_simple_new(NULL, "ttsplayer", PA_STREAM_PLAYBACK, NULL, "tts", &ss, NULL, NULL, &error))) {
+  if (!(s = pa_simple_new(NULL, "ttsplayer", PA_STREAM_PLAYBACK, NULL, "tts",
+                          &ss, NULL, NULL, &error))) {
     ALOGW("pa_simple_new() failed: %s\n", pa_strerror(error));
     pa_simple_free(s);
     s = NULL;

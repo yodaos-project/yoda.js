@@ -1,6 +1,6 @@
 #include "WifiNative.h"
-#include <netinet/in.h>
 #include <arpa/nameser.h>
+#include <netinet/in.h>
 #include <resolv.h>
 #include <unistd.h>
 #include <wpa_command.h>
@@ -12,7 +12,7 @@ JS_FUNCTION(JoinNetwork) {
   jerry_size_t ssidlen = -1;
   jerry_size_t psklen = -1;
   int key_mgmt = JS_GET_ARG(2, number);
-  
+
   // parse the ssid
   if (jerry_value_is_string(jargv[0])) {
     ssidlen = jerry_get_string_size(jargv[0]);
@@ -27,7 +27,7 @@ JS_FUNCTION(JoinNetwork) {
   // parse the psk
   if (jerry_value_is_string(jargv[1])) {
     psklen = jerry_get_string_size(jargv[1]);
-    // if psk is empty string or key_mgmt is none, pass 
+    // if psk is empty string or key_mgmt is none, pass
     // WIFI_KEY_NONE as key_mgmt.
     if (psklen == 0 || key_mgmt == WIFI_KEY_NONE) {
       config.key_mgmt = WIFI_KEY_NONE;
@@ -41,7 +41,7 @@ JS_FUNCTION(JoinNetwork) {
   } else {
     config.key_mgmt = WIFI_KEY_NONE;
   }
-  
+
   int r = wifi_join_network(&config);
   if (r != 0)
     return JS_CREATE_ERROR(COMMON, "join network failed");
@@ -85,4 +85,3 @@ void init(jerry_value_t exports) {
 }
 
 NODE_MODULE(wifi, init)
-

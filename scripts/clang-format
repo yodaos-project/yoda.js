@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file -i
