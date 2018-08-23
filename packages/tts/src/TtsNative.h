@@ -10,8 +10,8 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include <iotjs.h>
-#include <iotjs_binding.h>
 #include <iotjs_def.h>
+#include <iotjs_binding.h>
 #include <iotjs_objectwrap.h>
 
 class TtsNative;
