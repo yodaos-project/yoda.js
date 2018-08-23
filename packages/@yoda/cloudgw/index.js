@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * provide the battery state management.
+ * Cloud API request library.
  * @module @yoda/cloudgw
  */
 
