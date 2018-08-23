@@ -7,12 +7,12 @@ function Proxy (bus, options) {
 
 Proxy.prototype.invoke = function (name, args) {
   return new Promise((resolve, reject) => {
-    var sig = args.map(() => 's').join('')
+    var sig = args && args.length > 0 ? args.map(() => 's').join('') : ''
     this.bus.callMethod(
       this.options.dbusService,
       this.options.dbusObjectPath,
       this.options.dbusInterface,
-      name, sig, args, function (res) {
+      name, sig, args || [], function (res) {
         resolve(res)
       })
   })
