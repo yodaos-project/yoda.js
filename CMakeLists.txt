@@ -39,61 +39,30 @@ ExternalProject_Add(${NAME}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 endmacro()
 
-# @yoda/cloudgw
-YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
 
-# @yoda/ota
-YodaLocalPackage(yoda-ota @yoda/ota)
-
-# @yoda/system
-YodaLocalPackage(yoda-system @yoda/system)
-
-# @yoda/util
-YodaLocalPackage(yoda-util @yoda/util)
-
-# Bluetooth
-YodaLocalPackage(bluetooth)
-
-# Input
-YodaLocalPackage(input)
-
-# shadow-ffi
+# remote packages
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
-
-# tape: test framework
 YodaGitPackage(tape https://github.com/shadow-node/tape.git master)
-
-# turen
 YodaGitPackage(turen https://github.com/Rokid/node-turen.git master)
-
-# extapp client
 YodaGitPackage(extapp https://github.com/Rokid/node-extapp.git master)
 
-# Logger
-YodaLocalPackage(logger)
+# local packages
+YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
+YodaLocalPackage(yoda-battery @yoda/battery)
+YodaLocalPackage(yoda-input @yoda/input)
+YodaLocalPackage(yoda-ota @yoda/ota)
+YodaLocalPackage(yoda-system @yoda/system)
+YodaLocalPackage(yoda-util @yoda/util)
 
-# lockfile
-YodaLocalPackage(lockfile)
-
-# Light
-YodaLocalPackage(light)
-
-# Multimedia
-YodaLocalPackage(multimedia)
-
-# PowerCtrl
-YodaLocalPackage(battery)
-
-# Property
-YodaLocalPackage(property)
-
-# TextToSpeech
-YodaLocalPackage(tts)
-
-# Volume Controls
+# system packages
 YodaLocalPackage(audio)
-
-# Wifi Controls
+YodaLocalPackage(bluetooth)
+YodaLocalPackage(light)
+YodaLocalPackage(lockfile)
+YodaLocalPackage(logger)
+YodaLocalPackage(multimedia)
+YodaLocalPackage(property)
+YodaLocalPackage(tts)
 YodaLocalPackage(wifi)
 
 # Tools
