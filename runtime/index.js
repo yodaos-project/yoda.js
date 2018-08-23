@@ -47,9 +47,14 @@ speech.on('asr end', function (asr, event) {
     asr: asr
   })
 })
-// speech.on('raw event', (event) => {
-//   logger.log(JSON.stringify(event));
-// });
+
+// if DEBUG, we put raw events
+if (process.env.DISPLAY_RAW_EVENT) {
+  speech.on('raw event', function (event) {
+    logger.log(event)
+  })
+}
+
 // 监听turen NLP事件
 speech.on('nlp', function (response, event) {
   logger.log('nlp', response)
