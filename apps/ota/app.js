@@ -7,7 +7,12 @@ var logger = require('logger')('otap')
 var intentHandler = {
   start_sys_upgrade: checkUpdateAvailability,
   check_sys_upgrade: checkUpdateAvailability,
-  check_upgrade_num: whatsCurrentVersion
+  check_upgrade_num: whatsCurrentVersion,
+  /**
+   * Generated NLP
+   */
+  on_first_boot_after_upgrade: onFirstBootAfterUpgrade,
+  force_upgrade: forceUpgrade
 }
 
 module.exports = function (activity) {
@@ -18,11 +23,12 @@ module.exports = function (activity) {
       return
     }
     logger.info(`OtaApp got nlp ${nlp.intent}`)
-    handler(activity)
+    handler(activity, nlp, action)
   })
 }
 
 function checkUpdateAvailability (activity) {
+  logger.info('fetching available ota info')
   ota.getAvailableInfo(function onInfo (error, info) {
     if (error) {
       logger.error('Unexpected error on check available updates', error.stack)
@@ -58,4 +64,25 @@ function whatsCurrentVersion (activity) {
 function isUpgradeSuitableNow () {
   // TODO: check battery availability
   return true
+}
+
+function onFirstBootAfterUpgrade (activity, nlp) {
+  var info = nlp._info
+  if (info == null || !info.changelog) {
+    return
+  }
+
+  ota.resetOta()
+  activity.tts.speak(info.changelog, () => activity.exit())
+}
+
+function forceUpgrade (activity, nlp) {
+  var info = nlp._info
+  if (info == null || !info.changelog) {
+    return
+  }
+  activity.tts.speak(info.changelog, () => {
+    activity.exit()
+    system.reboot()
+  })
 }

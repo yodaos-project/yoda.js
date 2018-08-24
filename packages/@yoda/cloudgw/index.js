@@ -10,8 +10,6 @@ var crypto = require('crypto')
 
 var StatusCodeError = require('./status-code-error')
 
-var config = null
-
 var defaultHost = 'apigwrest.open.rokid.com'
 var signKeys = [ 'key', 'device_type_id', 'device_id', 'service', 'version', 'time', 'secret' ]
 var authKeys = [ 'version', 'time', 'sign', 'key', 'device_type_id', 'device_id', 'service' ]
@@ -34,14 +32,11 @@ function genSign (obj) {
  * @param {String} [options.service]
  */
 function getAuth (options) {
-  if (config === null) {
-    throw new Error('cloudgw not initialized')
-  }
   var data = {
-    key: config.key,
-    secret: config.secret,
-    device_type_id: config.deviceTypeId,
-    device_id: config.deviceId,
+    key: options.key,
+    secret: options.secret,
+    device_type_id: options.deviceTypeId,
+    device_id: options.deviceId,
     service: options.service,
     version: '1',
     time: Math.floor(Date.now() / 1000)
@@ -55,6 +50,14 @@ function getAuth (options) {
 function noop () {}
 
 /**
+ * @class
+ * @param {*} config
+ */
+function Cloudgw (config) {
+  this.config = config
+}
+
+/**
  *
  * @param {String} path
  * @param {Object} data
@@ -63,7 +66,7 @@ function noop () {}
  * @param {String} [options.service]
  * @param {Function} callback
  */
-function request (path, data, options, callback) {
+Cloudgw.prototype.request = function request (path, data, options, callback) {
   if (typeof options === 'function') {
     callback = options
     options = undefined
@@ -78,7 +81,7 @@ function request (path, data, options, callback) {
   var host = options.host || defaultHost
 
   data = JSON.stringify(data)
-  var authorization = getAuth(options)
+  var authorization = getAuth(Object.assign({}, options, this.config))
   var req = https.request({
     method: 'POST',
     host: host,
@@ -115,15 +118,4 @@ function request (path, data, options, callback) {
   req.end(data)
 }
 
-/**
- * @member {Object} config
- */
-Object.defineProperty(module.exports, 'config', {
-  get: function get () {
-    return config
-  },
-  set: function set (val) {
-    config = Object.assign({}, config, val)
-  }
-})
-module.exports.request = request
+module.exports = Cloudgw

@@ -1,58 +1,55 @@
 'use strict'
 
-var cloudgw = require('@yoda/cloudgw')
+var CloudGW = require('@yoda/cloudgw')
 var ota = require('@yoda/ota')
+var otaNetwork = require('@yoda/ota/network')
 var system = require('@yoda/system')
 var logger = require('logger')('otad')
+var yodaUtil = require('@yoda/util')
+var dbus = require('dbus').getBus('session')
 
-var extapp = require('extapp')
+var compose = yodaUtil.compose
 
-var service = new extapp.ExtAppService(extapp.DbusAdapter, {
-  dbusService: 'com.rokid.AmsExport',
-  dbusObjectPath: '/extapp/test',
-  dbusInterface: 'com.test.interface'
-})
+var ifaceOpenvoice
 
-service.on('ready', () => {
-  logger.info('service ready')
-})
-service.on('error', (err) => {
-  logger.info('service ', err.stack)
-})
-
-var ready = false
-var startTimer = setTimeout(() => {
-  if (!ready) {
-    logger.error('Unable to reach ready state after 5s of waiting.')
-    process.exit(1)
-  }
-}, 5 * 1000)
-
-var app = service.create('@ota')
-app.on('ready', () => {
-  app.get('all').then(result => {
+compose([
+  cb => {
+    dbus.getInterface(
+      'com.rokid.AmsExport',
+      '/activation/prop',
+      'com.rokid.activation.prop',
+      cb
+    )
+  },
+  (cb, iface) => {
+    iface.all('@ota', cb)
+  },
+  (cb, propStr) => {
     var config
     try {
-      config = JSON.parse(result && result[0])
+      config = JSON.parse(propStr)
     } catch (err) {
-      logger.error('Failed to parse props', err.stack)
-      return
+      cb(err)
     }
-    cloudgw.config = config
-
-    ready = true
-    clearTimeout(startTimer)
-    main(function () {
-      process.exit()
-    })
+    otaNetwork.cloudgw = new CloudGW(config)
+    cb()
   },
-  error => {
-    logger.error('get prop error', error)
-  })
-})
-
-app.on('error', error => {
-  logger.error('unexpected error on extapp', error && error.stack)
+  cb => dbus.getInterface(
+    'com.rokid.AmsExport',
+    '/rokid/openvoice',
+    'rokid.openvoice.AmsExport',
+    cb
+  ),
+  (cb, iface) => {
+    ifaceOpenvoice = iface
+    main(cb)
+  }
+], function onDone (err) {
+  if (err) {
+    logger.error('unexpected error', err.message, err.stack)
+    return process.exit(1)
+  }
+  process.exit()
 })
 
 function main (done) {
@@ -72,6 +69,10 @@ function main (done) {
     var ret = system.prepareOta(imagePath)
     logger.info(
       `OTA prepared with status code ${ret}, terminating.`)
-    done()
+
+    if (!info.isForceUpdate) {
+      return done()
+    }
+    ifaceOpenvoice.ForceUpdateAvailable(done)
   })
 }
