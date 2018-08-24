@@ -8,6 +8,8 @@ var AudioManager = require('audio').AudioManager
 var AppRuntime = require('./appRuntime')
 var logger = require('logger')('main')
 
+var CloudGW = require('@yoda/cloudgw')
+
 // ------------------------------------------------------
 
 var runtime = new AppRuntime(['/opt/apps'])
@@ -79,6 +81,7 @@ runtime.on('reconnected', function () {
       deviceId: config.device_id
     }
     speech.start(options)
+    require('@yoda/ota/network').cloudgw = new CloudGW(options)
 
     // Implementation interface
     runtime.onGetPropAll = function () {

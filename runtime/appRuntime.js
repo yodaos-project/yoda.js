@@ -14,6 +14,7 @@ var dbusConfig = require('./dbus-config.json')
 var Permission = require('./component/permission')
 var AppExecutor = require('./app/executor')
 var logger = require('logger')('yoda')
+var ota = require('@yoda/ota')
 
 module.exports = App
 perf.stub('init')
@@ -56,6 +57,8 @@ function App (arr) {
   // to identify the first start
   this.online = undefined
   this.login = undefined
+
+  this.forceUpdateAvailable = false
 
   // this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
@@ -206,6 +209,18 @@ App.prototype.onEvent = function (name, data) {
       }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
     }
     this.lightMethod('setAwake', [''])
+    if (this.forceUpdateAvailable) {
+      logger.info('pending force update, delegates activity to @ota.')
+      this.forceUpdateAvailable = false
+      ota.getInfoOfPendingUpgrade((err, info) => {
+        if (err || info == null) {
+          logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
+          return
+        }
+        logger.info('got pending update info', info)
+        this.startApp('@ota', { intent: 'force_upgrade', _info: info }, {})
+      })
+    }
   } else if (name === 'voice local awake') {
     if (this.online !== true) {
       // start @network app
@@ -233,6 +248,13 @@ App.prototype.onEvent = function (name, data) {
       this.emit('reconnected')
     }
     this.online = true
+    ota.getInfoIfFirstUpgradedBoot((err, info) => {
+      if (err || info == null) {
+        logger.error('failed to fetch upgraded info, skipping', err && err.stack)
+        return
+      }
+      this.startApp('@ota', { intent: 'on_first_boot_after_upgrade', _info: info }, {})
+    })
   } else if (name === 'disconnected') {
     // trigger disconnected event when network state is switched or when it is first activated.
     if (this.online === true || this.online === undefined) {
@@ -914,5 +936,13 @@ App.prototype.startExtappService = function () {
   }, function (cb) {
     logger.log('YodaOS is alive')
     cb(null, true)
+  })
+  amsexport.addMethod('ForceUpdateAvailable', {
+    in: [],
+    out: []
+  }, function (cb) {
+    logger.info('force update available, waiting for incoming voice')
+    self.forceUpdateAvailable = true
+    cb(null)
   })
 }
