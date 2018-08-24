@@ -204,27 +204,26 @@ function writeInfo (info, callback) {
  * Reset Ota status to prevent system updates on reboot.
  * Also clears OTA infos and images stored on disk on next tick.
  * @private
+ * @param {Function} callback
  */
-function resetOta () {
-  process.nextTick(() => {
-    lockInfo(function onInfoLocked (err, unlock) {
-      if (err) {
-        logger.error('ota is running, terminating reset.')
-        return
-      }
-
-      fs.unlink(infoFile, function onUnlink () {
-        /** ignore any error */
-        cleanImages(function onCleanImages () {
-          unlock(function noop () {})
-        })
-      })
-    }) /** END: lockInfo */
-  })
+function resetOta (callback) {
   var ret = system.prepareOta('')
   if (ret !== 0) {
     throw new Error(`set_recovery_cmd_status(${ret})`)
   }
+  lockInfo(function onInfoLocked (err, unlock) {
+    if (err) {
+      logger.error('ota is running, terminating reset.')
+      return callback(null, ret)
+    }
+
+    fs.unlink(infoFile, function onUnlink () {
+      /** ignore any error */
+      cleanImages(function onCleanImages () {
+        unlock(callback)
+      })
+    })
+  }) /** END: lockInfo */
 }
 
 /**
@@ -243,6 +242,8 @@ function cleanImages (callback) {
         var extname = path.extname(it)
         return extname === '.img' || extname === 'json'
       })
+      .map(it => path.join(upgradeDir, it))
+
     unlinkFiles(files, callback)
   }) /** fs.readdir */
 }
@@ -290,8 +291,20 @@ function checkDiskAvailability (imageSize, destPath, callback) {
     var diskUsage = system.diskUsage(upgradeDir)
     var left = diskUsage.available - imageSize + downloadedSize
     if (left < 5 * 1024 * 1024) {
-      callback(new Error(`Disk space not available for new ota image, expect ${imageSize}, got ${diskUsage.available}`))
-      return
+      /**
+       * no space left for new image, try remove existed images
+       * TODO: monkey army, remove arbitrary low prioritized files
+       */
+      return fs.readdir(upgradeDir, (_, files) => {
+        if (files && files.length) {
+          files = files.filter(it => path.extname(it) === '.img')
+          if (files.length) {
+            return cleanImages(() => checkDiskAvailability(imageSize, destPath, callback))
+          }
+        }
+        callback(new Error(
+          `Disk space not available for new ota image, expect ${imageSize}, got ${diskUsage.available}`))
+      })
     }
     callback(null, true)
   }) /** fs.stat */
@@ -332,8 +345,8 @@ function downloadImage (info, callback) {
 /**
  * Run OTA procedure in current process context.
  *
- * 1. make working directory;
- * 2. lock program to prevent from concurrent multiple OTA processes;
+ * 1. lock program to prevent from concurrent multiple OTA processes;
+ * 2. make working directory;
  * 3. fetch OTA info;
  * 4. check if new version available;
  * 5. check if local image exists;
@@ -346,86 +359,90 @@ function downloadImage (info, callback) {
  * @param {module:@yoda/ota~OtaInfoCallback} callback
  */
 function runInCurrentContext (callback) {
-  var localVersion = property.get(systemVersionProp)
-  var info
-  var destPath
-  compose([
-    /** make work dir */
-    cb => mkdirp(upgradeDir, cb),
-    /** lock proc to run exclusively */
-    cb => lockfile.lock(procLock, cb),
-    /**
-     * get new version info if available
-     * @returns {module:@yoda/ota~OtaInfo}
-     */
-    cb => otaNetwork.fetchOtaInfo(localVersion, cb),
-    /**
-     * @returns {boolean} if target image exists
-     */
-    (cb, nfo) => {
-      info = nfo
-      logger.info('got ota info', JSON.stringify(nfo))
-      if (info.code === 'NO_IMAGE' || !info.version) {
-        /** no available updates */
-        return compose.Break(false)
-      }
-      writeInfo(info, cb)
-    },
-    cb => {
-      destPath = getImagePath(info)
-      info.imagePath = destPath
-      /** check if target path exists */
-      fs.stat(destPath, function onStat (err, stat) {
-        logger.info('check if target path exists', stat != null)
-        if (err) {
-          if (err.code === 'ENOENT') {
-            return cb(null, false)
-          }
-          return cb(err)
-        }
-        return cb(null, stat.isFile())
-      }) /** fs.stat */
-    },
-    (cb, exists) => {
-      logger.info('if target download path exists', exists === true)
-      /** if target download path does not exist, forward to download directly */
-      if (!exists) {
-        return downloadImage(info, cb)
-      }
-      /** else calculate hash of the file */
-      compose([
-        ncb => calculateFileHash(destPath, ncb),
-        (ncb, hash) => {
-          if (hash === info.checksum) {
-            /** if checksum matches */
-            logger.info('image exists, hash matched')
-            info.status = 'downloaded'
-            writeInfo(info, ncb)
-            return
-          }
-          logger.info('image exists, yet hash not matched', hash)
-          /** checksum doesn't match, clean up work dir and download image */
-          compose([
-            cleanImages,
-            downloadImage.bind(null, info)
-          ], ncb)
-        }
-      ], cb)
+  lockfile.lock(procLock, { stale: /** 30m */ 30 * 60 * 1000 }, function onLocked (err) {
+    if (err) {
+      return callback(err)
     }
-  ],
-  /**
-   * @param {Error} err
-   * @param {false|undefined} ran
-   */
-  function otaCleanup (err, ran) {
-    logger.info('ota unlocking proc lock.')
+
+    var localVersion = property.get(systemVersionProp)
+    var info
+    var destPath
     compose([
-      cb => lockfile.unlock(procLock, cb)
-    ], () => {
-      if (ran === false) {
-        return callback(null)
+      /** make work dir */
+      cb => mkdirp(upgradeDir, cb),
+      /**
+       * get new version info if available
+       * @returns {module:@yoda/ota~OtaInfo}
+       */
+      cb => otaNetwork.fetchOtaInfo(localVersion, cb),
+      /**
+       * @returns {boolean} if target image exists
+       */
+      (cb, nfo) => {
+        info = nfo
+        logger.info('got ota info', JSON.stringify(nfo))
+        if (info.code === 'NO_IMAGE' || !info.version) {
+          /** no available updates */
+          return compose.Break(false)
+        }
+        writeInfo(info, cb)
+      },
+      cb => {
+        destPath = getImagePath(info)
+        info.imagePath = destPath
+        /** check if target path exists */
+        fs.stat(destPath, function onStat (err, stat) {
+          logger.info('check if target path exists', stat != null)
+          if (err) {
+            if (err.code === 'ENOENT') {
+              return cb(null, false)
+            }
+            return cb(err)
+          }
+          return cb(null, stat.isFile())
+        }) /** fs.stat */
+      },
+      (cb, exists) => {
+        logger.info('if target download path exists', exists === true)
+        /** if target download path does not exist, forward to download directly */
+        if (!exists) {
+          return downloadImage(info, cb)
+        }
+        /** else calculate hash of the file */
+        compose([
+          ncb => calculateFileHash(destPath, ncb),
+          (ncb, hash) => {
+            if (hash === info.checksum) {
+              /** if checksum matches */
+              logger.info('image exists, hash matched')
+              info.status = 'downloaded'
+              writeInfo(info, ncb)
+              return
+            }
+            logger.info('image exists, yet hash not matched', hash)
+            /** checksum doesn't match, clean up work dir and download image */
+            compose([
+              cleanImages,
+              downloadImage.bind(null, info)
+            ], ncb)
+          }
+        ], cb)
       }
-      callback(err, info)
+    ],
+    /**
+     * @param {Error} err
+     * @param {false|undefined} ran
+     */
+    function otaCleanup (err, ran) {
+      logger.info('ota unlocking proc lock.')
+      compose([
+        cb => lockfile.unlock(procLock, cb)
+      ], () => {
+        if (ran === false) {
+          return callback(null)
+        }
+        callback(err, info)
+      })
     })
   })
 }
@@ -434,7 +451,10 @@ function runInCurrentContext (callback) {
  * Run OTA procedure in background process.
  */
 function runInBackground () {
-  var cp = childProcess.spawn('iotjs', [ '/usr/lib/yoda/ota/index.js' ], { env: process.env })
+  var cp = childProcess.spawn('iotjs', [ '/usr/lib/yoda/ota/index.js' ], {
+    env: process.env,
+    detached: true
+  })
   cp.unref()
 }
 
@@ -458,9 +478,9 @@ function getAvailableInfo (callback) {
     },
     (cb, info) => {
       if (info == null) {
-        return cb(newInfo)
+        return cb(null, newInfo)
       }
-      return cb(info)
+      return cb(null, info)
     }
   ], callback)
 }
