@@ -91,25 +91,18 @@ var loggingServer = createLoggingServer(process.env.LOG_PORT)
  */
 function Logger (name) {
   if (!name) {
-    name = 'syst'
-  }
-  if (name.length > 4) {
-    name = name.slice(0, 4)
-  }
-
-  // map for 1/2/3
-  switch (name.length) {
-    case 1: name = ` :${name} `; break
-    case 2: name = ` ${name} `; break
-    case 3: name = `:${name}`; break
+    name = 'default'
   }
   this.name = name
 }
 
 function createLoggerFunction (level) {
+  if (typeof level !== 'string') {
+    level = 'info'
+  }
   return function () {
     var now = new Date()
-    var line = `[${now}] <${this.name}> :: ` + util.format.apply(this, arguments)
+    var line = `[${now}] ${level.toUpperCase()} <${this.name}> :: ` + util.format.apply(this, arguments)
     if (loggingServer.isAvailable()) {
       loggingServer.send(line)
     } else {
