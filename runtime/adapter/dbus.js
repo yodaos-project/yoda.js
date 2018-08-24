@@ -3,6 +3,11 @@
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 
+var DBUS_VUI = 'com.rokid.AmsExport'
+// vui prop接口
+var DBUS_PROP_PATH = '/activation/prop'
+var DBUS_PROP_INTERFACE = 'com.rokid.activation.prop'
+
 // ttsd 接口
 var DBUS_TTS_SERVER = 'com.service.tts'
 var DBUS_TTS_PATH = '/tts/service'
@@ -46,6 +51,10 @@ Adapter.prototype.multiMediaMethod = function (name, args) {
 
 Adapter.prototype.lightMethod = function (name, args) {
   return this.remoteCall(name, args, DBUS_LIGHT_SERVER, DBUS_LIGHT_PATH, DBUS_LIGHT_INTERFACE)
+}
+
+Adapter.prototype.propMethod = function (name, args) {
+  return this.remoteCall(name, args, DBUS_VUI, DBUS_PROP_PATH, DBUS_PROP_INTERFACE)
 }
 
 /**

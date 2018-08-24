@@ -47,6 +47,26 @@ function createActivity (appId, parent) {
 
   return Object.assign(activity, {
     /**
+     * get property value by key
+     * @function get
+     * @param {String} key
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @returns {Promise}
+     */
+    get: function (key) {
+      return new Promise((resolve, reject) => {
+        parent.adapter.propMethod(key, [appId])
+          .then((args) => {
+            // 目前只支持一个参数，考虑改成参数数组，或者resolve支持参数展开
+            resolve(args)
+          })
+          .catch((err) => {
+            reject(err)
+          })
+      })
+    },
+    /**
      * Exits the current application.
      * @function exit
      * @memberof yodaRT.activity.Activity
