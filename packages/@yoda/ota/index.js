@@ -147,7 +147,7 @@ function readInfo (callback) {
     } catch (err) {
       return callback(err)
     }
-    return callback(info)
+    return callback(null, info)
   }) /** END: fs.stat */
 }
 
@@ -202,9 +202,25 @@ function writeInfo (info, callback) {
 
 /**
  * Reset Ota status to prevent system updates on reboot.
+ * Also clears OTA infos and images stored on disk on next tick.
  * @private
  */
 function resetOta () {
+  process.nextTick(() => {
+    lockInfo(function onInfoLocked (err, unlock) {
+      if (err) {
+        logger.error('ota is running, terminating reset.')
+        return
+      }
+
+      fs.unlink(infoFile, function onUnlink () {
+        /** ignore any error */
+        cleanImages(function onCleanImages () {
+          unlock(function noop () {})
+        })
+      })
+    }) /** END: lockInfo */
+  })
   var ret = system.prepareOta('')
   if (ret !== 0) {
     throw new Error(`set_recovery_cmd_status(${ret})`)
@@ -402,7 +418,7 @@ function runInCurrentContext (callback) {
    * @param {false|undefined} ran
    */
   function otaCleanup (err, ran) {
-    logger.info('ota cleaning up.')
+    logger.info('ota unlocking proc lock.')
     compose([
       cb => lockfile.unlock(procLock, cb)
     ], () => {
@@ -423,7 +439,7 @@ function runInBackground () {
 }
 
 /**
- * Fetch OTA info, if update available, check if local OTA is running and return status.
+ * Fetch OTA info. If update available, return local stored OTA info if possible or newly fetch otherwise.
  * @param {module:@yoda/ota~OtaInfoCallback} callback
  */
 function getAvailableInfo (callback) {
@@ -449,6 +465,48 @@ function getAvailableInfo (callback) {
   ], callback)
 }
 
+/**
+ * Check if it is the first boot after an upgrade, return ota info if is, null otherwise.
+ *
+ * @param {module:@yoda/ota~OtaInfoCallback} callback
+ */
+function getInfoIfFirstUpgradedBoot (callback) {
+  var localVersion = property.get(systemVersionProp)
+  readInfo(function onInfo (err, info) {
+    if (err) {
+      logger.error(`read info failed`, err.message, err.stack)
+      callback(null, null)
+      return
+    }
+    logger.info(`local info version ${info && info.version}`)
+    if (info && (info.version === localVersion)) {
+      callback(null, info)
+      return
+    }
+    callback(null, null)
+  })
+}
+
+/**
+ * Check if there is a pending update, return ota info if is, null otherwise.
+ *
+ * @param {module:@yoda/ota~OtaInfoCallback} callback
+ */
+function getInfoOfPendingUpgrade (callback) {
+  readInfo(function onInfo (err, info) {
+    if (err) {
+      logger.error(`read info failed`, err.message, err.stack)
+      callback(null, null)
+      return
+    }
+    if (info && (info.status === 'downloaded')) {
+      callback(null, info)
+      return
+    }
+    callback(null, null)
+  })
+}
+
 module.exports.getImagePath = getImagePath
 module.exports.readInfo = readInfo
 module.exports.readInfoAndClear = readInfoAndClear
@@ -461,4 +519,6 @@ module.exports.downloadImage = downloadImage
 module.exports.runInCurrentContext = runInCurrentContext
 module.exports.runInBackground = runInBackground
 module.exports.getAvailableInfo = getAvailableInfo
+module.exports.getInfoIfFirstUpgradedBoot = getInfoIfFirstUpgradedBoot
+module.exports.getInfoOfPendingUpgrade = getInfoOfPendingUpgrade
 Object.assign(module.exports, otaNetwork)

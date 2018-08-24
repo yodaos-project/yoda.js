@@ -4,9 +4,9 @@ var childProcess = require('child_process')
 var http = require('http')
 var https = require('https')
 var url = require('url')
+var logger = require('logger')('otan')
 
-var cloudgw = require('@yoda/cloudgw')
-
+var cloudgw = null
 var otaEndpoint = '/v1/extended/ota/check'
 
 /**
@@ -21,6 +21,11 @@ var otaEndpoint = '/v1/extended/ota/check'
  * @param {module:@yoda/ota~OtaInfoCallback} callback
  */
 function fetchOtaInfo (localVersion, callback) {
+  if (cloudgw == null) {
+    logger.error('cloudgw is not initialized.')
+    callback(new Error('cloudgw in @yoda/ota is not initialized.'))
+    return
+  }
   cloudgw.request(otaEndpoint,
     { version: localVersion },
     { service: 'ota' },
@@ -134,3 +139,12 @@ function fetchImageSize (urlStr, callback) {
 module.exports.fetchOtaInfo = fetchOtaInfo
 module.exports.doDownloadImage = doDownloadImage
 module.exports.fetchImageSize = fetchImageSize
+Object.defineProperty(module.exports, 'cloudgw', {
+  configurable: false,
+  set: function set (val) {
+    cloudgw = val
+  },
+  get: function get () {
+    return null
+  }
+})

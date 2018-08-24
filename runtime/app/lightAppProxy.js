@@ -13,7 +13,11 @@ module.exports = function lightAppProxy (target) {
     var handle = require(main)
     var lightapp = new LightApp(appId, runtime)
     lightapp.appHome = target
-    handle(lightapp.app)
+    try {
+      handle(lightapp.app)
+    } catch (err) {
+      logger.error(`unexpected error on light app ${main}`, err.message, err.stack)
+    }
     return lightapp
   }
 }
