@@ -160,6 +160,20 @@ Manager.prototype.next = function () {
   }
 }
 
+Manager.prototype.pause = function () {
+  var cur = this.getCurrentSkill()
+  if (cur !== false) {
+    cur.emit('pause')
+  }
+}
+
+Manager.prototype.resume = function () {
+  var cur = this.getCurrentSkill()
+  if (cur !== false) {
+    cur.emit('resume')
+  }
+}
+
 Manager.prototype.getCurrentSkill = function () {
   if (this.skills.length <= 0) {
     return false
