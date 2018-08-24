@@ -164,10 +164,12 @@ app.on('created', function () {
 
 app.on('paused', function () {
   console.log(this.getAppId() + ' paused')
+  sos.pause()
 })
 
 app.on('resumed', function () {
   console.log(this.getAppId() + ' resumed')
+  sos.resume()
 })
 
 app.on('onrequest', function (nlp, action) {
