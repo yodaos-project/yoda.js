@@ -13,7 +13,7 @@ MultiMedia.prototype.start = function (appId, url) {
   return new Promise((resolve, reject) => {
     this.options.permit.invoke('check', [appId, 'ACCESS_MULTIMEDIA'])
       .then((res) => {
-        if (res['0'] === 'true') {
+        if (res && res['0'] === 'true') {
           if (this.handle[appId]) {
             this.handle[appId].stop()
           }
