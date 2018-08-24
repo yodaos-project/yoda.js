@@ -179,4 +179,5 @@ app.on('onrequest', function (nlp, action) {
 
 app.on('destroyed', function () {
   console.log(this.getAppId() + ' destroyed')
+  sos.destroy()
 })
