@@ -203,6 +203,7 @@ App.prototype.onEvent = function (name, data) {
       this.volume.setVolume(min)
       this.handle.setVolume = setTimeout(() => {
         this.volume.setVolume(volume)
+        this.prevVolume = -1
       }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
     }
     this.lightMethod('setAwake', [''])
@@ -222,6 +223,7 @@ App.prototype.onEvent = function (name, data) {
     clearTimeout(this.handle.setVolume)
     if (this.prevVolume > 0) {
       this.volume.setVolume(this.prevVolume)
+      this.prevVolume = -1
     }
     this.lightMethod('setHide', [''])
     this.onVoiceCommand(data.asr, data.nlp, data.action)
@@ -696,6 +698,7 @@ App.prototype.onReconnected = function () {
  */
 App.prototype.onDisconnected = function () {
   this.login = false
+  this.destroyAll()
   logger.log('network disconnected, please connect to wifi first')
   this.startApp('@network', {}, {})
 }
