@@ -16,6 +16,7 @@ function Light (options) {
 
 Light.prototype.init = function () {
   // TODO
+  this.setHide()
 }
 
 Light.prototype.stopPrev = function (keep) {
