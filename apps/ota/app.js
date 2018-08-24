@@ -45,8 +45,10 @@ function checkUpdateAvailability (activity) {
     var result = isUpgradeSuitableNow()
     if (result !== true) {
       // TODO: device not available for upgrade
+      return
     }
-    var ret = system.prepareOta(info)
+    logger.info(`using ota image ${info.imagePath}`)
+    var ret = system.prepareOta(info.imagePath)
     if (ret !== 0) {
       activity.tts.speak('准备升级失败', () => activity.exit())
       return
@@ -72,8 +74,9 @@ function onFirstBootAfterUpgrade (activity, nlp) {
     return
   }
 
-  ota.resetOta()
-  activity.tts.speak(info.changelog, () => activity.exit())
+  ota.resetOta(function onReset () {
+    activity.tts.speak(info.changelog, () => activity.exit())
+  })
 }
 
 function forceUpgrade (activity, nlp) {

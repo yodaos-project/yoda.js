@@ -29,6 +29,11 @@ exports.verifyOtaImage = native.verifyOtaImage
 exports.prepareOta = native.prepareOta
 
 /**
+ * @private
+ */
+exports.GetOtaFlag = native.GetOtaFlag
+
+/**
  * @typedef DiskUsage
  * @property {number} available
  * @property {number} free

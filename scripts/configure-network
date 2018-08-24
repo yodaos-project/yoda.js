@@ -48,11 +48,11 @@ adb shell "mount -o remount,rw /"
 # MARK: - Setup Network
 if ! test -z "$ssid" && ! test -z "$psk"; then
   set +e
-  content="$(adb shell cat /etc/wpa_supplicant.conf | grep ssid)"
+  content="$(adb shell cat /data/system/wpa_supplicant.conf | grep ssid)"
   set -e
   if test -z "$content"; then
     adb shell << EOC
-cat >> /etc/wpa_supplicant.conf <<- EOS
+cat >> /data/system/wpa_supplicant.conf <<- EOS
 network={
   ssid="$ssid"
   psk="$psk"

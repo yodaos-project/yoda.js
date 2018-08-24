@@ -57,14 +57,16 @@ function main (done) {
     logger.info('ota ran')
     if (err) {
       logger.error(err.message, err.stack)
-      ota.resetOta()
-      return done()
+      if (err.code === 'EEXIST') {
+        return done()
+      }
+      /** not errored for locking, shall retry in a short sleep */
+      return ota.resetOta(() => done(err))
     }
     var imagePath = info && info.imagePath
     if (typeof imagePath !== 'string') {
       logger.info('No updates found, exiting.')
-      ota.resetOta()
-      return done()
+      return ota.resetOta(done)
     }
     var ret = system.prepareOta(imagePath)
     logger.info(

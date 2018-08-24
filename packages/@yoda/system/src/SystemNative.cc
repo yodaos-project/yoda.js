@@ -35,13 +35,28 @@ JS_FUNCTION(PrepareOta) {
     iotjs_string_destroy(&iotjs_path);
     return jerry_create_number(status);
   }
-  strncpy(cmd.boot_mode, mode, strlen(mode));
-  strncpy(cmd.recovery_path, path, strlen(path));
-  strncpy(cmd.recovery_state, state, strlen(state));
+  /** include last \0 */
+  strncpy(cmd.boot_mode, mode, strlen(mode) + 1);
+  strncpy(cmd.recovery_path, path, strlen(path) + 1);
+  strncpy(cmd.recovery_state, state, strlen(state) + 1);
   status = set_recovery_cmd_status(&cmd);
 
   iotjs_string_destroy(&iotjs_path);
   return jerry_create_number(status);
+}
+
+JS_FUNCTION(GetOtaFlag) {
+  int status;
+  struct boot_cmd cmd;
+  memset(&cmd, 0, sizeof(cmd));
+  status = get_recovery_cmd_status(&cmd);
+
+  jerry_value_t jval = jerry_create_object();
+  iotjs_jval_set_property_string_raw(jval, "boot_mode", cmd.boot_mode);
+  iotjs_jval_set_property_string_raw(jval, "recovery_path", cmd.recovery_path);
+  iotjs_jval_set_property_string_raw(jval, "recovery_state", cmd.recovery_state);
+
+  return jval;
 }
 
 JS_FUNCTION(DiskUsage) {
