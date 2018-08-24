@@ -32,7 +32,7 @@ var native = require('./light.node')
 
 var config = native.getProfile()
 var length = config.leds * (config.format || 3)
-var buffer = Buffer.from(length)
+var buffer = Buffer.alloc(length, 0)
 var enabled = false;
 
 (function bootstrap () {
