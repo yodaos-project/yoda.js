@@ -299,7 +299,7 @@ function createActivity (appId, parent) {
        * set loop playback if you pass true.
        * @memberof yodaRT.activity.Activity.MediaClient
        * @instance
-       * @function setPosition
+       * @function setLoopMode
        * @param {Boolean} loop
        * @returns {Promise}
        */
