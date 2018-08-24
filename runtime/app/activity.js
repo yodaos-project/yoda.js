@@ -253,6 +253,13 @@ function createActivity (appId, parent) {
             })
         })
       },
+      /**
+       * return whether to loop
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function getLoopMode
+       * @returns {Promise}
+       */
       getLoopMode: function () {
         return new Promise((resolve, reject) => {
           parent.adapter.multiMediaMethod('getLoopMode', [appId])
@@ -268,10 +275,18 @@ function createActivity (appId, parent) {
             })
         })
       },
-      setLoopMode: function (mode) {
+      /**
+       * set loop playback if you pass true.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function setPosition
+       * @param {Boolean} loop
+       * @returns {Promise}
+       */
+      setLoopMode: function (loop) {
         return new Promise((resolve, reject) => {
-          mode = mode === true ? 'true' : 'false'
-          parent.adapter.multiMediaMethod('setLoopMode', [appId, mode])
+          loop = loop === true ? 'true' : 'false'
+          parent.adapter.multiMediaMethod('setLoopMode', [appId, loop])
             .then((res) => {
               if (res && res[0] !== undefined) {
                 resolve(res[0])
