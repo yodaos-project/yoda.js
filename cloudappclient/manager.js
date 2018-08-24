@@ -174,6 +174,12 @@ Manager.prototype.resume = function () {
   }
 }
 
+Manager.prototype.destroy = function () {
+  for (var i = 0; i < this.skills.length; i++) {
+    this.skills[i].emit('destroy')
+  }
+}
+
 Manager.prototype.getCurrentSkill = function () {
   if (this.skills.length <= 0) {
     return false
