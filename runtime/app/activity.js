@@ -253,6 +253,37 @@ function createActivity (appId, parent) {
             })
         })
       },
+      getLoopMode: function () {
+        return new Promise((resolve, reject) => {
+          parent.adapter.multiMediaMethod('getLoopMode', [appId])
+            .then((res) => {
+              if (res && res[0] !== undefined) {
+                resolve(res[0])
+              } else {
+                reject(new Error('multimediad error'))
+              }
+            })
+            .catch((error) => {
+              reject(error)
+            })
+        })
+      },
+      setLoopMode: function (mode) {
+        return new Promise((resolve, reject) => {
+          mode = mode === true ? 'true' : 'false'
+          parent.adapter.multiMediaMethod('setLoopMode', [appId, mode])
+            .then((res) => {
+              if (res && res[0] !== undefined) {
+                resolve(res[0])
+              } else {
+                reject(new Error('multimediad error'))
+              }
+            })
+            .catch((error) => {
+              reject(error)
+            })
+        })
+      },
       /**
        * Seek the given position.
        * @memberof yodaRT.activity.Activity.MediaClient

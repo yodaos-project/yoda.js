@@ -43,9 +43,23 @@ service.on('playbackcomplete', function (id) {
 })
 service.on('bufferingupdate', function (id) {
   logger.log('multimediad buffering update', Array.prototype.slice.call(arguments, 0))
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    'ss',
+    [id, 'bufferingupdate']
+  )
 })
 service.on('seekcomplete', function (id) {
   logger.log('multimediad seek complete', Array.prototype.slice.call(arguments, 0))
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    'ss',
+    [id, 'seekcomplete']
+  )
 })
 service.on('error', function (id) {
   logger.log('multimediad error', Array.prototype.slice.call(arguments, 0))
@@ -135,6 +149,33 @@ dbusApis.addMethod('seek', {
         cb(null, true)
       }
     })
+  } else {
+    cb(null, false)
+  }
+})
+
+dbusApis.addMethod('getLoopMode', {
+  in: ['s', 's'],
+  out: ['b']
+}, function (appId, cb) {
+  logger.log(`appId: ${appId} getLoopMode`)
+  if (appId) {
+    var mode = service.getLoopMode(appId)
+    logger.log(`response: ${mode}`)
+    cb(null, mode)
+  } else {
+    cb(null, false)
+  }
+})
+
+dbusApis.addMethod('setLoopMode', {
+  in: ['s', 's'],
+  out: ['b']
+}, function (appId, mode, cb) {
+  logger.log(`appId: ${appId} setLoopMode: ${mode}`)
+  if (appId) {
+    service.setLoopMode(appId, mode)
+    cb(null, true)
   } else {
     cb(null, false)
   }

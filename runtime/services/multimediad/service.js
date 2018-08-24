@@ -59,6 +59,19 @@ MultiMedia.prototype.getPosition = function (appId) {
   return -1
 }
 
+MultiMedia.prototype.getLoopMode = function (appId) {
+  if (this.handle[appId]) {
+    return this.handle[appId].loopMode
+  }
+  return false
+}
+
+MultiMedia.prototype.setLoopMode = function (appId, mode) {
+  if (this.handle[appId]) {
+    this.handle[appId].loopMode = mode === 'true'
+  }
+}
+
 MultiMedia.prototype.seek = function (appId, position, callback) {
   if (this.handle[appId]) {
     this.handle[appId].seek(position, callback)
