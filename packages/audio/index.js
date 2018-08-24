@@ -148,7 +148,7 @@ AudioManager.setMute = function (val) {
 AudioManager.setVolumeShaper = function (shaper) {
   var max = 100
   var shape = shaper(max)
-  if (!Array.isArray(shape) || shape.length !== max) { throw new Error('shaper function should return an array with 100 elements.') }
+  if (!Array.isArray(shape)) { throw new Error('shaper function should return an array with 100 elements.') }
 
   for (var i = 0; i <= max; i++) {
     if (!native.setCurveForVolume(i, shape[i])) {
