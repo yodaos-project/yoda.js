@@ -43,4 +43,15 @@ Tts.prototype.stop = function (appId) {
   }
 }
 
+Tts.prototype.reset = function () {
+  try {
+    for (var index in this.handle) {
+      this.handle[index].stop()
+    }
+  } catch (error) {
+    logger.log('error when try to stop all tts')
+  }
+  this.handle = {}
+}
+
 module.exports = Tts

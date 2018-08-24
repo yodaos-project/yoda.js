@@ -18,7 +18,7 @@ MultiMedia.prototype.start = function (appId, url) {
             this.handle[appId].stop()
           }
           var player = new this.options.Multimedia()
-          this.listenEvent(player)
+          this.listenEvent(player, appId)
           player.start(url)
           this.handle[appId] = player
           resolve('' + player.id)
@@ -80,11 +80,13 @@ MultiMedia.prototype.seek = function (appId, position, callback) {
   }
 }
 
-MultiMedia.prototype.listenEvent = function (player) {
+MultiMedia.prototype.listenEvent = function (player, appId) {
   player.on('prepared', () => {
     this.emit('prepared', '' + player.id, '' + player.duration, '' + player.position)
   })
   player.on('playbackcomplete', () => {
+    // free handle after playbackcomplete
+    delete this.handle[appId]
     this.emit('playbackcomplete', '' + player.id)
   })
   player.on('bufferingupdate', () => {
@@ -94,8 +96,21 @@ MultiMedia.prototype.listenEvent = function (player) {
     this.emit('seekcomplete', '' + player.id)
   })
   player.on('error', () => {
+    // free handle when something goes wrong
+    delete this.handle[appId]
     this.emit('error', '' + player.id)
   })
+}
+
+MultiMedia.prototype.reset = function () {
+  try {
+    for (var index in this.handle) {
+      this.handle[index].stop()
+    }
+  } catch (error) {
+    logger.log('error when try to stop all player')
+  }
+  this.handle = {}
 }
 
 module.exports = MultiMedia

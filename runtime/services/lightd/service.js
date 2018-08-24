@@ -57,6 +57,7 @@ Light.prototype.setDegree = function (degree) {
 
 Light.prototype.setHide = function () {
   this.stopPrev()
+  this.options.effect.stop()
   this.options.effect.clear()
   this.options.effect.render()
 }

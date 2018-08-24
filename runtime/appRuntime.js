@@ -402,6 +402,41 @@ App.prototype.destroyAll = function () {
   this.appIdOriginStack = []
   this.appDataMap = {}
   this.resetStack()
+
+  // reset service
+  this.lightMethod('reset', [])
+    .then((res) => {
+      if (res && res[0] === true) {
+        logger.log('reset lightd success')
+      } else {
+        logger.log('reset lightd failed')
+      }
+    })
+    .catch((error) => {
+      logger.log('reset lightd error', error)
+    })
+  this.multimediaMethod('reset', [])
+    .then((res) => {
+      if (res && res[0] === true) {
+        logger.log('reset multimediad success')
+      } else {
+        logger.log('reset multimediad failed')
+      }
+    })
+    .catch((error) => {
+      logger.log('reset multimediad error', error)
+    })
+  this.ttsMethod('reset', [])
+    .then((res) => {
+      if (res && res[0] === true) {
+        logger.log('reset ttsd success')
+      } else {
+        logger.log('reset ttsd failed')
+      }
+    })
+    .catch((error) => {
+      logger.log('reset ttsd error', error)
+    })
 }
 
 /**
@@ -694,6 +729,19 @@ App.prototype.ttsMethod = function (name, args) {
       'com.service.tts',
       '/tts/service',
       'tts.service',
+      name, sig, args, function (res) {
+        resolve(res)
+      })
+  })
+}
+
+App.prototype.multimediaMethod = function (name, args) {
+  return new Promise((resolve, reject) => {
+    var sig = args.map(() => 's').join('')
+    this.service._dbus.callMethod(
+      'com.service.multimedia',
+      '/multimedia/service',
+      'multimedia.service',
       name, sig, args, function (res) {
         resolve(res)
       })

@@ -151,6 +151,15 @@ dbusApis.addMethod('stop', {
   }
 })
 
+dbusApis.addMethod('reset', {
+  in: [],
+  out: ['b']
+}, function (cb) {
+  logger.log('reset ttsd requested by vui')
+  service.reset()
+  cb(null, true)
+})
+
 dbusApis.update()
 logger.log('service tts started')
 

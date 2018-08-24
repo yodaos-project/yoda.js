@@ -124,6 +124,15 @@ dbusApis.addMethod('unsetSpeaking', {
   cb(null)
 })
 
+dbusApis.addMethod('reset', {
+  in: [],
+  out: ['b']
+}, function (cb) {
+  logger.log('reset lightd requested by vui')
+  service.setHide()
+  cb(null, true)
+})
+
 dbusApis.update()
 
 logger.log('light service started')
