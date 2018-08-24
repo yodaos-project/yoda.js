@@ -181,4 +181,13 @@ dbusApis.addMethod('setLoopMode', {
   }
 })
 
+dbusApis.addMethod('reset', {
+  in: [],
+  out: ['b']
+}, function (cb) {
+  logger.log('reset multimedia requested by vui')
+  service.reset()
+  cb(null, true)
+})
+
 logger.log('service multimedia started')
