@@ -1005,60 +1005,60 @@ App.prototype.startExtappService = function () {
 
 App.prototype.listenKeyboardEvents = listenKeyboardEvents
 function listenKeyboardEvents () {
-  var currentKeyCode
-  input.on('keydown', event => {
-    currentKeyCode = event.keyCode
-    logger.info(`keydown: ${event.keyCode}`)
-  })
-  input.on('keyup', event => {
-    logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${currentKeyCode}`)
-    if (currentKeyCode !== event.keyCode) {
-      return
-    }
+  // var currentKeyCode
+  // input.on('keydown', event => {
+  //   currentKeyCode = event.keyCode
+  //   logger.info(`keydown: ${event.keyCode}`)
+  // })
+  // input.on('keyup', event => {
+  //   logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${currentKeyCode}`)
+  //   if (currentKeyCode !== event.keyCode) {
+  //     return
+  //   }
 
-    var map = {
-      113: () => {
-        /** mute */
-        this.startApp('@volume', { intent: 'switchmute' }, {})
-      },
-      114: () => {
-        /** decrease volume */
-        this.startApp('@volume', { intent: 'volumedown' }, {})
-      },
-      115: () => {
-        /** increase volume */
-        this.startApp('@volume', { intent: 'volumeup' }, {})
-      }
-    }
+  //   var map = {
+  //     113: () => {
+  //       /** mute */
+  //       this.startApp('@volume', { intent: 'switchmute' }, {})
+  //     },
+  //     114: () => {
+  //       /** decrease volume */
+  //       this.startApp('@volume', { intent: 'volumedown' }, {})
+  //     },
+  //     115: () => {
+  //       /** increase volume */
+  //       this.startApp('@volume', { intent: 'volumeup' }, {})
+  //     }
+  //   }
 
-    var handler = map[event.keyCode]
-    if (handler) {
-      handler()
-    }
-  })
+  //   var handler = map[event.keyCode]
+  //   if (handler) {
+  //     handler()
+  //   }
+  // })
 
-  var firstLongPressTime = null
-  input.on('longpress', event => {
-    if (currentKeyCode !== event.keyCode) {
-      firstLongPressTime = null
-      return
-    }
-    if (firstLongPressTime == null) {
-      firstLongPressTime = event.keyTime
-    }
-    var timeDelta = event.keyTime - firstLongPressTime
-    logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
-    var map = {
-      113: () => {
-        if (timeDelta > 2000) {
-          /** mute */
-          this.startApp('@bluetooth', { intent: 'bluetooth_broadcast' }, {})
-        }
-      }
-    }
-    var handler = map[event.keyCode]
-    if (handler) {
-      handler()
-    }
-  })
+  // var firstLongPressTime = null
+  // input.on('longpress', event => {
+  //   if (currentKeyCode !== event.keyCode) {
+  //     firstLongPressTime = null
+  //     return
+  //   }
+  //   if (firstLongPressTime == null) {
+  //     firstLongPressTime = event.keyTime
+  //   }
+  //   var timeDelta = event.keyTime - firstLongPressTime
+  //   logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
+  //   var map = {
+  //     113: () => {
+  //       if (timeDelta > 2000) {
+  //         /** mute */
+  //         this.startApp('@bluetooth', { intent: 'bluetooth_broadcast' }, {})
+  //       }
+  //     }
+  //   }
+  //   var handler = map[event.keyCode]
+  //   if (handler) {
+  //     handler()
+  //   }
+  // })
 }
