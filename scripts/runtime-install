@@ -29,4 +29,4 @@ adb push packages/* /usr/lib/node_modules
 
 adb shell 'rm -rf /data/workspace/test/*'
 adb shell mkdir -p /data/workspace/test
-adb push tests/* /data/workspace/test
+adb push test/* /data/workspace/test
