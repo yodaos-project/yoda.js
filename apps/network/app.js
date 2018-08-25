@@ -22,11 +22,10 @@ module.exports = function (app) {
     }
     this.started = true
     this.light.play('system://setStandby.js')
-
     ble.enable('ble')
     ble.on('ble data', function (data) {
       logger.log(`length: ${chunk.length} data: ${data.data}`)
-      if (chunk.length === 0 || data.protocol === 10759) {
+      if (chunk.length === 0 && data.protocol === 10759 && data.data && data.data.indexOf('RK') > -1) {
         chunk = []
         canReceive = true
         chunk.push(data.data)
@@ -40,11 +39,14 @@ module.exports = function (app) {
         chunk.push(data.data)
       } else {
         logger.log(`Unexpected packet: ${data.data}`)
+        chunk = []
+        canReceive = false
       }
       if (chunk.length === total + 2) {
         canReceive = false
         connectWIFI((err, connect) => {
           if (connect) {
+            logger.log('connect wifi success')
             ble.disable('ble')
             wifi.save()
           } else if (err || !connect) {
@@ -63,9 +65,11 @@ module.exports = function (app) {
       logger.log('ble closed')
       connectWIFI((err, connect) => {
         if (err || !connect) {
+          logger.log('wifi connect failed')
           app.playSound('system://wifi/connect_common_failure.ogg')
           connecting = false
         } else {
+          logger.log('connect wifi success')
           wifi.save()
         }
       })
@@ -87,12 +91,13 @@ module.exports = function (app) {
     logger.log(`start connect to wifi with SSID: ${data.S} PSK: ${data.P} UserId: ${data.U}`)
     property.set('persist.system.user.userId', data.U)
     app.playSound('system://wifi/prepare_connect_wifi.ogg')
-    wifi.joinNetwork(data.S, data.P, '')
     getWIFIState(cb)
     connectTimeout = setTimeout(() => {
+      logger.log('connect to wifi timeout')
       clearTimeout(pooling)
       cb(null, false)
     }, 5000)
+    wifi.joinNetwork(data.S, data.P, '')
   }
 
   function getWIFIState (cb) {
