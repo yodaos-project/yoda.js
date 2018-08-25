@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @namespace audio
+ * @module audio
  * @description The `audio` module exports `AudioManager`, which provides APIs to
  * to control volume of audio.
  *
@@ -15,7 +15,6 @@
 var native = require('./audio.node')
 
 /**
- * @memberof audio
  * @constructor
  */
 function AudioManager () {
@@ -24,45 +23,44 @@ function AudioManager () {
 exports.AudioManager = AudioManager
 
 /**
- * @memberof audio.AudioManager
- * @var STREAM_AUDIO {Number} - Used to identify the volume of audio streams for audio.
- * @static
+ * @memberof module:audio~AudioManager
+ * @member {Number} STREAM_AUDIO - Used to identify the volume of audio streams for audio.
  */
 AudioManager.STREAM_AUDIO = native.STREAM_AUDIO
 
 /**
- * @memberof audio.AudioManager
- * @var STREAM_TTS {Number} - Used to identify the volume of audio streams for tts.
- * @static
+ * @memberof module:audio~AudioManager
+ * @member {Number} STREAM_TTS  - Used to identify the volume of audio streams for tts.
  */
 AudioManager.STREAM_TTS = native.STREAM_TTS
 
 /**
- * @memberof audio.AudioManager
- * @var STREAM_PLAYBACK {Number} - Used to identify the volume of audio streams for
- *                                 multimedia.
- * @static
+ * @memberof module:audio~AudioManager
+ * @member {Number} STREAM_PLAYBACK  - Used to identify the volume of audio streams for
+ * multimedia.
  */
 AudioManager.STREAM_PLAYBACK = native.STREAM_PLAYBACK
 
 /**
- * @memberof audio.AudioManager
- * @var STREAM_ALARM {Number} - Used to identify the volume of audio streams for alarm.
- * @static
+ * @memberof module:audio~AudioManager
+ * @member {Number} STREAM_ALARM - Used to identify the volume of audio streams for alarm.
  */
 AudioManager.STREAM_ALARM = native.STREAM_ALARM
 
 /**
- * @memberof audio.AudioManager
- * @var STREAM_SYSTEM {Number} - Used to identify the volume of audio streams for system.
- * @static
+ * @memberof module:audio~AudioManager
+ * @member {Number} STREAM_SYSTEM - Used to identify the volume of audio streams for system.
  */
 AudioManager.STREAM_SYSTEM = native.STREAM_SYSTEM
 
 /**
- * @memberof audio.AudioManager
- * @var LINEAR_RAMP {Function} - The linear curve function for `setVolumeShaper`.
- * @static
+ * @typedef Shaper
+ */
+
+/**
+ * The linear curve function for `setVolumeShaper`.
+ * @memberof module:audio~AudioManager
+ * @member {module:audio~Shaper} LINEAR_RAMP
  */
 AudioManager.LINEAR_RAMP = function (len) {
   var shape = []
@@ -74,11 +72,10 @@ AudioManager.LINEAR_RAMP = function (len) {
 
 /**
  * Set the volume of the given stream.
- * @memberof audio.AudioManager
- * @function setVolume
- * @param {Number} [stream=STREAM_AUDIO] - The stream type.
+ * @memberof module:audio~AudioManager
+ * @method setVolume
+ * @param {Number} [stream=AudioManager.STREAM_AUDIO] - The stream type.
  * @param {Number} vol - The volume to set
- * @static
  * @throws {TypeError} `vol` is required.
  */
 AudioManager.setVolume = function (stream, vol) {
@@ -99,10 +96,9 @@ AudioManager.setVolume = function (stream, vol) {
 
 /**
  * Get the volume of the given stream.
- * @memberof audio.AudioManager
- * @function getVolume
- * @param {Number} [stream=STREAM_AUDIO] - The stream type.
- * @static
+ * @memberof module:audio~AudioManager
+ * @method getVolume
+ * @param {Number} [stream=AudioManager.STREAM_AUDIO] - The stream type.
  */
 AudioManager.getVolume = function (stream) {
   if (stream) {
@@ -114,10 +110,9 @@ AudioManager.getVolume = function (stream) {
 
 /**
  * Get if the volume is muted.
- * @memberof audio.AudioManager
- * @function isMuted
+ * @memberof module:audio~AudioManager
+ * @method isMuted
  * @returns {Boolean} if muted.
- * @static
  */
 AudioManager.isMuted = function () {
   return native.isMuted()
@@ -125,10 +120,9 @@ AudioManager.isMuted = function () {
 
 /**
  * Set the volume to be mute or not.
- * @memberof audio.AudioManager
- * @function setMute
+ * @memberof module:audio~AudioManager
+ * @method setMute
  * @param {Boolean} val - If muted.
- * @static
  */
 AudioManager.setMute = function (val) {
   return native.setMute(!!val)
@@ -136,10 +130,9 @@ AudioManager.setMute = function (val) {
 
 /**
  * Set the shaper of the volume.
- * @memberof audio.AudioManager
- * @function setVolumeShaper
- * @param {Function} shaper - The volume shaper function which returns an array with 100 elements.
- * @static
+ * @memberof module:audio~AudioManager
+ * @method setVolumeShaper
+ * @param {module:audio~Shaper} shaper - The volume shaper function which returns an array with 100 elements.
  * @throws {Error} shaper function should return an array with 100 elements.
  * @throws {RangeError} out of range when set volume shape.
  * @example
