@@ -52,6 +52,7 @@ YodaLocalPackage(yoda-battery @yoda/battery)
 YodaLocalPackage(yoda-input @yoda/input)
 YodaLocalPackage(yoda-ota @yoda/ota)
 YodaLocalPackage(yoda-system @yoda/system)
+YodaLocalPackage(yoda-speech @yoda/speech)
 YodaLocalPackage(yoda-util @yoda/util)
 
 # system packages

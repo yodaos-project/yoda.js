@@ -10,6 +10,7 @@ iotjs_speech_t* iotjs_speech_create(const jerry_value_t jspeech) {
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_speech_t, speech_wrap);
   iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jspeech,
                                &this_module_native_info);
+  _this->has_error = false;
   return speech_wrap;
 }
 
@@ -19,33 +20,67 @@ void iotjs_speech_destroy(iotjs_speech_t* speech_wrap) {
   IOTJS_RELEASE(speech_wrap);
 }
 
-void* iotjs_speech_poll_event(void* data) {
-  SpeechResult res;
-  iotjs_speech_t* speech_wrap = (iotjs_speech_t*)data;
+void iotjs_speech_onresult(uv_async_t* handle) {
+  iotjs_speech_t* speech_wrap = (iotjs_speech_t*)handle->data;
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_speech_t, speech_wrap);
 
+  jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_value_t onresult = iotjs_jval_get_property(jthis, "onresult");
+  if (!jerry_value_is_function(onresult)) {
+    fprintf(stderr, "no onresult handler is registered\n");
+    return;
+  }
+
+  if (_this->has_error) {
+    jerry_value_t jargv[0] = {};
+    jerry_call_function(onresult, jerry_create_undefined(), jargv, 0);
+  } else {
+    uint32_t jargc = 2;
+    jerry_value_t nlp = jerry_create_string((const jerry_char_t*)_this->nlp);
+    jerry_value_t action = jerry_create_string((const jerry_char_t*)_this->action);
+    jerry_value_t jargv[jargc] = { nlp, action };
+    jerry_call_function(onresult, jerry_create_undefined(), jargv, jargc);
+
+    // release strings
+    jerry_release_value(nlp);
+    jerry_release_value(action);
+    if (_this->nlp != NULL)
+      free(_this->nlp);
+    if (_this->action != NULL)
+      free(_this->action);
+  }
+  jerry_release_value(onresult);
+}
+
+void* iotjs_speech_poll_event(void* data) {
+  SpeechResult result;
+  iotjs_speech_t* speech = (iotjs_speech_t*)data;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_speech_t, speech);
+
   while (true) {
-    if (!_this->speech->poll(res)) {
-      fprintf(stderr, "tts poll failed\n");
+    if (!_this->speech->poll(result))
+      break;
+    if (result.type == SPEECH_RES_CANCELLED ||
+      result.type == SPEECH_RES_ERROR) {
+      _this->has_error = true;
+      break;
+    } else if (result.type == SPEECH_RES_END) {
+      _this->has_error = false;
+      _this->nlp = strdup(result.nlp.c_str());
+      _this->action = strdup(result.action.c_str());
       break;
     }
-    switch (res.type) {
-      case SPEECH_RES_END: {
-        printf("speech text %s\n", res.nlp);
-        break;
-      }
-      case SPEECH_RES_CANCELLED:
-      case SPEECH_RES_ERROR: {
-        printf("error\n");
-        break;
-      }
-    }
   }
+
+  uv_async_init(uv_default_loop(), &_this->async, iotjs_speech_onresult);
+  _this->async.data = (void*)speech;
+
+  uv_async_send(&_this->async);
   _this->speech->release();
   return NULL;
 }
 
-JS_FUNCTION(Speech) {
+JS_FUNCTION(SPEECH) {
   DJS_CHECK_THIS();
   const jerry_value_t jspeech = JS_GET_THIS();
   iotjs_speech_t* speech = iotjs_speech_create(jspeech);
@@ -100,13 +135,12 @@ JS_FUNCTION(Prepare) {
         break;
     }
   }
-
   fprintf(stdout, "host: %s, port: %d, branch: %s\n", host, port, branch);
 
   PrepareOptions opts;
   opts.host = host;
   opts.port = port;
-  opts.branch = path;
+  opts.branch = branch;
   opts.key = key;
   opts.secret = secret;
   opts.device_type_id = device_type;
@@ -121,10 +155,9 @@ JS_FUNCTION(Prepare) {
   free(device_type);
   free(device_id);
   free(secret);
-  free(declaimer);
 
   if (r) {
-    if (pthread_create(&_this->polling, NULL, iotjs_speech_poll_event, _this)) {
+    if (pthread_create(&_this->polling, NULL, iotjs_speech_poll_event, speech)) {
       goto terminate;
     }
     pthread_detach(_this->polling);
@@ -161,23 +194,13 @@ JS_FUNCTION(PutText) {
   return jerry_create_number(id);
 }
 
-JS_FUNCTION(Disconnect) {
-  JS_DECLARE_THIS_PTR(speech, speech);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_speech_t, speech);
-
-  _this->speech->release();
-  pthread_join(_this->polling);
-  return jerry_create_boolean(true);
-}
-
 void init(jerry_value_t exports) {
-  jerry_value_t jconstructor = jerry_create_external_function(Speech);
+  jerry_value_t jconstructor = jerry_create_external_function(SPEECH);
   iotjs_jval_set_property_jval(exports, "SpeechWrap", jconstructor);
 
   jerry_value_t proto = jerry_create_object();
   iotjs_jval_set_method(proto, "prepare", Prepare);
   iotjs_jval_set_method(proto, "putText", PutText);
-  iotjs_jval_set_method(proto, "disconnect", Disconnect);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
   jerry_release_value(proto);
