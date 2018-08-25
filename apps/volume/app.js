@@ -1,5 +1,6 @@
 'use strict'
 var AudioManager = require('audio').AudioManager
+var logger = require('logger')('@volume')
 
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
@@ -32,6 +33,7 @@ module.exports = function (activity) {
 
   function setVolume (value) {
     var vol = parseInt(value.number)
+    logger.info(`trying to set volume to ${vol}`)
     if (vol < 0 || vol > 10) {
       return speakAndExit(STRING_RANGE_ERROR)
     } else {
@@ -101,6 +103,13 @@ module.exports = function (activity) {
         break
       case 'cancelmute':
         setUnmute()
+        break
+      case 'switchmute':
+        if (AudioManager.isMuted()) {
+          setUnmute()
+        } else {
+          setMute()
+        }
         break
       default:
         activity.exit()
