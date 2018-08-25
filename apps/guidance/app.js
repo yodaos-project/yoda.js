@@ -1,7 +1,6 @@
 'use strict'
 
 module.exports = function (activity) {
-
   function random (max) {
     return Math.floor(Math.random() * max)
   }
@@ -31,7 +30,7 @@ module.exports = function (activity) {
       for (var key in texts) {
         if (key in slots) {
           speakAndExit(texts[key])
-          return;
+          return
         }
       }
       activity.exit()
