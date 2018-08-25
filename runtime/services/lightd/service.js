@@ -112,10 +112,29 @@ Light.prototype.setWelcome = function () {
 
 Light.prototype.appSound = function (appId, name) {
   if (this.playerHandle[appId]) {
-    this.playerHandle[appId].stop()
+    try {
+      // if the frequency is too fast, an error will occur.
+      this.playerHandle[appId].stop()
+      delete this.playerHandle[appId]
+    } catch (error) {
+      // if the previous one did not stop, ignore this time
+      logger.log(`ignore request: appId [${appId}] sound: [${name}]`)
+      return false
+    }
   }
   var player = this.options.effect.sound(name)
+  // free the player handle after playbackcomplete or error event
+  player.on('playbackcomplete', () => {
+    this.playerHandle[appId].stop()
+    delete this.playerHandle[appId]
+  })
+  player.on('error', () => {
+    this.playerHandle[appId].stop()
+    delete this.playerHandle[appId]
+  })
+
   this.playerHandle[appId] = player
+  return true
 }
 
 Light.prototype.setSpeaking = function () {

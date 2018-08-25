@@ -94,10 +94,10 @@ dbusApis.addMethod('setConfigFree', {
 
 dbusApis.addMethod('appSound', {
   in: ['s', 's'],
-  out: []
+  out: ['b']
 }, function (appId, name, cb) {
-  service.appSound(appId, name)
-  cb(null)
+  var result = service.appSound(appId, name)
+  cb(null, result)
 })
 
 dbusApis.addMethod('setWelcome', {
