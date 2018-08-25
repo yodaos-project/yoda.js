@@ -8,7 +8,7 @@ var imageUrl = 'https://ota.rokidcdn.com/toB/Mini_A113/RP105rokid_upgrade_packag
 var dest = '/data/upgrade/test.img'
 var imageSize = 61289860
 
-test('should download image', t => {
+test.skip('should download image', t => {
   t.plan(4)
 
   ota.doDownloadImage(imageUrl, dest, { noCheckCertificate: true }, err => {

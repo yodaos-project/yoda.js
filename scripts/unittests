@@ -1,9 +1,0 @@
-#!/usr/bin/env sh
-
-echo "create test container"
-adb shell "mkdir -p /data/unittests"
-adb push ./tests/* /data/unittests
-
-echo "run unittests"
-adb shell "NODE_PRIORITIZED_PATH=/usr/lib/node_modules iotjs /usr/lib/node_modules/tape/bin/tape.js /data/unittests/**/*.js"
-adb shell "rm -rf /data/unittests"
