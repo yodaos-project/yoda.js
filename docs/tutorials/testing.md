@@ -46,7 +46,7 @@ test('light get profile', (t) => {
 
 ### Run your tests
 
-Put the complete test file to the certain directory under `./tests`, then run `npm test`. The
+Put the complete test file to the certain directory under `./test` and name it with suffix `.test.js`, then run `npm test`. The
 program would push files to connected device, run tests and make outputs that you see.
 
 For the complete documentation about shadow-tape, see [github.com:shadow-node/tape](https://github.com/shadow-node/tape).
