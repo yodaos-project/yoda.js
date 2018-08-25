@@ -15,6 +15,10 @@ var intentHandler = {
   force_upgrade: forceUpgrade
 }
 
+/**
+ *
+ * @param {YodaRT.Activity} activity
+ */
 module.exports = function (activity) {
   activity.on('onrequest', function (nlp, action) {
     var handler = intentHandler[nlp.intent]
@@ -27,6 +31,10 @@ module.exports = function (activity) {
   })
 }
 
+/**
+ *
+ * @param {YodaRT.Activity} activity
+ */
 function checkUpdateAvailability (activity) {
   logger.info('fetching available ota info')
   ota.getAvailableInfo(function onInfo (error, info) {
@@ -59,6 +67,10 @@ function checkUpdateAvailability (activity) {
   }) /** ota.getAvailableInfo */
 }
 
+/**
+ *
+ * @param {YodaRT.Activity} activity
+ */
 function whatsCurrentVersion (activity) {
   activity.tts.speak('你可以在手机app的设备信息页面看到我现在的系统版本号', () => activity.exit())
 }
@@ -68,6 +80,11 @@ function isUpgradeSuitableNow () {
   return true
 }
 
+/**
+ *
+ * @param {YodaRT.Activity} activity
+ * @param {YodaRT.NlpObject} nlp
+ */
 function onFirstBootAfterUpgrade (activity, nlp) {
   var info = nlp._info
   if (info == null || !info.changelog) {
@@ -79,6 +96,11 @@ function onFirstBootAfterUpgrade (activity, nlp) {
   })
 }
 
+/**
+ *
+ * @param {YodaRT.Activity} activity
+ * @param {YodaRT.NlpObject} nlp
+ */
 function forceUpgrade (activity, nlp) {
   var info = nlp._info
   if (info == null || !info.changelog) {
