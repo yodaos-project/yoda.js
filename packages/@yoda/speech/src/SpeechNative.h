@@ -2,6 +2,7 @@
 #define SPEECH_NATIVE_H
 
 #include <stdio.h>
+#include <speech/speech.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,7 +13,6 @@ extern "C" {
 #include <iotjs_binding.h>
 #include <iotjs_objectwrap.h>
 #include <uv.h>
-#include <speech/speech.h>
 
 using namespace std;
 using namespace rokid::speech;
@@ -20,12 +20,19 @@ using namespace rokid::speech;
 typedef struct {
   iotjs_jobjectwrap_t jobjectwrap;
   shared_ptr<Speech> speech;
-  bool prepared;
   pthread_t polling;
+  uv_async_t async;
+  bool prepared;
+  bool has_error;
+  char* nlp;
+  char* action;
 } IOTJS_VALIDATED_STRUCT(iotjs_speech_t);
 
 static iotjs_speech_t* iotjs_speech_create(const jerry_value_t jspeech);
 static void iotjs_speech_destroy(iotjs_speech_t* speech);
+static void iotjs_speech_onresult(uv_async_t* handle);
+static void* iotjs_speech_poll_event(void* data);
+static void iotjs_speech_send_event(iotjs_speech_t* speech, SpeechResult result, bool has_error);
 
 #ifdef __cplusplus
 }
