@@ -248,15 +248,17 @@ App.prototype.onEvent = function (name, data) {
       logger.log('first startup')
       this.onReconnected()
       this.emit('reconnected')
+
+      /** Announce last installed ota changelog and clean up ota files */
+      ota.getInfoIfFirstUpgradedBoot((err, info) => {
+        if (err || info == null) {
+          logger.error('failed to fetch upgraded info, skipping', err && err.stack)
+          return
+        }
+        this.startApp('@ota', { intent: 'on_first_boot_after_upgrade', _info: info }, {})
+      })
     }
     this.online = true
-    ota.getInfoIfFirstUpgradedBoot((err, info) => {
-      if (err || info == null) {
-        logger.error('failed to fetch upgraded info, skipping', err && err.stack)
-        return
-      }
-      this.startApp('@ota', { intent: 'on_first_boot_after_upgrade', _info: info }, {})
-    })
   } else if (name === 'disconnected') {
     // trigger disconnected event when network state is switched or when it is first activated.
     if (this.online === true || this.online === undefined) {
