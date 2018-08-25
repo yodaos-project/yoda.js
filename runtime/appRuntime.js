@@ -15,7 +15,7 @@ var Permission = require('./component/permission')
 var AppExecutor = require('./app/executor')
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
-var input = require('@yoda/input')()
+// var input = require('@yoda/input')()
 
 module.exports = App
 perf.stub('init')
@@ -67,7 +67,7 @@ function App (arr) {
   // 处理mqtt事件
   this.handleMqttMessage()
   // handle keyboard/button events
-  this.listenKeyboardEvents()
+  // this.listenKeyboardEvents()
 }
 inherits(App, EventEmitter)
 
