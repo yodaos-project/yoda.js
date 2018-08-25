@@ -16,6 +16,7 @@ var runtime = new AppRuntime(['/opt/apps'])
 
 runtime.volume = AudioManager
 runtime.adapter = Adapter
+runtime.cloudApi = cloudApi
 
 AudioManager.setMute(false)
 AudioManager.setVolume(60)
