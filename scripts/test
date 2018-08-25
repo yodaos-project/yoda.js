@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+adb shell "
+source /etc/profile > /dev/null;
+iotjs /usr/lib/node_modules/tape/bin/tape.js /data/workspace/test/@yoda/**/*.test.js
+" | ./node_modules/.bin/tap-nyan
