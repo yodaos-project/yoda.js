@@ -3,7 +3,7 @@ var AudioManager = require('audio').AudioManager
 
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
-  var STRING_RANGE_ERROR = '音量调节范围为0-10'
+  var STRING_RANGE_ERROR = '音量调节范围为0到10'
   var STRING_SHOW_VOLUME = '当前音量为'
   var STRING_SHOW_MUTED = '设备已静音'
 
