@@ -25,7 +25,8 @@ module.exports = function (app) {
     ble.enable('ble')
     ble.on('ble data', function (data) {
       logger.log(`length: ${chunk.length} data: ${data.data}`)
-      if (chunk.length === 0 && data.protocol === 10759 && data.data && data.data.indexOf('RK') > -1) {
+      if (chunk.length === 0 && data.protocol === 10759 &&
+        data.data && data.data.indexOf('RK') > -1) {
         chunk = []
         canReceive = true
         chunk.push(data.data)
