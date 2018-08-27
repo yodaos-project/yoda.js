@@ -4,5 +4,5 @@
 
 sftp-config.json
 node_modules/
-docs/docs/
+website/docs/
 scripts/release

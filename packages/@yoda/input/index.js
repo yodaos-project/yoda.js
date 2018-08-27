@@ -34,7 +34,7 @@ function InputEvent (options) {
     slideTimeout: 300
   }
   if (this._options.selectTimeout === 0) {
-    throw new Error('selectTimeout must not be 0');
+    throw new Error('selectTimeout must not be 0')
   }
   this._handle = new InputWrap()
   this._handle.onevent = this.onevent.bind(this)

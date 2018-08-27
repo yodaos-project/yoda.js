@@ -13,11 +13,12 @@ declare global {
       get(key: string): Promise<any>
       getAppId(): string
       playSound(uri: string): Promise<void>
-      setConfirm(intent: string, slot: string, options?: object, attrs?: object): void
+      setConfirm(intent: string, slot: string, options?: object, attrs?: object): Promise<void>
       setPickup(pickup: boolean, duration?: number): void
       setBackground(): Promise<void>
       setForeground(): Promise<void>
 
+      on(event: 'ready', listener: () => void): this
       on(event: 'create', listener: () => void): this
       on(event: 'pause', listener: () => void): this
       on(event: 'resume', listener: () => void): this

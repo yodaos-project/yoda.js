@@ -31,18 +31,55 @@ function createActivity (appId, parent) {
   var activity = new EventEmitter()
   /**
    * @memberof yodaRT.activity
-   * @class Activity
-   * @augments EventEmitter
-   * @example
+   * @classdesc The `Activity` instance is that developer will use in often.
+   * ```js
    * module.exports = function(activity) {
    *   activity.on('ready', () => {
-   *     console.log('activity is ready');
-   *   });
+   *     console.log('activity is ready')
+   *   })
+   *   activity.on('created', () => {
+   *     console.log('app is created')
+   *   })
    *   activity.on('request', (nlp) => {
    *     // handle nlp
-   *   });
-   * };
+   *   })
+   * }
+   * ```
+   * @class Activity
+   * @hideconstructor
+   * @augments EventEmitter
    */
+
+  /**
+   * When the app is ready
+   * @event yodaRT.activity.Activity#ready
+   */
+
+  /**
+   * When the app is create
+   * @event yodaRT.activity.Activity#created
+   */
+
+  /**
+   * When the app is pause
+   * @event yodaRT.activity.Activity#paused
+   */
+
+  /**
+   * When the app is resume
+   * @event yodaRT.activity.Activity#resumed
+   */
+
+  /**
+   * When the app is destroy
+   * @event yodaRT.activity.Activity#destroyed
+   */
+
+  /**
+   * When the app is received a command request
+   * @event yodaRT.activity.Activity#onrequest
+   */
+
   var media = new EventEmitter()
 
   return Object.assign(activity, {
@@ -89,6 +126,7 @@ function createActivity (appId, parent) {
      * @function getAppId
      * @memberof yodaRT.activity.Activity
      * @instance
+     * @returns {String} the current `appId`.
      */
     getAppId: function getAppId () {
       return appId
@@ -113,6 +151,7 @@ function createActivity (appId, parent) {
      * @param {Object} attrs
      * @memberof yodaRT.activity.Activity
      * @instance
+     * @return {Promise}
      */
     setConfirm: function setConfirm (intent, slot, options, attrs) {
       return new Promise((resolve, reject) => {
@@ -138,6 +177,7 @@ function createActivity (appId, parent) {
      * @function setBackground
      * @memberof yodaRT.activity.Activity
      * @instance
+     * @return {Promise}
      */
     setBackground: function () {
       return new Promise((resolve, reject) => {
@@ -154,6 +194,7 @@ function createActivity (appId, parent) {
      * @function setForeground
      * @memberof yodaRT.activity.Activity
      * @instance
+     * @return {Promise}
      */
     setForeground: function () {
       return new Promise((resolve, reject) => {
@@ -193,6 +234,7 @@ function createActivity (appId, parent) {
        * @function speak
        * @param {String} text
        * @param {Function} callback
+       * @returns {Promise}
        */
       speak: function (text, callback) {
         return parent.adapter.ttsMethod('speak', [appId, text])
@@ -210,6 +252,7 @@ function createActivity (appId, parent) {
        * @instance
        * @function stop
        * @param {Function} callback
+       * @returns {Promise}
        */
       stop: function (callback) {
         return parent.adapter.ttsMethod('stop', [appId])
@@ -437,6 +480,7 @@ function createActivity (appId, parent) {
        * @memberof yodaRT.LocalStorage
        * @instance
        * @function getItem
+       * @returns {String}
        */
       getItem: function (key) {
         return property.get(key)
@@ -445,6 +489,7 @@ function createActivity (appId, parent) {
        * @memberof yodaRT.LocalStorage
        * @instance
        * @function setItem
+       * @returns {Boolean}
        */
       setItem: function (key, value) {
         return property.set(key, value)
