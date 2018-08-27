@@ -23,17 +23,17 @@ declare global {
       on(event: 'onrequest', listener: (nlp: NlpObject, action: ActionObject) => void): this
     }
 
-    class LightClient {
+    export class LightClient {
       play(uri: string, args?: object): Promise<void>
       stop(): Promise<void>
     }
 
-    class LocalStorage {
+    export class LocalStorage {
       getItem(key: string): any
       setItem(key: string, value: any): void
     }
 
-    class MediaClient {
+    export class MediaClient {
       getLoopMode(): Promise<any>
       getPosition(): Promise<any>
       pause(): Promise<void>
@@ -44,19 +44,19 @@ declare global {
       stop(): Promise<void>
     }
 
-    class TtsClient {
+    export class TtsClient {
       speak(text: string, callback: () => void): void
       stop(callback: () => void): void
     }
 
-    interface NlpObject {
+    export interface NlpObject {
       appId: string
       cloud: boolean
       intent: string
       slots: object[]
     }
 
-    interface ActionObject {
+    export interface ActionObject {
       appId: string
       startWithActiveWord: boolean
       response: {
