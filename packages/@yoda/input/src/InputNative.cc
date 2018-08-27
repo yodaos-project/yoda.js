@@ -40,6 +40,10 @@ class InputInitializer {
   static void DoStart(uv_work_t* req) {
     InputInitializer* initializer = (InputInitializer*)req->data;
     while (true) {
+      fprintf(stdout, "config select(%dms) dbclick(%dms) slide(%dms)\n", 
+          initializer->timeout_select,
+          initializer->timeout_dbclick,
+          initializer->timeout_slide);
       bool r =
           init_input_key(IOTJS_INPUT_HAS_TOUCH, initializer->timeout_select,
                          initializer->timeout_dbclick,
@@ -142,7 +146,6 @@ void InputEventHandler::DoStart(uv_work_t* req) {
                     InputEventHandler::OnGestureEvent);
       uv_async_send(async);
     }
-    usleep(1000);
   }
 }
 

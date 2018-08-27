@@ -33,6 +33,9 @@ function InputEvent (options) {
     dbclickTimeout: 300,
     slideTimeout: 300
   }
+  if (this._options.selectTimeout === 0) {
+    throw new Error('selectTimeout must not be 0');
+  }
   this._handle = new InputWrap()
   this._handle.onevent = this.onevent.bind(this)
 }
@@ -78,7 +81,9 @@ InputEvent.prototype.onevent = function (state, action, code, time) {
  * @fires input.InputEvent#keydown
  */
 InputEvent.prototype.start = function () {
-  return this._handle.start(this._options)
+  return this._handle.start(this._options.selectTimeout,
+    this._options.dbclickTimeout,
+    this._options.slideTimeout)
 }
 
 /**
