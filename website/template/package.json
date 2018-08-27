@@ -1,0 +1,52 @@
+{
+  "_from": "minami-yoda@^2.1.4",
+  "_id": "minami-yoda@2.1.4",
+  "_inBundle": false,
+  "_integrity": "sha512-Ge4O94qlJ9Xi5CDrgf2z5J50Y0eG3tTfbzdnKKHByXUC12AJWOsCaIQGlCShzSyXX+GDm2ymLxLK7NPjXBGw9A==",
+  "_location": "/minami-yoda",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "minami-yoda@^2.1.4",
+    "name": "minami-yoda",
+    "escapedName": "minami-yoda",
+    "rawSpec": "^2.1.4",
+    "saveSpec": null,
+    "fetchSpec": "^2.1.4"
+  },
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "https://registry.npmjs.org/minami-yoda/-/minami-yoda-2.1.4.tgz",
+  "_shasum": "2a188b1c6cf42251170776da55a948eb65ce7461",
+  "_spec": "minami-yoda@^2.1.4",
+  "_where": "/Users/yorkieliu/workspace/rokid/YodaRT",
+  "author": {
+    "name": "Nijiko Yonskai",
+    "email": "nijikokun@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/Nijikokun/minami/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "Clean and minimal JSDoc 3 Template / Theme",
+  "homepage": "https://github.com/Nijikokun/minami",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "main": "publish.js",
+  "name": "minami-yoda",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nijikokun/minami.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "2.1.4"
+}

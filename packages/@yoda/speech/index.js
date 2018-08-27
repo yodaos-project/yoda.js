@@ -30,8 +30,9 @@ function defaultCb (empty, nlp, action) {
  * @param {String} config.secret - the cloud secret
  */
 function start (config) {
-  if (handle)
+  if (handle) {
     return null
+  }
 
   speechConfig.deviceId = config.deviceId
   speechConfig.deviceTypeId = config.deviceTypeId
