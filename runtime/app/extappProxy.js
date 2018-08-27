@@ -1,7 +1,7 @@
 'use strict'
 
-var DbusAdapter = require('extapp').DbusAdapter
-var ExtAppService = require('extapp').ExtAppService
+var DbusAdapter = require('@yoda/extapp').DbusAdapter
+var ExtAppService = require('@yoda/extapp').ExtAppService
 var logger = require('logger')('extappProxy')
 var target = process.argv[2]
 
