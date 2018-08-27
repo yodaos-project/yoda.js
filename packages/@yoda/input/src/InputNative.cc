@@ -142,6 +142,7 @@ void InputEventHandler::DoStart(uv_work_t* req) {
                     InputEventHandler::OnGestureEvent);
       uv_async_send(async);
     }
+    usleep(1000);
   }
 }
 
