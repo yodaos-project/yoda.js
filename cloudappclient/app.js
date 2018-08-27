@@ -142,6 +142,22 @@ directive.do('frontend', 'media', function (dt, next) {
   }
 })
 
+directive.do('frontend', 'confirm', function (dt, next) {
+  app.setConfirm(dt.data.confirmIntent, dt.data.confirmSlot, [], '')
+    .then(() => {
+      next()
+    })
+    .catch((error) => {
+      console.log('setConfirm failed: ', error)
+      next()
+    })
+})
+
+directive.do('frontend', 'pickup', function (dt, next) {
+  app.setPickup(true)
+  next()
+})
+
 app.on('ready', function () {
   console.log(this.getAppId() + ' app ready')
   app.get('all')

@@ -97,11 +97,12 @@ function createActivity (appId, parent) {
      * Set the current app is pickup
      * @function setPickup
      * @param {Boolean} pickup
+     * @param {Number} [duration=6000]
      * @memberof yodaRT.activity.Activity
      * @instance
      */
-    setPickup: function setPickup (pickup) {
-      return parent.runtime.setPickup(pickup)
+    setPickup: function setPickup (pickup, duration) {
+      return parent.runtime.setPickup(pickup, duration)
     },
     /**
      * Set the app is confirmed

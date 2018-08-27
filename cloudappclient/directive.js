@@ -69,6 +69,14 @@ Directive.prototype.run = function run (type, cb) {
       self.cb[type].media.call(self, next, function () {
         handle(dt)
       })
+    } else if (next.type === 'confirm') {
+      self.cb[type].confirm.call(self, next, function () {
+        handle(dt)
+      })
+    } else if (next.type === 'pickup') {
+      self.cb[type].pickup.call(self, next, function () {
+        handle(dt)
+      })
     } else {
       console.log('all directive complete')
       cb && cb()

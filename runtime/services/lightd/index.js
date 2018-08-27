@@ -133,6 +133,14 @@ dbusApis.addMethod('reset', {
   cb(null, true)
 })
 
+dbusApis.addMethod('setPickup', {
+  in: ['s'],
+  out: ['b']
+}, function (duration, cb) {
+  service.setPickup(+duration)
+  cb(null, true)
+})
+
 dbusApis.update()
 
 logger.log('light service started')

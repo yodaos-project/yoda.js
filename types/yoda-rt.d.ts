@@ -14,7 +14,9 @@ declare global {
       getAppId(): string
       playSound(uri: string): Promise<void>
       setConfirm(intent: string, slot: string, options?: object, attrs?: object): void
-      setPickup(pickup: boolean): void
+      setPickup(pickup: boolean, duration?: number): void
+      setBackground(): Promise<void>
+      setForeground(): Promise<void>
 
       on(event: 'create', listener: () => void): this
       on(event: 'pause', listener: () => void): this
