@@ -44,11 +44,11 @@ endmacro()
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
 YodaGitPackage(tape https://github.com/shadow-node/tape.git master)
 YodaGitPackage(turen https://github.com/Rokid/node-turen.git master)
-YodaGitPackage(extapp https://github.com/Rokid/node-extapp.git master)
 
 # local packages
-YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
 YodaLocalPackage(yoda-battery @yoda/battery)
+YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
+YodaLocalPackage(yoda-extapp @yoda/extapp)
 YodaLocalPackage(yoda-input @yoda/input)
 YodaLocalPackage(yoda-ota @yoda/ota)
 YodaLocalPackage(yoda-system @yoda/system)

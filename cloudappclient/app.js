@@ -1,7 +1,7 @@
 'use strict'
 
-var DbusAdapter = require('extapp').DbusAdapter
-var ExtAppService = require('extapp').ExtAppService
+var DbusAdapter = require('@yoda/extapp').DbusAdapter
+var ExtAppService = require('@yoda/extapp').ExtAppService
 var Directive = require('./directive').Directive
 var eventRequest = require('./eventRequestApi')
 var Manager = require('./manager')
