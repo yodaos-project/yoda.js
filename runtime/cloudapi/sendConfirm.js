@@ -16,8 +16,8 @@ function request (appId, intent, slot, options, attrs, config, callback) {
     appId: appId,
     confirmIntent: intent,
     confirmSlot: slot,
-    confirmOptions: options,
-    attributes: attrs
+    confirmOptions: JSON.stringify(options),
+    attributes: JSON.stringify(attrs)
   }
   logger.log('confirm:', data)
 
