@@ -133,6 +133,38 @@ function createActivity (appId, parent) {
       })
     },
     /**
+     * push the app in background
+     * @function setBackground
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     */
+    setBackground: function () {
+      return new Promise((resolve, reject) => {
+        var result = parent.runtime.setBackgroundByAppId(appId)
+        if (result === true) {
+          resolve()
+        } else {
+          reject(new Error('push the app in background error'))
+        }
+      })
+    },
+    /**
+     * push the app in foreground
+     * @function setForeground
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     */
+    setForeground: function () {
+      return new Promise((resolve, reject) => {
+        var result = parent.runtime.setForegroundByAppId(appId)
+        if (result === true) {
+          resolve()
+        } else {
+          reject(new Error('push the app in foreground error'))
+        }
+      })
+    },
+    /**
      * @function mockNLPResponse
      * @memberof yodaRT.activity.Activity
      * @instance

@@ -31,6 +31,7 @@ function App (arr) {
   this.apps = {}
   // 保存正在运行的AppID
   this.appIdStack = []
+  this.bgAppIdStack = []
   // 保存正在运行的App Map, 以AppID为key
   this.appMap = {}
   // save the real appid
@@ -297,8 +298,12 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
     logger.log('invalid nlp/action, ignore')
     return
   }
-  // 命中的是当前运行的App
-  if (appId === this.getCurrentAppId()) {
+  // push the app in the foreground if the app is running in the backgroud
+  if (this.isBackgroundApp(appId)) {
+    this.setForegroundByAppId(appId)
+    this.lifeCycle('onrequest', data)
+    // 命中的是当前运行的App
+  } else if (appId === this.getCurrentAppId()) {
     this.lifeCycle('onrequest', data)
   } else {
     // 如果当前NLP是scene，则退出所有App
@@ -396,13 +401,22 @@ App.prototype.getCurrentApp = function () {
  */
 App.prototype.destroyAll = function () {
   // 依次给正在运行的App发送destroy命令
-  for (var i = 0; i < this.appIdStack.length; i++) {
+  var i = 0
+  // destroy all foreground app
+  for (i = 0; i < this.appIdStack.length; i++) {
     if (this.appMap[this.appIdStack[i]]) {
       this.appMap[this.appIdStack[i]].emit('destroy')
     }
   }
+  // destroy all background app
+  for (i = 0; i < this.bgAppIdStack.length; i++) {
+    if (this.appMap[this.bgAppIdStack[i]]) {
+      this.appMap[this.bgAppIdStack[i]].emit('destroy')
+    }
+  }
   // 清空正在运行的所有App
   this.appIdStack = []
+  this.bgAppIdStack = []
   this.appMap = {}
   this.appIdOriginStack = []
   this.appDataMap = {}
@@ -562,14 +576,19 @@ App.prototype.setConfirm = function (appId, intent, slot, options, attrs, callba
  * @private
  */
 App.prototype.exitAppById = function (appId) {
-  // 调用生命周期结束该应用
-  this.lifeCycle('destroy', {
-    appId: appId
-  })
-  // 如果上一个应用是scene，则需要resume恢复运行
-  var last = this.getCurrentAppData()
-  if (last && last.form === 'scene') {
-    this.lifeCycle('resume', last)
+  // silent when the background app exits
+  if (this.isBackgroundApp(appId)) {
+    this.deleteBGAppById(appId)
+  } else {
+    // 调用生命周期结束该应用
+    this.lifeCycle('destroy', {
+      appId: appId
+    })
+    // 如果上一个应用是scene，则需要resume恢复运行
+    var last = this.getCurrentAppData()
+    if (last) {
+      this.lifeCycle('resume', last)
+    }
   }
 }
 
@@ -578,15 +597,21 @@ App.prototype.exitAppById = function (appId) {
  * @private
  */
 App.prototype.exitAppByIdForce = function (appId) {
-  this.deleteAppById(appId)
+  // silent when the background app exits
+  if (this.isBackgroundApp(appId)) {
+    this.deleteBGAppById(appId)
+  } else {
+    this.deleteAppById(appId)
+  }
   var last = this.getCurrentAppData()
-  if (last && last.form === 'scene') {
+  if (last) {
     this.lifeCycle('resume', last)
   }
 }
 
 /**
- * @param {string} appId extapp的AppID
+ * delete the foreground app with appId
+ * @param {string} appId AppID
  * @private
  */
 App.prototype.deleteAppById = function (appId) {
@@ -594,6 +619,23 @@ App.prototype.deleteAppById = function (appId) {
   for (var i = 0; i < this.appIdStack.length; i++) {
     if (this.appIdStack[i] === appId) {
       this.appIdStack.splice(i, 1)
+      break
+    }
+  }
+  // 释放该应用
+  delete this.appMap[appId]
+  delete this.appDataMap[appId]
+}
+
+/**
+ * delete the background app with appId
+ * @param {string} appId AppID
+ * @private
+ */
+App.prototype.deleteBGAppById = function (appId) {
+  for (var i = 0; i < this.bgAppIdStack.length; i++) {
+    if (this.bgAppIdStack[i] === appId) {
+      this.bgAppIdStack.splice(i, 1)
       break
     }
   }
@@ -622,6 +664,57 @@ App.prototype.registerExtApp = function (appId, profile) {
  */
 App.prototype.deleteExtApp = function (appId) {
 
+}
+
+App.prototype.isBackgroundApp = function (appId) {
+  for (var i = 0; i < this.bgAppIdStack.length; i++) {
+    if (this.bgAppIdStack[i] === appId) {
+      return true
+    }
+  }
+  return false
+}
+
+App.prototype.setBackgroundByAppId = function (appId) {
+  var index = -1
+  for (var i = this.appIdStack.length - 1; i >= 0; i--) {
+    if (this.appIdStack[i] === appId) {
+      index = i
+      break
+    }
+  }
+  if (index === -1) {
+    return false
+  }
+  this.appIdStack.splice(index, 1)
+  this.bgAppIdStack.push(appId)
+  // try to resume previou app
+  var cur = this.getCurrentAppData()
+  if (cur) {
+    this.lifeCycle('resume', cur)
+  }
+  return true
+}
+
+App.prototype.setForegroundByAppId = function (appId) {
+  var index = -1
+  for (var i = this.bgAppIdStack.length - 1; i >= 0; i--) {
+    if (this.bgAppIdStack[i] === appId) {
+      index = i
+      break
+    }
+  }
+  if (index === -1) {
+    return false
+  }
+  this.bgAppIdStack.splice(index, 1)
+  // try to pause current app
+  var cur = this.getCurrentAppData()
+  if (cur) {
+    this.lifeCycle('pause', cur)
+  }
+  this.appIdStack.push(appId)
+  return true
 }
 
 /**
@@ -866,6 +959,14 @@ App.prototype.startExtappService = function () {
     in: ['s', 's', 's', 's', 's'],
     out: ['b']
   }, function (appId, intent, slot, options, attrs, cb) {
+    try {
+      options = JSON.parse(options)
+      attrs = JSON.parse(attrs)
+    } catch (error) {
+      logger.log('setConfirm Error: ', error)
+      cb(null, false)
+      return
+    }
     self.setConfirm(appId, intent, slot, options, attrs, (error) => {
       if (error) {
         logger.log(error)
@@ -887,6 +988,13 @@ App.prototype.startExtappService = function () {
       cb(null)
     }
   })
+  extapp.addMethod('destroyAll', {
+    in: [],
+    out: ['b']
+  }, function (cb) {
+    self.destroyAll()
+    cb(null, true)
+  })
   extapp.addMethod('mockNLPResponse', {
     in: ['s', 's', 's'],
     out: []
@@ -900,6 +1008,28 @@ App.prototype.startExtappService = function () {
       return
     }
     self.mockNLPResponse(nlp, action)
+  })
+  extapp.addMethod('setBackground', {
+    in: ['s'],
+    out: ['b']
+  }, function (appId, cb) {
+    if (appId) {
+      var result = self.setBackgroundByAppId(appId)
+      cb(null, result)
+    } else {
+      cb(null, false)
+    }
+  })
+  extapp.addMethod('setForeground', {
+    in: ['s'],
+    out: ['b']
+  }, function (appId, cb) {
+    if (appId) {
+      var result = self.setForegroundByAppId(appId)
+      cb(null, result)
+    } else {
+      cb(null, false)
+    }
   })
 
   /**
