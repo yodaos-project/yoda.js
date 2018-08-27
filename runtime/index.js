@@ -22,6 +22,7 @@ AudioManager.setMute(false)
 AudioManager.setVolume(60)
 
 var speech = new Turen.TurenSpeech()
+var speechT = require('@yoda/speech')
 
 // 监听代理事件。代理执行turen API
 runtime.on('setStack', function (stack) {
@@ -82,6 +83,7 @@ runtime.on('reconnected', function () {
       deviceId: config.device_id
     }
     speech.start(options)
+    speechT.start(options)
     require('@yoda/ota/network').cloudgw = new CloudGW(options)
 
     // Implementation interface
@@ -100,6 +102,15 @@ runtime.on('reconnected', function () {
 
     runtime.onReLogin()
 
+    mqttAgent.on('asr', function (asr) {
+      speechT.getNlpResult(asr, function (err, nlp, action) {
+        if (err) {
+          console.error(`occurrs some error in speechT`)
+        } else {
+          runtime.onVoiceCommand(asr, nlp, action)
+        }
+      })
+    })
     mqttAgent.on('cloud_forward', function (data) {
       runtime.onCloudForward(data)
     })
