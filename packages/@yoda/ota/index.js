@@ -349,12 +349,13 @@ function downloadImage (info, callback) {
  * 2. make working directory;
  * 3. fetch OTA info;
  * 4. check if new version available;
- * 5. check if local image exists;
+ * 5. check if local pending update exists;
+ * 6. check if local image exists;
  *   - if image exists:
  *     - if image hash matches, exit 0;
  *     - if image hash does not match, download image;
  *   - if image not exists, download image;
- * 6. write download status to info file on local disk.
+ * 7. write download status to info file on local disk.
  *
  * @param {module:@yoda/ota~OtaInfoCallback} callback
  */
@@ -384,6 +385,22 @@ function runInCurrentContext (callback) {
         if (info.code === 'NO_IMAGE' || !info.version) {
           /** no available updates */
           return compose.Break(false)
+        }
+        /** check if local pending update exists */
+        readInfo(cb)
+      },
+      (cb, localInfo) => {
+        /**
+         * new updates may be over the air whilst local pending update not installed yet.
+         * discard pending updates to prevent corruptions.
+         */
+        if (localInfo) {
+          if (localInfo.version !== info.version || localInfo.checksum !== info.checksum) {
+            return compose([
+              resetOta,
+              writeInfo.bind(null, info)
+            ], cb)
+          }
         }
         writeInfo(info, cb)
       },
