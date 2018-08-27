@@ -8,7 +8,8 @@ static JNativeInfoType this_module_native_info = {
 iotjs_speech_t* iotjs_speech_create(const jerry_value_t jspeech) {
   iotjs_speech_t* speech_wrap = IOTJS_ALLOC(iotjs_speech_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_speech_t, speech_wrap);
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jspeech,
+  jerry_value_t jspeechref = jerry_acquire_value(jspeech);
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jspeechref,
                                &this_module_native_info);
   _this->has_error = false;
   return speech_wrap;
@@ -17,6 +18,7 @@ iotjs_speech_t* iotjs_speech_create(const jerry_value_t jspeech) {
 void iotjs_speech_destroy(iotjs_speech_t* speech_wrap) {
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_speech_t, speech_wrap);
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
+  _this->speech->release();
   IOTJS_RELEASE(speech_wrap);
 }
 
@@ -58,25 +60,26 @@ void* iotjs_speech_poll_event(void* data) {
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_speech_t, speech);
 
   while (true) {
+    bool need_send = false;
     if (!_this->speech->poll(result))
       break;
     if (result.type == SPEECH_RES_CANCELLED ||
       result.type == SPEECH_RES_ERROR) {
       _this->has_error = true;
-      break;
+      need_send = true;
     } else if (result.type == SPEECH_RES_END) {
       _this->has_error = false;
       _this->nlp = strdup(result.nlp.c_str());
       _this->action = strdup(result.action.c_str());
-      break;
+      need_send = true;
+    }
+
+    if (need_send) {
+      uv_async_init(uv_default_loop(), &_this->async, iotjs_speech_onresult);
+      _this->async.data = (void*)speech;
+      uv_async_send(&_this->async);
     }
   }
-
-  uv_async_init(uv_default_loop(), &_this->async, iotjs_speech_onresult);
-  _this->async.data = (void*)speech;
-
-  uv_async_send(&_this->async);
-  _this->speech->release();
   return NULL;
 }
 
@@ -104,7 +107,7 @@ JS_FUNCTION(Prepare) {
   char* secret;
 
   port = (int)JS_GET_ARG(1, number);
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 7; i++) {
     if (i == 1)
       continue;
     jerry_size_t size = jerry_get_string_size(jargv[i]);
@@ -194,6 +197,19 @@ JS_FUNCTION(PutText) {
   return jerry_create_number(id);
 }
 
+JS_FUNCTION(Release) {
+  JS_DECLARE_THIS_PTR(speech, speech);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_speech_t, speech);
+
+  if (_this->speech == NULL)
+    return JS_CREATE_ERROR(COMMON, "speech is not initialized");
+
+  pthread_join(_this->polling, NULL);
+  jerry_value_t this_obj = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_release_value(this_obj);
+  return jerry_create_undefined();
+}
+
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(SPEECH);
   iotjs_jval_set_property_jval(exports, "SpeechWrap", jconstructor);
@@ -201,6 +217,7 @@ void init(jerry_value_t exports) {
   jerry_value_t proto = jerry_create_object();
   iotjs_jval_set_method(proto, "prepare", Prepare);
   iotjs_jval_set_method(proto, "putText", PutText);
+  iotjs_jval_set_method(proto, "release", Release);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
   jerry_release_value(proto);
