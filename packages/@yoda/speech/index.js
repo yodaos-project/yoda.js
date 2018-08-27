@@ -22,14 +22,17 @@ function defaultCb (empty, nlp, action) {
 }
 
 /**
- * initialize the speech config
+ * start the text speech
  * @param {Object} config - the speech config
  * @param {String} config.deviceId - the device id
  * @param {String} config.deviceTypeId - the devide type id
  * @param {String} config.key - the cloud key
  * @param {String} config.secret - the cloud secret
  */
-function initialize (config) {
+function start (config) {
+  if (handle)
+    return null
+
   speechConfig.deviceId = config.deviceId
   speechConfig.deviceTypeId = config.deviceTypeId
   speechConfig.key = config.key
@@ -76,5 +79,5 @@ function getNlpResult (text, _callback) {
   handle.putText(text)
 }
 
-exports.initialize = initialize
+exports.start = start
 exports.getNlpResult = getNlpResult
