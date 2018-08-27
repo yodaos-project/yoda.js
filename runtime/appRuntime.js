@@ -551,7 +551,10 @@ App.prototype.resetStack = function () {
  * @param {boolean} isPickup
  * @private
  */
-App.prototype.setPickup = function (isPickup) {
+App.prototype.setPickup = function (isPickup, duration) {
+  if (isPickup === true) {
+    this.lightMethod('setPickup', ['' + (duration || 6000)])
+  }
   this.emit('setPickup', isPickup)
 }
 
@@ -944,14 +947,14 @@ App.prototype.startExtappService = function () {
     cb(null)
   })
   extapp.addMethod('setPickup', {
-    in: ['s', 's'],
+    in: ['s', 's', 's'],
     out: []
-  }, function (appId, isPickup, cb) {
+  }, function (appId, isPickup, duration, cb) {
     if (appId !== self.getCurrentAppId()) {
       logger.log('set pickup permission deny')
       cb(null)
     } else {
-      self.setPickup(isPickup === 'true')
+      self.setPickup(isPickup === 'true', +duration)
       cb(null)
     }
   })

@@ -11,6 +11,7 @@ function Light (options) {
   this.playerHandle = {}
   this.options = options
   this.prev = null
+  this.degree = 0
   this.init()
 }
 
@@ -135,6 +136,15 @@ Light.prototype.appSound = function (appId, name) {
 
   this.playerHandle[appId] = player
   return true
+}
+
+Light.prototype.setPickup = function (duration, callback) {
+  this.stopPrev()
+  var hook = require(`${LIGHT_SOURCE}setPickup.js`)
+  this.prev = hook(this.options.effect, {
+    duration: duration,
+    degree: this.degree
+  }, callback)
 }
 
 Light.prototype.setSpeaking = function () {

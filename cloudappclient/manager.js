@@ -96,6 +96,22 @@ Skill.prototype.transform = function (directives, append) {
       }
       tdt.data.appId = this.appId
       this.directives.push(tdt)
+    } else if (ele.type === 'confirm') {
+      tdt = {
+        type: 'confirm',
+        action: '',
+        data: ele
+      }
+      tdt.data.appId = this.appId
+      this.directives.push(tdt)
+    } else if (ele.type === 'pickup') {
+      tdt = {
+        type: 'pickup',
+        action: '',
+        data: ele
+      }
+      tdt.data.appId = this.appId
+      this.directives.push(tdt)
     }
   })
 }
