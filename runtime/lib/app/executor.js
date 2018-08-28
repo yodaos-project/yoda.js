@@ -70,4 +70,10 @@ Executor.prototype.create = function (appId, runtime) {
   }
 }
 
+Executor.prototype.destroy = function destroy (app, runtime) {
+  app.registeredDbusSignals.forEach(it => {
+    runtime.dbusSignalRegistry.removeAllListeners(it)
+  })
+}
+
 module.exports = Executor
