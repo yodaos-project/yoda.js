@@ -508,6 +508,7 @@ App.prototype.lifeCycle = function (name, AppData) {
   }
   if (name === 'destroy') {
     app.emit('destroy')
+    this.apps[appId].destroy(app, this)
     this.deleteAppById(AppData.appId)
   }
   this.updateStack(AppData)
@@ -898,7 +899,10 @@ App.prototype.listenDbusSignals = function () {
   var ttsEvents = {
     'ttsdevent': function onTtsEvent (msg) {
       var channel = `callback:tts:${_.get(msg, 'args.0')}`
-      EventEmitter.prototype.emit.apply(self.dbusSignalRegistry, [ channel ].concat(msg.args.slice(1)))
+      EventEmitter.prototype.emit.apply(
+        self.dbusSignalRegistry,
+        [ channel ].concat(msg.args.slice(1))
+      )
     }
   }
   proxy.listen(
@@ -918,7 +922,10 @@ App.prototype.listenDbusSignals = function () {
   var multimediaEvents = {
     'multimediadevent': function onMultimediaEvent (msg) {
       var channel = `callback:multimedia:${_.get(msg, 'args.0')}`
-      EventEmitter.prototype.emit.apply(self.dbusSignalRegistry, [ channel ].concat(msg.args.slice(1)))
+      EventEmitter.prototype.emit.apply(
+        self.dbusSignalRegistry,
+        [ channel ].concat(msg.args.slice(1))
+      )
     }
   }
   proxy.listen(
@@ -934,10 +941,6 @@ App.prototype.listenDbusSignals = function () {
       handler(msg)
     }
   )
-}
-
-App.prototype.onceDbusSignal = function (signal, callback) {
-  this.dbusSignalRegistry.once(signal, callback)
 }
 
 /**

@@ -26,18 +26,18 @@ var EventEmitter = require('events')
  */
 
 var PropertyDescriptions = {
-  namespace: function Namespace (name, profile/** , namespace, nsProfile */) {
+  namespace: function Namespace (name, descriptor/** , namespace, nsProfile */) {
     var ns = new EventEmitter()
-    Object.keys(profile).forEach(key => {
-      var descriptor = profile[key]
-      if (typeof descriptor !== 'object') {
+    Object.keys(descriptor).forEach(key => {
+      var propDescriptor = descriptor[key]
+      if (typeof propDescriptor !== 'object') {
         return
       }
-      if (descriptorTypes.indexOf(descriptor.type) < 0) {
+      if (descriptorTypes.indexOf(propDescriptor.type) < 0) {
         return
       }
-      var ret = PropertyDescriptions[descriptor.type](key, descriptor, ns, profile)
-      if (descriptor.type !== 'event') {
+      var ret = PropertyDescriptions[propDescriptor.type](key, propDescriptor, ns, descriptor)
+      if (propDescriptor.type !== 'event') {
         ns[key] = ret
       }
     })

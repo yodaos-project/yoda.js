@@ -27,8 +27,215 @@ function pathTransform (name, prefix, home) {
   return absPath
 }
 
-function createContext (appId, appHome, runtime) {
-  var context = new EventEmitter()
+function createDescriptor (appId, appHome, runtime) {
+  var descriptor = new EventEmitter()
+  /**
+   * Continuously listened events, shall be removed on app destroy to prevent
+   * memory leaks
+   */
+  descriptor.registeredDbusSignals = []
+
+  var multimediaDescriptor = new EventEmitter()
+  Object.assign(multimediaDescriptor,
+    {
+      type: 'namespace'
+    },
+    {
+      /**
+       * @event yodaRT.activity.multimedia#prepared
+       */
+      prepared: {
+        type: 'event'
+      },
+      /**
+       * @event yodaRT.activity.multimedia#playbackcomplete
+       */
+      playbackcomplete: {
+        type: 'event'
+      },
+      /**
+       * @event yodaRT.activity.multimedia#bufferingupdate
+       */
+      bufferingupdate: {
+        type: 'event'
+      },
+      /**
+       * @event yodaRT.activity.multimedia#seekcomplete
+       */
+      seekcomplete: {
+        type: 'event'
+      },
+      /**
+       * @event yodaRT.activity.multimedia#error
+       */
+      error: {
+        type: 'event'
+      }
+    },
+    {
+      /**
+       * @memberof yodaRT.activity.Activity
+       * @class MediaClient
+       * @augments EventEmitter
+       */
+
+      /**
+       * Start playing your url.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function start
+       * @param {String} uri
+       * @returns {Promise}
+       */
+      start: {
+        type: 'method',
+        returns: 'promise',
+        fn: function (url) {
+          return runtime.multimediaMethod('start', [appId, url])
+            .then((result) => {
+              logger.log('create media player', result)
+              var channel = `callback:multimedia:${result[0]}`
+              runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
+                if (event === 'playbackcomplete' || event === 'error') {
+                  runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
+                  var idx = descriptor.registeredDbusSignals.indexOf(channel)
+                  descriptor.registeredDbusSignals.splice(idx, 1)
+                }
+
+                multimediaDescriptor.emit.apply(arguments)
+              })
+              descriptor.registeredDbusSignals.push(channel)
+            })
+        }
+      },
+      /**
+       * Pause the playing.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function pause
+       * @returns {Promise}
+       */
+      pause: {
+        type: 'method',
+        returns: 'promise',
+        fn: function () {
+          return runtime.multimediaMethod('pause', [appId])
+        }
+      },
+      /**
+       * Resume the playing.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function resume
+       * @returns {Promise}
+       */
+      resume: {
+        type: 'method',
+        returns: 'promise',
+        fn: function () {
+          return runtime.multimediaMethod('resume', [appId])
+        }
+      },
+      /**
+       * Stop the playing.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function stop
+       * @returns {Promise}
+       */
+      stop: {
+        type: 'method',
+        returns: 'promise',
+        fn: function () {
+          return runtime.multimediaMethod('stop', [appId])
+        }
+      },
+      /**
+       * get position.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function getPosition
+       * @returns {Promise}
+       */
+      getPosition: {
+        type: 'method',
+        returns: 'promise',
+        fn: function () {
+          return runtime.multimediaMethod('getPosition', [appId])
+            .then((res) => {
+              if (res && res[0] >= -1) {
+                return res[0]
+              }
+              throw new Error('player instance not found')
+            })
+        }
+      },
+      /**
+       * return whether to loop
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function getLoopMode
+       * @returns {Promise}
+       */
+      getLoopMode: {
+        type: 'method',
+        returns: 'promise',
+        fn: function () {
+          return runtime.multimediaMethod('getLoopMode', [appId])
+            .then((res) => {
+              if (res && res[0] !== undefined) {
+                return res[0]
+              }
+              throw new Error('multimediad error')
+            })
+        }
+      },
+      /**
+       * set loop playback if you pass true.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function setLoopMode
+       * @param {Boolean} loop
+       * @returns {Promise}
+       */
+      setLoopMode: {
+        type: 'method',
+        returns: 'promise',
+        fn: function (loop) {
+          loop = loop === true ? 'true' : 'false'
+          return runtime.multimediaMethod('setLoopMode', [appId, loop])
+            .then((res) => {
+              if (res && res[0] !== undefined) {
+                return res[0]
+              }
+              throw new Error('multimediad error')
+            })
+        }
+      },
+      /**
+       * Seek the given position.
+       * @memberof yodaRT.activity.Activity.MediaClient
+       * @instance
+       * @function seek
+       * @param {Number} pos
+       * @returns {Promise}
+       */
+      seek: {
+        type: 'method',
+        returns: 'promise',
+        fn: function (pos) {
+          return runtime.multimediaMethod('seek', [appId, pos])
+            .then((res) => {
+              if (res && res[0] === true) {
+                return
+              }
+              throw new Error('player instance not found')
+            })
+        }
+      }
+    }
+  )
+
   /**
    * @memberof yodaRT.activity
    * @classdesc The `Activity` instance is that developer will use in often.
@@ -50,7 +257,7 @@ function createContext (appId, appHome, runtime) {
    * @augments EventEmitter
    */
 
-  return Object.assign(context,
+  return Object.assign(descriptor,
     {
       /**
        * When the app is ready
@@ -286,7 +493,7 @@ function createContext (appId, appHome, runtime) {
               .then((args) => {
                 logger.log(`tts register ${args[0]}`)
                 return new Promise(resolve => {
-                  runtime.onceDbusSignal(`callback:tts:${args[0]}`, resolve)
+                  runtime.dbusSignalRegistry.once(`callback:tts:${args[0]}`, resolve)
                 })
               })
           }
@@ -312,166 +519,14 @@ function createContext (appId, appHome, runtime) {
        * @instance
        * @type {yodaRT.activity.Activity.MediaClient}
        */
-      media: {
-        /**
-         * @memberof yodaRT.activity.Activity
-         * @class MediaClient
-         * @augments EventEmitter
-         */
-
-        /**
-         * Start playing your url.
-         * @memberof yodaRT.activity.Activity.MediaClient
-         * @instance
-         * @function start
-         * @param {String} uri
-         * @returns {Promise}
-         */
-        start: {
-          type: 'method',
-          returns: 'promise',
-          fn: function (url) {
-            return runtime.multimediaMethod('start', [appId, url])
-              .then((result) => {
-                logger.log('create media player', result)
-                return new Promise(resolve => {
-                  runtime.onceDbusSignal(`callback:multimedia:${result[0]}`, resolve)
-                })
-              })
-          }
-        },
-        /**
-         * Pause the playing.
-         * @memberof yodaRT.activity.Activity.MediaClient
-         * @instance
-         * @function pause
-         * @returns {Promise}
-         */
-        pause: {
-          type: 'method',
-          returns: 'promise',
-          fn: function () {
-            return runtime.multimediaMethod('pause', [appId])
-          }
-        },
-        /**
-         * Resume the playing.
-         * @memberof yodaRT.activity.Activity.MediaClient
-         * @instance
-         * @function resume
-         * @returns {Promise}
-         */
-        resume: {
-          type: 'method',
-          returns: 'promise',
-          fn: function () {
-            return runtime.multimediaMethod('resume', [appId])
-          }
-        },
-        /**
-         * Stop the playing.
-         * @memberof yodaRT.activity.Activity.MediaClient
-         * @instance
-         * @function stop
-         * @returns {Promise}
-         */
-        stop: {
-          type: 'method',
-          returns: 'promise',
-          fn: function () {
-            return runtime.multimediaMethod('stop', [appId])
-          }
-        },
-        /**
-         * get position.
-         * @memberof yodaRT.activity.Activity.MediaClient
-         * @instance
-         * @function getPosition
-         * @returns {Promise}
-         */
-        getPosition: {
-          type: 'method',
-          returns: 'promise',
-          fn: function () {
-            return runtime.multimediaMethod('getPosition', [appId])
-              .then((res) => {
-                if (res && res[0] >= -1) {
-                  return res[0]
-                }
-                throw new Error('player instance not found')
-              })
-          }
-        },
-        /**
-         * return whether to loop
-         * @memberof yodaRT.activity.Activity.MediaClient
-         * @instance
-         * @function getLoopMode
-         * @returns {Promise}
-         */
-        getLoopMode: {
-          type: 'method',
-          returns: 'promise',
-          fn: function () {
-            return runtime.multimediaMethod('getLoopMode', [appId])
-              .then((res) => {
-                if (res && res[0] !== undefined) {
-                  return res[0]
-                }
-                throw new Error('multimediad error')
-              })
-          }
-        },
-        /**
-         * set loop playback if you pass true.
-         * @memberof yodaRT.activity.Activity.MediaClient
-         * @instance
-         * @function setLoopMode
-         * @param {Boolean} loop
-         * @returns {Promise}
-         */
-        setLoopMode: {
-          type: 'method',
-          returns: 'promise',
-          fn: function (loop) {
-            loop = loop === true ? 'true' : 'false'
-            return runtime.multimediaMethod('setLoopMode', [appId, loop])
-              .then((res) => {
-                if (res && res[0] !== undefined) {
-                  return res[0]
-                }
-                throw new Error('multimediad error')
-              })
-          }
-        },
-        /**
-         * Seek the given position.
-         * @memberof yodaRT.activity.Activity.MediaClient
-         * @instance
-         * @function seek
-         * @param {Number} pos
-         * @returns {Promise}
-         */
-        seek: {
-          type: 'method',
-          returns: 'promise',
-          fn: function (pos) {
-            return runtime.multimediaMethod('seek', [appId, pos])
-              .then((res) => {
-                if (res && res[0] === true) {
-                  return
-                }
-                throw new Error('player instance not found')
-              })
-          }
-        }
-      },
+      media: multimediaDescriptor,
       /**
        * @memberof yodaRT.activity.Activity
        * @instance
        * @type {yodaRT.activity.Activity.LightClient}
        */
       light: {
+        type: 'namespace',
         /**
          * @memberof yodaRT.activity.Activity
          * @class LightClient
@@ -520,6 +575,7 @@ function createContext (appId, appHome, runtime) {
        * @type {yodaRT.LocalStorage}
        */
       localStorage: {
+        type: 'namespace',
         /**
          * @memberof yodaRT
          * @class LocalStorage
@@ -571,4 +627,4 @@ function createContext (appId, appHome, runtime) {
   )
 }
 
-module.exports.createContext = createContext
+module.exports.createDescriptor = createDescriptor

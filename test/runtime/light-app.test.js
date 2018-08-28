@@ -34,4 +34,34 @@ test('should receive life cycle events', t => {
   app.emit('resumed')
   app.emit('destroyed')
   app.emit('onrequest', nlp, action)
+
+  proxy.removeAllListeners()
+})
+
+test('should populate methods', t => {
+  var createApp = lightApp(target)
+  var app = createApp('@test', {})
+  var activity = app.activity
+
+  var activityMethods = [ 'destroyAll', 'exit', 'get', 'getAppId',
+    'playSound', 'setBackground', 'setConfirm', 'setForeground', 'setPickup' ]
+  activityMethods.forEach(it => {
+    t.strictEqual(typeof activity[it], 'function', `activity.${it} has to be a function`)
+  })
+
+  var namespaces = {
+    light: [ 'play', 'stop' ],
+    media: [ 'getLoopMode', 'getPosition', 'pause', 'resume', 'seek',
+      'setLoopMode', 'start', 'stop' ],
+    tts: [ 'speak', 'stop' ]
+  }
+  Object.keys(namespaces).forEach(key => {
+    var ns = namespaces[key]
+    t.strictEqual(typeof activity[key], 'object', `activity.${key} has to be an object`)
+    ns.forEach(it => {
+      t.strictEqual(typeof activity[key][it], 'function', `activity.${key}.${it} has to be a function`)
+    })
+  })
+
+  t.end()
 })
