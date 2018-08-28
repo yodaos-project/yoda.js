@@ -1,6 +1,6 @@
 var Service = require('../service')
-var Light = require('light')
-var MediaPlayer = require('multimedia').MediaPlayer
+var Light = require('@yoda/light')
+var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var Effects = require('../effects')
 
 console.log(JSON.stringify(Light.getProfile()))

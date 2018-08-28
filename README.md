@@ -30,7 +30,7 @@ $ npm test
 How to configure to a device:
 
 ```shell
-$ ./scripts/configure-network -s <ssid> -p <psk> -m <masterId>
+$ ./tools/configure-network -s <ssid> -p <psk> -m <masterId>
 ```
 
 ## License

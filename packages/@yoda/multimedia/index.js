@@ -1,13 +1,13 @@
 'use strict'
 
 /**
- * @module multimedia
+ * @module @yoda/multimedia
  * @description The multimedia includes support for playing variety of common
  * media types, so that you can easily integrate audio into your applications.
  *
  * ```js
- * var AudioManager = require('audio').AudioManager;
- * var MediaPlayer = require('multimedia').MediaPlayer;
+ * var AudioManager = require('@yoda/audio').AudioManager;
+ * var MediaPlayer = require('@yoda/multimedia').MediaPlayer;
  *
  * var player = new MediaPlayer(AudioManager.STREAM_PLAYBACK);
  * player.start('/res/play.ogg');
@@ -15,18 +15,18 @@
  */
 
 var native = require('./multimedia.node')
-var audio = require('audio')
+var audio = require('@yoda/audio')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 
 /**
  * @constructor
  * @param {Number} [stream=STREAM_PLAYBACK] - the stream type of the player.
- * @fires multimedia.MediaPlayer#prepared
- * @fires multimedia.MediaPlayer#playbackcomplete
- * @fires multimedia.MediaPlayer#bufferingupdate
- * @fires multimedia.MediaPlayer#seekcomplete
- * @fires multimedia.MediaPlayer#error
+ * @fires module:@yoda/multimedia~MediaPlayer#prepared
+ * @fires module:@yoda/multimedia~MediaPlayer#playbackcomplete
+ * @fires module:@yoda/multimedia~MediaPlayer#bufferingupdate
+ * @fires module:@yoda/multimedia~MediaPlayer#seekcomplete
+ * @fires module:@yoda/multimedia~MediaPlayer#error
  */
 function MediaPlayer (stream) {
   EventEmitter.call(this)
@@ -57,7 +57,7 @@ MediaPlayer.prototype._initialize = function () {
 MediaPlayer.prototype.onprepared = function () {
   /**
    * Prepared event, media resource is loaded
-   * @event multimedia.MediaPlayer#prepared
+   * @event module:@yoda/multimedia~MediaPlayer#prepared
    */
   this.emit('prepared')
 }
@@ -65,7 +65,7 @@ MediaPlayer.prototype.onprepared = function () {
 MediaPlayer.prototype.onplaybackcomplete = function () {
   /**
    * Fired when media playback is complete.
-   * @event multimedia.MediaPlayer#playbackcomplete
+   * @event module:@yoda/multimedia~MediaPlayer#playbackcomplete
    */
   this.emit('playbackcomplete')
 }
@@ -73,7 +73,7 @@ MediaPlayer.prototype.onplaybackcomplete = function () {
 MediaPlayer.prototype.onbufferingupdate = function () {
   /**
    * Fired when media buffer is update.
-   * @event multimedia.MediaPlayer#bufferingupdate
+   * @event module:@yoda/multimedia~MediaPlayer#bufferingupdate
    */
   this.emit('bufferingupdate')
 }
@@ -85,7 +85,7 @@ MediaPlayer.prototype.onseekcomplete = function () {
   }
   /**
    * Fired when media seek is complete.
-   * @event multimedia.MediaPlayer#seekcomplete
+   * @event module:@yoda/multimedia~MediaPlayer#seekcomplete
    */
   this.emit('seekcomplete')
 }
@@ -93,7 +93,7 @@ MediaPlayer.prototype.onseekcomplete = function () {
 MediaPlayer.prototype.onerror = function () {
   /**
    * Fired when something went wrong.
-   * @event multimedia.MediaPlayer#error
+   * @event module:@yoda/multimedia~MediaPlayer#error
    * @type {Error}
    */
   this.emit('error', new Error('something went wrong'))

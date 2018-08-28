@@ -1,5 +1,5 @@
 'use strict'
-var AudioManager = require('audio').AudioManager
+var AudioManager = require('@yoda/audio').AudioManager
 var logger = require('logger')('@volume')
 
 module.exports = function (activity) {

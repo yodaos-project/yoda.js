@@ -4,7 +4,7 @@ var https = require('https')
 var qs = require('querystring')
 var crypto = require('crypto')
 var exec = require('child_process').exec
-var property = require('property')
+var property = require('@yoda/property')
 var logger = require('logger')('login')
 
 var uuid = property.get('ro.boot.serialno')

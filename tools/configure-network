@@ -8,7 +8,7 @@ Usage:
   -m <masterId> UserId/MasterId the device is regstered with
 
 Example:
-  $ ./scripts/configure-network -s <ssid> -p <psk> -m <masterId>
+  $ ./tools/configure-network -s <ssid> -p <psk> -m <masterId>
 "
 
 ssid=""
@@ -71,7 +71,7 @@ if test -z "$masterId"; then
   printf "Tips:
   script can automatically setup masterId on device! try:
 
-  $ bash ./scripts/configure-network -m <masterId>
+  $ bash ./tools/configure-network -m <masterId>
 "
 else
   adb shell setprop persist.system.user.userId "$masterId"

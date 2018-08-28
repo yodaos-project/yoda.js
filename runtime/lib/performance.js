@@ -1,6 +1,6 @@
 'use strict'
 
-var prop = require('property')
+var prop = require('@yoda/property')
 var keys = {
   'init': 'time.init',
   'started': 'time.started',

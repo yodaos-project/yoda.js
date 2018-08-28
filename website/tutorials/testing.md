@@ -33,7 +33,7 @@ A dead simple example are following:
 
 ```js
 var test = require('tape')
-var light = require('light')
+var light = require('@yoda/light')
 test('light get profile', (t) => {
   var profile = light.getProfile()
   t.equal(typeof profile.leds, 'number')

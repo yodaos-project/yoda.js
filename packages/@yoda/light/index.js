@@ -1,11 +1,11 @@
 'use strict'
 
 /**
- * @module light
+ * @module @yoda/light
  * @description Use `light` module to control your LEDs.
  *
  * ```js
- * var light = require('light');
+ * var light = require('@yoda/light');
  * light
  *   .fill(20, 20, 20, 0.7)
  *   .pixel(3, 255, 255, 255)
@@ -23,7 +23,7 @@ var native = require('./light.node')
 
 /**
  * Describe the hardware features for the current light.
- * @typedef {Object} light.LightProfile
+ * @typedef LightProfile
  * @property {Number} leds - the number of LEDs.
  * @property {Number} format - the color format, commonly 3 means rgb.
  * @property {Number} maximumFps - the maximum fps.
@@ -77,7 +77,7 @@ module.exports = {
   /**
    * Get the hardware profile data
    * @function getProfile
-   * @returns {light.LightProfile}
+   * @returns {module:@yoda/light~LightProfile}
    */
   getProfile: native.getProfile,
 

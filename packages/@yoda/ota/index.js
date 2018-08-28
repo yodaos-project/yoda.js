@@ -30,7 +30,7 @@ var childProcess = require('child_process')
 var yodaUtil = require('@yoda/util')
 var lockfile = require('lockfile')
 var system = require('@yoda/system')
-var property = require('property')
+var property = require('@yoda/property')
 var logger = require('logger')('ota')
 
 var otaNetwork = require('./network')

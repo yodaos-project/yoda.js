@@ -3,7 +3,7 @@
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var logger = require('logger')('extapp')
-var property = require('property')
+var property = require('@yoda/property')
 
 var MEDIA_SOURCE = '/opt/media/'
 var LIGHT_SOURCE = '/opt/light/'

@@ -46,25 +46,25 @@ YodaGitPackage(tape https://github.com/shadow-node/tape.git master)
 YodaGitPackage(turen https://github.com/Rokid/node-turen.git master)
 
 # local packages
+YodaLocalPackage(yoda-audio @yoda/audio)
 YodaLocalPackage(yoda-battery @yoda/battery)
 YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
 YodaLocalPackage(yoda-extapp @yoda/extapp)
 YodaLocalPackage(yoda-input @yoda/input)
+YodaLocalPackage(yoda-light @yoda/light)
+YodaLocalPackage(yoda-multimedia @yoda/multimedia)
 YodaLocalPackage(yoda-ota @yoda/ota)
+YodaLocalPackage(yoda-property @yoda/property)
 YodaLocalPackage(yoda-system @yoda/system)
 YodaLocalPackage(yoda-speech @yoda/speech)
+YodaLocalPackage(yoda-tts @yoda/tts)
 YodaLocalPackage(yoda-util @yoda/util)
+YodaLocalPackage(yoda-wifi @yoda/wifi)
 
 # system packages
-YodaLocalPackage(audio)
 YodaLocalPackage(bluetooth)
-YodaLocalPackage(light)
 YodaLocalPackage(lockfile)
 YodaLocalPackage(logger)
-YodaLocalPackage(multimedia)
-YodaLocalPackage(property)
-YodaLocalPackage(tts)
-YodaLocalPackage(wifi)
 
 # Tools
 ExternalProject_Add(rklogger
@@ -80,6 +80,5 @@ ExternalProject_Add(rklogger
 install(DIRECTORY ./apps            DESTINATION /opt)
 install(DIRECTORY ./res/media       DESTINATION /opt)
 install(DIRECTORY ./res/light       DESTINATION /opt)
-install(DIRECTORY ./ota             DESTINATION /usr/lib/yoda)
 install(DIRECTORY ./runtime         DESTINATION /usr/lib/yoda)
 install(DIRECTORY ./cloudappclient  DESTINATION /usr/lib/yoda)
