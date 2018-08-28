@@ -10,10 +10,6 @@ echo "installing cloudappclient..."
 adb shell "rm -rf /usr/lib/yoda/cloudappclient"
 adb push ./cloudappclient /usr/lib/yoda/
 
-echo "installing ota..."
-adb shell "rm -rf /usr/lib/yoda/ota"
-adb push ./ota /usr/lib/yoda/
-
 echo "installing system apps..."
 adb shell "rm -rf /opt/apps/*"
 adb push ./apps/* /opt/apps/
