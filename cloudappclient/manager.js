@@ -149,6 +149,7 @@ Manager.prototype.onrequest = function (nlp, action) {
     }
     skill.emit('start')
     skill.on('exit', this.next.bind(this))
+    this.emit('updateStack', this.updateStack())
   }
 }
 
@@ -174,6 +175,7 @@ Manager.prototype.next = function () {
   if (cur !== false) {
     cur.emit('resume')
   }
+  this.emit('updateStack', this.updateStack())
 }
 
 Manager.prototype.pause = function () {
@@ -194,6 +196,8 @@ Manager.prototype.destroy = function () {
   for (var i = 0; i < this.skills.length; i++) {
     this.skills[i].emit('destroy')
   }
+  this.skills = []
+  this.emit('updateStack', [])
 }
 
 Manager.prototype.getCurrentSkill = function () {
@@ -201,6 +205,17 @@ Manager.prototype.getCurrentSkill = function () {
     return false
   }
   return this.skills[this.skills.length - 1]
+}
+
+Manager.prototype.updateStack = function () {
+  var stack = []
+  for (var i = 0; i < this.skills.length; i++) {
+    stack.push({
+      appId: this.skills[i].appId,
+      form: this.skills[i].form
+    })
+  }
+  return stack
 }
 
 module.exports = Manager
