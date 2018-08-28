@@ -65,6 +65,7 @@ YodaLocalPackage(yoda-wifi @yoda/wifi)
 YodaLocalPackage(bluetooth)
 YodaLocalPackage(lockfile)
 YodaLocalPackage(logger)
+YodaLocalPackage(zeromq)
 
 # Tools
 ExternalProject_Add(rklogger
