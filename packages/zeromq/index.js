@@ -1,7 +1,38 @@
 'use strict'
 
 /**
- * The ZeroMQ client library for JavaScript.
+ * The ZeroMQ client library for JavaScript, which is compatible with:
+ * [zeromq/zeromq.js](https://github.com/zeromq/zeromq.js).
+ *
+ * **Pub/Sub**
+ *
+ * This example demonstrates using `zeromq` in a classic Pub/Sub.
+ *
+ * ```js
+ * // pubber.js
+ * var zmq = require('zeromq')
+ * var sock = zmq.socket('pub');
+ *
+ * sock.bindSync('ipc:///tmp/test');
+ * console.log('Publisher bound to port 3000');
+ *
+ * setInterval(function(){
+ *   console.log('sending a multipart message envelope');
+ *   sock.send(['kitty cats', 'meow!']);
+ * }, 500);
+ *
+ * // subber.js
+ * var zmq = require('zeromq')
+ * sock = zmq.socket('sub');
+ *
+ * sock.connect('tcp://127.0.0.1:3000');
+ * sock.subscribe('kitty cats');
+ * console.log('Subscriber connected to port 3000');
+ *
+ * sock.on('message', function(message) {
+ *   console.log('containing message:', message);
+ * });
+ * ```
  * @module zeromq
  */
 
@@ -46,6 +77,7 @@ inherits(ZeroMQSocket, EventEmitter)
 
 /**
  * connect to the given uri
+ * @param {String} uri - the uri to connect, support `ipc` and `tcp`.
  */
 ZeroMQSocket.prototype.connect = function (uri) {
   return this._socket.connect(uri)
@@ -53,6 +85,7 @@ ZeroMQSocket.prototype.connect = function (uri) {
 
 /**
  * bind the given uri
+ * @param {String} uri - the uri to connect, support `ipc` and `tcp`.
  */
 ZeroMQSocket.prototype.bindSync = function (uri) {
   return this._socket.bindSync(uri)
@@ -60,6 +93,7 @@ ZeroMQSocket.prototype.bindSync = function (uri) {
 
 /**
  * subscribe the topics by filter, an empty string means "all"
+ * @param {String} filter - the filter for topic, empty string means "all".
  */
 ZeroMQSocket.prototype.subscribe = function (filter) {
   return this._socket.subscribe(filter)
@@ -67,6 +101,7 @@ ZeroMQSocket.prototype.subscribe = function (filter) {
 
 /**
  * send buffers
+ * @param {Buffer} bufs - the buffer or buffers to send.
  */
 ZeroMQSocket.prototype.send = function (bufs) {
   if (Array.isArray(bufs)) {
@@ -113,7 +148,7 @@ ZeroMQSocket.prototype._onread = function () {
 /**
  * @function socket
  * @param {String} name
- * @returns {ZeroMQSocket}
+ * @returns {module:zeromq~ZeroMQSocket}
  */
 exports.socket = function createSocket (name) {
   return new ZeroMQSocket(name)
