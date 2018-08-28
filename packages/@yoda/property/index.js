@@ -1,13 +1,13 @@
 'use strict'
 
 /**
- * @module property
+ * @module @yoda/property
  * @description
  * A property is an abstraction that can be used to represent a mutable
  * value that is held in a host object.
  *
  * ```js
- * var prop = require('property');
+ * var prop = require('@yoda/property');
  * prop.get('ro.boot.serialno');
  * prop.set('foobar', 'testkey');
  * ```

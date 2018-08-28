@@ -1,12 +1,12 @@
 'use strict'
 
 /**
- * @module audio
+ * @module @yoda/audio
  * @description The `audio` module exports `AudioManager`, which provides APIs to
  * to control volume of audio.
  *
  * ```js
- * var AudioManager = require('audio').AudioManager;
+ * var AudioManager = require('@yoda/audio').AudioManager;
  * AudioManager.setVolume(AudioManager.STREAM_TTS, 30); // this sets the tts vol to 30.
  * AudioManager.getVolume(AudioManager.STREAM_AUDIO); // get the audio tts.
  * ```
@@ -23,32 +23,32 @@ function AudioManager () {
 exports.AudioManager = AudioManager
 
 /**
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @member {Number} STREAM_AUDIO - Used to identify the volume of audio streams for audio.
  */
 AudioManager.STREAM_AUDIO = native.STREAM_AUDIO
 
 /**
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @member {Number} STREAM_TTS  - Used to identify the volume of audio streams for tts.
  */
 AudioManager.STREAM_TTS = native.STREAM_TTS
 
 /**
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @member {Number} STREAM_PLAYBACK  - Used to identify the volume of audio streams for
  * multimedia.
  */
 AudioManager.STREAM_PLAYBACK = native.STREAM_PLAYBACK
 
 /**
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @member {Number} STREAM_ALARM - Used to identify the volume of audio streams for alarm.
  */
 AudioManager.STREAM_ALARM = native.STREAM_ALARM
 
 /**
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @member {Number} STREAM_SYSTEM - Used to identify the volume of audio streams for system.
  */
 AudioManager.STREAM_SYSTEM = native.STREAM_SYSTEM
@@ -59,8 +59,8 @@ AudioManager.STREAM_SYSTEM = native.STREAM_SYSTEM
 
 /**
  * The linear curve function for `setVolumeShaper`.
- * @memberof module:audio~AudioManager
- * @member {module:audio~Shaper} LINEAR_RAMP
+ * @memberof module:@yoda/audio~AudioManager
+ * @member {module:@yoda/audio~Shaper} LINEAR_RAMP
  */
 AudioManager.LINEAR_RAMP = function (len) {
   var shape = []
@@ -72,7 +72,7 @@ AudioManager.LINEAR_RAMP = function (len) {
 
 /**
  * Set the volume of the given stream.
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @method setVolume
  * @param {Number} [stream=AudioManager.STREAM_AUDIO] - The stream type.
  * @param {Number} vol - The volume to set
@@ -96,7 +96,7 @@ AudioManager.setVolume = function (stream, vol) {
 
 /**
  * Get the volume of the given stream.
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @method getVolume
  * @param {Number} [stream=AudioManager.STREAM_AUDIO] - The stream type.
  */
@@ -110,7 +110,7 @@ AudioManager.getVolume = function (stream) {
 
 /**
  * Get if the volume is muted.
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @method isMuted
  * @returns {Boolean} if muted.
  */
@@ -120,7 +120,7 @@ AudioManager.isMuted = function () {
 
 /**
  * Set the volume to be mute or not.
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @method setMute
  * @param {Boolean} val - If muted.
  */
@@ -130,9 +130,9 @@ AudioManager.setMute = function (val) {
 
 /**
  * Set the shaper of the volume.
- * @memberof module:audio~AudioManager
+ * @memberof module:@yoda/audio~AudioManager
  * @method setVolumeShaper
- * @param {module:audio~Shaper} shaper - The volume shaper function which returns an array with 100 elements.
+ * @param {module:@yoda/audio~Shaper} shaper - The volume shaper function which returns an array with 100 elements.
  * @throws {Error} shaper function should return an array with 100 elements.
  * @throws {RangeError} out of range when set volume shape.
  * @example

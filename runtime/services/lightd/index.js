@@ -3,8 +3,8 @@
 var Service = require('./service')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
-var Light = require('light')
-var MediaPlayer = require('multimedia').MediaPlayer
+var Light = require('@yoda/light')
+var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var logger = require('logger')('lightd')
 var Effects = require('./effects')
 

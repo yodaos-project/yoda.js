@@ -1,7 +1,7 @@
 'use strict'
 
 var test = require('tape')
-var prop = require('property')
+var prop = require('@yoda/property')
 var login = require('/usr/lib/yoda/runtime/cloudapi/login')
 
 test('login', function (t) {

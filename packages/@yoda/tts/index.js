@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @module tts
+ * @module @yoda/tts
  * @description Synthesizes speech from text for immediate playback.
  */
 
@@ -11,27 +11,27 @@ var inherits = require('util').inherits
 var TTSEvents = [
   /**
    * tts voice event.
-   * @event tts.TtsProxy#voice
+   * @event module:@yoda/tts~TtsProxy#voice
    */
   'voice', // 0: not used
   /**
    * tts start event.
-   * @event tts.TtsProxy#start
+   * @event module:@yoda/tts~TtsProxy#start
    */
   'start', // 1: start
   /**
    * tts end event
-   * @event tts.TtsProxy#end
+   * @event module:@yoda/tts~TtsProxy#end
    */
   'end', // 2: end
   /**
    * tts cancel event
-   * @event tts.TtsProxy#cancel
+   * @event module:@yoda/tts~TtsProxy#cancel
    */
   'cancel', // 3: cancel
   /**
    * tts error event
-   * @event tts.TtsProxy#error
+   * @event module:@yoda/tts~TtsProxy#error
    */
   'error' // 4: error
 ]
@@ -55,7 +55,7 @@ function TtsRequest (handle, text, callback) {
 
 /**
  * stop this tts request.
- * @fires tts.TtsProxy#cancel
+ * @fires module:@yoda/tts~TtsProxy#cancel
  */
 TtsRequest.prototype.stop = function () {
   this.state = 'cancel'
@@ -119,7 +119,7 @@ TtsProxy.prototype.onevent = function (name, id, errno) {
 /**
  * @param {String} text
  * @param {Function} cb - fired when tts is done
- * @returns {tts.TtsRequest}
+ * @returns {module:@yoda/tts~TtsRequest}
  */
 TtsProxy.prototype.speak = function (text, cb) {
   var req = new TtsRequest(this._handle, text, cb)
@@ -169,13 +169,13 @@ function createHandle (options) {
  * @param {String} options.secret - the secret
  * @param {String} options.deviceId - the device id
  * @param {String} options.deviceTypeId - the device type id
- * @returns {tts.TtsProxy}
- * @fires tts.TtsProxy#voice
- * @fires tts.TtsProxy#start
- * @fires tts.TtsProxy#end
- * @fires tts.TtsProxy#error
+ * @returns {module:@yoda/tts~TtsProxy}
+ * @fires module:@yoda/tts~TtsProxy#voice
+ * @fires module:@yoda/tts~TtsProxy#start
+ * @fires module:@yoda/tts~TtsProxy#end
+ * @fires module:@yoda/tts~TtsProxy#error
  * @example
- * var tts = require('tts').createTts({ ... })
+ * var tts = require('@yoda/tts').createTts({ ... })
  * tts.speak('hello yoda!', () => {
  *   console.log('tts is complete')
  * })

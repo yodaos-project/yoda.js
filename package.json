@@ -4,10 +4,10 @@
   "scripts": {
     "lint": "npm run lint-js && npm run lint-cc",
     "lint-js": "standard",
-    "lint-cc": "scripts/clang-format",
+    "lint-cc": "tools/clang-format",
     "website": "jsdoc -c jsdoc.config -R README.md -r . -d website/docs -u website/tutorials",
-    "pretest": "scripts/runtime-install",
-    "test": "scripts/test"
+    "pretest": "tools/runtime-install",
+    "test": "tools/test"
   },
   "config": {
     "unsafe-perm": true

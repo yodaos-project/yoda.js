@@ -2,8 +2,8 @@
 
 var logger = require('logger')('@network')
 var bluetooth = require('bluetooth')
-var wifi = require('wifi')
-var property = require('property')
+var wifi = require('@yoda/wifi')
+var property = require('@yoda/property')
 
 module.exports = function (app) {
   var uuid = property.get('ro.boot.serialno')

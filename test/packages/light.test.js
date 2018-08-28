@@ -1,7 +1,7 @@
 'use strict'
 
 var test = require('tape')
-var light = require('light')
+var light = require('@yoda/light')
 
 test('light get profile', function (t) {
   var profile = light.getProfile()

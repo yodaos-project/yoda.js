@@ -1,7 +1,7 @@
 'use strict'
 
 var test = require('tape')
-var prop = require('property')
+var prop = require('@yoda/property')
 
 test('simple property', function (t) {
   t.plan(1)

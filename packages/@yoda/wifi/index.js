@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * @module wifi
+ * @module @yoda/wifi
  * @description Provides classes to manage Wi-Fi functionality on the device.
  */
 

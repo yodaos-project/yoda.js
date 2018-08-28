@@ -3,7 +3,7 @@
 var Service = require('./service')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
-var TtsWrap = require('tts')
+var TtsWrap = require('@yoda/tts')
 var logger = require('logger')('ttsd')
 
 // vui prop definitions

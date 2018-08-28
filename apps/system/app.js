@@ -1,6 +1,6 @@
 'use strict'
 
-var wifi = require('wifi')
+var wifi = require('@yoda/wifi')
 
 module.exports = function (activity) {
   activity.on('onrequest', function (nlp, action) {

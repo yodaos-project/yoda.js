@@ -1,11 +1,11 @@
 'use strict'
 
 var Turen = require('turen')
-var Adapter = require('./adapter/dbus')
-var cloudApi = require('./cloudapi/index')
-var property = require('property')
-var AudioManager = require('audio').AudioManager
-var AppRuntime = require('./appRuntime')
+var Adapter = require('../../lib/adapter/dbus')
+var cloudApi = require('../../lib/cloudapi')
+var property = require('@yoda/property')
+var AudioManager = require('@yoda/audio').AudioManager
+var AppRuntime = require('../../lib/appRuntime')
 var logger = require('logger')('main')
 
 var CloudGW = require('@yoda/cloudgw')

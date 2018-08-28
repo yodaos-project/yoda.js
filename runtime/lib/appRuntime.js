@@ -8,8 +8,8 @@ var fs = require('fs')
 var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
-var perf = require('./lib/performance')
-var dbusConfig = require('./dbus-config.json')
+var perf = require('./performance')
+var dbusConfig = require('../dbus-config.json')
 
 var Permission = require('./component/permission')
 var AppExecutor = require('./app/executor')

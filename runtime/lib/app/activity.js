@@ -4,7 +4,7 @@
  * @namespace yodaRT.activity
  */
 
-var property = require('property')
+var property = require('@yoda/property')
 var logger = require('logger')('activity')
 var EventEmitter = require('events').EventEmitter
 
