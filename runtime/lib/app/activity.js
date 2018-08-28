@@ -27,8 +27,8 @@ function pathTransform (name, prefix, home) {
   return absPath
 }
 
-function createActivity (appId, parent) {
-  var activity = new EventEmitter()
+function createContext (appId, appHome, runtime) {
+  var context = new EventEmitter()
   /**
    * @memberof yodaRT.activity
    * @classdesc The `Activity` instance is that developer will use in often.
@@ -50,474 +50,525 @@ function createActivity (appId, parent) {
    * @augments EventEmitter
    */
 
-  /**
-   * When the app is ready
-   * @event yodaRT.activity.Activity#ready
-   */
-
-  /**
-   * When the app is create
-   * @event yodaRT.activity.Activity#created
-   */
-
-  /**
-   * When the app is pause
-   * @event yodaRT.activity.Activity#paused
-   */
-
-  /**
-   * When the app is resume
-   * @event yodaRT.activity.Activity#resumed
-   */
-
-  /**
-   * When the app is destroy
-   * @event yodaRT.activity.Activity#destroyed
-   */
-
-  /**
-   * When the app is received a command request
-   * @event yodaRT.activity.Activity#onrequest
-   */
-
-  var media = new EventEmitter()
-
-  return Object.assign(activity, {
-    /**
-     * get property value by key
-     * @function get
-     * @param {String} key
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @returns {Promise}
-     */
-    get: function (key) {
-      return new Promise((resolve, reject) => {
-        parent.adapter.propMethod(key, [appId])
-          .then((args) => {
-            // 目前只支持一个参数，考虑改成参数数组，或者resolve支持参数展开
-            resolve(args)
-          })
-          .catch((err) => {
-            reject(err)
-          })
-      })
-    },
-    /**
-     * Exits the current application.
-     * @function exit
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     */
-    exit: function exit () {
-      return parent.runtime.exitAppById(appId)
-    },
-    /**
-     * Exits the current application and clean up others.
-     * @function destroyAll
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     */
-    destroyAll: function destroyAll () {
-      return parent.runtime.destroyAll()
-    },
-    /**
-     * Get the current `appId`.
-     * @function getAppId
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @returns {String} the current `appId`.
-     */
-    getAppId: function getAppId () {
-      return appId
-    },
-    /**
-     * Set the current app is pickup
-     * @function setPickup
-     * @param {Boolean} pickup
-     * @param {Number} [duration=6000]
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     */
-    setPickup: function setPickup (pickup, duration) {
-      return parent.runtime.setPickup(pickup, duration)
-    },
-    /**
-     * Set the app is confirmed
-     * @function setConfirm
-     * @param {String} intent
-     * @param {String} slot
-     * @param {Object} options
-     * @param {Object} attrs
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @return {Promise}
-     */
-    setConfirm: function setConfirm (intent, slot, options, attrs) {
-      return new Promise((resolve, reject) => {
-        if (intent === undefined || intent === '') {
-          reject(new Error('intent required'))
-          return
-        }
-        if (slot === undefined) {
-          reject(new Error('slot required'))
-          return
-        }
-        parent.runtime.setConfirm(appId, intent, slot, options || '[]', attrs || '', (error) => {
-          if (error) {
-            reject(error)
-          } else {
-            resolve()
-          }
-        })
-      })
-    },
-    /**
-     * push the app in background
-     * @function setBackground
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @return {Promise}
-     */
-    setBackground: function () {
-      return new Promise((resolve, reject) => {
-        var result = parent.runtime.setBackgroundByAppId(appId)
-        if (result === true) {
-          resolve()
-        } else {
-          reject(new Error('push the app in background error'))
-        }
-      })
-    },
-    /**
-     * push the app in foreground
-     * @function setForeground
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @return {Promise}
-     */
-    setForeground: function () {
-      return new Promise((resolve, reject) => {
-        var result = parent.runtime.setForegroundByAppId(appId)
-        if (result === true) {
-          resolve()
-        } else {
-          reject(new Error('push the app in foreground error'))
-        }
-      })
-    },
-    /**
-     * @function mockNLPResponse
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @private
-     */
-    mockNLPResponse: function mockNLPResponse (nlp, action) {
-      parent._onVoiceCommand(nlp, action)
-    },
-    /**
-     * sync cloudappclient appid stack
-     * @function syncCloudAppIdStack
-     * @memberof yodaRT.activity.Activity
-     * @param {Array} stack cloud skills id
-     * @instance
-     * @private
-     */
-    syncCloudAppIdStack: function (stack) {
-      parent.runtime.syncCloudAppIdStack(stack || [])
-    },
-    /**
-     * The `TtsClient` is used to control TextToSpeech APIs.
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @type {yodaRT.activity.Activity.TtsClient}
-     */
-    tts: {
+  return Object.assign(context,
+    {
       /**
-       * @memberof yodaRT.activity.Activity
-       * @class TtsClient
+       * When the app is ready
+       * @event yodaRT.activity.Activity#ready
        */
-
-      /**
-       * Speak the given text.
-       * @memberof yodaRT.activity.Activity.TtsClient
-       * @instance
-       * @function speak
-       * @param {String} text
-       * @param {Function} callback
-       * @returns {Promise}
-       */
-      speak: function (text, callback) {
-        return parent.adapter.ttsMethod('speak', [appId, text])
-          .then((args) => {
-            logger.log(`tts register ${args[0]}`)
-            parent.ttsCallback[`ttscb:${args[0]}`] = callback.bind(activity)
-          })
-          .catch((err) => {
-            logger.error(err)
-          })
+      ready: {
+        type: 'event'
       },
       /**
-       * Stop the current task.
-       * @memberof yodaRT.activity.Activity.TtsClient
-       * @instance
-       * @function stop
-       * @param {Function} callback
-       * @returns {Promise}
+       * When the app is create
+       * @event yodaRT.activity.Activity#created
        */
-      stop: function (callback) {
-        return parent.adapter.ttsMethod('stop', [appId])
-          .then((args) => {
-            callback(null)
-          })
-          .catch((err) => {
-            callback(err)
-          })
+      created: {
+        type: 'event'
+      },
+      /**
+       * When the app is pause
+       * @event yodaRT.activity.Activity#paused
+       */
+      paused: {
+        type: 'event'
+      },
+      /**
+       * When the app is resume
+       * @event yodaRT.activity.Activity#resumed
+       */
+      resumed: {
+        type: 'event'
+      },
+      /**
+       * When the app is destroy
+       * @event yodaRT.activity.Activity#destroyed
+       */
+      destroyed: {
+        type: 'event'
+      },
+      /**
+       * When the app is received a command request
+       * @event yodaRT.activity.Activity#onrequest
+       */
+      onrequest: {
+        type: 'event'
       }
     },
-    /**
-     * The `MediaClient` is used to control multimedia APIs.
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @type {yodaRT.activity.Activity.MediaClient}
-     */
-    media: Object.assign(media, {
+    {
       /**
+       * get property value by key
+       * @function get
+       * @param {String} key
        * @memberof yodaRT.activity.Activity
-       * @class MediaClient
-       * @augments EventEmitter
-       */
-
-      /**
-       * Start playing your url.
-       * @memberof yodaRT.activity.Activity.MediaClient
        * @instance
-       * @function start
-       * @param {String} uri
        * @returns {Promise}
        */
-      start: function (url) {
-        return parent.adapter.multiMediaMethod('start', [appId, url])
-          .then((result) => {
-            logger.log('create media player', result)
-            parent.multiMediaCallback['mediacb:' + result[0]] = function (args) {
-              media.emit.apply(media, args)
+      get: {
+        type: 'method',
+        returns: 'promise',
+        fn: function (key) {
+          return Promise.resolve(runtime.onGetPropAll())
+        }
+      },
+      /**
+       * Exits the current application.
+       * @function exit
+       * @memberof yodaRT.activity.Activity
+       * @instance
+       */
+      exit: {
+        type: 'method',
+        returns: 'promise',
+        fn: function exit () {
+          return runtime.exitAppById(appId)
+        }
+      },
+      /**
+       * Exits the current application and clean up others.
+       * @function destroyAll
+       * @memberof yodaRT.activity.Activity
+       * @instance
+       */
+      destroyAll: {
+        type: 'method',
+        returns: 'promise',
+        fn: function destroyAll () {
+          return runtime.destroyAll()
+        }
+      },
+      /**
+       * Get the current `appId`.
+       * @function getAppId
+       * @memberof yodaRT.activity.Activity
+       * @instance
+       * @returns {String} the current `appId`.
+       */
+      getAppId: {
+        type: 'method',
+        returns: 'promise',
+        fn: function getAppId () {
+          return appId
+        }
+      },
+      /**
+       * Set the current app is pickup
+       * @function setPickup
+       * @param {Boolean} pickup
+       * @param {Number} [duration=6000]
+       * @memberof yodaRT.activity.Activity
+       * @instance
+       */
+      setPickup: {
+        type: 'method',
+        returns: 'promise',
+        fn: function setPickup (pickup, duration) {
+          return runtime.setPickup(pickup, duration)
+        }
+      },
+      /**
+       * Set the app is confirmed
+       * @function setConfirm
+       * @param {String} intent
+       * @param {String} slot
+       * @param {Object} options
+       * @param {Object} attrs
+       * @memberof yodaRT.activity.Activity
+       * @instance
+       * @return {Promise}
+       */
+      setConfirm: {
+        type: 'method',
+        returns: 'promise',
+        fn: function setConfirm (intent, slot, options, attrs) {
+          return new Promise((resolve, reject) => {
+            if (intent === undefined || intent === '') {
+              reject(new Error('intent required'))
+              return
+            }
+            if (slot === undefined) {
+              reject(new Error('slot required'))
+              return
+            }
+            runtime.setConfirm(appId, intent, slot, options || '[]', attrs || '', (error) => {
+              if (error) {
+                reject(error)
+              } else {
+                resolve()
+              }
+            })
+          })
+        }
+      },
+      /**
+       * push the app in background
+       * @function setBackground
+       * @memberof yodaRT.activity.Activity
+       * @instance
+       * @return {Promise}
+       */
+      setBackground: {
+        type: 'method',
+        returns: 'promise',
+        fn: function () {
+          return new Promise((resolve, reject) => {
+            var result = runtime.setBackgroundByAppId(appId)
+            if (result === true) {
+              resolve()
+            } else {
+              reject(new Error('push the app in background error'))
             }
           })
-          .catch((err) => {
-            logger.error(err)
+        }
+      },
+      /**
+       * push the app in foreground
+       * @function setForeground
+       * @memberof yodaRT.activity.Activity
+       * @instance
+       * @return {Promise}
+       */
+      setForeground: {
+        type: 'method',
+        returns: 'promise',
+        fn: function () {
+          return new Promise((resolve, reject) => {
+            var result = runtime.setForegroundByAppId(appId)
+            if (result === true) {
+              resolve()
+            } else {
+              reject(new Error('push the app in foreground error'))
+            }
           })
+        }
       },
       /**
-       * Pause the playing.
-       * @memberof yodaRT.activity.Activity.MediaClient
+       * sync cloudappclient appid stack
+       * @function syncCloudAppIdStack
+       * @memberof yodaRT.activity.Activity
+       * @param {Array} stack cloud skills id
        * @instance
-       * @function pause
-       * @returns {Promise}
+       * @private
        */
-      pause: function () {
-        return parent.adapter.multiMediaMethod('pause', [appId])
+      syncCloudAppIdStack: {
+        type: 'method',
+        returns: 'promise',
+        fn: function (stack) {
+          runtime.syncCloudAppIdStack(stack || [])
+        }
       },
       /**
-       * Resume the playing.
-       * @memberof yodaRT.activity.Activity.MediaClient
+       * The `TtsClient` is used to control TextToSpeech APIs.
+       * @memberof yodaRT.activity.Activity
        * @instance
-       * @function resume
-       * @returns {Promise}
+       * @type {yodaRT.activity.Activity.TtsClient}
        */
-      resume: function () {
-        return parent.adapter.multiMediaMethod('resume', [appId])
+      tts: {
+        type: 'namespace',
+        /**
+         * @memberof yodaRT.activity.Activity
+         * @class TtsClient
+         */
+
+        /**
+         * Speak the given text.
+         * @memberof yodaRT.activity.Activity.TtsClient
+         * @instance
+         * @function speak
+         * @param {String} text
+         * @returns {Promise}
+         */
+        speak: {
+          type: 'method',
+          returns: 'promise',
+          fn: function (text) {
+            return runtime.ttsMethod('speak', [appId, text])
+              .then((args) => {
+                logger.log(`tts register ${args[0]}`)
+                return new Promise(resolve => {
+                  runtime.onceDbusSignal(`callback:tts:${args[0]}`, resolve)
+                })
+              })
+          }
+        },
+        /**
+         * Stop the current task.
+         * @memberof yodaRT.activity.Activity.TtsClient
+         * @instance
+         * @function stop
+         * @returns {Promise}
+         */
+        stop: {
+          type: 'method',
+          returns: 'promise',
+          fn: function () {
+            return runtime.ttsMethod('stop', [appId])
+          }
+        }
       },
       /**
-       * Stop the playing.
-       * @memberof yodaRT.activity.Activity.MediaClient
+       * The `MediaClient` is used to control multimedia APIs.
+       * @memberof yodaRT.activity.Activity
        * @instance
-       * @function stop
-       * @returns {Promise}
+       * @type {yodaRT.activity.Activity.MediaClient}
        */
-      stop: function () {
-        return parent.adapter.multiMediaMethod('stop', [appId])
+      media: {
+        /**
+         * @memberof yodaRT.activity.Activity
+         * @class MediaClient
+         * @augments EventEmitter
+         */
+
+        /**
+         * Start playing your url.
+         * @memberof yodaRT.activity.Activity.MediaClient
+         * @instance
+         * @function start
+         * @param {String} uri
+         * @returns {Promise}
+         */
+        start: {
+          type: 'method',
+          returns: 'promise',
+          fn: function (url) {
+            return runtime.multimediaMethod('start', [appId, url])
+              .then((result) => {
+                logger.log('create media player', result)
+                return new Promise(resolve => {
+                  runtime.onceDbusSignal(`callback:multimedia:${result[0]}`, resolve)
+                })
+              })
+          }
+        },
+        /**
+         * Pause the playing.
+         * @memberof yodaRT.activity.Activity.MediaClient
+         * @instance
+         * @function pause
+         * @returns {Promise}
+         */
+        pause: {
+          type: 'method',
+          returns: 'promise',
+          fn: function () {
+            return runtime.multimediaMethod('pause', [appId])
+          }
+        },
+        /**
+         * Resume the playing.
+         * @memberof yodaRT.activity.Activity.MediaClient
+         * @instance
+         * @function resume
+         * @returns {Promise}
+         */
+        resume: {
+          type: 'method',
+          returns: 'promise',
+          fn: function () {
+            return runtime.multimediaMethod('resume', [appId])
+          }
+        },
+        /**
+         * Stop the playing.
+         * @memberof yodaRT.activity.Activity.MediaClient
+         * @instance
+         * @function stop
+         * @returns {Promise}
+         */
+        stop: {
+          type: 'method',
+          returns: 'promise',
+          fn: function () {
+            return runtime.multimediaMethod('stop', [appId])
+          }
+        },
+        /**
+         * get position.
+         * @memberof yodaRT.activity.Activity.MediaClient
+         * @instance
+         * @function getPosition
+         * @returns {Promise}
+         */
+        getPosition: {
+          type: 'method',
+          returns: 'promise',
+          fn: function () {
+            return runtime.multimediaMethod('getPosition', [appId])
+              .then((res) => {
+                if (res && res[0] >= -1) {
+                  return res[0]
+                }
+                throw new Error('player instance not found')
+              })
+          }
+        },
+        /**
+         * return whether to loop
+         * @memberof yodaRT.activity.Activity.MediaClient
+         * @instance
+         * @function getLoopMode
+         * @returns {Promise}
+         */
+        getLoopMode: {
+          type: 'method',
+          returns: 'promise',
+          fn: function () {
+            return runtime.multimediaMethod('getLoopMode', [appId])
+              .then((res) => {
+                if (res && res[0] !== undefined) {
+                  return res[0]
+                }
+                throw new Error('multimediad error')
+              })
+          }
+        },
+        /**
+         * set loop playback if you pass true.
+         * @memberof yodaRT.activity.Activity.MediaClient
+         * @instance
+         * @function setLoopMode
+         * @param {Boolean} loop
+         * @returns {Promise}
+         */
+        setLoopMode: {
+          type: 'method',
+          returns: 'promise',
+          fn: function (loop) {
+            loop = loop === true ? 'true' : 'false'
+            return runtime.multimediaMethod('setLoopMode', [appId, loop])
+              .then((res) => {
+                if (res && res[0] !== undefined) {
+                  return res[0]
+                }
+                throw new Error('multimediad error')
+              })
+          }
+        },
+        /**
+         * Seek the given position.
+         * @memberof yodaRT.activity.Activity.MediaClient
+         * @instance
+         * @function seek
+         * @param {Number} pos
+         * @returns {Promise}
+         */
+        seek: {
+          type: 'method',
+          returns: 'promise',
+          fn: function (pos) {
+            return runtime.multimediaMethod('seek', [appId, pos])
+              .then((res) => {
+                if (res && res[0] === true) {
+                  return
+                }
+                throw new Error('player instance not found')
+              })
+          }
+        }
       },
-      /**
-       * get position.
-       * @memberof yodaRT.activity.Activity.MediaClient
-       * @instance
-       * @function getPosition
-       * @returns {Promise}
-       */
-      getPosition: function () {
-        return new Promise((resolve, reject) => {
-          parent.adapter.multiMediaMethod('getPosition', [appId])
-            .then((res) => {
-              if (res && res[0] >= -1) {
-                resolve(res[0])
-              } else {
-                reject(new Error('player instance not found'))
-              }
-            })
-            .catch((error) => {
-              reject(error)
-            })
-        })
-      },
-      /**
-       * return whether to loop
-       * @memberof yodaRT.activity.Activity.MediaClient
-       * @instance
-       * @function getLoopMode
-       * @returns {Promise}
-       */
-      getLoopMode: function () {
-        return new Promise((resolve, reject) => {
-          parent.adapter.multiMediaMethod('getLoopMode', [appId])
-            .then((res) => {
-              if (res && res[0] !== undefined) {
-                resolve(res[0])
-              } else {
-                reject(new Error('multimediad error'))
-              }
-            })
-            .catch((error) => {
-              reject(error)
-            })
-        })
-      },
-      /**
-       * set loop playback if you pass true.
-       * @memberof yodaRT.activity.Activity.MediaClient
-       * @instance
-       * @function setLoopMode
-       * @param {Boolean} loop
-       * @returns {Promise}
-       */
-      setLoopMode: function (loop) {
-        return new Promise((resolve, reject) => {
-          loop = loop === true ? 'true' : 'false'
-          parent.adapter.multiMediaMethod('setLoopMode', [appId, loop])
-            .then((res) => {
-              if (res && res[0] !== undefined) {
-                resolve(res[0])
-              } else {
-                reject(new Error('multimediad error'))
-              }
-            })
-            .catch((error) => {
-              reject(error)
-            })
-        })
-      },
-      /**
-       * Seek the given position.
-       * @memberof yodaRT.activity.Activity.MediaClient
-       * @instance
-       * @function seek
-       * @param {Number} pos
-       * @returns {Promise}
-       */
-      seek: function (pos) {
-        return new Promise((resolve, reject) => {
-          parent.adapter.multiMediaMethod('seek', [appId, pos])
-            .then((res) => {
-              if (res && res[0] === true) {
-                resolve()
-              } else {
-                reject(new Error('player instance not found'))
-              }
-            })
-            .catch((error) => {
-              reject(error)
-            })
-        })
-      }
-    }),
-    /**
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @type {yodaRT.activity.Activity.LightClient}
-     */
-    light: {
       /**
        * @memberof yodaRT.activity.Activity
-       * @class LightClient
-       */
-
-      /**
-       * @memberof yodaRT.activity.Activity.LightClient
        * @instance
-       * @function play
-       * @param {String} uri - the light resource uri.
-       * @param {Object} args - the args.
-       * @returns {Promise}
+       * @type {yodaRT.activity.Activity.LightClient}
        */
-      play: function (uri, args) {
-        var argString = JSON.stringify(args || {})
-        var absPath = pathTransform(uri, LIGHT_SOURCE, parent.appHome + '/light')
-        return new Promise((resolve, reject) => {
-          parent.adapter.lightMethod('play', [appId, absPath, argString])
-            .then((res) => {
-              if (res && res[0] === true) {
-                resolve()
-              } else {
-                reject(new Error('lighting effect throw an error'))
-              }
-            })
-            .catch((error) => {
-              reject(error)
-            })
-        })
+      light: {
+        /**
+         * @memberof yodaRT.activity.Activity
+         * @class LightClient
+         */
+
+        /**
+         * @memberof yodaRT.activity.Activity.LightClient
+         * @instance
+         * @function play
+         * @param {String} uri - the light resource uri.
+         * @param {Object} args - the args.
+         * @returns {Promise}
+         */
+        play: {
+          type: 'method',
+          returns: 'promise',
+          fn: function (uri, args) {
+            var argString = JSON.stringify(args || {})
+            var absPath = pathTransform(uri, LIGHT_SOURCE, appHome + '/light')
+            return runtime.lightMethod('play', [appId, absPath, argString])
+              .then((res) => {
+                if (res && res[0] === true) {
+                  return
+                }
+                throw new Error('lighting effect throw an error')
+              })
+          }
+        },
+        /**
+         * @memberof yodaRT.activity.Activity.LightClient
+         * @instance
+         * @function stop
+         * @returns {Promise}
+         */
+        stop: {
+          type: 'method',
+          returns: 'promise',
+          fn: function () {
+            return runtime.lightMethod('stop', [appId])
+          }
+        }
       },
       /**
-       * @memberof yodaRT.activity.Activity.LightClient
+       * @memberof yodaRT.activity.Activity
        * @instance
-       * @function stop
-       * @returns {Promise}
+       * @type {yodaRT.LocalStorage}
        */
-      stop: function () {
-        return parent.adapter.lightMethod('stop', [appId])
-      }
-    },
-    /**
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @type {yodaRT.LocalStorage}
-     */
-    localStorage: {
-      /**
-       * @memberof yodaRT
-       * @class LocalStorage
-       */
+      localStorage: {
+        /**
+         * @memberof yodaRT
+         * @class LocalStorage
+         */
 
-      /**
-       * @memberof yodaRT.LocalStorage
-       * @instance
-       * @function getItem
-       * @returns {String}
-       */
-      getItem: function (key) {
-        return property.get(key)
+        /**
+         * @memberof yodaRT.LocalStorage
+         * @instance
+         * @function getItem
+         * @returns {String}
+         */
+        getItem: {
+          type: 'method',
+          returns: 'direct',
+          fn: function (key) {
+            return property.get(key)
+          }
+        },
+        /**
+         * @memberof yodaRT.LocalStorage
+         * @instance
+         * @function setItem
+         * @returns {Boolean}
+         */
+        setItem: {
+          type: 'method',
+          returns: 'direct',
+          fn: function (key, value) {
+            return property.set(key, value)
+          }
+        }
       },
       /**
-       * @memberof yodaRT.LocalStorage
+       * @memberof yodaRT.activity.Activity
        * @instance
-       * @function setItem
-       * @returns {Boolean}
+       * @function playSound
+       * @param {String} uri - the sound resource uri.
+       * @returns {Promise}
        */
-      setItem: function (key, value) {
-        return property.set(key, value)
+      playSound: {
+        type: 'method',
+        returns: 'promise',
+        fn: function (uri) {
+          var absPath = pathTransform(uri, MEDIA_SOURCE, appHome + '/media')
+          return runtime.lightMethod('appSound', [appId, absPath])
+        }
       }
-    },
-    /**
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function playSound
-     * @param {String} uri - the sound resource uri.
-     * @returns {Promise}
-     */
-    playSound: function (uri) {
-      var absPath = pathTransform(uri, MEDIA_SOURCE, parent.appHome + '/media')
-      return parent.adapter.lightMethod('appSound', [appId, absPath])
     }
-  })
+  )
 }
 
-exports.createActivity = createActivity
+module.exports.createContext = createContext
