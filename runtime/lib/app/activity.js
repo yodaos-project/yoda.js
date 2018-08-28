@@ -216,6 +216,17 @@ function createActivity (appId, parent) {
       parent._onVoiceCommand(nlp, action)
     },
     /**
+     * sync cloudappclient appid stack
+     * @function syncCloudAppIdStack
+     * @memberof yodaRT.activity.Activity
+     * @param {Array} stack cloud skills id
+     * @instance
+     * @private
+     */
+    syncCloudAppIdStack: function (stack) {
+      parent.runtime.syncCloudAppIdStack(stack || [])
+    },
+    /**
      * The `TtsClient` is used to control TextToSpeech APIs.
      * @memberof yodaRT.activity.Activity
      * @instance
