@@ -26,6 +26,11 @@ var directive = new Directive()
 // skill os
 var sos = new Manager(directive)
 
+sos.on('updateStack', (stack) => {
+  console.log('updateStack', stack)
+  app.syncCloudAppIdStack(stack)
+})
+
 var prevMediaItemData = null
 var mediaNextFn = null
 app.media.on('prepared', function (duration, position) {

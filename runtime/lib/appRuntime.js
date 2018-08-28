@@ -32,10 +32,9 @@ function App (arr) {
   // 保存正在运行的AppID
   this.appIdStack = []
   this.bgAppIdStack = []
+  this.cloudAppIdStack = []
   // 保存正在运行的App Map, 以AppID为key
   this.appMap = {}
-  // save the real appid
-  this.appIdOriginStack = []
   // 保存正在运行的App的data, 以AppID为key
   this.appDataMap = {}
   // save the skill's id domain
@@ -62,7 +61,6 @@ function App (arr) {
 
   this.forceUpdateAvailable = false
 
-  // this.dbusClient = dbus.getBus('session');
   // 启动extapp dbus接口
   this.startExtappService()
   // 处理mqtt事件
@@ -290,7 +288,7 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
     data = {
       appId: nlp.appId,
       cloud: nlp.cloud,
-      form: action.response.action.form,
+      form: appId === '@cloud' ? 'scene' : action.response.action.form,
       nlp: nlp,
       action: action
     }
@@ -417,8 +415,8 @@ App.prototype.destroyAll = function () {
   // 清空正在运行的所有App
   this.appIdStack = []
   this.bgAppIdStack = []
+  this.cloudAppIdStack = []
   this.appMap = {}
-  this.appIdOriginStack = []
   this.appDataMap = {}
   this.resetStack()
 
@@ -516,9 +514,9 @@ App.prototype.lifeCycle = function (name, AppData) {
  * @private
  */
 App.prototype.updateStack = function (AppData) {
-  // var scene = '';
-  // var cut = '';
-
+  var scene = ''
+  var cut = ''
+  // keep these codes for future reference, maybe useful
   // logger.log('stack', this.appIdStack);
   // for (var i = this.appIdOriginStack.length - 1; i >= 0; i--) {
   //   AppData = this.getAppDataById(this.appIdOriginStack[i]);
@@ -529,15 +527,43 @@ App.prototype.updateStack = function (AppData) {
   //     cut = AppData.appId;
   //   }
   // }
-  logger.log('AppData.appId: ' + AppData.appId + ' form: ' + AppData.form)
-  if (AppData.form === 'cut') {
-    this.domain.cut = AppData.appId
+  // logger.log('AppData.appId: ' + AppData.appId + ' form: ' + AppData.form)
+  // if (AppData.form === 'cut') {
+  //   this.domain.cut = AppData.appId
+  // }
+  // if (AppData.form === 'scene') {
+  //   this.domain.scene = AppData.appId
+  // }
+  // logger.log('domain', this.domain)
+  // this.emit('setStack', this.domain.scene + ':' + this.domain.cut)
+  var item
+  for (var i = this.appIdStack.length - 1; i >= 0; i--) {
+    // we map all cloud skills to the cloud app, so here we want to expand the cloud app's stack
+    if (this.appIdStack[i] === '@cloud') {
+      for (var j = this.cloudAppIdStack.length - 1; j >= 0; j--) {
+        item = this.cloudAppIdStack[j]
+        if (scene === '' && item.form === 'scene') {
+          scene = item.appId
+        }
+        if (cut === '' && item.form !== 'scene') {
+          cut = item.appId
+        }
+      }
+    } else {
+      item = this.getAppDataById(this.appIdStack[i])
+      if (scene === '' && item.form === 'scene') {
+        scene = item.appId
+      }
+      if (cut === '' && item.form !== 'scene') {
+        cut = item.appId
+      }
+    }
   }
-  if (AppData.form === 'scene') {
-    this.domain.scene = AppData.appId
+  if (scene !== this.domain.scene || cut !== this.domain.cut) {
+    this.domain.scene = scene
+    this.domain.cut = cut
+    this.emit('setStack', scene + ':' + cut)
   }
-  logger.log('domain', this.domain)
-  this.emit('setStack', this.domain.scene + ':' + this.domain.cut)
 }
 
 App.prototype.resetStack = function () {
@@ -738,6 +764,18 @@ App.prototype.mockNLPResponse = function (nlp, action) {
     }
     this.lifeCycle('onrequest', AppData)
   }
+}
+
+/**
+ * sync cloudappclient appid stack
+ * @param {Array} stack appid stack
+ * @private
+ */
+
+App.prototype.syncCloudAppIdStack = function (stack) {
+  this.cloudAppIdStack = stack || []
+  logger.log('cloudStack', this.cloudAppIdStack)
+  this.updateStack()
 }
 
 /**
@@ -1033,6 +1071,13 @@ App.prototype.startExtappService = function () {
     } else {
       cb(null, false)
     }
+  })
+  extapp.addMethod('syncCloudAppIdStack', {
+    in: ['s'],
+    out: ['b']
+  }, function (stack, cb) {
+    self.syncCloudAppIdStack(JSON.parse(stack || '[]'))
+    cb(null, true)
   })
 
   /**
