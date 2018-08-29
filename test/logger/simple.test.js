@@ -1,6 +1,6 @@
 'use strict'
 
-//process.env.LOG_PORT = 8081
+// process.env.LOG_PORT = 8081
 
 var test = require('tape')
 var net = require('net')
