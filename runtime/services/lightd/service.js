@@ -35,7 +35,7 @@ Light.prototype.loadfile = function (uri, data, callback) {
   var handle
   try {
     handle = require(uri)
-    this.stopPrev()
+    this.stopPrev(data && data.keep)
     this.prev = handle(this.options.effect, data || {}, callback)
   } catch (error) {
     logger.error(`load effect file error from path: ${uri}`, error)
