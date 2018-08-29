@@ -80,7 +80,7 @@ MqttAgent.prototype.onMessage = function (channel, message) {
   } catch (error) {
     msg = {}
     logger.log(error)
-    logger.log('parse error with message: ', channel, message+'')
+    logger.log('parse error with message: ', channel, message + '')
     logger.log(message.toString('hex'))
     return
   }
