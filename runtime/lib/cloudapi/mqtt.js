@@ -39,14 +39,16 @@ MqttAgent.prototype.register = function () {
 
 MqttAgent.prototype.reConnect = function () {
   if (handle) {
-    handle.end(true)
+    handle.disconnect()
+    handle.removeAllListeners()
+    handle = null
   }
   handle = mqtt.connect(endpoint, {
     clientId: this.mqttOptions.username,
     username: this.mqttOptions.username,
     password: this.mqttOptions.token,
     rejectUnauthorized: true,
-    reconnectPeriod: 5000
+    reconnectPeriod: -1
   })
   handle.on('connect', () => {
     var channelId = `u/${this.userId}/deviceType/${this.config.device_type_id}/deviceId/${this.config.device_id}/rc`
@@ -54,7 +56,15 @@ MqttAgent.prototype.reConnect = function () {
     logger.info('subscribed', channelId)
   })
   handle.on('reconnect', () => {
-    this.register()
+    logger.info('reconnecting mqtt service')
+  })
+  handle.on('offline', () => {
+    logger.error(`offline, reconnecting`)
+    this.register().then(() => {
+      this.reConnect()
+    }).catch((err) => {
+      logger.error(err)
+    })
   })
   handle.on('message', this.onMessage.bind(this))
   handle.on('error', (err) => {
@@ -70,7 +80,7 @@ MqttAgent.prototype.onMessage = function (channel, message) {
   } catch (error) {
     msg = {}
     logger.log(error)
-    logger.log('parse error with message: ', channel, message)
+    logger.log('parse error with message: ', channel, message+'')
     logger.log(message.toString('hex'))
     return
   }

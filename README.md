@@ -25,6 +25,26 @@ To run the unit tests on device, just try:
 $ npm test
 ```
 
+The above command would install all source code and tests on your connected device, if you just wanna
+put tests only, try the following:
+
+```shell
+$ TESTONLY=1 npm test
+```
+
+We supported the following TAP reporters:
+
+- [tap-nyan](https://github.com/calvinmetcalf/tap-nyan)
+- [tap-spec](https://github.com/scottcorgan/tap-spec)
+- [tap-json](https://github.com/gummesson/tap-json)
+
+Use the environ `REPORTER` to select which reporter do you prefer use:
+
+```shell
+$ TESTONLY=1 REPORTER=spec npm test
+$ TESTONLY=1 REPORTER=json npm test
+```
+
 ## Tools
 
 How to configure to a device:
