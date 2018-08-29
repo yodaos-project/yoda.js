@@ -6,7 +6,7 @@
     "lint-js": "standard",
     "lint-cc": "tools/clang-format",
     "website": "jsdoc -c jsdoc.config -R README.md -r . -d website/docs -u website/tutorials",
-    "pretest": "tools/runtime-install",
+    "pretest": "TESTFULL=1 tools/runtime-install",
     "test": "tools/test"
   },
   "config": {
@@ -22,7 +22,9 @@
     "ink-docstrap": "^1.3.2",
     "jsdoc": "^3.5.5",
     "standard": "^11.0.1",
-    "tap-nyan": "^1.1.0"
+    "tap-json": "^1.0.0",
+    "tap-nyan": "^1.1.0",
+    "tap-spec": "^5.0.0"
   },
   "standard": {
     "ignore": [

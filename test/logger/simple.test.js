@@ -1,12 +1,12 @@
 'use strict'
 
-process.env.LOG_PORT = 8081
+//process.env.LOG_PORT = 8081
 
 var test = require('tape')
 var net = require('net')
 var logger = require('logger')('log')
 
-test('simple ', function (t) {
+test.skip('simple ', function (t) {
   t.plan(1)
   var socket = net.connect(process.env.LOG_PORT)
   var text = 'foobar'
