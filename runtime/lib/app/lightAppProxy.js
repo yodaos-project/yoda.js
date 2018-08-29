@@ -1,7 +1,7 @@
 'use strict'
 
 var logger = require('logger')('lapp')
-var createDescriptor = require('./activity').createDescriptor
+var createDescriptor = require('./activity-descriptor').createDescriptor
 var translate = require('../../client/translator-in-process').translate
 
 module.exports = function lightAppProxy (target) {

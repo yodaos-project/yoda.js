@@ -1,5 +1,5 @@
 var test = require('tape')
-var _ = require('../../../packages/@yoda/util')._
+var _ = require('@yoda/util')._
 
 var suites = [
   {
