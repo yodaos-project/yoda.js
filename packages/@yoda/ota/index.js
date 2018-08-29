@@ -345,6 +345,7 @@ function downloadImage (info, callback) {
 /**
  * Run OTA procedure in current process context.
  *
+ * 0. check if prop 'persist.sys.rokid.noota' is set to truthy value
  * 1. lock program to prevent from concurrent multiple OTA processes;
  * 2. make working directory;
  * 3. fetch OTA info;
@@ -360,6 +361,12 @@ function downloadImage (info, callback) {
  * @param {module:@yoda/ota~OtaInfoCallback} callback
  */
 function runInCurrentContext (callback) {
+  var noOta = property.get('persist.sys.rokid.noota')
+  /** value is truthy */
+  if (noOta) {
+    return callback(null, null)
+  }
+
   lockfile.lock(procLock, { stale: /** 30m */ 30 * 60 * 1000 }, function onLocked (err) {
     if (err) {
       return callback(err)
