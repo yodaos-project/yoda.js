@@ -1,5 +1,9 @@
 'use strict'
 
+var AudioManager = require('@yoda/audio').AudioManager
+var MediaPlayer = require('@yoda/multimedia').MediaPlayer
+var light = require('@yoda/light')
+
 var MEDIA_SOURCE = '/opt/media/'
 var init = false
 
@@ -42,16 +46,12 @@ var init = false
  * ```
  * @memberof yodaRT
  * @class
- * @param {light} light - the light instance
- * @param {Object} multimedia
  */
-function LightRenderingContext (light, Multimedia) {
-  this.leds = light
-  this.Multimedia = Multimedia
-  this.ledsConfig = light.getProfile()
-  this.handle = {}
+function LightRenderingContext () {
   this.id = 0
-  this.player = new Multimedia()
+  this.handle = {}
+  this.ledsConfig = light.getProfile()
+  this._wakeupPlayer = new MediaPlayer(AudioManager.STREAM_AUDIO)
 }
 
 /**
@@ -71,9 +71,9 @@ LightRenderingContext.prototype.sound = function (name, self) {
   } else {
     absPath = name
   }
-  var player = new this.Multimedia()
-  player.start(absPath)
-  return player
+  var sounder = new MediaPlayer(AudioManager.STREAM_AUDIO)
+  sounder.start(absPath)
+  return sounder
 }
 
 /**
@@ -81,10 +81,10 @@ LightRenderingContext.prototype.sound = function (name, self) {
  */
 LightRenderingContext.prototype.wakeupSound = function () {
   if (!init) {
-    this.player.start(`${MEDIA_SOURCE}wakeup.ogg`)
+    this._wakeupPlayer.start(`${MEDIA_SOURCE}wakeup.ogg`)
     init = true
   } else {
-    this.player.seek(0)
+    this._wakeupPlayer.seek(0)
   }
 }
 
@@ -117,28 +117,28 @@ LightRenderingContext.prototype.stop = function (keep) {
  * render the effect.
  */
 LightRenderingContext.prototype.render = function () {
-  this.leds.write()
+  return light.write()
 }
 
 /**
  * clear the effect.
  */
 LightRenderingContext.prototype.clear = function () {
-  this.leds.clear()
+  return light.clear()
 }
 
 /**
  * write single position.
  */
 LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
-  this.leds.pixel(pos, r, g, b, a)
+  return light.pixel(pos, r, g, b, a)
 }
 
 /**
  * write all lights.
  */
 LightRenderingContext.prototype.fill = function (r, g, b, a) {
-  this.leds.fill(r, g, b, a)
+  return light.fill(r, g, b, a)
 }
 
 /**

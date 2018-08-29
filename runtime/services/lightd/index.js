@@ -3,10 +3,8 @@
 var Service = require('./service')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
-var Light = require('@yoda/light')
-var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var logger = require('logger')('lightd')
-var Effects = require('./effects')
+var LightRenderingContext = require('./effects')
 
 var dbusService = Dbus.registerService('session', 'com.service.light')
 var dbusObject = dbusService.createObject('/rokid/light')
@@ -18,10 +16,8 @@ var permit = new Remote(dbusService._dbus, {
   dbusInterface: 'com.rokid.permission'
 })
 
-var effect = new Effects(Light, MediaPlayer)
-
 var service = new Service({
-  effect: effect,
+  effect: new LightRenderingContext(),
   permit: permit
 })
 
