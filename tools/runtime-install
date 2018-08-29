@@ -1,28 +1,29 @@
 #!/usr/bin/env bash
+set -e
 
 adb shell "mount -o remount,rw /"
 
 echo "installing runtime..."
 adb shell "rm -rf /usr/lib/yoda/runtime"
-adb push ./runtime /usr/lib/yoda/
+adb push ./runtime /usr/lib/yoda/ >/dev/null
 
 echo "installing cloudappclient..."
 adb shell "rm -rf /usr/lib/yoda/cloudappclient"
-adb push ./cloudappclient /usr/lib/yoda/
+adb push ./cloudappclient /usr/lib/yoda/ >/dev/null
 
 echo "installing system apps..."
 adb shell "rm -rf /opt/apps/*"
-adb push ./apps/* /opt/apps/
+adb push ./apps/* /opt/apps/ >/dev/null
 
 echo "installing resource..."
 adb shell "rm -rf /opt/media"
 adb shell "rm -rf /opt/light"
-adb push ./res/light /opt/
-adb push ./res/media /opt/
+adb push ./res/light /opt/ >/dev/null
+adb push ./res/media /opt/ >/dev/null
 
 adb shell mkdir -p /usr/lib/node_modules/@yoda
-adb push packages/* /usr/lib/node_modules
+adb push packages/* /usr/lib/node_modules >/dev/null
 
 adb shell 'rm -rf /data/workspace/test/*'
 adb shell mkdir -p /data/workspace/test
-adb push test/* /data/workspace/test
+adb push test/* /data/workspace/test >/dev/null
