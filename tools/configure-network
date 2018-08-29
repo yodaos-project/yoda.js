@@ -30,9 +30,11 @@ while [ $# -gt 0 ]; do
       ;;
     --help)
       printf "$help"
+      exit
       ;;
     -h)
       printf "$help"
+      exit
       ;;
     --*)
       echo "Illegal option $1"
