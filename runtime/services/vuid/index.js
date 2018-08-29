@@ -4,7 +4,7 @@ var Turen = require('turen')
 var cloudApi = require('../../lib/cloudapi')
 var property = require('@yoda/property')
 var AudioManager = require('@yoda/audio').AudioManager
-var AppRuntime = require('../../lib/appRuntime')
+var AppRuntime = require('../../lib/app-runtime')
 var logger = require('logger')('main')
 
 var CloudGW = require('@yoda/cloudgw')
