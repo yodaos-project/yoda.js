@@ -15,7 +15,7 @@ function ExtApp (appId, dbusConn, runtime) {
   this.on('resume', this._onEvent.bind(this, 'resume', appId))
   this.on('stop', this._onEvent.bind(this, 'stop', appId))
   this.on('destroy', this._onEvent.bind(this, 'destroy', appId))
-  this.on('voice_command', this._onEvent.bind(this, 'voiceCommand', appId))
+  this.on('onrequest', this._onEvent.bind(this, 'voiceCommand', appId))
   this.on('key_event', this._onEvent.bind(this, 'keyEvent', appId))
 }
 inherits(ExtApp, EventEmitter)
