@@ -12,8 +12,36 @@ var init = false
  */
 
 /**
+ * The instance of `LightRenderingContext` is used for customizing your
+ * light effects. The following are a loading source code:
+ *
+ * ```js
+ * module.exports = function loading (context, params, callback) {
+ *   var pos = 0
+ *   if (data.degree) {
+ *     pos = Math.floor((data.degree / 360) * light.ledsConfig.leds)
+ *   }
+ *   render()
+ *   light.requestAnimationFrame(() => {
+ *     light.stop()
+ *   }, 6000)
+ *
+ *   function render () {
+ *     light.fill(30, 30, 150)
+ *     pos = pos === 11 ? 0 : pos + 1
+ *     light.pixel(pos, 255, 255, 255)
+ *     light.render()
+ *     light.requestAnimationFrame(render, 60)
+ *   }
+ *   return {
+ *     stop: function () {
+ *       light.stop()
+ *     }
+ *   }
+ * }
+ * ```
  * @memberof yodaRT
- * @constructor
+ * @class
  * @param {light} light - the light instance
  * @param {Object} multimedia
  */
