@@ -47,6 +47,13 @@ $ TESTONLY=1 REPORTER=json npm test
 
 ## Tools
 
+Generate the API references:
+
+```shell
+$ npm run website
+$ open website/docs/index.html
+```
+
 How to configure to a device:
 
 ```shell
