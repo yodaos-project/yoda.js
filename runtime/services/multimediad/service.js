@@ -1,4 +1,8 @@
+'use strict'
+
 var EventEmitter = require('events').EventEmitter
+var AudioManager = require('@yoda/audio').AudioManager
+var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var inherits = require('util').inherits
 var logger = require('logger')('multimediaService')
 
@@ -17,7 +21,7 @@ MultiMedia.prototype.start = function (appId, url) {
           if (this.handle[appId]) {
             this.handle[appId].stop()
           }
-          var player = new this.options.Multimedia()
+          var player = new MediaPlayer(AudioManager.STREAM_PLAYBACK)
           this.listenEvent(player, appId)
           player.start(url)
           this.handle[appId] = player

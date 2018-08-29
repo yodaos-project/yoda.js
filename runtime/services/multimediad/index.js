@@ -3,7 +3,6 @@
 var Service = require('./service')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
-var Media = require('@yoda/multimedia')
 var logger = require('logger')('multimediad')
 
 var dbusService = Dbus.registerService('session', 'com.service.multimedia')
@@ -17,7 +16,6 @@ var permit = new Remote(dbusService._dbus, {
 })
 
 var service = new Service({
-  Multimedia: Media.MediaPlayer,
   permit: permit
 })
 
