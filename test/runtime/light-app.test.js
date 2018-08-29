@@ -5,7 +5,7 @@ var path = require('path')
 var EventEmitter = require('events')
 
 var Descriptors = require('/usr/lib/yoda/runtime/lib/app/activity-descriptor')
-var lightApp = require('/usr/lib/yoda/runtime/lib/app/lightAppProxy')
+var lightApp = require('/usr/lib/yoda/runtime/lib/app/light-app')
 var proxy = require('../fixture/light-app').proxy
 
 var target = path.join(__dirname, '..', 'fixture', 'light-app')

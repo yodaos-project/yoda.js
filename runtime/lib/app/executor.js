@@ -3,7 +3,7 @@
 var fork = require('child_process').fork
 var ExtApp = require('./extappServer')
 var logger = require('logger')('executor')
-var lightApp = require('./lightAppProxy')
+var lightApp = require('./light-app')
 
 function Executor (profile, prefix) {
   this.type = 'light'

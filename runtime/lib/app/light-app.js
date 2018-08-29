@@ -4,8 +4,8 @@ var logger = require('logger')('lapp')
 var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
 var translate = require('../../client/translator-in-process').translate
 
-module.exports = function lightAppProxy (target) {
-  return function (appId, runtime) {
+module.exports = function lightApp (target) {
+  return function createLightApp (appId, runtime) {
     logger.log(`load target: ${target}/package.json`)
     var pkg = require(`${target}/package.json`)
     var main = `${target}/${pkg.main || 'app.js'}`

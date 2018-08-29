@@ -19,15 +19,15 @@ var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 // var input = require('@yoda/input')()
 
-module.exports = App
+module.exports = AppRuntime
 perf.stub('init')
 
 /**
  * @memberof yodaRT
  * @constructor
- * @param {Array} arr - the pathname
+ * @param {Array} paths - the pathname
  */
-function App (arr) {
+function AppRuntime (paths) {
   EventEmitter.call(this)
   // App Executor
   this.apps = {}
@@ -48,7 +48,7 @@ function App (arr) {
   this.permission = new Permission(this)
 
   // 加载APP
-  this.loadApp(arr, function () {
+  this.loadApp(paths, function () {
     logger.log('load app complete')
   })
   // volume module
@@ -73,7 +73,7 @@ function App (arr) {
   this.dbusSignalRegistry = new EventEmitter()
   this.listenDbusSignals()
 }
-inherits(App, EventEmitter)
+inherits(AppRuntime, EventEmitter)
 
 /**
  * 根据应用包安装目录加载所有应用
@@ -81,7 +81,7 @@ inherits(App, EventEmitter)
  * @param {Function} cb 加载完成的回调，回调没有参数
  * @private
  */
-App.prototype.loadApp = function (paths, cb) {
+AppRuntime.prototype.loadApp = function (paths, cb) {
   var self = this
 
   // 根据目录读取目录下所有的App包，返回的是App的包路径
@@ -153,7 +153,7 @@ App.prototype.loadApp = function (paths, cb) {
  * @return {object} 应用的appMetaData
  * @private
  */
-App.prototype.load = function (root, cb) {
+AppRuntime.prototype.load = function (root, cb) {
   var prefix = root
   var pkgInfo
   var app
@@ -200,7 +200,7 @@ App.prototype.load = function (root, cb) {
  * @param {object} data
  * @private
  */
-App.prototype.onEvent = function (name, data) {
+AppRuntime.prototype.onEvent = function (name, data) {
   var min = 30
   var volume = this.volume.getVolume()
   if (name === 'voice coming') {
@@ -284,7 +284,7 @@ App.prototype.onEvent = function (name, data) {
  * @param {object} action 服务端返回的action
  * @private
  */
-App.prototype.onVoiceCommand = function (asr, nlp, action) {
+AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action) {
   var data = {}
   var appId
   try {
@@ -343,7 +343,7 @@ App.prototype.onVoiceCommand = function (asr, nlp, action) {
  * @returns {boolean} 在appIdStack中返回true，否则false
  * @private
  */
-App.prototype.isAppAlive = function (appId) {
+AppRuntime.prototype.isAppAlive = function (appId) {
   for (var i = 0; i < this.appIdStack.length; i++) {
     if (appId === this.appIdStack[i]) {
       return true
@@ -357,7 +357,7 @@ App.prototype.isAppAlive = function (appId) {
  * @returns {string} appId
  * @private
  */
-App.prototype.getCurrentAppId = function () {
+AppRuntime.prototype.getCurrentAppId = function () {
   if (this.appIdStack.length <= 0) {
     return false
   }
@@ -369,7 +369,7 @@ App.prototype.getCurrentAppId = function () {
  * @returns {object} App的appData
  * @private
  */
-App.prototype.getCurrentAppData = function () {
+AppRuntime.prototype.getCurrentAppData = function () {
   if (this.appIdStack.length <= 0) {
     return false
   }
@@ -382,7 +382,7 @@ App.prototype.getCurrentAppData = function () {
  * @returns {object} App的appData
  * @private
  */
-App.prototype.getAppDataById = function (appId) {
+AppRuntime.prototype.getAppDataById = function (appId) {
   return this.appDataMap[appId] || false
 }
 
@@ -391,7 +391,7 @@ App.prototype.getAppDataById = function (appId) {
  * @returns {object} App实例
  * @private
  */
-App.prototype.getCurrentApp = function () {
+AppRuntime.prototype.getCurrentApp = function () {
   if (this.appIdStack.length <= 0) {
     return false
   }
@@ -402,7 +402,7 @@ App.prototype.getCurrentApp = function () {
  * 给所有App发送destroy事件，销毁所有App
  * @private
  */
-App.prototype.destroyAll = function () {
+AppRuntime.prototype.destroyAll = function () {
   // 依次给正在运行的App发送destroy命令
   var i = 0
   // destroy all foreground app
@@ -468,7 +468,7 @@ App.prototype.destroyAll = function () {
  * @returns {promise} Lifecycle events may be asynchronous
  * @private
  */
-App.prototype.lifeCycle = function (name, AppData) {
+AppRuntime.prototype.lifeCycle = function (name, AppData) {
   logger.log('lifeCycle: ', name)
   var appId = AppData.cloud === true ? '@cloud' : AppData.appId
   var app = null
@@ -519,7 +519,7 @@ App.prototype.lifeCycle = function (name, AppData) {
  * 更新App stack
  * @private
  */
-App.prototype.updateStack = function (AppData) {
+AppRuntime.prototype.updateStack = function (AppData) {
   var scene = ''
   var cut = ''
   // keep these codes for future reference, maybe useful
@@ -572,7 +572,7 @@ App.prototype.updateStack = function (AppData) {
   }
 }
 
-App.prototype.resetStack = function () {
+AppRuntime.prototype.resetStack = function () {
   this.domain.cut = ''
   this.domain.scene = ''
   this.emit('setStack', this.domain.scene + ':' + this.domain.cut)
@@ -583,14 +583,14 @@ App.prototype.resetStack = function () {
  * @param {boolean} isPickup
  * @private
  */
-App.prototype.setPickup = function (isPickup, duration) {
+AppRuntime.prototype.setPickup = function (isPickup, duration) {
   if (isPickup === true) {
     this.lightMethod('setPickup', ['' + (duration || 6000)])
   }
   this.emit('setPickup', isPickup)
 }
 
-App.prototype.setConfirm = function (appId, intent, slot, options, attrs, callback) {
+AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs, callback) {
   if (this.cloudApi) {
     this.cloudApi.sendConfirm(appId, intent, slot, options, attrs, (error) => {
       if (error) {
@@ -610,7 +610,7 @@ App.prototype.setConfirm = function (appId, intent, slot, options, attrs, callba
  * @param {string} appId extapp的AppID
  * @private
  */
-App.prototype.exitAppById = function (appId) {
+AppRuntime.prototype.exitAppById = function (appId) {
   // silent when the background app exits
   if (this.isBackgroundApp(appId)) {
     this.deleteBGAppById(appId)
@@ -631,7 +631,7 @@ App.prototype.exitAppById = function (appId) {
  * @param {string} appId extapp的AppID
  * @private
  */
-App.prototype.exitAppByIdForce = function (appId) {
+AppRuntime.prototype.exitAppByIdForce = function (appId) {
   // silent when the background app exits
   if (this.isBackgroundApp(appId)) {
     this.deleteBGAppById(appId)
@@ -649,7 +649,7 @@ App.prototype.exitAppByIdForce = function (appId) {
  * @param {string} appId AppID
  * @private
  */
-App.prototype.deleteAppById = function (appId) {
+AppRuntime.prototype.deleteAppById = function (appId) {
   // 删除指定AppID
   for (var i = 0; i < this.appIdStack.length; i++) {
     if (this.appIdStack[i] === appId) {
@@ -667,7 +667,7 @@ App.prototype.deleteAppById = function (appId) {
  * @param {string} appId AppID
  * @private
  */
-App.prototype.deleteBGAppById = function (appId) {
+AppRuntime.prototype.deleteBGAppById = function (appId) {
   for (var i = 0; i < this.bgAppIdStack.length; i++) {
     if (this.bgAppIdStack[i] === appId) {
       this.bgAppIdStack.splice(i, 1)
@@ -685,7 +685,7 @@ App.prototype.deleteBGAppById = function (appId) {
  * @param {object} profile extapp的profile
  * @private
  */
-App.prototype.registerExtApp = function (appId, profile) {
+AppRuntime.prototype.registerExtApp = function (appId, profile) {
   logger.log('register extapp with id: ', appId)
   // 配置exitApp的默认权限
   this.permission.load(appId, ['ACCESS_TTS', 'ACCESS_MULTIMEDIA'])
@@ -697,11 +697,11 @@ App.prototype.registerExtApp = function (appId, profile) {
  * @param {string} appId
  * @private
  */
-App.prototype.deleteExtApp = function (appId) {
+AppRuntime.prototype.deleteExtApp = function (appId) {
 
 }
 
-App.prototype.isBackgroundApp = function (appId) {
+AppRuntime.prototype.isBackgroundApp = function (appId) {
   for (var i = 0; i < this.bgAppIdStack.length; i++) {
     if (this.bgAppIdStack[i] === appId) {
       return true
@@ -710,7 +710,7 @@ App.prototype.isBackgroundApp = function (appId) {
   return false
 }
 
-App.prototype.setBackgroundByAppId = function (appId) {
+AppRuntime.prototype.setBackgroundByAppId = function (appId) {
   var index = -1
   for (var i = this.appIdStack.length - 1; i >= 0; i--) {
     if (this.appIdStack[i] === appId) {
@@ -731,7 +731,7 @@ App.prototype.setBackgroundByAppId = function (appId) {
   return true
 }
 
-App.prototype.setForegroundByAppId = function (appId) {
+AppRuntime.prototype.setForegroundByAppId = function (appId) {
   var index = -1
   for (var i = this.bgAppIdStack.length - 1; i >= 0; i--) {
     if (this.bgAppIdStack[i] === appId) {
@@ -758,7 +758,7 @@ App.prototype.setForegroundByAppId = function (appId) {
  * @param {object} action
  * @private
  */
-App.prototype.mockNLPResponse = function (nlp, action) {
+AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
   var AppData
   if (nlp.appId === this.getCurrentAppId()) {
     AppData = {
@@ -778,7 +778,7 @@ App.prototype.mockNLPResponse = function (nlp, action) {
  * @private
  */
 
-App.prototype.syncCloudAppIdStack = function (stack) {
+AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
   this.cloudAppIdStack = stack || []
   logger.log('cloudStack', this.cloudAppIdStack)
   this.updateStack()
@@ -787,7 +787,7 @@ App.prototype.syncCloudAppIdStack = function (stack) {
 /**
  * @private
  */
-App.prototype.startApp = function (appId, nlp, action) {
+AppRuntime.prototype.startApp = function (appId, nlp, action) {
   nlp.cloud = false
   nlp.appId = appId
   action = {
@@ -808,7 +808,7 @@ App.prototype.startApp = function (appId, nlp, action) {
  * @param {string} message
  * @private
  */
-App.prototype.onMqttMessage = function (topic, message) {
+AppRuntime.prototype.onMqttMessage = function (topic, message) {
   this.emit(topic, message)
 }
 
@@ -816,7 +816,7 @@ App.prototype.onMqttMessage = function (topic, message) {
  * 处理Mqtt的topic
  * @private
  */
-App.prototype.handleMqttMessage = function () {
+AppRuntime.prototype.handleMqttMessage = function () {
   this.on('cloud_forward', this.onCloudForward.bind(this))
   this.on('reset_settings', this.onResetSettings.bind(this))
 }
@@ -826,7 +826,7 @@ App.prototype.handleMqttMessage = function () {
  * @param {string} message
  * @private
  */
-App.prototype.onCloudForward = function (message) {
+AppRuntime.prototype.onCloudForward = function (message) {
   try {
     var msg = JSON.parse(message)
     var params = JSON.parse(msg.content.params)
@@ -842,7 +842,7 @@ App.prototype.onCloudForward = function (message) {
  * @param {string} message
  * @private
  */
-App.prototype.onResetSettings = function (message) {
+AppRuntime.prototype.onResetSettings = function (message) {
   if (message === '1') {
     logger.log('当前不支持恢复出厂设置')
   }
@@ -851,7 +851,7 @@ App.prototype.onResetSettings = function (message) {
 /**
  * @private
  */
-App.prototype.lightMethod = function (name, args) {
+AppRuntime.prototype.lightMethod = function (name, args) {
   return new Promise((resolve, reject) => {
     var sig = args.map(() => 's').join('')
     this.service._dbus.callMethod(
@@ -867,7 +867,7 @@ App.prototype.lightMethod = function (name, args) {
 /**
  * @private
  */
-App.prototype.ttsMethod = function (name, args) {
+AppRuntime.prototype.ttsMethod = function (name, args) {
   return new Promise((resolve, reject) => {
     var sig = args.map(() => 's').join('')
     this.service._dbus.callMethod(
@@ -880,7 +880,7 @@ App.prototype.ttsMethod = function (name, args) {
   })
 }
 
-App.prototype.multimediaMethod = function (name, args) {
+AppRuntime.prototype.multimediaMethod = function (name, args) {
   return new Promise((resolve, reject) => {
     var sig = args.map(() => 's').join('')
     this.service._dbus.callMethod(
@@ -893,7 +893,7 @@ App.prototype.multimediaMethod = function (name, args) {
   })
 }
 
-App.prototype.listenDbusSignals = function () {
+AppRuntime.prototype.listenDbusSignals = function () {
   var self = this
   var proxy = new DbusRemoteCall(this.service._bus)
   var ttsEvents = {
@@ -946,14 +946,14 @@ App.prototype.listenDbusSignals = function () {
 /**
  * @private
  */
-App.prototype.onGetPropAll = function () {
+AppRuntime.prototype.onGetPropAll = function () {
   return {}
 }
 
 /**
  * @private
  */
-App.prototype.onReconnected = function () {
+AppRuntime.prototype.onReconnected = function () {
   this.destroyAll()
   this.lightMethod('setConfigFree', ['system'])
 }
@@ -961,7 +961,7 @@ App.prototype.onReconnected = function () {
 /**
  * @private
  */
-App.prototype.onDisconnected = function () {
+AppRuntime.prototype.onDisconnected = function () {
   this.login = false
   this.destroyAll()
   logger.log('network disconnected, please connect to wifi first')
@@ -971,7 +971,7 @@ App.prototype.onDisconnected = function () {
 /**
  * @private
  */
-App.prototype.onReLogin = function () {
+AppRuntime.prototype.onReLogin = function () {
   this.login = true
   perf.stub('started')
   this.lightMethod('setWelcome', [])
@@ -994,7 +994,7 @@ App.prototype.onReLogin = function () {
  * 启动extApp dbus接口
  * @private
  */
-App.prototype.startExtappService = function () {
+AppRuntime.prototype.startExtappService = function () {
   var self = this
   var service = dbus.registerService('session', dbusConfig.service)
   this.service = service
@@ -1237,7 +1237,7 @@ App.prototype.startExtappService = function () {
   })
 }
 
-App.prototype.listenKeyboardEvents = listenKeyboardEvents
+AppRuntime.prototype.listenKeyboardEvents = listenKeyboardEvents
 function listenKeyboardEvents () {
   // var currentKeyCode
   // input.on('keydown', event => {
