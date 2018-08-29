@@ -1,7 +1,40 @@
 #!/usr/bin/env bash
 set -e
 
-install_os() {
+
+help="
+Usage:
+  -a Include tests.
+
+Full installation by default, includes all packages, runtime, and tests.
+
+Example:
+  $ ./tools/runtime-install
+"
+
+os="YES"
+test="NO"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -a)
+      test="YES"
+      ;;
+    --help)
+      printf "$help"
+      exit
+      ;;
+    -h)
+      printf "$help"
+      exit
+      ;;
+    --*)
+      echo "Illegal option $1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+function install_os() {
   adb shell "mount -o remount,rw /"
 
   echo "installing runtime..."
@@ -26,17 +59,17 @@ install_os() {
   adb push packages/* /usr/lib/node_modules >/dev/null
 }
 
-install_test() {
+function install_test() {
+  echo "installing tests..."
   adb shell 'rm -rf /data/workspace/test'
   adb shell mkdir -p /data/workspace/test
   adb push test/* /data/workspace/test >/dev/null
 }
 
-if ! test -z "$TESTONLY"; then
-  install_test
-elif ! test -z "$TESTFULL"; then
+if test "$os" = "YES"; then
   install_os
+fi
+
+if test "$test" = 'YES'; then
   install_test
-else
-  install_os
 fi
