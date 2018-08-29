@@ -191,6 +191,21 @@ ExtAppService.prototype.create = function (appId, preload) {
         })
     })
   }
+  app.syncCloudAppIdStack = function (stack) {
+    return new Promise((resolve, reject) => {
+      self.adapter.extAppMethod('syncCloudAppIdStack', [JSON.stringify(stack || [])])
+        .then((res) => {
+          if (res && res[0] === true) {
+            resolve()
+          } else {
+            reject(new Error('sync stack error'))
+          }
+        })
+        .catch((error) => {
+          reject(error)
+        })
+    })
+  }
   // TTS模块
   app.tts = {
     speak: function (text, cb) {
