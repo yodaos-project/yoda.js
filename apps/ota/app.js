@@ -72,7 +72,10 @@ function checkUpdateAvailability (activity) {
  * @param {YodaRT.Activity} activity
  */
 function whatsCurrentVersion (activity) {
-  activity.tts.speak('你可以在手机app的设备信息页面看到我现在的系统版本号', () => activity.exit())
+  activity.tts.speak('你可以在手机app的设备信息页面看到我现在的系统版本号')
+    .then(() => {
+      activity.exit()
+    })
 }
 
 function isUpgradeSuitableNow () {

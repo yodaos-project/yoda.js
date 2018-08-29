@@ -10,6 +10,8 @@ var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var perf = require('./performance')
 var dbusConfig = require('../dbus-config.json')
+var DbusRemoteCall = require('./dbus-remote-call')
+var _ = require('@yoda/util')._
 
 var Permission = require('./component/permission')
 var AppExecutor = require('./app/executor')
@@ -67,6 +69,9 @@ function App (arr) {
   this.handleMqttMessage()
   // handle keyboard/button events
   // this.listenKeyboardEvents()
+
+  this.dbusSignalRegistry = new EventEmitter()
+  this.listenDbusSignals()
 }
 inherits(App, EventEmitter)
 
@@ -493,7 +498,7 @@ App.prototype.lifeCycle = function (name, AppData) {
   }
 
   if (name === 'onrequest') {
-    app.emit('voice_command', AppData.nlp, AppData.action)
+    app.emit('onrequest', AppData.nlp, AppData.action)
   }
   if (name === 'pause') {
     app.emit('pause')
@@ -885,6 +890,54 @@ App.prototype.multimediaMethod = function (name, args) {
         resolve(res)
       })
   })
+}
+
+App.prototype.listenDbusSignals = function () {
+  var self = this
+  var proxy = new DbusRemoteCall(this.service._bus)
+  var ttsEvents = {
+    'ttsdevent': function onTtsEvent (msg) {
+      var channel = `callback:tts:${_.get(msg, 'args.0')}`
+      EventEmitter.prototype.emit.apply(self.dbusSignalRegistry, [ channel ].concat(msg.args.slice(1)))
+    }
+  }
+  proxy.listen(
+    'com.service.tts',
+    '/tts/service',
+    'tts.service',
+    function onTtsEvent (msg) {
+      var handler = ttsEvents[msg && msg.name]
+      if (handler == null) {
+        logger.warn(`Unknown ttsd event type '${msg && msg.name}'.`)
+        return
+      }
+      handler(msg)
+    }
+  )
+
+  var multimediaEvents = {
+    'multimediadevent': function onMultimediaEvent (msg) {
+      var channel = `callback:multimedia:${_.get(msg, 'args.0')}`
+      EventEmitter.prototype.emit.apply(self.dbusSignalRegistry, [ channel ].concat(msg.args.slice(1)))
+    }
+  }
+  proxy.listen(
+    'com.service.multimedia',
+    '/multimedia/service',
+    'multimedia.service',
+    function onMultimediaEvent (msg) {
+      var handler = multimediaEvents[msg && msg.name]
+      if (handler == null) {
+        logger.warn(`Unknown multimediad event type '${msg && msg.name}'.`)
+        return
+      }
+      handler(msg)
+    }
+  )
+}
+
+App.prototype.onceDbusSignal = function (signal, callback) {
+  this.dbusSignalRegistry.once(signal, callback)
 }
 
 /**

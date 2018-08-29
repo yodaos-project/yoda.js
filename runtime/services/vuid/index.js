@@ -1,7 +1,6 @@
 'use strict'
 
 var Turen = require('turen')
-var Adapter = require('../../lib/adapter/dbus')
 var cloudApi = require('../../lib/cloudapi')
 var property = require('@yoda/property')
 var AudioManager = require('@yoda/audio').AudioManager
@@ -15,7 +14,6 @@ var CloudGW = require('@yoda/cloudgw')
 var runtime = new AppRuntime(['/opt/apps'])
 
 runtime.volume = AudioManager
-runtime.adapter = Adapter
 runtime.cloudApi = cloudApi
 
 AudioManager.setMute(false)
