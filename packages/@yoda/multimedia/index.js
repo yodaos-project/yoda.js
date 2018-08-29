@@ -15,9 +15,9 @@
  */
 
 var native = require('./multimedia.node')
-var audio = require('@yoda/audio')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
+var AudioManager = require('@yoda/audio').AudioManager
 
 /**
  * @constructor
@@ -30,7 +30,7 @@ var EventEmitter = require('events').EventEmitter
  */
 function MediaPlayer (stream) {
   EventEmitter.call(this)
-  this._stream = stream || audio.STREAM_PLAYBACK
+  this._stream = stream || AudioManager.STREAM_PLAYBACK
   this._handle = null
   this._seekcompleteCb = null
   this._initialize()
