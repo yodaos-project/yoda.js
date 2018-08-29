@@ -6,7 +6,7 @@
     "lint-js": "standard",
     "lint-cc": "tools/clang-format",
     "website": "jsdoc -c jsdoc.config -R README.md -r . -d website/docs -u website/tutorials",
-    "pretest": "TESTFULL=1 tools/runtime-install",
+    "pretest": "tools/runtime-install -a",
     "test": "tools/test"
   },
   "config": {
