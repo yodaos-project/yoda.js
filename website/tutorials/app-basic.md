@@ -38,10 +38,6 @@ For example, an extapp's manifest looks like the following:
 manifest: {
   "extapp": true,
   "daemon": false,
-  "dbusConn": {
-    "objectPath": "/extapp/network",
-    "ifaceName": "com.extapp.network"
-  },
   "skills": [
     "your appId"
   ],
