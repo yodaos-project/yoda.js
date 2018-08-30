@@ -61,6 +61,11 @@ module.exports = {
    */
   getNetworkState: native.getNetworkState,
   /**
+   * Get the current wifi list
+   * @function getWifiList
+   */
+  getWifiList: native.getWifiList,
+  /**
    * Disable the WI-FI.
    * @function disableAll
    */
@@ -70,6 +75,11 @@ module.exports = {
    * @function resetDns
    */
   resetDns: native.resetDns,
+  /**
+   * scan the wifi list
+   * @function scan
+   */
+  scan: native.scan,
   /**
    * Save the current WI-FI config in local file, `/etc/wpa_supplicant`.
    * @function save
