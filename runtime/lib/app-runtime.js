@@ -47,8 +47,10 @@ function AppRuntime (paths) {
   // manager app's permission
   this.permission = new Permission(this)
 
+  this.loadAppComplete = false
   // 加载APP
-  this.loadApp(paths, function () {
+  this.loadApp(paths, () => {
+    this.loadAppComplete = true
     logger.log('load app complete')
   })
   // volume module
@@ -250,6 +252,10 @@ AppRuntime.prototype.onEvent = function (name, data) {
     this.lightMethod('setHide', [''])
     this.onVoiceCommand(data.asr, data.nlp, data.action)
   } else if (name === 'connected') {
+    // waiting for the app load complete
+    if (this.loadAppComplete === false) {
+      return
+    }
     if (this.online === false || this.online === undefined) {
       // need to play startup music
       logger.log('first startup')
@@ -267,6 +273,10 @@ AppRuntime.prototype.onEvent = function (name, data) {
     }
     this.online = true
   } else if (name === 'disconnected') {
+    // waiting for the app load complete
+    if (this.loadAppComplete === false) {
+      return
+    }
     // trigger disconnected event when network state is switched or when it is first activated.
     if (this.online === true || this.online === undefined) {
       // start network app here
