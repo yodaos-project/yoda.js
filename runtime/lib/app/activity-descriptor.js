@@ -45,9 +45,10 @@ function ActivityDescriptor (appId, appHome, runtime) {
   this.registeredDbusSignals = []
 
   /**
+   * The `LightClient` is used to control LED APIs.
    * @memberof yodaRT.activity.Activity
    * @instance
-   * @type {yodaRT.activity.Activity.LightClient}
+   * @member {yodaRT.activity.Activity.LightClient} light
    */
   this.light = new LightDescriptor(this, appId, runtime)
 
@@ -55,7 +56,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * The `MediaClient` is used to control multimedia APIs.
    * @memberof yodaRT.activity.Activity
    * @instance
-   * @type {yodaRT.activity.Activity.MediaClient}
+   * @member {yodaRT.activity.Activity.MediaClient} media
    */
   this.media = new MultimediaDescriptor(this, appId, runtime)
 
@@ -63,7 +64,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * The `TtsClient` is used to control TextToSpeech APIs.
    * @memberof yodaRT.activity.Activity
    * @instance
-   * @type {yodaRT.activity.Activity.TtsClient}
+   * @member {yodaRT.activity.Activity.TtsClient} tts
    */
   this.tts = new TtsDescriptor(this, appId, runtime)
 }
@@ -312,7 +313,7 @@ Object.assign(ActivityDescriptor.prototype,
 
 /**
  * @memberof yodaRT.activity.Activity
- * @class TtsClient
+ * @class LightClient
  * @hideconstructor
  * @extends EventEmitter
  */
@@ -332,11 +333,6 @@ Object.assign(LightDescriptor.prototype,
     type: 'namespace'
   },
   {
-    /**
-     * @memberof yodaRT.activity.Activity
-     * @class LightClient
-     * @hideconstructor
-     */
 
     /**
      * @memberof yodaRT.activity.Activity.LightClient
@@ -610,12 +606,6 @@ Object.assign(TtsDescriptor.prototype,
     type: 'namespace'
   },
   {
-    /**
-     * @memberof yodaRT.activity.Activity
-     * @class TtsClient
-     * @hideconstructor
-     */
-
     /**
      * Speak the given text.
      * @memberof yodaRT.activity.Activity.TtsClient
