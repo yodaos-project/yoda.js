@@ -475,9 +475,11 @@ function runInCurrentContext (callback) {
  * Run OTA procedure in background process.
  */
 function runInBackground () {
-  var cp = childProcess.spawn('iotjs', [ '/usr/lib/yoda/ota/index.js' ], {
+  logger.info('running ota with', process.argv[0])
+  var cp = childProcess.spawn(process.argv[0], [ '/usr/lib/yoda/runtime/services/otad/index.js' ], {
     env: process.env,
-    detached: true
+    detached: true,
+    stdio: 'ignore'
   })
   cp.unref()
 }
@@ -501,7 +503,9 @@ function getAvailableInfo (callback) {
       readInfo(cb)
     },
     (cb, info) => {
-      if (info == null) {
+      if (info == null ||
+        info.version !== newInfo.version ||
+        info.checksum !== newInfo.checksum) {
         return cb(null, newInfo)
       }
       return cb(null, info)
