@@ -112,6 +112,11 @@ function createLoggerFunction (level) {
 }
 
 /**
+ * log level: debug
+ */
+Logger.prototype.debug = createLoggerFunction('debug')
+
+/**
  * log level: log
  */
 Logger.prototype.log = createLoggerFunction('info')

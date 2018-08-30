@@ -7,6 +7,7 @@
     "lint-cc": "tools/clang-format",
     "website": "jsdoc -c jsdoc.config -R README.md -r . -d website/docs -u website/tutorials",
     "pretest": "tools/runtime-install -a",
+    "nyan": "npm run pretest && tools/test --reporter tap-nyan",
     "test": "tools/test"
   },
   "config": {

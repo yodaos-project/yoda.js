@@ -1,10 +1,49 @@
 #!/usr/bin/env bash
 
-if test -z "$REPORTER"; then
-  REPORTER=nyan
-fi
+patternPrefix='/data/workspace/test/'
+pattern="**/*.test.js"
+reporter=""
+help="
+Usage:
+  -p <pattern>        test file pattern, defaults to '$pattern'
+  --reporter <name>   test result reporter, no reporter by default
 
-adb shell "
+Example:
+  $ ./tools/test --reporter tap-nyan --pattern '/data/workspace/test/**/*.test.js'
+"
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -p)
+      pattern="$2"
+      shift
+      ;;
+    --reporter)
+      reporter="$2"
+      shift
+      ;;
+    --help)
+      printf "$help"
+      exit
+      ;;
+    -h)
+      printf "$help"
+      exit
+      ;;
+    --*)
+      echo "Illegal option $1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+scripts="
 source /etc/profile > /dev/null;
-iotjs /usr/lib/node_modules/tape/bin/tape.js '/data/workspace/test/**/*.test.js'
-" | ./node_modules/.bin/tap-$REPORTER
+iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
+"
+
+if test -z "$reporter"; then
+  adb shell "$scripts"
+else
+  adb shell "$scripts" | ./node_modules/.bin/$reporter
+fi

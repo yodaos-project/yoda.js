@@ -6,17 +6,16 @@ var EventEmitter = require('events')
 
 var Descriptors = require('/usr/lib/yoda/runtime/lib/app/activity-descriptor')
 var lightApp = require('/usr/lib/yoda/runtime/lib/app/light-app')
-var proxy = require('../fixture/light-app').proxy
+var proxy = require('../fixture/simple-app').proxy
 
-var target = path.join(__dirname, '..', 'fixture', 'light-app')
+var target = path.join(__dirname, '..', 'fixture', 'simple-app')
 var ActivityDescriptor = Descriptors.ActivityDescriptor
 var MultimediaDescriptor = Descriptors.MultimediaDescriptor
 
 test('should listen events', t => {
   var runtime = new EventEmitter()
 
-  var createApp = lightApp(target)
-  var descriptor = createApp('@test', runtime)
+  var descriptor = lightApp(target, '@test', runtime)
 
   var activityEvents = Object.keys(ActivityDescriptor.prototype).filter(key => {
     var desc = ActivityDescriptor.prototype[key]
@@ -59,8 +58,7 @@ test('should receive life cycle events', t => {
     t.strictEqual(gotNlp, nlp, 'nlp comparison')
     t.strictEqual(gotAction, action, 'action comparison')
   })
-  var createApp = lightApp(target)
-  var app = createApp('@test', {})
+  var app = lightApp(target, '@test', {})
   app.emit('created')
   app.emit('paused')
   app.emit('resumed')
@@ -72,8 +70,7 @@ test('should receive life cycle events', t => {
 })
 
 test('should populate methods', t => {
-  var createApp = lightApp(target)
-  var app = createApp('@test', {})
+  var app = lightApp(target, '@test', {})
   var activity = app.activity
 
   var activityMethods = [ 'destroyAll', 'exit', 'get', 'getAppId',

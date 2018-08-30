@@ -17,7 +17,7 @@ var EventEmitter = require('events')
  *
  * interface MethodDescriptor {
  *   type: 'method'
- *   returns: 'direct' | 'promise'
+ *   returns: 'promise'
  * }
  *
  * interface Event {
