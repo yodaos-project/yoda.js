@@ -24,6 +24,16 @@ Run the following commands:
 $ npm test
 ```
 
+Or run tests with delight nyan!
+```shell
+$ npm run nyan
+ 123 -_-_-_-_-_-_-_-_-_,------,
+ 0   -_-_-_-_-_-_-_-_-_|   /\_/\
+ 0   -_-_-_-_-_-_-_-_-^|__( ^ .^)
+     -_-_-_-_-_-_-_-_-  ""  ""
+  Pass!
+```
+
 Ensure you have a connected YodaOS device via ADB v1.0.39.
 
 ### How to write a unit test
@@ -50,4 +60,3 @@ Put the complete test file to the certain directory under `./test` and name it w
 program would push files to connected device, run tests and make outputs that you see.
 
 For the complete documentation about shadow-tape, see [github.com:shadow-node/tape](https://github.com/shadow-node/tape).
-
