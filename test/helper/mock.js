@@ -2,6 +2,23 @@
 
 var mockContext = []
 
+function mockReturns (target, prop, ret) {
+  var orig = target[prop]
+  target[prop] = mocking
+  mockContext.push({
+    target: target,
+    prop: prop,
+    orig: orig
+  })
+
+  function mocking () {
+    if (typeof ret === 'function') {
+      return ret.apply(target, arguments)
+    }
+    return ret
+  }
+}
+
 function mockCallback (target, prop, err, res) {
   var orig = target[prop]
   target[prop] = mocking
@@ -30,5 +47,6 @@ function restore () {
   mockContext = []
 }
 
+module.exports.mockReturns = mockReturns
 module.exports.mockCallback = mockCallback
 module.exports.restore = restore

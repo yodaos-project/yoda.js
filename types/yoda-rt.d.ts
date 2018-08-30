@@ -17,7 +17,7 @@ declare global {
       setPickup(pickup: boolean, duration?: number): void
       setBackground(): Promise<void>
       setForeground(): Promise<void>
-      syncCloudAppIdStack(stack?: Array): void
+      syncCloudAppIdStack(stack?: any[]): void
 
       on(event: 'ready', listener: () => void): this
       on(event: 'create', listener: () => void): this
