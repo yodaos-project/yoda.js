@@ -1,9 +1,9 @@
 'use strict'
 
-var fork = require('child_process').fork
-var ExtApp = require('./extappServer')
 var logger = require('logger')('executor')
+var DaemonExtApp = require('./extappServer')
 var lightApp = require('./light-app')
+var extApp = require('./ext-app')
 
 function Executor (profile, prefix) {
   this.type = 'light'
@@ -11,7 +11,6 @@ function Executor (profile, prefix) {
   this.exec = null
   this.errmsg = null
   this.valid = true
-  this.connector = null
   this.profile = profile
 
   if (profile.metadata.extapp === true) {
@@ -22,7 +21,6 @@ function Executor (profile, prefix) {
     this.exec = prefix
   } else {
     this.exec = prefix
-    this.connector = lightApp(this.exec)
   }
 }
 
@@ -33,47 +31,31 @@ Executor.prototype.create = function (appId, runtime) {
   }
   var app = null
   if (this.type === 'light') {
-    app = this.connector(appId, runtime)
+    app = lightApp(this.exec, appId, runtime)
     return Promise.resolve(app)
   } else if (this.type === 'extapp') {
-    // create extapp's sender
-    app = new ExtApp(appId, this.profile.metadata.dbusConn, runtime)
+    // app @cloud
     if (this.daemon === true) {
+      app = new DaemonExtApp(appId, this.profile.metadata.dbusConn, runtime)
       return Promise.resolve(app)
     }
-    // run real extapp
-    logger.log(`fork extapp ${this.exec}`)
-    var handle = fork(`${__dirname}/extappProxy.js`, [this.exec], {
-      env: {
-        NODE_PATH: '/usr/lib'
-      }
-    })
-    logger.log('fork complete')
-    handle.on('exit', () => {
-      logger.log(appId + ' exit')
-      runtime.exitAppByIdForce(appId)
-    })
-    handle.on('error', () => {
-      logger.log(appId + ' error')
-    })
-    return new Promise((resolve, reject) => {
-      // a message will received after extapp is startup
-      handle.on('message', (message, sender) => {
-        if (message.ready === true) {
-          logger.log(`extapp ${this.exec} run`)
-          resolve(app)
-        } else {
-          reject(new Error('an error occurred when starting the extapp'))
-        }
+    return extApp(this.exec, appId, runtime)
+      .then(app => {
+        logger.info('Ext-app successfully started')
+        return app
+      }, err => {
+        logger.info('Unexpected error on starting ext-app', err.message, err.stack)
+        runtime.exitAppByIdForce(appId)
       })
-    })
   }
 }
 
-Executor.prototype.destroy = function destroy (app, runtime) {
-  app.registeredDbusSignals.forEach(it => {
-    runtime.dbusSignalRegistry.removeAllListeners(it)
-  })
+/**
+ *
+ * @param {ActivityDescriptor} app
+ */
+Executor.prototype.destruct = function destruct (app) {
+  app.destruct()
 }
 
 module.exports = Executor

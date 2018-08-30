@@ -1,5 +1,6 @@
 'use strict'
 var EventEmitter = require('events')
+var logger = require('logger')('@ipc')
 
 /**
  * interface Descriptor {
@@ -17,7 +18,7 @@ var EventEmitter = require('events')
  *
  * interface MethodDescriptor {
  *   type: 'method'
- *   returns: 'direct' | 'promise'
+ *   returns: 'promise'
  * }
  *
  * interface Event {
@@ -25,35 +26,115 @@ var EventEmitter = require('events')
  * }
  */
 
+var eventBus = new EventEmitter()
+
+var invocationId = 0
+var MethodProxies = {
+  promise: (name, descriptor, ns) => function proxy () {
+    var id = invocationId
+    invocationId += 1
+
+    var args = Array.prototype.slice.call(arguments, 0)
+    return new Promise((resolve, reject) => {
+      eventBus.once(`promise:${id}`, function onCallback (msg) {
+        if (msg.action === 'resolve') {
+          return resolve(msg.result)
+        }
+        if (msg.action === 'reject') {
+          return reject(new Error(msg.error))
+        }
+        var err = new Error('Unknown response message type from VuiDaemon.')
+        err.msg = msg
+        reject(err)
+      })
+
+      process.send({
+        type: 'invoke',
+        invocationId: id,
+        namespace: ns.name,
+        method: name,
+        params: args
+      })
+    })
+  }
+}
+
 var PropertyDescriptions = {
-  namespace: function Namespace (name, profile/** , namespace, nsProfile */) {
+  namespace: function Namespace (name, descriptor/** , namespace, nsProfile */) {
     var ns = new EventEmitter()
-    Object.keys(profile).forEach(key => {
-      var descriptor = profile[key]
-      if (typeof descriptor !== 'object') {
+    ns.name = name
+    Object.keys(descriptor).forEach(step)
+
+    function step (key) {
+      var propDescriptor = descriptor[key]
+      if (typeof propDescriptor !== 'object') {
         return
       }
-      if (descriptorTypes.indexOf(descriptor.type) < 0) {
+      if (descriptorTypes.indexOf(propDescriptor.type) < 0) {
         return
       }
-      var ret = PropertyDescriptions[descriptor.type](key, descriptor, ns, profile)
-      if (descriptor.type !== 'event') {
+      var ret = PropertyDescriptions[propDescriptor.type](key, propDescriptor, ns, descriptor)
+      if (propDescriptor.type !== 'event') {
         ns[key] = ret
       }
-    })
+    }
     return ns
   },
-  method: function Method (name, descriptor, namespace, nsProfile) {
+  method: function Method (name, descriptor, namespace, nsDescriptor) {
+    var proxyfier = MethodProxies[descriptor.returns]
+    if (typeof proxyfier !== 'function') {
+      throw new Error(`Not implemented return type '${descriptor.returns}' for function '${name}'.`)
+    }
 
+    return proxyfier(name, descriptor, namespace, nsDescriptor)
   },
-  event: function Event (name, descriptor, namespace, nsProfile) {
+  event: function Event (name, descriptor, namespace, nsDescriptor) {
+    eventBus.on(`event:${name}`, function onEvent (params) {
+      EventEmitter.prototype.emit.apply(namespace, [ name ].concat(params))
+    })
 
+    process.send({
+      type: 'subscribe',
+      namespace: namespace.name,
+      event: name
+    })
   }
 }
 var descriptorTypes = Object.keys(PropertyDescriptions)
 
 module.exports.translate = translate
-function translate (profile) {
-  var activity = PropertyDescriptions.namespace(null, profile, null, null)
+function translate (descriptor) {
+  if (typeof process.send !== 'function') {
+    throw new Error('IpcTranslator must work in child process.')
+  }
+
+  var activity = PropertyDescriptions.namespace(null, descriptor, null, null)
+
+  listenIpc()
   return activity
+}
+
+function listenIpc () {
+  process.on('message', function onMessage (message) {
+    logger.debug('Received VuiDaemon message', message)
+    var channel
+    if (message.type === 'event') {
+      channel = `event:${message.event}`
+      if (!Array.isArray(message.params)) {
+        logger.error(`Params of event message '${channel}' is not an array.`)
+        return
+      }
+      return eventBus.emit(channel, message.params)
+    }
+    if (message.type === 'promise') {
+      channel = `promise:${message.invocationId}`
+      return eventBus.emit(channel, message)
+    }
+    if (message.type === 'fatal-error') {
+      var err = new Error(message.message)
+      throw err
+    }
+
+    logger.info(`Unhandled Ipc message type '${message.type}'.`)
+  })
 }

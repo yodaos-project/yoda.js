@@ -508,7 +508,7 @@ AppRuntime.prototype.lifeCycle = function (name, AppData) {
   }
   if (name === 'destroy') {
     app.emit('destroy')
-    this.apps[appId].destroy(app, this)
+    this.apps[appId].destruct(app, this)
     this.deleteAppById(AppData.appId)
   }
   this.updateStack(AppData)

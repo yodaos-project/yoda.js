@@ -1,11 +1,11 @@
 {
-  "name": "@test/light-app",
+  "name": "@test/ext-app",
   "version": "1.0.0",
   "description": "Test Apps for Rokid",
   "main": "app.js",
   "metadata": {
     "skills": [
-      "@test"
+      "@test/ext-app"
     ],
     "permission": [
       "ACCESS_TTS"

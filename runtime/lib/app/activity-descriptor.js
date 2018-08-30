@@ -4,7 +4,6 @@
  * @namespace yodaRT.activity
  */
 
-var property = require('@yoda/property')
 var logger = require('logger')('activity')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
@@ -70,10 +69,20 @@ function ActivityDescriptor (appId, appHome, runtime) {
 }
 inherits(ActivityDescriptor, EventEmitter)
 ActivityDescriptor.prototype.toJSON = function toJSON () {
-  return ActivityDescriptor.prototype
+  return Object.assign({}, ActivityDescriptor.prototype, {
+    light: this.light,
+    media: this.media,
+    tts: this.tts
+  })
 }
 ActivityDescriptor.prototype.toString = function toString () {
   return `ActivityDescriptor(appId=>${this.appId}, appHome=>${this.appHome})`
+}
+ActivityDescriptor.prototype.destruct = function destruct () {
+  this.registeredDbusSignals.forEach(it => {
+    this.runtime.dbusSignalRegistry.removeAllListeners(it)
+  })
+  this.emit('destruct')
 }
 
 Object.assign(ActivityDescriptor.prototype,
@@ -281,46 +290,6 @@ Object.assign(ActivityDescriptor.prototype,
       returns: 'promise',
       fn: function syncCloudAppIdStack (stack) {
         this.runtime.syncCloudAppIdStack(stack || [])
-      }
-    },
-    /**
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @type {yodaRT.LocalStorage}
-     */
-    localStorage: {
-      type: 'namespace',
-      /**
-       * @memberof yodaRT
-       * @class LocalStorage
-       * @hideconstructor
-       */
-
-      /**
-       * @memberof yodaRT.LocalStorage
-       * @instance
-       * @function getItem
-       * @returns {String}
-       */
-      getItem: {
-        type: 'method',
-        returns: 'direct',
-        fn: function getItem (key) {
-          return property.get(key)
-        }
-      },
-      /**
-       * @memberof yodaRT.LocalStorage
-       * @instance
-       * @function setItem
-       * @returns {Boolean}
-       */
-      setItem: {
-        type: 'method',
-        returns: 'direct',
-        fn: function setItem (key, value) {
-          return property.set(key, value)
-        }
       }
     },
     /**
