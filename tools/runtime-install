@@ -3,9 +3,10 @@ set -e
 
 help="
 Usage:
+  -t Only includes tests.
   -a Include tests.
 
-Full installation by default, includes all packages, runtime, and tests.
+Runtime installation by default, includes all packages, runtime, **no tests**.
 
 Example:
   $ ./tools/runtime-install
@@ -15,6 +16,10 @@ os="YES"
 test="NO"
 while [ $# -gt 0 ]; do
   case "$1" in
+    -t)
+      test="YES"
+      os="NO"
+      ;;
     -a)
       test="YES"
       ;;
