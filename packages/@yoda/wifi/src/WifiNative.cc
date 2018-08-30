@@ -60,13 +60,48 @@ JS_FUNCTION(GetNetworkState) {
   return jerry_create_number(state);
 }
 
+JS_FUNCTION(GetWifiList) {
+  struct wifi_scan_list list;
+  wifi_get_scan_result(&list);
+
+  jerry_value_t jlist = jerry_create_array(list.num);
+  for (uint32_t i = 0; i < list.num; i++) {
+    jerry_value_t jitem = jerry_create_object();
+    jerry_value_t jssid_name = jerry_create_string((const jerry_char_t*)"ssid");
+    jerry_value_t jssid_val = jerry_create_string((const jerry_char_t*)list.ssid[i].ssid);
+    jerry_value_t jsig_name = jerry_create_string((const jerry_char_t*)"signal");
+    jerry_value_t jsig_val = jerry_create_number(list.ssid[i].sig);
+
+    jerry_set_property(jitem, jssid_name, jssid_val);
+    jerry_set_property(jitem, jsig_name, jsig_val);
+    jerry_set_property_by_index(jlist, i, jitem);
+
+    // release
+    jerry_release_value(jssid_name);
+    jerry_release_value(jssid_val);
+    jerry_release_value(jsig_name);
+    jerry_release_value(jitem);
+  }
+  return jlist;
+}
+
 JS_FUNCTION(DisableAll) {
   int r = wifi_disable_all_network();
   return jerry_create_number(r);
 }
 
+JS_FUNCTION(Reconfigure) {
+  wifi_reconfigure();
+  return jerry_create_boolean(true);
+}
+
 JS_FUNCTION(ResetDns) {
   res_init();
+  return jerry_create_boolean(true);
+}
+
+JS_FUNCTION(Scan) {
+  wifi_scan();
   return jerry_create_boolean(true);
 }
 
@@ -79,8 +114,11 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "joinNetwork", JoinNetwork);
   iotjs_jval_set_method(exports, "getWifiState", GetWifiState);
   iotjs_jval_set_method(exports, "getNetworkState", GetNetworkState);
+  iotjs_jval_set_method(exports, "getWifiList", GetWifiList);
   iotjs_jval_set_method(exports, "disableAll", DisableAll);
+  iotjs_jval_set_method(exports, "reconfigure", Reconfigure);
   iotjs_jval_set_method(exports, "resetDns", ResetDns);
+  iotjs_jval_set_method(exports, "scan", Scan);
   iotjs_jval_set_method(exports, "save", Save);
 }
 
