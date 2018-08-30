@@ -367,17 +367,24 @@ function runInCurrentContext (callback) {
     return callback(null, null)
   }
 
-  lockfile.lock(procLock, { stale: /** 30m */ 30 * 60 * 1000 }, function onLocked (err) {
+  /** prepare to run */
+  compose([
+    /** make work dir */
+    cb => mkdirp(upgradeDir, cb),
+    cb => lockfile.lock(procLock, { stale: /** 30m */ 30 * 60 * 1000 }, cb)
+  ], err => {
     if (err) {
       return callback(err)
     }
+    /** actual procedure, shall skip if prepare failed */
+    doRun(callback)
+  })
 
+  function doRun (callback) {
     var localVersion = property.get(systemVersionProp)
     var info
     var destPath
     compose([
-      /** make work dir */
-      cb => mkdirp(upgradeDir, cb),
       /**
        * get new version info if available
        * @returns {module:@yoda/ota~OtaInfo}
@@ -468,7 +475,7 @@ function runInCurrentContext (callback) {
         callback(err, info)
       })
     })
-  })
+  }
 }
 
 /**
@@ -570,3 +577,18 @@ module.exports.getAvailableInfo = getAvailableInfo
 module.exports.getInfoIfFirstUpgradedBoot = getInfoIfFirstUpgradedBoot
 module.exports.getInfoOfPendingUpgrade = getInfoOfPendingUpgrade
 Object.assign(module.exports, otaNetwork)
+/**
+ * Change ota working directory in unit tests
+ * @private
+ */
+Object.defineProperty(module.exports, 'upgradeDir', {
+  get: () => {
+    return upgradeDir
+  },
+  set: (val) => {
+    upgradeDir = val
+    procLock = upgradeDir + '/proc.lock'
+    infoLock = upgradeDir + '/info.lock'
+    infoFile = upgradeDir + '/info.json'
+  }
+})
