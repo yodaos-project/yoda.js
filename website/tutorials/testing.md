@@ -5,7 +5,7 @@ be a tutorial for application developer.
 To get started, please clone the project firstly:
 
 ```shell
-$ git clone ssh://yorkie@openai-corp.rokid.com:29418/jsruntime
+$ git clone ssh://<your-username>@openai-corp.rokid.com:29418/jsruntime
 ```
 
 Initialize this project:
