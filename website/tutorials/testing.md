@@ -22,11 +22,6 @@ Run the following commands:
 
 ```shell
 $ npm test
-```
-
-Or run tests with delight nyan!
-```shell
-$ npm run nyan
  123 -_-_-_-_-_-_-_-_-_,------,
  0   -_-_-_-_-_-_-_-_-_|   /\_/\
  0   -_-_-_-_-_-_-_-_-^|__( ^ .^)
@@ -35,6 +30,32 @@ $ npm run nyan
 ```
 
 Ensure you have a connected YodaOS device via ADB v1.0.39.
+
+The above command would install all source code and tests on your connected device, if you just wanna
+put tests only, try the following:
+
+```shell
+$ npm run bare-test
+```
+
+We supported the following TAP reporters:
+
+- [tap-nyan](https://github.com/calvinmetcalf/tap-nyan)
+- [tap-spec](https://github.com/scottcorgan/tap-spec)
+- [tap-json](https://github.com/gummesson/tap-json)
+
+Use the cli params to select which reporter do you prefer use:
+
+```shell
+$ npm run bare-test -- --reporter tap-nyan
+```
+
+For more options, see
+
+```shell
+$ tools/test --help
+$ tools/runtime-install --help
+```
 
 ### How to write a unit test
 

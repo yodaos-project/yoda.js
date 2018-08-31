@@ -23,32 +23,23 @@ To run the unit tests on device, just try:
 
 ```shell
 $ npm test
+ 123 -_-_-_-_-_-_-_-_-_,------,
+ 0   -_-_-_-_-_-_-_-_-_|   /\_/\
+ 0   -_-_-_-_-_-_-_-_-^|__( ^ .^)
+     -_-_-_-_-_-_-_-_-  ""  ""
+  Pass!
 ```
 
-The above command would install all source code and tests on your connected device, if you just wanna
-put tests only, try the following:
+Ensure you have a connected YodaOS device via ADB v1.0.39.
+
+## Development
+
+In development, code changes are in a very frequent fashion and it might be hard to maintain
+synchronization between local codes and device codes. Try following commands to cope with the
+situation with ease:
 
 ```shell
-$ tools/runtime-install -t; tools/test
-```
-
-We supported the following TAP reporters:
-
-- [tap-nyan](https://github.com/calvinmetcalf/tap-nyan)
-- [tap-spec](https://github.com/scottcorgan/tap-spec)
-- [tap-json](https://github.com/gummesson/tap-json)
-
-Use the cli params to select which reporter do you prefer use:
-
-```shell
-$ npm test -- -r tap-nyan
-```
-
-For more options, see
-
-```shell
-$ tools/test --help
-$ tools/runtime-install --help
+$ npm restart
 ```
 
 ## Tools
