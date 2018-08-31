@@ -95,13 +95,14 @@ MqttAgent.prototype.onMessage = function (channel, message) {
 
 MqttAgent.prototype.sendToApp = function (topic, text) {
   logger.log('mqtt send channel:', `u/${this.userId}/rc`)
+  // console.log('--------------------------->', this.config, this.userId)
   handle.publish(`u/${this.userId}/rc`, JSON.stringify({
     reviceDevice: {
       accountId: this.userId
     },
     sourceDevice: {
-      deviceId: this.config.device_id,
-      deviceType: this.config.device_type_id
+      deviceId: this.config.deviceId,
+      deviceType: this.config.deviceType
     },
     topic: topic,
     text: text,
