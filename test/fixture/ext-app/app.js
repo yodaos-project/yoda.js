@@ -1,7 +1,5 @@
 'use strict'
 
-var logger = require('logger')('test-ext-app')
-
 /**
  *
  * @param {YodaRT.Activity} activity
@@ -25,5 +23,17 @@ module.exports = function (activity) {
       args: [nlp, action]
     })
   })
-  logger.info('app running')
+
+  activity.on('invoke', (method, params) => {
+    activity[method].apply(activity, params)
+      .then(res => process.send({
+        type: 'test',
+        event: 'invoke',
+        result: res
+      }), err => process.send({
+        type: 'test',
+        event: 'invoke',
+        error: err.message
+      }))
+  })
 }
