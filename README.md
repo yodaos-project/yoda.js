@@ -29,7 +29,7 @@ The above command would install all source code and tests on your connected devi
 put tests only, try the following:
 
 ```shell
-$ TESTONLY=1 npm test
+$ tools/runtime-install -t; tools/test
 ```
 
 We supported the following TAP reporters:
@@ -38,11 +38,17 @@ We supported the following TAP reporters:
 - [tap-spec](https://github.com/scottcorgan/tap-spec)
 - [tap-json](https://github.com/gummesson/tap-json)
 
-Use the environ `REPORTER` to select which reporter do you prefer use:
+Use the cli params to select which reporter do you prefer use:
 
 ```shell
-$ TESTONLY=1 REPORTER=spec npm test
-$ TESTONLY=1 REPORTER=json npm test
+$ npm test -- -r tap-nyan
+```
+
+For more options, see
+
+```shell
+$ tools/test --help
+$ tools/runtime-install --help
 ```
 
 ## Tools

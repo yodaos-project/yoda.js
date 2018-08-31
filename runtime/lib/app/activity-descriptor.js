@@ -27,7 +27,7 @@ module.exports.TtsDescriptor = TtsDescriptor
  *   activity.on('created', () => {
  *     console.log('app is created')
  *   })
- *   activity.on('request', (nlp) => {
+ *   activity.on('onrequest', (nlp) => {
  *     // handle nlp
  *   })
  * }
@@ -126,6 +126,8 @@ Object.assign(ActivityDescriptor.prototype,
     /**
      * When the app is received a command request
      * @event yodaRT.activity.Activity#onrequest
+     * @param {NLP} nlp
+     * @param {Action} action
      */
     onrequest: {
       type: 'event'
@@ -134,11 +136,11 @@ Object.assign(ActivityDescriptor.prototype,
   {
     /**
      * get property value by key
-     * @function get
-     * @param {String} key
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @returns {Promise}
+     * @function get
+     * @param {string} key
+     * @returns {Promise<object>}
      */
     get: {
       type: 'method',
@@ -149,9 +151,10 @@ Object.assign(ActivityDescriptor.prototype,
     },
     /**
      * Exits the current application.
-     * @function exit
      * @memberof yodaRT.activity.Activity
      * @instance
+     * @function exit
+     * @returns {Promise<void>}
      */
     exit: {
       type: 'method',
@@ -162,9 +165,10 @@ Object.assign(ActivityDescriptor.prototype,
     },
     /**
      * Exits the current application and clean up others.
-     * @function destroyAll
      * @memberof yodaRT.activity.Activity
      * @instance
+     * @function destroyAll
+     * @returns {Promise<void>}
      */
     destroyAll: {
       type: 'method',
@@ -175,25 +179,26 @@ Object.assign(ActivityDescriptor.prototype,
     },
     /**
      * Get the current `appId`.
-     * @function getAppId
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @returns {String} the current `appId`.
+     * @function getAppId
+     * @returns {Promise<string>} the current `appId`.
      */
     getAppId: {
       type: 'method',
       returns: 'promise',
       fn: function getAppId () {
-        return this.appId
+        return Promise.resolve(this.appId)
       }
     },
     /**
      * Set the current app is pickup
-     * @function setPickup
-     * @param {Boolean} pickup
-     * @param {Number} [duration=6000]
      * @memberof yodaRT.activity.Activity
      * @instance
+     * @function setPickup
+     * @param {boolean} pickup
+     * @param {number} [duration=6000]
+     * @returns {Promise<void>}
      */
     setPickup: {
       type: 'method',
@@ -204,14 +209,14 @@ Object.assign(ActivityDescriptor.prototype,
     },
     /**
      * Set the app is confirmed
-     * @function setConfirm
-     * @param {String} intent
-     * @param {String} slot
-     * @param {Object} options
-     * @param {Object} attrs
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @return {Promise}
+     * @function setConfirm
+     * @param {string} intent
+     * @param {string} slot
+     * @param {object} [options]
+     * @param {object} [attrs]
+     * @return {Promise<void>}
      */
     setConfirm: {
       type: 'method',
@@ -238,10 +243,10 @@ Object.assign(ActivityDescriptor.prototype,
     },
     /**
      * push the app in background
-     * @function setBackground
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @return {Promise}
+     * @function setBackground
+     * @return {Promise<void>}
      */
     setBackground: {
       type: 'method',
@@ -259,10 +264,10 @@ Object.assign(ActivityDescriptor.prototype,
     },
     /**
      * push the app in foreground
-     * @function setForeground
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @return {Promise}
+     * @function setForeground
+     * @return {Promise<void>}
      */
     setForeground: {
       type: 'method',
@@ -280,25 +285,26 @@ Object.assign(ActivityDescriptor.prototype,
     },
     /**
      * sync cloudappclient appid stack
-     * @function syncCloudAppIdStack
      * @memberof yodaRT.activity.Activity
-     * @param {Array} stack cloud skills id
      * @instance
      * @private
+     * @function syncCloudAppIdStack
+     * @param {string[]} stack cloud skills id
+     * @returns {Promise<void>}
      */
     syncCloudAppIdStack: {
       type: 'method',
       returns: 'promise',
       fn: function syncCloudAppIdStack (stack) {
-        this.runtime.syncCloudAppIdStack(stack || [])
+        return this.runtime.syncCloudAppIdStack(stack || [])
       }
     },
     /**
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function playSound
-     * @param {String} uri - the sound resource uri.
-     * @returns {Promise}
+     * @param {string} uri - the sound resource uri.
+     * @returns {Promise<void>}
      */
     playSound: {
       type: 'method',
@@ -338,9 +344,9 @@ Object.assign(LightDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.LightClient
      * @instance
      * @function play
-     * @param {String} uri - the light resource uri.
-     * @param {Object} args - the args.
-     * @returns {Promise}
+     * @param {string} uri - the light resource uri.
+     * @param {object} args - the args.
+     * @returns {Promise<void>}
      */
     play: {
       type: 'method',
@@ -361,7 +367,7 @@ Object.assign(LightDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.LightClient
      * @instance
      * @function stop
-     * @returns {Promise}
+     * @returns {Promise<void>}
      */
     stop: {
       type: 'method',
@@ -432,8 +438,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function start
-     * @param {String} uri
-     * @returns {Promise}
+     * @param {string} uri
+     * @returns {Promise<void>}
      */
     start: {
       type: 'method',
@@ -461,7 +467,7 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function pause
-     * @returns {Promise}
+     * @returns {Promise<void>}
      */
     pause: {
       type: 'method',
@@ -475,7 +481,7 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function resume
-     * @returns {Promise}
+     * @returns {Promise<void>}
      */
     resume: {
       type: 'method',
@@ -489,7 +495,7 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function stop
-     * @returns {Promise}
+     * @returns {Promise<void>}
      */
     stop: {
       type: 'method',
@@ -503,7 +509,7 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function getPosition
-     * @returns {Promise}
+     * @returns {Promise<number>}
      */
     getPosition: {
       type: 'method',
@@ -523,7 +529,7 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function getLoopMode
-     * @returns {Promise}
+     * @returns {Promise<number>}
      */
     getLoopMode: {
       type: 'method',
@@ -543,8 +549,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function setLoopMode
-     * @param {Boolean} loop
-     * @returns {Promise}
+     * @param {boolean} loop
+     * @returns {Promise<boolean>}
      */
     setLoopMode: {
       type: 'method',
@@ -565,8 +571,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function seek
-     * @param {Number} pos
-     * @returns {Promise}
+     * @param {number} pos
+     * @returns {Promise<void>}
      */
     seek: {
       type: 'method',
@@ -611,8 +617,8 @@ Object.assign(TtsDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.TtsClient
      * @instance
      * @function speak
-     * @param {String} text
-     * @returns {Promise}
+     * @param {string} text
+     * @returns {Promise<void>} Resolved on end of speech
      */
     speak: {
       type: 'method',
@@ -633,7 +639,7 @@ Object.assign(TtsDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.TtsClient
      * @instance
      * @function stop
-     * @returns {Promise}
+     * @returns {Promise<void>}
      */
     stop: {
       type: 'method',
@@ -645,6 +651,13 @@ Object.assign(TtsDescriptor.prototype,
   }
 )
 
+/**
+ *
+ * @private
+ * @param {string} name
+ * @param {string} prefix
+ * @param {string} home
+ */
 function pathTransform (name, prefix, home) {
   var len = name.length
   var absPath = ''
