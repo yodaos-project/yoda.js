@@ -2,13 +2,15 @@
   "name": "yodart",
   "version": "7.27.0",
   "scripts": {
+    "prerestart": "tools/runtime-install",
+    "restart": "tools/runtime-op restart",
     "lint": "npm run lint-js && npm run lint-cc",
     "lint-js": "standard",
     "lint-cc": "tools/clang-format",
     "website": "jsdoc -c jsdoc.config -R README.md -r . -d website/docs -u website/tutorials",
     "pretest": "tools/runtime-install -a",
-    "nyan": "npm run pretest && tools/test --reporter tap-nyan",
-    "test": "tools/test"
+    "bare-test": "tools/runtime-install -t && tools/test",
+    "test": "tools/test --reporter tap-nyan"
   },
   "config": {
     "unsafe-perm": true
