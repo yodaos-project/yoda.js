@@ -4,13 +4,15 @@ var https = require('https')
 var qs = require('querystring')
 var crypto = require('crypto')
 var logger = require('logger')('mqtt')
+var env = require('../env')()
+
 var host = 'wormhole-registry.rokid.com'
 
 function load (config) {
   return {
     key: config.key,
-    device_type_id: config.device_type_id,
-    device_id: config.device_id,
+    device_type_id: config.deviceTypeId,
+    device_id: config.deviceId,
     service: 'mqtt',
     version: '1',
     time: Math.floor(Date.now() / 1000),
@@ -26,7 +28,7 @@ function getSign (data) {
 }
 
 function registry (userId, config, cb) {
-  logger.log('start request /api/registryByKey with userId:', userId, 'config:', config)
+  logger.log('start request /api/registryByKey with userId:', userId)
   var data = load(config)
   var msg = JSON.stringify({
     appKey: data.key,
@@ -35,13 +37,13 @@ function registry (userId, config, cb) {
     deviceId: data.device_id,
     accountId: userId,
     service: data.service,
-    time: data.time + '',
+    time: `${data.time}`,
     version: data.version
   })
   var req = https.request({
     method: 'POST',
     family: 4,
-    host: host,
+    host: env.mqtt.registry,
     path: '/api/registryByKey',
     headers: {
       'Content-Type': 'application/json',

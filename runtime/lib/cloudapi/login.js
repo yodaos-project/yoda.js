@@ -6,10 +6,11 @@ var crypto = require('crypto')
 var exec = require('child_process').exec
 var property = require('@yoda/property')
 var logger = require('logger')('login')
+var env = require('../env')()
 
 var uuid = property.get('ro.boot.serialno')
 var seed = property.get('ro.boot.rokidseed')
-var secret
+var secret = null
 var retry = 0
 
 function md5 (str) {
@@ -22,7 +23,6 @@ function login (callback) {
     return
   }
   logger.log('exe test-stupid', seed, uuid)
-
   exec('test-stupid ' + seed + ' ' + uuid, {
     encoding: 'buffer'
   }, function (error, stdout, stderr) {
@@ -58,7 +58,7 @@ function login (callback) {
     logger.log('start /login request')
     var req = https.request({
       method: 'POST',
-      host: 'device-account.rokid.com',
+      host: env.cloudgw.account,
       path: '/device/login.do',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -69,14 +69,14 @@ function login (callback) {
       response.on('data', (chunk) => list.push(chunk))
       response.once('end', () => {
         var body = Buffer.concat(list).toString()
-        logger.log('request /login response: ', body)
+        logger.log('request /login response ok')
         try {
+          // FIXME(Yorkie): why make such many parse operations?
           var data = JSON.parse(JSON.parse(body).data)
-
-          config['device_id'] = data.deviceId
-          config['device_type_id'] = data.deviceTypeId
-          config['key'] = data.key
-          config['secret'] = data.secret
+          config.deviceId = data.deviceId
+          config.deviceTypeId = data.deviceTypeId
+          config.key = data.key
+          config.secret = data.secret
           callback(null, config)
         } catch (err) {
           logger.error(err && err.stack)

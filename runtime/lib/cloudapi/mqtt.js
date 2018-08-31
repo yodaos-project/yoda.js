@@ -6,8 +6,9 @@ var inherits = require('util').inherits
 var property = require('@yoda/property')
 var mqttRegister = require('./mqtt-register')
 var logger = require('logger')('mqtt')
+var env = require('../env')()
 
-var endpoint = 'mqtts://wormhole.rokid.com:8885'
+var endpoint = env.mqtt.uri
 var handle = null
 
 function MqttAgent (config) {
@@ -51,7 +52,7 @@ MqttAgent.prototype.reConnect = function () {
     reconnectPeriod: -1
   })
   handle.on('connect', () => {
-    var channelId = `u/${this.userId}/deviceType/${this.config.device_type_id}/deviceId/${this.config.device_id}/rc`
+    var channelId = `u/${this.userId}/deviceType/${this.config.deviceTypeId}/deviceId/${this.config.deviceId}/rc`
     handle.subscribe(channelId)
     logger.info('subscribed', channelId)
   })
