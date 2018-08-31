@@ -1,9 +1,82 @@
 #!/usr/bin/env bash
 
+help="
+Usage:
+  --lightd        only apply to lightd service
+  --multimediad   only apply to multimediad service
+  --vuid          only apply to vuid service
+  --ttsd          only apply to ttsd service
+
+By default operation is going to be applyed to all services.
+
+Example:
+  $ ./tools/runtime-op --vuid restart
+  $ ./tools/runtime-op restart
+"
+
+lightd='NO'
+multimediad='NO'
+vuid='NO'
+ttsd='NO'
+only='NO'
+args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --lightd)
+      only='YES'
+      lightd='YES'
+      ;;
+    --multimediad)
+      only='YES'
+      multimediad='YES'
+      ;;
+    --vuid)
+      only='YES'
+      vuid='YES'
+      ;;
+    --ttsd)
+      only='YES'
+      ttsd='YES'
+      ;;
+    --help)
+      printf "$help"
+      exit
+      ;;
+    -h)
+      printf "$help"
+      exit
+      ;;
+    -*)
+      echo "Illegal option $1"
+      ;;
+    *)
+      args=("${args[@]}" "$1")
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
 adb shell "mount -o remount,rw /"
 
-adb shell /etc/init.d/lightd $1
-adb shell /etc/init.d/multimediad $1
-adb shell /etc/init.d/vui-daemon $1
-adb shell /etc/init.d/ttsd $1
-adb shell /etc/init.d/cloudappclient $1
+if test "$only" = 'NO'; then
+  lightd='YES'
+  multimediad='YES'
+  vuid='YES'
+  ttsd='YES'
+fi
+
+function op {
+  adb shell "/etc/init.d/$1" $2
+}
+
+if test "$lightd" = 'YES'; then
+  op lightd "${args[0]}"
+fi
+if test "$multimediad" = 'YES'; then
+  op multimediad "${args[0]}"
+fi
+if test "$vuid" = 'YES'; then
+  op vui-daemon "${args[0]}"
+fi
+if test "$ttsd" = 'YES'; then
+  op ttsd "${args[0]}"
+fi

@@ -62,6 +62,7 @@ function AppRuntime (paths) {
   this.loadApp(paths, () => {
     this.loadAppComplete = true
     logger.log('load app complete')
+    this.startDaemonApps()
   })
   // volume module
   this.volume = null
@@ -203,6 +204,17 @@ AppRuntime.prototype.load = function (root, cb) {
         cb(new Error('invalid app format: ' + root))
       }
     }
+  })
+}
+
+AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
+  Object.keys(this.apps).forEach(appId => {
+    var executor = this.apps[appId]
+    if (!executor.daemon) {
+      return
+    }
+    logger.info('Starting daemon app', appId)
+    return executor.create(appId, this)
   })
 }
 
@@ -802,6 +814,7 @@ AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
   this.cloudAppIdStack = stack || []
   logger.log('cloudStack', this.cloudAppIdStack)
   this.updateStack()
+  return Promise.resolve()
 }
 
 /**
