@@ -1,25 +1,22 @@
 'use strict'
 
 var logger = require('logger')('executor')
-var DaemonExtApp = require('./extappServer')
 var lightApp = require('./light-app')
 var extApp = require('./ext-app')
+var _ = require('@yoda/util')._
 
 function Executor (profile, prefix) {
-  this.type = 'light'
   this.daemon = false
-  this.exec = null
   this.errmsg = null
   this.valid = true
   this.profile = profile
 
   if (profile.metadata.extapp === true) {
-    if (profile.metadata.daemon === true) {
-      this.daemon = true
-    }
     this.type = 'extapp'
+    this.daemon = _.get(profile, 'metadata.daemon', false)
     this.exec = prefix
   } else {
+    this.type = 'light'
     this.exec = prefix
   }
 }
@@ -32,16 +29,17 @@ Executor.prototype.create = function (appId, runtime) {
   var app = null
   if (this.type === 'light') {
     app = lightApp(this.exec, appId, runtime)
+    this.app = app
     return Promise.resolve(app)
   } else if (this.type === 'extapp') {
-    // app @cloud
-    if (this.daemon === true) {
-      app = new DaemonExtApp(appId, this.profile.metadata.dbusConn, runtime)
-      return Promise.resolve(app)
+    if (this.daemon && this.app != null) {
+      return Promise.resolve(this.app)
     }
+
     return extApp(this.exec, appId, runtime)
       .then(app => {
         logger.info('Ext-app successfully started')
+        this.app = app
         return app
       }, err => {
         logger.info('Unexpected error on starting ext-app', err.message, err.stack)
@@ -55,6 +53,9 @@ Executor.prototype.create = function (appId, runtime) {
  * @param {ActivityDescriptor} app
  */
 Executor.prototype.destruct = function destruct (app) {
+  if (this.daemon) {
+    return
+  }
   app.destruct()
 }
 

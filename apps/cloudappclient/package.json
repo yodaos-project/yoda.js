@@ -3,6 +3,16 @@
   "version": "1.0.0",
   "description": "to parse cloud nlp",
   "main": "app.js",
+  "metadata": {
+    "extapp": true,
+    "daemon": true,
+    "skills": [
+      "@cloud"
+    ],
+    "permission": [
+      "ACCESS_TTS"
+    ]
+  },
   "directories": {
     "test": "tests"
   },

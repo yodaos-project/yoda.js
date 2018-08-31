@@ -38,7 +38,7 @@ function launchApp (handle, activity) {
   handle(activity)
 }
 
-function keepAlive () {
+function keepAlive (appId) {
   /**
    * FIXME: though there do have listeners on process#message,
    * ShadowNode still exits on end of current context.
@@ -47,9 +47,10 @@ function keepAlive () {
    */
   var timer = setInterval(() => {
     process.send({
-      type: 'ping'
+      type: 'ping',
+      appId: appId
     })
-  }, 1000)
+  }, 60 * 1000)
   process.on('message', message => {
     if (message.type === 'pong') {
       logger.info('Received pong from VuiDaemon, stop pinging.')
@@ -82,7 +83,7 @@ function main () {
         type: 'status-report',
         status: 'ready'
       })
-      keepAlive()
+      keepAlive(appId)
     }).catch(error => {
       process.send({
         type: 'status-report',
