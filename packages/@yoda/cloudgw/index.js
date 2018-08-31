@@ -7,7 +7,7 @@
 
 var https = require('https')
 var crypto = require('crypto')
-
+var logger = require('logger')('cloudgw')
 var StatusCodeError = require('./status-code-error')
 
 var defaultHost = 'apigwrest.open.rokid.com'
@@ -81,6 +81,7 @@ Cloudgw.prototype.request = function request (path, data, options, callback) {
   var host = options.host || defaultHost
 
   data = JSON.stringify(data)
+  logger.info(`request https://${host}${path}`)
   var authorization = getAuth(Object.assign({}, options, this.config))
   var req = https.request({
     method: 'POST',
