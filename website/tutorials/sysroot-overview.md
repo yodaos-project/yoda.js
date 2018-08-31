@@ -18,6 +18,5 @@ The application has system and user types.
 - `/usr/lib/yoda/runtime/services/ttsd` The TTSd source code.
 - `/usr/lib/yoda/runtime/services/lightd` The Lightd source code.
 - `/usr/lib/yoda/runtime/services/multimediad` The Multimediad source code.
-- `/usr/lib/yoda/cloudappclient` The CloudAppClient source code.
 - `/usr/lib/node_modules` The global third-party modules.
 
