@@ -77,8 +77,8 @@ runtime.on('reconnected', function () {
       port: config.port,
       key: config.key,
       secret: config.secret,
-      deviceTypeId: config.device_type_id,
-      deviceId: config.device_id
+      deviceTypeId: config.deviceTypeId,
+      deviceId: config.deviceId
     }
     speech.start(options)
     speechT.start(options)
@@ -93,8 +93,8 @@ runtime.on('reconnected', function () {
         port: config.port,
         key: config.key,
         secret: config.secret,
-        deviceTypeId: config.device_type_id,
-        deviceId: config.device_id
+        deviceTypeId: config.deviceTypeId,
+        deviceId: config.deviceId
       }
     }
 

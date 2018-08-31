@@ -3,8 +3,9 @@
 var https = require('https')
 var logger = require('logger')('sendConfirm')
 var getAuth = require('./getAuth')
+var env = require('../env')()
 
-var DEFAULT_HOST = 'apigwrest.open.rokid.com'
+var DEFAULT_HOST = env.cloudgw.restful
 var DEFAULT_URI = '/v1/skill/dispatch/setConfirm'
 
 function request (appId, intent, slot, options, attrs, config, callback) {

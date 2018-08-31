@@ -15,6 +15,7 @@ var _ = require('@yoda/util')._
 
 var Permission = require('./component/permission')
 var AppExecutor = require('./app/executor')
+var env = require('./env')()
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 // var input = require('@yoda/input')()
@@ -31,6 +32,15 @@ function AppRuntime (paths) {
   EventEmitter.call(this)
   // App Executor
   this.apps = {}
+  this.config = {
+    host: env.cloudgw.wss,
+    port: 443,
+    deviceId: null,
+    deviceTypeId: null,
+    key: null,
+    secret: null
+  }
+
   // 保存正在运行的AppID
   this.appIdStack = []
   this.bgAppIdStack = []
@@ -1155,14 +1165,7 @@ AppRuntime.prototype.startExtappService = function () {
     out: ['s']
   }, function (appId, cb) {
     var config = self.onGetPropAll()
-    cb(null, JSON.stringify({
-      deviceId: config.deviceId,
-      appSecret: config.secret,
-      masterId: config.masterId,
-      deviceTypeId: config.deviceTypeId,
-      key: config.key,
-      secret: config.secret
-    }))
+    cb(null, JSON.stringify(config))
   })
 
   /**
