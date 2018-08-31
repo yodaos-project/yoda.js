@@ -6,9 +6,9 @@ var sendConfirm = require('./sendConfirm')
 
 var CONFIG = null
 
-exports.connect = function () {
+exports.connect = function (onEvent) {
   return new Promise((resolve, reject) => {
-    device.bindDevice()
+    device.bindDevice(onEvent)
       .then((config) => {
         CONFIG = config
         resolve(new MqttAgent(config))

@@ -66,10 +66,17 @@ speech.on('nlp', function (response, event) {
 
 speech.start()
 
+function cloudEvent (code, msg) {
+  runtime.onEvent('cloud event', {
+    code: code,
+    msg: msg
+  })
+}
+
 runtime.on('reconnected', function () {
   logger.log('yoda reconnected')
   // 登录、绑定、注册mqtt
-  cloudApi.connect().then((mqttAgent) => {
+  cloudApi.connect(cloudEvent).then((mqttAgent) => {
     // 系统配置文件
     var config = mqttAgent.config
     var options = {
