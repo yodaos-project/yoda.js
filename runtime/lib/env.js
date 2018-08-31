@@ -5,7 +5,7 @@ var path = require('path')
 var property = require('@yoda/property')
 var logger = require('logger')('env')
 var defaults = require('../env.json')
-var config = null
+var config
 
 function get () {
   return Object.assign({}, config)
