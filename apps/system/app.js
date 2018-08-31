@@ -13,7 +13,8 @@ module.exports = function (activity) {
       nlp.intent === 'ROKID.SYSTEM.EXIT') {
       activity.destroyAll()
     } else {
-      activity.tts.speak('什么设置', () => activity.exit())
+      activity.tts.speak('什么设置')
+        .then(() => activity.exit())
     }
   })
 }

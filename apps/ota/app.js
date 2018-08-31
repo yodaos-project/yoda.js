@@ -23,8 +23,8 @@ module.exports = function (activity) {
   activity.on('onrequest', function (nlp, action) {
     var handler = intentHandler[nlp.intent]
     if (handler == null) {
-      activity.tts.speak('什么升级', () => activity.exit())
-      return
+      return activity.tts.speak('什么升级')
+        .then(() => activity.exit())
     }
     logger.info(`OtaApp got nlp ${nlp.intent}`)
     handler(activity, nlp, action)
@@ -42,13 +42,13 @@ function checkUpdateAvailability (activity) {
       logger.error('Unexpected error on check available updates', error.stack)
     }
     if (error || info == null) {
-      activity.tts.speak('已经是最新的系统版本了', () => activity.exit())
-      return
+      return activity.tts.speak('已经是最新的系统版本了')
+        .then(() => activity.exit())
     }
     if (info.status !== 'downloaded') {
       ota.runInBackground()
-      activity.tts.speak('你有新的版本可以升级，下载马上可以完成', () => activity.exit())
-      return
+      return activity.tts.speak('你有新的版本可以升级，下载马上可以完成')
+        .then(() => activity.exit())
     }
     var result = isUpgradeSuitableNow()
     if (result !== true) {
@@ -58,12 +58,11 @@ function checkUpdateAvailability (activity) {
     logger.info(`using ota image ${info.imagePath}`)
     var ret = system.prepareOta(info.imagePath)
     if (ret !== 0) {
-      activity.tts.speak('准备升级失败', () => activity.exit())
-      return
+      return activity.tts.speak('准备升级失败')
+        .then(() => activity.exit())
     }
-    activity.tts.speak('你有新的版本可以升级，现在为你重启安装，成功升级后会及时告诉你', () => {
-      system.reboot()
-    })
+    return activity.tts.speak('你有新的版本可以升级，现在为你重启安装，成功升级后会及时告诉你')
+      .then(() => system.reboot())
   }) /** ota.getAvailableInfo */
 }
 
@@ -73,9 +72,7 @@ function checkUpdateAvailability (activity) {
  */
 function whatsCurrentVersion (activity) {
   activity.tts.speak('你可以在手机app的设备信息页面看到我现在的系统版本号')
-    .then(() => {
-      activity.exit()
-    })
+    .then(() => activity.exit())
 }
 
 function isUpgradeSuitableNow () {
@@ -95,7 +92,8 @@ function onFirstBootAfterUpgrade (activity, nlp) {
   }
 
   ota.resetOta(function onReset () {
-    activity.tts.speak(info.changelog, () => activity.exit())
+    activity.tts.speak(info.changelog)
+      .then(() => activity.exit())
   })
 }
 
@@ -109,8 +107,6 @@ function forceUpgrade (activity, nlp) {
   if (info == null || !info.changelog) {
     return
   }
-  activity.tts.speak(info.changelog, () => {
-    activity.exit()
-    system.reboot()
-  })
+  activity.tts.speak(info.changelog)
+    .then(() => system.reboot())
 }
