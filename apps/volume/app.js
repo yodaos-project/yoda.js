@@ -13,7 +13,7 @@ module.exports = function (activity) {
     if (ismuted) {
       AudioManager.setMute(false)
     }
-    return activity.tts.speak(text, () => {
+    return activity.tts.speak(text).then(() => {
       if (ismuted) { AudioManager.setMute(true) }
       activity.exit()
     })

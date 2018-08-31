@@ -33,9 +33,8 @@ module.exports = function (activity) {
   }
 
   function speakAndExit (text) {
-    return activity.tts.speak(text, () => {
-      activity.exit()
-    })
+    return activity.tts.speak(text)
+      .then(() => activity.exit())
   }
 
   activity.on('onrequest', function (nlp, action) {
