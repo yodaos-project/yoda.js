@@ -47,6 +47,7 @@ YodaGitPackage(turen https://github.com/Rokid/node-turen.git master)
 # local packages
 YodaLocalPackage(yoda-audio @yoda/audio)
 YodaLocalPackage(yoda-battery @yoda/battery)
+YodaLocalPackage(yoda-bluetooth @yoda/bluetooth)
 YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
 YodaLocalPackage(yoda-input @yoda/input)
 YodaLocalPackage(yoda-light @yoda/light)
