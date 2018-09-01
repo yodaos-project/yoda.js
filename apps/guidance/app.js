@@ -44,7 +44,7 @@ module.exports = function (activity) {
     }
   }
 
-  activity.on('onrequest', function (nlp, action) {
+  activity.on('request', function (nlp, action) {
     var textTable = require('./texts.json')
     if (nlp.intent in intentHandler && nlp.intent in textTable) {
       var handler = intentHandler[nlp.intent]

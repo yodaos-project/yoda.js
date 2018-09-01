@@ -5,21 +5,21 @@
  * @param {YodaRT.Activity} activity
  */
 module.exports = function (activity) {
-  activity.on('created', () => {
+  activity.on('create', () => {
     activity.setPickup('foo', 'bar')
       .then(data => {
         process.send({
           type: 'test',
-          event: 'created',
+          event: 'create',
           data: data
         })
       })
   })
 
-  activity.on('onrequest', (nlp, action) => {
+  activity.on('request', (nlp, action) => {
     process.send({
       type: 'test',
-      event: 'onrequest',
+      event: 'request',
       args: [nlp, action]
     })
   })

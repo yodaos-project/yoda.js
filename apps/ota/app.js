@@ -20,7 +20,7 @@ var intentHandler = {
  * @param {YodaRT.Activity} activity
  */
 module.exports = function (activity) {
-  activity.on('onrequest', function (nlp, action) {
+  activity.on('request', function (nlp, action) {
     var handler = intentHandler[nlp.intent]
     if (handler == null) {
       return activity.tts.speak('什么升级')
@@ -83,7 +83,7 @@ function isUpgradeSuitableNow () {
 /**
  *
  * @param {YodaRT.Activity} activity
- * @param {YodaRT.NlpObject} nlp
+ * @param {YodaRT.Request} nlp
  */
 function onFirstBootAfterUpgrade (activity, nlp) {
   var info = nlp._info
@@ -100,7 +100,7 @@ function onFirstBootAfterUpgrade (activity, nlp) {
 /**
  *
  * @param {YodaRT.Activity} activity
- * @param {YodaRT.NlpObject} nlp
+ * @param {YodaRT.Request} nlp
  */
 function forceUpgrade (activity, nlp) {
   var info = nlp._info

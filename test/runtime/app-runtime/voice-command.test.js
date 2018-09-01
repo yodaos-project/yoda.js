@@ -62,8 +62,8 @@ test('test onVoiceCommand', (t) => {
   testSceneCreate.on('create', () => {
     t.pass('@testSceneCreate create')
   })
-  testSceneCreate.on('onrequest', () => {
-    t.pass('@testSceneCreate should be onrequest')
+  testSceneCreate.on('request', () => {
+    t.pass('@testSceneCreate should be intent')
 
     // test scene destroy
     runtime.onVoiceCommand('', {
@@ -84,8 +84,8 @@ test('test onVoiceCommand', (t) => {
   testSceneDestroy.on('create', () => {
     t.pass('@testSceneDestroy should be create')
   })
-  testSceneDestroy.on('onrequest', () => {
-    t.pass('@testSceneDestroy should be onrequest')
+  testSceneDestroy.on('request', () => {
+    t.pass('@testSceneDestroy should be intent')
 
     // // test cut interrupt
     runtime.onVoiceCommand('', {
@@ -110,8 +110,8 @@ test('test onVoiceCommand', (t) => {
   testCutInterrupt.on('create', () => {
     t.pass('@testCutInterrupt should be create')
   })
-  testCutInterrupt.on('onrequest', () => {
-    t.pass('@testCutInterrupt should be onrequest')
+  testCutInterrupt.on('request', () => {
+    t.pass('@testCutInterrupt should be intent')
 
     // // test scene resume
     runtime.exitAppByIdForce('testCutInterrupt')

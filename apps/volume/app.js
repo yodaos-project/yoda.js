@@ -63,7 +63,7 @@ module.exports = function (activity) {
     AudioManager.setMute(false)
   }
 
-  activity.on('onrequest', function (nlp, action) {
+  activity.on('request', function (nlp, action) {
     switch (nlp.intent) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
