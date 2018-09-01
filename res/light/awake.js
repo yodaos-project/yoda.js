@@ -2,7 +2,7 @@
 
 module.exports = function awake (light, data, callback) {
   var end = false
-  function delayANDshutdown () {
+  function delayAndShutdown () {
     light.requestAnimationFrame(() => {
       light.transition({ r: 0, g: 0, b: 150 }, { r: 0, g: 0, b: 0 }, 130, 4, (r, g, b, lastFrame) => {
         light.fill(r, g, b)
@@ -15,21 +15,24 @@ module.exports = function awake (light, data, callback) {
   }
 
   light.transition({ r: 0, g: 0, b: 0 }, { r: 0, g: 0, b: 150 }, 130, 4, () => {
-    delayANDshutdown()
+    delayAndShutdown()
   })
+
+  var player = light.sound('system://wakeup.ogg')
+
   return {
     setDegree: function (degree) {
       if (!end) {
-        light.wakeupSound()
         light.stop(true)
         light.fill(0, 0, 150)
         var pos = Math.floor((degree / 360) * light.ledsConfig.leds)
         light.pixel(pos, 255, 255, 255)
         light.render()
-        delayANDshutdown()
+        delayAndShutdown()
       }
     },
     stop: function (keep) {
+      player.pause()
       light.stop(keep)
     }
   }
