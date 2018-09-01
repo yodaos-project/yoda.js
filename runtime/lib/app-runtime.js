@@ -376,7 +376,11 @@ AppRuntime.prototype.createOrResumeApp = function createOrResumeApp (appId, opti
 
   // Launch app
   logger.info('app is not running, creating', appId)
-  return this.onLifeCycle(appId, 'create')
+  return this.onLifeCycle({
+    appId: appId,
+    form: nlpForm,
+    preemptive: preemptive
+  }, 'create')
 
   function preemptTopOfStack (appCreated) {
     logger.info('preempting top stack for appId', appId)
@@ -397,6 +401,7 @@ AppRuntime.prototype.createOrResumeApp = function createOrResumeApp (appId, opti
     var last = self.getCurrentAppData()
     if (!last) {
       /** no currently running app */
+      logger.debug('no currently running app, skip preempting')
       return
     }
 
@@ -450,7 +455,7 @@ AppRuntime.prototype.getCurrentAppId = function () {
  * @private
  */
 AppRuntime.prototype.getCurrentAppData = function () {
-  var appId = this.getAppDataById()
+  var appId = this.getCurrentAppId()
   if (!appId) return false
   return this.appDataMap[appId]
 }
@@ -471,7 +476,7 @@ AppRuntime.prototype.getAppDataById = function (appId) {
  * @private
  */
 AppRuntime.prototype.getCurrentApp = function () {
-  var appId = this.getAppDataById()
+  var appId = this.getCurrentAppId()
   if (!appId) return false
   return this.appMap[appId]
 }
@@ -479,8 +484,12 @@ AppRuntime.prototype.getCurrentApp = function () {
 /**
  * 给所有App发送destroy事件，销毁所有App
  * @private
+ * @param {object} [options]
+ * @param {boolean} [options.resetServices]
  */
-AppRuntime.prototype.destroyAll = function () {
+AppRuntime.prototype.destroyAll = function (options) {
+  var resetServices = _.get(options, 'resetServices', true)
+
   // 依次给正在运行的App发送destroy命令
   var i = 0
   var appId
@@ -505,6 +514,10 @@ AppRuntime.prototype.destroyAll = function () {
   this.appMap = {}
   this.appDataMap = {}
   this.resetStack()
+
+  if (!resetServices) {
+    return
+  }
 
   // reset service
   this.lightMethod('reset', [])

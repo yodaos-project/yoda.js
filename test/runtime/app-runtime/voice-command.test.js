@@ -10,26 +10,9 @@ test('test onVoiceCommand', (t) => {
   AppRuntime.prototype.listenDbusSignals = function () {}
   AppRuntime.prototype.loadApp = function () {}
 
-  AppRuntime.prototype.destroyAll = function () {
-    var i = 0
-    // destroy all foreground app
-    for (i = 0; i < this.appIdStack.length; i++) {
-      if (this.appMap[this.appIdStack[i]]) {
-        this.appMap[this.appIdStack[i]].emit('destroy')
-      }
-    }
-    // destroy all background app
-    for (i = 0; i < this.bgAppIdStack.length; i++) {
-      if (this.appMap[this.bgAppIdStack[i]]) {
-        this.appMap[this.bgAppIdStack[i]].emit('destroy')
-      }
-    }
-
-    this.appIdStack = []
-    this.bgAppIdStack = []
-    this.cloudAppIdStack = []
-    this.appMap = {}
-    this.appDataMap = {}
+  var destroyAll = AppRuntime.prototype.destroyAll
+  AppRuntime.prototype.destroyAll = function destroyAllProxy () {
+    return destroyAll.call(this, { resetServices: false })
   }
 
   var testSceneCreate = new EventEmitter()
@@ -45,7 +28,8 @@ test('test onVoiceCommand', (t) => {
   var appT = {
     create: function (appId) {
       return Promise.resolve(appI[appId])
-    }
+    },
+    destruct: function () {}
   }
 
   var apps = {
@@ -63,7 +47,7 @@ test('test onVoiceCommand', (t) => {
     t.pass('@testSceneCreate create')
   })
   testSceneCreate.on('request', () => {
-    t.pass('@testSceneCreate should be intent')
+    t.pass('@testSceneCreate should be request')
 
     // test scene destroy
     runtime.onVoiceCommand('', {
@@ -85,7 +69,7 @@ test('test onVoiceCommand', (t) => {
     t.pass('@testSceneDestroy should be create')
   })
   testSceneDestroy.on('request', () => {
-    t.pass('@testSceneDestroy should be intent')
+    t.pass('@testSceneDestroy should be request')
 
     // // test cut interrupt
     runtime.onVoiceCommand('', {
@@ -111,7 +95,7 @@ test('test onVoiceCommand', (t) => {
     t.pass('@testCutInterrupt should be create')
   })
   testCutInterrupt.on('request', () => {
-    t.pass('@testCutInterrupt should be intent')
+    t.pass('@testCutInterrupt should be request')
 
     // // test scene resume
     runtime.exitAppByIdForce('testCutInterrupt')
