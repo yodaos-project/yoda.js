@@ -2,7 +2,6 @@
 
 var test = require('tape')
 var EventEmitter = require('events').EventEmitter
-
 var AppRuntime = require('/usr/lib/yoda/runtime/lib/app-runtime.js')
 
 test('test onVoiceCommand', (t) => {
