@@ -105,7 +105,7 @@ module.exports = function (onEvent) {
         onEvent && onEvent('-101', '登录失败')
         reject(err)
       } else {
-        onEvent('101', '登录成功')
+        onEvent && onEvent('101', '登录成功')
         resolve(data)
       }
     })
