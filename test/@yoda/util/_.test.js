@@ -3,66 +3,111 @@ var _ = require('@yoda/util')._
 
 var suites = [
   {
-    title: 'should get value',
-    target: { foo: 'bar' },
-    path: 'foo',
-    defaults: undefined,
-    expected: 'bar'
+    fn: 'get',
+    cases: [
+      {
+        title: 'should get value',
+        params: [
+          { foo: 'bar' },
+          'foo',
+          undefined
+        ],
+        expected: 'bar'
+      },
+      {
+        title: 'should get nested value',
+        params: [
+          { nested: { foo: 'bar' } },
+          'nested.foo',
+          undefined
+        ],
+        expected: 'bar'
+      },
+      {
+        title: 'should get default value',
+        params: [
+          {},
+          'foo',
+          'bar'
+        ],
+        expected: 'bar'
+      },
+      {
+        title: 'should get array item',
+        params: [
+          [ 'foo', 'bar' ],
+          '1',
+          undefined
+        ],
+        expected: 'bar'
+      },
+      {
+        title: 'should get array item by index',
+        params: [
+          [ 'foo', 'bar' ],
+          1,
+          undefined
+        ],
+        expected: 'bar'
+      },
+      {
+        title: 'should break if get nil in the middle of nested object',
+        params: [
+          { nested: { foo: { foo: 'bar' } } },
+          'nested.bar.foo',
+          undefined
+        ],
+        expected: undefined
+      },
+      {
+        title: 'should tolerant literal values',
+        params: [
+          { foo: 1 },
+          'foo.bar',
+          undefined
+        ],
+        expected: undefined
+      },
+      {
+        title: 'should break on null',
+        params: [
+          { foo: null },
+          'foo.bar',
+          undefined
+        ],
+        expected: null
+      }
+    ]
   },
   {
-    title: 'should get nested value',
-    target: { nested: { foo: 'bar' } },
-    path: 'nested.foo',
-    defaults: undefined,
-    expected: 'bar'
-  },
-  {
-    title: 'should get default value',
-    target: {},
-    path: 'foo',
-    defaults: 'bar',
-    expected: 'bar'
-  },
-  {
-    title: 'should get array item',
-    target: [ 'foo', 'bar' ],
-    path: '1',
-    defaults: undefined,
-    expected: 'bar'
-  },
-  {
-    title: 'should get array item by index',
-    target: [ 'foo', 'bar' ],
-    path: 1,
-    defaults: undefined,
-    expected: 'bar'
-  },
-  {
-    title: 'should break if get nil in the middle of nested object',
-    target: { nested: { foo: { foo: 'bar' } } },
-    path: 'nested.bar.foo',
-    defaults: undefined,
-    expected: undefined
-  },
-  {
-    title: 'should tolerant literal values',
-    target: { foo: 1 },
-    path: 'foo.bar',
-    defaults: undefined,
-    expected: undefined
-  },
-  {
-    title: 'should break on null',
-    target: { foo: null },
-    path: 'foo.bar',
-    defaults: undefined,
-    expected: null
+    fn: 'pick',
+    cases: [
+      {
+        title: 'should get keys',
+        params: [
+          { foo: 'bar', bar: 'foo' },
+          'foo'
+        ],
+        expected: { foo: 'bar' }
+      },
+      {
+        title: 'should skip if target is nil',
+        params: [
+          null,
+          'foo'
+        ],
+        expected: null
+      }
+    ]
   }
 ]
 
-suites.forEach(it => {
-  test(it.title, t => {
-    t.doesNotThrow(() => t.strictEqual(_.get(it.target, it.path, it.defaults), it.expected))
-    t.end()
+suites.forEach(suite => {
+  var fn = suite.fn
+  suite.cases.forEach(esac => {
+    test(`${fn}: ${esac.title}`, t => {
+      t.doesNotThrow(() => t.deepEqual(_[fn].apply(null, esac.params), esac.expected))
+      t.end()
+    })
   })
 })

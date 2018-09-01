@@ -31,3 +31,17 @@ test('should serialize namespace fields', t => {
 
   t.end()
 })
+
+test('should serialize value fields', t => {
+  var descriptor = new ActivityDescriptor('@test', '/foobar', {})
+  var serialized = JSON.stringify(descriptor)
+  var deserialized = JSON.parse(serialized)
+
+  ;['appId', 'appHome'].forEach(it => {
+    t.assert(deserialized[it] != null, `Key '${it}' should exists`)
+    t.strictEqual(deserialized[it].type, 'value', `Key '${it}' should be value type`)
+    t.assert(deserialized[it].value != null, `Value of key '${it}' should exists`)
+  })
+
+  t.end()
+})

@@ -21,3 +21,16 @@ function get (object, path, defaults) {
   }
   return ret
 }
+
+module.exports.pick = pick
+function pick (object) {
+  if (object == null) {
+    return object
+  }
+  var ret = {}
+  var keys = Array.prototype.slice.call(arguments, 1)
+  keys.forEach(key => {
+    ret[key] = object[key]
+  })
+  return ret
+}
