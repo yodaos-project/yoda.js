@@ -6,8 +6,6 @@ var crypto = require('crypto')
 var logger = require('logger')('mqtt')
 var env = require('../env')()
 
-var host = 'wormhole-registry.rokid.com'
-
 function load (config) {
   return {
     key: config.key,

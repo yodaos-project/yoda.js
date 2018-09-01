@@ -3,7 +3,6 @@
 var property = require('@yoda/property')
 var Cloudgw = require('@yoda/cloudgw')
 var logger = require('logger')('bind')
-var env = require('../env')()
 
 var CONFIG = null
 var login = require('./login')
