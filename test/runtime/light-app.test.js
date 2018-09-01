@@ -37,6 +37,25 @@ test('should listen events', t => {
   proxy.removeAllListeners()
 })
 
+test('should subscribe event-ack', t => {
+  var runtime = new EventEmitter()
+  var descriptor = lightApp('@test', target, runtime)
+
+  var activityEvents = Object.keys(ActivityDescriptor.prototype).filter(key => {
+    var desc = ActivityDescriptor.prototype[key]
+    return desc.type === 'event-ack'
+  })
+
+  activityEvents.forEach(it => {
+    var eventDescriptor = descriptor[it]
+    t.strictEqual(typeof descriptor[eventDescriptor.trigger], 'function',
+      `event-ack '${it}' should have been subscribed.`)
+  })
+
+  t.end()
+  proxy.removeAllListeners()
+})
+
 test('should receive life cycle events', t => {
   t.plan(6)
   proxy.on('create', () => {
