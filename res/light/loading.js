@@ -2,12 +2,13 @@
 
 module.exports = function loading (light, data, callback) {
   var pos = 0
+  var leds = light.ledsConfig.leds
   if (data.degree) {
-    pos = Math.floor((data.degree / 360) * light.ledsConfig.leds)
+    pos = Math.floor((data.degree / 360) * leds)
   }
   var render = function () {
     light.fill(30, 30, 150)
-    pos = pos === 11 ? 0 : pos + 1
+    pos = pos === (leds - 1) ? 0 : pos + 1
     light.pixel(pos, 255, 255, 255)
     light.render()
     light.requestAnimationFrame(() => {
