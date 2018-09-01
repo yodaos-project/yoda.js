@@ -144,7 +144,7 @@ LightRenderingContext.prototype.fill = function (r, g, b, a) {
 /**
  * make a breathing effect.
  */
-LightRenderingContext.prototype.breathing = function (pos, or, og, ob, duration, fps, cb) {
+LightRenderingContext.prototype.breathing = function (or, og, ob, duration, fps, cb) {
   var self = this
   var transformed = false
   var times = Math.floor(duration / fps / 2)
@@ -159,16 +159,18 @@ LightRenderingContext.prototype.breathing = function (pos, or, og, ob, duration,
   var colorB = 0
   var left = fps * 2
   var render = function (r, g, b) {
-    self.clear()
-    self.pixel(pos, r, g, b)
-    self.pixel(pos + 3, r, g, b)
-    self.pixel(pos + 6, r, g, b)
-    self.pixel(pos + 9, r, g, b)
-    self.render()
+    // self.clear()
+    // self.pixel(pos, r, g, b)
+    // self.pixel(pos + 3, r, g, b)
+    // self.pixel(pos + 6, r, g, b)
+    // self.pixel(pos + 9, r, g, b)
+    // self.render()
     left--
     if (left <= 0) {
-      cb && cb()
+      cb && cb(r, g, b, true)
       return
+    } else {
+      cb && cb(r, g, b, false)
     }
     colorR += stepR
     colorG += stepG
@@ -227,16 +229,18 @@ LightRenderingContext.prototype.transition = function (from, to, duration, fps, 
   var colorB = from.b
   var left = fps
   var render = function (r, g, b) {
-    self.clear()
-    for (var i = 0; i < self.ledsConfig.leds; i++) {
-      self.pixel(i, r, g, b)
-    }
+    // self.clear()
+    // for (var i = 0; i < self.ledsConfig.leds; i++) {
+    //   self.pixel(i, r, g, b)
+    // }
 
-    self.render()
+    // self.render()
     left--
     if (left <= 0) {
-      cb && cb()
+      cb && cb(r, g, b, true)
       return
+    } else {
+      cb && cb(r, g, b, false)
     }
     colorR += stepR
     colorG += stepG
