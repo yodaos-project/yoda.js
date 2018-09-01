@@ -453,20 +453,21 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function start (url) {
-        return this._runtime.multimediaMethod('start', [this._appId, url])
+        var self = this
+        return self._runtime.multimediaMethod('start', [self._appId, url])
           .then((result) => {
             logger.log('create media player', result)
             var channel = `callback:multimedia:${result[0]}`
-            this._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
+            self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
               if (event === 'playbackcomplete' || event === 'error') {
-                this._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
-                var idx = this._activityDescriptor._registeredDbusSignals.indexOf(channel)
-                this._activityDescriptor._registeredDbusSignals.splice(idx, 1)
+                self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
+                var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
+                self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
               }
 
-              EventEmitter.property.emit.apply(this, arguments)
+              EventEmitter.prototype.emit.apply(self, arguments)
             })
-            this._activityDescriptor._registeredDbusSignals.push(channel)
+            self._activityDescriptor._registeredDbusSignals.push(channel)
           })
       }
     },
@@ -620,6 +621,20 @@ Object.assign(TtsDescriptor.prototype,
     type: 'namespace'
   },
   {
+    start: {
+      type: 'event'
+    },
+    cancel: {
+      type: 'event'
+    },
+    end: {
+      type: 'event'
+    },
+    error: {
+      type: 'event'
+    }
+  },
+  {
     /**
      * Speak the given text.
      * @memberof yodaRT.activity.Activity.TtsClient
@@ -632,12 +647,24 @@ Object.assign(TtsDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function speak (text) {
-        console.log(this)
-        return this._runtime.ttsMethod('speak', [this._appId, text])
+        var self = this
+        return self._runtime.ttsMethod('speak', [self._appId, text])
           .then((args) => {
             logger.log(`tts register ${args[0]}`)
             return new Promise(resolve => {
-              this._runtime.dbusSignalRegistry.once(`callback:tts:${args[0]}`, resolve)
+              var channel = `callback:tts:${args[0]}`
+              self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
+                if (['cancel', 'end', 'error'].indexOf(event) >= 0) {
+                  self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
+                  var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
+                  self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
+                }
+                logger.info('tts signals', channel, event)
+                EventEmitter.prototype.emit.apply(self, arguments)
+                if (event === 'end') {
+                  resolve()
+                }
+              })
             })
           })
       }

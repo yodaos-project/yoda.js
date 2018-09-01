@@ -161,6 +161,7 @@ EventBus.prototype.invoke = function onInvoke (message) {
       type: 'promise',
       action: 'reject',
       invocationId: invocationId,
-      error: err.message
+      error: err.message,
+      stack: err.stack
     }))
 }
