@@ -61,19 +61,19 @@ Next, we will see how to write the logic:
 
 ```js
 module.exports = function (activity) {
-  activity.on('created', () => {
+  activity.on('create', () => {
     console.log('activity created')
   })
-  activity.on('paused', () => {
+  activity.on('pause', () => {
     console.log('activity paused')
   })
-  activity.on('resumed', () => {
+  activity.on('resume', () => {
     console.log('activity resumed')
   })
   activity.on('request', (nlp, action) => {
     console.log(nlp, action);
   })
-  activity.on('destroyed', () => {
+  activity.on('destroy', () => {
     console.log('activity destroyed');
   })
 }

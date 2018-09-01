@@ -9,7 +9,7 @@ var eventProxy = new EventEmitter()
  * @param {YodaRT.Activity} activity
  */
 module.exports = function (activity) {
-  ;['created', 'paused', 'resumed', 'destroyed', 'onrequest'].forEach(eve => {
+  ;['create', 'pause', 'resume', 'destroy', 'request'].forEach(eve => {
     activity.on(eve, function onEvent () {
       EventEmitter.prototype.emit.apply(
         eventProxy,

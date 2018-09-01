@@ -335,7 +335,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   }
   return this.createOrResumeApp(appId, Object.assign({}, options, { nlpForm: appInfo.form }))
     .then(() => {
-      return this.onLifeCycle(appInfo, 'onrequest', [ nlp, action ])
+      return this.onLifeCycle(appInfo, 'request', [ nlp, action ])
     })
     .catch((error) => {
       logger.error('create app error with appId:' + appId)
@@ -856,7 +856,7 @@ AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
       cloud: nlp.cloud,
       form: action.response.action.form
     }
-    this.onLifeCycle(appInfo, 'onrequest', [ nlp, action ])
+    this.onLifeCycle(appInfo, 'request', [ nlp, action ])
   }
 }
 

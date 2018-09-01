@@ -112,11 +112,11 @@ The `activation` defines 5 stages:
 
 | Lifecycle     | Description      | Active |
 |---------------|------------------|--------|
-| `created()`   | App is created   | Yes    |
-| `resumed()`   | App is resumed   | Yes    |
-| `paused()`    | App is paused    | No     |
-| `destroyed()` | App is destroyed | No     |
-| `onrequest()` | NLP requests     | Yes    |
+| `create`      | App is created   | Yes    |
+| `resume`      | App is resumed   | Yes    |
+| `pause`       | App is paused    | No     |
+| `destroy`     | App is destroyed | No     |
+| `request`     | NLP requests     | Yes    |
 
 Below is the diagram for the **App Lifecycle**, it guides you to learn how an app works in the whole system.
 

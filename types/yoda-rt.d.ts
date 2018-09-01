@@ -25,7 +25,7 @@ declare global {
       on(event: 'pause', listener: () => void): this
       on(event: 'resume', listener: () => void): this
       on(event: 'destroy', listener: () => void): this
-      on(event: 'onrequest', listener: (nlp: NlpObject, action: ActionObject) => void): this
+      on(event: 'request', listener: (req: Request) => void): this
     }
 
     export class LightClient {
@@ -49,19 +49,10 @@ declare global {
       stop(callback: () => void): void
     }
 
-    export interface NlpObject {
+    export interface Request {
       appId: string
-      cloud: boolean
       intent: string
       slots: object[]
-    }
-
-    export interface ActionObject {
-      appId: string
-      startWithActiveWord: boolean
-      response: {
-        action: object
-      }
     }
   }
 }

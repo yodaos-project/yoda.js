@@ -3,7 +3,7 @@
 var wifi = require('@yoda/wifi')
 
 module.exports = function (activity) {
-  activity.on('onrequest', function (nlp, action) {
+  activity.on('request', function (nlp, action) {
     if (nlp.intent === 'disconnect_network') {
       wifi.disableAll()
       activity.exit()

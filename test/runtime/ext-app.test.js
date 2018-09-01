@@ -49,12 +49,12 @@ test('should trigger events and pass arguments', t => {
   var runtime = new EventEmitter()
   extApp('@test', target, runtime)
     .then(descriptor => {
-      descriptor.emit('onrequest', nlp, action)
+      descriptor.emit('request', nlp, action)
       descriptor._childProcess.on('message', message => {
         if (message.type !== 'test') {
           return
         }
-        t.strictEqual(message.event, 'onrequest')
+        t.strictEqual(message.event, 'request')
         t.deepEqual(message.args, [ nlp, action ])
 
         descriptor.destruct()
@@ -76,7 +76,7 @@ test('should invoke methods and callback', t => {
   }
   extApp('@test', target, runtime)
     .then(descriptor => {
-      descriptor.emit('created')
+      descriptor.emit('create')
       descriptor._childProcess.on('message', message => {
         if (message.type !== 'test') {
           return
