@@ -14,7 +14,7 @@ module.exports = function (app) {
   var connecting = false
   var connectTimeout, pooling
 
-  app.on('onrequest', function (nlp, action) {
+  app.on('request', function (nlp, action) {
     console.log(this.appId + ' onrequest')
     if (this.started === true) {
       this.playSound('system://wifi/setup_network.ogg')
@@ -77,7 +77,7 @@ module.exports = function (app) {
     })
   })
 
-  app.on('destroyed', function () {
+  app.on('destroy', function () {
     console.log(this.appId + ' destroyed')
   })
 

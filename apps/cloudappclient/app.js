@@ -163,26 +163,26 @@ module.exports = activity => {
     console.log('app error: ', err)
   })
 
-  activity.on('created', function () {
+  activity.on('create', function () {
     console.log(this.appId + ' created')
   })
 
-  activity.on('paused', function () {
+  activity.on('pause', function () {
     console.log(this.appId + ' paused')
     sos.pause()
   })
 
-  activity.on('resumed', function () {
+  activity.on('resume', function () {
     console.log(this.appId + ' resumed')
     sos.resume()
   })
 
-  activity.on('onrequest', function (nlp, action) {
+  activity.on('request', function (nlp, action) {
     // console.log(this.appId + ' onrequest', nlp, action);
     sos.onrequest(nlp, action)
   })
 
-  activity.on('destroyed', function () {
+  activity.on('destroy', function () {
     console.log(this.appId + ' destroyed')
     sos.destroy()
   })
