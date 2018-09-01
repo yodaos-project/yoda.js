@@ -38,6 +38,13 @@ function entry () {
     logger.log('setPickup ', isPickup)
     speechV.setPickup(isPickup)
   })
+  runtime.on('micMute', function onMicMute (mute) {
+    if (mute) {
+      speechV.pause()
+      return
+    }
+    speechV.resume()
+  })
   speechV.on('voice coming', function onVoiceComing (event) {
     logger.log('voice coming')
     runtime.onEvent('voice coming', {})

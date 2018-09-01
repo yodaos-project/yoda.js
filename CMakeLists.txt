@@ -63,6 +63,9 @@ YodaLocalPackage(yoda-wifi @yoda/wifi)
 YodaLocalPackage(bluetooth)
 YodaLocalPackage(lockfile)
 YodaLocalPackage(logger)
+YodaLocalPackage(lru-cache)
+YodaLocalPackage(pseudomap)
+YodaLocalPackage(yallist)
 YodaLocalPackage(zeromq)
 
 # Tools

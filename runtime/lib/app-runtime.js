@@ -18,7 +18,7 @@ var AppExecutor = require('./app/executor')
 var env = require('./env')()
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
-// var input = require('@yoda/input')()
+var input = require('@yoda/input')()
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -73,6 +73,7 @@ function AppRuntime (paths) {
   // to identify the first start
   this.online = undefined
   this.login = undefined
+  this.micMuted = false
 
   this.forceUpdateAvailable = false
 
@@ -81,7 +82,7 @@ function AppRuntime (paths) {
   // 处理mqtt事件
   this.handleMqttMessage()
   // handle keyboard/button events
-  // this.listenKeyboardEvents()
+  this.listenKeyboardEvents()
 
   this.dbusSignalRegistry = new EventEmitter()
   this.listenDbusSignals()
@@ -1326,60 +1327,88 @@ AppRuntime.prototype.startExtappService = function () {
 
 AppRuntime.prototype.listenKeyboardEvents = listenKeyboardEvents
 function listenKeyboardEvents () {
-  // var currentKeyCode
-  // input.on('keydown', event => {
-  //   currentKeyCode = event.keyCode
-  //   logger.info(`keydown: ${event.keyCode}`)
-  // })
-  // input.on('keyup', event => {
-  //   logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${currentKeyCode}`)
-  //   if (currentKeyCode !== event.keyCode) {
-  //     return
-  //   }
+  var currentKeyCode
+  var firstLongPressTime = null
 
-  //   var map = {
-  //     113: () => {
-  //       /** mute */
-  //       this.startApp('@volume', { intent: 'switchmute' }, {})
-  //     },
-  //     114: () => {
-  //       /** decrease volume */
-  //       this.startApp('@volume', { intent: 'volumedown' }, {})
-  //     },
-  //     115: () => {
-  //       /** increase volume */
-  //       this.startApp('@volume', { intent: 'volumeup' }, {})
-  //     }
-  //   }
+  input.on('keydown', event => {
+    currentKeyCode = event.keyCode
+    logger.info(`keydown: ${event.keyCode}`)
+  })
 
-  //   var handler = map[event.keyCode]
-  //   if (handler) {
-  //     handler()
-  //   }
-  // })
+  input.on('keyup', event => {
+    logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${currentKeyCode}`)
+    if (currentKeyCode !== event.keyCode) {
+      return
+    }
+    if (firstLongPressTime != null) {
+      firstLongPressTime = null
+      return
+    }
 
-  // var firstLongPressTime = null
-  // input.on('longpress', event => {
-  //   if (currentKeyCode !== event.keyCode) {
-  //     firstLongPressTime = null
-  //     return
-  //   }
-  //   if (firstLongPressTime == null) {
-  //     firstLongPressTime = event.keyTime
-  //   }
-  //   var timeDelta = event.keyTime - firstLongPressTime
-  //   logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
-  //   var map = {
-  //     113: () => {
-  //       if (timeDelta > 2000) {
-  //         /** mute */
-  //         this.startApp('@bluetooth', { intent: 'bluetooth_broadcast' }, {})
-  //       }
-  //     }
-  //   }
-  //   var handler = map[event.keyCode]
-  //   if (handler) {
-  //     handler()
-  //   }
-  // })
+    /** Click Events */
+    var map = {
+      113: () => {
+        /** mute */
+        var muted = !this.micMuted
+        this.micMuted = muted
+        this.emit('micMute', muted)
+        if (muted) {
+          this.startApp('@volume', { intent: 'mic_mute', silent: true }, {}, { preemptive: false })
+          return
+        }
+        this.startApp('@volume', { intent: 'mic_unmute', silent: true }, {}, { preemptive: false })
+      },
+      114: () => {
+        /** decrease volume */
+        this.startApp('@volume', { intent: 'volumedown', silent: true }, {}, { preemptive: false })
+      },
+      115: () => {
+        /** increase volume */
+        this.startApp('@volume', { intent: 'volumeup', silent: true }, {}, { preemptive: false })
+      },
+      116: () => {
+        /** exit all app */
+        this.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
+      }
+    }
+
+    var handler = map[event.keyCode]
+    if (handler) {
+      handler()
+    }
+  })
+
+  input.on('longpress', event => {
+    if (currentKeyCode !== event.keyCode) {
+      firstLongPressTime = null
+      return
+    }
+    if (firstLongPressTime == null) {
+      firstLongPressTime = event.keyTime
+    }
+    var timeDelta = event.keyTime - firstLongPressTime
+    logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
+
+    /** Long Press Events */
+    var map = {
+      113: () => {
+        if (timeDelta >= 2000) {
+          /** mute */
+          this.startApp('@bluetooth', { intent: 'bluetooth_broadcast' }, {})
+        }
+      },
+      114: () => {
+        /** decrease volume */
+        this.startApp('@volume', { intent: 'volumedown', silent: true }, {}, { preemptive: false })
+      },
+      115: () => {
+        /** increase volume */
+        this.startApp('@volume', { intent: 'volumeup', silent: true }, {}, { preemptive: false })
+      }
+    }
+    var handler = map[event.keyCode]
+    if (handler) {
+      handler()
+    }
+  })
 }
