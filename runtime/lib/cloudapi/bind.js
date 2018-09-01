@@ -50,10 +50,10 @@ function loginAndBindDevice (onEvent, callback) {
     onEvent('200', '绑定中')
     deviceManager(config, '/v1/device/deviceManager/bindMaster', (err, config) => {
       if (err) {
-        onEvent('-201', '绑定失败')
+        onEvent && onEvent('-201', '绑定失败')
         callback(err)
       } else {
-        onEvent('201', '绑定成功')
+        onEvent && onEvent('201', '绑定成功')
         callback(null, config)
       }
     })

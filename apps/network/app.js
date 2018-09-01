@@ -32,6 +32,11 @@ module.exports = function (app) {
     }
   }
 
+  var CLOUD_STATUS = {
+    '-101': 'system://wifi/login_failed.ogg',
+    '-201': 'system://wifi/bind_master_failed.ogg'
+  }
+
   var bleCtrl = zeromq.socket('pub')
   bleCtrl.bindSync('ipc:///var/run/bluetooth/command')
   setTimeout(() => {
@@ -80,6 +85,11 @@ module.exports = function (app) {
         sCode: action.response.action.code,
         sMsg: action.response.action.msg
       })
+      var cloudStatus = CLOUD_STATUS[action.response.action.code]
+      if (cloudStatus) {
+        app.playSound(cloudStatus)
+      }
+
       return
     }
     if (this.started === true) {
@@ -127,19 +137,6 @@ module.exports = function (app) {
           }
         })
       }
-      // if (message.data) {
-      //   var data = JSON.parse(message.data)
-      //   connectWIFI(data, function (err, connect) {
-      //     if (err || !connect) {
-      //       logger.log('wifi connect failed')
-      //       app.playSound('system://wifi/connect_common_failure.ogg')
-      //       connecting = false
-      //     } else {
-      //       logger.log('connect wifi success')
-      //       wifi.save()
-      //     }
-      //   })
-      // }
     })
   })
 
