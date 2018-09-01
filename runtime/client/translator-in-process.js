@@ -70,6 +70,19 @@ var PropertyDescriptions = {
       )
     })
   },
+  'event-ack': function EventAck (name, descriptor, namespace, nsDescriptor) {
+    if (nsDescriptor[descriptor.trigger]) {
+      throw new Error(`Double subscription on event-ack descriptor '${name}'.`)
+    }
+    nsDescriptor[descriptor.trigger] = function onEventTrigger () {
+      return Promise.resolve().then(() =>
+        EventEmitter.prototype.emit.apply(
+          namespace,
+          [ name ].concat(Array.prototype.slice.call(arguments, 0))
+        )
+      )
+    }
+  },
   value: function Value (name, descriptor, namespace, nsDescriptor) {
     return descriptor.value
   }

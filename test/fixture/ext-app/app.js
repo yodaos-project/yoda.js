@@ -45,4 +45,12 @@ module.exports = function (activity) {
         error: err.message
       }))
   })
+
+  activity.on('test-ack', (arg1, arg2) => {
+    process.send({
+      type: 'test',
+      event: 'test-ack',
+      args: [arg1, arg2]
+    })
+  })
 }

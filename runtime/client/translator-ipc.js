@@ -104,6 +104,33 @@ var PropertyDescriptions = {
       event: name
     })
   },
+  'event-ack': function EventAck (name, descriptor, namespace, nsDescriptor) {
+    eventBus.on(`event-syn:${name}`, function onEvent (eventId, params) {
+      try {
+        EventEmitter.prototype.emit.apply(namespace, [ name ].concat(params))
+      } catch (err) {
+        return process.send({
+          type: 'event-ack',
+          namespace: namespace.name,
+          event: name,
+          eventId: eventId,
+          error: err.message
+        })
+      }
+      process.send({
+        type: 'event-ack',
+        namespace: namespace.name,
+        event: name,
+        eventId: eventId
+      })
+    })
+
+    process.send({
+      type: 'subscribe-ack',
+      namespace: namespace.name,
+      event: name
+    })
+  },
   value: function Value (name, descriptor, namespace, nsDescriptor) {
     return descriptor.value
   }
@@ -122,27 +149,43 @@ function translate (descriptor) {
   return activity
 }
 
+var listenMap = {
+  event: msg => {
+    var channel = `event:${msg.event}`
+    if (!Array.isArray(msg.params)) {
+      logger.error(`Params of event message '${channel}' is not an array.`)
+      return
+    }
+    return eventBus.emit(channel, msg.params)
+  },
+  'event-syn': msg => {
+    var channel = `event-syn:${msg.event}`
+    if (!Array.isArray(msg.params)) {
+      logger.error(`Params of event message '${channel}' is not an array.`)
+      return
+    }
+    return eventBus.emit(channel, msg.eventId, msg.params)
+  },
+  promise: msg => {
+    var channel = `promise:${msg.invocationId}`
+    return eventBus.emit(channel, msg)
+  },
+  'fatal-error': msg => {
+    var err = new Error(msg.message)
+    throw err
+  }
+}
+
 function listenIpc () {
   process.on('message', function onMessage (message) {
     logger.debug('Received VuiDaemon message', message)
-    var channel
-    if (message.type === 'event') {
-      channel = `event:${message.event}`
-      if (!Array.isArray(message.params)) {
-        logger.error(`Params of event message '${channel}' is not an array.`)
-        return
-      }
-      return eventBus.emit(channel, message.params)
-    }
-    if (message.type === 'promise') {
-      channel = `promise:${message.invocationId}`
-      return eventBus.emit(channel, message)
-    }
-    if (message.type === 'fatal-error') {
-      var err = new Error(message.message)
-      throw err
+
+    var handle = listenMap[message.type]
+    if (handle == null) {
+      logger.info(`Unhandled Ipc message type '${message.type}'.`)
+      return
     }
 
-    logger.info(`Unhandled Ipc message type '${message.type}'.`)
+    handle(message)
   })
 }

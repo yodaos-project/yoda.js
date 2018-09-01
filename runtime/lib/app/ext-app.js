@@ -65,10 +65,17 @@ function EventBus (descriptor, socket) {
   EventEmitter.call(this)
   this.descriptor = descriptor
   this.socket = socket
+
+  /**
+   * @type {{ [key: string]: (message) => void }}
+   */
+  this.eventSynTable = {}
+  this.eventSyn = 0
 }
 inherits(EventBus, EventEmitter)
 
-EventBus.prototype.eventTable = [ 'ping', 'status-report', 'subscribe', 'invoke' ]
+EventBus.prototype.eventTable = [ 'ping', 'status-report', 'subscribe', 'invoke',
+  'subscribe-ack', 'event-ack' ]
 
 EventBus.prototype.onMessage = function onMessage (message) {
   logger.debug('Received child message', message)
@@ -164,4 +171,70 @@ EventBus.prototype.invoke = function onInvoke (message) {
       error: err.message,
       stack: err.stack
     }))
+}
+
+EventBus.prototype['subscribe-ack'] = function onSubscribeAck (message) {
+  var self = this
+  var event = message.event
+  var namespace = message.namespace
+
+  var nsObj = this.descriptor
+  if (namespace != null) {
+    nsObj = nsObj[namespace]
+  }
+  var eventDescriptor = nsObj[event]
+  if (eventDescriptor.type !== 'event-ack') {
+    return self.socket.send({
+      type: 'fatal-error',
+      message: `Subscribed non event-ack descriptor '${event}'.`
+    })
+  }
+
+  if (nsObj[eventDescriptor.trigger]) {
+    return self.socket.send({
+      type: 'fatal-error',
+      message: `Double subscription on event-ack descriptor '${event}'.`
+    })
+  }
+  var timeout = eventDescriptor.timeout || 1000
+  nsObj[eventDescriptor.trigger] = function onEventTrigger () {
+    var eventId = self.eventSyn
+    self.eventSyn += 1
+    self.socket.send({
+      type: 'event-syn',
+      event: event,
+      eventId: eventId,
+      params: Array.prototype.slice.call(arguments, 0)
+    })
+    return new Promise((resolve, reject) => {
+      var timer = setTimeout(
+        () => {
+          logger.info('onEventTrigger timedout', eventId)
+          delete self.eventSynTable[eventId]
+          reject(new Error(`EventAck '${event}' timed out for ${timeout}`))
+        },
+        timeout)
+      self.eventSynTable[eventId] = function onAck () {
+        logger.info('onEventTrigger resolved', eventId)
+        clearTimeout(timer)
+        resolve()
+      }
+    })
+  }
+}
+
+EventBus.prototype['event-ack'] = function onEventAck (message) {
+  var namespace = message.namespace
+  var event = message.event
+  var eventId = message.eventId
+
+  var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}.${eventId}`
+
+  var callback = this.eventSynTable[eventId]
+  if (callback == null) {
+    logger.info(`Unregistered or timed out event-ack for event '${eventStr}'`)
+    return
+  }
+  logger.info(`Callback event-ack for event '${eventStr}'`)
+  callback(message)
 }
