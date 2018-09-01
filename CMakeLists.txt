@@ -39,7 +39,6 @@ ExternalProject_Add(${NAME}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 endmacro()
 
-
 # remote packages
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
 YodaGitPackage(tape https://github.com/shadow-node/tape.git master)
