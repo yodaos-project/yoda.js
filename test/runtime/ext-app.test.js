@@ -14,7 +14,7 @@ test('should listen events', t => {
   var target = path.join(__dirname, '..', 'fixture', 'simple-app')
 
   var runtime = new EventEmitter()
-  extApp(target, '@test', runtime)
+  extApp('@test', target, runtime)
     .then(descriptor => {
       var activityEvents = Object.keys(ActivityDescriptor.prototype).filter(key => {
         var desc = ActivityDescriptor.prototype[key]
@@ -47,10 +47,10 @@ test('should trigger events and pass arguments', t => {
   var nlp = { foo: 'bar' }
   var action = { appId: '@test' }
   var runtime = new EventEmitter()
-  extApp(target, '@test', runtime)
+  extApp('@test', target, runtime)
     .then(descriptor => {
       descriptor.emit('onrequest', nlp, action)
-      descriptor.childProcess.on('message', message => {
+      descriptor._childProcess.on('message', message => {
         if (message.type !== 'test') {
           return
         }
@@ -74,10 +74,10 @@ test('should invoke methods and callback', t => {
       return Promise.resolve(expectedData)
     }
   }
-  extApp(target, '@test', runtime)
+  extApp('@test', target, runtime)
     .then(descriptor => {
       descriptor.emit('created')
-      descriptor.childProcess.on('message', message => {
+      descriptor._childProcess.on('message', message => {
         if (message.type !== 'test') {
           return
         }

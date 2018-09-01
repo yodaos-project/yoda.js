@@ -21,8 +21,13 @@ var logger = require('logger')('@ipc')
  *   returns: 'promise'
  * }
  *
- * interface Event {
+ * interface EventDescriptor {
  *   type: 'event'
+ * }
+ *
+ * interface ValueDescriptor {
+ *   type: 'value'
+ *   value: any
  * }
  */
 
@@ -98,6 +103,9 @@ var PropertyDescriptions = {
       namespace: namespace.name,
       event: name
     })
+  },
+  value: function Value (name, descriptor, namespace, nsDescriptor) {
+    return descriptor.value
   }
 }
 var descriptorTypes = Object.keys(PropertyDescriptions)
