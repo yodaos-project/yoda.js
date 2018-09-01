@@ -15,7 +15,7 @@ var MultimediaDescriptor = Descriptors.MultimediaDescriptor
 test('should listen events', t => {
   var runtime = new EventEmitter()
 
-  var descriptor = lightApp(target, '@test', runtime)
+  var descriptor = lightApp('@test', target, runtime)
 
   var activityEvents = Object.keys(ActivityDescriptor.prototype).filter(key => {
     var desc = ActivityDescriptor.prototype[key]
@@ -58,7 +58,7 @@ test('should receive life cycle events', t => {
     t.strictEqual(gotNlp, nlp, 'nlp comparison')
     t.strictEqual(gotAction, action, 'action comparison')
   })
-  var app = lightApp(target, '@test', {})
+  var app = lightApp('@test', target, {})
   app.emit('created')
   app.emit('paused')
   app.emit('resumed')
@@ -70,10 +70,10 @@ test('should receive life cycle events', t => {
 })
 
 test('should populate methods', t => {
-  var app = lightApp(target, '@test', {})
+  var app = lightApp('@test', target, {})
   var activity = app.activity
 
-  var activityMethods = [ 'destroyAll', 'exit', 'get', 'getAppId',
+  var activityMethods = [ 'destroyAll', 'exit', 'get',
     'playSound', 'setBackground', 'setConfirm', 'setForeground', 'setPickup' ]
   activityMethods.forEach(it => {
     t.strictEqual(typeof activity[it], 'function', `activity.${it} has to be a function`)
@@ -93,6 +93,15 @@ test('should populate methods', t => {
     })
   })
 
+  t.end()
+  proxy.removeAllListeners()
+})
+
+test('should populate direct values', t => {
+  var app = lightApp('@test', target, {})
+  var activity = app.activity
+  t.strictEqual(activity.appId, '@test')
+  t.strictEqual(activity.appHome, target)
   t.end()
   proxy.removeAllListeners()
 })

@@ -10,7 +10,7 @@ var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
 var entry = path.join(__dirname, '..', '..', 'client', 'ext-app-entry.js')
 
 module.exports = createExtApp
-function createExtApp (target, appId, runtime) {
+function createExtApp (appId, target, runtime) {
   var descriptor = new ActivityDescriptor(appId, target, runtime)
 
   var cp = childProcess.fork(entry, [ target ], {
@@ -18,7 +18,7 @@ function createExtApp (target, appId, runtime) {
     env: Object.assign({}, process.env),
     stdio: 'inherit'
   })
-  descriptor.childProcess = cp
+  descriptor._childProcess = cp
   logger.info(`Forked child app ${target}.`)
 
   var eventBus = new EventBus(descriptor, cp)

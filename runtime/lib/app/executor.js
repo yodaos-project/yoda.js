@@ -28,7 +28,7 @@ Executor.prototype.create = function (appId, runtime) {
   }
   var app = null
   if (this.type === 'light') {
-    app = lightApp(this.exec, appId, runtime)
+    app = lightApp(appId, this.exec, runtime)
     this.app = app
     return Promise.resolve(app)
   } else if (this.type === 'extapp') {
@@ -36,7 +36,7 @@ Executor.prototype.create = function (appId, runtime) {
       return Promise.resolve(this.app)
     }
 
-    return extApp(this.exec, appId, runtime)
+    return extApp(appId, this.exec, runtime)
       .then(app => {
         logger.info('Ext-app successfully started')
         this.app = app

@@ -6,6 +6,7 @@
 
 var logger = require('logger')('activity')
 var inherits = require('util').inherits
+var _ = require('@yoda/util')._
 var EventEmitter = require('events').EventEmitter
 
 var MEDIA_SOURCE = '/opt/media/'
@@ -38,11 +39,11 @@ module.exports.TtsDescriptor = TtsDescriptor
  */
 function ActivityDescriptor (appId, appHome, runtime) {
   EventEmitter.call(this)
-  this.appId = appId
-  this.appHome = appHome
-  this.runtime = runtime
+  this._appId = appId
+  this._appHome = appHome
+  this._runtime = runtime
 
-  this.registeredDbusSignals = []
+  this._registeredDbusSignals = []
 
   /**
    * The `LightClient` is used to control LED APIs.
@@ -67,21 +68,42 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.TtsClient} tts
    */
   this.tts = new TtsDescriptor(this, appId, runtime)
+
+  /**
+   * Get current `appId`.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {string} appId - appId of current app.
+   */
+  this.appId = {
+    type: 'value',
+    value: this._appId
+  }
+  /**
+   * Get home directory of current app.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {string} appHome - home directory of current app.
+   */
+  this.appHome = {
+    type: 'value',
+    value: this._appHome
+  }
 }
 inherits(ActivityDescriptor, EventEmitter)
 ActivityDescriptor.prototype.toJSON = function toJSON () {
-  return Object.assign({}, ActivityDescriptor.prototype, {
-    light: this.light,
-    media: this.media,
-    tts: this.tts
-  })
+  var publicKeys = Object.keys(this).filter(it => it[0] !== '_')
+  return Object.assign(
+    _.pick.apply(null, [ this ].concat(publicKeys)),
+    ActivityDescriptor.prototype
+  )
 }
 ActivityDescriptor.prototype.toString = function toString () {
-  return `ActivityDescriptor(appId=>${this.appId}, appHome=>${this.appHome})`
+  return `ActivityDescriptor(appId=>${this._appId}, appHome=>${this._appHome})`
 }
 ActivityDescriptor.prototype.destruct = function destruct () {
-  this.registeredDbusSignals.forEach(it => {
-    this.runtime.dbusSignalRegistry.removeAllListeners(it)
+  this._registeredDbusSignals.forEach(it => {
+    this._runtime.dbusSignalRegistry.removeAllListeners(it)
   })
   this.emit('destruct')
 }
@@ -146,7 +168,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function get (key) {
-        return Promise.resolve(this.runtime.onGetPropAll())
+        return Promise.resolve(this._runtime.onGetPropAll())
       }
     },
     /**
@@ -160,7 +182,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function exit () {
-        return this.runtime.exitAppById(this.appId)
+        return this._runtime.exitAppById(this._appId)
       }
     },
     /**
@@ -174,21 +196,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function destroyAll () {
-        return this.runtime.destroyAll()
-      }
-    },
-    /**
-     * Get the current `appId`.
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function getAppId
-     * @returns {Promise<string>} the current `appId`.
-     */
-    getAppId: {
-      type: 'method',
-      returns: 'promise',
-      fn: function getAppId () {
-        return Promise.resolve(this.appId)
+        return this._runtime.destroyAll()
       }
     },
     /**
@@ -204,7 +212,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setPickup (pickup, duration) {
-        return this.runtime.setPickup(pickup, duration)
+        return this._runtime.setPickup(pickup, duration)
       }
     },
     /**
@@ -231,7 +239,7 @@ Object.assign(ActivityDescriptor.prototype,
             reject(new Error('slot required'))
             return
           }
-          this.runtime.setConfirm(this.appId, intent, slot, options || '[]', attrs || '', (error) => {
+          this._runtime.setConfirm(this._appId, intent, slot, options || '[]', attrs || '', (error) => {
             if (error) {
               reject(error)
             } else {
@@ -253,7 +261,7 @@ Object.assign(ActivityDescriptor.prototype,
       returns: 'promise',
       fn: function setBackground () {
         return new Promise((resolve, reject) => {
-          var result = this.runtime.setBackgroundByAppId(this.appId)
+          var result = this._runtime.setBackgroundByAppId(this._appId)
           if (result === true) {
             resolve()
           } else {
@@ -274,7 +282,7 @@ Object.assign(ActivityDescriptor.prototype,
       returns: 'promise',
       fn: function setForeground () {
         return new Promise((resolve, reject) => {
-          var result = this.runtime.setForegroundByAppId(this.appId)
+          var result = this._runtime.setForegroundByAppId(this._appId)
           if (result === true) {
             resolve()
           } else {
@@ -296,7 +304,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function syncCloudAppIdStack (stack) {
-        return this.runtime.syncCloudAppIdStack(stack || [])
+        return this._runtime.syncCloudAppIdStack(stack || [])
       }
     },
     /**
@@ -310,8 +318,8 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function playSound (uri) {
-        var absPath = pathTransform(uri, MEDIA_SOURCE, this.appHome + '/media')
-        return this.runtime.lightMethod('appSound', [this.appId, absPath])
+        var absPath = pathTransform(uri, MEDIA_SOURCE, this._appHome + '/media')
+        return this._runtime.lightMethod('appSound', [this._appId, absPath])
       }
     }
   }
@@ -325,9 +333,9 @@ Object.assign(ActivityDescriptor.prototype,
  */
 function LightDescriptor (activityDescriptor, appId, runtime) {
   EventEmitter.call(this)
-  this.activityDescriptor = activityDescriptor
-  this.appId = appId
-  this.runtime = runtime
+  this._activityDescriptor = activityDescriptor
+  this._appId = appId
+  this._runtime = runtime
 }
 inherits(LightDescriptor, EventEmitter)
 LightDescriptor.prototype.toJSON = function toJSON () {
@@ -353,8 +361,8 @@ Object.assign(LightDescriptor.prototype,
       returns: 'promise',
       fn: function play (uri, args) {
         var argString = JSON.stringify(args || {})
-        var absPath = pathTransform(uri, LIGHT_SOURCE, this.appHome + '/light')
-        return this.runtime.lightMethod('play', [this.appId, absPath, argString])
+        var absPath = pathTransform(uri, LIGHT_SOURCE, this._appHome + '/light')
+        return this._runtime.lightMethod('play', [this._appId, absPath, argString])
           .then((res) => {
             if (res && res[0] === true) {
               return
@@ -373,7 +381,7 @@ Object.assign(LightDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function stop () {
-        return this.runtime.lightMethod('stop', [this.appId])
+        return this._runtime.lightMethod('stop', [this._appId])
       }
     }
   }
@@ -387,9 +395,9 @@ Object.assign(LightDescriptor.prototype,
  */
 function MultimediaDescriptor (activityDescriptor, appId, runtime) {
   EventEmitter.call(this)
-  this.activityDescriptor = activityDescriptor
-  this.appId = appId
-  this.runtime = runtime
+  this._activityDescriptor = activityDescriptor
+  this._appId = appId
+  this._runtime = runtime
 }
 inherits(MultimediaDescriptor, EventEmitter)
 MultimediaDescriptor.prototype.toJSON = function toJSON () {
@@ -445,20 +453,20 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function start (url) {
-        return this.runtime.multimediaMethod('start', [this.appId, url])
+        return this._runtime.multimediaMethod('start', [this._appId, url])
           .then((result) => {
             logger.log('create media player', result)
             var channel = `callback:multimedia:${result[0]}`
-            this.runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
+            this._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
               if (event === 'playbackcomplete' || event === 'error') {
-                this.runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
-                var idx = this.activityDescriptor.registeredDbusSignals.indexOf(channel)
-                this.activityDescriptor.registeredDbusSignals.splice(idx, 1)
+                this._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
+                var idx = this._activityDescriptor._registeredDbusSignals.indexOf(channel)
+                this._activityDescriptor._registeredDbusSignals.splice(idx, 1)
               }
 
               EventEmitter.property.emit.apply(this, arguments)
             })
-            this.activityDescriptor.registeredDbusSignals.push(channel)
+            this._activityDescriptor._registeredDbusSignals.push(channel)
           })
       }
     },
@@ -473,7 +481,7 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function pause () {
-        return this.runtime.multimediaMethod('pause', [this.appId])
+        return this._runtime.multimediaMethod('pause', [this._appId])
       }
     },
     /**
@@ -487,7 +495,7 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function resume () {
-        return this.runtime.multimediaMethod('resume', [this.appId])
+        return this._runtime.multimediaMethod('resume', [this._appId])
       }
     },
     /**
@@ -501,7 +509,7 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function stop () {
-        return this.runtime.multimediaMethod('stop', [this.appId])
+        return this._runtime.multimediaMethod('stop', [this._appId])
       }
     },
     /**
@@ -515,7 +523,7 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function getPosition () {
-        return this.runtime.multimediaMethod('getPosition', [this.appId])
+        return this._runtime.multimediaMethod('getPosition', [this._appId])
           .then((res) => {
             if (res && res[0] >= -1) {
               return res[0]
@@ -535,7 +543,7 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function getLoopMode () {
-        return this.runtime.multimediaMethod('getLoopMode', [this.appId])
+        return this._runtime.multimediaMethod('getLoopMode', [this._appId])
           .then((res) => {
             if (res && res[0] !== undefined) {
               return res[0]
@@ -557,7 +565,7 @@ Object.assign(MultimediaDescriptor.prototype,
       returns: 'promise',
       fn: function setLoopMode (loop) {
         loop = loop === true ? 'true' : 'false'
-        return this.runtime.multimediaMethod('setLoopMode', [this.appId, loop])
+        return this._runtime.multimediaMethod('setLoopMode', [this._appId, loop])
           .then((res) => {
             if (res && res[0] !== undefined) {
               return res[0]
@@ -578,7 +586,7 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function seek (pos) {
-        return this.runtime.multimediaMethod('seek', [this.appId, pos])
+        return this._runtime.multimediaMethod('seek', [this._appId, pos])
           .then((res) => {
             if (res && res[0] === true) {
               return
@@ -598,9 +606,9 @@ Object.assign(MultimediaDescriptor.prototype,
  */
 function TtsDescriptor (activityDescriptor, appId, runtime) {
   EventEmitter.call(this)
-  this.activityDescriptor = activityDescriptor
-  this.appId = appId
-  this.runtime = runtime
+  this._activityDescriptor = activityDescriptor
+  this._appId = appId
+  this._runtime = runtime
 }
 inherits(TtsDescriptor, EventEmitter)
 TtsDescriptor.prototype.toJSON = function toJSON () {
@@ -625,11 +633,11 @@ Object.assign(TtsDescriptor.prototype,
       returns: 'promise',
       fn: function speak (text) {
         console.log(this)
-        return this.runtime.ttsMethod('speak', [this.appId, text])
+        return this._runtime.ttsMethod('speak', [this._appId, text])
           .then((args) => {
             logger.log(`tts register ${args[0]}`)
             return new Promise(resolve => {
-              this.runtime.dbusSignalRegistry.once(`callback:tts:${args[0]}`, resolve)
+              this._runtime.dbusSignalRegistry.once(`callback:tts:${args[0]}`, resolve)
             })
           })
       }
@@ -645,7 +653,7 @@ Object.assign(TtsDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function stop () {
-        return this.runtime.ttsMethod('stop', [this.appId])
+        return this._runtime.ttsMethod('stop', [this._appId])
       }
     }
   }

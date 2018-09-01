@@ -24,7 +24,16 @@ module.exports = function (activity) {
     })
   })
 
-  activity.on('invoke', (method, params) => {
+  activity.on('test-get', (key) => {
+    process.send({
+      type: 'test',
+      event: 'get',
+      result: activity[key],
+      typeof: typeof activity[key]
+    })
+  })
+
+  activity.on('test-invoke', (method, params) => {
     activity[method].apply(activity, params)
       .then(res => process.send({
         type: 'test',
