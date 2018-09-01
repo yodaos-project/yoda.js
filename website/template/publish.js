@@ -701,6 +701,8 @@ exports.publish = function(taffyData, opts, tutorials) {
       return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">Number</a>'
     } else if (longname === 'String') {
       return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">String</a>'
+    } else if (longname === 'Boolean') {
+      return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">Boolean</a>'
     } else if (longname === 'Array') {
       return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>'
     } else if (longname === 'Object') {
