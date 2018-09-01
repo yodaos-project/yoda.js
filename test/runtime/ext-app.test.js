@@ -120,10 +120,10 @@ test('should trigger events and acknowledge it', t => {
         }
         t.strictEqual(message.event, 'test-ack')
         t.deepEqual(message.args, [ nlp, action ])
-        
+
         descriptor.destruct()
       })
-      
+
       t.assert(typeof promise === 'object', 'onTestAck should return a promise')
       t.error(err, 'should not thrown on onTestAck')
     })
