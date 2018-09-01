@@ -9,4 +9,3 @@ test.skip('scan and fetch the available list', function (t) {
   t.assert(Array.isArray(list), true, 'list should be an array')
   t.end()
 })
-

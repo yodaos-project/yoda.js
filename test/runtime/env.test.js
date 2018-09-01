@@ -2,7 +2,6 @@
 
 var test = require('tape')
 var env = require('/usr/lib/yoda/runtime/lib/env')
-var property = require('@yoda/property')
 
 test('should test the default config', t => {
   var env1 = env()
