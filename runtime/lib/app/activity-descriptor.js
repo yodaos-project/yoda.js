@@ -25,10 +25,10 @@ module.exports.TtsDescriptor = TtsDescriptor
  *   activity.on('ready', () => {
  *     console.log('activity is ready')
  *   })
- *   activity.on('created', () => {
+ *   activity.on('create', () => {
  *     console.log('app is created')
  *   })
- *   activity.on('onrequest', (nlp) => {
+ *   activity.on('request', (nlp) => {
  *     // handle nlp
  *   })
  * }
@@ -118,40 +118,40 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'event'
     },
     /**
-     * When the app is create
-     * @event yodaRT.activity.Activity#created
+     * When the app is created
+     * @event yodaRT.activity.Activity#create
      */
-    created: {
+    create: {
       type: 'event'
     },
     /**
-     * When the app is pause
-     * @event yodaRT.activity.Activity#paused
+     * When the app is about been paused
+     * @event yodaRT.activity.Activity#pause
      */
-    paused: {
+    pause: {
       type: 'event'
     },
     /**
-     * When the app is resume
-     * @event yodaRT.activity.Activity#resumed
+     * When the app is resumed
+     * @event yodaRT.activity.Activity#resume
      */
-    resumed: {
+    resume: {
       type: 'event'
     },
     /**
-     * When the app is destroy
-     * @event yodaRT.activity.Activity#destroyed
+     * When the app is about been destroyed
+     * @event yodaRT.activity.Activity#destroy
      */
-    destroyed: {
+    destroy: {
       type: 'event'
     },
     /**
      * When the app is received a command request
-     * @event yodaRT.activity.Activity#onrequest
-     * @param {NLP} nlp
-     * @param {Action} action
+     * @event yodaRT.activity.Activity#request
+     * @param {object} data
+     * @param {string} data.intent
      */
-    onrequest: {
+    request: {
       type: 'event'
     }
   },

@@ -39,31 +39,31 @@ test('should listen events', t => {
 
 test('should receive life cycle events', t => {
   t.plan(6)
-  proxy.on('created', () => {
+  proxy.on('create', () => {
     t.pass('event `created` received')
   })
-  proxy.on('paused', () => {
+  proxy.on('pause', () => {
     t.pass('event `paused` received')
   })
-  proxy.on('resumed', () => {
+  proxy.on('resume', () => {
     t.pass('event `resumed` received')
   })
-  proxy.on('destroyed', () => {
+  proxy.on('destroy', () => {
     t.pass('event `destroyed` received')
   })
 
   var nlp = { intent: { } }
   var action = { appId: '@test' }
-  proxy.on('onrequest', (gotNlp, gotAction) => {
+  proxy.on('request', (gotNlp, gotAction) => {
     t.strictEqual(gotNlp, nlp, 'nlp comparison')
     t.strictEqual(gotAction, action, 'action comparison')
   })
   var app = lightApp('@test', target, {})
-  app.emit('created')
-  app.emit('paused')
-  app.emit('resumed')
-  app.emit('destroyed')
-  app.emit('onrequest', nlp, action)
+  app.emit('create')
+  app.emit('pause')
+  app.emit('resume')
+  app.emit('destroy')
+  app.emit('request', nlp, action)
 
   t.end()
   proxy.removeAllListeners()

@@ -37,7 +37,7 @@ module.exports = function (activity) {
       .then(() => activity.exit())
   }
 
-  activity.on('onrequest', function (nlp, action) {
+  activity.on('request', function (nlp, action) {
     switch (nlp.intent) {
       case 'bluetooth_broadcast':
         broadcast()
