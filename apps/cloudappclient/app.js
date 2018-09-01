@@ -148,7 +148,7 @@ module.exports = activity => {
   })
 
   activity.on('ready', function () {
-    console.log(this.getAppId() + ' app ready')
+    console.log(this.appId + ' app ready')
     activity.get('all')
       .then((result) => {
         console.log('get prop success', result[0])
@@ -164,26 +164,26 @@ module.exports = activity => {
   })
 
   activity.on('created', function () {
-    console.log(this.getAppId() + ' created')
+    console.log(this.appId + ' created')
   })
 
   activity.on('paused', function () {
-    console.log(this.getAppId() + ' paused')
+    console.log(this.appId + ' paused')
     sos.pause()
   })
 
   activity.on('resumed', function () {
-    console.log(this.getAppId() + ' resumed')
+    console.log(this.appId + ' resumed')
     sos.resume()
   })
 
   activity.on('onrequest', function (nlp, action) {
-    // console.log(this.getAppId() + ' onrequest', nlp, action);
+    // console.log(this.appId + ' onrequest', nlp, action);
     sos.onrequest(nlp, action)
   })
 
   activity.on('destroyed', function () {
-    console.log(this.getAppId() + ' destroyed')
+    console.log(this.appId + ' destroyed')
     sos.destroy()
   })
 }

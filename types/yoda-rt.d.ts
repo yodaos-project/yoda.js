@@ -4,9 +4,11 @@ declare global {
   namespace YodaRT {
     export class Activity extends EventEmitter {
       light: LightClient
-      localStorage: LocalStorage
       media: MediaClient
       tts: TtsClient
+
+      appId: string
+      appHome: string
 
       destroyAll(): void
       exit(): void
@@ -17,7 +19,6 @@ declare global {
       setPickup(pickup: boolean, duration?: number): void
       setBackground(): Promise<void>
       setForeground(): Promise<void>
-      syncCloudAppIdStack(stack?: any[]): void
 
       on(event: 'ready', listener: () => void): this
       on(event: 'create', listener: () => void): this
@@ -30,11 +31,6 @@ declare global {
     export class LightClient {
       play(uri: string, args?: object): Promise<void>
       stop(): Promise<void>
-    }
-
-    export class LocalStorage {
-      getItem(key: string): any
-      setItem(key: string, value: any): void
     }
 
     export class MediaClient {
