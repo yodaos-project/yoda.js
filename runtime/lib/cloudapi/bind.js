@@ -1,15 +1,9 @@
 'use strict'
 
-var https = require('https')
-var crypto = require('crypto')
-var logger = console
 var property = require('@yoda/property')
 var Cloudgw = require('@yoda/cloudgw')
+var logger = require('logger')('bind')
 var env = require('../env')()
-
-function md5 (str) {
-  return crypto.createHash('md5').update(str).digest('hex').toUpperCase()
-}
 
 var CONFIG = null
 var login = require('./login')

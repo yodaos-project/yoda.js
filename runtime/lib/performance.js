@@ -1,12 +1,7 @@
 'use strict'
 
 var prop = require('@yoda/property')
-var keys = {
-  'init': 'time.init',
-  'started': 'time.started',
-  'voice coming': 'time.voice.coming',
-  'voice awake': 'time.voice.awake'
-}
+var keys = require('../probe.json')
 
 function stub (name) {
   var key = keys[name]
