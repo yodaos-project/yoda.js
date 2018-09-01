@@ -311,61 +311,109 @@ AppRuntime.prototype.onEvent = function (name, data) {
 
 /**
  * 解析服务端返回的NLP，并执行App生命周期
+ * @private
  * @param {string} asr 语音识别后的文字
  * @param {object} nlp 服务端返回的NLP
  * @param {object} action 服务端返回的action
- * @private
+ * @param {object} [options]
+ * @param {boolean} [options.preemptive]
  */
-AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action) {
-  var data = {}
+AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
+  var appInfo = {}
   var appId
   try {
     // for appDataMap
     appId = nlp.cloud === true ? '@cloud' : nlp.appId
-    data = {
+    appInfo = {
       appId: nlp.appId,
       cloud: nlp.cloud,
-      form: appId === '@cloud' ? 'scene' : action.response.action.form,
-      nlp: nlp,
-      action: action
+      form: appId === '@cloud' ? 'scene' : action.response.action.form
     }
   } catch (error) {
     logger.log('invalid nlp/action, ignore')
     return
   }
-  // push the app in the foreground if the app is running in the backgroud
-  if (this.isBackgroundApp(appId)) {
-    this.setForegroundByAppId(appId)
-    this.lifeCycle('onrequest', data)
-    // 命中的是当前运行的App
-  } else if (appId === this.getCurrentAppId()) {
-    this.lifeCycle('onrequest', data)
-  } else {
-    // 如果当前NLP是scene，则退出所有App
-    if (data.form === 'scene') {
-      logger.log('debug: destroy all app')
-      this.destroyAll()
-    } else {
-      var last = this.getCurrentAppData()
-      if (last) {
-        // 如果正在运行的App不是scene，则停止该App
-        if (last.form !== 'scene') {
-          logger.log('debug: destroy current app')
-          this.lifeCycle('destroy', last)
-          // 否则暂停该App
-        } else {
-          logger.log('debug: pause current app')
-          this.lifeCycle('pause', last)
-        }
-      }
-    }
-    // 启动App
-    this.lifeCycle('create', data).then((app) => {
-      this.lifeCycle('onrequest', data)
-    }).catch((error) => {
+  return this.createOrResumeApp(appId, Object.assign({}, options, { nlpForm: appInfo.form }))
+    .then(() => {
+      return this.onLifeCycle(appInfo, 'onrequest', [ nlp, action ])
+    })
+    .catch((error) => {
       logger.error('create app error with appId:' + appId)
       logger.error(error)
     })
+}
+
+/**
+ *
+ * @private
+ * @param {string} appId
+ * @param {object} [options]
+ * @param {'cut' | 'scene'} [options.nlpForm]
+ * @param {boolean} [options.preemptive]
+ */
+AppRuntime.prototype.createOrResumeApp = function createOrResumeApp (appId, options) {
+  var self = this
+
+  var nlpForm = _.get(options, 'nlpForm', 'cut')
+  var preemptive = _.get(options, 'preemptive', true)
+
+  if (appId === this.getCurrentAppId()) {
+    /**
+     * App is the currently running one
+     */
+    logger.info('app is top of stack, skipping resuming', appId)
+    return Promise.resolve()
+  }
+
+  var appCreated = this.isBackgroundApp(appId)
+  if (preemptive) {
+    preemptTopOfStack(appCreated)
+  }
+  if (appCreated) {
+    /** No need to recreate app */
+    return Promise.resolve()
+  }
+
+  // Launch app
+  logger.info('app is not running, creating', appId)
+  return this.onLifeCycle(appId, 'create')
+
+  function preemptTopOfStack (appCreated) {
+    logger.info('preempting top stack for appId', appId)
+    if (appCreated) {
+      /**
+       * Pull the app to foreground if running in background
+       */
+      logger.info('app is running, resuming', appId)
+      self.setForegroundByAppId(appId)
+      return
+    }
+
+    if (nlpForm === 'scene') {
+      // Exit all app on incoming scene nlp
+      logger.debug('on scene nlp.')
+      return self.destroyAll()
+    }
+    var last = self.getCurrentAppData()
+    if (!last) {
+      /** no currently running app */
+      return
+    }
+
+    if (last.form === 'scene') {
+      /**
+       * currently running app is a scene app, pause it
+       */
+      logger.debug('pausing current app')
+      self.onLifeCycle(last, 'pause')
+      return
+    }
+
+    /**
+     * currently running app is a normal app, destroy it
+     */
+    logger.debug('destroying current app')
+    self.onLifeCycle(last, 'destroy')
   }
 }
 
@@ -402,10 +450,9 @@ AppRuntime.prototype.getCurrentAppId = function () {
  * @private
  */
 AppRuntime.prototype.getCurrentAppData = function () {
-  if (this.appIdStack.length <= 0) {
-    return false
-  }
-  return this.appDataMap[this.getCurrentAppId()]
+  var appId = this.getAppDataById()
+  if (!appId) return false
+  return this.appDataMap[appId]
 }
 
 /**
@@ -424,10 +471,9 @@ AppRuntime.prototype.getAppDataById = function (appId) {
  * @private
  */
 AppRuntime.prototype.getCurrentApp = function () {
-  if (this.appIdStack.length <= 0) {
-    return false
-  }
-  return this.appMap[this.getCurrentAppId()]
+  var appId = this.getAppDataById()
+  if (!appId) return false
+  return this.appMap[appId]
 }
 
 /**
@@ -437,16 +483,19 @@ AppRuntime.prototype.getCurrentApp = function () {
 AppRuntime.prototype.destroyAll = function () {
   // 依次给正在运行的App发送destroy命令
   var i = 0
+  var appId
   // destroy all foreground app
   for (i = 0; i < this.appIdStack.length; i++) {
+    appId = this.appIdStack[i]
     if (this.appMap[this.appIdStack[i]]) {
-      this.appMap[this.appIdStack[i]].emit('destroy')
+      this.onLifeCycle(appId, 'destroy')
     }
   }
   // destroy all background app
   for (i = 0; i < this.bgAppIdStack.length; i++) {
+    appId = this.bgAppIdStack[i]
     if (this.appMap[this.bgAppIdStack[i]]) {
-      this.appMap[this.bgAppIdStack[i]].emit('destroy')
+      this.onLifeCycle(appId, 'destroy')
     }
   }
   // 清空正在运行的所有App
@@ -494,64 +543,76 @@ AppRuntime.prototype.destroyAll = function () {
 }
 
 /**
- * 执行App的生命周期
- * @param {string} name 生命周期名字
- * @param {object} AppData 服务端返回的NLP
- * @returns {promise} Lifecycle events may be asynchronous
+ * Emit life cycle event to app asynchronously
  * @private
+ * @param {object | string} appInfo - app info object or app id
+ * @param {boolean} appInfo.appId
+ * @param {boolean} [appInfo.form]
+ * @param {boolean} [appInfo.cloud]
+ * @param {string} event -
+ * @param {any[]} params -
+ * @returns {Promise<void>} LifeCycle events are asynchronous
  */
-AppRuntime.prototype.lifeCycle = function (name, AppData) {
-  logger.log('lifeCycle: ', name)
-  var appId = AppData.cloud === true ? '@cloud' : AppData.appId
-  var app = null
-  if (name === 'create') {
+AppRuntime.prototype.onLifeCycle = function onLifeCycle (appInfo, event, params) {
+  logger.log(`on life cycle '${event}'`)
+
+  var appId
+  if (typeof appInfo === 'string') {
+    appId = appInfo
+    appInfo = { appId: appId }
+  } else {
+    appId = _.get(appInfo, 'appId')
+  }
+  var cloud = _.get(appInfo, 'cloud', false)
+  if (cloud) {
+    appId = '@cloud'
+  }
+
+  if (event === 'create') {
     // 启动应用
     if (this.apps[appId]) {
       return this.apps[appId].create(appId, this)
         .then((app) => {
           if (app) {
             // 执行create生命周期
-            app.emit('create', AppData.nlp, AppData.action)
+            emit(app)
             // 当前App正在运行
             this.appIdStack.push(appId)
             this.appMap[appId] = app
-            this.appDataMap[appId] = AppData
+            this.appDataMap[appId] = appInfo
           }
         })
     } else {
       // fix: should create miss app here
       logger.log('not find appid: ', appId)
-    }
-  } else {
-    app = this.getCurrentApp()
-    if (app === false) {
-      return Promise.reject(new Error('app instance not found, you should wait for creation of a lifecycle event to complete'))
+      return Promise.resolve()
     }
   }
 
-  if (name === 'onrequest') {
-    app.emit('onrequest', AppData.nlp, AppData.action)
+  var app = this.appMap[appId]
+  if (app == null) {
+    return Promise.reject(new Error('app instance not found, you should wait for creation of a lifecycle event to complete'))
   }
-  if (name === 'pause') {
-    app.emit('pause')
-  }
-  if (name === 'resume') {
-    app.emit('resume')
-  }
-  if (name === 'destroy') {
-    app.emit('destroy')
+
+  emit(app)
+
+  if (event === 'destroy') {
     this.apps[appId].destruct(app, this)
-    this.deleteAppById(AppData.appId)
+    this.deleteAppById(appId)
   }
-  this.updateStack(AppData)
+  this.updateStack()
   return Promise.resolve()
+
+  function emit (target) {
+    EventEmitter.prototype.emit.apply(target, [ event ].concat(params))
+  }
 }
 
 /**
  * 更新App stack
  * @private
  */
-AppRuntime.prototype.updateStack = function (AppData) {
+AppRuntime.prototype.updateStack = function () {
   var scene = ''
   var cut = ''
   // keep these codes for future reference, maybe useful
@@ -648,13 +709,11 @@ AppRuntime.prototype.exitAppById = function (appId) {
     this.deleteBGAppById(appId)
   } else {
     // 调用生命周期结束该应用
-    this.lifeCycle('destroy', {
-      appId: appId
-    })
+    this.onLifeCycle(appId, 'destroy')
     // 如果上一个应用是scene，则需要resume恢复运行
     var last = this.getCurrentAppData()
     if (last) {
-      this.lifeCycle('resume', last)
+      this.onLifeCycle(last, 'resume')
     }
   }
 }
@@ -672,7 +731,7 @@ AppRuntime.prototype.exitAppByIdForce = function (appId) {
   }
   var last = this.getCurrentAppData()
   if (last) {
-    this.lifeCycle('resume', last)
+    this.onLifeCycle(last, 'resume')
   }
 }
 
@@ -758,7 +817,7 @@ AppRuntime.prototype.setBackgroundByAppId = function (appId) {
   // try to resume previou app
   var cur = this.getCurrentAppData()
   if (cur) {
-    this.lifeCycle('resume', cur)
+    this.onLifeCycle(cur, 'resume')
   }
   return true
 }
@@ -778,7 +837,7 @@ AppRuntime.prototype.setForegroundByAppId = function (appId) {
   // try to pause current app
   var cur = this.getCurrentAppData()
   if (cur) {
-    this.lifeCycle('pause', cur)
+    this.onLifeCycle(cur, 'pause')
   }
   this.appIdStack.push(appId)
   return true
@@ -791,16 +850,13 @@ AppRuntime.prototype.setForegroundByAppId = function (appId) {
  * @private
  */
 AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
-  var AppData
   if (nlp.appId === this.getCurrentAppId()) {
-    AppData = {
+    var appInfo = {
       appId: nlp.appId,
       cloud: nlp.cloud,
-      form: action.response.action.form,
-      nlp: nlp,
-      action: action
+      form: action.response.action.form
     }
-    this.lifeCycle('onrequest', AppData)
+    this.onLifeCycle(appInfo, 'onrequest', [ nlp, action ])
   }
 }
 
@@ -818,9 +874,14 @@ AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
 }
 
 /**
- * @private
+ *
+ * @param {string} appId
+ * @param {object} nlp
+ * @param {object} action
+ * @param {object} [options]
+ * @param {boolean} [options.preemptive]
  */
-AppRuntime.prototype.startApp = function (appId, nlp, action) {
+AppRuntime.prototype.startApp = function (appId, nlp, action, options) {
   nlp.cloud = false
   nlp.appId = appId
   action = {
@@ -832,7 +893,7 @@ AppRuntime.prototype.startApp = function (appId, nlp, action) {
   }
   action.response.action.appId = appId
   action.response.action.form = 'cut'
-  this.onVoiceCommand('', nlp, action)
+  this.onVoiceCommand('', nlp, action, options)
 }
 
 /**
