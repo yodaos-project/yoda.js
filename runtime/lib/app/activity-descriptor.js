@@ -410,31 +410,37 @@ Object.assign(MultimediaDescriptor.prototype,
   },
   {
     /**
-     * @event yodaRT.activity.multimedia#prepared
+     * When the media resource is prepared.
+     * @event yodaRT.activity.Activity.MediaClient#prepared
      */
     prepared: {
       type: 'event'
     },
     /**
-     * @event yodaRT.activity.multimedia#playbackcomplete
+     * When the media playback is complete.
+     * @event yodaRT.activity.Activity.MediaClient#playbackcomplete
      */
     playbackcomplete: {
       type: 'event'
     },
     /**
-     * @event yodaRT.activity.multimedia#bufferingupdate
+     * When buffering progress is updates.
+     * @event yodaRT.activity.Activity.MediaClient#bufferingupdate
      */
     bufferingupdate: {
       type: 'event'
     },
     /**
-     * @event yodaRT.activity.multimedia#seekcomplete
+     * When the `seek()` operation is complete.
+     * @event yodaRT.activity.Activity.MediaClient#seekcomplete
      */
     seekcomplete: {
       type: 'event'
     },
     /**
-     * @event yodaRT.activity.multimedia#error
+     * Something went wrong
+     * @event yodaRT.activity.Activity.MediaClient#error
+     * @type {Error}
      */
     error: {
       type: 'event'
@@ -621,15 +627,31 @@ Object.assign(TtsDescriptor.prototype,
     type: 'namespace'
   },
   {
+    /**
+     * The TTS job is started.
+     * @event yodaRT.activity.Activity.TtsClient#start
+     */
     start: {
       type: 'event'
     },
+    /**
+     * The TTS job is cancelled.
+     * @event yodaRT.activity.Activity.TtsClient#cancel
+     */
     cancel: {
       type: 'event'
     },
+    /**
+     * The TTS job is ended.
+     * @event yodaRT.activity.Activity.TtsClient#end
+     */
     end: {
       type: 'event'
     },
+    /**
+     * The TTS job went wrong.
+     * @event yodaRT.activity.Activity.TtsClient#error
+     */
     error: {
       type: 'event'
     }

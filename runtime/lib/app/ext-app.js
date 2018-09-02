@@ -65,10 +65,6 @@ function EventBus (descriptor, socket) {
   EventEmitter.call(this)
   this.descriptor = descriptor
   this.socket = socket
-
-  /**
-   * @type {{ [key: string]: (message) => void }}
-   */
   this.eventSynTable = {}
   this.eventSyn = 0
 }
