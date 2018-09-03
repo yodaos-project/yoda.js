@@ -3,17 +3,13 @@
 var test = require('tape')
 var ttsModule = require('@yoda/tts')
 var logger = require('logger')('tts-test')
+var config = require('../../helper/config')
 
 test.skip('module->tts->createTts method test case: normal options params', t => {
   t.plan(3)
-  var tts = ttsModule.createTts({
-    deviceId: '0602041822000129',
-    deviceTypeId: '060F941561F24278B8ED71733D7B9507',
-    key: 'A5D4350521F84E8C859DD473E043087F',
-    secret: '658D918B788B4416AE27389D1189F5B8'
-  })
-  var request = tts.speak('你好若琪', cb => {
-    logger.info('call back')
+  var tts = ttsModule.createTts(config.cloudgw)
+  var request = tts.speak('你好若琪', () => {
+    logger.info('callback')
     logger.info(request)
     t.equal(request.state, 'end', `tts : id=${id} call back`)
   })

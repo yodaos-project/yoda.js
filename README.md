@@ -32,6 +32,25 @@ $ npm test
 
 Ensure you have a connected YodaOS device via ADB v1.0.39.
 
+**Define your .testrc**
+
+`.testrc` is the configuration in JSON for your testing jobs. An example is here:
+
+```json
+{
+  "cloudgw": {
+    "deviceId": "your device id",
+    "deviceTypeId": "your device type id",
+    "key": "your rokid cloud key",
+    "secret": "your rokid cloud secret"
+  },
+  "wifi": {
+    "ssid": "your ssid of wifi",
+    "psk": "your psk of wifi"
+  }
+}
+```
+
 ## Development
 
 In development, code changes are in a very frequent fashion and it might be hard to maintain

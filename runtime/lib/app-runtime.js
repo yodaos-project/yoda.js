@@ -1340,7 +1340,7 @@ AppRuntime.prototype.startExtappService = function () {
 }
 
 AppRuntime.prototype.destroy = function destroyRuntime () {
-  input.disconnect()
+  this._input.disconnect()
 }
 
 AppRuntime.prototype.listenKeyboardEvents = listenKeyboardEvents
