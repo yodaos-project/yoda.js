@@ -9,13 +9,18 @@ module.exports = function awake (light, data, callback) {
         light.render()
         if (lastFrame) {
           end = true
+          callback && callback()
         }
       })
     }, 6000)
   }
 
-  light.transition({ r: 0, g: 0, b: 0 }, { r: 0, g: 0, b: 150 }, 130, 4, () => {
-    delayAndShutdown()
+  light.transition({ r: 0, g: 0, b: 0 }, { r: 0, g: 0, b: 150 }, 130, 4, (r, g, b, lastFrame) => {
+    light.fill(r, g, b)
+    light.render()
+    if (lastFrame) {
+      delayAndShutdown()
+    }
   })
 
   var player = light.sound('system://wakeup.ogg')
@@ -23,6 +28,8 @@ module.exports = function awake (light, data, callback) {
   return {
     setDegree: function (degree) {
       if (!end) {
+        callback && callback()
+        light.wakeupSound()
         light.stop(true)
         light.fill(0, 0, 150)
         var pos = Math.floor((degree / 360) * light.ledsConfig.leds)

@@ -13,7 +13,7 @@ module.exports = function awake (light, data, callback) {
     }, 45)
   }
   render()
-
+  callback && callback()
   return {
     stop: function (keep) {
       light.stop(keep)
