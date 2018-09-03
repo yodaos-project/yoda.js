@@ -18,3 +18,9 @@ test('set/get tts volume', (t) => {
   t.equal(AudioManager.getVolume(AudioManager.STREAM_TTS), 100)
   t.end()
 })
+
+test('set tts volume with 0', (t) => {
+  AudioManager.setVolume(AudioManager.STREAM_TTS, 0)
+  t.pass()
+  t.end()
+})
