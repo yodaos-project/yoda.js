@@ -83,8 +83,8 @@ AudioManager.setVolume = function (stream, vol) {
     vol = stream
     stream = null
   }
-  if (!vol) {
-    throw new TypeError('vol is required')
+  if (typeof vol !== 'number') {
+    throw new TypeError('vol must be a number')
   }
 
   if (stream !== null) {
