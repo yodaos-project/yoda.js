@@ -80,18 +80,21 @@ inherits(BluetoothMessageStream, EventEmitter)
 /**
  * @private
  */
-BluetoothMessageStream.prototype._send = function (cmdstr) {
+BluetoothMessageStream.prototype._send = function (cmdstr, name) {
   return this._cmdSocket.send(JSON.stringify({
     proto: 'ROKID_BLE',
-    command: cmdstr
+    command: cmdstr,
+    name: name
   }))
 }
 
 /**
  * start the message stream.
+ * @param {String} name - the bluetooth name.
+ * @returns {Null}
  */
-BluetoothMessageStream.prototype.start = function start () {
-  return this._send('ON')
+BluetoothMessageStream.prototype.start = function start (name) {
+  return this._send('ON', name)
 }
 
 /**
