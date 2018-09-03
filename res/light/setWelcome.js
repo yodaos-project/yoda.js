@@ -13,7 +13,7 @@ module.exports = function (light, data, callback) {
             light.fill(r, g, b)
             light.render()
             if (lastFrame) {
-              callback && callback()
+              callback()
             }
           })
         }, 1000)
@@ -23,6 +23,7 @@ module.exports = function (light, data, callback) {
 
   return {
     stop: function () {
+      callback()
       player.stop()
       light.stop()
     }
