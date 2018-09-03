@@ -22,7 +22,7 @@ module.exports = function (activity) {
 
   function format (slots) {
     try {
-      return _.get(JSON.parse(slots.num1.value), 'number', 0)
+      return parseInt(_.get(JSON.parse(slots.num1.value), 'number', 0))
     } catch (err) {
       return speakAndExit(STRING_COMMON_ERROR)
     }
@@ -104,7 +104,7 @@ module.exports = function (activity) {
         speakAndExit(STRING_RANGE_ERROR)
         break
       case 'set_volume':
-        setVolume(format(nlp.slots))
+        setVolume(format(nlp.slots) * partition)
         break
       case 'add_volume_num':
         incVolume(format(nlp.slots))
