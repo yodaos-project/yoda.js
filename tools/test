@@ -9,7 +9,7 @@ Usage:
   --reporter <name>   test result reporter, no reporter by default
 
 Example:
-  $ ./tools/test --reporter tap-nyan --pattern '/data/workspace/test/**/*.test.js'
+  $ ./tools/test --reporter tap-nyan --pattern '**/*.test.js'
 "
 
 while [ $# -gt 0 ]; do
