@@ -17,6 +17,7 @@ function getCmdSocket () {
   } else {
     cmdSocket = zeromq.socket('pub')
     cmdSocket.bindSync(cmdPath)
+    return cmdSocket
   }
 }
 

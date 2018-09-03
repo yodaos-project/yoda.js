@@ -43,19 +43,21 @@ inherits(BluetoothPlayer, EventEmitter)
 /**
  * @private
  */
-BluetoothPlayer.prototype._send = function (cmdstr) {
+BluetoothPlayer.prototype._send = function (cmdstr, name) {
   return this._cmdSocket.send(JSON.stringify({
     proto: 'A2DPSINK',
-    command: cmdstr
+    command: cmdstr,
+    name: name
   }))
 }
 
 /**
  * Start the bluetooth player.
+ * @param {String} name - the bluetooth name.
  * @returns {Null}
  */
-BluetoothPlayer.prototype.start = function start () {
-  return this._send('ON')
+BluetoothPlayer.prototype.start = function start (name) {
+  return this._send('ON', name)
 }
 
 /**
