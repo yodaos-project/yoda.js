@@ -3,6 +3,13 @@
 var test = require('tape')
 var AudioManager = require('@yoda/audio').AudioManager
 
+function setAndGetVolum(t,input,output){
+  t.plan(1)
+  AudioManager.setVolume(AudioManager.STREAM_TTS, input)
+  t.equal(AudioManager.getVolume(AudioManager.STREAM_TTS), output)
+  t.end()
+}
+
 test('tts stream types', (t) => {
   t.equal(typeof AudioManager.STREAM_AUDIO, 'number')
   t.equal(typeof AudioManager.STREAM_TTS, 'number')
@@ -12,15 +19,27 @@ test('tts stream types', (t) => {
   t.end()
 })
 
-test('set/get tts volume', (t) => {
-  t.plan(1)
-  AudioManager.setVolume(AudioManager.STREAM_TTS, 100)
-  t.equal(AudioManager.getVolume(AudioManager.STREAM_TTS), 100)
-  t.end()
+test('set/get tts volume 100', (t) => {
+  setAndGetVolum(t,100,100)
 })
 
-test('set tts volume with 0', (t) => {
-  AudioManager.setVolume(AudioManager.STREAM_TTS, 0)
-  t.pass()
-  t.end()
+test('set/get tts volume 101', (t) => {
+  setAndGetVolum(t,101,101)
 })
+
+test('set/get tts volume 1', (t) => {
+  setAndGetVolum(t,1,1)
+})
+
+test('set/get tts volume -1', (t) => {
+  setAndGetVolum(t,-1,-1)
+})
+
+test('set/get tts volume 1.6', (t) => {
+  setAndGetVolum(t,1.6,1.6)
+})
+
+test('set/get tts volume 0', (t) => {
+  setAndGetVolum(t,0,0)
+})
+
