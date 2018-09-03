@@ -412,6 +412,7 @@ Object.assign(MultimediaDescriptor.prototype,
     /**
      * When the media resource is prepared.
      * @event yodaRT.activity.Activity.MediaClient#prepared
+     * @param {string} id - multimedia player id
      */
     prepared: {
       type: 'event'
@@ -419,6 +420,7 @@ Object.assign(MultimediaDescriptor.prototype,
     /**
      * When the media playback is complete.
      * @event yodaRT.activity.Activity.MediaClient#playbackcomplete
+     * @param {string} id - multimedia player id
      */
     playbackcomplete: {
       type: 'event'
@@ -426,6 +428,7 @@ Object.assign(MultimediaDescriptor.prototype,
     /**
      * When buffering progress is updates.
      * @event yodaRT.activity.Activity.MediaClient#bufferingupdate
+     * @param {string} id - multimedia player id
      */
     bufferingupdate: {
       type: 'event'
@@ -433,6 +436,7 @@ Object.assign(MultimediaDescriptor.prototype,
     /**
      * When the `seek()` operation is complete.
      * @event yodaRT.activity.Activity.MediaClient#seekcomplete
+     * @param {string} id - multimedia player id
      */
     seekcomplete: {
       type: 'event'
@@ -440,6 +444,7 @@ Object.assign(MultimediaDescriptor.prototype,
     /**
      * Something went wrong
      * @event yodaRT.activity.Activity.MediaClient#error
+     * @param {string} id - multimedia player id
      * @type {Error}
      */
     error: {
@@ -453,7 +458,7 @@ Object.assign(MultimediaDescriptor.prototype,
      * @instance
      * @function start
      * @param {string} uri
-     * @returns {Promise<void>}
+     * @returns {Promise<string>} multimedia player id
      */
     start: {
       type: 'method',
@@ -462,18 +467,27 @@ Object.assign(MultimediaDescriptor.prototype,
         var self = this
         return self._runtime.multimediaMethod('start', [self._appId, url])
           .then((result) => {
+            var multimediaId = result[0]
             logger.log('create media player', result)
-            var channel = `callback:multimedia:${result[0]}`
+
+            if (multimediaId === '-1') {
+              throw new Error('Unexpected multimediad error.')
+            }
+
+            var channel = `callback:multimedia:${multimediaId}`
+            self._activityDescriptor._registeredDbusSignals.push(channel)
             self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
-              if (event === 'playbackcomplete' || event === 'error') {
+              if (['playbackcomplete', 'error'].indexOf(event) >= 0) {
+                /** stop listening upcoming events for channel */
                 self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
                 var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                 self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
               }
 
-              EventEmitter.prototype.emit.apply(self, arguments)
+              EventEmitter.prototype.emit.call(self, event, multimediaId)
             })
-            self._activityDescriptor._registeredDbusSignals.push(channel)
+
+            return multimediaId
           })
       }
     },
@@ -630,6 +644,7 @@ Object.assign(TtsDescriptor.prototype,
     /**
      * The TTS job is started.
      * @event yodaRT.activity.Activity.TtsClient#start
+     * @param {string} id - tts player id
      */
     start: {
       type: 'event'
@@ -637,6 +652,7 @@ Object.assign(TtsDescriptor.prototype,
     /**
      * The TTS job is cancelled.
      * @event yodaRT.activity.Activity.TtsClient#cancel
+     * @param {string} id - tts player id
      */
     cancel: {
       type: 'event'
@@ -644,6 +660,7 @@ Object.assign(TtsDescriptor.prototype,
     /**
      * The TTS job is ended.
      * @event yodaRT.activity.Activity.TtsClient#end
+     * @param {string} id - tts player id
      */
     end: {
       type: 'event'
@@ -651,6 +668,7 @@ Object.assign(TtsDescriptor.prototype,
     /**
      * The TTS job went wrong.
      * @event yodaRT.activity.Activity.TtsClient#error
+     * @param {string} id - tts player id
      */
     error: {
       type: 'event'
@@ -663,30 +681,57 @@ Object.assign(TtsDescriptor.prototype,
      * @instance
      * @function speak
      * @param {string} text
+     * @param {object} [options]
+     * @param {boolean} [options.impatient=false] wait for end of tts speech, set false to resolve once tts are scheduled
      * @returns {Promise<void>} Resolved on end of speech
      */
     speak: {
       type: 'method',
       returns: 'promise',
-      fn: function speak (text) {
+      fn: function speak (text, options) {
         var self = this
+        var impatient = _.get(options, 'impatient', false)
         return self._runtime.ttsMethod('speak', [self._appId, text])
           .then((args) => {
-            logger.log(`tts register ${args[0]}`)
-            return new Promise(resolve => {
-              var channel = `callback:tts:${args[0]}`
+            var ttsId = args[0]
+            logger.log(`tts register ${ttsId}`)
+
+            if (ttsId === '-1') {
+              return Promise.reject(new Error('Unexpected ttsd error.'))
+            }
+            return new Promise((resolve, reject) => {
+              var channel = `callback:tts:${ttsId}`
+              self._activityDescriptor._registeredDbusSignals(channel)
               self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
+                logger.info('tts signals', channel, event)
+
                 if (['cancel', 'end', 'error'].indexOf(event) >= 0) {
+                  /** stop listening upcoming events for channel */
                   self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                   self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
                 }
-                logger.info('tts signals', channel, event)
-                EventEmitter.prototype.emit.apply(self, arguments)
+                EventEmitter.prototype.emit.call(self, event, ttsId)
+
+                if (impatient) {
+                  /** promise has been resolved early, shall not be resolve/reject again */
+                  return
+                }
+
                 if (event === 'end') {
-                  resolve()
+                  return resolve()
+                }
+                if (event === 'cancel') {
+                  return reject(new Error('Tts canceled'))
+                }
+                if (event === 'error') {
+                  return reject(new Error('Unexpected ttsd error'))
                 }
               })
+
+              if (impatient) {
+                resolve(ttsId)
+              }
             })
           })
       }
