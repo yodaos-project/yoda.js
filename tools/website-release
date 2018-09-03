@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -e
+
+help="
+Usage:
+  -a Server address.
+  -v API level.
+
+Publish website release online.
+
+Example:
+  $ ./tools/website-release -a xx.xx.xx.xx -v 0.3
+"
+
+address=""
+apilevel=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -a)
+      address="$2"
+      shift
+      ;;
+    -v)
+      apilevel="$2"
+      shift
+      ;;
+    --help|-h)
+      printf "$help"
+      exit
+      ;;
+    --*)
+      echo "Illegal option $1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+if test "$address" = ""; then
+  printf "You must specify server address to publish\n"
+  exit
+fi
+
+if test "$apilevel" = ""; then
+  printf "You must specify API level to publish\n"
+  exit
+fi
+
+npm run website
+scp -r ./website/index.html root@${address}:/var/www/yodaos/index.html
+
+export docs_pathname=/var/www/yodaos/docs/${apilevel}
+ssh root@${address} 'rm -rf ${docs_pathname} && mkdir -p ${docs_pathname}'
+scp -r ./website/docs/* root@${address}:${docs_pathname}/
