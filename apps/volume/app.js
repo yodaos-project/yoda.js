@@ -22,43 +22,56 @@ module.exports = function (activity) {
 
   function format (slots) {
     try {
-      return JSON.parse(slots.num1.value)
+      return _.get(JSON.parse(slots.num1.value), 'number', 0)
     } catch (err) {
       return speakAndExit(STRING_COMMON_ERROR)
     }
   }
 
   function getVolume () {
-    return parseInt(AudioManager.getVolume() / 10)
+    /** FIXME: only volume on channel STREAM_TTS could be fetched right now */
+    return AudioManager.getVolume(AudioManager.STREAM_TTS)
   }
 
-  function setVolume (value, options) {
+  /**
+   *
+   * @param {number} vol
+   * @param {object} [options]
+   * @param {boolean} [options.silent]
+   */
+  function setVolume (vol, options) {
     var silent = _.get(options, 'silent', false)
 
-    var vol = parseInt(value.number)
     logger.info(`trying to set volume to ${vol}`)
-    if (vol < 0 || vol > 10) {
+    if (vol < 0 || vol > 100) {
       if (silent) {
-        return activity.exit()
+        return activity.light.play('system://setVolume', {
+          volume: vol
+        })
       }
       return speakAndExit(STRING_RANGE_ERROR)
     } else {
-      var target = vol * 10
-      AudioManager.setVolume(target)
+      AudioManager.setVolume(vol)
       return activity.light.play('system://setVolume', {
-        volume: target
+        volume: vol
       })
     }
   }
 
+  /**
+   *
+   * @param {number} value
+   * @param {object} [options]
+   * @param {boolean} [options.silent]
+   */
   function incVolume (value, options) {
-    var vol = getVolume() + parseInt(value.number)
-    return setVolume({ number: vol }, options)
+    var vol = getVolume() + value
+    return setVolume(vol, options)
   }
 
   function decVolume (value, options) {
-    var vol = getVolume() - parseInt(value.number)
-    return setVolume({ number: vol }, options)
+    var vol = getVolume() - value
+    return setVolume(vol, options)
   }
 
   function setMute () {
@@ -78,12 +91,13 @@ module.exports = function (activity) {
 
   activity.on('request', function (nlp, action) {
     var silent = _.get(nlp, 'silent')
+    var partition = _.get(nlp, 'partition', 10)
     switch (nlp.intent) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
           speakAndExit(STRING_SHOW_MUTED)
         } else {
-          speakAndExit(STRING_SHOW_VOLUME + getVolume())
+          speakAndExit(STRING_SHOW_VOLUME + getVolume() / partition)
         }
         break
       case 'set_volume_percent':
@@ -100,17 +114,17 @@ module.exports = function (activity) {
         break
       case 'volumeup':
       case 'volume_too_low':
-        incVolume({ number: 1 }, { silent: silent })
+        incVolume(100 / partition, { silent: silent })
         break
       case 'volumedown':
       case 'volume_too_high':
-        decVolume({ number: 1 }, { silent: silent })
+        decVolume(100 / partition, { silent: silent })
         break
       case 'volumemin':
-        setVolume({ number: 1 })
+        setVolume(10)
         break
       case 'volumemax':
-        setVolume({ number: 10 })
+        setVolume(100)
         break
       case 'volumemute':
         setMute()
