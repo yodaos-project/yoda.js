@@ -96,6 +96,7 @@ InputEventHandler::InputEventHandler(iotjs_input_t* inputwrap_) {
   inputwrap = inputwrap_;
   keyevent_ = { 0 };
   gesture_ = { 0 };
+  need_destroy_ = false;
   req.data = this;
 }
 
@@ -109,12 +110,17 @@ int InputEventHandler::start() {
 }
 
 int InputEventHandler::stop() {
-  return uv_cancel((uv_req_t*)&req);
+  int r = uv_cancel((uv_req_t*)&req);
+  this->need_destroy_ = true;
+  return r;
 }
 
 void InputEventHandler::DoStart(uv_work_t* req) {
   InputEventHandler* handler = (InputEventHandler*)req->data;
   while (true) {
+    if (handler->need_destroy_ == true) {
+      break;
+    }
     daemon_start_listener(&handler->keyevent_, &handler->gesture_);
     // Send InputKeyEvent
     if (handler->keyevent_.new_action) {
