@@ -1339,6 +1339,10 @@ AppRuntime.prototype.startExtappService = function () {
   })
 }
 
+AppRuntime.prototype.destroy = function destroyRuntime () {
+  input.disconnect()
+}
+
 AppRuntime.prototype.listenKeyboardEvents = listenKeyboardEvents
 function listenKeyboardEvents () {
   var currentKeyCode
