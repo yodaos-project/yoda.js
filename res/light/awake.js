@@ -23,13 +23,13 @@ module.exports = function awake (light, data, callback) {
     }
   })
 
-  var player = light.sound('system://wakeup.ogg')
+  var player
 
   return {
     setDegree: function (degree) {
       if (!end) {
         callback()
-        light.wakeupSound()
+        player = light.sound('system://wakeup.ogg')
         light.stop(true)
         light.fill(0, 0, 150)
         var pos = Math.floor((degree / 360) * light.ledsConfig.leds)
@@ -39,7 +39,7 @@ module.exports = function awake (light, data, callback) {
       }
     },
     stop: function (keep) {
-      player.pause()
+      player && player.pause()
       light.stop(keep)
     }
   }
