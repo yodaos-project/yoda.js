@@ -144,7 +144,7 @@ JS_FUNCTION(Speak) {
 
   char* text = NULL;
   jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
-  jerry_char_t text_buf[size];
+  jerry_char_t text_buf[size + 1];
   jerry_string_to_utf8_char_buffer(jargv[0], text_buf, size);
   text_buf[size] = '\0';
   text = (char*)&text_buf;
