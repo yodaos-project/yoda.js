@@ -88,6 +88,7 @@ test('test onVoiceCommand', (t) => {
   })
   testSceneDestroy.on('resume', () => {
     t.pass('@testSceneDestroy should be resume')
+    runtime.destroy()
     t.end()
   })
 
