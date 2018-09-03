@@ -18,7 +18,7 @@ var AppExecutor = require('./app/executor')
 var env = require('./env')()
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
-var input = require('@yoda/input')()
+var Input = require('@yoda/input')
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -82,6 +82,7 @@ function AppRuntime (paths) {
   // 处理mqtt事件
   this.handleMqttMessage()
   // handle keyboard/button events
+  this._input = Input()
   this.listenKeyboardEvents()
 
   this.dbusSignalRegistry = new EventEmitter()
@@ -1343,12 +1344,12 @@ function listenKeyboardEvents () {
   var currentKeyCode
   var firstLongPressTime = null
 
-  input.on('keydown', event => {
+  this._input.on('keydown', event => {
     currentKeyCode = event.keyCode
     logger.info(`keydown: ${event.keyCode}`)
   })
 
-  input.on('keyup', event => {
+  this._input.on('keyup', event => {
     logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${currentKeyCode}`)
     if (currentKeyCode !== event.keyCode) {
       return
@@ -1391,7 +1392,7 @@ function listenKeyboardEvents () {
     }
   })
 
-  input.on('longpress', event => {
+  this._input.on('longpress', event => {
     if (currentKeyCode !== event.keyCode) {
       firstLongPressTime = null
       return
