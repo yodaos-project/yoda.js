@@ -70,7 +70,7 @@ function EventBus (descriptor, socket) {
 }
 inherits(EventBus, EventEmitter)
 
-EventBus.prototype.eventTable = [ 'ping', 'status-report', 'subscribe', 'invoke',
+EventBus.prototype.eventTable = [ 'test', 'ping', 'status-report', 'subscribe', 'invoke',
   'subscribe-ack', 'event-ack' ]
 
 EventBus.prototype.onMessage = function onMessage (message) {
@@ -83,6 +83,7 @@ EventBus.prototype.onMessage = function onMessage (message) {
   this[type](message)
 }
 
+EventBus.prototype.test = function onTest () { /** nothing to do with test */ }
 EventBus.prototype.ping = function onPing () { /** nothing to do with ping */ }
 
 EventBus.prototype['status-report'] = function onStatusReport (message) {
