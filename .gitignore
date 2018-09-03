@@ -2,6 +2,9 @@
 **/yarn.lock
 *.DS_Store
 
+.idea
+.vscode
+
 sftp-config.json
 node_modules/
 website/docs/
