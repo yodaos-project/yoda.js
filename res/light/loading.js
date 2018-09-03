@@ -17,13 +17,13 @@ module.exports = function loading (light, data, callback) {
   }
   render()
   light.requestAnimationFrame(() => {
-    callback && callback()
+    callback()
     light.stop()
   }, 6000)
 
   return {
     stop: function () {
-      callback && callback()
+      callback()
       light.stop()
     }
   }

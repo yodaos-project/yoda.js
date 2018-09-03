@@ -9,7 +9,7 @@ module.exports = function awake (light, data, callback) {
         light.render()
         if (lastFrame) {
           end = true
-          callback && callback()
+          callback()
         }
       })
     }, 6000)
@@ -28,7 +28,7 @@ module.exports = function awake (light, data, callback) {
   return {
     setDegree: function (degree) {
       if (!end) {
-        callback && callback()
+        callback()
         light.wakeupSound()
         light.stop(true)
         light.fill(0, 0, 150)

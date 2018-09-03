@@ -45,7 +45,7 @@ Light.prototype.loadfile = function (uri, data, callback) {
 
 Light.prototype.setAwake = function () {
   this.stopPrev()
-  this.prev = setAwake(this.options.effect)
+  this.prev = setAwake(this.options.effect, {}, function noop () {})
   this.prev.name = 'setAwake'
 }
 
@@ -74,13 +74,13 @@ Light.prototype.setLoading = function () {
   var hook = require(`${LIGHT_SOURCE}loading.js`)
   this.prev = hook(this.options.effect, {
     degree: this.degree || 0
-  })
+  }, function noop () {})
 }
 
 Light.prototype.setStandby = function () {
   this.stopPrev()
   var hook = require(`${LIGHT_SOURCE}setStandby.js`)
-  this.prev = hook(this.options.effect)
+  this.prev = hook(this.options.effect, {}, function noop () {})
 }
 
 Light.prototype.setVolume = function (volume) {
@@ -94,7 +94,7 @@ Light.prototype.setVolume = function (volume) {
   var hook = require(`${LIGHT_SOURCE}setVolume.js`)
   this.prev = hook(this.options.effect, {
     volume: +volume
-  })
+  }, function noop () {})
   this.prev.name = 'setVolume'
 }
 
@@ -108,7 +108,7 @@ Light.prototype.setConfigFree = function () {
 Light.prototype.setWelcome = function () {
   this.stopPrev()
   var hook = require(`${LIGHT_SOURCE}setWelcome.js`)
-  this.prev = hook(this.options.effect)
+  this.prev = hook(this.options.effect, {}, function noop () {})
 }
 
 Light.prototype.appSound = function (appId, name) {
@@ -149,7 +149,7 @@ Light.prototype.setPickup = function (duration, callback) {
 
 Light.prototype.setSpeaking = function () {
   this.stopPrev(true)
-  this.prev = setSpeaking(this.options.effect)
+  this.prev = setSpeaking(this.options.effect, {}, function noop () {})
 }
 
 module.exports = Light

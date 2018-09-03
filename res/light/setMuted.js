@@ -11,6 +11,7 @@ module.exports = function (light, data, callback) {
     light.render()
     return {
       stop: () => {
+        callback()
         player.stop()
         light.stop()
       }
@@ -20,9 +21,10 @@ module.exports = function (light, data, callback) {
   player = light.sound('system://mic_close_tts.ogg')
   light.pixel(leds - 1, 255, 0, 0)
   light.render()
-
+  callback()
   return {
     stop: () => {
+      callback()
       player.stop()
       light.stop(true)
     }
