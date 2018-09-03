@@ -175,12 +175,6 @@ LightRenderingContext.prototype.breathing = function (or, og, ob, duration, fps,
   var colorB = 0
   var left = fps * 2
   var render = function (r, g, b) {
-    // self.clear()
-    // self.pixel(pos, r, g, b)
-    // self.pixel(pos + 3, r, g, b)
-    // self.pixel(pos + 6, r, g, b)
-    // self.pixel(pos + 9, r, g, b)
-    // self.render()
     left--
     if (left <= 0) {
       cb && cb(r, g, b, true)
@@ -245,12 +239,6 @@ LightRenderingContext.prototype.transition = function (from, to, duration, fps, 
   var colorB = from.b
   var left = fps
   var render = function (r, g, b) {
-    // self.clear()
-    // for (var i = 0; i < self.ledsConfig.leds; i++) {
-    //   self.pixel(i, r, g, b)
-    // }
-
-    // self.render()
     left--
     if (left <= 0) {
       cb && cb(r, g, b, true)

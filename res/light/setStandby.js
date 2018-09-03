@@ -17,10 +17,10 @@ module.exports = function setStandby (light, data, callback) {
         console.log('NOTICE: LED number is less then 4, what you see may not be the effect you want')
         light.fill(r, g, b)
       } else {
-        light.pixel(index * 4 + 0, r, g, b)
-        light.pixel(index * 4 + 1, r, g, b)
-        light.pixel(index * 4 + 2, r, g, b)
-        light.pixel(index * 4 + 3, r, g, b)
+        light.pixel(index + repeat * 0, r, g, b)
+        light.pixel(index + repeat * 1, r, g, b)
+        light.pixel(index + repeat * 2, r, g, b)
+        light.pixel(index + repeat * 3, r, g, b)
       }
       light.render()
       if (lastFrame) {
