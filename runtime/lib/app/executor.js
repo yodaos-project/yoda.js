@@ -11,9 +11,9 @@ function Executor (profile, prefix) {
   this.valid = true
   this.profile = profile
 
+  this.daemon = _.get(profile, 'metadata.daemon', false)
   if (profile.metadata.extapp === true) {
     this.type = 'extapp'
-    this.daemon = _.get(profile, 'metadata.daemon', false)
     this.exec = prefix
   } else {
     this.type = 'light'
@@ -26,16 +26,16 @@ Executor.prototype.create = function (appId, runtime) {
     logger.log(`app ${appId} invalid`)
     return false
   }
+  if (this.daemon && this.app != null) {
+    return Promise.resolve(this.app)
+  }
+
   var app = null
   if (this.type === 'light') {
     app = lightApp(appId, this.exec, runtime)
     this.app = app
     return Promise.resolve(app)
   } else if (this.type === 'extapp') {
-    if (this.daemon && this.app != null) {
-      return Promise.resolve(this.app)
-    }
-
     return extApp(appId, this.exec, runtime)
       .then(app => {
         logger.info('Ext-app successfully started')

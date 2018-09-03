@@ -1374,11 +1374,17 @@ function listenKeyboardEvents () {
       },
       114: () => {
         /** decrease volume */
-        this.startApp('@volume', { intent: 'volumedown', silent: true }, {}, { preemptive: false })
+        this.startApp('@volume',
+          { intent: 'volumedown', partition: 16, silent: true },
+          {},
+          { preemptive: false })
       },
       115: () => {
         /** increase volume */
-        this.startApp('@volume', { intent: 'volumeup', silent: true }, {}, { preemptive: false })
+        this.startApp('@volume',
+          { intent: 'volumeup', partition: 16, silent: true },
+          {},
+          { preemptive: false })
       },
       116: () => {
         /** exit all app */
@@ -1413,11 +1419,17 @@ function listenKeyboardEvents () {
       },
       114: () => {
         /** decrease volume */
-        this.startApp('@volume', { intent: 'volumedown', silent: true }, {}, { preemptive: false })
+        this.startApp('@volume',
+          { intent: 'volumedown', partition: 16, silent: true },
+          {},
+          { preemptive: false })
       },
       115: () => {
         /** increase volume */
-        this.startApp('@volume', { intent: 'volumeup', silent: true }, {}, { preemptive: false })
+        this.startApp('@volume',
+          { intent: 'volumeup', partition: 16, silent: true },
+          {},
+          { preemptive: false })
       }
     }
     var handler = map[event.keyCode]
