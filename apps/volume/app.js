@@ -1,6 +1,7 @@
 'use strict'
 var AudioManager = require('@yoda/audio').AudioManager
 var logger = require('logger')('@volume')
+var _ = require('@yoda/util')._
 
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
@@ -31,10 +32,15 @@ module.exports = function (activity) {
     return parseInt(AudioManager.getVolume() / 10)
   }
 
-  function setVolume (value) {
+  function setVolume (value, options) {
+    var silent = _.get(options, 'silent', false)
+
     var vol = parseInt(value.number)
     logger.info(`trying to set volume to ${vol}`)
     if (vol < 0 || vol > 10) {
+      if (silent) {
+        return activity.exit()
+      }
       return speakAndExit(STRING_RANGE_ERROR)
     } else {
       var target = vol * 10
@@ -45,14 +51,14 @@ module.exports = function (activity) {
     }
   }
 
-  function incVolume (value) {
+  function incVolume (value, options) {
     var vol = getVolume() + parseInt(value.number)
-    return setVolume({ number: vol })
+    return setVolume({ number: vol }, options)
   }
 
-  function decVolume (value) {
+  function decVolume (value, options) {
     var vol = getVolume() - parseInt(value.number)
-    return setVolume({ number: vol })
+    return setVolume({ number: vol }, options)
   }
 
   function setMute () {
@@ -63,7 +69,15 @@ module.exports = function (activity) {
     AudioManager.setMute(false)
   }
 
+  function micMute (muted) {
+    /** Only light effects, actual mic mute operation has been handled by runtime */
+    return activity.light.play('system://setMuted', {
+      muted: muted
+    })
+  }
+
   activity.on('request', function (nlp, action) {
+    var silent = _.get(nlp, 'silent')
     switch (nlp.intent) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
@@ -86,11 +100,11 @@ module.exports = function (activity) {
         break
       case 'volumeup':
       case 'volume_too_low':
-        incVolume({ number: 1 })
+        incVolume({ number: 1 }, { silent: silent })
         break
       case 'volumedown':
       case 'volume_too_high':
-        decVolume({ number: 1 })
+        decVolume({ number: 1 }, { silent: silent })
         break
       case 'volumemin':
         setVolume({ number: 1 })
@@ -110,6 +124,12 @@ module.exports = function (activity) {
         } else {
           setMute()
         }
+        break
+      case 'mic_mute':
+        micMute(true)
+        break
+      case 'mic_unmute':
+        micMute(false)
         break
       default:
         activity.exit()

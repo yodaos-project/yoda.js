@@ -3,9 +3,10 @@
 var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var light = require('@yoda/light')
+var LRU = require('lru-cache')
+var Map = require('pseudomap')
 
-var MEDIA_SOURCE = '/opt/media/'
-var init = false
+var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
 /**
  * @typedef Color
@@ -52,6 +53,13 @@ function LightRenderingContext () {
   this.handle = {}
   this.ledsConfig = light.getProfile()
   this._wakeupPlayer = new MediaPlayer(AudioManager.STREAM_AUDIO)
+  this._playerCache = new LRU({
+    max: 10,
+    dispose: (key, val) => {
+      val.stop()
+    }
+  })
+  this._systemCache = new Map()
 }
 
 /**
@@ -59,32 +67,40 @@ function LightRenderingContext () {
  * @param {String} uri - the sound resource uri
  */
 LightRenderingContext.prototype.sound = function (name, self) {
+  var isSystem = false
   var len = name.length
   var absPath = ''
-  // etc.. system://path/to/sound.ogg
   if (len > 9 && name.substr(0, 9) === 'system://') {
-    absPath = MEDIA_SOURCE + name.substr(9)
-  // etc.. self://path/to/sound.ogg
+    // etc.. system://path/to/sound.ogg
+    absPath = SYSTEM_MEDIA_SOURCE + name.substr(9)
+    isSystem = true
   } else if (len > 7 && name.substr(0, 7) === 'self://') {
+    // etc.. self://path/to/sound.ogg
     absPath = self + '/' + name.substr(7)
-  // etc.. path/to/sound.ogg
   } else {
+    // etc.. path/to/sound.ogg
     absPath = name
   }
-  var sounder = new MediaPlayer(AudioManager.STREAM_AUDIO)
-  sounder.start(absPath)
-  return sounder
-}
+  var cache = this._playerCache
+  if (isSystem) {
+    cache = this._systemCache
+  }
 
-/**
- * play wakeup sound
- */
-LightRenderingContext.prototype.wakeupSound = function () {
-  if (!init) {
-    this._wakeupPlayer.start(`${MEDIA_SOURCE}wakeup.ogg`)
-    init = true
+  var sounder = cache.get(absPath)
+  if (sounder != null) {
+    sounder.seek(0)
+    sounder.resume()
   } else {
-    this._wakeupPlayer.seek(0)
+    sounder = new MediaPlayer(AudioManager.STREAM_AUDIO)
+    sounder.start(absPath)
+    this._playerCache.set(absPath, sounder)
+  }
+
+  return {
+    stop: sounder.pause.bind(sounder),
+    pause: sounder.pause.bind(sounder),
+    resume: sounder.resume.bind(sounder),
+    seek: sounder.seek.bind(sounder)
   }
 }
 
