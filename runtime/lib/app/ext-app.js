@@ -123,6 +123,7 @@ EventBus.prototype.subscribe = function onSubscribe (message) {
   function onEvent () {
     self.socket.send({
       type: 'event',
+      namespace: namespace,
       event: event,
       params: Array.prototype.slice.call(arguments, 0)
     })
