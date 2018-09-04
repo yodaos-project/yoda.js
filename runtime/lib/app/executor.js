@@ -5,19 +5,20 @@ var lightApp = require('./light-app')
 var extApp = require('./ext-app')
 var _ = require('@yoda/util')._
 
-function Executor (profile, prefix) {
+function Executor (profile, appHome) {
   this.daemon = false
   this.errmsg = null
   this.valid = true
   this.profile = profile
 
-  this.daemon = _.get(profile, 'metadata.daemon', false)
   if (profile.metadata.extapp === true) {
     this.type = 'extapp'
-    this.exec = prefix
+    this.daemon = _.get(profile, 'metadata.daemon', false)
+    this.appHome = appHome
   } else {
     this.type = 'light'
-    this.exec = prefix
+    this.daemon = true
+    this.appHome = appHome
   }
 }
 
@@ -32,11 +33,11 @@ Executor.prototype.create = function (appId, runtime) {
 
   var app = null
   if (this.type === 'light') {
-    app = lightApp(appId, this.exec, runtime)
+    app = lightApp(appId, this.appHome, runtime)
     this.app = app
     return Promise.resolve(app)
   } else if (this.type === 'extapp') {
-    return extApp(appId, this.exec, runtime)
+    return extApp(appId, this.appHome, runtime)
       .then(app => {
         logger.info('Ext-app successfully started')
         this.app = app
