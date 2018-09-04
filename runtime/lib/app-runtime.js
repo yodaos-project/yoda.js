@@ -45,6 +45,14 @@ function AppRuntime (paths) {
   this.appIdStack = []
   this.bgAppIdStack = []
   this.cloudAppIdStack = []
+  /**
+   * Some app may have permissions to call up on other app,
+   * in which case, the app which has the permission will be stored
+   * on `this.carrier`, and the one called up preempts the top of stack.
+   * Since there is only one app could be on top of stack, single carrier slot
+   * might be sufficient.
+   */
+  this.carrierId = null
   // 保存正在运行的App Map, 以AppID为key
   this.appMap = {}
   // 保存正在运行的App的data, 以AppID为key
@@ -319,8 +327,11 @@ AppRuntime.prototype.onEvent = function (name, data) {
  * @param {object} action 服务端返回的action
  * @param {object} [options]
  * @param {boolean} [options.preemptive]
+ * @param {boolean} [options.byCarrier]
  */
 AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
+  var carrierId = _.get(options, 'carrierId')
+
   var appInfo = {}
   var appId
   try {
@@ -337,6 +348,13 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   }
   return this.createOrResumeApp(appId, Object.assign({}, options, { nlpForm: appInfo.form }))
     .then(() => {
+      if (carrierId) {
+        /**
+         * if app is started by a carrier, set flag after the app has been created
+         * in creation, previous app and it's carrier might have been destroyed if preemptive
+         */
+        this.carrierId = carrierId
+      }
       return this.onLifeCycle(appInfo, 'request', [ nlp, action ])
     })
     .catch((error) => {
@@ -354,22 +372,12 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
  * @param {boolean} [options.preemptive]
  */
 AppRuntime.prototype.createOrResumeApp = function createOrResumeApp (appId, options) {
-  var self = this
-
   var nlpForm = _.get(options, 'nlpForm', 'cut')
   var preemptive = _.get(options, 'preemptive', true)
 
-  if (appId === this.getCurrentAppId()) {
-    /**
-     * App is the currently running one
-     */
-    logger.info('app is top of stack, skipping resuming', appId)
-    return Promise.resolve()
-  }
-
   var appCreated = this.isBackgroundApp(appId)
   if (preemptive) {
-    preemptTopOfStack(appCreated)
+    this.preemptTopOfStack(appId, appCreated, nlpForm)
   }
   if (appCreated) {
     /** No need to recreate app */
@@ -383,45 +391,71 @@ AppRuntime.prototype.createOrResumeApp = function createOrResumeApp (appId, opti
     form: nlpForm,
     preemptive: preemptive
   }, 'create')
+}
 
-  function preemptTopOfStack (appCreated) {
-    logger.info('preempting top stack for appId', appId)
-    if (appCreated) {
-      /**
-       * Pull the app to foreground if running in background
-       */
-      logger.info('app is running, resuming', appId)
-      self.setForegroundByAppId(appId)
-      return
-    }
+/**
+ *
+ * @param {string} appId - id of app that have interests on top of stack
+ * @param {boolean} appCreated - if app has been created
+ * @param {'cut' | 'scene'} nlpForm - which form the app was applying
+ */
+AppRuntime.prototype.preemptTopOfStack = function preemptTopOfStack (appId, appCreated, nlpForm) {
+  logger.info('preempting top stack for appId', appId)
 
-    if (nlpForm === 'scene') {
-      // Exit all app on incoming scene nlp
-      logger.debug('on scene nlp.')
-      return self.destroyAll()
-    }
-    var last = self.getCurrentAppData()
-    if (!last) {
-      /** no currently running app */
-      logger.debug('no currently running app, skip preempting')
-      return
-    }
-
-    if (last.form === 'scene') {
-      /**
-       * currently running app is a scene app, pause it
-       */
-      logger.debug('pausing current app')
-      self.onLifeCycle(last, 'pause')
-      return
-    }
-
+  if (this.carrierId) {
     /**
-     * currently running app is a normal app, destroy it
+     * if previous app is started by a carrier,
+     * exit the carrier before next steps.
      */
-    logger.debug('destroying current app')
-    self.onLifeCycle(last, 'destroy')
+    logger.info('previous app started by a carrier, exiting', this.carrierId)
+    this.exitAppById(this.carrierId)
+    this.carrierId = null
   }
+
+  if (appId === this.getCurrentAppId()) {
+    /**
+     * App is the currently running one
+     */
+    logger.info('app is top of stack, skipping resuming', appId)
+    return Promise.resolve()
+  }
+
+  if (appCreated) {
+    /**
+     * Pull the app to foreground if running in background
+     */
+    logger.info('app is running, resuming', appId)
+    this.setForegroundByAppId(appId)
+    return
+  }
+
+  if (nlpForm === 'scene') {
+    // Exit all app on incoming scene nlp
+    logger.debug('on scene nlp.')
+    return this.destroyAll()
+  }
+
+  var last = this.getCurrentAppData()
+  if (!last) {
+    /** no currently running app */
+    logger.debug('no currently running app, skip preempting')
+    return
+  }
+
+  if (last.form === 'scene') {
+    /**
+     * currently running app is a scene app, pause it
+     */
+    logger.debug('pausing current app')
+    this.onLifeCycle(last, 'pause')
+    return
+  }
+
+  /**
+   * currently running app is a normal app, destroy it
+   */
+  logger.debug('destroying current app')
+  this.onLifeCycle(last, 'destroy')
 }
 
 /**
@@ -569,8 +603,6 @@ AppRuntime.prototype.destroyAll = function (options) {
  * @returns {Promise<void>} LifeCycle events are asynchronous
  */
 AppRuntime.prototype.onLifeCycle = function onLifeCycle (appInfo, event, params) {
-  logger.log(`on life cycle '${event}'`)
-
   var appId
   if (typeof appInfo === 'string') {
     appId = appInfo
@@ -578,6 +610,8 @@ AppRuntime.prototype.onLifeCycle = function onLifeCycle (appInfo, event, params)
   } else {
     appId = _.get(appInfo, 'appId')
   }
+  logger.log(`on life cycle '${event}'`, appId)
+
   var cloud = _.get(appInfo, 'cloud', false)
   if (cloud) {
     appId = '@cloud'
@@ -730,6 +764,11 @@ AppRuntime.prototype.exitAppById = function (appId) {
     if (last) {
       this.onLifeCycle(last, 'resume')
     }
+  }
+
+  if (this.carrierId) {
+    /** if app is started by a carrier, unset the flag on exit */
+    this.carrierId = null
   }
 }
 
