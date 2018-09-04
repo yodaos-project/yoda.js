@@ -7,6 +7,7 @@ var AudioManager = require('@yoda/audio').AudioManager
 var AppRuntime = require('../../lib/app-runtime')
 var CloudGW = require('@yoda/cloudgw')
 var logger = require('logger')('main')
+var ota = require('@yoda/ota')
 
 var speechT = require('@yoda/speech')
 var speechV = new TurenSpeech()
@@ -147,6 +148,10 @@ function entry () {
         }
         logger.log('response topic set_volume ->', res)
         mqttAgent.sendToApp('event', JSON.stringify(res))
+      })
+      mqttAgent.on('sys_update_available', () => {
+        logger.info('received upgrade command from mqtt, running ota in background.')
+        ota.runInBackground()
       })
     }).catch((err) => {
       logger.error('initializing occurrs error', err && err.stack)
