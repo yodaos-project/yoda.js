@@ -76,12 +76,20 @@ AudioManager.LINEAR_RAMP = function (len) {
  * @method setVolume
  * @param {Number} [stream=AudioManager.STREAM_AUDIO] - The stream type.
  * @param {Number} vol - The volume to set
- * @throws {TypeError} `vol` is required.
+ * @throws {TypeError} vol must be a number
+ * @throws {TypeError} invalid stream type
  */
 AudioManager.setVolume = function (stream, vol) {
   if (arguments.length === 1) {
     vol = stream
     stream = null
+  }
+  if (stream && stream !== STREAM_AUDIO &&
+    stream !== STREAM_TTS &&
+    stream !== STREAM_PLAYBACK &&
+    stream !== STREAM_ALARM &&
+    stream !== STREAM_SYSTEM) {
+    throw new TypeError('invalid stream type')
   }
   if (typeof vol !== 'number') {
     throw new TypeError('vol must be a number')
@@ -99,9 +107,17 @@ AudioManager.setVolume = function (stream, vol) {
  * @memberof module:@yoda/audio~AudioManager
  * @method getVolume
  * @param {Number} [stream=AudioManager.STREAM_AUDIO] - The stream type.
+ * @throws {TypeError} invalid stream type
  */
 AudioManager.getVolume = function (stream) {
   if (stream) {
+    if (stream !== STREAM_AUDIO &&
+      stream !== STREAM_TTS &&
+      stream !== STREAM_PLAYBACK &&
+      stream !== STREAM_ALARM &&
+      stream !== STREAM_SYSTEM) {
+      throw new TypeError('invalid stream type')
+    }
     return native.getStreamVolume(stream)
   } else {
     return native.getMediaVolume()
