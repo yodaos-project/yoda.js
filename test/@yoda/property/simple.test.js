@@ -2,11 +2,40 @@
 
 var test = require('tape')
 var prop = require('@yoda/property')
+var fs = require('fs')
+
+test('module->property->set value: key starting with persist.', t => {
+  t.plan(2)
+  prop.set('persist.test.a', 'test.a')
+  t.equal(prop.get('persist.test.a'), 'test.a')
+  var text = fs.readFileSync('/data/property/persist.test.a', 'utf8')
+  t.equal(text, 'test.a')
+  t.end()
+})
+
+test('module->property->set value: key starting with persist-', t => {
+  t.plan(2)
+  prop.set('persist-test.a', 'test.a')
+  t.equal(prop.get('persist-test.a'), 'test.a')
+  t.throws(() => {
+    fs.readFileSync('/data/property/persist-test.a', 'utf8')
+  }, new RegExp('no such file or directory'), 'should be no files')
+  t.end()
+})
+
+test('module->property->set value: key starting with ro.', t => {
+  t.plan(2)
+  prop.set('ro.test.a', 'test.a')
+  t.equal(prop.get('ro.test.a'), 'test.a')
+  prop.set('ro.test.a', 'test.b')
+  t.equal(prop.get('ro.test.a'), 'test.a')
+  t.end()
+})
 
 /**
  * the key starts with ro.*, these key and values are readonly.
  */
-test('module->property->set value : readonly key', t => {
+test('module->property->set value: readonly key', t => {
   t.plan(4)
   var usid = prop.get('ro.boot.usid')
   var device = prop.get('ro.rokid.device')
@@ -23,21 +52,21 @@ test('module->property->set value : readonly key', t => {
   t.end()
 })
 
-test('module->property->set value : normal key', t => {
+test('module->property->set value: normal key', t => {
   t.plan(1)
   prop.set('test_key', 'foobar')
   t.equal(prop.get('test_key'), 'foobar')
   t.end()
 })
 
-test('module->property->set value : normal key, set value typeof number', t => {
+test('module->property->set value: normal key, set value typeof number', t => {
   t.plan(1)
   prop.set('number_key', 2)
   t.equal(typeof prop.get('number_key'), 'string')
   t.end()
 })
 
-test('module->property->set value : normal key, set key typeof number', t => {
+test('module->property->set value: normal key, set key typeof number', t => {
   t.plan(2)
   t.throws(() => { prop.set(3, 4) }, new RegExp('key must be a string'), 'key must be a string')
   t.equal(prop.get('3'), '')
@@ -47,7 +76,7 @@ test('module->property->set value : normal key, set key typeof number', t => {
 /**
  * bug id = 1291
  */
-test.skip('module->property->set value : normal key, set long key ', t => {
+test.skip('module->property->set value: normal key, set long key ', t => {
   t.plan(1)
   var key = 'test_key.aaa.bbb.ccc.ddd.fff.ggg.ppp.www.rrr.eee.vvv.bbb.nnn.mmm'
   prop.set(key, 'test')
@@ -58,7 +87,7 @@ test.skip('module->property->set value : normal key, set long key ', t => {
 /**
  * bug id = 1292
  */
-test.skip('module->property->set value : normal key, set key ', t => {
+test.skip('module->property->set value: normal key, set key ', t => {
   t.plan(1)
   var key = 'test_key.&'
   prop.set(key, 'test')
