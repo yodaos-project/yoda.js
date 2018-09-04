@@ -182,7 +182,8 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function exit () {
-        return this._runtime.exitAppById(this._appId)
+        this._runtime.exitAppById(this._appId)
+        return Promise.resolve()
       }
     },
     /**
@@ -196,7 +197,8 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function destroyAll () {
-        return this._runtime.destroyAll()
+        this._runtime.destroyAll()
+        return Promise.resolve()
       }
     },
     /**
@@ -212,7 +214,8 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setPickup (pickup, duration) {
-        return this._runtime.setPickup(pickup, duration)
+        this._runtime.setPickup(pickup, duration)
+        return Promise.resolve()
       }
     },
     /**
