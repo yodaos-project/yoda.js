@@ -182,10 +182,16 @@ void InputEventHandler::OnKeyEvent(uv_async_t* async) {
     jerry_release_value(jargv[i]);
   }
   jerry_release_value(onevent);
+  uv_close((uv_handle_t*)handle, InputEventHandler::AfterCallback);
 }
 
 void InputEventHandler::OnGestureEvent(uv_async_t* async) {
   // Gesture TODO
+  uv_close((uv_handle_t*)handle, InputEventHandler::AfterCallback);
+}
+
+void InputEventHandler::AfterCallback(uv_handle_t* handle) {
+  delete handle;
 }
 
 iotjs_input_t* iotjs_input_create(const jerry_value_t jinput) {
