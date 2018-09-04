@@ -18,6 +18,7 @@ function gensigh (data) {
 
 function getAuth () {
   if (CONFIG === null) {
+    logger.error('CONFIG not set yet, please set CONFIG first. in: eventRequest')
     return ''
   }
   var data = {

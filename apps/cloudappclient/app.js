@@ -4,6 +4,7 @@ var Directive = require('./directive').Directive
 var eventRequest = require('./eventRequestApi')
 var TtsEventHandle = require('./ttsEventHandle')
 var MediaEventHandle = require('./mediaEventHandle')
+var logger = require('logger')('cloudAppClient')
 
 var Manager = require('./manager')
 
@@ -17,7 +18,7 @@ module.exports = activity => {
   var mediaClient = new MediaEventHandle(activity.media)
 
   sos.on('updateStack', (stack) => {
-    console.log('updateStack', stack)
+    logger.log('updateStack', stack)
     activity.syncCloudAppIdStack(stack)
   })
 
@@ -25,6 +26,7 @@ module.exports = activity => {
     if (dt.action === 'say') {
       activity.media.pause()
       ttsClient.speak(dt.data.item.tts, function (name) {
+        logger.log('====> tts event' + name)
         if (name === 'start') {
           if (dt.data.disableEvent === false) {
             eventRequest.ttsEvent('Voice.STARTED', dt.data.appId, dt.data.item.itemId)
@@ -32,10 +34,9 @@ module.exports = activity => {
         } else if (name === 'end') {
           if (dt.data.disableEvent === false) {
             eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
-              // console.log('tts response', response);
+              logger.log('-----> end response', response)
               var action = JSON.parse(response)
               sos.append(null, action)
-              // next();
             })
           } else {
             next()
@@ -43,10 +44,9 @@ module.exports = activity => {
         } else if (name === 'cancel') {
           if (dt.data.disableEvent === false) {
             eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
-              console.log('tts response', response)
+              logger.log('tts response', response)
               var action = JSON.parse(response)
               sos.append(null, action)
-              // next();
             })
           } else {
             next()
@@ -54,14 +54,15 @@ module.exports = activity => {
         }
       })
     } else if (dt.action === 'cancel') {
-      activity.tts.stop(function () {
-        next()
-        if (dt.data.disableEvent === false) {
-          eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
-            console.log('tts response', response)
-          })
-        }
-      })
+      activity.tts.stop()
+        .then(() => {
+          next()
+          if (dt.data.disableEvent === false) {
+            eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
+              logger.log('tts response', response)
+            })
+          }
+        })
     }
   })
   directive.do('frontend', 'media', function (dt, next) {
@@ -74,7 +75,7 @@ module.exports = activity => {
               duration: args[0],
               progress: args[1]
             }, (response) => {
-              // console.log('media response', response);
+              // nothing to do now
             })
           }
         } else if (name === 'playbackcomplete') {
@@ -84,7 +85,6 @@ module.exports = activity => {
               itemId: dt.data.item.itemId,
               token: dt.data.item.token
             }, (response) => {
-              // console.log('media response', response);
               var action = JSON.parse(response)
               activity.mockNLPResponse(null, action)
             })
@@ -130,7 +130,7 @@ module.exports = activity => {
         next()
       })
       .catch((error) => {
-        console.log('setConfirm failed: ', error)
+        logger.log('setConfirm failed: ', error)
         next()
       })
   })
@@ -141,42 +141,46 @@ module.exports = activity => {
   })
 
   activity.on('ready', function () {
-    console.log(this.appId + ' app ready')
-    activity.get('all')
-      .then((result) => {
-        console.log('get prop success', result[0])
-        eventRequest.setConfig(JSON.parse(result[0] || {}))
-      })
-      .catch((error) => {
-        console.log('get prop error', error)
-      })
+    logger.log(this.appId + ' app ready')
   })
 
   activity.on('error', function (err) {
-    console.log('app error: ', err)
+    logger.log('app error: ', err)
   })
 
   activity.on('create', function () {
-    console.log(this.appId + ' created')
+    logger.log('get CONFIG from OS')
+    activity.get('all')
+      .then((result) => {
+        logger.log('get prop success', result)
+        eventRequest.setConfig(result || {})
+      })
+      .catch((error) => {
+        logger.log('get prop error', error)
+      })
+    logger.log(this.appId + ' created')
   })
 
   activity.on('pause', function () {
-    console.log(this.appId + ' paused')
+    logger.log(this.appId + ' paused')
     sos.pause()
   })
 
   activity.on('resume', function () {
-    console.log(this.appId + ' resumed')
+    logger.log(this.appId + ' resumed')
     sos.resume()
   })
 
   activity.on('request', function (nlp, action) {
-    // console.log(this.appId + ' onrequest', nlp, action);
+    if (action.response.action.type === 'EXIT') {
+      sos.destroy()
+      return
+    }
     sos.onrequest(nlp, action)
   })
 
   activity.on('destroy', function () {
-    console.log(this.appId + ' destroyed')
+    logger.log(this.appId + ' destroyed')
     sos.destroy()
   })
 }
