@@ -2,6 +2,9 @@
 
 var Directive = require('./directive').Directive
 var eventRequest = require('./eventRequestApi')
+var TtsEventHandle = require('./ttsEventHandle')
+var MediaEventHandle = require('./mediaEventHandle')
+
 var Manager = require('./manager')
 
 module.exports = activity => {
@@ -9,51 +12,19 @@ module.exports = activity => {
   var directive = new Directive()
   // skill os
   var sos = new Manager(directive)
+  // tts, media event handle
+  var ttsClient = new TtsEventHandle(activity.tts)
+  var mediaClient = new MediaEventHandle(activity.media)
 
   sos.on('updateStack', (stack) => {
     console.log('updateStack', stack)
     activity.syncCloudAppIdStack(stack)
   })
 
-  var prevMediaItemData = null
-  var mediaNextFn = null
-  activity.media.on('prepared', function (duration, position) {
-    if (!prevMediaItemData) {
-      return
-    }
-    if (prevMediaItemData.disableEvent === false) {
-      eventRequest.mediaEvent('Media.STARTED', prevMediaItemData.appId, {
-        itemId: prevMediaItemData.item.itemId,
-        duration: duration,
-        progress: position
-      }, (response) => {
-        // console.log('media response', response);
-      })
-    }
-  })
-  activity.media.on('playbackcomplete', function () {
-    if (!prevMediaItemData) {
-      return
-    }
-    if (typeof mediaNextFn === 'function') {
-      mediaNextFn()
-    }
-    if (prevMediaItemData.disableEvent === false) {
-      eventRequest.mediaEvent('Media.FINISHED', prevMediaItemData.appId, {
-        itemId: prevMediaItemData.item.itemId,
-        token: prevMediaItemData.item.token
-      }, (response) => {
-        // console.log('media response', response);
-        var action = JSON.parse(response)
-        activity.mockNLPResponse(null, action)
-      })
-    }
-  })
-
   directive.do('frontend', 'tts', function (dt, next) {
     if (dt.action === 'say') {
       activity.media.pause()
-      activity.tts.speak(dt.data.item.tts, function (name) {
+      ttsClient.speak(dt.data.item.tts, function (name) {
         if (name === 'start') {
           if (dt.data.disableEvent === false) {
             eventRequest.ttsEvent('Voice.STARTED', dt.data.appId, dt.data.item.itemId)
@@ -87,7 +58,7 @@ module.exports = activity => {
         next()
         if (dt.data.disableEvent === false) {
           eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
-            // console.log('tts response', response);
+            console.log('tts response', response)
           })
         }
       })
@@ -95,9 +66,31 @@ module.exports = activity => {
   })
   directive.do('frontend', 'media', function (dt, next) {
     if (dt.action === 'play') {
-      prevMediaItemData = dt.data || {}
-      mediaNextFn = next
-      activity.media.start(dt.data.item.url)
+      mediaClient.start(dt.data.item.url, function (name, args) {
+        if (name === 'prepared') {
+          if (dt.data.disableEvent === false) {
+            eventRequest.mediaEvent('Media.STARTED', dt.data.appId, {
+              itemId: dt.data.item.itemId,
+              duration: args[0],
+              progress: args[1]
+            }, (response) => {
+              // console.log('media response', response);
+            })
+          }
+        } else if (name === 'playbackcomplete') {
+          next()
+          if (dt.data.disableEvent === false) {
+            eventRequest.mediaEvent('Media.FINISHED', dt.data.appId, {
+              itemId: dt.data.item.itemId,
+              token: dt.data.item.token
+            }, (response) => {
+              // console.log('media response', response);
+              var action = JSON.parse(response)
+              activity.mockNLPResponse(null, action)
+            })
+          }
+        }
+      })
     } else if (dt.action === 'pause') {
       activity.media.pause(function () {
         next()
