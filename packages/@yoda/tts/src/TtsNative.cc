@@ -34,11 +34,23 @@ static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
   iotjs_tts_t* ttswrap = IOTJS_ALLOC(iotjs_tts_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_tts_t, ttswrap);
 
-  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jtts,
+  jerry_value_t jval = jerry_acquire_value(jtts);
+  iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jval,
                                &this_module_native_info);
   _this->handle = new TtsNative(ttswrap);
   _this->prepared = false;
+  _this->close_handle.data = (void*)ttswrap;
+  uv_async_init(uv_default_loop(), &_this->close_handle, iotjs_tts_onclose);
   return ttswrap;
+}
+
+static void iotjs_tts_onclose(uv_async_t* handle) {
+  iotjs_tts_t* ttswrap = (iotjs_tts_t*)handle->data;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, ttswrap);
+
+  uv_close((uv_handle_t*)handle, NULL);
+  jerry_value_t jval = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_release_value(jval);
 }
 
 static void iotjs_tts_destroy(iotjs_tts_t* tts) {
@@ -173,8 +185,7 @@ JS_FUNCTION(Disconnect) {
     return JS_CREATE_ERROR(COMMON, "tts is not initialized");
   }
   _this->handle->disconnect();
-  jerry_value_t jval = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
-  jerry_release_value(jval);
+  uv_async_send(&_this->close_handle);
   return jerry_create_boolean(true);
 }
 

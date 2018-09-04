@@ -13,6 +13,7 @@ extern "C" {
 #include <iotjs_def.h>
 #include <iotjs_binding.h>
 #include <iotjs_objectwrap.h>
+#include <uv.h>
 
 class TtsNative;
 
@@ -20,6 +21,7 @@ typedef struct {
   iotjs_jobjectwrap_t jobjectwrap;
   bool prepared;
   TtsNative* handle;
+  uv_async_t close_handle;
 } IOTJS_VALIDATED_STRUCT(iotjs_tts_t);
 
 /**
@@ -44,6 +46,7 @@ class TtsNative : public TtsService {
 
 static iotjs_tts_t* iotjs_tts_create(const jerry_value_t jtts);
 static void iotjs_tts_destroy(iotjs_tts_t* tts);
+static void iotjs_tts_onclose(uv_async_t* handle);
 
 #ifdef __cplusplus
 }
