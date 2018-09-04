@@ -413,6 +413,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * When the media resource is prepared.
      * @event yodaRT.activity.Activity.MediaClient#prepared
      * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
      */
     prepared: {
       type: 'event'
@@ -484,7 +486,8 @@ Object.assign(MultimediaDescriptor.prototype,
                 self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
               }
 
-              EventEmitter.prototype.emit.call(self, event, multimediaId)
+              EventEmitter.prototype.emit.apply(self,
+                [event, multimediaId].concat(Array.prototype.slice.call(arguments, 1)))
             })
 
             return multimediaId
@@ -711,7 +714,8 @@ Object.assign(TtsDescriptor.prototype,
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                   self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
                 }
-                EventEmitter.prototype.emit.call(self, event, ttsId)
+                EventEmitter.prototype.emit.apply(self,
+                  [event, ttsId].concat(Array.prototype.slice.call(arguments, 1)))
 
                 if (impatient) {
                   /** promise has been resolved early, shall not be resolve/reject again */
