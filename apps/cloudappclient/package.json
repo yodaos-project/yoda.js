@@ -10,7 +10,8 @@
       "@cloud"
     ],
     "permission": [
-      "ACCESS_TTS"
+      "ACCESS_TTS",
+      "ACCESS_MULTIMEDIA"
     ]
   },
   "directories": {
