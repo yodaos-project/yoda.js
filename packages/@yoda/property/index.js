@@ -13,7 +13,7 @@
  * ```
  *
  * The property key has 3 schemas for different purposes:
- * - persistent key: the key starts with `persist`, these key and
+ * - persistent key: the key starts with `persist.`, these key and
  *   values are stored in persistent.
  * - readonly key: the key starts with `ro.*`, these key and values
  *   are readonly.
