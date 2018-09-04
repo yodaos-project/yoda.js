@@ -1,6 +1,7 @@
 'use strict'
 
 var logger = require('logger')('ttsdService')
+var AudioManager = require('@yoda/audio').AudioManager
 
 function Tts (options) {
   this.handle = {}
@@ -13,8 +14,11 @@ Tts.prototype.speak = function (appId, text) {
       .then((res) => {
         logger.log('ttsd say', res, appId, text)
         if (res['0'] === 'true') {
-          var req
-          req = this.options.tts.speak(text)
+          // unmute if current is muted.
+          if (AudioManager.isMuted()) {
+            AudioManager.setMute(false)
+          }
+          var req = this.options.tts.speak(text)
           if (this.handle[appId]) {
             setTimeout(() => {
               this.handle[appId].stop()
