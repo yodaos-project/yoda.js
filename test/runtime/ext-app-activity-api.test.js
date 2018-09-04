@@ -58,3 +58,30 @@ test('setPickup should be invoked with two arguments', t => {
       })
     })
 })
+
+test('get should return properties', t => {
+  t.plan(1)
+
+  var expected = {
+    masterId: 'foobar',
+    key: 'a-key',
+    secret: 'very-secret-secret'
+  }
+  var runtime = {
+    onGetPropAll: function onGetPropAll () {
+      return Promise.resolve(expected)
+    }
+  }
+  extApp('@test/app-id', target, runtime)
+    .then(descriptor => {
+      descriptor.emit('test-invoke', 'get', [ 'all' ])
+      descriptor._childProcess.on('message', message => {
+        if (message.type !== 'test') {
+          return
+        }
+        var result = message.result
+        t.deepEqual(result, expected)
+        descriptor.destruct()
+      })
+    })
+})

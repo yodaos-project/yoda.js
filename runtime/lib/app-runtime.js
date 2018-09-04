@@ -219,6 +219,7 @@ AppRuntime.prototype.load = function (root, cb) {
 }
 
 AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
+  var self = this
   var daemons = Object.keys(this.apps).map(appId => {
     var executor = this.apps[appId]
     if (!executor.daemon) {
@@ -235,7 +236,7 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
     var appId = daemons[idx][0]
     var executor = daemons[idx][1]
     logger.info('Starting daemon app', executor.appHome)
-    executor.create(appId, this).then(() => start(idx + 1), () => start(idx + 1))
+    executor.create(appId, self).then(() => start(idx + 1), () => start(idx + 1))
   }
 }
 
