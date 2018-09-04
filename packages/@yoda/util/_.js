@@ -37,5 +37,8 @@ function pick (object) {
 
 module.exports.startsWith = startsWith
 function startsWith (str, search, pos) {
+  if (typeof str !== 'string') {
+    return false
+  }
   return str.substring(!pos || pos < 0 ? 0 : +pos, search.length) === search
 }
