@@ -676,7 +676,23 @@ AppRuntime.prototype.updateStack = function () {
   if (scene !== this.domain.scene || cut !== this.domain.cut) {
     this.domain.scene = scene
     this.domain.cut = cut
-    this.emit('setStack', scene + ':' + cut)
+    var ids = [scene, cut].map(it => {
+      /**
+       * Exclude local convenience app from cloud skill stack
+       */
+      if (_.startsWith(it, '@')) {
+        return ''
+      }
+      /**
+       * Exclude apps from cloud skill stack
+       * - composition-de-voix
+       */
+      if (['RB0BF7E9D7F84B2BB4A1C2990A1EF8F5'].indexOf(it) >= 0) {
+        return ''
+      }
+      return it
+    })
+    this.emit('setStack', ids.join(':'))
   }
 }
 
