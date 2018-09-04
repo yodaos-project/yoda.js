@@ -94,7 +94,8 @@ var PropertyDescriptions = {
     return proxyfier(name, descriptor, namespace, nsDescriptor)
   },
   event: function Event (name, descriptor, namespace, nsDescriptor) {
-    eventBus.on(`event:${name}`, function onEvent (params) {
+    var channel = `event:${namespace.name ? namespace.name + ':' : ''}${name}`
+    eventBus.on(channel, function onEvent (params) {
       EventEmitter.prototype.emit.apply(namespace, [ name ].concat(params))
     })
 
@@ -151,7 +152,7 @@ function translate (descriptor) {
 
 var listenMap = {
   event: msg => {
-    var channel = `event:${msg.event}`
+    var channel = `event:${msg.namespace ? msg.namespace + ':' : ''}${msg.event}`
     if (!Array.isArray(msg.params)) {
       logger.error(`Params of event message '${channel}' is not an array.`)
       return
