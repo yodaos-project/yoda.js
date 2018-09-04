@@ -148,8 +148,7 @@ void InputEventHandler::DoStart(uv_work_t* req) {
       event->data.click_count = handler->gesture_.click_count;
       event->data.long_press_time = handler->gesture_.long_press_time;
       async->data = (void*)event;
-      uv_async_init(uv_default_loop(), async,
-                    InputEventHandler::OnGestureEvent);
+      uv_async_init(uv_default_loop(), async, InputEventHandler::OnGestureEvent);
       uv_async_send(async);
     }
   }
@@ -186,7 +185,26 @@ void InputEventHandler::OnKeyEvent(uv_async_t* async) {
 }
 
 void InputEventHandler::OnGestureEvent(uv_async_t* async) {
-  // Gesture TODO
+  InputGestureEvent* event = (InputGestureEvent*)async->data;
+  iotjs_input_t* input = event->event_handler->inputwrap;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_input_t, input);
+
+  jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_value_t onevent = iotjs_jval_get_property(jthis, "ongesture");
+  if (!jerry_value_is_function(onevent)) {
+    fprintf(stderr, "no onevent function is registered\n");
+    return;
+  }
+  uint32_t jargc = 2;
+  jerry_value_t jargv[jargc] = {
+    jerry_create_number((double)event->data.action),
+    jerry_create_number((double)event->data.key_code),
+  };
+  jerry_call_function(onevent, jerry_create_undefined(), jargv, jargc);
+  for (int i = 0; i < jargc; i++) {
+    jerry_release_value(jargv[i]);
+  }
+  jerry_release_value(onevent);
   uv_close((uv_handle_t*)async, InputEventHandler::AfterCallback);
 }
 
