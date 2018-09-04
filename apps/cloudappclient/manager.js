@@ -2,6 +2,7 @@
 
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
+var logger = require('logger')('manager')
 
 function Skill (exe, nlp, action) {
   console.log(action.appId + ' was create')
@@ -25,7 +26,7 @@ Skill.prototype.onrequest = function (directives) {
 
 Skill.prototype.handleEvent = function () {
   this.on('start', () => {
-    console.log(this.appId + ' emit start')
+    console.log(this.appId + ' emit start', this.directives)
     this.exe.execute(this.directives, 'frontend', () => {
       this.directives = []
       this.emit('exit')
@@ -124,6 +125,7 @@ function Manager (exe) {
 inherits(Manager, EventEmitter)
 
 Manager.prototype.onrequest = function (nlp, action) {
+  logger.log('sos onrequest')
   var pos = this.findByAppId(action.appId)
   if (pos > -1) {
     this.skills[pos].onrequest(action.response.action.directives)
@@ -167,6 +169,7 @@ Manager.prototype.append = function (nlp, action) {
   if (pos > -1) {
     this.skills[pos].onrequest(action.response.action.directives || [])
   }
+  // this.onrequest(nlp, action)
 }
 
 Manager.prototype.next = function () {
