@@ -19,7 +19,7 @@
     "shadow": "0.9.x"
   },
   "manifest": {
-    "apilevel": 0.3
+    "apilevel": 0.4
   },
   "devDependencies": {
     "ink-docstrap": "^1.3.2",
