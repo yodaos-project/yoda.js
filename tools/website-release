@@ -50,5 +50,7 @@ npm run website
 scp -r ./website/index.html root@${address}:/var/www/yodaos/index.html
 
 export docs_pathname=/var/www/yodaos/docs/${apilevel}
-ssh root@${address} 'rm -rf ${docs_pathname} && mkdir -p ${docs_pathname}'
+CMD="rm -rf ${docs_pathname} && mkdir -p ${docs_pathname}"
+echo $CMD
+ssh root@${address} $CMD
 scp -r ./website/docs/* root@${address}:${docs_pathname}/
