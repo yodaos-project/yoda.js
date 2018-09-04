@@ -3,6 +3,7 @@
 function TtsEventHandle (ttsClient) {
   this.ttsClient = ttsClient
   this.callbackHandle = {}
+  this.handleEvent()
 }
 
 TtsEventHandle.prototype.handleEvent = function () {
