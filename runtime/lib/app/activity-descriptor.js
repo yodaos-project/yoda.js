@@ -347,7 +347,6 @@ Object.assign(ActivityDescriptor.prototype,
             }
             logger.info('get nlp result for asr', text, nlp, action)
             self._runtime.onVoiceCommand(text, nlp, action, {
-              preemptive: false,
               carrierId: self._appId
             })
             return resolve()
