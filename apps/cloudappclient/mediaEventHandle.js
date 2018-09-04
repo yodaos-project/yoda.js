@@ -3,11 +3,13 @@
 function MediaEventHandle (mediaClient) {
   this.mediaClient = mediaClient
   this.callbackHandle = {}
+  this.handleEvent()
 }
 
 MediaEventHandle.prototype.handleEvent = function () {
+  var self = this
   this.mediaClient.on('prepared', function (mediaId) {
-    this.handle(mediaId, 'prepared', Array.prototype.slice.call(arguments, 1))
+    self.handle(mediaId, 'prepared', Array.prototype.slice.call(arguments, 1))
   })
   this.mediaClient.on('playbackcomplete', (mediaId) => {
     this.handle(mediaId, 'playbackcomplete')
