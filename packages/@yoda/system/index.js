@@ -9,6 +9,7 @@ var native = require('./system.node')
  * Reboot the system.
  * @function reboot
  * @returns {Boolean}
+ * @private
  */
 exports.reboot = native.reboot
 
@@ -16,6 +17,7 @@ exports.reboot = native.reboot
  * Verify the OTA image, including hash(md5) check, section check and header check.
  * @function verifyOtaImage
  * @returns {Boolean}
+ * @private
  */
 exports.verifyOtaImage = native.verifyOtaImage
 
