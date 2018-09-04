@@ -1,0 +1,29 @@
+{
+  "name": "@yoda/composition-de-voix",
+  "version": "1.0.0",
+  "description": "Voice commands composition app for Rokid",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "metadata": {
+    "skills": [
+      "@composition",
+      "RB0BF7E9D7F84B2BB4A1C2990A1EF8F5"
+    ],
+    "permission": [
+      "ACCESS_TTS",
+      "ACCESS_VOICE_COMMAND",
+      "INTERRUPT"
+    ]
+  },
+  "keywords": [
+    "composition",
+    "voices",
+    "commands",
+    "rokid",
+    "skill"
+  ],
+  "author": "Chengzhong Wu <chengzhong.wu@rokid.com>",
+  "license": "UNLICENSED"
+}
