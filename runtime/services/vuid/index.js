@@ -30,6 +30,7 @@ function entry () {
   var runtime = new AppRuntime(['/opt/apps'])
   runtime.cloudApi = cloudApi
   runtime.volume = AudioManager
+  runtime.speechT = speechT
 
   runtime.on('setStack', function onSetStack (stack) {
     logger.log('setStack ', stack)
@@ -108,6 +109,7 @@ function entry () {
           if (err) {
             console.error(`occurrs some error in speechT`)
           } else {
+            logger.info('MQTT command: get nlp result for asr', asr, nlp, action)
             runtime.onVoiceCommand(asr, nlp, action)
           }
         })

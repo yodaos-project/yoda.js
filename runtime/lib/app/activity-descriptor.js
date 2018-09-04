@@ -321,6 +321,55 @@ Object.assign(ActivityDescriptor.prototype,
         var absPath = pathTransform(uri, MEDIA_SOURCE, this._appHome + '/media')
         return this._runtime.lightMethod('appSound', [this._appId, absPath])
       }
+    },
+    /**
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function voiceCommand
+     * @param {string} text - voice asr/text command to be parsed and executed.
+     * @returns {Promise<void>}
+     */
+    voiceCommand: {
+      type: 'method',
+      returns: 'promise',
+      fn: function voiceCommand (text) {
+        var self = this
+        if (!self._runtime.permission.check(self._appId, 'ACCESS_VOICE_COMMAND')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
+        return new Promise((resolve, reject) => {
+          self._runtime.speechT.getNlpResult(text, function (err, nlp, action) {
+            if (err) {
+              return reject(err)
+            }
+            logger.info('get nlp result for asr', text, nlp, action)
+            self._runtime.onVoiceCommand(text, nlp, action, {
+              preemptive: false,
+              carrierId: self._appId
+            })
+            return resolve()
+          })
+        })
+      }
+    },
+    /**
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function preemptTopOfStack
+     * @param {'cur' | 'scene'} form - nlp form to perform preemption
+     * @returns {Promise<void>}
+     */
+    preemptTopOfStack: {
+      type: 'method',
+      returns: 'promise',
+      fn: function preemptTopOfStack (form) {
+        var self = this
+        if (!self._runtime.permission.check(self._appId, 'INTERRUPT')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
+        self._runtime.preemptTopOfStack(self._appId, true, form || 'cut')
+        return Promise.resolve()
+      }
     }
   }
 )
