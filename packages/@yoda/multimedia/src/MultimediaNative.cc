@@ -97,6 +97,9 @@ static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
   _this->handle = NULL;
   _this->listener = new MultimediaListener(player_wrap);
   _this->id = (global_id++);
+
+  _this->close_handle.data = (void*)player_wrap;
+  uv_async_init(uv_default_loop(), &_this->close_handle, iotjs_player_onclose);
   return player_wrap;
 }
 
@@ -105,6 +108,15 @@ static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
   delete _this->handle;
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
   IOTJS_RELEASE(player_wrap);
+}
+
+static void iotjs_player_onclose(uv_async_t* handle) {
+  iotjs_player_t* player_wrap = (iotjs_player_t*)handle->data;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
+
+  uv_close((uv_handle_t*)handle, NULL);
+  jerry_value_t jval = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_release_value(jval);
 }
 
 JS_FUNCTION(Player) {
@@ -240,6 +252,7 @@ JS_FUNCTION(Disconnect) {
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->disconnect();
+  uv_async_send(&_this->close_handle);
   return jerry_create_undefined();
 }
 
