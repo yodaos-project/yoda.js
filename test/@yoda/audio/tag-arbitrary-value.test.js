@@ -26,7 +26,7 @@ tags.forEach(key => {
   })
 
   function step (esac, suffix) {
-    test(`${key || 'default'}: set volume ${esac}${suffix}`, t => {
+    test.skip(`${key || 'default'}: set volume ${esac}${suffix}`, t => {
       t.plan(1)
       AudioManager.setVolume.apply(AudioManager, [tag, esac].filter(it => it != null))
       var ret = AudioManager.getVolume.apply(AudioManager, [tag].filter(it => it != null))
