@@ -91,7 +91,7 @@ LightRenderingContext.prototype.sound = function (name, self) {
     sounder.seek(0)
     sounder.resume()
   } else {
-    sounder = new MediaPlayer(AudioManager.STREAM_AUDIO)
+    sounder = new MediaPlayer(AudioManager.STREAM_SYSTEM)
     sounder.start(absPath)
     this._playerCache.set(absPath, sounder)
   }
