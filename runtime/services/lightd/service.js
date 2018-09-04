@@ -123,18 +123,27 @@ Light.prototype.appSound = function (appId, name) {
       return false
     }
   }
-  var player = this.options.effect.sound(name)
-  // free the player handle after playbackcomplete or error event
-  player.on('playbackcomplete', () => {
-    this.playerHandle[appId].stop()
-    delete this.playerHandle[appId]
-  })
-  player.on('error', () => {
-    this.playerHandle[appId].stop()
-    delete this.playerHandle[appId]
-  })
+  var player
+  try {
+    player = this.options.effect.sound(name)
+    // free the player handle after playbackcomplete or error event
+    player.on('playbackcomplete', () => {
+      logger.log(`playbackcomplete ${name}`)
+      this.playerHandle[appId].stop()
+      delete this.playerHandle[appId]
+    })
+    player.on('error', () => {
+      logger.log(`error ${name}`)
+      this.playerHandle[appId].stop()
+      delete this.playerHandle[appId]
+    })
 
-  this.playerHandle[appId] = player
+    this.playerHandle[appId] = player
+  } catch (error) {
+    logger.error(error)
+    logger.log(`appSound play error: ${appId} [${name}]`)
+    return false
+  }
   return true
 }
 

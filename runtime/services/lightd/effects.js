@@ -56,7 +56,7 @@ function LightRenderingContext () {
   this._playerCache = new LRU({
     max: 10,
     dispose: (key, val) => {
-      val.stop()
+      val._stop()
     }
   })
   this._systemCache = new Map()
@@ -96,12 +96,10 @@ LightRenderingContext.prototype.sound = function (name, self) {
     this._playerCache.set(absPath, sounder)
   }
 
-  return {
-    stop: sounder.pause.bind(sounder),
-    pause: sounder.pause.bind(sounder),
-    resume: sounder.resume.bind(sounder),
-    seek: sounder.seek.bind(sounder)
-  }
+  sounder._stop = sounder.stop
+  sounder.stop = sounder.pause.bind(sounder)
+
+  return sounder
 }
 
 /**
