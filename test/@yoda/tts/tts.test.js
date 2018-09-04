@@ -5,29 +5,22 @@ var ttsModule = require('@yoda/tts')
 var logger = require('logger')('tts-test')
 var config = require('../../helper/config')
 
-test.skip('module->tts->createTts method test case: normal options params', t => {
+test('tts: normal options params', t => {
   t.plan(3)
   var tts = ttsModule.createTts(config.cloudgw)
-  var request = tts.speak('你好若琪', () => {
-    logger.info('callback')
-    logger.info(request)
-    t.equal(request.state, 'end', `tts : id=${id} call back`)
+  var req = tts.speak('hello', (err) => {
+    t.equal(req.state, 'end', `tts : id=${req.id} call back`)
+    t.end()
+    tts.disconnect()
   })
-  logger.info(request)
   tts.on('start', function(id, errno) {
-    t.equal(request.state, 'start', `tts : id=${id} start`)
-  })
-  tts.on('voice', function(id, errno) {
-    logger.info('tts voice', id)
+    t.equal(req.state, 'start', `tts : id=${req.id} start`)
   })
   tts.on('end', function(id, errno) {
-    logger.info('tts end', id)
-    t.equal(request.state, 'end', `tts : id=${id} end`)
-    tts.disconnect()
-    t.end()
+    t.equal(req.state, 'end', `tts : id=${req.id} end`)
   })
-  tts.on('error', function(id, errno) {
-    logger.info('tts error', id)
+  tts.on('error', function (id, errno) {
+    t.fail()
   })
 })
 

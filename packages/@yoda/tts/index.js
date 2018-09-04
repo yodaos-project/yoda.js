@@ -10,8 +10,9 @@ var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var TTSEvents = [
   /**
-   * tts voice event.
+   * tts voice event, not yet used.
    * @event module:@yoda/tts~TtsProxy#voice
+   * @private
    */
   'voice', // 0: not used
   /**
@@ -91,6 +92,7 @@ TtsRequest.prototype.onend = function (errno) {
  * @constructor
  * @augments EventEmitter
  * @param {Object} handle
+ * @throws {Error} TTS task not found.
  */
 function TtsProxy (handle) {
   EventEmitter.call(this)
@@ -106,12 +108,17 @@ TtsProxy.prototype.onevent = function (name, id, errno) {
   var evt = TTSEvents[name]
   var req = this._requests[id]
   if (!req) {
-    this.emit('error', new Error('tts task not found'))
-  } else if (evt === 'start') {
-    req.onstart()
-  } else if (evt === 'end' || evt === 'error') {
-    req.onend(errno)
-    delete this._requests[id]
+    this.emit('error', new Error('TTS task not found'))
+  } else {
+    this.emit(evt, id, errno)
+    if (evt === 'start') {
+      req.onstart()
+    } else if (evt === 'end' ||
+      evt === 'error' ||
+      evt === 'cancel') {
+      req.onend(errno)
+      delete this._requests[id]
+    }
   }
   this.emit(TTSEvents[name], id, errno)
 }
