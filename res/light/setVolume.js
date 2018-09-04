@@ -2,6 +2,7 @@
 
 module.exports = function (light, data, callback) {
   var pos = Math.floor((data.volume / 100) * light.ledsConfig.leds)
+  pos = Math.max(1, pos)
   light.clear()
   var player = light.sound('system://volume.wav')
 
