@@ -71,6 +71,7 @@ function AppRuntime (paths) {
     this.loadAppComplete = true
     logger.log('load app complete')
     this.startDaemonApps()
+    this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
   })
   // volume module
   this.volume = null
