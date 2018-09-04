@@ -53,7 +53,7 @@ function registry (userId, config, cb) {
     response.once('end', () => {
       var data, err, msg
       msg = Buffer.concat(list).toString()
-      logger.log('request /api/registryByKey response', msg)
+      logger.log('request /api/registryByKey response received')
       try {
         data = JSON.parse(msg)
         // 判断是否注册成功
