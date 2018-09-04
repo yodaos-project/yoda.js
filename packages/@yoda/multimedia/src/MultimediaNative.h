@@ -21,6 +21,7 @@ typedef struct {
   iotjs_jobjectwrap_t jobjectwrap;
   MediaPlayer* handle;
   MultimediaListener* listener;
+  uv_async_t close_handle;
   uint32_t id;
 } IOTJS_VALIDATED_STRUCT(iotjs_player_t);
 
@@ -75,6 +76,7 @@ class MultimediaListener : public MediaPlayerListener {
 
 static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer);
 static void iotjs_player_destroy(iotjs_player_t* player);
+static void iotjs_player_onclose(uv_async_t* handle);
 
 #ifdef __cplusplus
 }
