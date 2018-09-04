@@ -182,12 +182,12 @@ void InputEventHandler::OnKeyEvent(uv_async_t* async) {
     jerry_release_value(jargv[i]);
   }
   jerry_release_value(onevent);
-  uv_close((uv_handle_t*)handle, InputEventHandler::AfterCallback);
+  uv_close((uv_handle_t*)async, InputEventHandler::AfterCallback);
 }
 
 void InputEventHandler::OnGestureEvent(uv_async_t* async) {
   // Gesture TODO
-  uv_close((uv_handle_t*)handle, InputEventHandler::AfterCallback);
+  uv_close((uv_handle_t*)async, InputEventHandler::AfterCallback);
 }
 
 void InputEventHandler::AfterCallback(uv_handle_t* handle) {
