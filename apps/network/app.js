@@ -17,11 +17,11 @@ module.exports = function (app) {
   app.on('request', function (nlp, action) {
     console.log(this.appId + ' onrequest')
     if (this.started === true) {
-      this.playSound('system://wifi/setup_network.ogg')
+      app.playSound('system://wifi/setup_network.ogg')
       return
     }
     this.started = true
-    this.light.play('system://setStandby.js')
+    app.light.play('system://setStandby.js')
     ble.enable('ble')
     ble.on('ble data', function (data) {
       logger.log(`length: ${chunk.length} data: ${data.data}`)
@@ -35,13 +35,9 @@ module.exports = function (app) {
       } else if (canReceive && chunk.length === 1) {
         total = +data.data.substr(5)
         chunk.push(data.data)
-        logger.log('the length of the packet is ' + total)
+        logger.log('the length of the packet is ' + (total + 2))
       } else if (canReceive && chunk.length > 1 && chunk.length < total + 2) {
         chunk.push(data.data)
-      } else {
-        logger.log(`Unexpected packet: ${data.data}`)
-        chunk = []
-        canReceive = false
       }
       if (chunk.length === total + 2) {
         canReceive = false
