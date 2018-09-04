@@ -84,11 +84,11 @@ AudioManager.setVolume = function (stream, vol) {
     vol = stream
     stream = null
   }
-  if (stream && stream !== STREAM_AUDIO &&
-    stream !== STREAM_TTS &&
-    stream !== STREAM_PLAYBACK &&
-    stream !== STREAM_ALARM &&
-    stream !== STREAM_SYSTEM) {
+  if (stream && stream !== AudioManager.STREAM_AUDIO &&
+    stream !== AudioManager.STREAM_TTS &&
+    stream !== AudioManager.STREAM_PLAYBACK &&
+    stream !== AudioManager.STREAM_ALARM &&
+    stream !== AudioManager.STREAM_SYSTEM) {
     throw new TypeError('invalid stream type')
   }
   if (typeof vol !== 'number') {
@@ -111,11 +111,11 @@ AudioManager.setVolume = function (stream, vol) {
  */
 AudioManager.getVolume = function (stream) {
   if (stream) {
-    if (stream !== STREAM_AUDIO &&
-      stream !== STREAM_TTS &&
-      stream !== STREAM_PLAYBACK &&
-      stream !== STREAM_ALARM &&
-      stream !== STREAM_SYSTEM) {
+    if (stream !== AudioManager.STREAM_AUDIO &&
+      stream !== AudioManager.STREAM_TTS &&
+      stream !== AudioManager.STREAM_PLAYBACK &&
+      stream !== AudioManager.STREAM_ALARM &&
+      stream !== AudioManager.STREAM_SYSTEM) {
       throw new TypeError('invalid stream type')
     }
     return native.getStreamVolume(stream)
