@@ -419,8 +419,8 @@ AppRuntime.prototype.preemptTopOfStack = function preemptTopOfStack (appId, appC
      * if previous app is started by a carrier,
      * exit the carrier before next steps.
      */
-    logger.info('previous app started by a carrier, exiting', this.carrierId)
-    this.exitAppById(this.carrierId)
+    logger.info('previous app started by a carrier, ', this.carrierId)
+    this.destroyAppsInStack()
     this.carrierId = null
   }
 
@@ -529,16 +529,7 @@ AppRuntime.prototype.getCurrentApp = function () {
   return this.appMap[appId]
 }
 
-/**
- * 给所有App发送destroy事件，销毁所有App
- * @private
- * @param {object} [options]
- * @param {boolean} [options.resetServices]
- */
-AppRuntime.prototype.destroyAll = function (options) {
-  var resetServices = _.get(options, 'resetServices', true)
-
-  // 依次给正在运行的App发送destroy命令
+AppRuntime.prototype.destroyAppsInStack = function () {
   var i = 0
   var appId
   // destroy all foreground app
@@ -548,6 +539,20 @@ AppRuntime.prototype.destroyAll = function (options) {
       this.onLifeCycle(appId, 'destroy')
     }
   }
+}
+
+/**
+ * 给所有App发送destroy事件，销毁所有App
+ * @private
+ * @param {object} [options]
+ * @param {boolean} [options.resetServices]
+ */
+AppRuntime.prototype.destroyAll = function (options) {
+  var resetServices = _.get(options, 'resetServices', true)
+
+  this.destroyAppsInStack()
+  var i = 0
+  var appId
   // destroy all background app
   for (i = 0; i < this.bgAppIdStack.length; i++) {
     appId = this.bgAppIdStack[i]
