@@ -753,7 +753,7 @@ Object.assign(TtsDescriptor.prototype,
             }
             return new Promise((resolve, reject) => {
               var channel = `callback:tts:${ttsId}`
-              self._activityDescriptor._registeredDbusSignals(channel)
+              self._activityDescriptor._registeredDbusSignals.push(channel)
               self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
                 logger.info('tts signals', channel, event)
 
