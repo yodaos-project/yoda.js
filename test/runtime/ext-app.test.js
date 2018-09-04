@@ -94,6 +94,29 @@ test('should trigger events and pass arguments', t => {
     })
 })
 
+test('should trigger events in namespaces and pass arguments', t => {
+  t.plan(3)
+  var target = path.join(__dirname, '..', 'fixture', 'ext-app')
+
+  var arg1 = { foo: 'bar' }
+  var arg2 = { appId: '@test' }
+  var runtime = new EventEmitter()
+  extApp('@test', target, runtime)
+    .then(descriptor => {
+      descriptor.tts.emit('end', arg1, arg2)
+      descriptor._childProcess.on('message', message => {
+        if (message.type !== 'test') {
+          return
+        }
+        t.strictEqual(message.namespace, 'tts')
+        t.strictEqual(message.event, 'end')
+        t.deepEqual(message.args, [ arg1, arg2 ])
+
+        descriptor.destruct()
+      })
+    })
+})
+
 test('should trigger events and acknowledge it', t => {
   t.plan(5)
   var target = path.join(__dirname, '..', 'fixture', 'ext-app')

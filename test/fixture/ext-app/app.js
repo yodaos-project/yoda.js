@@ -53,4 +53,13 @@ module.exports = function (activity) {
       args: [arg1, arg2]
     })
   })
+
+  activity.tts.on('end', (arg1, arg2) => {
+    process.send({
+      type: 'test',
+      namespace: 'tts',
+      event: 'end',
+      args: [arg1, arg2]
+    })
+  })
 }
