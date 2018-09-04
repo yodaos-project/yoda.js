@@ -35,12 +35,14 @@ Executor.prototype.create = function (appId, runtime) {
   if (this.type === 'light') {
     app = lightApp(appId, this.appHome, runtime)
     this.app = app
+    app.emit('ready')
     return Promise.resolve(app)
   } else if (this.type === 'extapp') {
     return extApp(appId, this.appHome, runtime)
       .then(app => {
         logger.info('Ext-app successfully started')
         this.app = app
+        app.emit('ready')
         return app
       }, err => {
         logger.info('Unexpected error on starting ext-app', err.message, err.stack)
