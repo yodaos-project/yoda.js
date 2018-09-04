@@ -41,6 +41,7 @@ class InputEventHandler {
   static void AfterStart(uv_work_t* req, int status);
   static void OnKeyEvent(uv_async_t* async);
   static void OnGestureEvent(uv_async_t* async);
+  static void AfterCallback(uv_handle_t* handle);
 
  private:
   iotjs_input_t* inputwrap;
