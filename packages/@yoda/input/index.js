@@ -57,14 +57,21 @@ InputEvent.prototype.onevent = function (state, action, code, time) {
   }
   /**
    * keyup event
-   * @event input.InputEvent#keyup
+   * @event module:@yoda/input~InputEvent#keyup
    * @type {Object}
    * @property {Number} keyCode - the key code
    * @property {Number} keyTime - the key time
    */
   /**
    * keydown event
-   * @event input.InputEvent#keydown
+   * @event module:@yoda/input~InputEvent#keydown
+   * @type {Object}
+   * @property {Number} keyCode - the key code
+   * @property {Number} keyTime - the key time
+   */
+  /**
+   * long press event
+   * @event module:@yoda/input~InputEvent#longpress
    * @type {Object}
    * @property {Number} keyCode - the key code
    * @property {Number} keyTime - the key time
@@ -77,8 +84,9 @@ InputEvent.prototype.onevent = function (state, action, code, time) {
 
 /**
  * start handling event
- * @fires input.InputEvent#keyup
- * @fires input.InputEvent#keydown
+ * @fires module:@yoda/input~InputEvent#keyup
+ * @fires module:@yoda/input~InputEvent#keydown
+ * @fires module:@yoda/input~InputEvent#longpress
  */
 InputEvent.prototype.start = function () {
   return this._handle.start(this._options.selectTimeout,
@@ -96,8 +104,6 @@ InputEvent.prototype.disconnect = function () {
 /**
  * get the event handler
  * @function defaults
- * @fires input.InputEvent#keyup
- * @fires input.InputEvent#keydown
  * @example
  * var inputEvent = require('input')()
  * inputEvent.on('keyup', (event) => {
@@ -105,6 +111,9 @@ InputEvent.prototype.disconnect = function () {
  * })
  * inputEvent.on('keydown', (event) => {
  *   console.log('keydown', event.keyCode)
+ * })
+ * inputEvent.on('longpress', (event) => {
+ *   console.log('longpressx', event.keyCode)
  * })
  * @returns {input.InputEvent}
  */
