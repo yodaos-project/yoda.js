@@ -16,6 +16,11 @@ var events = [
   'keyup', 'keydown', 'longpress'
 ]
 
+var ACTION_CLICK = 1
+var ACTION_DB_CLICK = 2
+var ACTION_LONG_CLICK = 3
+var ACTION_SLIDE = 4
+
 /**
  * Common base class for input events.
  * @constructor
@@ -38,6 +43,7 @@ function InputEvent (options) {
   }
   this._handle = new InputWrap()
   this._handle.onevent = this.onevent.bind(this)
+  this._handle.ongesture = this.ongesture.bind(this)
 }
 inherits(InputEvent, EventEmitter)
 
@@ -83,6 +89,39 @@ InputEvent.prototype.onevent = function (state, action, code, time) {
 }
 
 /**
+ * @private
+ * @param {Number} action - the action type
+ * @param {Number} code - the event code
+ */
+InputEvent.prototype.ongesture = function (action, code) {
+  if (action === ACTION_CLICK) {
+    /**
+     * click event
+     * @event module:@yoda/input~InputEvent#click
+     * @type {Object}
+     * @property {Number} keyCode - the key code
+     */
+    this.emit('click', { keyCode: code })
+  } else if (action === ACTION_DB_CLICK) {
+    /**
+     * double click event
+     * @event module:@yoda/input~InputEvent#dbclick
+     * @type {Object}
+     * @property {Number} keyCode - the key code
+     */
+    this.emit('dbclick', { keyCode: code })
+  } else if (action === ACTION_LONG_CLICK) {
+    /**
+     * click event
+     * @event module:@yoda/input~InputEvent#longpressed
+     * @type {Object}
+     * @property {Number} keyCode - the key code
+     */
+    this.emit('longpressed', { keyCode: code })
+  }
+}
+
+/**
  * start handling event
  * @fires module:@yoda/input~InputEvent#keyup
  * @fires module:@yoda/input~InputEvent#keydown
@@ -108,6 +147,12 @@ InputEvent.prototype.disconnect = function () {
  * var inputEvent = require('input')()
  * inputEvent.on('keyup', (event) => {
  *   console.log('keyup', event.keyCode)
+ * })
+ * inputEvent.on('click', (event) => {
+ *   console.log('click', event.keyCode)
+ * })
+ * inputEvent.on('dbclick', (event) => {
+ *   console.log('double click', event.keyCode)
  * })
  * inputEvent.on('keydown', (event) => {
  *   console.log('keydown', event.keyCode)
