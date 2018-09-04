@@ -3,8 +3,8 @@
 #include <sys/statvfs.h>
 
 JS_FUNCTION(Reboot) {
-  int ret = system("reboot");
-  return jerry_create_number(ret);
+  system("reboot");
+  return jerry_create_boolean(true);
 }
 
 JS_FUNCTION(VerifyOtaImage) {
