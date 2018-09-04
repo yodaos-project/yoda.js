@@ -2,12 +2,16 @@
 var AudioManager = require('@yoda/audio').AudioManager
 var logger = require('logger')('@volume')
 var _ = require('@yoda/util')._
+var property = require('@yoda/property')
 
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
   var STRING_RANGE_ERROR = '音量调节范围为0到10'
   var STRING_SHOW_VOLUME = '当前音量为'
   var STRING_SHOW_MUTED = '设备已静音'
+
+  var volumePropKey = 'persist.yoda.volume.value'
+  var volumeDefaultPropKey = 'persist.yoda.volume.default.value'
 
   function speakAndExit (text) {
     var ismuted = AudioManager.isMuted()
@@ -30,7 +34,7 @@ module.exports = function (activity) {
 
   function getVolume () {
     /** FIXME: only volume on channel STREAM_TTS could be fetched right now */
-    return AudioManager.getVolume(AudioManager.STREAM_TTS)
+    return Math.floor(AudioManager.getVolume(AudioManager.STREAM_TTS))
   }
 
   /**
@@ -38,24 +42,40 @@ module.exports = function (activity) {
    * @param {number} vol
    * @param {object} [options]
    * @param {boolean} [options.silent]
+   * @param {boolean} [options.init]
    */
   function setVolume (vol, options) {
     var silent = _.get(options, 'silent', false)
+    var init = _.get(options, 'init', false)
+
+    if (AudioManager.isMuted()) {
+      setUnmute({ recover: false })
+    }
 
     logger.info(`trying to set volume to ${vol}`)
-    if (vol < 0 || vol > 100) {
-      if (silent) {
-        return activity.light.play('system://setVolume', {
-          volume: vol
-        })
-      }
-      return speakAndExit(STRING_RANGE_ERROR)
-    } else {
+    if (vol > 0 && vol <= 100) {
+      /** normal range, set volume as it is */
       AudioManager.setVolume(vol)
+      property.set(volumePropKey, vol)
+      if (init) {
+        return
+      }
       return activity.light.play('system://setVolume', {
         volume: vol
       })
     }
+
+    /** handles out of range conditions */
+    if (vol <= 0) {
+      setMute()
+    }
+
+    if (silent) {
+      return activity.light.play('system://setVolume', {
+        volume: vol
+      })
+    }
+    return speakAndExit(STRING_RANGE_ERROR)
   }
 
   /**
@@ -71,15 +91,37 @@ module.exports = function (activity) {
 
   function decVolume (value, options) {
     var vol = getVolume() - value
+    if (vol < 0) {
+      vol = 0
+    }
     return setVolume(vol, options)
+  }
+
+  function initVolume () {
+    var volume = parseInt(property.get(volumeDefaultPropKey))
+    if (!volume) {
+      volume = 60
+    }
+    setVolume(volume, { init: true })
+    setUnmute({ recover: false })
   }
 
   function setMute () {
     AudioManager.setMute(true)
   }
 
-  function setUnmute () {
+  function setUnmute (options) {
+    var recover = _.get(options, 'recover', true)
     AudioManager.setMute(false)
+
+    if (!recover) {
+      return
+    }
+    var def = parseInt(property.get(volumeDefaultPropKey))
+    if (!def) {
+      def = 30
+    }
+    setVolume(def)
   }
 
   function micMute (muted) {
@@ -97,7 +139,7 @@ module.exports = function (activity) {
         if (AudioManager.isMuted()) {
           speakAndExit(STRING_SHOW_MUTED)
         } else {
-          speakAndExit(STRING_SHOW_VOLUME + getVolume() / partition)
+          speakAndExit(STRING_SHOW_VOLUME + Math.floor(getVolume() / partition))
         }
         break
       case 'set_volume_percent':
@@ -132,18 +174,14 @@ module.exports = function (activity) {
       case 'cancelmute':
         setUnmute()
         break
-      case 'switchmute':
-        if (AudioManager.isMuted()) {
-          setUnmute()
-        } else {
-          setMute()
-        }
-        break
       case 'mic_mute':
         micMute(true)
         break
       case 'mic_unmute':
         micMute(false)
+        break
+      case 'init_volume':
+        initVolume()
         break
       default:
         activity.exit()
