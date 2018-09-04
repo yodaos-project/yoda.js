@@ -36,9 +36,11 @@ Permission.prototype.check = function (appId, name) {
   }
   // 判断App是否声明了权限
   if (this.permission[appId] && this.permission[appId][name] === true) {
-    // 判断App是否运行 或者 是否具有中断权限
-    return appId === this.app_runtime.getCurrentAppId() ||
-      this.permission[appId]['interrupt'] === true
+    if (name === 'INTERRUPT') {
+      return true
+    }
+    /** no permission other than `INTERRUPT` shall be allow if app is not top of stack */
+    return appId === this.app_runtime.getCurrentAppId()
   }
   return false
 }
