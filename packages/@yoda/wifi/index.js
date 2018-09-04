@@ -88,9 +88,9 @@ module.exports = {
    */
   getWifiList: native.getWifiList,
   /**
-   * Disable the WI-FI.
+   * Disable all the WI-FI.
    * @function disableAll
-   * @returns {Boolean}
+   * @returns {Number} the status code.
    */
   disableAll: native.disableAll,
   /**
