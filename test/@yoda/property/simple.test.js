@@ -34,6 +34,7 @@ test('module->property->set value : normal key, set value typeof number', t => {
   t.plan(1)
   prop.set('number_key', 2)
   t.equal(typeof prop.get('number_key'), 'string')
+  t.end()
 })
 
 test('module->property->set value : normal key, set key typeof number', t => {
