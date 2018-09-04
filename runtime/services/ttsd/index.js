@@ -74,6 +74,13 @@ function reConnect (CONFIG) {
     _TTS.on('start', function (id, errno) {
       logger.log('ttsd start', id)
       lightd.invoke('setSpeaking')
+      dbusService._dbus.emitSignal(
+        '/tts/service',
+        'tts.service',
+        'ttsdevent',
+        'ss',
+        ['' + id, 'start']
+      )
     })
     _TTS.on('end', function (id, errno) {
       logger.log('ttsd end', id)
@@ -88,6 +95,7 @@ function reConnect (CONFIG) {
     })
     _TTS.on('cancel', function (id, errno) {
       logger.log('ttsd cancel', id)
+      lightd.invoke('unsetSpeaking')
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',

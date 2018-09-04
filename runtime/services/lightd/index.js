@@ -98,6 +98,7 @@ dbusApis.addMethod('appSound', {
   in: ['s', 's'],
   out: ['b']
 }, function (appId, name, cb) {
+  logger.log(`appSound: ${appId} ${name}`)
   var result = service.appSound(appId, name)
   cb(null, result)
 })
