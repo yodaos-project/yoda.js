@@ -5,11 +5,10 @@ var lightApp = require('./light-app')
 var extApp = require('./ext-app')
 var _ = require('@yoda/util')._
 
-function Executor (profile, appHome) {
-  this.daemon = false
-  this.errmsg = null
-  this.valid = true
+function Executor (profile, appHome, appId, runtime) {
   this.profile = profile
+  this.appId = appId
+  this.runtime = runtime
   this.daemon = _.get(profile, 'metadata.daemon', false)
 
   if (profile.metadata.extapp === true) {
@@ -21,23 +20,19 @@ function Executor (profile, appHome) {
   }
 }
 
-Executor.prototype.create = function (appId, runtime) {
-  if (!this.valid) {
-    logger.log(`app ${appId} invalid`)
-    return false
-  }
+Executor.prototype.create = function () {
   if (this.daemon && this.app != null) {
     return Promise.resolve(this.app)
   }
 
   var app = null
   if (this.type === 'light') {
-    app = lightApp(appId, this.appHome, runtime)
+    app = lightApp(this.appId, this.appHome, this.runtime)
     this.app = app
     app.emit('ready')
     return Promise.resolve(app)
   } else if (this.type === 'extapp') {
-    return extApp(appId, this.appHome, runtime)
+    return extApp(this.appId, this.appHome, this.runtime)
       .then(app => {
         logger.info('Ext-app successfully started')
         this.app = app
@@ -45,7 +40,7 @@ Executor.prototype.create = function (appId, runtime) {
         return app
       }, err => {
         logger.info('Unexpected error on starting ext-app', err.message, err.stack)
-        runtime.exitAppByIdForce(appId)
+        this.runtime.exitAppByIdForce(this.appId)
       })
   }
 }
@@ -53,12 +48,17 @@ Executor.prototype.create = function (appId, runtime) {
 /**
  *
  * @param {ActivityDescriptor} app
+ * @returns {Promise<void>}
  */
-Executor.prototype.destruct = function destruct (app) {
-  if (this.daemon) {
-    return
+Executor.prototype.destruct = function destruct () {
+  if (this.app == null) {
+    return Promise.resolve()
   }
-  app.destruct()
+  return Promise.resolve()
+    .then(() => {
+      this.app.destruct()
+      this.app = null
+    })
 }
 
 module.exports = Executor

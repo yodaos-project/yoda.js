@@ -61,30 +61,31 @@ module.exports = function compositionDeVoix (activity) {
       logger.info('Batch execution has been preempted, skipping.')
       return Promise.resolve()
     }
-    activity.preemptTopOfStack()
-
-    if (idx == null) {
-      idx = 0
-    }
-    var exec = executions[idx]
-    var handler = execMap[exec.type]
-    if (handler == null) {
-      return Promise.reject(new Error(`Unknown execution type ${exec.type} at index '${idx}'.`))
-    }
-    return handler(exec.text)
+    return activity.preemptTopOfStack()
       .then(() => {
-        if (exec.delay) {
-          logger.info('delaying', exec.delay)
-          return delay(exec.delay)
+        if (idx == null) {
+          idx = 0
         }
-      })
-      .then(() => {
-        if (idx < executions.length - 1) {
-          logger.info('next step', idx + 1)
-          return execute(id, executions, idx + 1)
+        var exec = executions[idx]
+        var handler = execMap[exec.type]
+        if (handler == null) {
+          return Promise.reject(new Error(`Unknown execution type ${exec.type} at index '${idx}'.`))
         }
-        /** execution done */
-        activity.exit()
+        return handler(exec.text)
+          .then(() => {
+            if (exec.delay) {
+              logger.info('delaying', exec.delay)
+              return delay(exec.delay)
+            }
+          })
+          .then(() => {
+            if (idx < executions.length - 1) {
+              logger.info('next step', idx + 1)
+              return execute(id, executions, idx + 1)
+            }
+            /** execution done */
+            activity.exit()
+          })
       })
   }
 

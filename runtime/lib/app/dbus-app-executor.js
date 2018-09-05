@@ -2,13 +2,15 @@ var EventEmitter = require('events')
 var inherits = require('util').inherits
 
 module.exports = Executor
-function Executor (objectPath, ifaceName) {
+function Executor (objectPath, ifaceName, appId, runtime) {
   this.objectPath = objectPath
   this.ifaceName = ifaceName
+  this.appId = appId
+  this.runtime = runtime
 }
 
-Executor.prototype.create = function (appId, runtime) {
-  this.app = new DbusApp(appId, this.objectPath, this.ifaceName, runtime.service)
+Executor.prototype.create = function () {
+  this.app = new DbusApp(this.appId, this.objectPath, this.ifaceName, this.runtime.service)
 
   return Promise.resolve(this.app)
 }
