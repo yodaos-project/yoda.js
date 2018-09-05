@@ -220,8 +220,8 @@ AppRuntime.prototype.load = function (root, cb) {
 
 AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
   var self = this
-  var daemons = Object.keys(this.apps).map(appId => {
-    var executor = this.apps[appId]
+  var daemons = Object.keys(self.apps).map(appId => {
+    var executor = self.apps[appId]
     if (!executor.daemon) {
       return
     }
@@ -236,7 +236,14 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
     var appId = daemons[idx][0]
     var executor = daemons[idx][1]
     logger.info('Starting daemon app', executor.appHome)
-    executor.create(appId, self).then(() => start(idx + 1), () => start(idx + 1))
+    executor.create(appId, self).then(app => {
+      self.bgAppIdStack.push(appId)
+      self.appMap[appId] = app
+      return start(idx + 1)
+    }, () => {
+      /** ignore error and continue populating */
+      return start(idx + 1)
+    })
   }
 }
 
@@ -639,14 +646,15 @@ AppRuntime.prototype.onLifeCycle = function onLifeCycle (appInfo, event, params)
     if (this.apps[appId]) {
       return this.apps[appId].create(appId, this)
         .then((app) => {
-          if (app) {
-            // 执行create生命周期
-            emit(app)
-            // 当前App正在运行
-            this.appIdStack.push(appId)
-            this.appMap[appId] = app
-            this.appDataMap[appId] = appInfo
+          // 执行create生命周期
+          emit(app)
+          this.appMap[appId] = app
+          // 当前App正在运行
+          if (this.apps[appId].daemon) {
+            this.bgAppIdStack.push(appId)
+            return
           }
+          this.appIdStack.push(appId)
         })
     } else {
       // fix: should create miss app here
@@ -658,6 +666,10 @@ AppRuntime.prototype.onLifeCycle = function onLifeCycle (appInfo, event, params)
   var app = this.appMap[appId]
   if (app == null) {
     return Promise.reject(new Error('app instance not found, you should wait for creation of a lifecycle event to complete'))
+  }
+
+  if (event === 'request') {
+    this.appDataMap[appId] = Object.assign({}, this.appDataMap[appId], appInfo)
   }
 
   emit(app)

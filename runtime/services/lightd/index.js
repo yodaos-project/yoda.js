@@ -31,13 +31,7 @@ dbusApis.addMethod('play', {
   } catch (error) {
     logger.log(`parse args error: ${args}, appId: ${appId}`)
   }
-  var called = false
   service.loadfile(name, data, (error) => {
-    if (called) {
-      logger.log(`NOTICE: ${name} the callback function was called multiple times`)
-      return
-    }
-    called = true
     if (error) {
       cb(null, false)
     } else {

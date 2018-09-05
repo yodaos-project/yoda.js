@@ -36,7 +36,7 @@ Light.prototype.loadfile = function (uri, data, callback) {
   try {
     handle = require(uri)
     this.stopPrev(data && data.keep)
-    this.prev = handle(this.options.effect, data || {}, callback)
+    this.prev = handle(this.options.effect, data || {}, dedup(callback))
   } catch (error) {
     logger.error(`load effect file error from path: ${uri}`, error)
     callback(error)
@@ -162,3 +162,13 @@ Light.prototype.setSpeaking = function () {
 }
 
 module.exports = Light
+
+function dedup (callback) {
+  var called = false
+  return function dedupCallback () {
+    if (!called) {
+      called = true
+      return callback.apply(this, arguments)
+    }
+  }
+}

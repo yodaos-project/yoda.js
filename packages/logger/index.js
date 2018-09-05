@@ -102,7 +102,7 @@ function createLoggerFunction (level) {
   }
   return function () {
     var now = new Date()
-    var line = `[${now}] ${level.toUpperCase()} <${this.name}> :: ` + util.format.apply(this, arguments)
+    var line = `[${now.toISOString()}] ${level.toUpperCase()} <${this.name}> :: ` + util.format.apply(this, arguments)
     if (loggingServer.isAvailable()) {
       loggingServer.send(line)
     } else {
