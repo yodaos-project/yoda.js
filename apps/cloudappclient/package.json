@@ -29,7 +29,7 @@
     "extapp",
     "vui"
   ],
-  "author": "sudo",
+  "author": "sudo <xiaofei.lan@rokid.com>",
   "license": "ISC",
   "bugs": {
     "url": ""
