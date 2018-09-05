@@ -1320,6 +1320,37 @@ AppRuntime.prototype.startExtappService = function () {
     self.syncCloudAppIdStack(JSON.parse(stack || '[]'))
     cb(null, true)
   })
+  extapp.addMethod('tts', {
+    in: ['s', 's'],
+    out: ['s']
+  }, function (appId, text, cb) {
+    if (self.apps[appId] === undefined) {
+      return cb(null, '-1')
+    }
+    var permit = self.permission.check(appId, 'ACCESS_TTS')
+    if (permit) {
+      self.ttsMethod('speak', [appId, text])
+        .then((res) => {
+          var ttsId = res[0]
+          cb(null, ttsId)
+          var channel = `callback:tts:${ttsId}`
+          var app = self.apps[appId]
+          if (ttsId !== '-1') {
+            self.dbusSignalRegistry.once(channel, function () {
+              self.service._dbus.emitSignal(
+                app.objectPath,
+                app.ifaceName,
+                'onTtsComplete',
+                's',
+                [ttsId]
+              )
+            })
+          }
+        })
+    } else {
+      cb(null, '-1')
+    }
+  })
 
   /**
    * Create prop service
