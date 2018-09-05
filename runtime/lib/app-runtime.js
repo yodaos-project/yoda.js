@@ -15,6 +15,7 @@ var _ = require('@yoda/util')._
 
 var Permission = require('./component/permission')
 var AppExecutor = require('./app/executor')
+var DbusAppExecutor = require('./app/dbus-app-executor')
 var env = require('./env')()
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
@@ -875,11 +876,11 @@ AppRuntime.prototype.deleteBGAppById = function (appId) {
  * @param {object} profile extapp的profile
  * @private
  */
-AppRuntime.prototype.registerExtApp = function (appId, profile) {
-  logger.log('register extapp with id: ', appId)
+AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
+  logger.log('register dbus app with id: ', appId)
   // 配置exitApp的默认权限
   this.permission.load(appId, ['ACCESS_TTS', 'ACCESS_MULTIMEDIA'])
-  this.apps[appId] = new AppExecutor(profile)
+  this.apps[appId] = new DbusAppExecutor(objectPath, ifaceName)
 }
 
 /**
@@ -1205,16 +1206,7 @@ AppRuntime.prototype.startExtappService = function () {
     out: ['b']
   }, function (appId, objectPath, ifaceName, cb) {
     if (self.login === true) {
-      self.registerExtApp(appId, {
-        metadata: {
-          extapp: true,
-          daemon: true,
-          dbusConn: {
-            objectPath: objectPath,
-            ifaceName: ifaceName
-          }
-        }
-      })
+      self.registerDbusApp(appId, objectPath, ifaceName)
       cb(null, true)
     } else {
       cb(null, false)
