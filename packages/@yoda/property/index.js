@@ -22,17 +22,47 @@
 
 var native = require('./property.node')
 
+function normalize (key, flag) {
+  if (typeof key !== 'string') {
+    throw new TypeError(`key must be a string "${key}"`)
+  }
+  if (key === '') {
+    throw new TypeError('key must not be empty string')
+  }
+  if (flag === 'persist') {
+    key = `persist.${key}`
+  } else if (flag === 'readonly') {
+    key = `ro.${key}`
+  }
+  return key
+}
+
 module.exports = {
   /**
    * @function get
    * @param {String} key - the property key.
+   * @param {String} [flag] - the flag for set operation, available 
+   *                 values are: persistent and readonly.
+   * @returns {String|Number} returns the value by the given key.
+   * @throws {TypeError} key must be a number.
+   * @throws {TypeError} key must not be empty string.
    */
-  get: native.get,
+  get: function (key, flag) {
+    key = normalize(key, flag)
+    return native.get(key)
+  },
 
   /**
    * @function set
    * @param {String} key - the property key.
    * @param {String} val - the property val to set.
+   * @param {String} [flag] - the flag for set operation, available 
+   *                 values are: persistent and readonly.
+   * @throws {TypeError} key must be a number.
+   * @throws {TypeError} key must not be empty string.
    */
-  set: native.set
+  set: function (key, val, flag) {
+    key = normalize(key, flag)
+    native.set(key, val)
+  },
 }

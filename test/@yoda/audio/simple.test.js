@@ -24,12 +24,8 @@ test('set/get tts volume 100', (t) => {
 })
 
 // Bug Id 1284
-test.skip('set/get tts volume 101', (t) => {
-  t.plan(1)
-  t.throws(() => {
-    AudioManager.setVolume(AudioManager.STREAM_TTS, 101)
-  }, Error)
-  t.end()
+test('set/get tts volume 101', (t) => {
+  setAndGetVolum(t, 101, 100)
 })
 
 test('set/get tts volume 1', (t) => {
@@ -44,31 +40,9 @@ test('set/get tts volume undefined', (t) => {
   t.end()
 })
 
-// Bug Id 1297, 1298
-test.skip('set/get volume with different stream model in 0-100', (t) => {
-  t.plan(606)
-  var strs = ['STREAM_AUDIO', 'STREAM_TTS', 'STREAM_PLAYBACK', 'STREAM_ALARM', 'STREAM_SYSTEM', '']
-  strs.forEach((str) => {
-    for (var i = 0; i < 101; i++) {
-      if (str !== '') {
-        AudioManager.setVolume(AudioManager[str], i)
-        t.equal(AudioManager.getVolume(AudioManager[str]), i)
-      } else {
-        AudioManager.setVolume(i)
-        t.equal(AudioManager.getVolume(), i)
-      }
-    }
-  })
-  t.end()
-})
-
 // Bug Id 1284
-test.skip('set/get tts volume -1', (t) => {
-  t.plan(1)
-  t.throws(() => {
-    AudioManager.setVolume(AudioManager.STREAM_TTS, -1)
-  }, Error)
-  t.end()
+test('set/get tts volume -1', (t) => {
+  setAndGetVolum(t, -1, 0)
 })
 
 test('set/get tts volume 1.6', (t) => {
@@ -98,6 +72,23 @@ test('set/cancel tts volume mute', (t) => {
   AudioManager.setMute(false)
   t.equal(AudioManager.isMuted(), false)
   t.equal(AudioManager.getVolume(AudioManager.STREAM_TTS), 60)
+  t.end()
+})
+
+// Bug Id 1297, 1298
+test('set/get volume with different stream model in 0-100', (t) => {
+  var strs = ['STREAM_AUDIO', 'STREAM_TTS', 'STREAM_PLAYBACK', 'STREAM_ALARM', '']
+  strs.forEach((str) => {
+    for (var i = 1; i <= 100; i++) {
+      if (str !== '') {
+        AudioManager.setVolume(AudioManager[str], i)
+        t.equal(AudioManager.getVolume(AudioManager[str]), i, `it should be set volume to ${i}`)
+      } else {
+        AudioManager.setVolume(i)
+        t.equal(AudioManager.getVolume(), i)
+      }
+    }
+  })
   t.end()
 })
 
