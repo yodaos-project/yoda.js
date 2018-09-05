@@ -88,7 +88,7 @@ function AppRuntime (paths) {
   this.forceUpdateAvailable = false
 
   // 启动extapp dbus接口
-  this.startExtappService()
+  this.startDbusAppService()
   // 处理mqtt事件
   this.handleMqttMessage()
   // handle keyboard/button events
@@ -888,7 +888,7 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
  * @param {string} appId
  * @private
  */
-AppRuntime.prototype.deleteExtApp = function (appId) {
+AppRuntime.prototype.deleteDbusApp = function (appId) {
 
 }
 
@@ -1188,7 +1188,7 @@ AppRuntime.prototype.onReLogin = function () {
  * 启动extApp dbus接口
  * @private
  */
-AppRuntime.prototype.startExtappService = function () {
+AppRuntime.prototype.startDbusAppService = function () {
   var self = this
   var service = dbus.registerService('session', dbusConfig.service)
   this.service = service
@@ -1205,6 +1205,7 @@ AppRuntime.prototype.startExtappService = function () {
     in: ['s', 's', 's'],
     out: ['b']
   }, function (appId, objectPath, ifaceName, cb) {
+    logger.info('dbus registering app', appId, objectPath, ifaceName)
     if (self.login === true) {
       self.registerDbusApp(appId, objectPath, ifaceName)
       cb(null, true)
@@ -1216,7 +1217,7 @@ AppRuntime.prototype.startExtappService = function () {
     in: ['s'],
     out: []
   }, function (appId, cb) {
-    self.deleteExtApp(appId)
+    self.deleteDbusApp(appId)
     cb(null)
   })
   extapp.addMethod('start', {
