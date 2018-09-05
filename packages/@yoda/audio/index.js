@@ -13,9 +13,56 @@
  */
 
 var native = require('./audio.node')
+var property = require('@yoda/property')
 
 /**
- * @constructor
+ * This define the streams config
+ */
+var AudioBase = {
+  /**
+   * default volume
+   */
+  DEFAULT_VOLUME: _getNumber('audio.volume.default', 60),
+}
+
+function _getNumber (key, defaults) {
+  var num = parseInt(property.get(key, 'persist'))
+  return isNaN(num) ? defaults : num
+}
+
+function _storeVolume (stream, vol) {
+  vol = Math.floor(vol)
+  property.set(stream.key, vol, 'persist')
+  native.setStreamVolume(stream.id, vol)
+}
+
+function _getVolume (stream) {
+  var vol = parseInt(property.get(stream.key, 'persist'))
+  if (isNaN(vol)) {
+    return false
+  } else {
+    return vol
+  }
+}
+
+function defineStream (id, name, options) {
+  options = options || {}
+  var stream = AudioBase[id] = {
+    id: id,
+    name: name,
+    readonly: options.readonly || undefined,
+    get key () {
+      return `audio.volume.${this.name}`
+    }
+  }
+
+  if (_getVolume(stream) === false) {
+    _storeVolume(stream, AudioBase.DEFAULT_VOLUME)
+  }
+}
+
+/**
+ * @class
  */
 function AudioManager () {
   throw new TypeError('should not call this function')
@@ -74,32 +121,41 @@ AudioManager.LINEAR_RAMP = function (len) {
  * Set the volume of the given stream.
  * @memberof module:@yoda/audio~AudioManager
  * @method setVolume
- * @param {Number} [stream=AudioManager.STREAM_AUDIO] - The stream type.
+ * @param {Number} [stream=AudioManager.STREAM_TTS] - The stream type.
  * @param {Number} vol - The volume to set
  * @throws {TypeError} vol must be a number
  * @throws {TypeError} invalid stream type
+ * @throws {Error} stream type readonly
  */
-AudioManager.setVolume = function (stream, vol) {
+AudioManager.setVolume = function (type, vol) {
   if (arguments.length === 1) {
-    vol = stream
-    stream = null
+    vol = type
+    type = null
   }
-  if (stream && stream !== AudioManager.STREAM_AUDIO &&
-    stream !== AudioManager.STREAM_TTS &&
-    stream !== AudioManager.STREAM_PLAYBACK &&
-    stream !== AudioManager.STREAM_ALARM &&
-    stream !== AudioManager.STREAM_SYSTEM) {
+  if (type && !AudioBase[type]) {
     throw new TypeError('invalid stream type')
   }
   if (typeof vol !== 'number') {
     throw new TypeError('vol must be a number')
   }
-
-  if (stream !== null) {
-    native.setStreamVolume(stream, vol)
-  } else {
-    native.setMediaVolume(vol)
+  if (vol > 100) {
+    vol = 100
+  } else if (vol < 0) {
+    vol = 0
   }
+
+  if (type === null) {
+    AudioManager.setVolume(AudioManager.STREAM_AUDIO, vol)
+    AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
+    AudioManager.setVolume(AudioManager.STREAM_TTS, vol)
+    return
+  }
+
+  var stream = AudioBase[type]
+  if (stream.readonly) {
+    throw new Error(`stream type "${stream.name}" is readonly`)
+  }
+  return _storeVolume(stream, vol)
 }
 
 /**
@@ -110,17 +166,13 @@ AudioManager.setVolume = function (stream, vol) {
  * @throws {TypeError} invalid stream type
  */
 AudioManager.getVolume = function (stream) {
-  if (stream) {
-    if (stream !== AudioManager.STREAM_AUDIO &&
-      stream !== AudioManager.STREAM_TTS &&
-      stream !== AudioManager.STREAM_PLAYBACK &&
-      stream !== AudioManager.STREAM_ALARM &&
-      stream !== AudioManager.STREAM_SYSTEM) {
+  if (stream !== undefined) {
+    if (!AudioBase[stream]) {
       throw new TypeError('invalid stream type')
     }
-    return native.getStreamVolume(stream)
+    return _getVolume(AudioBase[stream])
   } else {
-    return native.getMediaVolume()
+    return _getVolume(AudioBase[native.STREAM_TTS])
   }
 }
 
@@ -166,3 +218,13 @@ AudioManager.setVolumeShaper = function (shaper) {
   }
   return true
 }
+
+;(function init() {
+  defineStream(native.STREAM_AUDIO, 'audio')
+  defineStream(native.STREAM_TTS, 'tts')
+  defineStream(native.STREAM_PLAYBACK, 'playback')
+  defineStream(native.STREAM_ALARM, 'alarm')
+  defineStream(native.STREAM_SYSTEM, 'system', {
+    readonly: true
+  })
+})()

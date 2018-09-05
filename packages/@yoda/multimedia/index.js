@@ -102,9 +102,13 @@ MediaPlayer.prototype.onerror = function () {
 /**
  * prepare with the given resource(URI) and start asynchronously.
  * @param {String} uri - The resource uri to play
+ * @throws {Error} url must be a valid string
  */
 MediaPlayer.prototype.start = function (uri) {
-  if (!uri) { throw new Error('url must be a valid string') }
+  if (!uri) {
+    throw new Error('url must be a valid string')
+  }
+  this.volume = AudioManager.getVolume(this._stream)
   return this._handle.prepare(uri)
 }
 
