@@ -449,9 +449,9 @@ AppRuntime.prototype.preemptTopOfStack = function preemptTopOfStack (appId, appC
   }
 
   if (nlpForm === 'scene') {
-    // Exit all app on incoming scene nlp
+    // Exit all apps in stack on incoming scene nlp
     logger.debug('on scene nlp.')
-    return this.destroyAll()
+    return this.destroyAppsInStack()
   }
 
   var last = this.getCurrentAppData()
