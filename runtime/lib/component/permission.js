@@ -2,6 +2,7 @@
 
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
+var logger = require('logger')('permission')
 
 function Permission (runtime) {
   EventEmitter.call(this)
@@ -40,7 +41,11 @@ Permission.prototype.check = function (appId, name) {
       return true
     }
     /** no permission other than `INTERRUPT` shall be allow if app is not top of stack */
-    return appId === this.app_runtime.getCurrentAppId()
+    var isActiveApp = appId === this.app_runtime.life.getCurrentAppId()
+    if (!isActiveApp) {
+      logger.info(`app has permission ${name}, but is not currently active app, denying.`, appId, this.app_runtime.life.getCurrentAppId())
+    }
+    return isActiveApp
   }
   return false
 }

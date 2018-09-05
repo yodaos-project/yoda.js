@@ -42,3 +42,28 @@ function startsWith (str, search, pos) {
   }
   return str.substring(!pos || pos < 0 ? 0 : +pos, search.length) === search
 }
+
+module.exports.times = times
+function times (number) {
+  var ret = []
+  for (var idx = 0; idx < number; ++idx) {
+    ret.push(idx)
+  }
+  return ret
+}
+
+module.exports.mapSeries = mapSeries
+function mapSeries (iterable, mapper) {
+  var ret = []
+  return step(0)
+  function step (idx) {
+    if (idx >= iterable.length) {
+      return Promise.resolve(ret)
+    }
+    return Promise.resolve(mapper(iterable[idx], idx))
+      .then(res => {
+        ret.push(res)
+        return step(idx + 1)
+      })
+  }
+}

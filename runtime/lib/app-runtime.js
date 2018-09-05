@@ -20,6 +20,7 @@ var env = require('./env')()
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 var Input = require('@yoda/input')
+var Lifetime = require('./lifetime')
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -31,8 +32,6 @@ perf.stub('init')
  */
 function AppRuntime (paths) {
   EventEmitter.call(this)
-  // App Executor
-  this.apps = {}
   this.config = {
     host: env.cloudgw.wss,
     port: 443,
@@ -42,38 +41,16 @@ function AppRuntime (paths) {
     secret: null
   }
 
-  // 保存正在运行的AppID
-  this.appIdStack = []
-  this.bgAppIdStack = []
   this.cloudAppIdStack = []
-  /**
-   * Some app may have permissions to call up on other app,
-   * in which case, the app which has the permission will be stored
-   * on `this.carrier`, and the one called up preempts the top of stack.
-   * Since there is only one app could be on top of stack, single carrier slot
-   * might be sufficient.
-   */
-  this.carrierId = null
-  // 保存正在运行的App Map, 以AppID为key
-  this.appMap = {}
-  // 保存正在运行的App的data, 以AppID为key
-  this.appDataMap = {}
   // save the skill's id domain
   this.domain = {
     cut: '',
     scene: ''
   }
+
   // manager app's permission
   this.permission = new Permission(this)
 
-  this.loadAppComplete = false
-  // 加载APP
-  this.loadApp(paths, () => {
-    this.loadAppComplete = true
-    logger.log('load app complete')
-    this.startDaemonApps()
-    this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
-  })
   // volume module
   this.volume = null
   this.prevVolume = -1
@@ -97,6 +74,21 @@ function AppRuntime (paths) {
 
   this.dbusSignalRegistry = new EventEmitter()
   this.listenDbusSignals()
+
+  this.loadAppComplete = false
+  // 加载APP
+  this.executors = {}
+  this.loadApp(paths, (err, executors) => {
+    if (err) {
+      throw err
+    }
+    this.life = new Lifetime(executors)
+    this.loadAppComplete = true
+    logger.log('load app complete')
+    this.startDaemonApps().then(() => {
+      this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
+    })
+  })
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -106,7 +98,7 @@ inherits(AppRuntime, EventEmitter)
  * @param {Function} cb 加载完成的回调，回调没有参数
  * @private
  */
-AppRuntime.prototype.loadApp = function (paths, cb) {
+AppRuntime.prototype.loadApp = function loadApp (paths, cb) {
   var self = this
 
   // 根据目录读取目录下所有的App包，返回的是App的包路径
@@ -143,26 +135,26 @@ AppRuntime.prototype.loadApp = function (paths, cb) {
     readDir(0)
   }
   // 读取目录并加载APP
-  loadAppDir(paths, function (apps) {
+  loadAppDir(paths, function (dirs) {
     // 检查目录下是否有App包
-    if (apps.length <= 0) {
+    if (dirs.length <= 0) {
       logger.log('no app load')
       cb()
       return
     }
-    logger.log('load app num: ', apps.length)
+    logger.log('load app num: ', dirs.length)
     // 加载APP
     var loadApp = function (index) {
-      self.load(apps[index], function (err, metadata) {
+      self.load(dirs[index], function (err, stage) {
         if (err) {
           // logger.log('load app error: ', err);
         }
         index++
-        if (index < apps.length) {
+        if (index < dirs.length) {
           loadApp(index)
         } else {
           // 加载完成回调
-          cb()
+          cb(null, self.executors)
         }
       })
     }
@@ -178,73 +170,62 @@ AppRuntime.prototype.loadApp = function (paths, cb) {
  * @return {object} 应用的appMetaData
  * @private
  */
-AppRuntime.prototype.load = function (root, cb) {
+AppRuntime.prototype.load = function load (root, callback) {
   var prefix = root
   var pkgInfo
-  var app
   logger.log('load app: ' + root)
   fs.readFile(prefix + '/package.json', 'utf8', (err, data) => {
     if (err) {
-      cb(err)
-    } else {
-      pkgInfo = JSON.parse(data)
-      if (pkgInfo.metadata && pkgInfo.metadata.skills) {
-        for (var i in pkgInfo.metadata.skills) {
-          var id = pkgInfo.metadata.skills[i]
-          // 加载权限配置
-          this.permission.load(id, pkgInfo.metadata.permission || [])
-          if (this.apps[id]) {
-            // 打印调试信息
-            logger.log('load app path: ', prefix)
-            logger.log('skill id: ', id)
-            throw new Error('skill conflicts')
-          }
-          app = new AppExecutor(pkgInfo, prefix)
-          if (app.valid) {
-            app.skills = pkgInfo.metadata.skills
-            this.apps[id] = app
-          } else {
-            cb(app.errmsg)
-            return
-          }
-        }
-        cb(null, {
-          pathname: prefix,
-          metadata: pkgInfo.metadata
-        })
-      } else {
-        cb(new Error('invalid app format: ' + root))
-      }
+      return callback(err)
     }
+    pkgInfo = JSON.parse(data)
+    if (!Array.isArray(_.get(pkgInfo, 'metadata.skills'))) {
+      return callback(new Error('invalid app format: ' + root))
+    }
+
+    for (var i in pkgInfo.metadata.skills) {
+      var id = pkgInfo.metadata.skills[i]
+      // 加载权限配置
+      this.permission.load(id, pkgInfo.metadata.permission || [])
+      if (this.executors[id]) {
+        // 打印调试信息
+        logger.log('load app path: ', prefix)
+        logger.log('skill id: ', id)
+        throw new Error('skill conflicts')
+      }
+      var app = new AppExecutor(pkgInfo, prefix, id, this)
+      this.executors[id] = app
+    }
+
+    callback(null, this.executors)
   })
 }
 
 AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
   var self = this
-  var daemons = Object.keys(self.apps).map(appId => {
-    var executor = self.apps[appId]
+  var daemons = Object.keys(self.life.executors).map(appId => {
+    var executor = self.life.executors[appId]
     if (!executor.daemon) {
       return
     }
-    return [ appId, executor ]
+    return appId
   }).filter(it => it)
 
-  start(0)
+  return start(0)
   function start (idx) {
     if (idx > daemons.length - 1) {
       return Promise.resolve()
     }
-    var appId = daemons[idx][0]
-    var executor = daemons[idx][1]
-    logger.info('Starting daemon app', executor.appHome)
-    executor.create(appId, self).then(app => {
-      self.bgAppIdStack.push(appId)
-      self.appMap[appId] = app
-      return start(idx + 1)
-    }, () => {
-      /** ignore error and continue populating */
-      return start(idx + 1)
-    })
+    var appId = daemons[idx]
+    logger.info('Starting daemon app', appId)
+    return self.life.createApp(appId)
+      .then(() => self.life.setBackgroundById(appId))
+      .then(() => {
+        return start(idx + 1)
+      }, () => {
+        /** ignore error and continue populating */
+        return start(idx + 1)
+      })
   }
 }
 
@@ -372,189 +353,15 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     }
   } catch (error) {
     logger.log('invalid nlp/action, ignore')
-    return
+    return Promise.resolve()
   }
-  return this.createOrResumeApp(appId, Object.assign({}, options, { nlpForm: appInfo.form }))
-    .then(() => {
-      if (carrierId) {
-        /**
-         * if app is started by a carrier, set flag after the app has been created
-         * in creation, previous app and it's carrier might have been destroyed if preemptive
-         */
-        this.carrierId = carrierId
-      }
-      return this.onLifeCycle(appInfo, 'request', [ nlp, action ])
-    })
+  return this.life.createApp(appId)
+    .then(() => this.life.activateAppById(appId, appInfo.form, carrierId))
+    .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch((error) => {
-      logger.error('create app error with appId:' + appId)
-      logger.error(error)
+      logger.error('create app error with appId:' + appId, error)
+      throw error
     })
-}
-
-/**
- *
- * @private
- * @param {string} appId
- * @param {object} [options]
- * @param {'cut' | 'scene'} [options.nlpForm]
- * @param {boolean} [options.preemptive]
- */
-AppRuntime.prototype.createOrResumeApp = function createOrResumeApp (appId, options) {
-  var nlpForm = _.get(options, 'nlpForm', 'cut')
-  var preemptive = _.get(options, 'preemptive', true)
-
-  var appCreated = this.isBackgroundApp(appId) || this.isAppAlive(appId)
-  if (preemptive) {
-    this.preemptTopOfStack(appId, appCreated, nlpForm)
-  }
-  if (appCreated) {
-    /** No need to recreate app */
-    return Promise.resolve()
-  }
-
-  // Launch app
-  logger.info('app is not running, creating', appId)
-  return this.onLifeCycle({
-    appId: appId,
-    form: nlpForm,
-    preemptive: preemptive
-  }, 'create')
-}
-
-/**
- *
- * @param {string} appId - id of app that have interests on top of stack
- * @param {boolean} appCreated - if app has been created
- * @param {'cut' | 'scene'} nlpForm - which form the app was applying
- */
-AppRuntime.prototype.preemptTopOfStack = function preemptTopOfStack (appId, appCreated, nlpForm) {
-  logger.info('preempting top stack for appId', appId)
-
-  if (this.carrierId) {
-    /**
-     * if previous app is started by a carrier,
-     * exit the carrier before next steps.
-     */
-    logger.info('previous app started by a carrier, ', this.carrierId)
-    this.destroyAppsInStack()
-    this.carrierId = null
-  }
-
-  if (appId === this.getCurrentAppId()) {
-    /**
-     * App is the currently running one
-     */
-    logger.info('app is top of stack, skipping resuming', appId)
-    return Promise.resolve()
-  }
-
-  if (appCreated) {
-    /**
-     * Pull the app to foreground if running in background
-     */
-    logger.info('app is running, resuming', appId)
-    this.setForegroundByAppId(appId)
-    return
-  }
-
-  if (nlpForm === 'scene') {
-    // Exit all apps in stack on incoming scene nlp
-    logger.debug('on scene nlp.')
-    return this.destroyAppsInStack()
-  }
-
-  var last = this.getCurrentAppData()
-  if (!last) {
-    /** no currently running app */
-    logger.debug('no currently running app, skip preempting')
-    return
-  }
-
-  if (last.form === 'scene') {
-    /**
-     * currently running app is a scene app, pause it
-     */
-    logger.debug('pausing current app')
-    this.onLifeCycle(last, 'pause')
-    return
-  }
-
-  /**
-   * currently running app is a normal app, destroy it
-   */
-  logger.debug('destroying current app')
-  this.onLifeCycle(last, 'destroy')
-}
-
-/**
- * 返回App是否在运行栈中
- * @param {string} appId App的AppID
- * @returns {boolean} 在appIdStack中返回true，否则false
- * @private
- */
-AppRuntime.prototype.isAppAlive = function (appId) {
-  for (var i = 0; i < this.appIdStack.length; i++) {
-    if (appId === this.appIdStack[i]) {
-      return true
-    }
-  }
-  return false
-}
-
-/**
- * 获取当前运行的appId，如果没有则返回false
- * @returns {string} appId
- * @private
- */
-AppRuntime.prototype.getCurrentAppId = function () {
-  if (this.appIdStack.length <= 0) {
-    return false
-  }
-  return this.appIdStack[this.appIdStack.length - 1]
-}
-
-/**
- * 获取当前App的data，如果没有则返回false
- * @returns {object} App的appData
- * @private
- */
-AppRuntime.prototype.getCurrentAppData = function () {
-  var appId = this.getCurrentAppId()
-  if (!appId) return false
-  return this.appDataMap[appId]
-}
-
-/**
- * 获取指定的AppData，如果没有则返回false
- * @param {string} appId App的AppID
- * @returns {object} App的appData
- * @private
- */
-AppRuntime.prototype.getAppDataById = function (appId) {
-  return this.appDataMap[appId] || false
-}
-
-/**
- * 获取当前运行的App，如果没有则返回false
- * @returns {object} App实例
- * @private
- */
-AppRuntime.prototype.getCurrentApp = function () {
-  var appId = this.getCurrentAppId()
-  if (!appId) return false
-  return this.appMap[appId]
-}
-
-AppRuntime.prototype.destroyAppsInStack = function () {
-  var i = 0
-  var appId
-  // destroy all foreground app
-  for (i = 0; i < this.appIdStack.length; i++) {
-    appId = this.appIdStack[i]
-    if (this.appMap[this.appIdStack[i]]) {
-      this.onLifeCycle(appId, 'destroy')
-    }
-  }
 }
 
 /**
@@ -566,22 +373,9 @@ AppRuntime.prototype.destroyAppsInStack = function () {
 AppRuntime.prototype.destroyAll = function (options) {
   var resetServices = _.get(options, 'resetServices', true)
 
-  this.destroyAppsInStack()
-  var i = 0
-  var appId
-  // destroy all background app
-  for (i = 0; i < this.bgAppIdStack.length; i++) {
-    appId = this.bgAppIdStack[i]
-    if (this.appMap[this.bgAppIdStack[i]]) {
-      this.onLifeCycle(appId, 'destroy')
-    }
-  }
+  this.life.destroyAll()
   // 清空正在运行的所有App
-  this.appIdStack = []
-  this.bgAppIdStack = []
   this.cloudAppIdStack = []
-  this.appMap = {}
-  this.appDataMap = {}
   this.resetStack()
 
   if (!resetServices) {
@@ -625,109 +419,17 @@ AppRuntime.prototype.destroyAll = function (options) {
 }
 
 /**
- * Emit life cycle event to app asynchronously
- * @private
- * @param {object | string} appInfo - app info object or app id
- * @param {boolean} appInfo.appId
- * @param {boolean} [appInfo.form]
- * @param {boolean} [appInfo.cloud]
- * @param {string} event -
- * @param {any[]} params -
- * @returns {Promise<void>} LifeCycle events are asynchronous
- */
-AppRuntime.prototype.onLifeCycle = function onLifeCycle (appInfo, event, params) {
-  var appId
-  if (typeof appInfo === 'string') {
-    appId = appInfo
-    appInfo = { appId: appId }
-  } else {
-    appId = _.get(appInfo, 'appId')
-  }
-  logger.log(`on life cycle '${event}'`, appId)
-
-  var cloud = _.get(appInfo, 'cloud', false)
-  if (cloud) {
-    appId = '@cloud'
-  }
-
-  if (event === 'create') {
-    // 启动应用
-    if (this.apps[appId]) {
-      return this.apps[appId].create(appId, this)
-        .then((app) => {
-          // 执行create生命周期
-          emit(app)
-          this.appMap[appId] = app
-          // 当前App正在运行
-          if (this.apps[appId].daemon) {
-            this.bgAppIdStack.push(appId)
-            logger.log(`bgAppIdStack: Length: ${this.bgAppIdStack.length} ${this.bgAppIdStack.join(', ')}`)
-            return
-          }
-          this.appIdStack.push(appId)
-          logger.log(`appIdStack: Length: ${this.appIdStack.length} ${this.appIdStack.join(', ')}`)
-        })
-    } else {
-      // fix: should create miss app here
-      logger.log('not find appid: ', appId)
-      return Promise.resolve()
-    }
-  }
-
-  var app = this.appMap[appId]
-  if (app == null) {
-    return Promise.reject(new Error('app instance not found, you should wait for creation of a lifecycle event to complete'))
-  }
-
-  if (event === 'request') {
-    this.appDataMap[appId] = Object.assign({}, this.appDataMap[appId], appInfo)
-  }
-
-  emit(app)
-
-  if (event === 'destroy') {
-    this.apps[appId].destruct(app, this)
-    this.deleteAppById(appId)
-  }
-  this.updateStack()
-  return Promise.resolve()
-
-  function emit (target) {
-    EventEmitter.prototype.emit.apply(target, [ event ].concat(params))
-  }
-}
-
-/**
  * 更新App stack
  * @private
  */
 AppRuntime.prototype.updateStack = function () {
   var scene = ''
   var cut = ''
-  // keep these codes for future reference, maybe useful
-  // logger.log('stack', this.appIdStack);
-  // for (var i = this.appIdOriginStack.length - 1; i >= 0; i--) {
-  //   AppData = this.getAppDataById(this.appIdOriginStack[i]);
-  //   if (scene === '' && AppData.form === 'scene') {
-  //     scene = AppData.appId;
-  //   }
-  //   if (cut === '' && AppData.form !== 'scene') {
-  //     cut = AppData.appId;
-  //   }
-  // }
-  // logger.log('AppData.appId: ' + AppData.appId + ' form: ' + AppData.form)
-  // if (AppData.form === 'cut') {
-  //   this.domain.cut = AppData.appId
-  // }
-  // if (AppData.form === 'scene') {
-  //   this.domain.scene = AppData.appId
-  // }
-  // logger.log('domain', this.domain)
-  // this.emit('setStack', this.domain.scene + ':' + this.domain.cut)
   var item
-  for (var i = this.appIdStack.length - 1; i >= 0; i--) {
+  for (var i = this.life.appIdStack.length - 1; i >= 0; i--) {
     // we map all cloud skills to the cloud app, so here we want to expand the cloud app's stack
-    if (this.appIdStack[i] === '@cloud') {
+    var appId = this.life.appIdStack[i]
+    if (appId === '@cloud') {
       for (var j = this.cloudAppIdStack.length - 1; j >= 0; j--) {
         item = this.cloudAppIdStack[j]
         if (scene === '' && item.form === 'scene') {
@@ -738,12 +440,12 @@ AppRuntime.prototype.updateStack = function () {
         }
       }
     } else {
-      item = this.getAppDataById(this.appIdStack[i])
+      item = this.life.getAppDataById(appId)
       if (scene === '' && item.form === 'scene') {
-        scene = item.appId
+        scene = appId
       }
       if (cut === '' && item.form !== 'scene') {
-        cut = item.appId
+        cut = appId
       }
     }
   }
@@ -804,83 +506,6 @@ AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs,
 }
 
 /**
- * 退出App。由应用自身在退出时手动调用，向系统表明该应用可以被销毁了
- * @param {string} appId extapp的AppID
- * @private
- */
-AppRuntime.prototype.exitAppById = function (appId) {
-  // silent when the background app exits
-  if (this.isBackgroundApp(appId)) {
-    this.deleteBGAppById(appId)
-  } else {
-    // 调用生命周期结束该应用
-    this.onLifeCycle(appId, 'destroy')
-    // 如果上一个应用是scene，则需要resume恢复运行
-    var last = this.getCurrentAppData()
-    if (last) {
-      this.onLifeCycle(last, 'resume')
-    }
-  }
-
-  if (this.carrierId) {
-    /** if app is started by a carrier, unset the flag on exit */
-    this.carrierId = null
-  }
-}
-
-/**
- * @param {string} appId extapp的AppID
- * @private
- */
-AppRuntime.prototype.exitAppByIdForce = function (appId) {
-  // silent when the background app exits
-  if (this.isBackgroundApp(appId)) {
-    this.deleteBGAppById(appId)
-  } else {
-    this.deleteAppById(appId)
-  }
-  var last = this.getCurrentAppData()
-  if (last) {
-    this.onLifeCycle(last, 'resume')
-  }
-}
-
-/**
- * delete the foreground app with appId
- * @param {string} appId AppID
- * @private
- */
-AppRuntime.prototype.deleteAppById = function (appId) {
-  // 删除指定AppID
-  for (var i = 0; i < this.appIdStack.length; i++) {
-    if (this.appIdStack[i] === appId) {
-      this.appIdStack.splice(i, 1)
-      break
-    }
-  }
-  // 释放该应用
-  delete this.appMap[appId]
-  delete this.appDataMap[appId]
-}
-
-/**
- * delete the background app with appId
- * @param {string} appId AppID
- * @private
- */
-AppRuntime.prototype.deleteBGAppById = function (appId) {
-  for (var i = 0; i < this.bgAppIdStack.length; i++) {
-    if (this.bgAppIdStack[i] === appId) {
-      this.bgAppIdStack.splice(i, 1)
-      break
-    }
-  }
-  // 释放该应用
-  delete this.appMap[appId]
-  delete this.appDataMap[appId]
-}
-
-/**
  * 通过dbus注册extapp
  * @param {string} appId extapp的AppID
  * @param {object} profile extapp的profile
@@ -890,7 +515,7 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
   logger.log('register dbus app with id: ', appId)
   // 配置exitApp的默认权限
   this.permission.load(appId, ['ACCESS_TTS', 'ACCESS_MULTIMEDIA'])
-  this.apps[appId] = new DbusAppExecutor(objectPath, ifaceName)
+  this.life.executors[appId] = new DbusAppExecutor(objectPath, ifaceName, appId, this)
 }
 
 /**
@@ -902,57 +527,6 @@ AppRuntime.prototype.deleteDbusApp = function (appId) {
 
 }
 
-AppRuntime.prototype.isBackgroundApp = function (appId) {
-  for (var i = 0; i < this.bgAppIdStack.length; i++) {
-    if (this.bgAppIdStack[i] === appId) {
-      return true
-    }
-  }
-  return false
-}
-
-AppRuntime.prototype.setBackgroundByAppId = function (appId) {
-  var index = -1
-  for (var i = this.appIdStack.length - 1; i >= 0; i--) {
-    if (this.appIdStack[i] === appId) {
-      index = i
-      break
-    }
-  }
-  if (index === -1) {
-    return false
-  }
-  this.appIdStack.splice(index, 1)
-  this.bgAppIdStack.push(appId)
-  // try to resume previou app
-  var cur = this.getCurrentAppData()
-  if (cur) {
-    this.onLifeCycle(cur, 'resume')
-  }
-  return true
-}
-
-AppRuntime.prototype.setForegroundByAppId = function (appId) {
-  var index = -1
-  for (var i = this.bgAppIdStack.length - 1; i >= 0; i--) {
-    if (this.bgAppIdStack[i] === appId) {
-      index = i
-      break
-    }
-  }
-  if (index === -1) {
-    return false
-  }
-  this.bgAppIdStack.splice(index, 1)
-  // try to pause current app
-  var cur = this.getCurrentAppData()
-  if (cur) {
-    this.onLifeCycle(cur, 'pause')
-  }
-  this.appIdStack.push(appId)
-  return true
-}
-
 /**
  * mock nlp response
  * @param {object} nlp
@@ -960,13 +534,9 @@ AppRuntime.prototype.setForegroundByAppId = function (appId) {
  * @private
  */
 AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
-  if (nlp.appId === this.getCurrentAppId()) {
-    var appInfo = {
-      appId: nlp.appId,
-      cloud: nlp.cloud,
-      form: action.response.action.form
-    }
-    this.onLifeCycle(appInfo, 'request', [ nlp, action ])
+  var appId = nlp.cloud ? '@cloud' : nlp.appId
+  if (appId === this.life.getCurrentAppId()) {
+    this.life.onLifeCycle(appId, 'request', [ nlp, action ])
   }
 }
 
@@ -1010,7 +580,7 @@ AppRuntime.prototype.startApp = function (appId, nlp, action, options) {
  * @private
  */
 AppRuntime.prototype.sendNLPToApp = function (appId, nlp, action) {
-  var curAppId = this.getCurrentAppId()
+  var curAppId = this.life.getCurrentAppId()
   if (curAppId === appId) {
     nlp.cloud = false
     nlp.appId = appId
@@ -1023,7 +593,7 @@ AppRuntime.prototype.sendNLPToApp = function (appId, nlp, action) {
     }
     action.response.action.appId = appId
     action.response.action.form = 'cut'
-    this.onLifeCycle(appId, 'request', [nlp, action])
+    this.life.onLifeCycle(appId, 'request', [nlp, action])
   } else {
     logger.log('send NLP to App faild, AppId ' + appId + ' not in active')
   }
@@ -1181,7 +751,6 @@ AppRuntime.prototype.onGetPropAll = function () {
  * @private
  */
 AppRuntime.prototype.onReconnected = function () {
-  // this.destroyAll()
   this.lightMethod('setConfigFree', ['system'])
 }
 
@@ -1266,7 +835,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     in: ['s', 's', 's'],
     out: []
   }, function (appId, isPickup, duration, cb) {
-    if (appId !== self.getCurrentAppId()) {
+    if (appId !== self.life.getCurrentAppId()) {
       logger.log('set pickup permission deny')
       cb(null)
     } else {
@@ -1299,11 +868,11 @@ AppRuntime.prototype.startDbusAppService = function () {
     in: ['s'],
     out: []
   }, function (appId, cb) {
-    if (appId !== self.getCurrentAppId()) {
+    if (appId !== self.life.getCurrentAppId()) {
       logger.log('exit app permission deny')
       cb(null)
     } else {
-      self.exitAppByIdForce(appId)
+      self.life.destroyAppById(appId)
       cb(null)
     }
   })
@@ -1333,7 +902,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     out: ['b']
   }, function (appId, cb) {
     if (appId) {
-      var result = self.setBackgroundByAppId(appId)
+      var result = self.life.setBackgroundById(appId)
       cb(null, result)
     } else {
       cb(null, false)
@@ -1344,7 +913,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     out: ['b']
   }, function (appId, cb) {
     if (appId) {
-      var result = self.setForegroundByAppId(appId)
+      var result = self.life.setForegroundById(appId)
       cb(null, result)
     } else {
       cb(null, false)
@@ -1361,7 +930,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     in: ['s', 's'],
     out: ['s']
   }, function (appId, text, cb) {
-    if (self.apps[appId] === undefined) {
+    if (self.life.executors[appId] === undefined) {
       return cb(null, '-1')
     }
     var permit = self.permission.check(appId, 'ACCESS_TTS')

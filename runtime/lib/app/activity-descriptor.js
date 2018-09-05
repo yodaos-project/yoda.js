@@ -182,7 +182,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function exit () {
-        this._runtime.exitAppById(this._appId)
+        this._runtime.life.deactivateAppById(this._appId)
         return Promise.resolve()
       }
     },
@@ -197,7 +197,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function destroyAll () {
-        this._runtime.destroyAll()
+        this._runtime.life.destroyAll()
         return Promise.resolve()
       }
     },
@@ -263,14 +263,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setBackground () {
-        return new Promise((resolve, reject) => {
-          var result = this._runtime.setBackgroundByAppId(this._appId)
-          if (result === true) {
-            resolve()
-          } else {
-            reject(new Error('push the app in background error'))
-          }
-        })
+        return this._runtime.life.setBackgroundById(this._appId).then(() => {})
       }
     },
     /**
@@ -284,14 +277,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setForeground () {
-        return new Promise((resolve, reject) => {
-          var result = this._runtime.setForegroundByAppId(this._appId)
-          if (result === true) {
-            resolve()
-          } else {
-            reject(new Error('push the app in foreground error'))
-          }
-        })
+        return this._runtime.life.setForegroundById(this._appId).then(() => {})
       }
     },
     /**
@@ -340,23 +326,25 @@ Object.assign(ActivityDescriptor.prototype,
         if (!self._runtime.permission.check(self._appId, 'ACCESS_VOICE_COMMAND')) {
           return Promise.reject(new Error('Permission denied.'))
         }
-        return new Promise((resolve, reject) => {
-          self._runtime.speechT.getNlpResult(text, function (err, nlp, action) {
-            if (err) {
-              return reject(err)
-            }
-            logger.info('get nlp result for asr', text, nlp, action)
-            /**
-             * retreat self-app into background, then promote the upcoming app
-             * to prevent self being destroy in stack preemption.
-             */
-            self._runtime.setBackgroundByAppId(self._appId)
-            self._runtime.onVoiceCommand(text, nlp, action, {
-              carrierId: self._appId
+        return Promise.resolve()
+          .then(() => {
+            self._runtime.speechT.getNlpResult(text, function (err, nlp, action) {
+              if (err) {
+                throw err
+              }
+              logger.info('get nlp result for asr', text, nlp, action)
+              /**
+               * retreat self-app into background, then promote the upcoming app
+               * to prevent self being destroy in stack preemption.
+               */
+              return self._runtime.life.setBackgroundById(self._appId)
+                .then(() => {
+                  return self._runtime.onVoiceCommand(text, nlp, action, {
+                    carrierId: self._appId
+                  })
+                })
             })
-            return resolve()
           })
-        })
       }
     },
     /**
@@ -374,8 +362,7 @@ Object.assign(ActivityDescriptor.prototype,
         if (!self._runtime.permission.check(self._appId, 'INTERRUPT')) {
           return Promise.reject(new Error('Permission denied.'))
         }
-        self._runtime.preemptTopOfStack(self._appId, true, form || 'cut')
-        return Promise.resolve()
+        return self._runtime.life.activateAppById(self._appId, form || 'cut')
       }
     }
   }
