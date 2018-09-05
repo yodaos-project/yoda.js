@@ -1346,7 +1346,7 @@ AppRuntime.prototype.startExtappService = function () {
     if (permit) {
       cb(null, 'true')
     } else {
-      cb(new Error('permission deny'), 'false')
+      cb(null, 'false')
     }
   })
 
