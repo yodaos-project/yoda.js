@@ -54,7 +54,7 @@ function LightRenderingContext () {
   this.ledsConfig = light.getProfile()
   this._wakeupPlayer = new MediaPlayer(AudioManager.STREAM_AUDIO)
   this._playerCache = new LRU({
-    max: 10,
+    max: 1,
     dispose: (key, val) => {
       val._stop()
     }
