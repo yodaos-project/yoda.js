@@ -5,7 +5,7 @@ var EventEmitter = require('events').EventEmitter
 var AppRuntime = require('/usr/lib/yoda/runtime/lib/app-runtime.js')
 
 test('test onVoiceCommand', (t) => {
-  AppRuntime.prototype.startExtappService = function () {}
+  AppRuntime.prototype.startDbusAppService = function () {}
   AppRuntime.prototype.handleMqttMessage = function () {}
   AppRuntime.prototype.listenDbusSignals = function () {}
   AppRuntime.prototype.loadApp = function () {}

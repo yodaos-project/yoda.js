@@ -58,5 +58,3 @@ DbusApp.prototype._onEvent = function (name) {
     params
   )
 }
-
-module.exports = DbusApp
