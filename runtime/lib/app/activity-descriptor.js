@@ -413,6 +413,7 @@ Object.assign(LightDescriptor.prototype,
       fn: function play (uri, args) {
         var argString = JSON.stringify(args || {})
         var absPath = pathTransform(uri, LIGHT_SOURCE, this._appHome + '/light')
+        logger.log('playing light effect', absPath)
         return this._runtime.lightMethod('play', [this._appId, absPath, argString])
           .then((res) => {
             if (res && res[0] === true) {
