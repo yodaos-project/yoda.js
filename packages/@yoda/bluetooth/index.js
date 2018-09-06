@@ -11,6 +11,7 @@
  * - Transfer data to and from other devices.
  */
 
+var helper = require('./lib/helper')
 var messageStreamInstance
 var playerInstance
 
@@ -20,7 +21,8 @@ module.exports = {
    * @returns {module:@yoda/bluetooth.BluetoothMessageStream}
    */
   getMessageStream: function () {
-    if (!messageStreamInstance) {
+    if (!messageStreamInstance ||
+      messageStreamInstance._eventSocket._closed === true) {
       var BluetoothMessageStream =
         require('./lib/stream').BluetoothMessageStream
       messageStreamInstance = new BluetoothMessageStream()
@@ -32,11 +34,25 @@ module.exports = {
    * @returns {module:@yoda/bluetooth.BluetoothPlayer}
    */
   getPlayer: function () {
-    if (!playerInstance) {
+    if (!playerInstance ||
+      playerInstance._eventSocket._closed === true) {
       var BluetoothPlayer =
         require('./lib/player').BluetoothPlayer
       playerInstance = new BluetoothPlayer()
     }
     return playerInstance
+  },
+  /**
+   * disconnect all the bluetooth.
+   * @returns {module:@yoda/bluetooth.BluetoothPlayer}
+   */
+  disconnect: function () {
+    helper.closeCmdSocket()
+    if (messageStreamInstance) {
+      messageStreamInstance.disconnect()
+    }
+    if (playerInstance) {
+      playerInstance.disconnect()
+    }
   }
 }

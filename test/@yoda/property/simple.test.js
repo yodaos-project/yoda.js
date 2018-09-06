@@ -67,7 +67,7 @@ test('module->property->set value: normal key, set value typeof number', t => {
 })
 
 test('module->property->set value: normal key, set key typeof number', t => {
-  t.throws(() => { 
+  t.throws(() => {
     prop.set(3, 4)
   }, /key must be a string/, 'key must be a string')
   t.equal(prop.get('3'), '')
