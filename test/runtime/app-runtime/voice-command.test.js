@@ -99,7 +99,7 @@ test('test onVoiceCommand', (t) => {
   testCutInterrupt.on('request', () => {
     t.pass('@testCutInterrupt should be request')
 
-    // // test scene resume
+    // test scene resume
     runtime.exitAppByIdForce('testCutInterrupt')
   })
 
