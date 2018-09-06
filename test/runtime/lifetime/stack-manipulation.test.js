@@ -6,6 +6,7 @@ var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 var mock = require('./mock')
 
 test('app preemption', t => {
+  mock.restore()
   var apps = mock.getMockAppExecutors(5)
   var life = new Lifetime(apps)
 

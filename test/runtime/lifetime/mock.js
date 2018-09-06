@@ -20,13 +20,12 @@ function getMockAppExecutors (number, daemon, startIdx) {
       appId: `${idx}`,
       daemon: daemon,
       create: function create () {
-        bus.emit('create', this.appId, daemon)
         var app = new EventEmitter()
+        bus.emit('create', this.appId, app, daemon)
         return Promise.resolve(app)
       },
       destruct: function destruct () {
         bus.emit('destruct', this.appId, daemon)
-        this.app = null
         return Promise.resolve()
       }
     }

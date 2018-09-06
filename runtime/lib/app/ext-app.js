@@ -10,6 +10,13 @@ var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
 var entry = path.join(__dirname, '..', '..', 'client', 'ext-app-entry.js')
 
 module.exports = createExtApp
+/**
+ *
+ * @author Chengzhong Wu <chengzhong.wu@rokid.com>
+ * @param {string} appId -
+ * @param {string} target - app home directory
+ * @param {AppRuntime} runtime -
+ */
 function createExtApp (appId, target, runtime) {
   var descriptor = new ActivityDescriptor(appId, target, runtime)
 

@@ -1,3 +1,4 @@
+'use strict'
 var EventEmitter = require('events')
 var inherits = require('util').inherits
 
@@ -16,6 +17,7 @@ module.exports = LaVieEnPile
  *
  * - OnLifeCycle -> send events to app
  *
+ * @author Chengzhong Wu <chengzhong.wu@rokid.com>
  * @param {object} executors - AppExecutors map used to create apps, keyed by app id.
  */
 function LaVieEnPile (executors) {
@@ -137,6 +139,9 @@ LaVieEnPile.prototype.isDaemonApp = function isDaemonApp (appId) {
 
 /**
  * Create app, yet does not activate it, and set it as inactive.
+ *
+ * - daemon app: created as background app
+ * - non-daemon app: created as inactive app
  *
  * Possible subsequent calls:
  *   - LaVieEnPile#activateAppById
