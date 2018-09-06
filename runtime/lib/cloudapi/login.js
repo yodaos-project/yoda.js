@@ -97,10 +97,17 @@ function login (callback) {
   })
 }
 
-module.exports = function () {
+module.exports = function (onEvent) {
   return new Promise((resolve, reject) => {
+    onEvent && onEvent('100', '登录中')
     login((err, data) => {
-      err ? reject(err) : resolve(data)
+      if (err) {
+        onEvent && onEvent('-101', '登录失败')
+        reject(err)
+      } else {
+        onEvent && onEvent('101', '登录成功')
+        resolve(data)
+      }
     })
   })
 }
