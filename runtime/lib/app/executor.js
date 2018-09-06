@@ -10,14 +10,13 @@ function Executor (profile, appHome) {
   this.errmsg = null
   this.valid = true
   this.profile = profile
+  this.daemon = _.get(profile, 'metadata.daemon', false)
 
   if (profile.metadata.extapp === true) {
     this.type = 'extapp'
-    this.daemon = _.get(profile, 'metadata.daemon', false)
     this.appHome = appHome
   } else {
     this.type = 'light'
-    this.daemon = true
     this.appHome = appHome
   }
 }
