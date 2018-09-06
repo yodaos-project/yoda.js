@@ -358,7 +358,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     .then(() => this.life.activateAppById(appId, appInfo.form, carrierId))
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch((error) => {
-      logger.error('create app error with appId:' + appId, error)
+      logger.error(`create app error with appId: ${appId}`, error)
       throw error
     })
 }
