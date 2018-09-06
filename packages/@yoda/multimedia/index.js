@@ -12,6 +12,39 @@
  * var player = new MediaPlayer(AudioManager.STREAM_PLAYBACK);
  * player.start('/res/play.ogg');
  * ```
+ *
+ * The following are what we supported audio codec:
+ * - aac
+ * - aac_latm
+ * - ac3
+ * - adpcm_*
+ * - alac
+ * - amrnb
+ * - amrwb
+ * - ape
+ * - atrac3
+ * - flac
+ * - mp2
+ * - mp3*
+ * - mpc7
+ * - mpc8
+ * - opus
+ * - pcm_*
+ * - vorbis
+ * - wavpack
+ * - wmav1
+ * - wmav2
+ * - wmalossless
+ * - wmapro
+ *
+ * And we supported multiple transfering protocols:
+ * - file
+ * - http/https
+ * - icecast
+ * - rtp
+ * - tcp
+ * - udp
+ * - tls_openssl
  */
 
 var native = require('./multimedia.node')
@@ -21,7 +54,7 @@ var AudioManager = require('@yoda/audio').AudioManager
 
 /**
  * @constructor
- * @param {Number} [stream=STREAM_PLAYBACK] - the stream type of the player.
+ * @param {number} [stream=STREAM_PLAYBACK] - the stream type of the player.
  * @fires module:@yoda/multimedia~MediaPlayer#prepared
  * @fires module:@yoda/multimedia~MediaPlayer#playbackcomplete
  * @fires module:@yoda/multimedia~MediaPlayer#bufferingupdate
@@ -101,10 +134,14 @@ MediaPlayer.prototype.onerror = function () {
 
 /**
  * prepare with the given resource(URI) and start asynchronously.
- * @param {String} uri - The resource uri to play
+ * @param {string} uri - The resource uri to play.
+ * @throws {Error} uri must be a valid string.
  */
 MediaPlayer.prototype.start = function (uri) {
-  if (!uri) { throw new Error('url must be a valid string') }
+  if (!uri) {
+    throw new Error('url must be a valid string')
+  }
+  this.volume = AudioManager.getVolume(this._stream)
   return this._handle.prepare(uri)
 }
 
@@ -124,8 +161,8 @@ MediaPlayer.prototype.resume = function () {
 
 /**
  * seek to `pos`.
- * @param {Number} pos - the position in ms.
- * @param {Function} callback - get called when seek complete
+ * @param {number} pos - the position in ms.
+ * @param {function} callback - get called when seek complete
  */
 MediaPlayer.prototype.seek = function (pos, callback) {
   if (typeof callback === 'function') {
@@ -135,7 +172,10 @@ MediaPlayer.prototype.seek = function (pos, callback) {
 }
 
 /**
- * stop the player.
+ * This stops the `MediaPlayer` instance, `.stop()` will destroy
+ * the handle.
+ *
+ * > Don't use the instance anymore when you stopped it.
  */
 MediaPlayer.prototype.stop = function () {
   return this._handle.stop()
@@ -143,62 +183,75 @@ MediaPlayer.prototype.stop = function () {
 
 /**
  * reset the player.
+ * @private
  */
 MediaPlayer.prototype.reset = function () {
   return this._handle.reset()
 }
 
 /**
- * disconnect and cleanup the player.
+ * disconnect the player.
+ * @private
  */
 MediaPlayer.prototype.disconnect = function () {
-  return this._handle.disconnect()
+  return this.stop()
 }
 
 /**
- * @peoperty {String} id
- * @readonly
+ * @memberof @yoda/multimedia~MediaPlayer
+ * @member {string} id - the player id.
  */
 Object.defineProperty(MediaPlayer.prototype, 'id', {
   get: function () {
     return this._handle.idGetter()
+  },
+  set: function (val) {
+    throw new Error('the property id is readonly')
   }
 })
 
 /**
- * @property {Boolean} playing
- * @readable
+ * @member {boolean} playing
+ * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'playing', {
   get: function () {
     return this._handle.playingStateGetter()
+  },
+  set: function (val) {
+    throw new Error('the property playing is readonly')
   }
 })
 
 /**
- * @property {Number} duration
- * @readable
+ * @member {number} duration
+ * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'duration', {
   get: function () {
     return this._handle.durationGetter()
+  },
+  set: function (val) {
+    throw new Error('the property duration is readonly')
   }
 })
 
 /**
- * @property {Number} position
- * @readable
+ * @member {number} position
+ * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'position', {
   get: function () {
     return this._handle.positionGetter()
+  },
+  set: function (val) {
+    throw new Error('the property position is readonly')
   }
 })
 
 /**
- * @property {Boolean} loopMode
- * @readable
- * @writable
+ * @member {boolean} loopMode
+ * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'loopMode', {
   get: function () {
@@ -210,9 +263,8 @@ Object.defineProperty(MediaPlayer.prototype, 'loopMode', {
 })
 
 /**
- * @property {Number} volume
- * @readable
- * @writable
+ * @member {number} volume
+ * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'volume', {
   get: function () {
@@ -224,9 +276,8 @@ Object.defineProperty(MediaPlayer.prototype, 'volume', {
 })
 
 /**
- * @property {String} sessionId
- * @readable
- * @writable
+ * @member {string} sessionId
+ * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'sessionId', {
   get: function () {
