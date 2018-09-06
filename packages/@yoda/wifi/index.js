@@ -47,12 +47,30 @@ module.exports = {
    */
   NETSERVER_UNCONNECTED: 5,
   /**
-   * Connect a WI-FI via ssid, psk and method.
+   * Sends the WI-FI config to network service, which would try to join immediately.
+   * You may need to use `getWifiState()` or `getNetworkState()` to get if the network
+   * is connected in interval.
+   *
    * @function joinNetwork
    * @param {String} ssid - the wifi name
-   * @param {String} psk - the wifi psk
+   * @param {String} [psk] - the wifi psk, an empty string or blanks would be ignored.
    * @param {String} [method=WPA2PSK] - the key method, available
    *                 methods are: "WPA2PSK", "WPAPSK", "WEP", "NONE".
+   * @returns {Number}
+   * @throws {Error} ssid must be a string.
+   * @example
+   * var wifi = require('@yoda/wifi')
+   * wifi.joinNetwork(config.ssid, config.psk)
+   * check()
+   *
+   * function check () {
+   *   var state = wifi.getWifiState()
+   *   if (state === wifi.WIFI_CONNECTED) {
+   *     console.log('wifi is connected')
+   *   } else {
+   *     setTimeout(check, 500) // check after 500ms again
+   *   }
+   * }
    */
   joinNetwork: function joinNetwork (ssid, psk, method) {
     var m = keyMethods[method] || keyMethods.WPA2PSK
