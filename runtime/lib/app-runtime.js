@@ -403,7 +403,7 @@ AppRuntime.prototype.createOrResumeApp = function createOrResumeApp (appId, opti
   var nlpForm = _.get(options, 'nlpForm', 'cut')
   var preemptive = _.get(options, 'preemptive', true)
 
-  var appCreated = this.isBackgroundApp(appId)
+  var appCreated = this.isBackgroundApp(appId) || this.isAppAlive(appId)
   if (preemptive) {
     this.preemptTopOfStack(appId, appCreated, nlpForm)
   }
@@ -1021,12 +1021,9 @@ AppRuntime.prototype.sendNLPToApp = function (appId, nlp, action) {
         action: action || {}
       }
     }
-    this.lifeCycle('onrequest', {
-      appId: appId,
-      cloud: false,
-      nlp: nlp,
-      action: action
-    })
+    action.response.action.appId = appId
+    action.response.action.form = 'cut'
+    this.onLifeCycle(appId, 'request', [nlp, action])
   } else {
     logger.log('send NLP to App faild, AppId ' + appId + ' not in active')
   }
@@ -1430,7 +1427,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     out: ['b']
   }, function (status, cb) {
     try {
-      // logger.log('report:' + status)
+      logger.log('report:' + status)
       var data = JSON.parse(status)
       if (data.upgrade === true) {
         self.startApp('@upgrade', {}, {})
@@ -1439,6 +1436,7 @@ AppRuntime.prototype.startDbusAppService = function () {
       } else if (data['Network'] === true && !self.online) {
         self.onEvent('connected', {})
       } else if (data['msg']) {
+        logger.log(`network report ${data.msg}`)
         self.sendNLPToApp('@network', {
           intent: 'wifi_status'
         }, {
