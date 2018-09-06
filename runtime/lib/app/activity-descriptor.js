@@ -425,7 +425,7 @@ Object.assign(LightDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function stop () {
-        return this._runtime.lightMethod('stop', [this._appId])
+        return this._runtime.lightMethod('setHide', [this._appId])
       }
     }
   }
