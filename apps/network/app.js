@@ -39,7 +39,8 @@ module.exports = function (app) {
     '-201': 'system://wifi/bind_master_failed.ogg'
   }
 
-  var SLEEP_TIME = 5 * 60 * 1000
+  var DEFAULT_SLEEP_TIME = 5 * 60 * 1000
+  var SLEEP_TIME = +property.get('app.network.sleeptime') || DEFAULT_SLEEP_TIME
   var bleEnable = false
   var sleepTimer
 
