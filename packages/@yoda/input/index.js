@@ -29,14 +29,28 @@ var ACTION_SLIDE = 4
  * @param {Number} options.selectTimeout
  * @param {Number} options.dbclickTimeout
  * @param {Number} options.slideTimeout
+ * @throws {TypeError} selectTimeout must be a number.
+ * @throws {TypeError} dbclickTimeout must be a number.
+ * @throws {TypeError} slideTimeout must be a number.
+ * @throws {Error} selectTimeout must not be 0.
  */
 function InputEvent (options) {
   EventEmitter.call(this)
 
-  this._options = options || {
+  this._options = Object.assign({
     selectTimeout: 300,
     dbclickTimeout: 300,
     slideTimeout: 300
+  }, options)
+
+  if (typeof this._options.selectTimeout !== 'number') {
+    throw new TypeError('selectTimeout must be a number')
+  }
+  if (typeof this._options.dbclickTimeout !== 'number') {
+    throw new TypeError('dbclickTimeout must be a number')
+  }
+  if (typeof this._options.slideTimeout !== 'number') {
+    throw new TypeError('slideTimeout must be a number')
   }
   if (this._options.selectTimeout === 0) {
     throw new Error('selectTimeout must not be 0')
