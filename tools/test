@@ -1,10 +1,9 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -i
+set -e
 
-patternPrefix='/data/workspace/test/'
-pattern="**/*.test.js"
-reporter=""
 help="
 Usage:
+  -l                  run tests on local machine
   -p <pattern>        test file pattern, defaults to '$pattern'
   --reporter <name>   test result reporter, no reporter by default
 
@@ -12,6 +11,10 @@ Example:
   $ ./tools/test --reporter tap-nyan --pattern '**/*.test.js'
 "
 
+patternPrefix='/data/workspace/test/'
+pattern="**/*.test.js"
+reporter="cat"
+local="NO"
 while [ $# -gt 0 ]; do
   case "$1" in
     -p)
@@ -19,8 +22,11 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     --reporter)
-      reporter="$2"
+      reporter="./node_modules/.bin/$2"
       shift
+      ;;
+    -l)
+      local="YES"
       ;;
     --help)
       printf "$help"
@@ -37,13 +43,18 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
-scripts="
+if test "$local" = "YES"; then
+  patternPrefix="$(pwd)/test/"
+  scripts="$patternPrefix$pattern"
+
+  cmd='iotjs ./node_modules/tape/bin/tape.js'
+else
+  scripts="
 source /etc/profile > /dev/null;
 iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
 "
 
-if test -z "$reporter"; then
-  adb shell "$scripts"
-else
-  adb shell "$scripts" | ./node_modules/.bin/$reporter
+  cmd="adb shell"
 fi
+
+$cmd $scripts | $reporter

@@ -4,11 +4,12 @@ var test = require('tape')
 var path = require('path')
 var EventEmitter = require('events')
 
-var Descriptors = require('/usr/lib/yoda/runtime/lib/app/activity-descriptor')
-var lightApp = require('/usr/lib/yoda/runtime/lib/app/light-app')
+var helper = require('../helper')
+var Descriptors = require(`${helper.paths.runtime}/lib/app/activity-descriptor`)
+var lightApp = require(`${helper.paths.runtime}/lib/app/light-app`)
 var proxy = require('../fixture/simple-app').proxy
 
-var target = path.join(__dirname, '..', 'fixture', 'simple-app')
+var target = path.join(helper.paths.fixture, 'simple-app')
 var ActivityDescriptor = Descriptors.ActivityDescriptor
 var MultimediaDescriptor = Descriptors.MultimediaDescriptor
 
