@@ -164,7 +164,7 @@ function readInfoAndClear (callback) {
       return callback(err)
     }
     if (info == null) {
-      callback(null, null)
+      return callback(null, null)
     }
     fs.unlink(infoFile, () => {
       /** ignore unlink error */
