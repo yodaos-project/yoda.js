@@ -188,6 +188,7 @@ JS_FUNCTION(Stop) {
     return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->stop();
+  uv_async_send(&_this->close_handle);
   return jerry_create_undefined();
 }
 
@@ -239,20 +240,6 @@ JS_FUNCTION(Reset) {
   if (_this->handle) {
     _this->handle->reset();
   }
-  return jerry_create_undefined();
-}
-
-JS_FUNCTION(Disconnect) {
-  JS_DECLARE_THIS_PTR(player, player);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
-
-  if (_this->handle == NULL)
-    return JS_CREATE_ERROR(COMMON, "player native handle is not initialized");
-  if (!_this->listener->isPrepared())
-    return JS_CREATE_ERROR(COMMON, "player is not prepared");
-
-  _this->handle->disconnect();
-  uv_async_send(&_this->close_handle);
   return jerry_create_undefined();
 }
 
@@ -377,7 +364,6 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "resume", Resume);
   iotjs_jval_set_method(proto, "seek", Seek);
   iotjs_jval_set_method(proto, "reset", Reset);
-  iotjs_jval_set_method(proto, "disconnect", Disconnect);
 
   // the following methods are for getters and setters internally
   iotjs_jval_set_method(proto, "idGetter", IdGetter);
