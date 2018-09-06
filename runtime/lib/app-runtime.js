@@ -20,7 +20,7 @@ var env = require('./env')()
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 var Input = require('@yoda/input')
-var Lifetime = require('./lifetime')
+var Lifetime = require('./component/lifetime')
 
 module.exports = AppRuntime
 perf.stub('init')
