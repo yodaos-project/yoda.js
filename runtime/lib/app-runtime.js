@@ -374,7 +374,11 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
 AppRuntime.prototype.destroyAll = function (options) {
   var resetServices = _.get(options, 'resetServices', true)
 
+  /**
+   * Destroy all apps, then restart daemon apps
+   */
   this.life.destroyAll()
+    .then(() => this.startDaemonApps())
   // 清空正在运行的所有App
   this.cloudAppIdStack = []
   this.resetStack()

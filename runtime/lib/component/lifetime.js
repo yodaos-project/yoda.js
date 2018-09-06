@@ -24,6 +24,9 @@ function LaVieEnPile (executors) {
   EventEmitter.call(this)
   // App Executor
   this.executors = executors
+  /**
+   * Running app instances map, keyed by app id.
+   */
   this.apps = {}
   /**
    * @typedef AppPreemptionData
@@ -451,7 +454,7 @@ LaVieEnPile.prototype.destroyAll = function () {
   this.appDataMap = {}
 
   var self = this
-  var ids = Object.keys(this.executors)
+  var ids = Object.keys(this.apps)
   self.appIdStack = []
   /** destroy apps in stack in a reversed order */
   return Promise.all(ids.map(step))
