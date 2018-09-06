@@ -70,11 +70,18 @@ function entry () {
     runtime.onEvent('nlp', response)
   })
 
+  function cloudEvent (code, msg) {
+    runtime.onEvent('cloud event', {
+      code: code,
+      msg: msg
+    })
+  }
+
   runtime.on('reconnected', function () {
     logger.log('yoda reconnected')
 
     // login -> bind -> mqtt
-    cloudApi.connect().then((mqttAgent) => {
+    cloudApi.connect(cloudEvent).then((mqttAgent) => {
       // load the system configuration
       var config = mqttAgent.config
       var options = {

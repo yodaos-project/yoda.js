@@ -336,6 +336,14 @@ AppRuntime.prototype.onEvent = function (name, data) {
       this.emit('disconnected')
     }
     this.online = false
+  } else if (name === 'cloud event') {
+    console.log('---------------- cloud event', data)
+    this.sendNLPToApp('@network', {
+      intent: 'cloud_status'
+    }, {
+      code: data.code,
+      msg: data.msg
+    })
   }
 }
 
@@ -653,9 +661,11 @@ AppRuntime.prototype.onLifeCycle = function onLifeCycle (appInfo, event, params)
           // 当前App正在运行
           if (this.apps[appId].daemon) {
             this.bgAppIdStack.push(appId)
+            logger.log(`bgAppIdStack: Length: ${this.bgAppIdStack.length} ${this.bgAppIdStack.join(', ')}`)
             return
           }
           this.appIdStack.push(appId)
+          logger.log(`appIdStack: Length: ${this.appIdStack.length} ${this.appIdStack.join(', ')}`)
         })
     } else {
       // fix: should create miss app here
@@ -997,6 +1007,32 @@ AppRuntime.prototype.startApp = function (appId, nlp, action, options) {
 }
 
 /**
+ * @private
+ */
+AppRuntime.prototype.sendNLPToApp = function (appId, nlp, action) {
+  var curAppId = this.getCurrentAppId()
+  if (curAppId === appId) {
+    nlp.cloud = false
+    nlp.appId = appId
+    action = {
+      appId: appId,
+      startWithActiveWord: false,
+      response: {
+        action: action || {}
+      }
+    }
+    this.lifeCycle('onrequest', {
+      appId: appId,
+      cloud: false,
+      nlp: nlp,
+      action: action
+    })
+  } else {
+    logger.log('send NLP to App faild, AppId ' + appId + ' not in active')
+  }
+}
+
+/**
  * 接收Mqtt的topic
  * @param {string} topic
  * @param {string} message
@@ -1148,7 +1184,7 @@ AppRuntime.prototype.onGetPropAll = function () {
  * @private
  */
 AppRuntime.prototype.onReconnected = function () {
-  this.destroyAll()
+  // this.destroyAll()
   this.lightMethod('setConfigFree', ['system'])
 }
 
@@ -1159,13 +1195,16 @@ AppRuntime.prototype.onDisconnected = function () {
   this.login = false
   this.destroyAll()
   logger.log('network disconnected, please connect to wifi first')
-  this.startApp('@network', {}, {})
+  this.startApp('@network', {
+    intent: 'system_setup'
+  }, {})
 }
 
 /**
  * @private
  */
 AppRuntime.prototype.onReLogin = function () {
+  this.destroyAll()
   this.login = true
   perf.stub('started')
   this.lightMethod('setWelcome', [])
@@ -1391,6 +1430,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     out: ['b']
   }, function (status, cb) {
     try {
+      // logger.log('report:' + status)
       var data = JSON.parse(status)
       if (data.upgrade === true) {
         self.startApp('@upgrade', {}, {})
@@ -1398,6 +1438,13 @@ AppRuntime.prototype.startDbusAppService = function () {
         self.onEvent('disconnected', {})
       } else if (data['Network'] === true && !self.online) {
         self.onEvent('connected', {})
+      } else if (data['msg']) {
+        self.sendNLPToApp('@network', {
+          intent: 'wifi_status'
+        }, {
+          status: data['msg'],
+          value: data['data']
+        })
       }
       cb(null, true)
     } catch (err) {
