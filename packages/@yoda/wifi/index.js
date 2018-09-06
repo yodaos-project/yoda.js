@@ -56,6 +56,9 @@ module.exports = {
    */
   joinNetwork: function joinNetwork (ssid, psk, method) {
     var m = keyMethods[method] || keyMethods.WPA2PSK
+    if (typeof psk === 'string') {
+      psk = psk.trim()
+    }
     return native.joinNetwork(ssid, psk, m)
   },
   /**
