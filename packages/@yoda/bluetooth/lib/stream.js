@@ -25,10 +25,14 @@ var blePath = 'ipc:///var/run/bluetooth/rokid_ble_event'
  */
 function BluetoothMessageStream () {
   EventEmitter.call(this)
+  this._end = false
   this._cmdSocket = helper.getCmdSocket()
   this._eventSocket = helper.getSocket(blePath)
   this._eventSocket.on('message', (buffer) => {
     try {
+      if (this._end) {
+        return
+      }
       var msg = JSON.parse(buffer + '')
       if (msg.state) {
         /**
@@ -94,6 +98,7 @@ BluetoothMessageStream.prototype._send = function (cmdstr, name) {
  * @returns {Null}
  */
 BluetoothMessageStream.prototype.start = function start (name) {
+  this._end = false
   return this._send('ON', name)
 }
 
@@ -101,9 +106,16 @@ BluetoothMessageStream.prototype.start = function start (name) {
  * end the message stream.
  */
 BluetoothMessageStream.prototype.end = function end () {
-  // TODO(Yorkie): should end socket connection.
-  this._eventSocket.removeAllListeners()
+  this._end = true
   return this._send('OFF')
+}
+
+/**
+ * disconnect the event socket
+ */
+BluetoothMessageStream.prototype.disconnect = function disconnect () {
+  this.end()
+  this._eventSocket.close()
 }
 
 /**
