@@ -37,16 +37,25 @@ function deviceManager (config, pathname, callback) {
     }) /** cloudgw.request */
 }
 
-function loginAndBindDevice (callback) {
-  login().then((config) => {
+function loginAndBindDevice (onEvent, callback) {
+  login(onEvent).then((config) => {
     CONFIG = config
-    deviceManager(config, '/v1/device/deviceManager/bindMaster', callback)
+    onEvent('200', '绑定中')
+    deviceManager(config, '/v1/device/deviceManager/bindMaster', (err, config) => {
+      if (err) {
+        onEvent && onEvent('-201', '绑定失败')
+        callback(err)
+      } else {
+        onEvent && onEvent('201', '绑定成功')
+        callback(null, config)
+      }
+    })
   }).catch(callback)
 }
 
-function bindDevice () {
+function bindDevice (onEvent) {
   return new Promise((resolve, reject) => {
-    loginAndBindDevice((err, config) => {
+    loginAndBindDevice(onEvent, (err, config) => {
       if (err) {
         reject(err)
       } else {
