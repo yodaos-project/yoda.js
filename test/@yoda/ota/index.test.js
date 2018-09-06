@@ -7,11 +7,12 @@ var ota = require('@yoda/ota')
 var property = require('@yoda/property')
 var otaNetwork = require('@yoda/ota/network')
 var mock = require('../../helper/mock')
+var helper = require('../../helper')
 
-var upgradeDir = path.join(__dirname, '..', '..', 'fixture', 'upgrade')
+var upgradeDir = path.join(helper.paths.fixture, 'upgrade')
 ota.upgradeDir = upgradeDir
 
-var dumpFile = path.join(__dirname, '..', '..', 'fixture', 'tobeornottobe.txt')
+var dumpFile = path.join(helper.paths.fixture, 'tobeornottobe.txt')
 var imgFile = path.join(upgradeDir, '99d7bdf3ecf03f3fd081d7b835c7347f.img')
 
 function tryUnlinkSync (file) {
