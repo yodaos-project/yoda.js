@@ -42,14 +42,29 @@ JS_FUNCTION(SetProperty) {
   jerry_string_to_char_buffer(jval, (jerry_char_t*)val, vallen);
   pstr[keylen + vallen + 1] = '\0';
 
-  fprintf(stdout, "property: set %s => %s\n", key, val);
-  property_set(key, val);
-  return jerry_create_boolean(true);
+  int r = property_set(key, val);
+  if (r == 0) {
+    return jerry_create_boolean(true);
+  } else {
+    return JS_CREATE_ERROR(COMMON, "key is too long.");
+  }
 }
 
 void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "get", GetProperty);
   iotjs_jval_set_method(exports, "set", SetProperty);
+
+#define IOTJS_SET_CONSTANT(jobj, name)                                    \
+  do {                                                                    \
+    jerry_value_t jkey = jerry_create_string((const jerry_char_t*)#name); \
+    jerry_value_t jval = jerry_create_number(name);                       \
+    jerry_set_property(jobj, jkey, jval);                                 \
+    jerry_release_value(jkey);                                            \
+    jerry_release_value(jval);                                            \
+  } while (0)
+
+  IOTJS_SET_CONSTANT(exports, PROP_VALUE_MAX);
+#undef IOTJS_SET_CONSTANT
 }
 
 NODE_MODULE(volume, init)

@@ -21,6 +21,7 @@
  */
 
 var native = require('./property.node')
+var PROP_VALUE_MAX = native.PROP_VALUE_MAX
 
 function normalize (key, flag) {
   if (typeof key !== 'string') {
@@ -33,6 +34,10 @@ function normalize (key, flag) {
     key = `persist.${key}`
   } else if (flag === 'readonly') {
     key = `ro.${key}`
+  }
+
+  if (PROP_VALUE_MAX < key.length) {
+    throw new Error(`the key length should be less than ${PROP_VALUE_MAX}`)
   }
   return key
 }
