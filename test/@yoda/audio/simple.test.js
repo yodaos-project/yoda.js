@@ -23,7 +23,6 @@ test('set/get tts volume 100', (t) => {
   setAndGetVolum(t, 100, 100)
 })
 
-// Bug Id 1284
 test('set/get tts volume 101', (t) => {
   setAndGetVolum(t, 101, 100)
 })
@@ -32,15 +31,20 @@ test('set/get tts volume 1', (t) => {
   setAndGetVolum(t, 1, 1)
 })
 
+test('cannot set system volume', (t) => {
+  t.throws(() => {
+    AudioManager.setVolume(AudioManager.STREAM_SYSTEM, 1)
+  }, Error)
+  t.end()
+})
+
 test('set/get tts volume undefined', (t) => {
-  t.plan(1)
   t.throws(() => {
     AudioManager.setVolume(undefined, 1)
   }, new RegExp('undefined'))
   t.end()
 })
 
-// Bug Id 1284
 test('set/get tts volume -1', (t) => {
   setAndGetVolum(t, -1, 0)
 })
