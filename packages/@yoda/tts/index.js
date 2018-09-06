@@ -18,11 +18,13 @@ var TTSEvents = [
   /**
    * tts start event.
    * @event module:@yoda/tts~TtsProxy#start
+   * @type {number} id - the task id.
    */
   'start', // 1: start
   /**
    * tts end event
    * @event module:@yoda/tts~TtsProxy#end
+   * @type {number} id - the task id.
    */
   'end', // 2: end
   /**
@@ -33,6 +35,7 @@ var TTSEvents = [
   /**
    * tts error event
    * @event module:@yoda/tts~TtsProxy#error
+   * @type {Error} err - the error.
    */
   'error' // 4: error
 ]
@@ -52,6 +55,7 @@ function TtsRequest (handle, text, callback) {
   this.text = text
   this.callback = callback
   this.state = 'ready'
+  this.error = null
 }
 
 /**
@@ -75,16 +79,28 @@ TtsRequest.prototype.onstart = function () {
  * @param {Number} errno - the error code if something wrong.
  * @private
  */
-TtsRequest.prototype.onend = function (errno) {
-  if (errno) {
-    var err = new Error('tts is occurring error')
-    err.code = errno
+TtsRequest.prototype.onend = function (type, errno) {
+  if (type === 'error') {
+    this.error = new Error('Tts occurrs error')
+    this.error.code = errno
+    this.error.id = this.id
     this.state = 'error'
-    if (typeof this.callback !== 'function') { throw err }
-    this.callback(err)
   } else {
-    this.state = 'end'
-    if (typeof this.callback === 'function') { this.callback(null, this) }
+    this.state = type
+  }
+}
+
+/**
+ * returns the request.
+ * @param {Number} err - the error.
+ */
+TtsRequest.prototype.returns = function () {
+  if (typeof this.callback === 'function') {
+    if (this.state === 'error') {
+      this.callback(this.error)
+    } else if (this.state !== 'start') {
+      this.callback(null, this)
+    }
   }
 }
 
@@ -108,19 +124,20 @@ TtsProxy.prototype.onevent = function (name, id, errno) {
   var evt = TTSEvents[name]
   var req = this._requests[id]
   if (!req) {
+    this.state = 'error'
     this.emit('error', new Error('TTS task not found'))
   } else {
-    this.emit(evt, id, errno)
     if (evt === 'start') {
       req.onstart()
     } else if (evt === 'end' ||
       evt === 'error' ||
       evt === 'cancel') {
-      req.onend(errno)
+      req.onend(evt, errno)
       delete this._requests[id]
     }
+    this.emit(evt, id, errno)
+    req.returns()
   }
-  this.emit(TTSEvents[name], id, errno)
 }
 
 /**

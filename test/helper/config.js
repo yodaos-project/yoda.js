@@ -2,7 +2,7 @@
 
 var fs = require('fs')
 var path = require('path')
-var configPath = path.join(__dirname, '../.testrc')
+var configPath = path.join(__dirname, '../config.json')
 var configObj = {}
 
 ;(function checkAndLoad () {
