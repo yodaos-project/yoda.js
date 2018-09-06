@@ -2,7 +2,7 @@ var test = require('tape')
 var _ = require('@yoda/util')._
 
 var helper = require('../../helper')
-var Lifetime = require(`${helper.paths.runtime}/lib/lifetime`)
+var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 var mock = require('./mock')
 
 test('should destroy app by id', t => {

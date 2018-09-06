@@ -2,7 +2,7 @@ var test = require('tape')
 var _ = require('@yoda/util')._
 
 var helper = require('../../helper')
-var Lifetime = require(`${helper.paths.runtime}/lib/lifetime`)
+var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 var mock = require('./mock')
 
 test('is daemon app', t => {
@@ -79,7 +79,7 @@ test('current app status', t => {
       t.strictEqual(life.isAppInStack('1'), true, 'should be in stack on activated')
       t.strictEqual(life.isAppInactive('1'), false, 'should not be inactive on activated')
       t.strictEqual(life.isBackgroundApp('1'), false, 'should not be background app on activated')
-      t.deepEqual(life.getCurrentAppData(), { form: 'cut' })
+      t.deepEqual(life.getAppDataById('1'), { form: 'cut' })
       return life.deactivateAppById('1')
     })
     .then(() => {
