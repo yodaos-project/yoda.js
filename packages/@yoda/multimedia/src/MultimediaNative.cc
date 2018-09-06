@@ -232,6 +232,19 @@ JS_FUNCTION(Seek) {
   return jerry_create_undefined();
 }
 
+JS_FUNCTION(SetVolume) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  float vol = JS_GET_ARG(0, number);
+  if (_this->handle) {
+    _this->handle->setVolume(vol /* left */, vol /* right */);
+    return jerry_create_boolean(true);
+  } else {
+    return JS_CREATE_ERROR(COMMON, "player is not ready");
+  }
+}
+
 JS_FUNCTION(Reset) {
   JS_DECLARE_THIS_PTR(player, player);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
@@ -363,6 +376,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "pause", Pause);
   iotjs_jval_set_method(proto, "resume", Resume);
   iotjs_jval_set_method(proto, "seek", Seek);
+  iotjs_jval_set_method(proto, "setVolume", SetVolume);
   iotjs_jval_set_method(proto, "reset", Reset);
 
   // the following methods are for getters and setters internally
