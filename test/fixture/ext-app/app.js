@@ -6,7 +6,7 @@
  */
 module.exports = function (activity) {
   activity.on('create', () => {
-    activity.setPickup('foo', 'bar')
+    activity.testMethod('foo', 'bar')
       .then(data => {
         process.send({
           type: 'test',
