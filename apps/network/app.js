@@ -42,10 +42,8 @@ module.exports = function (app) {
   var WifiList = []
 
   wifi.scan()
-  // startScan()
 
   app.on('request', function (nlp, action) {
-    console.log('>>>>>>>>>>>>>>>>>> onrequest, nlp and action', nlp, action)
     if (this.started && nlp.intent === 'wifi_status') {
       // ignore wifi status if not connecting
       if (connecting === false) {
@@ -171,6 +169,8 @@ module.exports = function (app) {
   function getWIFIState (cb) {
     var state = wifi.getWifiState()
     logger.log(`wifi state is ${state}`)
+    // always poll until get WIFI_CONNECTED state or timeout
+    // not used now, TODO:
     if (state === wifi.WIFI_INIVATE) {
       // TODO: how?
     } else if (state === wifi.WIFI_SCANING) {
@@ -187,6 +187,7 @@ module.exports = function (app) {
     }, 300)
   }
 
+  // update wifi list, wifi list will upate in services now
   function startScan () {
     clearInterval(scanHandle)
     scanHandle = setInterval(function () {
@@ -200,6 +201,7 @@ module.exports = function (app) {
     }, 1000)
   }
 
+  // stop update wifi list
   function stopScan () {
     clearInterval(scanHandle)
   }
