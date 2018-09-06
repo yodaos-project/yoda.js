@@ -3,7 +3,9 @@
 var test = require('tape')
 var EventEmitter = require('events').EventEmitter
 var helper = require('../../helper')
-var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime.js`)
+
+var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
+var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 
 test('test onVoiceCommand', (t) => {
   AppRuntime.prototype.startDbusAppService = function () {}
@@ -26,21 +28,26 @@ test('test onVoiceCommand', (t) => {
     testCutInterrupt: testCutInterrupt
   }
 
-  var appT = {
-    create: function (appId) {
-      return Promise.resolve(appI[appId])
-    },
-    destruct: function () {}
+  var appT = function (appId) {
+    return {
+      create: function () {
+        return Promise.resolve(appI[appId])
+      },
+      destruct: function () {
+        return Promise.resolve()
+      }
+    }
   }
 
   var apps = {
-    testSceneCreate: appT,
-    testSceneDestroy: appT,
-    testCutInterrupt: appT
+    testSceneCreate: appT('testSceneCreate'),
+    testSceneDestroy: appT('testSceneDestroy'),
+    testCutInterrupt: appT('testCutInterrupt')
   }
 
   var runtime = new AppRuntime()
   runtime.apps = apps
+  runtime.life = new Lifetime(apps)
 
   t.plan(9)
 
@@ -100,7 +107,7 @@ test('test onVoiceCommand', (t) => {
     t.pass('@testCutInterrupt should be request')
 
     // test scene resume
-    runtime.exitAppByIdForce('testCutInterrupt')
+    runtime.life.deactivateAppById('testCutInterrupt')
   })
 
   // test scene create
