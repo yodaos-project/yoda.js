@@ -39,7 +39,7 @@ module.exports = function (app) {
     '-201': 'system://wifi/bind_master_failed.ogg'
   }
 
-  var SLEEP_TIME = 20 * 1000
+  var SLEEP_TIME = 5 * 60 * 1000
   var bleEnable = false
   var sleepTimer
 
@@ -95,9 +95,13 @@ module.exports = function (app) {
       timerAndSleep()
       return
     }
+    if (started && nlp.intent === 'into_sleep') {
+      intoSleep()
+      return
+    }
     // user voice active after into sleep
     if (!started && nlp.intent === 'user_says') {
-      app.playSound('system://wifi/ble_connected.ogg')
+      app.light.play('system://setStandby.js')
       messageStream.start(BLE_NAME)
       // retimer
       timerAndSleep()
@@ -258,14 +262,19 @@ module.exports = function (app) {
   function timerAndSleep () {
     clearTimeout(sleepTimer)
     sleepTimer = setTimeout(function sleep () {
-      logger.log('start sleep ......')
-      app.light.stop()
-      if (bleEnable) {
-        messageStream.end()
-        bleEnable = false
-        logger.log('closed ble')
-      }
-      started = false
+      intoSleep()
     }, SLEEP_TIME)
+  }
+
+  function intoSleep () {
+    logger.log('start sleep ......')
+    clearTimeout(sleepTimer)
+    app.light.stop()
+    if (bleEnable) {
+      messageStream.end()
+      bleEnable = false
+      logger.log('closed ble')
+    }
+    started = false
   }
 }
