@@ -21,5 +21,13 @@ function getCmdSocket () {
   }
 }
 
+function closeCmdSocket () {
+  if (cmdSocket) {
+    cmdSocket.close()
+    cmdSocket = null
+  }
+}
+
 exports.getSocket = getSocket
 exports.getCmdSocket = getCmdSocket
+exports.closeCmdSocket = closeCmdSocket

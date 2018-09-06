@@ -46,7 +46,7 @@ module.exports = {
   /**
    * @function get
    * @param {String} key - the property key.
-   * @param {String} [flag] - the flag for set operation, available 
+   * @param {String} [flag] - the flag for set operation, available
    *                 values are: persistent and readonly.
    * @returns {String|Number} returns the value by the given key.
    * @throws {TypeError} key must be a number.
@@ -61,7 +61,7 @@ module.exports = {
    * @function set
    * @param {String} key - the property key.
    * @param {String} val - the property val to set.
-   * @param {String} [flag] - the flag for set operation, available 
+   * @param {String} [flag] - the flag for set operation, available
    *                 values are: persistent and readonly.
    * @throws {TypeError} key must be a number.
    * @throws {TypeError} key must not be empty string.
@@ -69,5 +69,5 @@ module.exports = {
   set: function (key, val, flag) {
     key = normalize(key, flag)
     native.set(key, val)
-  },
+  }
 }

@@ -22,7 +22,7 @@ var AudioBase = {
   /**
    * default volume
    */
-  DEFAULT_VOLUME: _getNumber('audio.volume.default', 60),
+  DEFAULT_VOLUME: _getNumber('audio.volume.default', 60)
 }
 
 function _getNumber (key, defaults) {
@@ -219,7 +219,7 @@ AudioManager.setVolumeShaper = function (shaper) {
   return true
 }
 
-;(function init() {
+;(function init () {
   defineStream(native.STREAM_AUDIO, 'audio')
   defineStream(native.STREAM_TTS, 'tts')
   defineStream(native.STREAM_PLAYBACK, 'playback')

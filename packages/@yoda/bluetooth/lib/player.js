@@ -13,10 +13,14 @@ var a2dpsinkPath = 'ipc:///var/run/bluetooth/a2dpsink_event'
  */
 function BluetoothPlayer () {
   EventEmitter.call(this)
+  this._end = false
   this._cmdSocket = helper.getCmdSocket()
   this._eventSocket = helper.getSocket(a2dpsinkPath)
   this._eventSocket.on('message', (buffer) => {
     try {
+      if (this._end) {
+        return
+      }
       /**
        * When play state updates.
        * @event module:@yoda/bluetooth.BluetoothPlayer#stateupdate
@@ -57,6 +61,7 @@ BluetoothPlayer.prototype._send = function (cmdstr, name) {
  * @returns {Null}
  */
 BluetoothPlayer.prototype.start = function start (name) {
+  this._end = false
   return this._send('ON', name)
 }
 
@@ -65,7 +70,7 @@ BluetoothPlayer.prototype.start = function start (name) {
  * @returns {Null}
  */
 BluetoothPlayer.prototype.end = function () {
-  this._eventSocket.removeAllListeners()
+  this._end = true
   return this._send('OFF')
 }
 
@@ -107,6 +112,14 @@ BluetoothPlayer.prototype.next = function () {
  */
 BluetoothPlayer.prototype.prev = function () {
   return this._send('PREV')
+}
+
+/**
+ * disconnect the event socket
+ */
+BluetoothPlayer.prototype.disconnect = function disconnect () {
+  this.end()
+  this._eventSocket.close()
 }
 
 exports.BluetoothPlayer = BluetoothPlayer

@@ -69,6 +69,7 @@ function ZeroMQSocket (name) {
   }
 
   this._type = type
+  this._closed = false
   this._socket = new ZmqSocket(type)
   this._socket.onerror = this._onerror.bind(this)
   this._socket.onread = this._onread.bind(this)
@@ -112,6 +113,15 @@ ZeroMQSocket.prototype.send = function (bufs) {
   } else {
     return this._socket.send(bufs)
   }
+}
+
+/**
+ * close the socket and remove all listeners.
+ */
+ZeroMQSocket.prototype.close = function () {
+  this._closed = true
+  this.removeAllListeners()
+  return this._socket.close()
 }
 
 /**
