@@ -2,7 +2,8 @@
 
 var test = require('tape')
 var _ = require('@yoda/util')._
-var Descriptors = require('/usr/lib/yoda/runtime/lib/app/activity-descriptor')
+var helper = require('../helper')
+var Descriptors = require(`${helper.paths.runtime}/lib/app/activity-descriptor`)
 
 var ActivityDescriptor = Descriptors.ActivityDescriptor
 var MultimediaDescriptor = Descriptors.MultimediaDescriptor
