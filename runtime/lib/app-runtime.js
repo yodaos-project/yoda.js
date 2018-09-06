@@ -266,7 +266,9 @@ AppRuntime.prototype.onEvent = function (name, data) {
   } else if (name === 'voice local awake') {
     if (this.online !== true) {
       // start @network app
-      this.startApp('@network', {}, {})
+      this.startApp('@network', {
+        intent: 'user_says'
+      }, {})
       // Do noting when there is no network
       return
     }
@@ -995,7 +997,6 @@ AppRuntime.prototype.startDbusAppService = function () {
     out: ['b']
   }, function (status, cb) {
     try {
-      logger.log('report:' + status)
       var data = JSON.parse(status)
       if (data.upgrade === true) {
         self.startApp('@upgrade', {}, {})
@@ -1004,7 +1005,6 @@ AppRuntime.prototype.startDbusAppService = function () {
       } else if (data['Network'] === true && !self.online) {
         self.onEvent('connected', {})
       } else if (data['msg']) {
-        logger.log(`network report ${data.msg}`)
         self.sendNLPToApp('@network', {
           intent: 'wifi_status'
         }, {
@@ -1113,6 +1113,13 @@ function listenKeyboardEvents () {
       },
       116: () => {
         /** exit all app */
+        if (this.online !== true) {
+          // start @network app
+          this.sendNLPToApp('@network', {
+            intent: 'into_sleep'
+          }, {})
+          return
+        }
         this.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
       }
     }

@@ -2,13 +2,16 @@
 
 var logger = require('logger')('@network')
 var bluetooth = require('@yoda/bluetooth')
-var messageStream = bluetooth.getMessageStream()
+var messageStream
 var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
 
 module.exports = function (app) {
+  var started = false
   var uuid = property.get('ro.boot.serialno') || ''
+  // connecting to wifi or not
   var connecting = false
+  // save the current connected wifi config
   var prevWIFI = {
     ssid: '',
     psk: ''
@@ -16,7 +19,7 @@ module.exports = function (app) {
   var connectTimeout, pooling
 
   var BLE_NAME = 'Rokid-Me-' + uuid.substr(-6)
-  console.log(BLE_NAME)
+  logger.log(BLE_NAME)
 
   var WIFI_STATUS = {
     'CTRL-EVENT-NETWORK-NOT-FOUND': {
@@ -36,7 +39,11 @@ module.exports = function (app) {
     '-201': 'system://wifi/bind_master_failed.ogg'
   }
 
-  messageStream.start(BLE_NAME)
+  var SLEEP_TIME = 20 * 1000
+  var bleEnable = false
+  var sleepTimer
+
+  bleEnable = true
 
   var scanHandle = null
   var WifiList = []
@@ -44,14 +51,14 @@ module.exports = function (app) {
   wifi.scan()
 
   app.on('request', function (nlp, action) {
-    if (this.started && nlp.intent === 'wifi_status') {
+    if (started && nlp.intent === 'wifi_status') {
       // ignore wifi status if not connecting
       if (connecting === false) {
         return
       }
       var status = WIFI_STATUS[action.response.action.status]
       if (status !== undefined) {
-        console.log('---------', status)
+        logger.log(status)
         if (action.response.action.status === 'CTRL-EVENT-SSID-TEMP-DISABLED') {
           var search = action.response.action.value.match(/ssid=".+"/)
           if (search && `ssid="${prevWIFI.ssid}" psk="${prevWIFI.psk}"` === search[0]) {
@@ -65,10 +72,10 @@ module.exports = function (app) {
           sendWifiStatus(status)
         }
       }
-      console.log('app report: ' + action.response.action.status)
+      logger.log('app report: ' + action.response.action.status)
       return
     }
-    if (this.started && nlp.intent === 'cloud_status') {
+    if (started && nlp.intent === 'cloud_status') {
       sendWifiStatus({
         topic: 'bind',
         sCode: action.response.action.code,
@@ -81,19 +88,44 @@ module.exports = function (app) {
 
       return
     }
-    if (this.started === true) {
+    // user say again
+    if (started && nlp.intent === 'user_says') {
       this.playSound('system://wifi/setup_network.ogg')
+      // retimer
+      timerAndSleep()
       return
     }
-    this.started = true
-    this.light.play('system://setStandby.js')
+    // user voice active after into sleep
+    if (!started && nlp.intent === 'user_says') {
+      app.playSound('system://wifi/ble_connected.ogg')
+      messageStream.start(BLE_NAME)
+      // retimer
+      timerAndSleep()
+      started = true
+      logger.log('user voice active')
+      return
+    }
+    // nothing to do
+    if (started === true) {
+      return
+    }
+    messageStream = bluetooth.getMessageStream()
+    messageStream.start(BLE_NAME)
+    app.light.play('system://setStandby.js')
+    // start timer
+    timerAndSleep()
+    started = true
 
     messageStream.on('connected', (message) => {
       app.playSound('system://wifi/ble_connected.ogg')
+      // retimer
+      timerAndSleep()
     })
 
     messageStream.on('data', function (message) {
-      console.log('message: ' + message)
+      logger.log('message: ' + message)
+      // retimer
+      timerAndSleep()
 
       if (message && message.topic && message.topic === 'getWifiList') {
         if (WifiList.length <= 0) {
@@ -131,7 +163,13 @@ module.exports = function (app) {
   })
 
   app.on('destroyed', function () {
-    console.log('destroyed')
+    // close ble if it is open
+    if (bleEnable) {
+      bluetooth.disconnect()
+      logger.log('ble closed')
+    }
+    clearTimeout(sleepTimer)
+    logger.log('destroyed')
   })
 
   function connectWIFI (config, cb) {
@@ -215,5 +253,19 @@ module.exports = function (app) {
 
   function sendWifiStatus (data) {
     messageStream.write(data)
+  }
+
+  function timerAndSleep () {
+    clearTimeout(sleepTimer)
+    sleepTimer = setTimeout(function sleep () {
+      logger.log('start sleep ......')
+      app.light.stop()
+      if (bleEnable) {
+        messageStream.end()
+        bleEnable = false
+        logger.log('closed ble')
+      }
+      started = false
+    }, SLEEP_TIME)
   }
 }
