@@ -8,4 +8,4 @@
 sftp-config.json
 node_modules/
 website/docs/
-test/.testrc
+test/config.json

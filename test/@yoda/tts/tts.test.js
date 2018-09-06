@@ -6,6 +6,11 @@ var logger = require('logger')('tts-test')
 var config = require('../../helper/config')
 
 test('tts: normal options params', t => {
+  if (!config || !config.cloudgw) {
+    logger.log('skip this case when config not provided')
+    t.end()
+    return
+  }
   t.plan(3)
   var tts = ttsModule.createTts(config.cloudgw)
   var req = tts.speak('hello', (err) => {
@@ -13,10 +18,10 @@ test('tts: normal options params', t => {
     t.end()
     tts.disconnect()
   })
-  tts.on('start', function(id, errno) {
+  tts.on('start', function (id, errno) {
     t.equal(req.state, 'start', `tts : id=${req.id} start`)
   })
-  tts.on('end', function(id, errno) {
+  tts.on('end', function (id, errno) {
     t.equal(req.state, 'end', `tts : id=${req.id} end`)
   })
   tts.on('error', function (id, errno) {
@@ -33,8 +38,7 @@ test.skip('module->tts->createTts method testcase :invalid options params', t =>
     secret: 'xxx'
   })
   t.equal(typeof tts, 'object', 'TtsProxy is object')
-  tts.on('error', (id, err) => {
-    logger.error(`${id} err: ${err}`)
+  tts.on('error', (err) => {
     t.ok(err !== '' || err !== null)
   })
   setTimeout(() => {
@@ -44,7 +48,7 @@ test.skip('module->tts->createTts method testcase :invalid options params', t =>
   }, 2000)
 })
 
-test('module->tts->createHandle method test case: error options params , get handle is null', t => {
+test.skip('module->tts->createHandle method test case: error options params , get handle is null', t => {
   t.plan(2)
   var handle = ttsModule.createHandle({
     deviceId: 'xxx',
@@ -57,7 +61,7 @@ test('module->tts->createHandle method test case: error options params , get han
   t.end()
 })
 
-test('module->tts->createHandle method test case: normal options', t => {
+test.skip('module->tts->createHandle method test case: normal options', t => {
   t.plan(1)
   t.doesNotThrow(() => {
     ttsModule.createHandle({
