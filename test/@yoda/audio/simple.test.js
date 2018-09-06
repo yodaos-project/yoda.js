@@ -82,13 +82,31 @@ test('set/get volume with different stream model in 0-100', (t) => {
     for (var i = 1; i <= 100; i++) {
       if (str !== '') {
         AudioManager.setVolume(AudioManager[str], i)
-        t.equal(AudioManager.getVolume(AudioManager[str]), i, `it should be set volume to ${i}`)
+        if (AudioManager.getVolume(AudioManager[str]) !== i) {
+          t.fail(`it should be set volume to ${i}`)
+        }
       } else {
         AudioManager.setVolume(i)
-        t.equal(AudioManager.getVolume(), i)
+        if (AudioManager.getVolume() !== i) {
+          t.fail(`it should be set volume to ${i}`)
+        }
       }
     }
   })
+  t.end()
+})
+
+test('set/cancel tts volume mute', (t) => {
+  t.plan(5)
+  AudioManager.setVolume(AudioManager.STREAM_TTS, 50)
+  AudioManager.setMute(true)
+  t.equal(AudioManager.getVolume(AudioManager.STREAM_TTS), 50)
+  AudioManager.setVolume(AudioManager.STREAM_TTS, 60)
+  t.equal(AudioManager.isMuted(), true)
+  t.equal(AudioManager.getVolume(AudioManager.STREAM_TTS), 60)
+  AudioManager.setMute(false)
+  t.equal(AudioManager.isMuted(), false)
+  t.equal(AudioManager.getVolume(AudioManager.STREAM_TTS), 60)
   t.end()
 })
 
