@@ -24,7 +24,7 @@ module.exports = {
     if (!messageStreamInstance ||
       messageStreamInstance._eventSocket._closed === true) {
       var BluetoothMessageStream =
-        require('./lib/stream').BluetoothMessageStream
+        require('./stream').BluetoothMessageStream
       messageStreamInstance = new BluetoothMessageStream()
     }
     return messageStreamInstance
@@ -37,7 +37,7 @@ module.exports = {
     if (!playerInstance ||
       playerInstance._eventSocket._closed === true) {
       var BluetoothPlayer =
-        require('./lib/player').BluetoothPlayer
+        require('./player').BluetoothPlayer
       playerInstance = new BluetoothPlayer()
     }
     return playerInstance
