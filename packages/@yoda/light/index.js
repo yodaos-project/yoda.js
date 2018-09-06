@@ -50,6 +50,7 @@ module.exports = {
   enable: function () {
     if (!enabled) {
       native.enable()
+      enabled = true
     }
   },
 
@@ -61,6 +62,7 @@ module.exports = {
   disable: function () {
     if (enabled) {
       native.disable()
+      enabled = false
     }
   },
 
