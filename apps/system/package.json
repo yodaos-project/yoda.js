@@ -4,6 +4,7 @@
   "description": "Bluetooth Apps for Rokid",
   "main": "app.js",
   "metadata": {
+    "daemon": true,
     "skills": [
       "ROKID.SYSTEM",
       "1B54DBC9F7D74C619282CCE8FE28EB7E",
