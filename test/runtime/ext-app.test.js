@@ -4,13 +4,21 @@ var test = require('tape')
 var path = require('path')
 var EventEmitter = require('events')
 
-var Descriptors = require('/usr/lib/yoda/runtime/lib/app/activity-descriptor')
-var extApp = require('/usr/lib/yoda/runtime/lib/app/ext-app')
+var helper = require('../helper')
+var Descriptors = require(`${helper.paths.runtime}/lib/app/activity-descriptor`)
+var extApp = require(`${helper.paths.runtime}/lib/app/ext-app`)
 
 var ActivityDescriptor = Descriptors.ActivityDescriptor
 var MultimediaDescriptor = Descriptors.MultimediaDescriptor
 
 Object.assign(ActivityDescriptor.prototype, {
+  testMethod: {
+    type: 'method',
+    returns: 'promise',
+    fn: function testMethod () {
+      return this._runtime.testMethod.apply(this._runtime, arguments)
+    }
+  },
   'test-ack': {
     type: 'event-ack',
     trigger: 'onTestAck'
@@ -18,7 +26,7 @@ Object.assign(ActivityDescriptor.prototype, {
 })
 
 test('should listen events', t => {
-  var target = path.join(__dirname, '..', 'fixture', 'simple-app')
+  var target = path.join(helper.paths.fixture, 'simple-app')
 
   var runtime = new EventEmitter()
   extApp('@test', target, runtime)
@@ -48,7 +56,7 @@ test('should listen events', t => {
 })
 
 test('should subscribe event-ack', t => {
-  var target = path.join(__dirname, '..', 'fixture', 'simple-app')
+  var target = path.join(helper.paths.fixture, 'simple-app')
 
   var runtime = new EventEmitter()
   extApp('@test', target, runtime)
@@ -74,7 +82,7 @@ test('should subscribe event-ack', t => {
 
 test('should trigger events and pass arguments', t => {
   t.plan(2)
-  var target = path.join(__dirname, '..', 'fixture', 'ext-app')
+  var target = path.join(helper.paths.fixture, 'ext-app')
 
   var nlp = { foo: 'bar' }
   var action = { appId: '@test' }
@@ -96,7 +104,7 @@ test('should trigger events and pass arguments', t => {
 
 test('should trigger events in namespaces and pass arguments', t => {
   t.plan(3)
-  var target = path.join(__dirname, '..', 'fixture', 'ext-app')
+  var target = path.join(helper.paths.fixture, 'ext-app')
 
   var arg1 = { foo: 'bar' }
   var arg2 = { appId: '@test' }
@@ -119,7 +127,7 @@ test('should trigger events in namespaces and pass arguments', t => {
 
 test('should trigger events and acknowledge it', t => {
   t.plan(5)
-  var target = path.join(__dirname, '..', 'fixture', 'ext-app')
+  var target = path.join(helper.paths.fixture, 'ext-app')
 
   var nlp = { foo: 'bar' }
   var action = { appId: '@test' }
@@ -154,11 +162,11 @@ test('should trigger events and acknowledge it', t => {
 
 test('should invoke methods and callback', t => {
   t.plan(3)
-  var target = path.join(__dirname, '..', 'fixture', 'ext-app')
+  var target = path.join(helper.paths.fixture, 'ext-app')
 
   var expectedData = { foo: 'bar' }
   var runtime = {
-    setPickup: function setPickup (arg1, arg2) {
+    testMethod: function testMethod (arg1, arg2) {
       t.strictEqual(arg1, 'foo')
       t.strictEqual(arg2, 'bar')
       return Promise.resolve(expectedData)
@@ -168,7 +176,7 @@ test('should invoke methods and callback', t => {
     .then(descriptor => {
       descriptor.emit('create')
       descriptor._childProcess.on('message', message => {
-        if (message.type !== 'test') {
+        if (message.type !== 'test' || message.event !== 'create') {
           return
         }
         var data = message.data

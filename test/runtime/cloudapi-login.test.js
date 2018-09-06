@@ -2,7 +2,8 @@
 
 var test = require('tape')
 var prop = require('@yoda/property')
-var login = require('/usr/lib/yoda/runtime/lib/cloudapi/login')
+var helper = require('../helper')
+var login = require(`${helper.paths.runtime}/lib/cloudapi/login`)
 
 test('login', function (t) {
   t.plan(4)

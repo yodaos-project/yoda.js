@@ -27,7 +27,8 @@
     "standard": "^11.0.1",
     "tap-json": "^1.0.0",
     "tap-nyan": "^1.1.0",
-    "tap-spec": "^5.0.0"
+    "tap-spec": "^5.0.0",
+    "tape": "shadow-node/tape#master"
   },
   "standard": {
     "ignore": [
