@@ -141,8 +141,19 @@ MediaPlayer.prototype.start = function (uri) {
   if (!uri) {
     throw new Error('url must be a valid string')
   }
-  this.volume = AudioManager.getVolume(this._stream)
+  var vol = AudioManager.getVolume(this._stream)
+  this.setVolume(vol)
   return this._handle.prepare(uri)
+}
+
+/**
+ * This stops the `MediaPlayer` instance, `.stop()` will destroy
+ * the handle.
+ *
+ * > Don't use the instance anymore when you stopped it.
+ */
+MediaPlayer.prototype.stop = function () {
+  return this._handle.stop()
 }
 
 /**
@@ -172,13 +183,10 @@ MediaPlayer.prototype.seek = function (pos, callback) {
 }
 
 /**
- * This stops the `MediaPlayer` instance, `.stop()` will destroy
- * the handle.
- *
- * > Don't use the instance anymore when you stopped it.
+ * set volume of this media player
  */
-MediaPlayer.prototype.stop = function () {
-  return this._handle.stop()
+MediaPlayer.prototype.setVolume = function (vol) {
+  return this._handle.setVolume(vol)
 }
 
 /**
@@ -265,6 +273,7 @@ Object.defineProperty(MediaPlayer.prototype, 'loopMode', {
 /**
  * @member {number} volume
  * @memberof @yoda/multimedia~MediaPlayer
+ * @private
  */
 Object.defineProperty(MediaPlayer.prototype, 'volume', {
   get: function () {
