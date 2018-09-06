@@ -3,7 +3,13 @@
 var logger = require('logger')('lapp')
 var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
 var translate = require('../../client/translator-in-process').translate
-
+/**
+ *
+ * @author Chengzhong Wu <chengzhong.wu@rokid.com>
+ * @param {string} appId -
+ * @param {string} target - app home directory
+ * @param {AppRuntime} runtime
+ */
 module.exports = function createLightApp (appId, target, runtime) {
   logger.log(`load target: ${target}/package.json`)
   var pkg = require(`${target}/package.json`)

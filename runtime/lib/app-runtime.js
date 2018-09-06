@@ -219,7 +219,6 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
     var appId = daemons[idx]
     logger.info('Starting daemon app', appId)
     return self.life.createApp(appId)
-      .then(() => self.life.setBackgroundById(appId))
       .then(() => {
         return start(idx + 1)
       }, () => {

@@ -6,6 +6,7 @@ var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 var mock = require('./mock')
 
 test('is daemon app', t => {
+  mock.restore()
   var apps = mock.getMockAppExecutors(1)
   var daemonApps = mock.getMockAppExecutors(1, true, 1)
   var life = new Lifetime(Object.assign(apps, daemonApps))
