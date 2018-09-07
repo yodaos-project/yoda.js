@@ -48,7 +48,7 @@ test('test onVoiceCommand', (t) => {
   runtime.apps = apps
   runtime.life.executors = apps
 
-  t.plan(9)
+  t.plan(10)
 
   testSceneCreate.on('create', () => {
     t.pass('@testSceneCreate create')
@@ -93,10 +93,15 @@ test('test onVoiceCommand', (t) => {
   testSceneDestroy.on('pause', () => {
     t.pass('@testSceneDestroy should be pause')
   })
+  var resumed = false
   testSceneDestroy.on('resume', () => {
     t.pass('@testSceneDestroy should be resume')
-    runtime.destroy()
-    t.end()
+    if (resumed) {
+      runtime.destroy()
+      t.end()
+      return
+    }
+    resumed = true
   })
 
   testCutInterrupt.on('create', () => {

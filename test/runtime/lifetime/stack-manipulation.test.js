@@ -36,7 +36,7 @@ test('app preemption', t => {
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '3', 'cut app preempts top of stack from scene app')
       t.notLooseEqual(life.getAppById('2'), null, 'scene app shall not be destroyed on preemption by a cut app')
-      t.strictEqual(life.isAppInStack('2'), true, 'scene app shall remain in stack on preemption by a cut app')
+      t.strictEqual(life.isAppActive('2'), true, 'scene app shall remain in stack on preemption by a cut app')
 
       return life.deactivateAppById('3')
     })
