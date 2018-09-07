@@ -61,7 +61,7 @@ module.exports = function compositionDeVoix (activity) {
       logger.info('Batch execution has been preempted, skipping.')
       return Promise.resolve()
     }
-    return activity.preemptTopOfStack()
+    return activity.setForeground()
       .then(() => {
         if (idx == null) {
           idx = 0
