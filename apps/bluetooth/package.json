@@ -7,12 +7,14 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "metadata": {
+    "extapp": true,
     "skills": [
       "@bluetooth",
       "73F9C00420AA472B914E5C051282945C"
     ],
     "permission": [
-      "ACCESS_TTS"
+      "ACCESS_TTS",
+      "INTERRUPT"
     ]
   },
   "keywords": [
