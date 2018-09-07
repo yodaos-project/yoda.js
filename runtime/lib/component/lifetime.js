@@ -19,6 +19,7 @@ module.exports = LaVieEnPile
  *
  * @author Chengzhong Wu <chengzhong.wu@rokid.com>
  * @param {object} executors - AppExecutors map used to create apps, keyed by app id.
+ *
  */
 function LaVieEnPile (executors) {
   EventEmitter.call(this)
@@ -58,6 +59,15 @@ function LaVieEnPile (executors) {
    */
   this.carrierId = null
 }
+/**
+ * On stack updated, might have be de-bounced
+ * @event stack-update
+ * @param {string[]} stack - new stack
+ */
+/**
+ * On stack reset, might have be de-bounced
+ * @event stack-reset
+ */
 inherits(LaVieEnPile, EventEmitter)
 
 // MARK: - Getters
@@ -133,7 +143,7 @@ LaVieEnPile.prototype.isAppRunning = function isAppRunning (appId) {
  * @returns {boolean} true if is a daemon app, false otherwise.
  */
 LaVieEnPile.prototype.isDaemonApp = function isDaemonApp (appId) {
-  return this.executors[appId].daemon === true
+  return _.get(this.executors, `${appId}.daemon`) === true
 }
 
 // MARK: - END Getters
@@ -219,8 +229,14 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
      * if previous app is started by a carrier,
      * exit the carrier before next steps.
      */
-    logger.info('previous app started by a carrier, ', this.carrierId)
-    future = future.then(() => this.deactivateAppsInStack())
+    var cid = this.carrierId
+    var stack = this.appIdStack
+    logger.info('previous app started by a carrier', cid)
+    future = future.then(() => {
+      var ids = [ cid ].concat(stack).filter(it => it !== appId)
+      /** all apps in stack are going to be destroyed, no need to recover */
+      return Promise.all(ids.map(id => this.destroyAppById(id)))
+    })
   }
   this.carrierId = carrierId
 
@@ -247,18 +263,21 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
-  var deferred = () => this.appIdStack.push(appId)
+  var deferred = () => {
+    this.appIdStack.push(appId)
+    this.onStackUpdate()
+  }
 
   if (form === 'scene') {
     // Exit all apps in stack on incoming scene nlp
-    logger.debug('on scene app preempting, deactivating all apps in stack.')
+    logger.info('on scene app preempting, deactivating all apps in stack.')
     return future.then(() => this.deactivateAppsInStack()).then(deferred)
   }
 
   var last = this.getAppDataById(lastAppId)
   if (!last) {
     /** no previously running app */
-    logger.debug('no previously running app, skip preempting')
+    logger.info('no previously running app, skip preempting')
     return future.then(deferred)
   }
 
@@ -266,26 +285,26 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     /**
      * currently running app is a scene app, pause it
      */
-    logger.debug('on cut app preempting, pausing previous scene app')
+    logger.info('on cut app preempting, pausing previous scene app')
     return future.then(() => this.onLifeCycle(lastAppId, 'pause')).then(deferred)
-  }
-
-  var lastIdIdx = this.appIdStack.indexOf(lastAppId)
-  if (lastIdIdx >= 0) {
-    this.appIdStack.splice(lastIdIdx, 1)
   }
 
   /**
    * currently running app is a normal app, deactivate it
    */
-  logger.debug('on cut app preempting, deactivating previous cut app', lastAppId)
-  return future.then(() => this.deactivateAppById(lastAppId)).then(deferred)
+  logger.info('on cut app preempting, deactivating previous cut app', lastAppId)
+  /** no need to recover previously paused scene app if exists */
+  return future.then(() => this.deactivateAppById(lastAppId, { recover: false }))
+    .then(deferred)
 }
 
 /**
  * Deactivate app. Could be trigger by app itself, or it's active status was preempted by another app.
  * Once an app was deactivated, it's resources may be collected by app runtime.
- * **Also resumes last non-top app in stack.**
+ *
+ * **Also resumes last non-top app in stack by default.**
+ *
+ * > Note: deactivating doesn't apply to apps that not in stack.
  *
  * On deactivating:
  * - non-daemon app: destroyed
@@ -295,18 +314,23 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
  *   - LaVieEnPile#setForegroundById
  *
  * @param {string} appId -
+ * @param {object} [options] -
+ * @param {boolean} [options.recover] - if recover previous app
  * @returns {Promise<void>}
  */
-LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId) {
+LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, options) {
+  var recover = _.get(options, 'recover', true)
+
   var idx = this.appIdStack.indexOf(appId)
-  if (idx !== this.appIdStack.length - 1) {
-    /** app is not top of stack, no need to be deactivated */
-    logger.info('app is not top of stack, skip deactivating', appId)
+  if (idx < 0) {
+    /** app is in stack, no need to be deactivated */
+    logger.info('app is not in stack, skip deactivating', appId)
     return Promise.resolve()
   }
-  logger.info('deactivating top app', appId)
+  logger.info('deactivating app', appId)
 
   this.appIdStack.splice(idx, 1)
+  this.onStackUpdate()
 
   var deactivating
   if (this.isDaemonApp(appId)) {
@@ -322,6 +346,11 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId) {
     this.carrierId = null
   }
 
+  if (!recover) {
+    return deactivating
+  }
+
+  logger.info('recovering previous app on deactivating.')
   return deactivating.then(() => {
     var lastAppId = this.getCurrentAppId()
     if (lastAppId) {
@@ -338,13 +367,14 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId) {
 LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack () {
   var self = this
   var stack = self.appIdStack
-  self.appIdStack = []
   /** deactivate apps in stack in a reversed order */
   logger.info('deactivating apps in stack')
   return Promise.all(stack.map(step))
 
   function step (appId) {
-    return self.deactivateAppById(appId)
+    /** all apps in stack are going to be deactivated, no need to recover */
+    return self.deactivateAppById(appId, { recover: false })
+      .then(() => self.onStackReset())
       .catch(err => logger.error('Unexpected error on deactivating app', appId, err))
   }
 }
@@ -368,6 +398,7 @@ LaVieEnPile.prototype.setBackgroundById = function (appId) {
   var activeIdx = this.appIdStack.indexOf(appId)
   if (activeIdx >= 0) {
     this.appIdStack.splice(activeIdx, 1)
+    this.onStackUpdate()
   }
 
   if (inactiveIdx < 0 && activeIdx < 0) {
@@ -437,6 +468,25 @@ LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) 
   }
 }
 
+/**
+ * Emit event `stack-update` with current app id stack to listeners.
+ */
+LaVieEnPile.prototype.onStackUpdate = function onStackUpdate () {
+  var stack = this.appIdStack
+  process.nextTick(() => {
+    this.emit('stack-update', stack)
+  })
+}
+
+/**
+ * Emit event `stack-reset` to listeners.
+ */
+LaVieEnPile.prototype.onStackReset = function onStackReset () {
+  process.nextTick(() => {
+    this.emit('stack-reset')
+  })
+}
+
 // MARK: - END App Events
 
 // MARK: - App Termination
@@ -455,6 +505,7 @@ LaVieEnPile.prototype.destroyAll = function () {
   var self = this
   var ids = Object.keys(this.apps)
   self.appIdStack = []
+  this.onStackReset()
   /** destroy apps in stack in a reversed order */
   return Promise.all(ids.map(step))
 

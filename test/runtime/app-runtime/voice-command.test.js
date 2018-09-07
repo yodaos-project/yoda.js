@@ -5,7 +5,6 @@ var EventEmitter = require('events').EventEmitter
 var helper = require('../../helper')
 
 var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
-var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 
 test('test onVoiceCommand', (t) => {
   AppRuntime.prototype.startDbusAppService = function () {}
@@ -47,7 +46,7 @@ test('test onVoiceCommand', (t) => {
 
   var runtime = new AppRuntime()
   runtime.apps = apps
-  runtime.life = new Lifetime(apps)
+  runtime.life.executors = apps
 
   t.plan(9)
 

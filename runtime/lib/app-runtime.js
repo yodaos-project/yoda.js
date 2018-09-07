@@ -78,11 +78,18 @@ function AppRuntime (paths) {
   this.loadAppComplete = false
   // 加载APP
   this.executors = {}
+  this.life = new Lifetime(this.executors)
+  this.life.on('stack-update', stack => {
+    this.updateStack(stack)
+  })
+  this.life.on('stack-reset', () => {
+    this.resetStack()
+  })
   this.loadApp(paths, (err, executors) => {
     if (err) {
       throw err
     }
-    this.life = new Lifetime(executors)
+    this.life.executors = executors
     this.loadAppComplete = true
     logger.log('load app complete')
     this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
@@ -433,13 +440,13 @@ AppRuntime.prototype.destroyAll = function (options) {
  * 更新App stack
  * @private
  */
-AppRuntime.prototype.updateStack = function () {
+AppRuntime.prototype.updateStack = function (newStack) {
   var scene = ''
   var cut = ''
   var item
-  for (var i = this.life.appIdStack.length - 1; i >= 0; i--) {
+  for (var i = newStack.length - 1; i >= 0; i--) {
     // we map all cloud skills to the cloud app, so here we want to expand the cloud app's stack
-    var appId = this.life.appIdStack[i]
+    var appId = newStack[i]
     if (appId === '@cloud') {
       for (var j = this.cloudAppIdStack.length - 1; j >= 0; j--) {
         item = this.cloudAppIdStack[j]
@@ -560,7 +567,7 @@ AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
 AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
   this.cloudAppIdStack = stack || []
   logger.log('cloudStack', this.cloudAppIdStack)
-  this.updateStack()
+  this.updateStack(this.life.appIdStack)
   return Promise.resolve()
 }
 
