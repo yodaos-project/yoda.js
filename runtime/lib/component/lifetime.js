@@ -402,10 +402,15 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   var future = this.onLifeCycle(appId, 'background')
 
   if (!recover || activeIdx < 0) {
+    /**
+     * No recover shall be taken if app is not active.
+     */
     return Promise.resolve()
   }
 
-  // try to resume previous app
+  /**
+   * Try to resume previous app only when app is active too.
+   */
   var lastAppId = this.getCurrentAppId()
   if (lastAppId == null) {
     return future
