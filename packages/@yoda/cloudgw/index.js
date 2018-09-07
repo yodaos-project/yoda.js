@@ -7,12 +7,22 @@
 
 var https = require('https')
 var crypto = require('crypto')
+
+var _ = require('@yoda/util')._
 var logger = require('logger')('cloudgw')
 var StatusCodeError = require('./status-code-error')
 
 var defaultHost = 'apigwrest.open.rokid.com'
 var signKeys = [ 'key', 'device_type_id', 'device_id', 'service', 'version', 'time', 'secret' ]
 var authKeys = [ 'version', 'time', 'sign', 'key', 'device_type_id', 'device_id', 'service' ]
+
+/**
+ * @typedef Config
+ * @property {string} key
+ * @property {string} secret
+ * @property {string} deviceTypeId
+ * @property {string} deviceId
+ */
 
 /**
  * @private
@@ -28,8 +38,8 @@ function genSign (obj) {
 
 /**
  * @private
- * @param {Object} [options]
- * @param {String} [options.service]
+ * @param {module:@yoda/cloudgw~Config} options
+ * @param {String} options.service
  */
 function getAuth (options) {
   var data = {
@@ -51,9 +61,14 @@ function noop () {}
 
 /**
  * @class
- * @param {*} config
+ * @param {module:@yoda/cloudgw~Config} config
  */
 function Cloudgw (config) {
+  ;['key', 'secret', 'deviceTypeId', 'deviceId'].forEach(key => {
+    if (typeof _.get(config, key) !== 'string') {
+      throw new TypeError(`Expect a string on config.${key}.`)
+    }
+  })
   this.config = config
 }
 
