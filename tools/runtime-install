@@ -52,9 +52,9 @@ function shell() {
 function push() {
   echo "installing from $1 to $2"
   if test "$sn" != ""; then
-    adb -s "$sn" push $1 $2 >/dev/null
+    adb -s "$sn" push $1 $2
   else
-    adb push $1 $2 >/dev/null
+    adb push $1 $2
   fi
 }
 
