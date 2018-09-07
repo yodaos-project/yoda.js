@@ -85,9 +85,7 @@ function AppRuntime (paths) {
     this.life = new Lifetime(executors)
     this.loadAppComplete = true
     logger.log('load app complete')
-    this.startDaemonApps().then(() => {
-      this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
-    })
+    this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
   })
 }
 inherits(AppRuntime, EventEmitter)
