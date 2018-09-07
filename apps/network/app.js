@@ -103,9 +103,7 @@ module.exports = function (app) {
     // user voice active after into sleep
     if (!started && nlp.intent === 'user_says') {
       app.light.play('system://setStandby.js')
-      setTimeout(() => {
-        messageStream.start(BLE_NAME)
-      }, 800)
+      messageStream.start(BLE_NAME)
       // retimer
       timerAndSleep()
       started = true
@@ -117,13 +115,15 @@ module.exports = function (app) {
       return
     }
     messageStream = bluetooth.getMessageStream()
-    messageStream.start(BLE_NAME)
-    app.light.play('system://setStandby.js')
-    // start timer
-    timerAndSleep()
-    started = true
+    setTimeout(() => {
+      messageStream.start(BLE_NAME)
+      app.light.play('system://setStandby.js')
+      // start timer
+      timerAndSleep()
+      started = true
+    }, 1000)
 
-    messageStream.on('connected', (message) => {
+    messageStream.on('handshaked', (message) => {
       app.playSound('system://wifi/ble_connected.ogg')
       // retimer
       timerAndSleep()
