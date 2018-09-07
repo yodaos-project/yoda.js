@@ -61,7 +61,8 @@ module.exports = function (activity) {
         return
       }
       return activity.light.play('system://setVolume', {
-        volume: vol
+        volume: vol,
+        action: options.action || ''
       })
     }
 
@@ -72,7 +73,8 @@ module.exports = function (activity) {
 
     if (silent) {
       return activity.light.play('system://setVolume', {
-        volume: vol
+        volume: vol,
+        action: options.action || ''
       })
     }
     return speakAndExit(STRING_RANGE_ERROR)
@@ -86,6 +88,7 @@ module.exports = function (activity) {
    */
   function incVolume (value, options) {
     var vol = getVolume() + value
+    options.action = 'increse'
     return setVolume(vol, options)
   }
 
@@ -94,6 +97,7 @@ module.exports = function (activity) {
     if (vol < 0) {
       vol = 0
     }
+    options.action = 'decrese'
     return setVolume(vol, options)
   }
 
