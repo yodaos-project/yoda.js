@@ -338,7 +338,7 @@ AppRuntime.prototype.onEvent = function (name, data) {
  * @param {boolean} [options.carrierId]
  */
 AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
-  var preemptive = _.get(options, 'preemptive')
+  var preemptive = _.get(options, 'preemptive', true)
   var carrierId = _.get(options, 'carrierId')
 
   var appInfo = {}
@@ -358,8 +358,10 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   return this.life.createApp(appId)
     .then(() => {
       if (!preemptive) {
+        logger.info(`app is not preemptive, skip activating app ${appId}`)
         return Promise.resolve()
       }
+      logger.info(`app is preemptive, activating app ${appId}`)
       return this.life.activateAppById(appId, appInfo.form, carrierId)
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
@@ -604,8 +606,7 @@ AppRuntime.prototype.sendNLPToApp = function (appId, nlp, action) {
     action.response.action.form = 'cut'
     this.life.onLifeCycle(appId, 'request', [nlp, action])
   } else {
-    logger.log('send NLP to App faild, AppId ' + appId + ' not in active, ' +
-      `current appid is ${curAppId}`)
+    logger.log(`send NLP to App failed, AppId ${appId} not in active, activing app: ${curAppId}`)
   }
 }
 
