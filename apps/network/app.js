@@ -103,7 +103,9 @@ module.exports = function (app) {
     // user voice active after into sleep
     if (!started && nlp.intent === 'user_says') {
       app.light.play('system://setStandby.js')
-      messageStream.start(BLE_NAME)
+      setTimeout(() => {
+        messageStream.start(BLE_NAME)
+      }, 800)
       // retimer
       timerAndSleep()
       started = true
