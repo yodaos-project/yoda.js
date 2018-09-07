@@ -7,6 +7,9 @@ Usage:
   --vuid          only apply to vuid service
   --ttsd          only apply to ttsd service
 
+Options:
+  -s              serial number.
+
 By default operation is going to be applyed to all services.
 
 Example:
@@ -19,9 +22,15 @@ multimediad='NO'
 vuid='NO'
 ttsd='NO'
 only='NO'
+sn=""
+
 args=()
 while [ $# -gt 0 ]; do
   case "$1" in
+    -s)
+      sn="$2"
+      shift
+      ;;
     --lightd)
       only='YES'
       lightd='YES'
@@ -38,11 +47,7 @@ while [ $# -gt 0 ]; do
       only='YES'
       ttsd='YES'
       ;;
-    --help)
-      printf "$help"
-      exit
-      ;;
-    -h)
+    -h|--help)
       printf "$help"
       exit
       ;;
@@ -55,7 +60,24 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
-adb shell "mount -o remount,rw /"
+function shell() {
+  if test "$sn" != ""; then
+    adb -s "$sn" shell $1
+  else
+    adb shell $1
+  fi
+}
+
+function op {
+  echo "$2ing $1..."
+  if test "$sn" != ""; then
+    adb -s "$sn" shell "/etc/init.d/$1 $2"
+  else
+    adb shell "/etc/init.d/$1 $sn $2"
+  fi
+}
+
+shell "mount -o remount,rw /"
 
 if test "$only" = 'NO'; then
   lightd='YES'
@@ -64,19 +86,15 @@ if test "$only" = 'NO'; then
   ttsd='YES'
 fi
 
-function op {
-  adb shell "/etc/init.d/$1" $2
-}
-
 if test "$lightd" = 'YES'; then
-  op lightd "${args[0]}"
+  op "lightd" "${args[0]}"
 fi
 if test "$multimediad" = 'YES'; then
-  op multimediad "${args[0]}"
+  op "multimediad" "${args[0]}"
 fi
 if test "$vuid" = 'YES'; then
-  op vui-daemon "${args[0]}"
+  op "vui-daemon" "${args[0]}"
 fi
 if test "$ttsd" = 'YES'; then
-  op ttsd "${args[0]}"
+  op "ttsd" "${args[0]}"
 fi

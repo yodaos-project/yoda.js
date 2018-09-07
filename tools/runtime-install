@@ -5,6 +5,7 @@ help="
 Usage:
   -t Only includes tests.
   -a Include tests.
+  -s serial number.
 
 Runtime installation by default, includes all packages, runtime, **no tests**.
 
@@ -14,6 +15,8 @@ Example:
 
 os="YES"
 test="NO"
+sn=""
+
 while [ $# -gt 0 ]; do
   case "$1" in
     -t)
@@ -23,11 +26,11 @@ while [ $# -gt 0 ]; do
     -a)
       test="YES"
       ;;
-    --help)
-      printf "$help"
-      exit
+    -s)
+      sn="$2"
+      shift
       ;;
-    -h)
+    -h|--help)
       printf "$help"
       exit
       ;;
@@ -38,32 +41,47 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
+function shell() {
+  if test "$sn" != ""; then
+    adb -s "$sn" shell $1
+  else
+    adb shell $1
+  fi
+}
+
+function push() {
+  echo "installing from $1 to $2"
+  if test "$sn" != ""; then
+    adb -s "$sn" push $1 $2 >/dev/null
+  else
+    adb push $1 $2 >/dev/null
+  fi
+}
+
 function install_os() {
-  adb shell "mount -o remount,rw /"
+  shell "mount -o remount,rw /"
+  shell "rm -rf /usr/lib/yoda/runtime"
+  push "./runtime" "/usr/lib/yoda/"
 
-  echo "installing runtime..."
-  adb shell "rm -rf /usr/lib/yoda/runtime"
-  adb push ./runtime /usr/lib/yoda/ >/dev/null
+  # apps
+  shell "rm -rf /opt/apps/*"
+  push "./apps/*" "/opt/apps/"
 
-  echo "installing system apps..."
-  adb shell "rm -rf /opt/apps/*"
-  adb push ./apps/* /opt/apps/ >/dev/null
+  # resource
+  shell "rm -rf /opt/media"
+  shell "rm -rf /opt/light"
+  push "./res/light" "/opt/"
+  push "./res/media" "/opt/"
 
-  echo "installing resource..."
-  adb shell "rm -rf /opt/media"
-  adb shell "rm -rf /opt/light"
-  adb push ./res/light /opt/ >/dev/null
-  adb push ./res/media /opt/ >/dev/null
-
-  adb shell mkdir -p /usr/lib/node_modules/@yoda
-  adb push packages/* /usr/lib/node_modules >/dev/null
+  # node_modules
+  shell "mkdir -p /usr/lib/node_modules/@yoda"
+  push "packages/*" "/usr/lib/node_modules"
 }
 
 function install_test() {
-  echo "installing tests..."
-  adb shell 'rm -rf /data/workspace/test'
-  adb shell mkdir -p /data/workspace/test
-  adb push test/* /data/workspace/test >/dev/null
+  shell "rm -rf /data/workspace/test"
+  shell "mkdir -p /data/workspace/test"
+  push "test/*" "/data/workspace/test"
 }
 
 if test "$os" = "YES"; then
