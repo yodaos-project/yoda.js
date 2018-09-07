@@ -262,6 +262,9 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setBackground () {
+        if (!this._runtime.permission.check(this._appId, 'INTERRUPT')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
         return this._runtime.life.setBackgroundById(this._appId).then(() => {})
       }
     },
@@ -270,13 +273,20 @@ Object.assign(ActivityDescriptor.prototype,
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function setForeground
+     * @param {'cut' | 'scene'} [form]
      * @return {Promise<void>}
      */
     setForeground: {
       type: 'method',
       returns: 'promise',
-      fn: function setForeground () {
-        return this._runtime.life.setForegroundById(this._appId).then(() => {})
+      fn: function setForeground (form) {
+        if (!this._runtime.permission.check(this._appId, 'INTERRUPT')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
+        if (form != null && (form !== 'cut' || form !== 'scene')) {
+          return Promise.reject(new TypeError(`Expect 'cut' or 'scene' on first argument of setForeground.`))
+        }
+        return this._runtime.life.setForegroundById(this._appId, form).then(() => {})
       }
     },
     /**
@@ -344,24 +354,6 @@ Object.assign(ActivityDescriptor.prototype,
                 })
             })
           })
-      }
-    },
-    /**
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function preemptTopOfStack
-     * @param {'cur' | 'scene'} form - nlp form to perform preemption
-     * @returns {Promise<void>}
-     */
-    preemptTopOfStack: {
-      type: 'method',
-      returns: 'promise',
-      fn: function preemptTopOfStack (form) {
-        var self = this
-        if (!self._runtime.permission.check(self._appId, 'INTERRUPT')) {
-          return Promise.reject(new Error('Permission denied.'))
-        }
-        return self._runtime.life.activateAppById(self._appId, form || 'cut')
       }
     }
   }
