@@ -1106,9 +1106,11 @@ function listenKeyboardEvents () {
     }
 
     var handler = map[event.keyCode]
-    if (handler) {
-      handler()
+    if (typeof handler !== 'function') {
+      logger.info(`No handler registered for click '${event.keyCode}'.`)
+      return
     }
+    handler()
   })
 
   this._input.on('longpress', event => {
@@ -1146,8 +1148,10 @@ function listenKeyboardEvents () {
       }
     }
     var handler = map[event.keyCode]
-    if (handler) {
-      handler()
+    if (typeof handler !== 'function') {
+      logger.info(`No handler registered for long press '${event.keyCode}'.`)
+      return
     }
+    handler()
   })
 }
