@@ -10,15 +10,14 @@ declare global {
       appId: string
       appHome: string
 
-      destroyAll(): void
-      exit(): void
+      destroyAll(): Promise<void>
+      exit(): Promise<void>
       get(key: string): Promise<any>
-      getAppId(): string
       playSound(uri: string): Promise<void>
       setConfirm(intent: string, slot: string, options?: object, attrs?: object): Promise<void>
-      setPickup(pickup: boolean, duration?: number): void
+      setPickup(pickup: boolean, duration?: number): Promise<void>
       setBackground(): Promise<void>
-      setForeground(): Promise<void>
+      setForeground(form?: 'cut' | 'scene'): Promise<void>
 
       on(event: 'ready', listener: () => void): this
       on(event: 'create', listener: () => void): this
@@ -52,7 +51,12 @@ declare global {
     export interface Request {
       appId: string
       intent: string
-      slots: object[]
+      slots: {
+        [key: string]: {
+          type: string
+          value: string
+        }
+      }
     }
   }
 }
