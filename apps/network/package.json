@@ -4,6 +4,7 @@
   "description": "Bluetooth Apps for Rokid",
   "main": "app.js",
   "metadata": {
+    "extapp": true,
     "skills": [
       "@network"
     ]
