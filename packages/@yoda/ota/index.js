@@ -140,14 +140,19 @@ function readInfo (callback) {
       }
       return callback(err)
     }
+    fs.readFile(infoFile, 'utf8', function onRead (err, data) {
+      if (err) {
+        return callback(err)
+      }
 
-    var info
-    try {
-      info = require(infoFile)
-    } catch (err) {
-      return callback(err)
-    }
-    return callback(null, info)
+      var info
+      try {
+        info = JSON.parse(data)
+      } catch (err) {
+        return callback(err)
+      }
+      return callback(null, info)
+    }) /** END: fs.readFile */
   }) /** END: fs.stat */
 }
 
