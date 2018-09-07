@@ -45,7 +45,7 @@ test('non-daemon app life events', t => {
 
 test('daemon app life events', t => {
   mock.restore()
-  t.plan(5)
+  t.plan(6)
 
   mock.eventBus.on('create', (appId, app) => {
     if (appId === '0') {
@@ -59,6 +59,7 @@ test('daemon app life events', t => {
         t.pass('resume event shall be emitted')
       })
       app.on('destroy', () => {
+        /** destroy shall be emitted twice */
         t.pass('destroy event shall be emitted')
       })
     }
@@ -75,7 +76,7 @@ test('daemon app life events', t => {
 
   life.createApp('0')
     .then(() => {
-      /** daemon app is create as background app, 'background' event shall not be emitted */
+      /** daemon app is create as inactive app, 'background' event shall be emitted */
       return life.setBackgroundById('0')
     })
     .then(() => {
@@ -89,10 +90,10 @@ test('daemon app life events', t => {
       return life.createApp('1')
     })
     .then(() => {
-      /** evict app '0' from stack, emit 'background' event */
+      /** evict app '0' from stack, emit 'destroy' event */
       return life.activateAppById('1')
     })
     .then(() => {
-      return life.destroyAppById('0')
+      return life.destroyAppById('0', { force: true })
     })
 })

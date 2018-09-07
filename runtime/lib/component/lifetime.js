@@ -44,7 +44,7 @@ function LaVieEnPile (executors) {
    * Apps' id running actively.
    * @type {string[]}
    */
-  this.appIdStack = []
+  this.activeAppStack = []
   /**
    * Apps' id running inactively and not background.
    * @type {string[]}
@@ -77,10 +77,10 @@ inherits(LaVieEnPile, EventEmitter)
  * @returns {string | undefined} appId, or undefined if no app was in stack.
  */
 LaVieEnPile.prototype.getCurrentAppId = function getCurrentAppId () {
-  if (this.appIdStack.length === 0) {
+  if (this.activeAppStack.length === 0) {
     return undefined
   }
-  return this.appIdStack[this.appIdStack.length - 1]
+  return this.activeAppStack[this.activeAppStack.length - 1]
 }
 
 /**
@@ -107,16 +107,16 @@ LaVieEnPile.prototype.getAppById = function getAppById (appId) {
  * @returns {boolean} true if in background, false otherwise.
  */
 LaVieEnPile.prototype.isBackgroundApp = function isBackgroundApp (appId) {
-  return this.isAppRunning(appId) && !(this.isAppInStack(appId) || this.isAppInactive(appId))
+  return this.isAppRunning(appId) && !(this.isAppActive(appId) || this.isAppInactive(appId))
 }
 
 /**
- * Get if app is in active stack (neither inactive nor in background).
+ * Get if app is active (neither inactive nor in background).
  * @param {string} appId -
  * @returns {boolean} true if active, false otherwise.
  */
-LaVieEnPile.prototype.isAppInStack = function isAppInStack (appId) {
-  return this.appIdStack.indexOf(appId) >= 0
+LaVieEnPile.prototype.isAppActive = function isAppActive (appId) {
+  return this.activeAppStack.indexOf(appId) >= 0
 }
 
 /**
@@ -153,9 +153,6 @@ LaVieEnPile.prototype.isDaemonApp = function isDaemonApp (appId) {
 /**
  * Create app, yet does not activate it, and set it as inactive.
  *
- * - daemon app: created as background app
- * - non-daemon app: created as inactive app
- *
  * Possible subsequent calls:
  *   - LaVieEnPile#activateAppById
  *   - LaVieEnPile#setBackgroundById
@@ -175,16 +172,13 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
   logger.info('app is not running, creating', appId)
   var executor = this.executors[appId]
   if (executor == null) {
-    // FIXME: what if executor doesn't exists for app
     return Promise.reject(new Error(`App ${appId} not registered`))
   }
 
   return executor.create()
     .then(app => {
       this.apps[appId] = app
-      if (!this.isDaemonApp(appId)) {
-        this.inactiveAppIds.push(appId)
-      }
+      this.inactiveAppIds.push(appId)
       return this.onLifeCycle(appId, 'create')
     })
 }
@@ -229,11 +223,11 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
      * if previous app is started by a carrier,
      * exit the carrier before next steps.
      */
+    // temporary carrier id store
     var cid = this.carrierId
-    var stack = this.appIdStack
     logger.info('previous app started by a carrier', cid)
     future = future.then(() => {
-      var ids = [ cid ].concat(stack).filter(it => it !== appId)
+      var ids = [ cid ].concat(this.activeAppStack).filter(it => it !== appId)
       /** all apps in stack are going to be destroyed, no need to recover */
       return Promise.all(ids.map(id => this.destroyAppById(id)))
     })
@@ -252,26 +246,28 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     /**
      * Pull the app to foreground if running in background
      */
-    logger.info('app is running, resuming', appId)
-    future = this.onLifeCycle(appId, 'resume')
+    logger.info('app is running in background, resuming', appId)
   } else {
+    logger.info('app is running inactively, resuming', appId)
     var idx = this.inactiveAppIds.indexOf(appId)
     if (idx >= 0) {
       this.inactiveAppIds.splice(idx, 1)
     }
   }
+  future = this.onLifeCycle(appId, 'resume')
 
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
   var deferred = () => {
-    this.appIdStack.push(appId)
+    this.activeAppStack.push(appId)
     this.onStackUpdate()
   }
 
   if (form === 'scene') {
     // Exit all apps in stack on incoming scene nlp
     logger.info('on scene app preempting, deactivating all apps in stack.')
-    return future.then(() => this.deactivateAppsInStack()).then(deferred)
+    return future.then(() => this.deactivateAppsInStack())
+      .then(deferred)
   }
 
   var last = this.getAppDataById(lastAppId)
@@ -286,7 +282,8 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
      * currently running app is a scene app, pause it
      */
     logger.info('on cut app preempting, pausing previous scene app')
-    return future.then(() => this.onLifeCycle(lastAppId, 'pause')).then(deferred)
+    return future.then(() => this.onLifeCycle(lastAppId, 'pause'))
+      .then(deferred)
   }
 
   /**
@@ -321,7 +318,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, options) {
   var recover = _.get(options, 'recover', true)
 
-  var idx = this.appIdStack.indexOf(appId)
+  var idx = this.activeAppStack.indexOf(appId)
   if (idx < 0) {
     /** app is in stack, no need to be deactivated */
     logger.info('app is not in stack, skip deactivating', appId)
@@ -329,19 +326,12 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   }
   logger.info('deactivating app', appId)
 
-  this.appIdStack.splice(idx, 1)
+  this.activeAppStack.splice(idx, 1)
   this.onStackUpdate()
 
-  var deactivating
-  if (this.isDaemonApp(appId)) {
-    deactivating = this.onLifeCycle(appId, 'background')
-  } else {
-    // TODO: inactive app could still be alive for a while waiting for automatic destroy
-    deactivating = this.destroyAppById(appId)
-  }
+  var deactivating = this.destroyAppById(appId)
 
   if (this.carrierId) {
-    // TODO: carrier
     /** if app is started by a carrier, unset the flag on exit */
     this.carrierId = null
   }
@@ -366,15 +356,15 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
  */
 LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack () {
   var self = this
-  var stack = self.appIdStack
+  var stack = self.activeAppStack
   /** deactivate apps in stack in a reversed order */
   logger.info('deactivating apps in stack')
   return Promise.all(stack.map(step))
+    .then(() => self.onStackReset())
 
   function step (appId) {
     /** all apps in stack are going to be deactivated, no need to recover */
     return self.deactivateAppById(appId, { recover: false })
-      .then(() => self.onStackReset())
       .catch(err => logger.error('Unexpected error on deactivating app', appId, err))
   }
 }
@@ -389,15 +379,18 @@ LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack () 
  * @param {string} appId
  * @returns {Promise<ActivityDescriptor>}
  */
-LaVieEnPile.prototype.setBackgroundById = function (appId) {
+LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
+  var recover = _.get(options, 'recover', true)
+
+  logger.info('set background', appId)
   var inactiveIdx = this.inactiveAppIds.indexOf(appId)
   if (inactiveIdx >= 0) {
     this.inactiveAppIds.splice(inactiveIdx, 1)
   }
 
-  var activeIdx = this.appIdStack.indexOf(appId)
+  var activeIdx = this.activeAppStack.indexOf(appId)
   if (activeIdx >= 0) {
-    this.appIdStack.splice(activeIdx, 1)
+    this.activeAppStack.splice(activeIdx, 1)
     this.onStackUpdate()
   }
 
@@ -405,14 +398,19 @@ LaVieEnPile.prototype.setBackgroundById = function (appId) {
     logger.info('app already in background', appId)
     return Promise.resolve()
   }
-  logger.info('set background', appId)
+
+  var future = this.onLifeCycle(appId, 'background')
+
+  if (!recover || activeIdx < 0) {
+    return Promise.resolve()
+  }
 
   // try to resume previous app
   var lastAppId = this.getCurrentAppId()
   if (lastAppId == null) {
-    return Promise.resolve()
+    return future
   }
-  return this.onLifeCycle(lastAppId, 'resume')
+  return future.then(() => this.onLifeCycle(lastAppId, 'resume'))
 }
 
 /**
@@ -429,6 +427,7 @@ LaVieEnPile.prototype.setBackgroundById = function (appId) {
  */
 LaVieEnPile.prototype.setForegroundById = function (appId, form) {
   if (!this.isBackgroundApp(appId)) {
+    logger.info('app is not in background, skipping', appId)
     return Promise.resolve()
   }
   logger.info('set foreground', appId)
@@ -472,7 +471,7 @@ LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) 
  * Emit event `stack-update` with current app id stack to listeners.
  */
 LaVieEnPile.prototype.onStackUpdate = function onStackUpdate () {
-  var stack = this.appIdStack
+  var stack = this.activeAppStack
   process.nextTick(() => {
     this.emit('stack-update', stack)
   })
@@ -498,19 +497,21 @@ LaVieEnPile.prototype.onStackReset = function onStackReset () {
  *
  * @returns {Promise<void>}
  */
-LaVieEnPile.prototype.destroyAll = function () {
-  logger.log('destroying all apps')
+LaVieEnPile.prototype.destroyAll = function (options) {
+  var force = _.get(options, 'force', false)
+
+  logger.log(`destroying all apps${force ? ' by force' : ''}`)
   this.appDataMap = {}
 
   var self = this
   var ids = Object.keys(this.apps)
-  self.appIdStack = []
+  self.activeAppStack = []
   this.onStackReset()
   /** destroy apps in stack in a reversed order */
   return Promise.all(ids.map(step))
 
   function step (appId) {
-    return self.destroyAppById(appId)
+    return self.destroyAppById(appId, { force: force })
       .catch(err => logger.error('Unexpected error on destroying app', appId, err))
   }
 }
@@ -523,17 +524,27 @@ LaVieEnPile.prototype.destroyAll = function () {
  * @param {string} appId -
  * @returns {Promise<void>}
  */
-LaVieEnPile.prototype.destroyAppById = function (appId) {
+LaVieEnPile.prototype.destroyAppById = function (appId, options) {
+  var force = _.get(options, 'force', false)
+
   /**
    * Try remove app id from stacks.
    */
-  var idx = this.appIdStack.indexOf(appId)
+  var idx = this.activeAppStack.indexOf(appId)
   if (idx >= 0) {
-    this.appIdStack.splice(idx, 1)
+    this.activeAppStack.splice(idx, 1)
   }
-  idx = this.inactiveAppIds.indexOf(appId)
-  if (idx >= 0) {
-    this.inactiveAppIds.splice(idx, 1)
+  var inactiveIdx = this.inactiveAppIds.indexOf(appId)
+
+  if (!force && this.isDaemonApp(appId)) {
+    if (inactiveIdx < 0) {
+      this.inactiveAppIds.push(appId)
+    }
+    return this.onLifeCycle(appId, 'destroy')
+  }
+
+  if (inactiveIdx >= 0) {
+    this.inactiveAppIds.splice(inactiveIdx, 1)
   }
 
   return this.onLifeCycle(appId, 'destroy')

@@ -390,7 +390,7 @@ AppRuntime.prototype.destroyAll = function (options) {
   /**
    * Destroy all apps, then restart daemon apps
    */
-  this.life.destroyAll()
+  this.life.destroyAll({ force: true })
     .then(() => this.startDaemonApps())
   // 清空正在运行的所有App
   this.cloudAppIdStack = []
@@ -567,7 +567,7 @@ AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
 AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
   this.cloudAppIdStack = stack || []
   logger.log('cloudStack', this.cloudAppIdStack)
-  this.updateStack(this.life.appIdStack)
+  this.updateStack(this.life.activeAppStack)
   return Promise.resolve()
 }
 
@@ -889,7 +889,7 @@ AppRuntime.prototype.startDbusAppService = function () {
       logger.log('exit app permission deny')
       cb(null)
     } else {
-      self.life.destroyAppById(appId)
+      self.life.destroyAppById(appId, { force: true })
       cb(null)
     }
   })
