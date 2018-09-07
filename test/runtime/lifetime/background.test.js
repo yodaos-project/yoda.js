@@ -5,7 +5,7 @@ var helper = require('../../helper')
 var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 var mock = require('./mock')
 
-test('non-daemon inactive carrier shall be destroyed on preemption', t => {
+test('set background recovers previous active app if target app is top of stack', t => {
   mock.restore()
 
   var apps = mock.getMockAppExecutors(3)

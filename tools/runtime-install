@@ -4,17 +4,21 @@ set -e
 help="
 Usage:
   -t Only includes tests.
-  -a Include tests.
-  -s serial number.
+  -r Only includes resources.
+  -a Include tests and resources.
 
-Runtime installation by default, includes all packages, runtime, **no tests**.
+  -s Select which device to be installed on if multiple devices presents.
+
+Runtime installation by default, includes all packages, runtime, **no tests and resources**.
 
 Example:
   $ ./tools/runtime-install
+  $ ./tools/runtime-install -s 0502031835000257
 "
 
 os="YES"
 test="NO"
+resources="NO"
 sn=""
 
 while [ $# -gt 0 ]; do
@@ -23,8 +27,13 @@ while [ $# -gt 0 ]; do
       test="YES"
       os="NO"
       ;;
+    -r)
+      resources="YES"
+      os="NO"
+      ;;
     -a)
       test="YES"
+      resources="YES"
       ;;
     -s)
       sn="$2"
@@ -52,9 +61,9 @@ function shell() {
 function push() {
   echo "installing from $1 to $2"
   if test "$sn" != ""; then
-    adb -s "$sn" push $1 $2
+    adb -s "$sn" push $1 $2 >/dev/null
   else
-    adb push $1 $2
+    adb push $1 $2 >/dev/null
   fi
 }
 
@@ -67,12 +76,6 @@ function install_os() {
   shell "rm -rf /opt/apps/*"
   push "./apps/*" "/opt/apps/"
 
-  # resource
-  shell "rm -rf /opt/media"
-  shell "rm -rf /opt/light"
-  push "./res/light" "/opt/"
-  push "./res/media" "/opt/"
-
   # node_modules
   shell "mkdir -p /usr/lib/node_modules/@yoda"
   push "packages/*" "/usr/lib/node_modules"
@@ -84,8 +87,19 @@ function install_test() {
   push "test/*" "/data/workspace/test"
 }
 
+function install_resources() {
+  shell "rm -rf /opt/media"
+  shell "rm -rf /opt/light"
+  push "./res/light" "/opt/"
+  push "./res/media" "/opt/"
+}
+
 if test "$os" = "YES"; then
   install_os
+fi
+
+if test "$resources" = "YES"; then
+  install_resources
 fi
 
 if test "$test" = 'YES'; then
