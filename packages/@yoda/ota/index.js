@@ -245,7 +245,7 @@ function cleanImages (callback) {
     files = files
       .filter(it => {
         var extname = path.extname(it)
-        return extname === '.img' || extname === 'json'
+        return extname === '.img'
       })
       .map(it => path.join(upgradeDir, it))
 
