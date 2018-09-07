@@ -59,6 +59,7 @@ YodaLocalPackage(yoda-speech @yoda/speech)
 YodaLocalPackage(yoda-tts @yoda/tts)
 YodaLocalPackage(yoda-util @yoda/util)
 YodaLocalPackage(yoda-wifi @yoda/wifi)
+YodaLocalPackage(yoda-flora @yoda/flora)
 
 # system packages
 YodaLocalPackage(bluetooth)
