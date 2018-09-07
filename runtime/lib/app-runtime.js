@@ -604,7 +604,8 @@ AppRuntime.prototype.sendNLPToApp = function (appId, nlp, action) {
     action.response.action.form = 'cut'
     this.life.onLifeCycle(appId, 'request', [nlp, action])
   } else {
-    logger.log('send NLP to App faild, AppId ' + appId + ' not in active')
+    logger.log('send NLP to App faild, AppId ' + appId + ' not in active, ' +
+      `current appid is ${curAppId}`)
   }
 }
 
@@ -768,7 +769,6 @@ AppRuntime.prototype.onReconnected = function () {
  */
 AppRuntime.prototype.onDisconnected = function () {
   this.login = false
-  this.destroyAll()
   logger.log('network disconnected, please connect to wifi first')
   this.startApp('@network', {
     intent: 'system_setup'
