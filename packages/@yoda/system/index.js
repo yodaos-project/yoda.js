@@ -28,7 +28,12 @@ exports.verifyOtaImage = native.verifyOtaImage
  * @param {string} path the image path to be installed, **empty string** if resetting ota
  * @returns {Number} native method status code, 0 on success, non-0 otherwise
  */
-exports.prepareOta = native.prepareOta
+exports.prepareOta = function prepareOta (path) {
+  if (typeof path !== 'string') {
+    return TypeError('Expect a string on first argument of prepareOta')
+  }
+  return native.prepareOta(path)
+}
 
 /**
  * @private
@@ -49,4 +54,9 @@ exports.GetOtaFlag = native.GetOtaFlag
  * @param {string} path - the path to be analyzed
  * @returns {module:@yoda/system~DiskUsage}
  */
-exports.diskUsage = native.diskUsage
+exports.diskUsage = function diskUsage (path) {
+  if (typeof path !== 'string') {
+    return TypeError('Expect a string on first argument of diskUsage')
+  }
+  return native.diskUsage(path)
+}
