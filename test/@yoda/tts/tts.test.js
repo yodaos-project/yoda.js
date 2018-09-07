@@ -136,7 +136,7 @@ test.skip('module->tts->createTts method test case: normal options params', t =>
     return
   }
   var tts = ttsModule.createTts(config.cloudgw)
-  var request = tts.speak('你好若琪', () => {
+  var req = tts.speak('你好若琪', (e) => {
     if (!e) {
       t.equal(req.state, 'end', `tts : id=${req.id} call back`)
     }
@@ -145,11 +145,11 @@ test.skip('module->tts->createTts method test case: normal options params', t =>
   })
   tts.on('start', (id, errno) => {
     logger.info(`tts start : id = ${id}, errno = ${errno}`)
-    t.equal(request.state, 'start', `tts : id=${id} start`)
+    t.equal(req.state, 'start', `tts : id=${id} start`)
   })
   tts.on('end', (id, errno) => {
     logger.info(`tts end : id = ${id}, errno = ${errno}`)
-    t.equal(request.state, 'end', `tts : id=${id} end`)
+    t.equal(req.state, 'end', `tts : id=${id} end`)
   })
   tts.on('error', (id, errno) => {
     logger.info(`tts error : id = ${id}, errno = ${errno}`)
