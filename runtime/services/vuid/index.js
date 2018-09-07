@@ -142,7 +142,7 @@ function entry () {
       mqttAgent.on('set_volume', function (data) {
         var msg = JSON.parse(data)
         if (msg.music !== undefined) {
-          AudioManager.setVolume('audio', msg.music)
+          AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, msg.music)
         }
         var res = {
           type: 'Volume',
