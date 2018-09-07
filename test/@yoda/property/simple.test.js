@@ -67,18 +67,20 @@ test('module->property->set value: normal key, set value typeof number', t => {
 })
 
 test('module->property->set value: normal key, set key typeof number', t => {
-  t.throws(() => {
-    prop.set(3, 4)
-  }, /key must be a string/, 'key must be a string')
+  t.plan(2)
+  t.throws(() => { prop.set(3, '4') }, new RegExp('key must be a string'), 'key must be a string')
   t.equal(prop.get('3'), '')
   t.end()
 })
 
-test('module->property->set value: normal key, set long key ', t => {
-  t.throws(() => {
-    var key = 'test_key.aaa.bbb.ccc.ddd.fff.ggg.ppp.www.rrr.eee.vvv.bbb.nnn.mmm'
-    prop.set(key, 'test')
-  }, /key is too long/)
+/**
+ * bug id = 1291
+ */
+test.skip('module->property->set value: normal key, set long key ', t => {
+  t.plan(1)
+  var key = 'test_key.aaa.bbb.ccc.ddd.fff.ggg.ppp.www.rrr.eee.vvv.bbb.nnn.mmm'
+  prop.set(key, 'test')
+  t.equal(prop.get(key), 'test')
   t.end()
 })
 
@@ -93,8 +95,38 @@ test.skip('module->property->set value: normal key, set key ', t => {
   t.end()
 })
 
-test('basic info', function (t) {
+test('module->property->get value', function (t) {
+  t.plan(3)
   t.equal(typeof prop.get('ro.build.version.release'), 'string')
   t.equal(typeof prop.get('ro.rokid.build.platform'), 'string')
+  t.equal(typeof prop.get('xxx'), 'string')
+  t.end()
+})
+
+test('module->property->get value : key is null', function (t) {
+  t.plan(1)
+  t.throws(() => {
+    prop.get(null)
+  }, new RegExp('key must be a string'), 'key must be a string')
+  t.end()
+})
+
+test('module->property->set value : key is null', function (t) {
+  t.plan(1)
+  t.throws(() => {
+    prop.set(null)
+  }, new RegExp('key must be a string'), 'key must be a string')
+  t.end()
+})
+
+/**
+ * bug id = 1303
+ */
+test.skip('module->property->set value : value must be needed', function (t) {
+  t.plan(1)
+  prop.set('test_key.xxxxxpp')
+  t.throws(() => {
+    prop.set('test_key.xxxxx')
+  }, 'value must be needed')
   t.end()
 })
