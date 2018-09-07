@@ -450,7 +450,6 @@ LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) 
  */
 LaVieEnPile.prototype.destroyAll = function () {
   logger.log('destroying all apps')
-  // 清空正在运行的所有App
   this.appDataMap = {}
 
   var self = this
