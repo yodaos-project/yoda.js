@@ -20,6 +20,7 @@ var env = require('./env')()
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 var Input = require('@yoda/input')
+var wifi = require('@yoda/wifi')
 var Lifetime = require('./component/lifetime')
 
 module.exports = AppRuntime
@@ -55,11 +56,15 @@ function AppRuntime (paths) {
   this.volume = null
   this.prevVolume = -1
   this.handle = {}
-
+  // support cloud api. etc.. login
   this.cloudApi = null
   // to identify the first start
   this.online = undefined
+  // to identify is login or not
   this.login = undefined
+  // to identify network switch from connected to disconnected
+  this.waitingForAwake = undefined
+
   this.micMuted = false
 
   this.forceUpdateAvailable = false
@@ -74,7 +79,7 @@ function AppRuntime (paths) {
 
   this.dbusSignalRegistry = new EventEmitter()
   this.listenDbusSignals()
-
+  // identify load app complete
   this.loadAppComplete = false
   // 加载APP
   this.executors = {}
@@ -266,6 +271,11 @@ AppRuntime.prototype.onEvent = function (name, data) {
       })
     }
   } else if (name === 'voice local awake') {
+    // guide the user to double-click the button
+    if (this.waitingForAwake === true) {
+      this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
+      return
+    }
     if (this.online !== true) {
       // start @network app
       this.startApp('@network', {
@@ -293,8 +303,11 @@ AppRuntime.prototype.onEvent = function (name, data) {
       return
     }
     if (this.online === false || this.online === undefined) {
-      // need to play startup music
-      logger.log('first startup')
+      if (this.online === undefined) {
+        logger.log('first login')
+      } else {
+        logger.log('relogin')
+      }
       this.onReconnected()
       this.emit('reconnected')
 
@@ -320,8 +333,9 @@ AppRuntime.prototype.onEvent = function (name, data) {
       this.emit('disconnected')
     }
     this.online = false
+  // trigger by cloud api, network app should send it to mobile app
   } else if (name === 'cloud event') {
-    console.log('---------------- cloud event', data)
+    logger.log('cloud event', data)
     this.sendNLPToApp('@network', {
       intent: 'cloud_status'
     }, {
@@ -734,6 +748,11 @@ AppRuntime.prototype.onGetPropAll = function () {
  * @private
  */
 AppRuntime.prototype.onReconnected = function () {
+  wifi.resetDns()
+  // only if switch network
+  if (this.waitingForAwake === true) {
+    this.waitingForAwake = false
+  }
   this.lightMethod('setConfigFree', ['system'])
 }
 
@@ -741,11 +760,17 @@ AppRuntime.prototype.onReconnected = function () {
  * @private
  */
 AppRuntime.prototype.onDisconnected = function () {
+  if (this.login === true) {
+    // waiting for user awake or button event in order to switch to network config
+    this.waitingForAwake = true
+    logger.log('network switch, try to relogin, waiting for user awake or button event')
+  } else {
+    logger.log('network disconnected, please connect to wifi first')
+    this.startApp('@network', {
+      intent: 'system_setup'
+    }, {})
+  }
   this.login = false
-  logger.log('network disconnected, please connect to wifi first')
-  this.startApp('@network', {
-    intent: 'system_setup'
-  }, {})
 }
 
 /**
@@ -755,7 +780,11 @@ AppRuntime.prototype.onReLogin = function () {
   this.destroyAll()
   this.login = true
   perf.stub('started')
-  this.lightMethod('setWelcome', [])
+  // not need to play startup music after relogin
+  if (this.waitingForAwake === undefined) {
+    this.lightMethod('setWelcome', [])
+  }
+  this.waitingForAwake = undefined
 
   var config = JSON.stringify(this.onGetPropAll())
   this.ttsMethod('connect', [config])
@@ -1111,6 +1140,23 @@ function listenKeyboardEvents () {
       return
     }
     handler()
+  })
+  // dbclick event
+  this._input.on('dbclick', event => {
+    var map = {
+      116: () => {
+        if (this.waitingForAwake === true) {
+          this.waitingForAwake = false
+          this.startApp('@network', {
+            intent: 'system_setup'
+          }, {})
+        }
+      }
+    }
+    var handler = map[event.keyCode]
+    if (handler) {
+      handler()
+    }
   })
 
   this._input.on('longpress', event => {
