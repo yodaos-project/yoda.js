@@ -348,20 +348,13 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   var preemptive = _.get(options, 'preemptive', true)
   var carrierId = _.get(options, 'carrierId')
 
-  var appInfo = {}
-  var appId
-  try {
-    // for appDataMap
-    appId = nlp.cloud === true ? '@cloud' : nlp.appId
-    appInfo = {
-      appId: nlp.appId,
-      cloud: nlp.cloud,
-      form: appId === '@cloud' ? 'scene' : action.response.action.form
-    }
-  } catch (error) {
+  var appId = nlp.cloud === true ? '@cloud' : nlp.appId
+  var form = _.get(action, 'response.action.form')
+  if (!appId) {
     logger.log('invalid nlp/action, ignore')
     return Promise.resolve()
   }
+
   return this.life.createApp(appId)
     .then(() => {
       if (!preemptive) {
@@ -369,7 +362,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
         return Promise.resolve()
       }
       logger.info(`app is preemptive, activating app ${appId}`)
-      return this.life.activateAppById(appId, appInfo.form, carrierId)
+      return this.life.activateAppById(appId, form, carrierId)
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch((error) => {
