@@ -206,7 +206,7 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
  */
 LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, carrierId) {
   if (!this.isAppRunning(appId)) {
-    return Promise.reject(new Error('App is not running, launch it first.'))
+    return Promise.reject(new Error(`App ${appId} is not running, launch it first.`))
   }
 
   if (form == null) {
@@ -265,7 +265,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   if (form === 'scene') {
     // Exit all apps in stack on incoming scene nlp
-    logger.info('on scene app preempting, deactivating all apps in stack.')
+    logger.info(`on scene app '${appId}' preempting, deactivating all apps in stack.`)
     return future.then(() => this.deactivateAppsInStack())
       .then(deferred)
   }
@@ -281,7 +281,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     /**
      * currently running app is a scene app, pause it
      */
-    logger.info('on cut app preempting, pausing previous scene app')
+    logger.info(`on cut app '${appId}' preempting, pausing previous scene app`)
     return future.then(() => this.onLifeCycle(lastAppId, 'pause'))
       .then(deferred)
   }
@@ -289,7 +289,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   /**
    * currently running app is a normal app, deactivate it
    */
-  logger.info('on cut app preempting, deactivating previous cut app', lastAppId)
+  logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
   /** no need to recover previously paused scene app if exists */
   return future.then(() => this.deactivateAppById(lastAppId, { recover: false }))
     .then(deferred)
