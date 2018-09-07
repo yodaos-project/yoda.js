@@ -79,11 +79,8 @@ function AppRuntime (paths) {
   // 加载APP
   this.executors = {}
   this.life = new Lifetime(this.executors)
-  this.life.on('stack-update', stack => {
-    this.updateStack(stack)
-  })
   this.life.on('stack-reset', () => {
-    this.resetStack()
+    this.resetCloudStack()
   })
   this.loadApp(paths, (err, executors) => {
     if (err) {
@@ -354,6 +351,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     logger.log('invalid nlp/action, ignore')
     return Promise.resolve()
   }
+  this.updateCloudStack(nlp.appId, form)
 
   return this.life.createApp(appId)
     .then(() => {
@@ -387,7 +385,7 @@ AppRuntime.prototype.destroyAll = function (options) {
     .then(() => this.startDaemonApps())
   // 清空正在运行的所有App
   this.cloudAppIdStack = []
-  this.resetStack()
+  this.resetCloudStack()
 
   if (!resetServices) {
     return
@@ -433,57 +431,32 @@ AppRuntime.prototype.destroyAll = function (options) {
  * 更新App stack
  * @private
  */
-AppRuntime.prototype.updateStack = function (newStack) {
-  var scene = ''
-  var cut = ''
-  var item
-  for (var i = newStack.length - 1; i >= 0; i--) {
-    // we map all cloud skills to the cloud app, so here we want to expand the cloud app's stack
-    var appId = newStack[i]
-    if (appId === '@cloud') {
-      for (var j = this.cloudAppIdStack.length - 1; j >= 0; j--) {
-        item = this.cloudAppIdStack[j]
-        if (scene === '' && item.form === 'scene') {
-          scene = item.appId
-        }
-        if (cut === '' && item.form !== 'scene') {
-          cut = item.appId
-        }
-      }
-    } else {
-      item = this.life.getAppDataById(appId)
-      if (scene === '' && item.form === 'scene') {
-        scene = appId
-      }
-      if (cut === '' && item.form !== 'scene') {
-        cut = appId
-      }
+AppRuntime.prototype.updateCloudStack = function (appId, form) {
+  if (form === 'cut') {
+    this.domain.cut = appId
+  } else if (form === 'scene') {
+    this.domain.scene = appId
+  }
+  var ids = [this.domain.scene, this.domain.cut].map(it => {
+    /**
+     * Exclude local convenience app from cloud skill stack
+     */
+    if (_.startsWith(it, '@')) {
+      return ''
     }
-  }
-  if (scene !== this.domain.scene || cut !== this.domain.cut) {
-    this.domain.scene = scene
-    this.domain.cut = cut
-    var ids = [scene, cut].map(it => {
-      /**
-       * Exclude local convenience app from cloud skill stack
-       */
-      if (_.startsWith(it, '@')) {
-        return ''
-      }
-      /**
-       * Exclude apps from cloud skill stack
-       * - composition-de-voix
-       */
-      if (['RB0BF7E9D7F84B2BB4A1C2990A1EF8F5'].indexOf(it) >= 0) {
-        return ''
-      }
-      return it
-    })
-    this.emit('setStack', ids.join(':'))
-  }
+    /**
+     * Exclude apps from cloud skill stack
+     * - composition-de-voix
+     */
+    if (['RB0BF7E9D7F84B2BB4A1C2990A1EF8F5'].indexOf(it) >= 0) {
+      return ''
+    }
+    return it
+  })
+  this.emit('setStack', ids.join(':'))
 }
 
-AppRuntime.prototype.resetStack = function () {
+AppRuntime.prototype.resetCloudStack = function () {
   this.domain.cut = ''
   this.domain.scene = ''
   this.emit('setStack', this.domain.scene + ':' + this.domain.cut)
@@ -560,7 +533,6 @@ AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
 AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
   this.cloudAppIdStack = stack || []
   logger.log('cloudStack', this.cloudAppIdStack)
-  this.updateStack(this.life.activeAppStack)
   return Promise.resolve()
 }
 
