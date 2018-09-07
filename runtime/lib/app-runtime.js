@@ -335,9 +335,10 @@ AppRuntime.prototype.onEvent = function (name, data) {
  * @param {object} action 服务端返回的action
  * @param {object} [options]
  * @param {boolean} [options.preemptive]
- * @param {boolean} [options.byCarrier]
+ * @param {boolean} [options.carrierId]
  */
 AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
+  var preemptive = _.get(options, 'preemptive')
   var carrierId = _.get(options, 'carrierId')
 
   var appInfo = {}
@@ -355,7 +356,12 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve()
   }
   return this.life.createApp(appId)
-    .then(() => this.life.activateAppById(appId, appInfo.form, carrierId))
+    .then(() => {
+      if (!preemptive) {
+        return Promise.resolve()
+      }
+      return this.life.activateAppById(appId, appInfo.form, carrierId)
+    })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch((error) => {
       logger.error(`create app error with appId: ${appId}`, error)
