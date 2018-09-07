@@ -11,7 +11,7 @@
  * - Transfer data to and from other devices.
  */
 
-var helper = require('./lib/helper')
+var helper = require('./helper')
 var messageStreamInstance
 var playerInstance
 
