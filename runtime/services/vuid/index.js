@@ -129,7 +129,7 @@ function entry () {
           type: 'Volume',
           event: 'ON_VOLUME_CHANGE',
           template: JSON.stringify({
-            mediaCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_AUDIO),
+            mediaCurrent: '' + AudioManager.getVolume(),
             mediaTotal: '100',
             alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
             alarmTotal: '100'
@@ -142,13 +142,13 @@ function entry () {
       mqttAgent.on('set_volume', function (data) {
         var msg = JSON.parse(data)
         if (msg.music !== undefined) {
-          AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, msg.music)
+          AudioManager.setVolume(msg.music)
         }
         var res = {
           type: 'Volume',
           event: 'ON_VOLUME_CHANGE',
           template: JSON.stringify({
-            mediaCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_AUDIO),
+            mediaCurrent: '' + AudioManager.getVolume(),
             mediaTotal: '100',
             alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
             alarmTotal: '100'
