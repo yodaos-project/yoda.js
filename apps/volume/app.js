@@ -63,6 +63,8 @@ module.exports = function (activity) {
       return activity.light.play('system://setVolume', {
         volume: vol,
         action: options.action || ''
+      }).then(() => {
+        return activity.exit()
       })
     }
 
@@ -75,6 +77,8 @@ module.exports = function (activity) {
       return activity.light.play('system://setVolume', {
         volume: vol,
         action: options.action || ''
+      }).then(() => {
+        return activity.exit()
       })
     }
     return speakAndExit(STRING_RANGE_ERROR)
@@ -132,6 +136,8 @@ module.exports = function (activity) {
     /** Only light effects, actual mic mute operation has been handled by runtime */
     return activity.light.play('system://setMuted', {
       muted: muted
+    }).then(() => {
+      return activity.exit()
     })
   }
 
@@ -174,9 +180,11 @@ module.exports = function (activity) {
         break
       case 'volumemute':
         setMute()
+        activity.exit()
         break
       case 'cancelmute':
         setUnmute()
+        activity.exit()
         break
       case 'mic_mute':
         micMute(true)
@@ -186,6 +194,7 @@ module.exports = function (activity) {
         break
       case 'init_volume':
         initVolume()
+        activity.exit()
         break
       default:
         activity.exit()
