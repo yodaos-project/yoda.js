@@ -31,6 +31,7 @@ test.skip('module->tts->call method speak', t => {
 })
 
 test('module->tts->stopall after speak ', t => {
+  var cancel = 0
   tts.speak('hello rokid', (e) => {
     if (e) {
       t.fail(e)
@@ -40,6 +41,12 @@ test('module->tts->stopall after speak ', t => {
     if (e) {
       t.fail(e)
     }
+  })
+  tts.speak('hello rokid', (e) => {
+    if (e) {
+      t.fail(e)
+    }
+    t.equal(cancel, 3)
     tts.disconnect()
     t.end()
   })
@@ -55,11 +62,13 @@ test('module->tts->stopall after speak ', t => {
     t.fail('call speack error')
   })
   tts.on('cancel', (id, errno) => {
-    logger.info(`tts cancel : id = ${id}, errno = ${errno}`)
+    cancel++
+    t.pass(`tts cancel : id = ${id}, errno = ${errno}`)
   })
 })
 
 test('module->tts->stopall after start ', t => {
+  var cancel = 0
   tts.speak('hello rokid', (e) => {
     if (e) {
       t.fail(e)
@@ -69,6 +78,12 @@ test('module->tts->stopall after start ', t => {
     if (e) {
       t.fail(e)
     }
+  })
+  tts.speak('hello rokid', (e) => {
+    if (e) {
+      t.fail(e)
+    }
+    t.equal(cancel, 3)
     tts.disconnect()
     t.end()
   })
@@ -80,10 +95,10 @@ test('module->tts->stopall after start ', t => {
     logger.info(`tts end : id = ${id}, errno = ${errno}`)
   })
   tts.on('error', (id, errno) => {
-    logger.info(`tts error : id = ${id}, errno = ${errno}`)
-    t.fail('call speack error')
+    t.fail(`tts error : id = ${id}, errno = ${errno}`)
   })
   tts.on('cancel', (id, errno) => {
-    logger.info(`tts cancel : id = ${id}, errno = ${errno}`)
+    cancel++
+    t.pass(`tts cancel : id = ${id}, errno = ${errno}`)
   })
 })
