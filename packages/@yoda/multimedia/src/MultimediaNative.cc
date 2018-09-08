@@ -319,7 +319,14 @@ JS_FUNCTION(LoopModeSetter) {
 }
 
 JS_FUNCTION(VolumeGetter) {
-  return jerry_create_undefined();
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  if (_this->handle) {
+    return jerry_create_number(_this->handle->getVolume());
+  } else {
+    return JS_CREATE_ERROR(COMMON, "player is not ready");
+  }
 }
 
 JS_FUNCTION(VolumeSetter) {
