@@ -19,7 +19,7 @@ module.exports.TtsDescriptor = TtsDescriptor
 
 /**
  * @memberof yodaRT.activity
- * @classdesc The `Activity` instance is that developer will use in often.
+ * @classdesc The `Activity` is the APIs for apps developer.
  * ```js
  * module.exports = function(activity) {
  *   activity.on('ready', () => {
@@ -27,6 +27,12 @@ module.exports.TtsDescriptor = TtsDescriptor
  *   })
  *   activity.on('create', () => {
  *     console.log('app is created')
+ *   })
+ *   activity.on('destroy', () => {
+ *     console.log('app is destroyed')
+ *   })
+ *   activity.on('resume', () => {
+ *     console.log('app is resumed')
  *   })
  *   activity.on('request', (nlp) => {
  *     // handle nlp
