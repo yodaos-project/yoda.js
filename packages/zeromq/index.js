@@ -11,27 +11,27 @@
  * ```js
  * // pubber.js
  * var zmq = require('zeromq')
- * var sock = zmq.socket('pub');
+ * var sock = zmq.socket('pub')
  *
- * sock.bindSync('ipc:///tmp/test');
- * console.log('Publisher bound to port 3000');
+ * sock.bindSync('ipc:///tmp/test')
+ * console.log('Publisher bound to port 3000')
  *
  * setInterval(function(){
- *   console.log('sending a multipart message envelope');
- *   sock.send(['kitty cats', 'meow!']);
- * }, 500);
+ *   console.log('sending a multipart message envelope')
+ *   sock.send(['kitty cats', 'meow!'])
+ * }, 500)
  *
  * // subber.js
  * var zmq = require('zeromq')
- * sock = zmq.socket('sub');
+ * sock = zmq.socket('sub')
  *
- * sock.connect('tcp://127.0.0.1:3000');
- * sock.subscribe('kitty cats');
- * console.log('Subscriber connected to port 3000');
+ * sock.connect('tcp://127.0.0.1:3000')
+ * sock.subscribe('kitty cats')
+ * console.log('Subscriber connected to port 3000')
  *
  * sock.on('message', function(message) {
- *   console.log('containing message:', message);
- * });
+ *   console.log('containing message:', message)
+ * })
  * ```
  * @module zeromq
  */
