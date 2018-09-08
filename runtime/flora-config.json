@@ -1,0 +1,5 @@
+{
+  "uri": "unix:/var/run/flora.sock",
+  "bufsize": 40960,
+  "reconnInterval": 10000
+}
