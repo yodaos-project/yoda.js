@@ -117,45 +117,48 @@ ActivityDescriptor.prototype.destruct = function destruct () {
 Object.assign(ActivityDescriptor.prototype,
   {
     /**
-     * When the app is ready
+     * When the app is ready.
      * @event yodaRT.activity.Activity#ready
      */
     ready: {
       type: 'event'
     },
     /**
-     * When the app is created
+     * When an activity is created.
      * @event yodaRT.activity.Activity#create
      */
     create: {
       type: 'event'
     },
     /**
-     * When the app is about been paused
+     * When an activity is about been paused.
      * @event yodaRT.activity.Activity#pause
      */
     pause: {
       type: 'event'
     },
     /**
-     * When the app is resumed
+     * When an activity is resumed.
      * @event yodaRT.activity.Activity#resume
      */
     resume: {
       type: 'event'
     },
     /**
-     * When the app is about been destroyed
+     * When an activity is about been destroyed.
      * @event yodaRT.activity.Activity#destroy
      */
     destroy: {
       type: 'event'
     },
     /**
-     * When the app is received a command request
+     * Handle your nlp request in this lifecycle.
      * @event yodaRT.activity.Activity#request
      * @param {object} data
-     * @param {string} data.intent
+     * @param {string} data.intent - your nlp intent.
+     * @param {object} data.slots  - your nlp slots.
+     * @param {string} data.asr    - the asr text.
+     * @param {object} action      - the cloud postprocessed data.
      */
     request: {
       type: 'event'
@@ -176,8 +179,8 @@ Object.assign(ActivityDescriptor.prototype,
      * @returns {Promise<object>}
      * @example
      * module.exports = function (activity) {
-     *   activity.get().then((props) => {
-     *     console.log(props)
+     *   activity.on('ready', () => {
+     *     activity.get().then((props) => console.log(props))
      *   })
      * }
      */
@@ -219,7 +222,9 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Set the current app is pickup
+     * Open the mics for continuely listenning for your users
+     * without activation.
+     *
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function setPickup
@@ -236,7 +241,7 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Set the app is confirmed
+     * Set the app is confirmed.
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function setConfirm
@@ -270,7 +275,11 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * push the app in background
+     * Set your application in background mode, in this mode, the application still could keep alive,
+     * and listen other events, but no ablitity to control TTS, light and multimedia.
+     *
+     * To use this API, you must specify the permission `INTERRUPT` in your application manifest.
+     *
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function setBackground
@@ -287,11 +296,14 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * push the app in foreground
+     * Push the app in foreground, the reverse slide to `setBackground()`, it requires the `INTERRUPT`
+     * permission, either.
+     *
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function setForeground
-     * @param {'cut' | 'scene'} [form]
+     * @param {string} [form] - the running form of the activity, available value are: cut
+     *                          or scene.
      * @return {Promise<void>}
      */
     setForeground: {
@@ -324,6 +336,8 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
+     * Play the sound effect, support the following schemas: `system://` and `self://`.
+     *
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function playSound
@@ -339,6 +353,8 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
+     * Send a voice command to the main process. It requires the permission `ACCESS_VOICE_COMMAND`.
+     *
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function voiceCommand
