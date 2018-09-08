@@ -195,7 +195,7 @@ MediaPlayer.prototype.getVolume = function () {
 MediaPlayer.prototype.setVolume = function (vol) {
   if (vol < 0) {
     vol = 0
-  } else (vol > 100) {
+  } else if (vol > 100) {
     vol = 100
   }
   return this._handle.setVolume(vol)
