@@ -157,17 +157,17 @@ Object.assign(ActivityDescriptor.prototype,
   },
   {
     /**
-     * get property value by key
+     * get all properties.
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function get
-     * @param {string} key
      * @returns {Promise<object>}
      */
     get: {
       type: 'method',
       returns: 'promise',
-      fn: function get (key) {
+      fn: function get () {
+        // TODO(Yorkie): check permission.
         return Promise.resolve(this._runtime.onGetPropAll())
       }
     },
