@@ -22,7 +22,7 @@ function login (callback) {
     callback(new Error('expect uuid and seed'))
     return
   }
-  logger.log('exe test-stupid', seed, uuid)
+  logger.debug(`exe test-stupid ${seed} ${uuid}`)
   exec('test-stupid ' + seed + ' ' + uuid, {
     encoding: 'buffer'
   }, function (error, stdout, stderr) {
@@ -32,13 +32,12 @@ function login (callback) {
       return
     }
     var _seed = stdout
-    logger.log('exec result: ' + _seed.toString('base64'))
+    logger.debug(`exec result: ${_seed.toString('base64')}`)
     secret = md5(_seed.toString('base64'))
     if (!secret) {
       return callback(new Error('can not get secret'))
     }
     var config = {}
-
     if (config && config.disableAutoRefresh) {
       return callback(null)
     }
