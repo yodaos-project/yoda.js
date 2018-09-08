@@ -2,26 +2,111 @@
 
 var cloudApi = require('../../lib/cloudapi')
 var property = require('@yoda/property')
-var TurenSpeech = require('turen').TurenSpeech
 var AudioManager = require('@yoda/audio').AudioManager
 var AppRuntime = require('../../lib/app-runtime')
 var CloudGW = require('@yoda/cloudgw')
 var logger = require('logger')('main')
 var ota = require('@yoda/ota')
-
-var speechT = require('@yoda/speech')
-var speechV = new TurenSpeech()
-speechV.start()
-speechV.on('ready', entry)
+var floraFactory = require('@yoda/flora')
+var floraCli
+var speechAuthInfo
+var floraMsgHandlers = {}
+var floraConfig = require('../../flora-config.json')
 
 ;(function init () {
   // if DEBUG, we put raw events
-  if (process.env.DISPLAY_RAW_EVENT) {
-    speechV.on('raw event', function (event) {
-      logger.log(event)
-    })
-  }
+  initFloraClient()
+  entry()
 })()
+
+function initFloraClient () {
+  var cli = floraFactory.connect(floraConfig.uri, floraConfig.bufsize)
+  if (!cli) {
+    logger.log('flora connect failed, try again after', floraConfig.reconnInterval, 'milliseconds')
+    setTimeout(initFloraClient, floraConfig.reconnInterval)
+    return
+  }
+  cli.on('recv_post', function (name, type, msg) {
+    var cb = floraMsgHandlers[name]
+    if (cb) {
+      cb(msg)
+    }
+  })
+  cli.on('disconnect', function () {
+    logger.log('flora disconnected, try reconnect')
+    floraCli.close()
+    initFloraClient()
+  })
+  cli.subscribe('rokid.turen.voice_coming', floraFactory.MSGTYPE_INSTANT)
+  cli.subscribe('rokid.turen.local_awake', floraFactory.MSGTYPE_INSTANT)
+  cli.subscribe('rokid.speech.inter_asr', floraFactory.MSGTYPE_INSTANT)
+  cli.subscribe('rokid.speech.final_asr', floraFactory.MSGTYPE_INSTANT)
+  cli.subscribe('rokid.speech.nlp', floraFactory.MSGTYPE_INSTANT)
+  cli.subscribe('rokid.speech.error', floraFactory.MSGTYPE_INSTANT)
+  cli.subscribe('rokid.speech.cancel', floraFactory.MSGTYPE_INSTANT)
+
+  updateSpeechPrepareOptions()
+
+  var msg = new floraFactory.Caps()
+  // lang
+  msg.writeInt32(0)
+  // codec
+  msg.writeInt32(0)
+  // vad mode + timeout
+  msg.writeInt32(1)
+  msg.writeInt32(500)
+  // no nlp
+  msg.writeInt32(0)
+  // no intermediate asr
+  msg.writeInt32(0)
+  // vad begin
+  msg.writeInt32(0)
+  cli.post('rokid.speech.options', msg, floraFactory.MSGTYPE_PERSIST)
+  floraCli = cli
+}
+
+function updateSpeechPrepareOptions () {
+  if (floraCli && speechAuthInfo) {
+    var uri = 'wss://' + speechAuthInfo.host + ':' + speechAuthInfo.port + '/api'
+    var msg = new floraFactory.Caps()
+    msg.write(uri)
+    msg.write(speechAuthInfo.key)
+    msg.write(speechAuthInfo.deviceTypeId)
+    msg.write(speechAuthInfo.secret)
+    msg.write(speechAuthInfo.deviceId)
+    // reconn interval
+    msg.writeInt32(10000)
+    // ping interval
+    msg.writeInt32(10000)
+    // noresp timeout
+    msg.writeInt32(20000)
+    floraCli.post('rokid.speech.prepare_options', msg, floraFactory.MSGTYPE_PERSIST)
+  }
+}
+
+function updateStack (stack) {
+  if (floraCli) {
+    var msg = new floraFactory.Caps()
+    msg.write(stack)
+    floraCli.post('rokid.speech.stack', msg, floraFactory.MSGTYPE_PERSIST)
+  }
+}
+
+function turenPickup (isPickup) {
+  if (floraCli) {
+    var msg = new floraFactory.Caps()
+    msg.writeInt32(isPickup ? 1 : 0)
+    floraCli.post('rokid.turen.pickup', msg, floraFactory.MSGTYPE_INSTANT)
+  }
+}
+
+function turenMute (mute) {
+  if (floraCli) {
+    var msg = new floraFactory.Caps()
+    msg.writeInt32(mute ? 1 : 0)
+    floraCli.post('rokid.turen.mute', msg, floraFactory.MSGTYPE_INSTANT)
+  }
+}
 
 function entry () {
   logger.debug('vui is ready')
@@ -29,46 +114,55 @@ function entry () {
   var runtime = new AppRuntime(['/opt/apps'])
   runtime.cloudApi = cloudApi
   runtime.volume = AudioManager
-  runtime.speechT = speechT
 
   runtime.on('setStack', function onSetStack (stack) {
-    logger.log('setStack ', stack)
-    speechV.setStack(stack)
-    speechT.setStack(stack)
+    logger.log('setStack', stack)
+    updateStack(stack)
   })
   runtime.on('setPickup', function onSetPickup (isPickup) {
     logger.log('setPickup ', isPickup)
-    speechV.setPickup(isPickup)
+    turenPickup(isPickup)
   })
   runtime.on('micMute', function onMicMute (mute) {
-    if (mute) {
-      speechV.pause()
-      return
-    }
-    speechV.resume()
+    turenMute(mute)
   })
-  speechV.on('voice coming', function onVoiceComing (event) {
+  floraMsgHandlers['rokid.turen.voice_coming'] = function (msg) {
     logger.log('voice coming')
     runtime.onEvent('voice coming', {})
-  })
-  speechV.on('voice local awake', function onVoiceAwake (event) {
+  }
+  floraMsgHandlers['rokid.turen.local_awake'] = function (msg) {
     logger.log('voice local awake')
-    runtime.onEvent('voice local awake', event)
-  })
-  speechV.on('asr pending', function onAsrPending (asr) {
-    logger.log(`asr pending ${asr}`)
+    var data = {}
+    data.sl = msg.get(0)
+    runtime.onEvent('voice local awake', data)
+  }
+  floraMsgHandlers['rokid.speech.inter_asr'] = function (msg) {
+    var asr = msg.get(0)
+    logger.log('asr pending', asr)
     runtime.onEvent('asr pending', asr)
-  })
-  speechV.on('asr end', function onAsrComplete (asr, event) {
-    logger.log(`asr end ${asr}`)
-    runtime.onEvent('asr end', {
-      asr: asr
-    })
-  })
-  speechV.on('nlp', function (response, event) {
-    logger.log('nlp', response)
-    runtime.onEvent('nlp', response)
-  })
+  }
+  floraMsgHandlers['rokid.speech.final_asr'] = function (msg) {
+    var asr = msg.get(0)
+    logger.log('asr end', asr)
+    runtime.onEvent('asr end', { asr: asr })
+  }
+  floraMsgHandlers['rokid.speech.nlp'] = function (msg) {
+    logger.log('nlp', msg.get(0), 'action', msg.get(1))
+    var data = {}
+    data.asr = ''
+    try {
+      data.nlp = JSON.parse(msg.get(0))
+      data.action = JSON.parse(msg.get(1))
+    } catch (err) {
+      logger.log('nlp/action parse failed, discarded.')
+      return
+    }
+    runtime.onEvent('nlp', data)
+  }
+  floraMsgHandlers['rokid.speech.error'] = function (msg) {
+  }
+  floraMsgHandlers['rokid.speech.cancel'] = function (msg) {
+  }
 
   runtime.on('reconnected', function () {
     logger.log('yoda reconnected')
@@ -83,21 +177,21 @@ function entry () {
       // load the system configuration
       var config = mqttAgent.config
       var options = {
-        host: config.host,
-        port: config.port,
+        host: 'apigwws.open.rokid.com',
+        port: 443,
         key: config.key,
         secret: config.secret,
         deviceTypeId: config.deviceTypeId,
         deviceId: config.deviceId
       }
-      speechV.start(options)
-      speechT.start(options)
       var cloudgw = new CloudGW(options)
       require('@yoda/ota/network').cloudgw = cloudgw
       cloudApi.updateBasicInfo(cloudgw)
         .catch(err => {
           logger.error('Unexpected error on updating basic info', err.stack)
         })
+      speechAuthInfo = options
+      updateSpeechPrepareOptions()
 
       // implementation interface
       var props = Object.assign({}, config, {
@@ -114,7 +208,7 @@ function entry () {
 
 function handleMQTT (mqtt, runtime) {
   mqtt.on('asr', function (asr) {
-    runtime.speechT.getNlpResult(asr, function (err, nlp, action) {
+    runtime.getNlpResult(asr, function (err, nlp, action) {
       if (err) {
         console.error(`occurrs some error in speechT`)
       } else {

@@ -388,10 +388,8 @@ Object.assign(ActivityDescriptor.prototype,
         }
         return Promise.resolve()
           .then(() => {
-            self._runtime.speechT.getNlpResult(text, function (err, nlp, action) {
-              if (err) {
-                throw err
-              }
+            self._runtime.getNlpResult(text, function (err, nlp, action) {
+              if (err) { throw err }
               logger.info('get nlp result for asr', text, nlp, action)
               /**
                * retreat self-app into background, then promote the upcoming app
