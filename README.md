@@ -32,9 +32,9 @@ $ npm test
 
 Ensure you have a connected YodaOS device via ADB v1.0.39.
 
-**Define your .testrc**
+**Define your test.json**
 
-`.testrc` is the configuration in JSON for your testing jobs. An example is here:
+`test.json` is the configuration in JSON for your testing jobs. An example is here:
 
 ```json
 {
@@ -50,6 +50,8 @@ Ensure you have a connected YodaOS device via ADB v1.0.39.
   }
 }
 ```
+
+And put this file under the ./test directory.
 
 ## Development
 
