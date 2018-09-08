@@ -3,18 +3,14 @@
 var device = require('./bind')
 var MqttAgent = require('./mqtt')
 var sendConfirm = require('./sendConfirm')
-
 var CONFIG = null
 
 exports.connect = function (onEvent) {
-  return new Promise((resolve, reject) => {
-    device.bindDevice(onEvent)
-      .then((config) => {
-        CONFIG = config
-        resolve(new MqttAgent(config))
-      })
-      .catch(reject)
-  })
+  return device.bindDevice(onEvent)
+    .then((config) => {
+      CONFIG = Object.assign({}, config)
+      return new MqttAgent(config)
+    })
 }
 
 exports.sendConfirm = function (appId, intent, slot, options, attrs, callback) {

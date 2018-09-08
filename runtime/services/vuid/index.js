@@ -21,12 +21,11 @@ speechV.on('ready', entry)
       logger.log(event)
     })
   }
-  AudioManager.setMute(false)
-  AudioManager.setVolume(60)
 })()
 
 function entry () {
-  console.log('ready')
+  logger.debug('vui is ready')
+
   var runtime = new AppRuntime(['/opt/apps'])
   runtime.cloudApi = cloudApi
   runtime.volume = AudioManager
@@ -70,18 +69,16 @@ function entry () {
     runtime.onEvent('nlp', response)
   })
 
-  function cloudEvent (code, msg) {
-    runtime.onEvent('cloud event', {
-      code: code,
-      msg: msg
-    })
-  }
-
   runtime.on('reconnected', function () {
     logger.log('yoda reconnected')
 
-    // login -> bind -> mqtt
-    cloudApi.connect(cloudEvent).then((mqttAgent) => {
+    // login -> mqtt
+    cloudApi.connect((code, msg) => {
+      runtime.onEvent('cloud event', {
+        code: code,
+        msg: msg
+      })
+    }).then((mqttAgent) => {
       // load the system configuration
       var config = mqttAgent.config
       var options = {
@@ -97,73 +94,69 @@ function entry () {
       require('@yoda/ota/network').cloudgw = new CloudGW(options)
 
       // implementation interface
-      runtime.onGetPropAll = function () {
-        var masterId = property.get('persist.system.user.userId')
-        return {
-          masterId: masterId,
-          host: config.host,
-          port: config.port,
-          key: config.key,
-          secret: config.secret,
-          deviceTypeId: config.deviceTypeId,
-          deviceId: config.deviceId
-        }
-      }
+      var props = Object.assign({}, config, {
+        masterId: property.get('persist.system.user.userId'),
+      })
+      runtime.onGetPropAll = () => props
       runtime.onReLogin()
-
-      mqttAgent.on('asr', function (asr) {
-        speechT.getNlpResult(asr, function (err, nlp, action) {
-          if (err) {
-            console.error(`occurrs some error in speechT`)
-          } else {
-            logger.info('MQTT command: get nlp result for asr', asr, nlp, action)
-            runtime.onVoiceCommand(asr, nlp, action)
-          }
-        })
-      })
-      mqttAgent.on('cloud_forward', function (data) {
-        runtime.onCloudForward(data)
-      })
-      mqttAgent.on('get_volume', function (data) {
-        var res = {
-          type: 'Volume',
-          event: 'ON_VOLUME_CHANGE',
-          template: JSON.stringify({
-            mediaCurrent: '' + AudioManager.getVolume(),
-            mediaTotal: '100',
-            alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
-            alarmTotal: '100'
-          }),
-          appid: ''
-        }
-        logger.log('response topic get_volume ->', res)
-        mqttAgent.sendToApp('event', JSON.stringify(res))
-      })
-      mqttAgent.on('set_volume', function (data) {
-        var msg = JSON.parse(data)
-        if (msg.music !== undefined) {
-          AudioManager.setVolume(msg.music)
-        }
-        var res = {
-          type: 'Volume',
-          event: 'ON_VOLUME_CHANGE',
-          template: JSON.stringify({
-            mediaCurrent: '' + AudioManager.getVolume(),
-            mediaTotal: '100',
-            alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
-            alarmTotal: '100'
-          }),
-          appid: ''
-        }
-        logger.log('response topic set_volume ->', res)
-        mqttAgent.sendToApp('event', JSON.stringify(res))
-      })
-      mqttAgent.on('sys_update_available', () => {
-        logger.info('received upgrade command from mqtt, running ota in background.')
-        ota.runInBackground()
-      })
+      handleMQTT(mqttAgent, runtime)
+      
     }).catch((err) => {
       logger.error('initializing occurrs error', err && err.stack)
     })
+  })
+}
+
+function handleMQTT (mqtt, runtime) {
+  mqtt.on('asr', function (asr) {
+    runtime.speechT.getNlpResult(asr, function (err, nlp, action) {
+      if (err) {
+        console.error(`occurrs some error in speechT`)
+      } else {
+        logger.info('MQTT command: get nlp result for asr', asr, nlp, action)
+        runtime.onVoiceCommand(asr, nlp, action)
+      }
+    })
+  })
+  mqtt.on('cloud_forward', function (data) {
+    runtime.onCloudForward(data)
+  })
+  mqtt.on('get_volume', function (data) {
+    var res = {
+      type: 'Volume',
+      event: 'ON_VOLUME_CHANGE',
+      template: JSON.stringify({
+        mediaCurrent: '' + AudioManager.getVolume(),
+        mediaTotal: '100',
+        alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
+        alarmTotal: '100'
+      }),
+      appid: ''
+    }
+    logger.log('response topic get_volume ->', res)
+    mqtt.sendToApp('event', JSON.stringify(res))
+  })
+  mqtt.on('set_volume', function (data) {
+    var msg = JSON.parse(data)
+    if (msg.music !== undefined) {
+      AudioManager.setVolume(msg.music)
+    }
+    var res = {
+      type: 'Volume',
+      event: 'ON_VOLUME_CHANGE',
+      template: JSON.stringify({
+        mediaCurrent: '' + AudioManager.getVolume(),
+        mediaTotal: '100',
+        alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
+        alarmTotal: '100'
+      }),
+      appid: ''
+    }
+    logger.log('response topic set_volume ->', res)
+    mqtt.sendToApp('event', JSON.stringify(res))
+  })
+  mqtt.on('sys_update_available', () => {
+    logger.info('received upgrade command from mqtt, running ota in background.')
+    ota.runInBackground()
   })
 }
