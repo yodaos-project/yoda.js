@@ -155,7 +155,9 @@ TtsProxy.prototype.speak = function (text, cb) {
  * stop all task
  */
 TtsProxy.prototype.stopAll = function () {
-  for (var i = 0; i < this._requests.length; i++) { this._requests[i].cancel() }
+  for (var i = 0; i < this._requests.length; i++) {
+    this._requests[i].stop()
+  }
 }
 
 /**
