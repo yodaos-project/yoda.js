@@ -49,17 +49,21 @@ function login (callback) {
     }
     var time = Math.floor(Date.now() / 1000)
     var sign = md5(`${secret}${type}${uuid}${time}${secret}`)
+    var userId = property.get('persist.system.user.userId') || undefined
+
     var params = qs.stringify({
       deviceId: uuid,
       deviceTypeId: type || undefined,
       time: time,
-      sign: sign
+      sign: sign,
+      userId: userId
     })
     logger.log('start /login request')
+
     var req = https.request({
       method: 'POST',
       host: env.cloudgw.account,
-      path: '/device/login.do',
+      path: '/device/loginV2.do',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Content-Length': params.length
@@ -68,16 +72,22 @@ function login (callback) {
       var list = []
       response.on('data', (chunk) => list.push(chunk))
       response.once('end', () => {
-        var body = Buffer.concat(list).toString()
+        var contents = Buffer.concat(list).toString()
         logger.log('request /login response ok')
         try {
-          // FIXME(Yorkie): why make such many parse operations?
-          var data = JSON.parse(JSON.parse(body).data)
-          config.deviceId = data.deviceId
-          config.deviceTypeId = data.deviceTypeId
-          config.key = data.key
-          config.secret = data.secret
-          callback(null, config)
+          var body = JSON.parse(contents)
+          if (!body.success) {
+            var err = new Error(body.msg || 'request error')
+            err.code = body.code
+            callback(err)
+          } else {
+            var data = JSON.parse(body.data)
+            config.deviceId = data.deviceId
+            config.deviceTypeId = data.deviceTypeId
+            config.key = data.key
+            config.secret = data.secret
+            callback(null, config)
+          }
         } catch (err) {
           logger.error(err && err.stack)
           callback(err)
@@ -97,17 +107,10 @@ function login (callback) {
   })
 }
 
-module.exports = function (onEvent) {
+module.exports = function () {
   return new Promise((resolve, reject) => {
-    onEvent && onEvent('100', '登录中')
     login((err, data) => {
-      if (err) {
-        onEvent && onEvent('-101', '登录失败')
-        reject(err)
-      } else {
-        onEvent && onEvent('101', '登录成功')
-        resolve(data)
-      }
+      err ? reject(err) : resolve(data)
     })
   })
 }

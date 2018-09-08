@@ -1,0 +1,7 @@
+{
+  "LOGIN_DOING": "登录中",
+  "LOGIN_DONE": "登录成功",
+  "LOGIN_FAILURE": "登录失败",
+  "BIND_MASTER_DONE": "绑定成功",
+  "BIND_MASTER_FAILURE": "绑定失败"
+}

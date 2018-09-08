@@ -3,9 +3,10 @@
 var property = require('@yoda/property')
 var Cloudgw = require('@yoda/cloudgw')
 var logger = require('logger')('bind')
+var strings = require('../../strings/login.json')
+var login = require('./login')
 
 var CONFIG = null
-var login = require('./login')
 var retry = 0
 
 function deviceManager (config, pathname, callback) {
@@ -37,32 +38,24 @@ function deviceManager (config, pathname, callback) {
     }) /** cloudgw.request */
 }
 
-function loginAndBindDevice (onEvent, callback) {
-  login(onEvent).then((config) => {
-    CONFIG = config
-    onEvent('200', '绑定中')
-    deviceManager(config, '/v1/device/deviceManager/bindMaster', (err, config) => {
-      if (err) {
-        onEvent && onEvent('-201', '绑定失败')
-        callback(err)
+function bindDevice (notify) {
+  notify('100', strings.LOGIN_DOING)
+  return login().then(
+    function (config) {
+      notify('101', strings.LOGIN_DONE)
+      notify('201', strings.BIND_MASTER_DONE)
+      return config
+    },
+    function (err) {
+      if (err.code === '100006' || err.code === '100007') {
+        notify('101', strings.LOGIN_DONE)
+        notify('-201', strings.BIND_MASTER_FAILURE)
       } else {
-        onEvent && onEvent('201', '绑定成功')
-        callback(null, config)
+        notify('-101', strings.LOGIN_FAILURE)
       }
-    })
-  }).catch(callback)
-}
-
-function bindDevice (onEvent) {
-  return new Promise((resolve, reject) => {
-    loginAndBindDevice(onEvent, (err, config) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(config)
-      }
-    })
-  })
+      return Promise.reject(err)
+    }
+  )
 }
 
 function unBindDevice () {
