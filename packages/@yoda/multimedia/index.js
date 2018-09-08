@@ -183,9 +183,21 @@ MediaPlayer.prototype.seek = function (pos, callback) {
 }
 
 /**
+ * get the  volume
+ */
+MediaPlayer.prototype.getVolume = function () {
+  return this._handle.getVolume()
+}
+
+/**
  * set volume of this media player
  */
 MediaPlayer.prototype.setVolume = function (vol) {
+  if (vol < 0) {
+    vol = 0
+  } else (vol > 100) {
+    vol = 100
+  }
   return this._handle.setVolume(vol)
 }
 
