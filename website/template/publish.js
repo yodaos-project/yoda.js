@@ -699,20 +699,29 @@ exports.publish = function(taffyData, opts, tutorials) {
   view.find = find
   view.linkto = function(longname, linkText, cssClass, fragmentId) {
     // preload JavaScript and Node.js type links.
-    if (longname === 'Number') {
-      return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">Number</a>'
-    } else if (longname === 'String') {
-      return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">String</a>'
-    } else if (longname === 'Boolean') {
-      return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">Boolean</a>'
-    } else if (longname === 'Array') {
-      return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>'
-    } else if (longname === 'Object') {
-      return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>'
-    } else if (longname === 'EventEmitter') {
-      return '<a href="https://nodejs.org/dist/latest-v10.x/docs/api/events.html#events_class_eventemitter">EventEmitter</a>'
-    } else if (longname === 'Buffer') {
-      return '<a href="https://nodejs.org/dist/latest-v10.x/docs/api/buffer.html#buffer_class_buffer">Buffer</a>'
+    switch (longname.toLowerCase()) {
+      // ECMA Types
+      case 'number':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>'
+      case 'boolean':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>'
+      case 'string':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>'
+      case 'regexp':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp">RegExp</a>'
+      case 'array':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>'
+      case 'object':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>'
+      case 'error':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error">Error</a>'
+      case 'null':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Null">Null</a>'
+      // Node.js Types
+      case 'eventemitter':
+        return '<a href="https://nodejs.org/dist/latest-v10.x/docs/api/events.html#events_class_eventemitter">EventEmitter</a>'
+      case 'buffer':
+        return '<a href="https://nodejs.org/dist/latest-v10.x/docs/api/buffer.html#buffer_class_buffer">Buffer</a>'
     }
     // common links.
     return linkto(longname, linkText, cssClass, fragmentId);
