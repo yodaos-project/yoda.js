@@ -62,7 +62,6 @@ YodaLocalPackage(yoda-wifi @yoda/wifi)
 YodaLocalPackage(yoda-flora @yoda/flora)
 
 # system packages
-YodaLocalPackage(bluetooth)
 YodaLocalPackage(lockfile)
 YodaLocalPackage(logger)
 YodaLocalPackage(lru-cache)
