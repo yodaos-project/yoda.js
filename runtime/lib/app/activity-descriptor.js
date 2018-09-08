@@ -163,11 +163,23 @@ Object.assign(ActivityDescriptor.prototype,
   },
   {
     /**
-     * get all properties.
+     * Get all properties, it contains the following fields:
+     * - `deviceId` the device id.
+     * - `deviceTypeId` the device type id.
+     * - `key` the cloud key.
+     * - `secret` the cloud secret.
+     * - `masterId` the userId or masterId.
+     *
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function get
      * @returns {Promise<object>}
+     * @example
+     * module.exports = function (activity) {
+     *   activity.get().then((props) => {
+     *     console.log(props)
+     *   })
+     * }
      */
     get: {
       type: 'method',
