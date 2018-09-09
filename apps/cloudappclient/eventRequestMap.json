@@ -1,0 +1,14 @@
+{
+  "tts": {
+    "start": "Voice.STARTED",
+    "end": "Voice.FINISHED",
+    "cancel": "Voice.FINISHED"
+  },
+  "media": {
+    "prepared": "Media.STARTED",
+    "playbackcomplete": "Media.FINISHED",
+    "pause": "Media.PAUSED",
+    "resume": "Media.STARTED",
+    "cancel": "Media.FINISHED"
+  }
+}

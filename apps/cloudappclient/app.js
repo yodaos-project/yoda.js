@@ -1,7 +1,6 @@
 'use strict'
 
 var Directive = require('./directive').Directive
-var eventRequest = require('./eventRequestApi')
 var TtsEventHandle = require('./ttsEventHandle')
 var MediaEventHandle = require('./mediaEventHandle')
 var logger = require('logger')('cloudAppClient')
@@ -26,42 +25,22 @@ module.exports = activity => {
     if (dt.action === 'say') {
       activity.media.pause()
       ttsClient.speak(dt.data.item.tts, function (name) {
-        logger.log('====> tts event' + name)
+        logger.log('====> tts event ' + name)
         if (name === 'start') {
-          if (dt.data.disableEvent === false) {
-            eventRequest.ttsEvent('Voice.STARTED', dt.data.appId, dt.data.item.itemId)
-          }
+          sos.sendEventRequest('tts', 'start', dt.data, dt.data.item.itemId)
         } else if (name === 'end') {
-          if (dt.data.disableEvent === false) {
-            eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
-              logger.log('-----> end response', response)
-              var action = JSON.parse(response)
-              sos.append(null, action)
-            })
-          } else {
-            next()
-          }
+          sos.sendEventRequest('tts', 'end', dt.data, dt.data.item.itemId, next)
         } else if (name === 'cancel') {
-          if (dt.data.disableEvent === false) {
-            eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
-              logger.log('tts response', response)
-              var action = JSON.parse(response)
-              sos.append(null, action)
-            })
-          } else {
-            next()
-          }
+          sos.sendEventRequest('tts', 'cancel', dt.data, dt.data.item.itemId, next)
         }
       })
     } else if (dt.action === 'cancel') {
       activity.tts.stop()
         .then(() => {
+          sos.sendEventRequest('tts', 'cancel', dt.data, dt.data.item.itemId, next)
+        })
+        .catch(() => {
           next()
-          if (dt.data.disableEvent === false) {
-            eventRequest.ttsEvent('Voice.FINISHED', dt.data.appId, dt.data.item.itemId, (response) => {
-              logger.log('tts response', response)
-            })
-          }
         })
     }
   })
@@ -69,58 +48,51 @@ module.exports = activity => {
     if (dt.action === 'play') {
       mediaClient.start(dt.data.item.url, function (name, args) {
         if (name === 'prepared') {
-          if (dt.data.disableEvent === false) {
-            eventRequest.mediaEvent('Media.STARTED', dt.data.appId, {
-              itemId: dt.data.item.itemId,
-              duration: args[0],
-              progress: args[1]
-            }, (response) => {
-              // nothing to do now
-            })
-          }
+          sos.sendEventRequest('media', 'prepared', dt.data, {
+            itemId: dt.data.item.itemId,
+            duration: args[0],
+            progress: args[1]
+          })
         } else if (name === 'playbackcomplete') {
-          next()
-          if (dt.data.disableEvent === false) {
-            eventRequest.mediaEvent('Media.FINISHED', dt.data.appId, {
-              itemId: dt.data.item.itemId,
-              token: dt.data.item.token
-            }, (response) => {
-              var action = JSON.parse(response)
-              activity.mockNLPResponse(null, action)
-            })
-          }
+          sos.sendEventRequest('media', 'playbackcomplete', dt.data, {
+            itemId: dt.data.item.itemId,
+            token: dt.data.item.token
+          }, next)
         }
       })
     } else if (dt.action === 'pause') {
-      activity.media.pause(function () {
-        next()
-        if (dt.data.disableEvent === false) {
-          eventRequest.mediaEvent('Media.PAUSED', dt.data.appId, {
+      activity.media.pause()
+        .then(() => {
+          sos.sendEventRequest('media', 'pause', dt.data, {
             itemId: dt.data.item.itemId,
             token: dt.data.item.token
-          })
-        }
-      })
+          }, next)
+        })
+        .catch(() => {
+          next()
+        })
     } else if (dt.action === 'resume') {
-      activity.media.resume(function () {
-        next()
-        if (dt.data.disableEvent === false) {
-          eventRequest.mediaEvent('Media.STARTED', dt.data.appId, {
+      activity.media.resume()
+        .then(() => {
+          sos.sendEventRequest('media', 'resume', dt.data, {
             itemId: dt.data.item.itemId,
             token: dt.data.item.token
-          })
-        }
-      })
+          }, next)
+        })
+        .catch(() => {
+          next()
+        })
     } else if (dt.action === 'cancel') {
-      activity.media.stop(function () {
-        next()
-        if (dt.data.disableEvent === false) {
-          eventRequest.mediaEvent('Media.FINISHED', dt.data.appId, {
+      activity.media.stop()
+        .then(() => {
+          sos.sendEventRequest('media', 'cancel', dt.data, {
             itemId: dt.data.item.itemId,
             token: dt.data.item.token
-          })
-        }
-      })
+          }, next)
+        })
+        .catch(() => {
+          next()
+        })
     }
   })
 
@@ -149,11 +121,12 @@ module.exports = activity => {
   })
 
   activity.on('create', function () {
+    logger.log(`${this.appId} app create`)
     logger.log('get CONFIG from OS')
     activity.get('all')
       .then((result) => {
         logger.log('get prop success', result)
-        eventRequest.setConfig(result || {})
+        sos.setEventRequestConfig(result || {})
       })
       .catch((error) => {
         logger.log('get prop error', error)
@@ -173,9 +146,11 @@ module.exports = activity => {
 
   activity.on('request', function (nlp, action) {
     if (action.response.action.type === 'EXIT') {
+      logger.log(`${this.appId} intent EXIT`)
       sos.destroy()
       return
     }
+    logger.log(`${this.appId} app request`)
     sos.onrequest(nlp, action)
   })
 
