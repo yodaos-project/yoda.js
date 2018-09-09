@@ -127,6 +127,25 @@ JS_FUNCTION(BindSync) {
   return jerry_create_boolean(true);
 }
 
+JS_FUNCTION(UnbindSync) {
+  JS_DECLARE_THIS_PTR(zmq, zmq);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_zmq_t, zmq);
+
+  if (_this->socket == NULL) {
+    return JS_CREATE_ERROR(COMMON, "socket is not initialized.");
+  }
+  jerry_size_t size = jerry_get_string_size(jargv[0]);
+  jerry_char_t url[size + 1];
+  jerry_string_to_char_buffer(jargv[0], url, size);
+  url[size] = '\0';
+
+  int rc = zmq_unbind(_this->socket, (const char*)url);
+  if (rc != 0) {
+    return JS_CREATE_ERROR(COMMON, "socket unbind failed.");
+  }
+  return jerry_create_boolean(true);
+}
+
 JS_FUNCTION(Recv) {
   JS_DECLARE_THIS_PTR(zmq, zmq);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_zmq_t, zmq);
@@ -207,6 +226,7 @@ JS_FUNCTION(Close) {
     return JS_CREATE_ERROR(COMMON, "socket is not initialized.");
   }
 
+  uv_poll_stop(_this->poll_handle);
   int rc = zmq_close(_this->socket);
   if (rc == -1) {
     return JS_CREATE_ERROR(COMMON, "close failed.");
@@ -222,6 +242,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "connect", Connect);
   iotjs_jval_set_method(proto, "subscribe", Subscribe);
   iotjs_jval_set_method(proto, "bindSync", BindSync);
+  iotjs_jval_set_method(proto, "unbindSync", UnbindSync);
   iotjs_jval_set_method(proto, "recv", Recv);
   iotjs_jval_set_method(proto, "send", Send);
   iotjs_jval_set_method(proto, "close", Close);

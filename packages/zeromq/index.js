@@ -93,6 +93,14 @@ ZeroMQSocket.prototype.bindSync = function (uri) {
 }
 
 /**
+ * unbind the given uri
+ * @param {String} uri - the uri to connect, support `ipc` and `tcp`.
+ */
+ZeroMQSocket.prototype.unbindSync = function (uri) {
+  return this._socket.unbindSync(uri)
+}
+
+/**
  * subscribe the topics by filter, an empty string means "all"
  * @param {String} filter - the filter for topic, empty string means "all".
  */
