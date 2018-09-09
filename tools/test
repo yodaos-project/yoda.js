@@ -51,6 +51,7 @@ if test "$local" = "YES"; then
 else
   scripts="
 source /etc/profile > /dev/null;
+export BLUETOOTH_CHANNEL_PREFIX=/tmp > /dev/null;
 iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
 "
 

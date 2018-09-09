@@ -1,7 +1,8 @@
 'use strict'
 
 var zeromq = require('zeromq')
-var cmdPath = 'ipc:///var/run/bluetooth/command'
+var CHANNEL_PREFIX = process.env.BLUETOOTH_CHANNEL_PREFIX || '/var/run/bluetooth'
+var cmdPath = `ipc://${CHANNEL_PREFIX}/command`
 var cmdSocket
 
 function getSocket (path, filter) {
@@ -28,6 +29,7 @@ function closeCmdSocket () {
   }
 }
 
+exports.CHANNEL_PREFIX = CHANNEL_PREFIX
 exports.getSocket = getSocket
 exports.getCmdSocket = getCmdSocket
 exports.closeCmdSocket = closeCmdSocket
