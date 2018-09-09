@@ -226,7 +226,7 @@ JS_FUNCTION(Close) {
     return JS_CREATE_ERROR(COMMON, "socket is not initialized.");
   }
 
-  uv_poll_stop(_this->poll_handle);
+  uv_poll_stop(&_this->poll_handle);
   int rc = zmq_close(_this->socket);
   if (rc == -1) {
     return JS_CREATE_ERROR(COMMON, "close failed.");
