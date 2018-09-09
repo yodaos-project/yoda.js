@@ -90,5 +90,3 @@ test('handle data listener', (t) => {
     messageStream.start(btName)
   }, 1000)
 })
-
-
