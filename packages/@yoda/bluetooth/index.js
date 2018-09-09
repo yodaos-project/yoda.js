@@ -47,12 +47,16 @@ module.exports = {
    * @returns {module:@yoda/bluetooth.BluetoothPlayer}
    */
   disconnect: function () {
-    helper.closeCmdSocket()
     if (messageStreamInstance) {
       messageStreamInstance.disconnect()
+      messageStreamInstance = null
     }
     if (playerInstance) {
       playerInstance.disconnect()
+      playerInstance = null
     }
+    process.nextTick(() => {
+      helper.closeCmdSocket()
+    })
   }
 }
