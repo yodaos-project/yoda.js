@@ -16,10 +16,10 @@
     "unsafe-perm": true
   },
   "engine": {
-    "shadow": "0.9.x"
+    "shadow": "0.10.x"
   },
   "manifest": {
-    "apilevel": 0.4
+    "apilevel": 0.5
   },
   "devDependencies": {
     "ink-docstrap": "^1.3.2",
