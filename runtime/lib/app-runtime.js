@@ -399,7 +399,7 @@ AppRuntime.prototype.destroyAll = function (options) {
     .then(() => this.startDaemonApps())
   // 清空正在运行的所有App
   this.cloudAppIdStack = []
-  this.resetCloudStack()
+  // this.resetCloudStack()
 
   if (!resetServices) {
     return
