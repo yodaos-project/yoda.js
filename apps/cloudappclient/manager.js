@@ -2,23 +2,31 @@
 
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
+var eventRequest = require('./eventRequestApi')
+var eventRequestMap = require('./eventRequestMap.json')
 var logger = require('logger')('manager')
 
 function Skill (exe, nlp, action) {
-  console.log(action.appId + ' was create')
+  logger.log(action.appId + ' was create')
   EventEmitter.call(this)
   this.appId = action.appId
   this.form = action.response.action.form
   this.directives = []
   this.paused = false
+  this.task = 0
   this.exe = exe
   this.handleEvent()
   this.transform(action.response.action.directives || [])
 }
 inherits(Skill, EventEmitter)
 
-Skill.prototype.onrequest = function (directives) {
-  this.transform(directives || [])
+Skill.prototype.onrequest = function (directives, append) {
+  if (directives === undefined || directives.length <= 0) {
+    return
+  }
+  logger.log(`skill ${this.appId} onrequest`)
+  this.transform(directives || [], append)
+  logger.log(`${this.appId} pause: ${this.paused}`, this.directives)
   if (this.paused === false) {
     this.emit('start')
   }
@@ -26,15 +34,28 @@ Skill.prototype.onrequest = function (directives) {
 
 Skill.prototype.handleEvent = function () {
   this.on('start', () => {
-    console.log(this.appId + ' emit start', this.directives)
+    logger.log(this.appId + ' emit start', this.directives)
+    this.paused = false
+    this.task++
     this.exe.execute(this.directives, 'frontend', () => {
+      this.task--
+      logger.info('execute end', this.appId, this.directives, this.paused)
+      if (this.paused === true) {
+        return
+      }
+      if (this.task > 0) {
+        return
+      }
+      if (this.directives.length > 0) {
+        return this.emit('start')
+      }
       this.directives = []
+      logger.log(`${this.appId} exit because exe complete`)
       this.emit('exit')
     })
-    this.paused = false
   })
   this.on('pause', () => {
-    console.log(this.appId + ' emit pause')
+    logger.log(this.appId + ' emit pause')
     this.exe.execute([{
       type: 'media',
       action: 'pause',
@@ -43,14 +64,25 @@ Skill.prototype.handleEvent = function () {
     this.paused = true
   })
   this.on('resume', () => {
-    console.log(this.appId + ' emit resume')
+    logger.log(this.appId + ' emit resume')
     this.exe.execute([{
       type: 'media',
       action: 'resume',
       data: {}
     }], 'frontend')
     if (this.directives.length > 0) {
+      this.task++
       this.exe.execute(this.directives, 'frontend', () => {
+        this.task--
+        if (this.paused === true) {
+          return
+        }
+        if (this.task > 0) {
+          return
+        }
+        if (this.directives.length > 0) {
+          return this.emit('start')
+        }
         this.directives = []
         this.emit('exit')
       })
@@ -58,12 +90,13 @@ Skill.prototype.handleEvent = function () {
     this.paused = false
   })
   this.on('destroy', () => {
-    console.log(this.appId + ' emit destroy')
+    logger.log(this.appId + ' emit destroy')
     this.exe.stop('frontend')
   })
 }
 
 Skill.prototype.transform = function (directives, append) {
+  logger.log(this.appId, directives, append)
   if (append !== true) {
     this.directives = []
   }
@@ -150,7 +183,7 @@ Manager.prototype.onrequest = function (nlp, action) {
       }
     }
     skill.emit('start')
-    skill.on('exit', this.next.bind(this))
+    skill.on('exit', this.next.bind(this, skill))
     this.emit('updateStack', this.updateStack())
   }
 }
@@ -167,14 +200,22 @@ Manager.prototype.findByAppId = function (appId) {
 Manager.prototype.append = function (nlp, action) {
   var pos = this.findByAppId(action.appId)
   if (pos > -1) {
+    logger.log(`skill ${action.appId}  index ${pos} append request`)
     this.skills[pos].onrequest(action.response.action.directives || [])
+  } else {
+    logger.log(`skill ${action.appId} not in stack, append ignore`)
+    // this.onrequest(nlp, action)
   }
-  // this.onrequest(nlp, action)
 }
 
-Manager.prototype.next = function () {
-  this.skills.pop()
+Manager.prototype.next = function (skill) {
+  logger.log(`next skill`)
   var cur = this.getCurrentSkill()
+  if (cur.appId !== skill.appId) {
+    return
+  }
+  this.skills.pop()
+  cur = this.getCurrentSkill()
   if (cur !== false) {
     cur.emit('resume')
   }
@@ -219,6 +260,39 @@ Manager.prototype.updateStack = function () {
     })
   }
   return stack
+}
+
+Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
+  if (type === 'tts' && name === 'cancel') {
+    if (this.getCurrentSkill().appId === data.appId) {
+      logger.log('current tts cancel event, ignore')
+      cb && cb()
+      return
+    }
+  }
+  if (data.disableEvent === true) {
+    logger.log('disable event, ignore')
+    cb && cb()
+    return
+  }
+  if (type === 'tts') {
+    eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
+      logger.log(`====> tts response: ${response}`)
+      var action = JSON.parse(response)
+      this.append(null, action)
+      cb && cb()
+    })
+  } else if (type === 'media') {
+    eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
+      var action = JSON.parse(response)
+      this.append(null, action)
+      cb && cb()
+    })
+  }
+}
+
+Manager.prototype.setEventRequestConfig = function (config) {
+  eventRequest.setConfig(config || {})
 }
 
 module.exports = Manager

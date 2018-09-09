@@ -72,7 +72,7 @@ function request (event, appId, options, onaction) {
         logger.error(`Error: failed upload ${event} ${data} with ${msg}`)
       } else {
         msg = JSON.parse(msg)
-        // logger.log(`got ${event} successfully response`, msg);
+        logger.log(`got ${event} successfully response`, msg)
         if (typeof onaction === 'function') {
           onaction(msg.response)
         }
