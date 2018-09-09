@@ -130,7 +130,6 @@ dbusApis.addMethod('speak', {
   in: ['s', 's'],
   out: ['s']
 }, function (appId, text, cb) {
-  logger.log('tts speak', appId, text)
   if (appId && text) {
     service.speak(appId, text)
       .then((id) => {

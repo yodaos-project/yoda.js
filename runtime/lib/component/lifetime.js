@@ -359,8 +359,7 @@ LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack () 
   var stack = self.activeAppStack
   /** deactivate apps in stack in a reversed order */
   logger.info('deactivating apps in stack')
-  return Promise.all(stack.map(step))
-    .then(() => self.onStackReset())
+  return Promise.all(stack.map(step)) // .then(() => self.onStackReset())
 
   function step (appId) {
     /** all apps in stack are going to be deactivated, no need to recover */

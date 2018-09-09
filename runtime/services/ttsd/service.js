@@ -20,14 +20,17 @@ Tts.prototype.speak = function (appId, text) {
           }
           var req = this.options.tts.speak(text)
           if (this.handle[appId]) {
-            setTimeout(() => {
-              this.handle[appId].stop()
-              delete this.handle[appId]
-              this.handle[appId] = req
-            }, 0)
-          } else {
-            this.handle[appId] = req
+            try {
+              setTimeout(() => {
+                this.handle[appId].stop()
+                delete this.handle[appId]
+                this.handle[appId] = req
+              }, 0)
+            } catch (error) {
+              logger.log(`try to stop prev tts failed with appId: ${appId}`)
+            }
           }
+          logger.log(`response tts id: ${req.id}`)
           resolve(req.id)
         } else {
           reject(new Error('permission deny'))
