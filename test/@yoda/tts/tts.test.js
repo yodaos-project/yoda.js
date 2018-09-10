@@ -92,12 +92,12 @@ test.skip('module->tts->disconnect', t => {
   bug id = 1290
 */
 test('module->tts->TtsProxy: cancel event', t => {
-  t.plan(3)
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()
     return
   }
+  t.plan(3)
   var tts = ttsModule.createTts(config.cloudgw)
   var request = tts.speak('hello', () => {
     t.equal(request.state, 'cancel', `tts : id=${request.id} call back`)
