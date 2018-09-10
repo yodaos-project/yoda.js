@@ -20,7 +20,7 @@ function AppChargeur (runtime) {
   this.runtime = runtime
 
   this.skillIdAppIdMap = {}
-  this.schemeAppIdMap = {}
+  this.hostSkillIdMap = {}
   this.executors = {}
 }
 
@@ -42,13 +42,13 @@ AppChargeur.prototype.getExecutorByAppId = function getExecutorByAppId (appId) {
  * @param {object} metadata
  * @param {string[]} [metadata.skills]
  * @param {string[]} [metadata.permission]
- * @param {string[]} [metadata.schemes]
+ * @param {string[]} [metadata.hosts]
  * @returns {void}
  */
 AppChargeur.prototype.setExecutorForAppId = function setExecutorForAppId (appId, executor, metadata) {
   var skillIds = _.get(metadata, 'skills', [])
   var permissions = _.get(metadata, 'permission', [])
-  var schemes = _.get(metadata, 'schemes', [])
+  var hosts = _.get(metadata, 'hosts', [])
 
   if (typeof appId !== 'string' || !appId) {
     throw new Error(`AppId is not valid at ${appId}.`)
@@ -59,14 +59,14 @@ AppChargeur.prototype.setExecutorForAppId = function setExecutorForAppId (appId,
   if (!Array.isArray(skillIds)) {
     throw new Error(`metadata.skills is not valid at ${appId}.`)
   }
-  if (!Array.isArray(schemes)) {
-    throw new Error(`metadata.schemes is not valid at ${appId}.`)
+  if (!Array.isArray(hosts)) {
+    throw new Error(`metadata.hosts is not valid at ${appId}.`)
   }
   if (!Array.isArray(permissions)) {
     throw new Error(`metadata.permission is not valid at ${appId}.`)
   }
 
-  this.__loadApp(appId, executor, skillIds, schemes, permissions)
+  this.__loadApp(appId, executor, skillIds, hosts, permissions)
 }
 
 /**
@@ -80,12 +80,12 @@ AppChargeur.prototype.getAppIdBySkillId = function getAppIdBySkillId (skillId) {
 }
 
 /**
- * Get appId that the scheme was mapped to.
+ * Get skillId that the hostname was mapped to.
  *
  * @param {string} scheme
  */
-AppChargeur.prototype.getAppIdByScheme = function getAppIdByScheme (scheme) {
-  return this.schemeAppIdMap[scheme]
+AppChargeur.prototype.getSkillIdByHost = function getSkillIdByHost (scheme) {
+  return this.hostSkillIdMap[scheme]
 }
 
 /**
@@ -140,7 +140,7 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
       }
       var appId = _.get(pkgInfo, 'name')
       var skillIds = _.get(pkgInfo, 'metadata.skills', [])
-      var schemes = _.get(pkgInfo, 'metadata.schemes', [])
+      var hosts = _.get(pkgInfo, 'metadata.hosts', [])
       var permissions = _.get(pkgInfo, 'metadata.permission', [])
       if (typeof appId !== 'string' || !appId) {
         throw new Error(`AppId is not valid at ${root}.`)
@@ -151,15 +151,15 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
       if (!Array.isArray(skillIds)) {
         throw new Error(`metadata.skills is not valid at ${root}.`)
       }
-      if (!Array.isArray(schemes)) {
-        throw new Error(`metadata.schemes is not valid at ${root}.`)
+      if (!Array.isArray(hosts)) {
+        throw new Error(`metadata.hosts is not valid at ${root}.`)
       }
       if (!Array.isArray(permissions)) {
         throw new Error(`metadata.permission is not valid at ${root}.`)
       }
 
       var executor = new AppExecutor(pkgInfo, root, appId, this.runtime)
-      this.__loadApp(appId, executor, skillIds, schemes, permissions)
+      this.__loadApp(appId, executor, skillIds, hosts, permissions)
     })
 }
 
@@ -170,11 +170,11 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
  * @param {string} appId -
  * @param {AppExecutor} executor -
  * @param {string[]} skillIds -
- * @param {string[]} schemes -
+ * @param {object[]} hosts -
  * @param {string[]} permissions -
  * @returns {void}
  */
-AppChargeur.prototype.__loadApp = function __loadApp (appId, executor, skillIds, schemes, permissions) {
+AppChargeur.prototype.__loadApp = function __loadApp (appId, executor, skillIds, hosts, permissions) {
   this.executors[appId] = executor
 
   skillIds.forEach(skillId => {
@@ -184,12 +184,17 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, executor, skillIds,
     }
     this.skillIdAppIdMap[skillId] = appId
   })
-  schemes.forEach(scheme => {
-    var currAppId = this.schemeAppIdMap[scheme]
-    if (currAppId != null) {
-      throw new Error(`metadata.scheme '${scheme}' by '${currAppId}' exists, declaring by ${appId}.`)
+  hosts.forEach(host => {
+    var name = _.get(host, 'name')
+    var skillId = _.get(host, 'skillId')
+    if (skillIds.indexOf(skillId) < 0) {
+      throw new Error(`metadata.hosts '${skillId}' mapped from '${name}' doesn't owned by ${appId}.`)
     }
-    this.schemeAppIdMap[scheme] = appId
+    var currSkillId = this.hostSkillIdMap[name]
+    if (currSkillId != null) {
+      throw new Error(`metadata.hosts '${name}' by '${currSkillId}' exists, declaring by ${appId}.`)
+    }
+    this.hostSkillIdMap[host] = skillId
   })
 
   this.runtime.permission.load(appId, permissions)

@@ -162,6 +162,23 @@ Object.assign(ActivityDescriptor.prototype,
      */
     request: {
       type: 'event'
+    },
+    /**
+     * Handle url requests.
+     *
+     * > URL offer a potential attack vector into your app, so make
+     * > sure to validate all URL parameters and discard any malformed
+     * > URLs. In addition, limit the available actions to those that
+     * > do not risk the user’s data. For example, do not allow other
+     * > apps to directly delete content or access sensitive information
+     * > about the user. When testing your URL-handling code, make sure
+     * > your test cases include improperly formatted URLs.
+     *
+     * @event yodaRT.activity.Activity#url
+     * @param {string} url
+     */
+    url: {
+      type: 'event'
     }
   },
   {
@@ -379,6 +396,27 @@ Object.assign(ActivityDescriptor.prototype,
                 })
             })
           })
+      }
+    },
+    /**
+     * Use this method to open the specified resource. If the specified URL could
+     * be handled by another app, YodaOS launches that app and passes the URL to it.
+     * (Launching the app brings the other app to the foreground.) If no app is
+     * capable of handling the specified scheme, the returning promise is resolved
+     * with false.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function openUrl
+     * @param {string} url -
+     * @param {'cut' | 'scene'} form -
+     * @returns {Promise<boolean>}
+     */
+    openUrl: {
+      type: 'method',
+      returns: 'promise',
+      fn: function openUrl (url, form) {
+        return this._runtime.openUrl(url, form)
       }
     }
   }
