@@ -93,7 +93,7 @@ test('seek media to some point', t => {
     console.log(duration)
 
     seekStep(0)
-    function seekStep(idx) {
+    function seekStep (idx) {
       console.log(idx)
       if (idx >= times.length) {
         player.stop()

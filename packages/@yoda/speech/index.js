@@ -80,5 +80,21 @@ function getNlpResult (text, _callback) {
   handle.putText(text)
 }
 
+function setStack (stack) {
+  if (!handle) {
+    return false
+  }
+  return handle.setStack(stack)
+}
+
+function setSkillOption (skillOption) {
+  if (!handle) {
+    return false
+  }
+  return handle.setSkillOption(skillOption)
+}
+
 exports.start = start
 exports.getNlpResult = getNlpResult
+exports.setStack = setStack
+exports.setSkillOption = setSkillOption
