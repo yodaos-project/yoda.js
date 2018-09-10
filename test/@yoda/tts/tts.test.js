@@ -31,7 +31,7 @@ test('module->tts->TtsProxy: check event', t => {
   })
 })
 
-test.skip('module->tts->TtsRequest: check state ', t => {
+test('module->tts->TtsRequest: check state ', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()
@@ -66,7 +66,7 @@ test.skip('module->tts->TtsRequest: check state ', t => {
   })
 })
 
-test('module->tts->disconnect', t => {
+test.skip('module->tts->disconnect', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()
@@ -76,14 +76,11 @@ test('module->tts->disconnect', t => {
   var text = 'hello rokid'
   var req = tts.speak(text, (e) => {
     logger.info(e)
-    if (!e) {
-      logger.info(req)
-      t.equal(req.state, 'end', `tts : id=${req.id} callback`)
-      t.equal(req.text, text)
-      tts.disconnect()
-      t.equal(tts._requests.length, 0, 'disconnect is ok')
-    }
+    logger.info(req)
+    t.equal(req.state, 'end', `tts : id=${req.id} callback`)
+    t.equal(req.text, text)
     tts.disconnect()
+    t.equal(tts._requests.length, 0, 'disconnect is ok')
     t.end()
   })
   tts.on('error', (id, errno) => {
@@ -94,7 +91,7 @@ test('module->tts->disconnect', t => {
 /**
   bug id = 1290
 */
-test.skip('module->tts->TtsProxy: cancel event', t => {
+test('module->tts->TtsProxy: cancel event', t => {
   t.plan(3)
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
@@ -103,33 +100,29 @@ test.skip('module->tts->TtsProxy: cancel event', t => {
   }
   var tts = ttsModule.createTts(config.cloudgw)
   var request = tts.speak('hello', () => {
-    t.equal(request.state, 'end', `tts : id=${request.id} call back`)
+    t.equal(request.state, 'cancel', `tts : id=${request.id} call back`)
     tts.disconnect()
     t.end()
   })
   tts.on('start', (id, errno) => {
-    logger.info(`tts start : id = ${id}, errno = ${errno}`)
-    t.equal(request.state, 'start', `tts : id=${id} start`)
+    t.equal(request.state, 'start', `tts start : id = ${id}, errno = ${errno}`)
     request.stop()
   })
   tts.on('end', (id, errno) => {
-    logger.info(`tts end : id = ${id}, errno = ${errno}`)
-    t.equal(request.state, 'end', `tts : id=${id} end`)
+    t.equal(request.state, 'end', `tts end : id = ${id}, errno = ${errno}`)
   })
   tts.on('error', (id, errno) => {
-    logger.info(`tts error : id = ${id}, errno = ${errno}`)
     t.fail(`tts speak error, id = ${id} err = ${errno}`)
   })
   tts.on('cancel', (id, errno) => {
-    logger.info(`tts cancel : id = ${id}, errno = ${errno}`)
-    t.equal(request.state, 'cancel', `tts : id=${id} cancel`)
+    t.equal(request.state, 'cancel', `tts cancel : id = ${id}, errno = ${errno}`)
   })
 })
 
 /**
   bug id = 1317
 */
-test.skip('module->tts->createTts method test case: normal options params', t => {
+test('module->tts->createTts method test case: normal options params', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()
@@ -144,16 +137,13 @@ test.skip('module->tts->createTts method test case: normal options params', t =>
     t.end()
   })
   tts.on('start', (id, errno) => {
-    logger.info(`tts start : id = ${id}, errno = ${errno}`)
-    t.equal(req.state, 'start', `tts : id=${id} start`)
+    t.equal(req.state, 'start', `tts start : id = ${id}, errno = ${errno}`)
   })
   tts.on('end', (id, errno) => {
-    logger.info(`tts end : id = ${id}, errno = ${errno}`)
-    t.equal(req.state, 'end', `tts : id=${id} end`)
+    t.equal(req.state, 'end', `tts end : id = ${id}, errno = ${errno}`)
   })
   tts.on('error', (id, errno) => {
-    logger.info(`tts error : id = ${id}, errno = ${errno}`)
-    t.fail('tts event error')
+    t.fail(`tts error : id = ${id}, errno = ${errno}`)
   })
 })
 
