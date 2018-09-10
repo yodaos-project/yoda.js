@@ -30,10 +30,9 @@ int TtsService::disconnect() {
   if (!prepared) {
     return 0;
   }
-  if (tts_handle)
-    tts_handle->release();
   _player.reset();
   prepared = false;
+  need_destroy_ = true
   return 0;
 }
 
@@ -42,6 +41,9 @@ void* TtsService::PollEvent(void* params) {
   TtsService* self = (TtsService*)params;
 
   while (true) {
+    if (self->need_destroy_ == true) {
+      break;
+    }
     if (!self->tts_handle->poll(res)) {
       fprintf(stderr, "tts poll failed\n");
       break;
@@ -74,7 +76,8 @@ void* TtsService::PollEvent(void* params) {
       }
     }
   }
-  self->tts_handle->release();
+  if (self->tts_handle)
+    self->tts_handle->release();
   return NULL;
 }
 
@@ -114,11 +117,11 @@ bool TtsService::prepare(const char* host, int port, const char* branch,
   }
   pthread_detach(polling);
   prepared = true;
+  need_destroy_ = false;
   return true;
 
 terminate:
   if (tts_handle)
     tts_handle->release();
-  printf("release tts\n");
   return false;
 }
