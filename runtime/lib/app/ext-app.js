@@ -39,6 +39,7 @@ function createExtApp (appId, target, runtime) {
   })
   cp.on('exit', (code, signal) => {
     logger.info(`Child process exited with code ${code}, signal ${signal}`)
+    descriptor.emit('exit', code, signal)
   })
   descriptor.once('destruct', () => {
     logger.info(`Activity end of life.`)
@@ -128,6 +129,9 @@ EventBus.prototype.subscribe = function onSubscribe (message) {
   nsObj.on(message.event, onEvent)
 
   function onEvent () {
+    if (!self.socket.connected) {
+      throw new Error('Child process disconnected')
+    }
     self.socket.send({
       type: 'event',
       namespace: namespace,
@@ -203,6 +207,10 @@ EventBus.prototype['subscribe-ack'] = function onSubscribeAck (message) {
   }
   var timeout = eventDescriptor.timeout || 1000
   nsObj[eventDescriptor.trigger] = function onEventTrigger () {
+    if (!self.socket.connected) {
+      throw new Error('Child process disconnected')
+    }
+
     var eventId = self.eventSyn
     self.eventSyn += 1
     self.socket.send({

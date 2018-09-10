@@ -27,7 +27,8 @@ module.exports = function createLightApp (appId, target, runtime) {
     handle(activity)
   } catch (err) {
     logger.error(`unexpected error on light app ${main}`, err.message, err.stack)
+    return Promise.reject(err)
   }
 
-  return descriptor
+  return Promise.resolve(descriptor)
 }

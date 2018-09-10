@@ -7,6 +7,7 @@ function Executor (objectPath, ifaceName, appId, runtime) {
   this.ifaceName = ifaceName
   this.appId = appId
   this.runtime = runtime
+  this.app = null
 }
 
 Executor.prototype.create = function () {
@@ -16,6 +17,7 @@ Executor.prototype.create = function () {
 }
 
 Executor.prototype.destruct = function destruct () {
+  this.app = null
   return Promise.resolve()
 }
 
