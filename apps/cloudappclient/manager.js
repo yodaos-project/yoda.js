@@ -146,6 +146,14 @@ Skill.prototype.transform = function (directives, append) {
       }
       tdt.data.appId = this.appId
       this.directives.push(tdt)
+    } else if (ele.type === 'native') {
+      tdt = {
+        type: 'native',
+        action: '',
+        data: ele
+      }
+      tdt.data.appId = this.appId
+      this.directives.push(tdt)
     }
   })
 }
