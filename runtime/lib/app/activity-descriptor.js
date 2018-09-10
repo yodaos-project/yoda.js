@@ -255,23 +255,14 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setConfirm (intent, slot, options, attrs) {
-        return new Promise((resolve, reject) => {
-          if (intent === undefined || intent === '') {
-            reject(new Error('intent required'))
-            return
-          }
-          if (slot === undefined) {
-            reject(new Error('slot required'))
-            return
-          }
-          this._runtime.setConfirm(this._appId, intent, slot, options || '[]', attrs || '', (error) => {
-            if (error) {
-              reject(error)
-            } else {
-              resolve()
-            }
-          })
-        })
+        if (intent === undefined || intent === '') {
+          return Promise.reject(new Error('intent required'))
+        }
+        if (slot === undefined) {
+          return Promise.reject(new Error('slot required'))
+        }
+        return this._runtime.setConfirm(this._appId, intent, slot, options || '[]', attrs || '')
+          .then(() => { /** stop pass through results */ })
       }
     },
     /**

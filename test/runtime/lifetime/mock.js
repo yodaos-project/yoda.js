@@ -2,15 +2,22 @@ var EventEmitter = require('events')
 
 module.exports.eventBus = new EventEmitter()
 
-module.exports.getMockAppExecutors = getMockAppExecutors
+module.exports.executors = {}
+module.exports.appLoader = {
+  getExecutorByAppId: function getExecutorByAppId (appId) {
+    return module.exports.executors[appId]
+  }
+}
+
+module.exports.mockAppExecutors = mockAppExecutors
 /**
  *
  * @param {number} number
  * @param {boolean} daemon
  * @param {number} [startIdx]
  */
-function getMockAppExecutors (number, daemon, startIdx) {
-  var ret = {}
+function mockAppExecutors (number, daemon, startIdx) {
+  var map = {}
   var bus = module.exports.eventBus
   if (startIdx == null) {
     startIdx = 0
@@ -29,12 +36,14 @@ function getMockAppExecutors (number, daemon, startIdx) {
         return Promise.resolve()
       }
     }
-    ret[executor.appId] = executor
+    map[executor.appId] = executor
   }
-  return ret
+  Object.assign(module.exports.executors, map)
+  return map
 }
 
 module.exports.restore = function restore () {
   module.exports.eventBus.removeAllListeners()
   module.exports.eventBus = new EventEmitter()
+  module.exports.executors = {}
 }

@@ -1,5 +1,5 @@
 {
-  "name": "cloudappclient",
+  "name": "@yoda/cloudappclient",
   "version": "1.0.0",
   "description": "to parse cloud nlp",
   "main": "app.js",

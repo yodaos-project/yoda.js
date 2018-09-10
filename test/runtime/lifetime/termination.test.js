@@ -9,8 +9,8 @@ test('should destroy app by id', t => {
   mock.restore()
   t.plan(1)
 
-  var apps = mock.getMockAppExecutors(5)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
 
   mock.eventBus.on('destruct', appId => {
     t.strictEqual(appId, '1')
@@ -25,8 +25,8 @@ test('should destroy app by id', t => {
   mock.restore()
   t.plan(1)
 
-  var apps = mock.getMockAppExecutors(5, true)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(5, true)
+  var life = new Lifetime(mock.appLoader)
 
   mock.eventBus.on('destruct', appId => {
     t.strictEqual(appId, '1')
@@ -41,8 +41,8 @@ test('should destroy all apps', t => {
   mock.restore()
   t.plan(5)
 
-  var apps = mock.getMockAppExecutors(5)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
 
   mock.eventBus.on('destruct', appId => {
     t.pass(`${appId} destructed`)
@@ -58,8 +58,8 @@ test('should destroy all apps', t => {
   mock.restore()
   t.plan(5)
 
-  var apps = mock.getMockAppExecutors(5, true)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(5, true)
+  var life = new Lifetime(mock.appLoader)
 
   mock.eventBus.on('destruct', appId => {
     t.pass(`${appId} destructed`)

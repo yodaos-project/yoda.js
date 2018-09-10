@@ -7,9 +7,9 @@ var mock = require('./mock')
 
 test('daemon app status', t => {
   mock.restore()
-  var apps = mock.getMockAppExecutors(1)
-  var daemonApps = mock.getMockAppExecutors(1, true, 1)
-  var life = new Lifetime(Object.assign(apps, daemonApps))
+  mock.mockAppExecutors(1)
+  mock.mockAppExecutors(1, true, 1)
+  var life = new Lifetime(mock.appLoader)
 
   t.strictEqual(life.isDaemonApp('0'), false)
   t.strictEqual(life.isDaemonApp('1'), true)
@@ -72,8 +72,8 @@ test('daemon app status', t => {
 test('non-daemon app status', t => {
   mock.restore()
 
-  var apps = mock.getMockAppExecutors(5)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
 
   t.strictEqual(life.isDaemonApp('1'), false)
   t.strictEqual(life.isAppRunning('1'), false)
@@ -130,8 +130,8 @@ test('non-daemon app status', t => {
 test('should get app data by id', t => {
   mock.restore()
 
-  var apps = mock.getMockAppExecutors(5)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
