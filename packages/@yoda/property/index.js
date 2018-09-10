@@ -65,8 +65,12 @@ module.exports = {
    *                 values are: persistent and readonly.
    * @throws {TypeError} key must be a number.
    * @throws {TypeError} key must not be empty string.
+   * @throws {TypeError}value must be required to be not undefined or null.
    */
   set: function (key, val, flag) {
+    if (val === undefined || val === null) {
+      throw new TypeError('value must be required to be not undefined or null')
+    }
     key = normalize(key, flag)
     native.set(key, val)
   }
