@@ -7,8 +7,8 @@ var mock = require('./mock')
 
 test('app preemption', t => {
   mock.restore()
-  var apps = mock.getMockAppExecutors(5)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {

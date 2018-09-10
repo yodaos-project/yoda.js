@@ -44,6 +44,8 @@ while [ $# -gt 0 ]; do
 done
 
 if test "$local" = "YES"; then
+  export NODE_PRIORITIZED_PATH="$(pwd)/packages"
+
   patternPrefix="$(pwd)/test/"
   scripts="$patternPrefix$pattern"
 

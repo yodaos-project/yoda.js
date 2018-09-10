@@ -18,8 +18,8 @@ test('non-daemon app life events', t => {
       })
     }
   })
-  var apps = mock.getMockAppExecutors(2)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(2)
+  var life = new Lifetime(mock.appLoader)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
@@ -64,9 +64,9 @@ test('daemon app life events', t => {
       })
     }
   })
-  var daemonApps = mock.getMockAppExecutors(1, true)
-  var apps = mock.getMockAppExecutors(1, false, 1)
-  var life = new Lifetime(Object.assign(apps, daemonApps))
+  mock.mockAppExecutors(1, true)
+  mock.mockAppExecutors(1, false, 1)
+  var life = new Lifetime(mock.appLoader)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {

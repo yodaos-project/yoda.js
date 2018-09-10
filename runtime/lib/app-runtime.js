@@ -4,7 +4,6 @@
  * @namespace yodaRT
  */
 
-var fs = require('fs')
 var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
@@ -14,7 +13,7 @@ var DbusRemoteCall = require('./dbus-remote-call')
 var _ = require('@yoda/util')._
 
 var Permission = require('./component/permission')
-var AppExecutor = require('./app/executor')
+var AppLoader = require('./component/app-loader')
 var DbusAppExecutor = require('./app/dbus-app-executor')
 var env = require('./env')()
 var logger = require('logger')('yoda')
@@ -42,11 +41,12 @@ function AppRuntime (paths) {
     secret: null
   }
 
-  this.cloudAppIdStack = []
+  this.cloudSkillIdStack = []
   // save the skill's id domain
   this.domain = {
     cut: '',
-    scene: ''
+    scene: '',
+    active: ''
   }
 
   // manager app's permission
@@ -82,136 +82,24 @@ function AppRuntime (paths) {
   // identify load app complete
   this.loadAppComplete = false
   // 加载APP
-  this.executors = {}
-  this.life = new Lifetime(this.executors)
+  this.loader = new AppLoader(this)
+  this.life = new Lifetime(this.loader)
   this.life.on('stack-reset', () => {
     this.resetCloudStack()
   })
-  this.loadApp(paths, (err, executors) => {
-    if (err) {
-      throw err
-    }
-    this.life.executors = executors
-    this.loadAppComplete = true
-    logger.log('load app complete')
-    this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
-  })
+  this.loader.loadPaths(paths)
+    .then(() => {
+      this.loadAppComplete = true
+      logger.log('load app complete')
+      this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
+    })
 }
 inherits(AppRuntime, EventEmitter)
 
-/**
- * 根据应用包安装目录加载所有应用
- * @param {String[]} paths 应用包的安装目录
- * @param {Function} cb 加载完成的回调，回调没有参数
- * @private
- */
-AppRuntime.prototype.loadApp = function loadApp (paths, cb) {
-  var self = this
-
-  // 根据目录读取目录下所有的App包，返回的是App的包路径
-  var loadAppDir = function (dirs, next) {
-    // 检查参数
-    if (dirs.length <= 0) {
-      next([])
-      return
-    }
-    // 保存所有的App目录
-    var appRoot = []
-    // 读取文件夹，递归调用，不读取子目录
-    var readDir = function (index) {
-      fs.readdir(dirs[index], function (err, files) {
-        if (err) {
-          logger.log('read dir error: ', dirs[index])
-        } else {
-          files.map(function (name) {
-            if (name === '.' || name === '..') {
-              return
-            }
-            appRoot.push(dirs[index] + '/' + name)
-          })
-        }
-        index++
-        if (index < paths.length) {
-          readDir(index)
-        } else {
-          // 读取完成回调
-          next(appRoot)
-        }
-      })
-    }
-    readDir(0)
-  }
-  // 读取目录并加载APP
-  loadAppDir(paths, function (dirs) {
-    // 检查目录下是否有App包
-    if (dirs.length <= 0) {
-      logger.log('no app load')
-      cb()
-      return
-    }
-    logger.log('load app num: ', dirs.length)
-    // 加载APP
-    var loadApp = function (index) {
-      self.load(dirs[index], function (err, stage) {
-        if (err) {
-          // logger.log('load app error: ', err);
-        }
-        index++
-        if (index < dirs.length) {
-          loadApp(index)
-        } else {
-          // 加载完成回调
-          cb(null, self.executors)
-        }
-      })
-    }
-    loadApp(0)
-  })
-}
-
-/**
- * 根据应用的包路径加载应用
- * @param {string} root 应用的包路径
- * @param {string} name 应用的包名字
- * @param {function} cb 加载完成的回调: (err, metadata)
- * @return {object} 应用的appMetaData
- * @private
- */
-AppRuntime.prototype.load = function load (root, callback) {
-  var prefix = root
-  var pkgInfo
-  logger.log('load app: ' + root)
-  fs.readFile(prefix + '/package.json', 'utf8', (err, data) => {
-    if (err) {
-      return callback(err)
-    }
-    pkgInfo = JSON.parse(data)
-    if (!Array.isArray(_.get(pkgInfo, 'metadata.skills'))) {
-      return callback(new Error('invalid app format: ' + root))
-    }
-
-    for (var i in pkgInfo.metadata.skills) {
-      var id = pkgInfo.metadata.skills[i]
-      // 加载权限配置
-      this.permission.load(id, pkgInfo.metadata.permission || [])
-      if (this.executors[id]) {
-        // 打印调试信息
-        logger.log('load app path: ', prefix)
-        logger.log('skill id: ', id)
-        throw new Error('skill conflicts')
-      }
-      var app = new AppExecutor(pkgInfo, prefix, id, this)
-      this.executors[id] = app
-    }
-
-    callback(null, this.executors)
-  })
-}
-
 AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
   var self = this
-  var daemons = Object.keys(self.life.executors).map(appId => {
-    var executor = self.life.executors[appId]
+  var daemons = Object.keys(self.loader.executors).map(appId => {
+    var executor = self.loader.executors[appId]
     if (!executor.daemon) {
       return
     }
@@ -359,13 +247,24 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   var preemptive = _.get(options, 'preemptive', true)
   var carrierId = _.get(options, 'carrierId')
 
-  var appId = nlp.cloud === true ? '@cloud' : nlp.appId
-  var form = _.get(action, 'response.action.form')
-  if (!appId) {
+  if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
     return Promise.resolve()
   }
+  var form = _.get(action, 'response.action.form')
+
   this.updateCloudStack(nlp.appId, form)
+
+  var appId
+  if (nlp.cloud) {
+    appId = '@yoda/cloudappclient'
+  } else {
+    appId = this.loader.getAppIdBySkillId(nlp.appId)
+  }
+  if (appId == null) {
+    logger.log(`Local app '${nlp.appId}' not found.`)
+    return Promise.resolve()
+  }
 
   return this.life.createApp(appId)
     .then(() => {
@@ -398,7 +297,7 @@ AppRuntime.prototype.destroyAll = function (options) {
   this.life.destroyAll({ force: true })
     .then(() => this.startDaemonApps())
   // 清空正在运行的所有App
-  this.cloudAppIdStack = []
+  this.cloudSkillIdStack = []
   // this.resetCloudStack()
 
   if (!resetServices) {
@@ -445,12 +344,13 @@ AppRuntime.prototype.destroyAll = function (options) {
  * 更新App stack
  * @private
  */
-AppRuntime.prototype.updateCloudStack = function (appId, form) {
+AppRuntime.prototype.updateCloudStack = function (skillId, form) {
   if (form === 'cut') {
-    this.domain.cut = appId
+    this.domain.cut = skillId
   } else if (form === 'scene') {
-    this.domain.scene = appId
+    this.domain.scene = skillId
   }
+  this.domain.active = skillId
   var ids = [this.domain.scene, this.domain.cut].map(it => {
     /**
      * Exclude local convenience app from cloud skill stack
@@ -473,6 +373,7 @@ AppRuntime.prototype.updateCloudStack = function (appId, form) {
 AppRuntime.prototype.resetCloudStack = function () {
   this.domain.cut = ''
   this.domain.scene = ''
+  this.domain.active = ''
   this.emit('setStack', this.domain.scene + ':' + this.domain.cut)
 }
 
@@ -482,25 +383,29 @@ AppRuntime.prototype.resetCloudStack = function () {
  * @private
  */
 AppRuntime.prototype.setPickup = function (isPickup, duration) {
-  if (isPickup === true) {
-    this.lightMethod('setPickup', ['' + (duration || 6000)])
-  }
   this.emit('setPickup', isPickup)
+  if (isPickup !== true) {
+    return Promise.resolve()
+  }
+  return this.lightMethod('setPickup', ['' + (duration || 6000)])
 }
 
-AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs, callback) {
-  if (this.cloudApi) {
-    this.cloudApi.sendConfirm(appId, intent, slot, options, attrs, (error) => {
-      if (error) {
-        callback(error)
-      } else {
-        this.setPickup(true)
-        callback()
-      }
-    })
-  } else {
-    callback(new Error('cloudApi not found'))
+AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {
+  var currAppId = this.life.getCurrentAppId()
+  if (currAppId !== appId) {
+    return Promise.reject(new Error(`App is not currently active app, active app: ${currAppId}.`))
   }
+  if (this.cloudApi == null) {
+    return Promise.reject(new Error('CloudApi not ready.'))
+  }
+  return new Promise((resolve, reject) => {
+    this.cloudApi.sendConfirm(this.domain.active, intent, slot, options, attrs, (error) => {
+      if (error) {
+        return reject(error)
+      }
+      resolve()
+    })
+  }).then(() => this.setPickup(true))
 }
 
 /**
@@ -511,9 +416,11 @@ AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs,
  */
 AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
   logger.log('register dbus app with id: ', appId)
-  // 配置exitApp的默认权限
-  this.permission.load(appId, ['ACCESS_TTS', 'ACCESS_MULTIMEDIA'])
-  this.life.executors[appId] = new DbusAppExecutor(objectPath, ifaceName, appId, this)
+  var executor = new DbusAppExecutor(objectPath, ifaceName, appId, this)
+  this.loader.setExecutorForAppId(appId, executor, {
+    skills: [ appId ],
+    permission: ['ACCESS_TTS', 'ACCESS_MULTIMEDIA']
+  })
 }
 
 /**
@@ -532,7 +439,7 @@ AppRuntime.prototype.deleteDbusApp = function (appId) {
  * @private
  */
 AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
-  var appId = nlp.cloud ? '@cloud' : nlp.appId
+  var appId = nlp.cloud ? '@yoda/cloudappclient' : nlp.appId
   if (appId === this.life.getCurrentAppId()) {
     this.life.onLifeCycle(appId, 'request', [ nlp, action ])
   }
@@ -545,30 +452,30 @@ AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
  */
 
 AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
-  this.cloudAppIdStack = stack || []
-  logger.log('cloudStack', this.cloudAppIdStack)
+  this.cloudSkillIdStack = stack || []
+  logger.log('cloudStack', this.cloudSkillIdStack)
   return Promise.resolve()
 }
 
 /**
  *
- * @param {string} appId
+ * @param {string} skillId
  * @param {object} nlp
  * @param {object} action
  * @param {object} [options]
  * @param {boolean} [options.preemptive]
  */
-AppRuntime.prototype.startApp = function (appId, nlp, action, options) {
+AppRuntime.prototype.startApp = function (skillId, nlp, action, options) {
   nlp.cloud = false
-  nlp.appId = appId
+  nlp.appId = skillId
   action = {
-    appId: appId,
+    appId: skillId,
     startWithActiveWord: false,
     response: {
       action: action || {}
     }
   }
-  action.response.action.appId = appId
+  action.response.action.appId = skillId
   action.response.action.form = 'cut'
   this.onVoiceCommand('', nlp, action, options)
 }
@@ -576,23 +483,24 @@ AppRuntime.prototype.startApp = function (appId, nlp, action, options) {
 /**
  * @private
  */
-AppRuntime.prototype.sendNLPToApp = function (appId, nlp, action) {
+AppRuntime.prototype.sendNLPToApp = function (skillId, nlp, action) {
   var curAppId = this.life.getCurrentAppId()
+  var appId = this.loader.getAppIdBySkillId(skillId)
   if (curAppId === appId) {
     nlp.cloud = false
-    nlp.appId = appId
+    nlp.appId = skillId
     action = {
-      appId: appId,
+      appId: skillId,
       startWithActiveWord: false,
       response: {
         action: action || {}
       }
     }
-    action.response.action.appId = appId
+    action.response.action.appId = skillId
     action.response.action.form = 'cut'
-    this.life.onLifeCycle(appId, 'request', [nlp, action])
+    this.life.onLifeCycle(skillId, 'request', [nlp, action])
   } else {
-    logger.log(`send NLP to App failed, AppId ${appId} not in active, activing app: ${curAppId}`)
+    logger.log(`send NLP to App failed, AppId ${appId} not in active, active app: ${curAppId}`)
   }
 }
 
@@ -866,14 +774,14 @@ AppRuntime.prototype.startDbusAppService = function () {
       cb(null, false)
       return
     }
-    self.setConfirm(appId, intent, slot, options, attrs, (error) => {
-      if (error) {
-        logger.log(error)
-        cb(null, false)
-      } else {
-        cb(null, true)
-      }
-    })
+    self.setConfirm(appId, intent, slot, options, attrs)
+      .then(
+        () => cb(null, true),
+        (err) => {
+          logger.log(err)
+          cb(null, false)
+        }
+      )
   })
   extapp.addMethod('exit', {
     in: ['s'],
@@ -883,7 +791,7 @@ AppRuntime.prototype.startDbusAppService = function () {
       logger.log('exit app permission deny')
       cb(null)
     } else {
-      self.life.destroyAppById(appId, { force: true })
+      self.life.deactivateAppById(appId, { force: true })
       cb(null)
     }
   })
@@ -941,7 +849,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     in: ['s', 's'],
     out: ['s']
   }, function (appId, text, cb) {
-    if (self.life.executors[appId] === undefined) {
+    if (self.loader.getExecutorByAppId(appId) == null) {
       return cb(null, '-1')
     }
     var permit = self.permission.check(appId, 'ACCESS_TTS')

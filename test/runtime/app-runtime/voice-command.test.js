@@ -38,15 +38,19 @@ test('test onVoiceCommand', (t) => {
     }
   }
 
-  var apps = {
+  var executors = {
     testSceneCreate: appT('testSceneCreate'),
     testSceneDestroy: appT('testSceneDestroy'),
     testCutInterrupt: appT('testCutInterrupt')
   }
 
-  var runtime = new AppRuntime()
-  runtime.apps = apps
-  runtime.life.executors = apps
+  var runtime = new AppRuntime([])
+  runtime.loader.executors = executors
+  runtime.loader.skillIdAppIdMap = {
+    testSceneCreate: 'testSceneCreate',
+    testSceneDestroy: 'testSceneDestroy',
+    testCutInterrupt: 'testCutInterrupt'
+  }
 
   t.plan(10)
 

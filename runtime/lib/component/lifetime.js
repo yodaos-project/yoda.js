@@ -18,13 +18,13 @@ module.exports = LaVieEnPile
  * - OnLifeCycle -> send events to app
  *
  * @author Chengzhong Wu <chengzhong.wu@rokid.com>
- * @param {object} executors - AppExecutors map used to create apps, keyed by app id.
+ * @param {AppLoader} loader - AppLoader that loaded or loading apps.
  *
  */
-function LaVieEnPile (executors) {
+function LaVieEnPile (loader) {
   EventEmitter.call(this)
   // App Executor
-  this.executors = executors
+  this.loader = loader
   /**
    * Running app instances map, keyed by app id.
    */
@@ -143,7 +143,7 @@ LaVieEnPile.prototype.isAppRunning = function isAppRunning (appId) {
  * @returns {boolean} true if is a daemon app, false otherwise.
  */
 LaVieEnPile.prototype.isDaemonApp = function isDaemonApp (appId) {
-  return _.get(this.executors, `${appId}.daemon`) === true
+  return _.get(this.loader.getExecutorByAppId(appId), `daemon`) === true
 }
 
 // MARK: - END Getters
@@ -170,7 +170,7 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
 
   // Launch app
   logger.info('app is not running, creating', appId)
-  var executor = this.executors[appId]
+  var executor = this.loader.getExecutorByAppId(appId)
   if (executor == null) {
     return Promise.reject(new Error(`App ${appId} not registered`))
   }
@@ -559,7 +559,7 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
       delete this.apps[appId]
       delete this.appDataMap[appId]
 
-      return this.executors[appId].destruct()
+      return this.loader.getExecutorByAppId(appId).destruct()
     })
 }
 

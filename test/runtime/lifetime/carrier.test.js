@@ -9,8 +9,8 @@ test('non-daemon inactive carrier shall be destroyed on preemption', t => {
   mock.restore()
   t.plan(1)
 
-  var apps = mock.getMockAppExecutors(3)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.appLoader)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
@@ -31,8 +31,8 @@ test('non-daemon background carrier shall be destroyed on preemption', t => {
   mock.restore()
   t.plan(1)
 
-  var apps = mock.getMockAppExecutors(3)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.appLoader)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {

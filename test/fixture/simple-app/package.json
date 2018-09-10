@@ -9,6 +9,9 @@
     ],
     "permission": [
       "ACCESS_TTS"
+    ],
+    "scheme": [
+      "simple-app"
     ]
   },
   "scripts": {

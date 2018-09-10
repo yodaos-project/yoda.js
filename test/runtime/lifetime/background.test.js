@@ -8,8 +8,8 @@ var mock = require('./mock')
 test('set background recovers previous active app if target app is top of stack', t => {
   mock.restore()
 
-  var apps = mock.getMockAppExecutors(3)
-  var life = new Lifetime(apps)
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.appLoader)
 
   Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
     .then(() => {
