@@ -16,15 +16,15 @@ test('module->system: verifyOtaImage', t => {
 /**
  * bug id = 1304
  */
-test.skip('module->diskusage: path must be needed', t => {
+test('module->diskusage: path must be needed', t => {
   t.plan(1)
   t.throws(() => {
     sys.diskUsage()
-  }, 'path must be needed')
+  }, new RegExp('Expect a string on first argument of diskUsage'), 'expect a string on first argument')
   t.end()
 })
 
-test('module->diskusage: path is ', t => {
+test('module->diskusage: path is emtpy string', t => {
   t.plan(1)
   t.throws(() => {
     sys.diskUsage('')
@@ -36,7 +36,7 @@ test('module->diskusage: path is null ', t => {
   t.plan(1)
   t.throws(() => {
     sys.diskUsage(null)
-  }, new RegExp('No such file or directory'), 'no such directory')
+  }, new RegExp('Expect a string on first argument of diskUsage'), 'expect a string on first argument')
   t.end()
 })
 
@@ -104,7 +104,7 @@ test('module->diskusage: support file path, eg. /bin/debug.sh', t => {
   t.end()
 })
 
-test('module->system: reboot', t => {
+test.skip('module->system: reboot', t => {
   t.plan(2)
   var result = sys.reboot()
   t.equal(typeof result, 'boolean')
