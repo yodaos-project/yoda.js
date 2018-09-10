@@ -68,7 +68,9 @@ test('module->property->set value: normal key, set value typeof number', t => {
 
 test('module->property->set value: normal key, set key typeof number', t => {
   t.plan(2)
-  t.throws(() => { prop.set(3, '4') }, new RegExp('key must be a string'), 'key must be a string')
+  t.throws(() => {
+    prop.set(3, '4')
+  }, /key must be a string/, 'key must be a string')
   t.equal(prop.get('3'), '')
   t.end()
 })
@@ -76,22 +78,23 @@ test('module->property->set value: normal key, set key typeof number', t => {
 /**
  * bug id = 1291
  */
-test.skip('module->property->set value: normal key, set long key ', t => {
+test('module->property->set value: normal key, set long key ', t => {
   t.plan(1)
-  var key = 'test_key.aaa.bbb.ccc.ddd.fff.ggg.ppp.www.rrr.eee.vvv.bbb.nnn.mmm'
-  prop.set(key, 'test')
-  t.equal(prop.get(key), 'test')
+  t.throws(() => {
+    var key = 'test_key.aaa.bbb.ccc.ddd.fff.ggg.ppp.www.rrr.eee.vvv.bbb.nnn.mmm'
+    prop.set(key, 'test')
+  }, /key is too long/)
   t.end()
 })
 
 /**
  * bug id = 1292
  */
-test.skip('module->property->set value: normal key, set key ', t => {
+test('module->property->set value: normal key, set key ', t => {
   t.plan(1)
-  var key = 'test_key.&'
-  prop.set(key, 'test')
-  t.equal(prop.get(key), 'test')
+  t.throws(() => {
+    prop.set('test_key.&', 'test')
+  }, TypeError)
   t.end()
 })
 
