@@ -10,7 +10,9 @@ module.exports = function (activity) {
   var STRING_SHOW_VOLUME = '当前音量为'
   var STRING_SHOW_MUTED = '设备已静音'
 
-  var volumePropKey = 'persist.yoda.volume.value'
+  var mutedBy
+  var volume = 60
+  var defaultVolume = 30
   var volumeDefaultPropKey = 'persist.yoda.volume.default.value'
 
   function speakAndExit (text) {
@@ -48,21 +50,21 @@ module.exports = function (activity) {
     var silent = _.get(options, 'silent', false)
     var init = _.get(options, 'init', false)
 
-    if (AudioManager.isMuted()) {
-      setUnmute({ recover: false })
-    }
-
     logger.info(`trying to set volume to ${vol}`)
     if (vol > 0 && vol <= 100) {
+      if (AudioManager.isMuted()) {
+        setUnmute({ recover: false })
+      }
+
       /** normal range, set volume as it is */
       AudioManager.setVolume(vol)
-      property.set(volumePropKey, vol)
+      volume = vol
       if (init) {
         return
       }
       return activity.light.play('system://setVolume', {
         volume: vol,
-        action: options.action || ''
+        action: _.get(options, 'action')
       }).then(() => {
         return activity.exit()
       })
@@ -70,7 +72,7 @@ module.exports = function (activity) {
 
     /** handles out of range conditions */
     if (vol <= 0) {
-      setMute()
+      setMute({ source: 'indirect' })
     }
 
     if (silent) {
@@ -92,7 +94,7 @@ module.exports = function (activity) {
    */
   function incVolume (value, options) {
     var vol = getVolume() + value
-    options.action = 'increse'
+    options = Object.assign({}, options, { action: 'increase' })
     return setVolume(vol, options)
   }
 
@@ -101,7 +103,7 @@ module.exports = function (activity) {
     if (vol < 0) {
       vol = 0
     }
-    options.action = 'decrese'
+    options = Object.assign({}, options, { action: 'decrease' })
     return setVolume(vol, options)
   }
 
@@ -114,20 +116,42 @@ module.exports = function (activity) {
     setUnmute({ recover: false })
   }
 
-  function setMute () {
+  /**
+   *
+   * @param {object} [options]
+   * @param {'direct' | 'indirect'} [options.source]
+   */
+  function setMute (options) {
+    var source = _.get(options, 'source', 'direct')
+    mutedBy = source
+
+    logger.info('mute')
     AudioManager.setMute(true)
+    if (volume == null) {
+      volume = getVolume()
+    }
+    if (volume < 0) {
+      volume = defaultVolume
+    }
   }
 
   function setUnmute (options) {
     var recover = _.get(options, 'recover', true)
+    logger.info('unmute')
+
     AudioManager.setMute(false)
 
     if (!recover) {
       return
     }
-    var def = parseInt(property.get(volumeDefaultPropKey))
+    var def
+    if (mutedBy === 'direct') {
+      def = volume
+    } else {
+      def = parseInt(property.get(volumeDefaultPropKey))
+    }
     if (!def) {
-      def = 30
+      def = defaultVolume
     }
     setVolume(def)
   }
@@ -159,10 +183,10 @@ module.exports = function (activity) {
         setVolume(format(nlp.slots) * partition)
         break
       case 'add_volume_num':
-        incVolume(format(nlp.slots))
+        incVolume(format(nlp.slots) * partition)
         break
       case 'dec_volume_num':
-        decVolume(format(nlp.slots))
+        decVolume(format(nlp.slots) * partition)
         break
       case 'volumeup':
       case 'volume_too_low':
