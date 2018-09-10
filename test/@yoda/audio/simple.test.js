@@ -79,6 +79,17 @@ test('set/cancel tts volume mute', (t) => {
   t.end()
 })
 
+test('repeat set/cancel tts volume mute', (t) => {
+  t.plan(20)
+  for (var i = 0; i < 10; i++) {
+    AudioManager.setMute(true)
+    t.equal(AudioManager.isMuted(), true)
+    AudioManager.setMute(false)
+    t.equal(AudioManager.isMuted(), false)
+  }
+  t.end()
+})
+
 // Bug Id 1297, 1298
 test('set/get volume with different stream model in 0-100', (t) => {
   var strs = ['STREAM_AUDIO', 'STREAM_TTS', 'STREAM_PLAYBACK', 'STREAM_ALARM', '']
