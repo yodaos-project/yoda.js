@@ -135,7 +135,8 @@ dbusApis.addMethod('speak', {
       .then((id) => {
         cb(null, '' + id)
       })
-      .catch(() => {
+      .catch((err) => {
+        logger.log(`speak error: `, err)
         cb(null, '-1')
       })
   } else {
