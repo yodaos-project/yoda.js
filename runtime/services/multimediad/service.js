@@ -13,7 +13,7 @@ function MultiMedia (options) {
 }
 inherits(MultiMedia, EventEmitter)
 
-MultiMedia.prototype.start = function (appId, url) {
+MultiMedia.prototype.start = function (appId, url, streamType) {
   return new Promise((resolve, reject) => {
     this.options.permit.invoke('check', [appId, 'ACCESS_MULTIMEDIA'])
       .then((res) => {
@@ -21,7 +21,12 @@ MultiMedia.prototype.start = function (appId, url) {
           if (this.handle[appId]) {
             this.handle[appId].stop()
           }
-          var player = new MediaPlayer(AudioManager.STREAM_PLAYBACK)
+          var player
+          if (streamType === 'alarm') {
+            player = new MediaPlayer(AudioManager.STREAM_ALARM)
+          } else {
+            player = new MediaPlayer(AudioManager.STREAM_PLAYBACK)
+          }
           this.listenEvent(player, appId)
           player.start(url)
           this.handle[appId] = player
