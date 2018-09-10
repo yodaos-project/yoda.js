@@ -3,7 +3,7 @@
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 var helper = require('./helper')
-var blePath = `ipc:/${helper.CHANNEL_PREFIX}/rokid_ble_event`
+var blePath = `ipc://${helper.CHANNEL_PREFIX}/rokid_ble_event`
 
 /**
  * Use `bluetooth.getMessageStream()` instead of this constructor.
