@@ -30,6 +30,10 @@ function normalize (key, flag) {
   if (key === '') {
     throw new TypeError('key must not be empty string')
   }
+  if (!/^[a-z0-9\.\-_]+$/i.test(key)) {
+    throw new TypeError('invalid key, it must be string with dot')
+  }
+
   if (flag === 'persist') {
     key = `persist.${key}`
   } else if (flag === 'readonly') {
@@ -65,13 +69,13 @@ module.exports = {
    *                 values are: persistent and readonly.
    * @throws {TypeError} key must be a number.
    * @throws {TypeError} key must not be empty string.
-   * @throws {TypeError}value must be required to be not undefined or null.
+   * @throws {TypeError} value must be required to be not undefined or null.
    */
   set: function (key, val, flag) {
+    key = normalize(key, flag)
     if (val === undefined || val === null) {
       throw new TypeError('value must be required to be not undefined or null')
     }
-    key = normalize(key, flag)
     native.set(key, val)
   }
 }
