@@ -3,7 +3,7 @@
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 var helper = require('./helper')
-var a2dpsinkPath = `ipc:/${helper.CHANNEL_PREFIX}/a2dpsink_event`
+var a2dpsinkPath = `ipc://${helper.CHANNEL_PREFIX}/a2dpsink_event`
 
 /**
  * Use `bluetooth.getPlayer()` instead of this constructor.
