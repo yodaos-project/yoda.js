@@ -77,6 +77,10 @@ Directive.prototype.run = function run (type, cb) {
       self.cb[type].pickup.call(self, next, function () {
         handle(dt)
       })
+    } else if (next.type === 'native') {
+      self.cb[type].native.call(self, next, function () {
+        handle(dt)
+      })
     } else {
       console.log('all directive complete')
       cb && cb()
