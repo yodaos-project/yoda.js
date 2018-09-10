@@ -122,7 +122,7 @@ test('module->property->set value : key is null', function (t) {
 /**
  * bug id = 1303
  */
-test.only('module->property->set value : value must be needed', function (t) {
+test('module->property->set value : value must be needed', function (t) {
   t.plan(1)
   t.throws(() => {
     prop.set('test_key.xxxxx')
