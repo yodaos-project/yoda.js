@@ -119,7 +119,15 @@ Client.prototype.native_callback = function (type, args) {
   }
 }
 
+/**
+ * @memberof module:@yoda/flora
+ * @member {Number} MSGTYPE_INSTANT
+ */
 exports.MSGTYPE_INSTANT = 0
+/**
+ * @memberof module:@yoda/flora
+ * @member {Number} MSGTYPE_PERSIST
+ */
 exports.MSGTYPE_PERSIST = 1
 // exports.MSGTYPE_REQUEST = 2;
 
@@ -217,6 +225,13 @@ Caps.prototype.write = function (v) {
   this.pairs.push(p)
 }
 
+/**
+ * get caps member value by index
+ * @memberof module:@yoda/flora~Caps
+ * @method get
+ * @param {Number} idx - member index
+ * @return member value
+ */
 Caps.prototype.get = function (idx) {
   if (!util.isNumber(idx)) { return undefined }
   if (idx < 0 || idx >= this.pairs.length) { return undefined }
