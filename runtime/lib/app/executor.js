@@ -5,11 +5,19 @@ var lightApp = require('./light-app')
 var extApp = require('./ext-app')
 var _ = require('@yoda/util')._
 
+/**
+ *
+ * @param {object} profile -
+ * @param {string} appHome -
+ * @param {string} appId -
+ * @param {AppRuntime} runtime -
+ */
 function Executor (profile, appHome, appId, runtime) {
   this.profile = profile
   this.appId = appId
   this.runtime = runtime
   this.daemon = _.get(profile, 'metadata.daemon', false)
+  this.app = null
 
   if (profile.metadata.extapp === true) {
     this.type = 'extapp'
@@ -25,17 +33,22 @@ Executor.prototype.create = function () {
     return Promise.resolve(this.app)
   }
 
-  var app = null
   if (this.type === 'light') {
-    app = lightApp(this.appId, this.appHome, this.runtime)
-    this.app = app
-    app.emit('ready')
-    return Promise.resolve(app)
+    return lightApp(this.appId, this.appHome, this.runtime)
+      .then(app => {
+        this.app = app
+        app.emit('ready')
+        return app
+      })
   } else if (this.type === 'extapp') {
     return extApp(this.appId, this.appHome, this.runtime)
       .then(app => {
         logger.info('Ext-app successfully started')
         this.app = app
+        app.once('exit', () => {
+          logger.info(`${this.appId} exited.`)
+          this.app = null
+        })
         app.emit('ready')
         return app
       }, err => {

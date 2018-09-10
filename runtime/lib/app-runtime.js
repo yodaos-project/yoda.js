@@ -88,6 +88,11 @@ function AppRuntime (paths) {
   this.life.on('stack-reset', () => {
     this.resetCloudStack()
   })
+  this.loadApps(paths)
+}
+inherits(AppRuntime, EventEmitter)
+
+AppRuntime.prototype.loadApps = function loadApps (paths) {
   this.loader.loadPaths(paths)
     .then(() => {
       this.loadAppComplete = true
@@ -95,7 +100,6 @@ function AppRuntime (paths) {
       this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
     })
 }
-inherits(AppRuntime, EventEmitter)
 
 AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
   var self = this
@@ -279,7 +283,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch((error) => {
       logger.error(`create app error with appId: ${appId}`, error)
-      throw error
+      return this.life.destroyAppById(appId)
     })
 }
 
@@ -320,7 +324,7 @@ AppRuntime.prototype.openUrl = function (url, form, options) {
     .then(() => true)
     .catch((error) => {
       logger.error(`open url error with appId: ${appId}`, error)
-      throw error
+      return this.life.destroyAppById(appId)
     })
 }
 

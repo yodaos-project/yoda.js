@@ -24,6 +24,10 @@ function AppChargeur (runtime) {
   this.executors = {}
 }
 
+AppChargeur.prototype.getAppIds = function getAppIds () {
+  return Object.keys(this.executors)
+}
+
 /**
  * Get executor for app.
  *
