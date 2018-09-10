@@ -63,7 +63,9 @@ function TtsRequest (handle, text, callback) {
  * @fires module:@yoda/tts~TtsProxy#cancel
  */
 TtsRequest.prototype.stop = function () {
-  this.state = 'cancel'
+  process.nextTick(() => {
+    this.state = 'cancel'
+  })
   return this.handle.cancel(this.id)
 }
 
@@ -164,9 +166,9 @@ TtsProxy.prototype.stopAll = function () {
  * disconnect
  */
 TtsProxy.prototype.disconnect = function () {
-  this._handle.disconnect()
   this._requests.length = 0
   this.removeAllListeners()
+  this._handle.disconnect()
 }
 
 function createHandle (options) {
