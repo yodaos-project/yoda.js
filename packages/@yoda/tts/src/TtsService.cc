@@ -32,7 +32,7 @@ int TtsService::disconnect() {
   }
   _player.reset();
   prepared = false;
-  need_destroy_ = true
+  need_destroy_ = true;
   return 0;
 }
 
