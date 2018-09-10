@@ -53,7 +53,7 @@ module.exports = {
    * @param {String} [flag] - the flag for set operation, available
    *                 values are: persistent and readonly.
    * @returns {String|Number} returns the value by the given key.
-   * @throws {TypeError} key must be a number.
+   * @throws {TypeError} key must be a string.
    * @throws {TypeError} key must not be empty string.
    */
   get: function (key, flag) {
@@ -67,7 +67,7 @@ module.exports = {
    * @param {String} val - the property val to set.
    * @param {String} [flag] - the flag for set operation, available
    *                 values are: persistent and readonly.
-   * @throws {TypeError} key must be a number.
+   * @throws {TypeError} key must be a string.
    * @throws {TypeError} key must not be empty string.
    * @throws {TypeError} value must be required to be not undefined or null.
    */
