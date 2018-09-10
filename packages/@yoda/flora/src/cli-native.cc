@@ -3,6 +3,42 @@
 using namespace std;
 
 /**
+#include <vector>
+#include <utility>
+class JMemCheck {
+public:
+  void add(jerry_value_t value, int32_t id) {
+    values.push_back(pair<jerry_value_t, int32_t>(value, id));
+  }
+
+  void check() {
+    size_t i;
+    jerry_value_t v;
+    jerry_type_t jtp;
+    uint16_t flag;
+    for (i = 0; i < values.size(); ++i) {
+      v = values[i].first;
+      jtp = jerry_value_get_type(v);
+      if (jtp == 5 || jtp == 6 || jtp == 7) {
+        v &= (~7);
+        flag = ((uint16_t*)v)[0];
+        flag >>= 6;
+        if (flag != 0)
+          printf("JMemCheck: id(%d) %p, ref count %d\n", values[i].second, v, flag);
+      }
+    }
+  }
+
+  void clear() {
+    values.clear();
+  }
+
+private:
+  vector<pair<jerry_value_t, int32_t> > values;
+};
+
+static JMemCheck jmem_check;
+
 static bool foreach_func(const jerry_value_t name, const jerry_value_t value, void* data) {
   jerry_size_t size = jerry_get_string_size(name);
   jerry_char_t str[size + 1];
@@ -101,6 +137,7 @@ static jerry_value_t caps_to_jobject(iotjs_flora_cli_t* handle, shared_ptr<Caps>
     jerry_release_value(ele);
     ++idx;
   }
+  jerry_release_value(arr);
   return jcaps;
 }
 
@@ -320,14 +357,17 @@ JS_FUNCTION(Subscribe) {
   if (jargc < 2) {
     return JS_CREATE_ERROR(COMMON, "arguments: string name, int type");
   }
+  JS_DECLARE_THIS_PTR(flora_cli, thisptr);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
+  if (_this->stl_st->cli.get() == nullptr) {
+    return jerry_create_number(FLORA_CLI_ECONN);
+  }
+
   jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
   jerry_char_t strbuf[size + 1];
   jerry_string_to_utf8_char_buffer(jargv[0], strbuf, size);
   strbuf[size] = '\0';
   int32_t msgtype = (int32_t)JS_GET_ARG(1, number);
-
-  JS_DECLARE_THIS_PTR(flora_cli, thisptr);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
   int32_t r = _this->stl_st->cli->subscribe((char*)strbuf, msgtype);
   return jerry_create_number(r);
 }
@@ -336,14 +376,17 @@ JS_FUNCTION(Unsubscribe) {
   if (jargc < 2) {
     return JS_CREATE_ERROR(COMMON, "arguments: string name, int type");
   }
+  JS_DECLARE_THIS_PTR(flora_cli, thisptr);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
+  if (_this->stl_st->cli.get() == nullptr) {
+    return jerry_create_number(FLORA_CLI_ECONN);
+  }
+
   jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
   jerry_char_t strbuf[size + 1];
   jerry_string_to_utf8_char_buffer(jargv[0], strbuf, size);
   strbuf[size] = '\0';
   int32_t msgtype = (int32_t)JS_GET_ARG(1, number);
-
-  JS_DECLARE_THIS_PTR(flora_cli, thisptr);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
   int32_t r = _this->stl_st->cli->unsubscribe((char*)strbuf, msgtype);
   return jerry_create_number(r);
 }
@@ -352,22 +395,36 @@ JS_FUNCTION(Post) {
   if (jargc < 3) {
     return JS_CREATE_ERROR(COMMON, "arguments: string name, array msgcontent, int type");
   }
+  JS_DECLARE_THIS_PTR(flora_cli, thisptr);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
+  if (_this->stl_st->cli.get() == nullptr) {
+    return jerry_create_number(FLORA_CLI_ECONN);
+  }
   jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
   jerry_char_t namebuf[size + 1];
   jerry_string_to_utf8_char_buffer(jargv[0], namebuf, size);
   namebuf[size] = '\0';
   shared_ptr<Caps> caps = jobject_to_caps(jargv[1]);
   int32_t msgtype = (int32_t)JS_GET_ARG(2, number);
-
-  JS_DECLARE_THIS_PTR(flora_cli, thisptr);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
   int32_t r = _this->stl_st->cli->post((char*)namebuf, caps, msgtype);
   return jerry_create_number(r);
+}
+
+static void flora_safe_close(uv_handle_t* handle) {
+  NativeCallback* cb = reinterpret_cast<NativeCallback*>(
+      reinterpret_cast<uv_async_t*>(handle)->data);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, cb->thisptr);
+  jerry_value_t this_obj = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_release_value(this_obj);
 }
 
 JS_FUNCTION(Close) {
   // TODO: implement Close
   // release jerry_value_t in callback of uv_async_close
+  JS_DECLARE_THIS_PTR(flora_cli, thisptr);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
+  _this->stl_st->cli.reset();
+  uv_close((uv_handle_t*)&_this->async, flora_safe_close);
 }
 
 void init_cli(jerry_value_t exports) {
