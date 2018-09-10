@@ -50,7 +50,7 @@ function keepAlive (appId) {
       type: 'ping',
       appId: appId
     })
-  }, 60 * 1000)
+  }, 60 * 60 * 1000)
   process.on('message', message => {
     if (message.type === 'pong') {
       logger.info('Received pong from VuiDaemon, stop pinging.')

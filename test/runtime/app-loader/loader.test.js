@@ -48,13 +48,13 @@ test('should load app', t => {
       var appId = pkgInfo.name
       var skillIds = _.get(pkgInfo, 'metadata.skills', [])
       var permissions = _.get(pkgInfo, 'metadata.permission', [])
-      var schemes = _.get(pkgInfo, 'metadata.schemes', [])
+      var hosts = _.get(pkgInfo, 'metadata.hosts', [])
 
       skillIds.forEach(it => {
         t.strictEqual(loader.skillIdAppIdMap[it], appId)
       })
-      schemes.forEach(it => {
-        t.strictEqual(loader.schemeAppIdMap[it], appId)
+      hosts.forEach(it => {
+        t.strictEqual(loader.hostSkillIdMap[it.name], it.skillId)
       })
       t.deepEqual(fakeRuntime.permission.map[appId], permissions)
 

@@ -7,6 +7,7 @@
 var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
+var Url = require('url')
 var perf = require('./performance')
 var dbusConfig = require('../dbus-config.json')
 var DbusRemoteCall = require('./dbus-remote-call')
@@ -278,6 +279,47 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch((error) => {
       logger.error(`create app error with appId: ${appId}`, error)
+      throw error
+    })
+}
+
+/**
+ *
+ * @param {string} url -
+ * @param {'cut' | 'scene'} form -
+ * @param {object} [options] -
+ * @param {boolean} [options.preemptive] -
+ * @param {string} [options.carrierId] -
+ * @returns {Promise<boolean>}
+ */
+AppRuntime.prototype.openUrl = function (url, form, options) {
+  var preemptive = _.get(options, 'preemptive', true)
+  var carrierId = _.get(options, 'carrierId')
+
+  var urlObj = Url.parse(url)
+  if (urlObj.protocol !== 'yoda-skill:') {
+    return Promise.resolve(false)
+  }
+  var skillId = this.loader.getSkillIdByHost(urlObj.hostname)
+  if (skillId == null) {
+    return Promise.resolve(false)
+  }
+  this.updateCloudStack(skillId, form)
+  var appId = this.loader.getAppIdBySkillId(skillId)
+
+  return this.life.createApp(appId)
+    .then(() => {
+      if (!preemptive) {
+        logger.info(`app is not preemptive, skip activating app ${appId}`)
+        return Promise.resolve()
+      }
+      logger.info(`app is preemptive, activating app ${appId}`)
+      return this.life.activateAppById(appId, form, carrierId)
+    })
+    .then(() => this.life.onLifeCycle(appId, 'url', [ url ]))
+    .then(() => true)
+    .catch((error) => {
+      logger.error(`open url error with appId: ${appId}`, error)
       throw error
     })
 }
