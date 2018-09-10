@@ -19,6 +19,12 @@ void iotjs_speech_destroy(iotjs_speech_t* speech_wrap) {
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_speech_t, speech_wrap);
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
   _this->speech->release();
+  if (_this->stack != NULL) {
+    free(_this->stack);
+  }
+  if (_this->skillOption != NULL) {
+    free(_this->skillOption);
+  }
   IOTJS_RELEASE(speech_wrap);
 }
 
@@ -188,12 +194,29 @@ JS_FUNCTION(PutText) {
 
   char* text = NULL;
   jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
-  jerry_char_t text_buf[size];
+  jerry_char_t text_buf[size + 1];
   jerry_string_to_utf8_char_buffer(jargv[0], text_buf, size);
   text_buf[size] = '\0';
   text = (char*)&text_buf;
 
-  int32_t id = _this->speech->put_text(text, NULL);
+  VoiceOptions* voiceOptions = new VoiceOptions();
+  if (_this->stack != NULL) {
+    voiceOptions->stack = _this->stack;
+  }
+  if (_this->skillOption != NULL) {
+    voiceOptions->skill_options = _this->skillOption;
+  }
+  int32_t id = _this->speech->put_text(text, voiceOptions);
+  // int32_t id = _this->speech->put_text(text,NULL);
+  if (_this->stack != NULL) {
+    free(_this->stack);
+    _this->stack = NULL;
+  }
+  if (_this->skillOption != NULL) {
+    free(_this->skillOption);
+    _this->skillOption = NULL;
+  }
+  free(voiceOptions);
   return jerry_create_number(id);
 }
 
@@ -210,6 +233,47 @@ JS_FUNCTION(Release) {
   return jerry_create_undefined();
 }
 
+JS_FUNCTION(SetStack) {
+  JS_DECLARE_THIS_PTR(speech, speech);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_speech_t, speech);
+
+  if (_this->speech == NULL) {
+    return JS_CREATE_ERROR(COMMON, "speech is not initialized");
+  }
+  if (_this->stack != NULL) {
+    free(_this->stack);
+    _this->stack = NULL;
+  }
+  char* text = NULL;
+  jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
+  jerry_char_t text_buf[size + 1];
+  jerry_string_to_utf8_char_buffer(jargv[0], text_buf, size);
+  text_buf[size] = '\0';
+  text = (char*)&text_buf;
+  _this->stack = strdup(text);
+  return jerry_create_number(0);
+}
+
+JS_FUNCTION(SetSkillOption) {
+  JS_DECLARE_THIS_PTR(speech, speech);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_speech_t, speech);
+  if (_this->speech == NULL) {
+    return JS_CREATE_ERROR(COMMON,"speech is not initialized");
+  }
+  if (_this->skillOption != NULL) {
+    free(_this->skillOption);
+    _this->skillOption = NULL;
+  }
+  char* text = NULL;
+  jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
+  jerry_char_t text_buf[size + 1];
+  jerry_string_to_utf8_char_buffer(jargv[0],text_buf,size);
+  text_buf[size] = '\0';
+  text = (char*)&text_buf;
+  _this->skillOption = strdup(text);
+  return jerry_create_number(0);
+}
+
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(SPEECH);
   iotjs_jval_set_property_jval(exports, "SpeechWrap", jconstructor);
@@ -218,6 +282,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "prepare", Prepare);
   iotjs_jval_set_method(proto, "putText", PutText);
   iotjs_jval_set_method(proto, "release", Release);
+  iotjs_jval_set_method(proto, "setStack", SetStack);
+  iotjs_jval_set_method(proto, "setSkillOption", SetSkillOption);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
   jerry_release_value(proto);
