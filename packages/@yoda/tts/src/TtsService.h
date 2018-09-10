@@ -41,6 +41,7 @@ class TtsService {
  protected:
   send_event_callback send_event;
   bool prepared = false;
+  bool need_destroy_ = false;
 
  private:
   PrepareOptions options;
