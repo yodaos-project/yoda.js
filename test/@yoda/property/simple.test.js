@@ -122,11 +122,10 @@ test('module->property->set value : key is null', function (t) {
 /**
  * bug id = 1303
  */
-test.skip('module->property->set value : value must be needed', function (t) {
+test.only('module->property->set value : value must be needed', function (t) {
   t.plan(1)
-  prop.set('test_key.xxxxxpp')
   t.throws(() => {
     prop.set('test_key.xxxxx')
-  }, 'value must be needed')
+  }, /value must be required to be not undefined or null/)
   t.end()
 })
