@@ -26,6 +26,8 @@ typedef struct {
   bool has_error;
   char* nlp;
   char* action;
+  char* stack;
+  char* skillOption;
 } IOTJS_VALIDATED_STRUCT(iotjs_speech_t);
 
 static iotjs_speech_t* iotjs_speech_create(const jerry_value_t jspeech);

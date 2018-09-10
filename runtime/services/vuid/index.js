@@ -34,6 +34,7 @@ function entry () {
   runtime.on('setStack', function onSetStack (stack) {
     logger.log('setStack ', stack)
     speechV.setStack(stack)
+    speechT.setStack(stack)
   })
   runtime.on('setPickup', function onSetPickup (isPickup) {
     logger.log('setPickup ', isPickup)
@@ -95,12 +96,11 @@ function entry () {
 
       // implementation interface
       var props = Object.assign({}, config, {
-        masterId: property.get('persist.system.user.userId'),
+        masterId: property.get('persist.system.user.userId')
       })
       runtime.onGetPropAll = () => props
       runtime.onReLogin()
       handleMQTT(mqttAgent, runtime)
-      
     }).catch((err) => {
       logger.error('initializing occurrs error', err && err.stack)
     })
