@@ -26,10 +26,6 @@ function LaVieEnPile (loader) {
   // App Executor
   this.loader = loader
   /**
-   * Running app instances map, keyed by app id.
-   */
-  this.apps = {}
-  /**
    * @typedef AppPreemptionData
    * @property {'cut' | 'scene'} form
    */
@@ -98,7 +94,11 @@ LaVieEnPile.prototype.getAppDataById = function getAppDataById (appId) {
  * @returns {AppDescriptor | undefined} app instance, or undefined if app is not running.
  */
 LaVieEnPile.prototype.getAppById = function getAppById (appId) {
-  return this.apps[appId]
+  var executor = this.loader.getExecutorByAppId(appId)
+  if (executor == null) {
+    return null
+  }
+  return executor.app
 }
 
 /**
@@ -176,8 +176,7 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
   }
 
   return executor.create()
-    .then(app => {
-      this.apps[appId] = app
+    .then(() => {
       this.inactiveAppIds.push(appId)
       return this.onLifeCycle(appId, 'create')
     })
@@ -508,7 +507,8 @@ LaVieEnPile.prototype.destroyAll = function (options) {
   this.appDataMap = {}
 
   var self = this
-  var ids = Object.keys(this.apps)
+  var ids = this.loader.getAppIds()
+    .filter(id => this.getAppById(id) != null)
   self.activeAppStack = []
   this.onStackReset()
   /** destroy apps in stack in a reversed order */
@@ -551,15 +551,18 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
     this.inactiveAppIds.splice(inactiveIdx, 1)
   }
 
-  return this.onLifeCycle(appId, 'destroy')
-    .then(() => {
-      /**
-       * Remove apps from records of LaVieEnPile.
-       */
-      delete this.apps[appId]
-      delete this.appDataMap[appId]
+  var deferred = () => {
+    /**
+     * Remove apps from records of LaVieEnPile.
+     */
+    delete this.appDataMap[appId]
+    return this.loader.getExecutorByAppId(appId).destruct()
+  }
 
-      return this.loader.getExecutorByAppId(appId).destruct()
+  return this.onLifeCycle(appId, 'destroy')
+    .then(deferred, err => {
+      logger.error('Unexpected error on send destroy event to app.', err.stack)
+      return deferred()
     })
 }
 

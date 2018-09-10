@@ -10,7 +10,7 @@ test('test onVoiceCommand', (t) => {
   AppRuntime.prototype.startDbusAppService = function () {}
   AppRuntime.prototype.handleMqttMessage = function () {}
   AppRuntime.prototype.listenDbusSignals = function () {}
-  AppRuntime.prototype.loadApp = function () {}
+  AppRuntime.prototype.loadApps = function () {}
 
   var destroyAll = AppRuntime.prototype.destroyAll
   AppRuntime.prototype.destroyAll = function destroyAllProxy () {
