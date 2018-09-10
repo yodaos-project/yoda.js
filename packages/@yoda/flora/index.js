@@ -1,5 +1,39 @@
 'use strict'
 
+/**
+ * @module @yoda/flora
+ * @description The `flora` module provide protocol of cross process communication.
+ * exports 'connect' function for generate `flora client` instance.
+ * exports 'Caps' constructor for generate `Caps` instance.
+ * `Caps` is utility of data struct serialize.
+ *
+ * ```js
+ * // create flora client instance
+ * // connect to unix domain socket '/data/flora-service'
+ * var flora_factory = require('@yoda/flora');
+ * var client = flora_factory.connect('unix:/data/flora-service', 0);
+ *
+ * // subscribe msg
+ * client.on("recv_post", function (name, msgtype, msg) {
+ *   console.log("recv post msg " + name);
+ * }
+ * client.subscribe("test msg2", flora_factory.MSGTYPE_INSTANT);
+ *
+ * // post msg
+ * var caps = new flora_factory.Caps();
+ * caps.writeInt32(1);
+ * caps.writeInt64(2);
+ * caps.write("hello world");
+ * var sub = new flora_factory.Caps();
+ * sub.write("foo");
+ * caps.write(sub);
+ * client.post("test msg1", caps, flora_factory.MSGTYPE_INSTANT);
+ *
+ * // close client
+ * client.close();
+ * ```
+ */
+
 var native_ctor = require('./flora-cli.node')
 var util = require('util')
 var logger = require('logger')('flora')
@@ -7,17 +41,69 @@ var logger = require('logger')('flora')
 function dummy_callback () {
 }
 
+/**
+ * @class
+ */
 function Client () {
   this.callbacks = new Array()
   this.callbacks[0] = dummy_callback
   this.callbacks[1] = dummy_callback
 }
 
+/**
+ * @callback FloraClientCallback
+ * @param {String} name - msg name
+ * @param {Number} type - msg type
+ * @param {module:@yoda/flora~Caps} msg - msg content
+ */
+
+/**
+ * setup callback functions
+ * @memberof module:@yoda/flora~Client
+ * @method on
+ * @param {String} name - callback type ('recv_post' | 'disconnected')
+ * @param {module:@yoda/flora~FloraClientCallback} cb - callback function
+ */
 Client.prototype.on = function (name, cb) {
   if (name && util.isFunction(cb)) {
     if (name == 'recv_post') { this.callbacks[0] = cb } else if (name == 'disconnected') { this.callbacks[1] = cb }
   }
 }
+
+/**
+ * Subscribe msg
+ * @memberof module:@yoda/flora~Client
+ * @method subscribe
+ * @param {String} name - msg name to subscribe
+ * @param {Number} type - msg type to subscribe (exports.MSGTYPE_INSTANT | exports.MSGTYPE_PERSIST)
+ */
+// Client.prototype.prototype.subscribe
+
+/**
+ * Unsubscribe msg
+ * @memberof module:@yoda/flora~Client
+ * @method unsubscribe
+ * @param {String} name - msg name to unsubscribe
+ * @param {Number} type - msg type to unsubscribe (exports.MSGTYPE_INSTANT | exports.MSGTYPE_PERSIST)
+ */
+// Client.prototype.prototype.unsubscribe
+
+/**
+ * Post msg
+ * @memberof module:@yoda/flora~Client
+ * @method post
+ * @param {String} name - msg name to post
+ * @param {module:@yoda/flora~Caps} msg - msg content
+ * @param {Number} type - msg type to post (exports.MSGTYPE_INSTANT | exports.MSGTYPE_PERSIST)
+ */
+// Client.prototype.prototype.post
+
+/**
+ * close flora client
+ * @memberof module:@yoda/flora~Client
+ * @method close
+ */
+// Client.prototype.prototype.close
 
 Client.prototype.native_callback = function (type, args) {
   switch (type) {
@@ -49,6 +135,10 @@ exports.CLI_ECONN = -3
 // 'get'请求目标不存在
 // exports.CLI_ENEXISTS = -5;
 
+/**
+ * @class
+ * @classdesc utility of data struct serialize
+ */
 function Caps () {
   this.pairs = new Array()
 }
@@ -61,30 +151,60 @@ Caps.STRING = 83 // 'S'
 Caps.BINARY = 66 // 'B'
 Caps.OBJECT = 79 // 'O'
 
+/**
+ * write int32 value
+ * @memberof module:@yoda/flora~Caps
+ * @method writeInt32
+ * @param {Number} i32 - int32 value
+ */
 Caps.prototype.writeInt32 = function (i32) {
   if (!util.isNumber(i32)) { return }
   var p = { type: Caps.INT32, value: i32 }
   this.pairs.push(p)
 }
 
+/**
+ * write int64 value
+ * @memberof module:@yoda/flora~Caps
+ * @method writeInt64
+ * @param {Number} i64 - int64 value
+ */
 Caps.prototype.writeInt64 = function (i64) {
   if (!util.isNumber(i64)) { return }
   var p = { type: Caps.INT64, value: i64 }
   this.pairs.push(p)
 }
 
+/**
+ * write float value
+ * @memberof module:@yoda/flora~Caps
+ * @method writeFloat
+ * @param {Number} f - float value
+ */
 Caps.prototype.writeFloat = function (f) {
   if (!util.isNumber(f)) { return }
   var p = { type: Caps.FLOAT, value: f }
   this.pairs.push(p)
 }
 
+/**
+ * write double value
+ * @memberof module:@yoda/flora~Caps
+ * @method writeDouble
+ * @param {Number} d - double value
+ */
 Caps.prototype.writeDouble = function (d) {
   if (!util.isNumber(d)) { return }
   var p = { type: Caps.DOUBLE, value: d }
   this.pairs.push(p)
 }
 
+/**
+ * write string/Caps value
+ * @memberof module:@yoda/flora~Caps
+ * @method write
+ * @param {Object} v - value to write (String | Caps instance)
+ */
 Caps.prototype.write = function (v) {
   var p
   if (util.isString(v)) {
@@ -103,6 +223,13 @@ Caps.prototype.get = function (idx) {
   return this.pairs[idx].value
 }
 
+/**
+ * @memberof module:@yoda/flora
+ * @method connect
+ * @param {String} uri - flora service uri to connect
+ * @param {Number} [bufsize=0] - preallocated msg buffer size
+ * @return module:@yoda/flora~Client instance
+ */
 exports.connect = function (uri, bufsize) {
   var cli = new Client()
   cli.__caps_ctor__ = Caps
@@ -114,4 +241,8 @@ exports.connect = function (uri, bufsize) {
   return cli
 }
 
+/**
+ * @memberof module:@yoda/flora
+ * @member {module:@yoda/flora~Caps} Caps - Caps constructor
+ */
 exports.Caps = Caps
