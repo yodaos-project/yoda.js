@@ -2,7 +2,6 @@
 var AudioManager = require('@yoda/audio').AudioManager
 var logger = require('logger')('@volume')
 var _ = require('@yoda/util')._
-var property = require('@yoda/property')
 
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
@@ -13,7 +12,6 @@ module.exports = function (activity) {
   var mutedBy
   var volume = 60
   var defaultVolume = 30
-  var volumeDefaultPropKey = 'persist.yoda.volume.default.value'
 
   function speakAndExit (text) {
     var ismuted = AudioManager.isMuted()
@@ -108,11 +106,9 @@ module.exports = function (activity) {
   }
 
   function initVolume () {
-    var volume = parseInt(property.get(volumeDefaultPropKey))
-    if (!volume) {
-      volume = 60
-    }
-    setVolume(volume, { init: true })
+    var vol = getVolume()
+    logger.info(`init volume to ${vol}`)
+    setVolume(vol, { init: true })
     setUnmute({ recover: false })
   }
 
@@ -147,8 +143,6 @@ module.exports = function (activity) {
     var def
     if (mutedBy === 'direct') {
       def = volume
-    } else {
-      def = parseInt(property.get(volumeDefaultPropKey))
     }
     if (!def) {
       def = defaultVolume
@@ -166,8 +160,7 @@ module.exports = function (activity) {
   }
 
   activity.on('request', function (nlp, action) {
-    var silent = _.get(nlp, 'silent')
-    var partition = _.get(nlp, 'partition', 10)
+    var partition = 10
     switch (nlp.intent) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
@@ -190,11 +183,11 @@ module.exports = function (activity) {
         break
       case 'volumeup':
       case 'volume_too_low':
-        incVolume(100 / partition, { silent: silent })
+        incVolume(100 / partition)
         break
       case 'volumedown':
       case 'volume_too_high':
-        decVolume(100 / partition, { silent: silent })
+        decVolume(100 / partition)
         break
       case 'volumemin':
         setVolume(10)
@@ -210,18 +203,35 @@ module.exports = function (activity) {
         setUnmute()
         activity.exit()
         break
-      case 'mic_mute':
-        micMute(true)
+      default:
+        activity.exit()
         break
-      case 'mic_unmute':
-        micMute(false)
-        break
-      case 'init_volume':
+    }
+  })
+
+  activity.on('url', url => {
+    var partition = parseInt(_.get(url.query, 'partition', 16))
+    var silent = _.get(url.query, 'silent') == null
+    switch (url.pathname) {
+      case '/init':
         initVolume()
         activity.exit()
         break
-      default:
+      case '/volume_up':
+        incVolume(100 / partition, { silent: silent })
         activity.exit()
+        break
+      case '/volume_down':
+        decVolume(100 / partition, { silent: silent })
+        activity.exit()
+        break
+      case '/mic_mute_effect':
+        micMute(true)
+          .then(() => activity.exit())
+        break
+      case '/mic_unmute_effect':
+        micMute(false)
+          .then(() => activity.exit())
         break
     }
   })

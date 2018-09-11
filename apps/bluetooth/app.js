@@ -127,4 +127,12 @@ module.exports = function (activity) {
         break
     }
   })
+
+  activity.on('url', url => {
+    switch (url.pathname) {
+      case '/bluetooth_broadcast':
+        broadcast()
+        break
+    }
+  })
 }

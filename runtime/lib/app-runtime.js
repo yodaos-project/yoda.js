@@ -8,19 +8,20 @@ var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var Url = require('url')
+
+var _ = require('@yoda/util')._
+var logger = require('logger')('yoda')
+var ota = require('@yoda/ota')
+var wifi = require('@yoda/wifi')
+
+var env = require('./env')()
 var perf = require('./performance')
 var dbusConfig = require('../dbus-config.json')
 var DbusRemoteCall = require('./dbus-remote-call')
-var _ = require('@yoda/util')._
-
+var DbusAppExecutor = require('./app/dbus-app-executor')
 var Permission = require('./component/permission')
 var AppLoader = require('./component/app-loader')
-var DbusAppExecutor = require('./app/dbus-app-executor')
-var env = require('./env')()
-var logger = require('logger')('yoda')
-var ota = require('@yoda/ota')
-var Input = require('@yoda/input')
-var wifi = require('@yoda/wifi')
+var Keyboard = require('./component/keyboard')
 var Lifetime = require('./component/lifetime')
 
 module.exports = AppRuntime
@@ -75,8 +76,8 @@ function AppRuntime (paths) {
   // 处理mqtt事件
   this.handleMqttMessage()
   // handle keyboard/button events
-  this._input = Input()
-  this.listenKeyboardEvents()
+  this.keyboard = new Keyboard(this)
+  this.keyboard.init()
 
   this.dbusSignalRegistry = new EventEmitter()
   this.listenDbusSignals()
@@ -97,7 +98,7 @@ AppRuntime.prototype.loadApps = function loadApps (paths) {
     .then(() => {
       this.loadAppComplete = true
       logger.log('load app complete')
-      this.startApp('@volume', { intent: 'init_volume' }, {}, { preemptive: false })
+      return this.openUrl('yoda-skill://volume/init', { preemptive: false })
     })
 }
 
@@ -1023,134 +1024,6 @@ AppRuntime.prototype.startDbusAppService = function () {
   })
 }
 
-AppRuntime.prototype.destroy = function destroyRuntime () {
-  this._input.disconnect()
-}
-
-AppRuntime.prototype.listenKeyboardEvents = listenKeyboardEvents
-function listenKeyboardEvents () {
-  var currentKeyCode
-  var firstLongPressTime = null
-
-  this._input.on('keydown', event => {
-    currentKeyCode = event.keyCode
-    logger.info(`keydown: ${event.keyCode}`)
-  })
-
-  this._input.on('keyup', event => {
-    logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${currentKeyCode}`)
-    if (currentKeyCode !== event.keyCode) {
-      return
-    }
-    if (firstLongPressTime != null) {
-      firstLongPressTime = null
-      return
-    }
-
-    /** Click Events */
-    var map = {
-      113: () => {
-        /** mute */
-        var muted = !this.micMuted
-        this.micMuted = muted
-        this.emit('micMute', muted)
-        if (muted) {
-          this.startApp('@volume', { intent: 'mic_mute', silent: true }, {}, { preemptive: false })
-          return
-        }
-        this.startApp('@volume', { intent: 'mic_unmute', silent: true }, {}, { preemptive: false })
-      },
-      114: () => {
-        /** decrease volume */
-        this.startApp('@volume',
-          { intent: 'volumedown', partition: 16, silent: true },
-          {},
-          { preemptive: false })
-      },
-      115: () => {
-        /** increase volume */
-        this.startApp('@volume',
-          { intent: 'volumeup', partition: 16, silent: true },
-          {},
-          { preemptive: false })
-      },
-      116: () => {
-        /** exit all app */
-        if (this.online !== true) {
-          // start @network app
-          this.sendNLPToApp('@network', {
-            intent: 'into_sleep'
-          }, {})
-          return
-        }
-        this.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
-      }
-    }
-
-    var handler = map[event.keyCode]
-    if (typeof handler !== 'function') {
-      logger.info(`No handler registered for click '${event.keyCode}'.`)
-      return
-    }
-    handler()
-  })
-  // dbclick event
-  this._input.on('dbclick', event => {
-    var map = {
-      116: () => {
-        if (this.waitingForAwake === true) {
-          this.waitingForAwake = false
-          this.startApp('@network', {
-            intent: 'system_setup'
-          }, {})
-        }
-      }
-    }
-    var handler = map[event.keyCode]
-    if (handler) {
-      handler()
-    }
-  })
-
-  this._input.on('longpress', event => {
-    if (currentKeyCode !== event.keyCode) {
-      firstLongPressTime = null
-      return
-    }
-    if (firstLongPressTime == null) {
-      firstLongPressTime = event.keyTime
-    }
-    var timeDelta = event.keyTime - firstLongPressTime
-    logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
-
-    /** Long Press Events */
-    var map = {
-      113: () => {
-        if (timeDelta >= 2000) {
-          /** mute */
-          this.startApp('@bluetooth', { intent: 'bluetooth_broadcast' }, {})
-        }
-      },
-      114: () => {
-        /** decrease volume */
-        this.startApp('@volume',
-          { intent: 'volumedown', partition: 16, silent: true },
-          {},
-          { preemptive: false })
-      },
-      115: () => {
-        /** increase volume */
-        this.startApp('@volume',
-          { intent: 'volumeup', partition: 16, silent: true },
-          {},
-          { preemptive: false })
-      }
-    }
-    var handler = map[event.keyCode]
-    if (typeof handler !== 'function') {
-      logger.info(`No handler registered for long press '${event.keyCode}'.`)
-      return
-    }
-    handler()
-  })
+AppRuntime.prototype.destruct = function destruct () {
+  this.keyboard.destruct()
 }

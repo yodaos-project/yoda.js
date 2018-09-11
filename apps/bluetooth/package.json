@@ -15,6 +15,12 @@
     "permission": [
       "ACCESS_TTS",
       "INTERRUPT"
+    ],
+    "hosts": [
+      {
+        "name": "bluetooth",
+        "skillId": "@bluetooth"
+      }
     ]
   },
   "keywords": [
