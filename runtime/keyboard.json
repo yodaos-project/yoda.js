@@ -1,0 +1,38 @@
+{
+  "keydown": {
+    "114": {
+      "url": "yoda-skill://volume/volume_down?partition=16",
+      "options": {
+        "preemptive": false
+      }
+    },
+    "115": {
+      "url": "yoda-skill://volume/volume_up?partition=16",
+      "options": {
+        "preemptive": false
+      }
+    }
+  },
+  "longpress": {
+    "113": {
+      "repeat": false,
+      "timeDelta": 2000,
+      "url": "yoda-skill://bluetooth/bluetooth_broadcast",
+      "options": {}
+    },
+    "114": {
+      "repeat": true,
+      "url": "yoda-skill://volume/volume_down?partition=16",
+      "options": {
+        "preemptive": false
+      }
+    },
+    "115": {
+      "repeat": true,
+      "url": "yoda-skill://volume/volume_up?partition=16",
+      "options": {
+        "preemptive": false
+      }
+    }
+  }
+}
