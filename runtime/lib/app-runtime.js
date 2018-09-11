@@ -460,6 +460,20 @@ AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs)
   }).then(() => this.setPickup(true))
 }
 
+AppRuntime.prototype.preventKeyDefaults = function preventKeyDefaults (appId, keyCode) {
+  var key = String(keyCode)
+  this.keyboard.listeners[key] = appId
+  return Promise.resolve()
+}
+
+AppRuntime.prototype.restoreKeyDefaults = function restoreKeyDefaults (appId, keyCode) {
+  var key = String(keyCode)
+  if (this.keyboard.listeners[key] === appId) {
+    this.keyboard.listeners[key] = null
+  }
+  return Promise.resolve()
+}
+
 /**
  * 通过dbus注册extapp
  * @param {string} appId extapp的AppID
