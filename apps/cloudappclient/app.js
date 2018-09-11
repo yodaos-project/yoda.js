@@ -112,6 +112,12 @@ module.exports = activity => {
     next()
   })
 
+  directive.do('frontend', 'native', function (dt, next) {
+    // notice: current form default value is 'cut'
+    activity.openUrl(`yoda-skill://${dt.data.packageInfo}/${dt.data.commond}`, 'cut')
+    next()
+  })
+
   activity.on('ready', function () {
     logger.log(this.appId + ' app ready')
   })
