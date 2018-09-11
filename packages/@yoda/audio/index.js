@@ -206,7 +206,7 @@ AudioManager.setMute = function (val) {
  * @example
  * AudioManager.setVolumeShaper(AudioManager.LINEAR_RAMP)
  */
-AudioManager.setVolumeShaper = function (shaper) {
+AudioManager.setVolumeShaper = function setVolumeShaper (shaper) {
   var max = 100
   var shape = shaper(max)
   if (!Array.isArray(shape)) { throw new Error('shaper function should return an array with 100 elements.') }
@@ -217,6 +217,15 @@ AudioManager.setVolumeShaper = function (shaper) {
     }
   }
   return true
+}
+
+/**
+ * Get the human readable string for the stream type
+ * @method getStreamName
+ * @returns {string} return the stream type name, "audio", "tts", "playback", "alarm" and "system".
+ */
+AudioManager.getStreamName = function getStreamName (type) {
+  return AudioBase[type] && AudioBase[type].name
 }
 
 ;(function init () {
