@@ -1,6 +1,9 @@
+#define _XOPEN_SOURCE
+
 #include "SystemNative.h"
 #include <recovery/recovery.h>
 #include <sys/statvfs.h>
+#include <time.h>
 
 JS_FUNCTION(Reboot) {
   system("reboot");
@@ -55,7 +58,6 @@ JS_FUNCTION(GetOtaFlag) {
   iotjs_jval_set_property_string_raw(jval, "boot_mode", cmd.boot_mode);
   iotjs_jval_set_property_string_raw(jval, "recovery_path", cmd.recovery_path);
   iotjs_jval_set_property_string_raw(jval, "recovery_state", cmd.recovery_state);
-
   return jval;
 }
 
@@ -80,11 +82,43 @@ JS_FUNCTION(DiskUsage) {
   return res;
 }
 
+JS_FUNCTION(Strptime) {
+  struct tm tm;
+  memset(&tm, 0, sizeof(struct tm));
+
+  // datetime as the first argument
+  char* datetime = NULL;
+  jerry_size_t datetime_size = jerry_get_utf8_string_size(jargv[0]);
+  jerry_char_t datetime_buf[datetime_size + 1];
+  jerry_string_to_utf8_char_buffer(jargv[0], datetime_buf, datetime_size);
+  datetime_buf[datetime_size] = '\0';
+  datetime = (char*)&datetime_buf;
+
+  // format as the first argument
+  char* format = NULL;
+  jerry_size_t format_size = jerry_get_utf8_string_size(jargv[1]);
+  jerry_char_t format_buf[format_size + 1];
+  jerry_string_to_utf8_char_buffer(jargv[1], format_buf, format_size);
+  format_buf[format_size] = '\0';
+  format = (char*)&format_buf;
+
+  strptime(datetime, format, &tm);
+  jerry_value_t jtime = jerry_create_object();
+  iotjs_jval_set_property_number(jtime, "seconds", tm.tm_sec);
+  iotjs_jval_set_property_number(jtime, "minutes", tm.tm_min);
+  iotjs_jval_set_property_number(jtime, "hours", tm.tm_hour);
+  iotjs_jval_set_property_number(jtime, "date", tm.tm_mday);
+  iotjs_jval_set_property_number(jtime, "month", tm.tm_mon + 1);
+  iotjs_jval_set_property_number(jtime, "year", tm.tm_year + 1900);
+  return jtime;
+}
+
 void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "verifyOtaImage", VerifyOtaImage);
   iotjs_jval_set_method(exports, "prepareOta", PrepareOta);
   iotjs_jval_set_method(exports, "reboot", Reboot);
   iotjs_jval_set_method(exports, "diskUsage", DiskUsage);
+  iotjs_jval_set_method(exports, "strptime", Strptime);
 }
 
 NODE_MODULE(system, init)
