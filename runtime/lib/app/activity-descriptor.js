@@ -175,7 +175,7 @@ Object.assign(ActivityDescriptor.prototype,
      * > your test cases include improperly formatted URLs.
      *
      * @event yodaRT.activity.Activity#url
-     * @param {string} url
+     * @param {module:url~UrlWithParsedQuery} url
      */
     url: {
       type: 'event'
@@ -409,14 +409,18 @@ Object.assign(ActivityDescriptor.prototype,
      * @instance
      * @function openUrl
      * @param {string} url -
-     * @param {'cut' | 'scene'} form -
+     * @param {'cut' | 'scene' | object} [options]
+     * @param {boolean} [options.preemptive=true] -
      * @returns {Promise<boolean>}
      */
     openUrl: {
       type: 'method',
       returns: 'promise',
-      fn: function openUrl (url, form) {
-        return this._runtime.openUrl(url, form)
+      fn: function openUrl (url, options) {
+        if (typeof options === 'string') {
+          options = { form: options }
+        }
+        return this._runtime.openUrl(url, options)
       }
     }
   }
