@@ -544,7 +544,7 @@ AppRuntime.prototype.sendNLPToApp = function (skillId, nlp, action) {
     }
     action.response.action.appId = skillId
     action.response.action.form = 'cut'
-    this.life.onLifeCycle(skillId, 'request', [nlp, action])
+    this.life.onLifeCycle(appId, 'request', [nlp, action])
   } else {
     logger.log(`send NLP to App failed, AppId ${appId} not in active, active app: ${curAppId}`)
   }

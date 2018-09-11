@@ -131,6 +131,7 @@ dbusApis.addMethod('speak', {
   out: ['s']
 }, function (appId, text, cb) {
   if (appId && text) {
+    logger.log(`speak: ${text} ${appId}`)
     service.speak(appId, text)
       .then((id) => {
         cb(null, '' + id)
@@ -141,6 +142,7 @@ dbusApis.addMethod('speak', {
       })
   } else {
     // TODO: error handler?
+    logger.log(`speak error, appId and text expected`)
     cb(null, '-1')
   }
 })

@@ -252,6 +252,7 @@ module.exports = function (app) {
   }
 
   function sendWifiList (list) {
+    logger.log('send WIFI List to App: ', JSON.stringify(list))
     messageStream.write({
       topic: 'getWifiList',
       data: list || []
