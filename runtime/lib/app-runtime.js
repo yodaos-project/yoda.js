@@ -289,23 +289,28 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
 
 /**
  *
+ * > Note: currently only `yoda-skill:` scheme is supported.
+ *
  * @param {string} url -
- * @param {'cut' | 'scene'} form -
  * @param {object} [options] -
- * @param {boolean} [options.preemptive] -
+ * @param {'cut' | 'scene'} [options.form='cut'] -
+ * @param {boolean} [options.preemptive=true] -
  * @param {string} [options.carrierId] -
  * @returns {Promise<boolean>}
  */
-AppRuntime.prototype.openUrl = function (url, form, options) {
+AppRuntime.prototype.openUrl = function (url, options) {
+  var form = _.get(options, 'form', 'cut')
   var preemptive = _.get(options, 'preemptive', true)
   var carrierId = _.get(options, 'carrierId')
 
   var urlObj = Url.parse(url)
   if (urlObj.protocol !== 'yoda-skill:') {
+    logger.info('Url protocol other than yoda-skill is not supported now.')
     return Promise.resolve(false)
   }
   var skillId = this.loader.getSkillIdByHost(urlObj.hostname)
   if (skillId == null) {
+    logger.info(`No app registered for skill host '${urlObj.hostname}'.`)
     return Promise.resolve(false)
   }
   this.updateCloudStack(skillId, form)
@@ -320,7 +325,7 @@ AppRuntime.prototype.openUrl = function (url, form, options) {
       logger.info(`app is preemptive, activating app ${appId}`)
       return this.life.activateAppById(appId, form, carrierId)
     })
-    .then(() => this.life.onLifeCycle(appId, 'url', [ url ]))
+    .then(() => this.life.onLifeCycle(appId, 'url', [ urlObj ]))
     .then(() => true)
     .catch((error) => {
       logger.error(`open url error with appId: ${appId}`, error)
