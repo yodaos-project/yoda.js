@@ -71,12 +71,12 @@ service.on('error', function (id) {
 })
 
 dbusApis.addMethod('start', {
-  in: ['s', 's'],
+  in: ['s', 's', 's'],
   out: ['s']
-}, function (appId, url, cb) {
-  logger.log('multimedia play', appId, url)
+}, function (appId, url, streamType, cb) {
+  logger.log('multimedia play', appId, url, streamType)
   if (appId && url) {
-    service.start(appId, url)
+    service.start(appId, url, streamType)
       .then((id) => {
         logger.log('return', id, typeof id)
         cb(null, id)

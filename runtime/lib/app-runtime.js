@@ -606,9 +606,7 @@ AppRuntime.prototype.lightMethod = function (name, args) {
       'com.service.light',
       '/rokid/light',
       'com.rokid.light.key',
-      name, sig, args, function (res) {
-        resolve(res)
-      })
+      name, sig, args, resolve)
   })
 }
 
@@ -622,9 +620,7 @@ AppRuntime.prototype.ttsMethod = function (name, args) {
       'com.service.tts',
       '/tts/service',
       'tts.service',
-      name, sig, args, function (res) {
-        resolve(res)
-      })
+      name, sig, args, resolve)
   })
 }
 
@@ -635,9 +631,7 @@ AppRuntime.prototype.multimediaMethod = function (name, args) {
       'com.service.multimedia',
       '/multimedia/service',
       'multimedia.service',
-      name, sig, args, function (res) {
-        resolve(res)
-      })
+      name, sig, args, resolve)
   })
 }
 

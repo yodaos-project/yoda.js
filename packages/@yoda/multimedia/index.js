@@ -75,7 +75,8 @@ inherits(MediaPlayer, EventEmitter)
  * @private
  */
 MediaPlayer.prototype._initialize = function () {
-  this._handle = new native.Player(this._stream)
+  var streamName = getStreamName(this._stream)
+  this._handle = new native.Player(streamName)
   this._handle.onprepared = this.onprepared.bind(this)
   this._handle.onplaybackcomplete = this.onplaybackcomplete.bind(this)
   this._handle.onbufferingupdate = this.onbufferingupdate.bind(this)

@@ -558,14 +558,15 @@ Object.assign(MultimediaDescriptor.prototype,
      * @instance
      * @function start
      * @param {string} uri
+     * @param {boolean} [isAlarm=false]
      * @returns {Promise<string>} multimedia player id
      */
     start: {
       type: 'method',
       returns: 'promise',
-      fn: function start (url) {
+      fn: function start (url, isAlarm) {
         var self = this
-        return self._runtime.multimediaMethod('start', [self._appId, url])
+        return self._runtime.multimediaMethod('start', [self._appId, url, isAlarm ? 'alarm' : ''])
           .then((result) => {
             var multimediaId = result[0]
             logger.log('create media player', result)
@@ -573,7 +574,6 @@ Object.assign(MultimediaDescriptor.prototype,
             if (multimediaId === '-1') {
               throw new Error('Unexpected multimediad error.')
             }
-
             var channel = `callback:multimedia:${multimediaId}`
             self._activityDescriptor._registeredDbusSignals.push(channel)
             self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
