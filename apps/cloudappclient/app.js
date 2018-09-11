@@ -114,7 +114,10 @@ module.exports = activity => {
 
   directive.do('frontend', 'native', function (dt, next) {
     // notice: current form default value is 'cut'
-    activity.openUrl(`yoda-skill://${dt.data.packageInfo}/${dt.data.commond}`, 'cut')
+    var appId = dt.data.packageInfo && dt.data.packageInfo.name
+    var form = dt.data.packageInfo && dt.data.packageInfo.form
+    var command = dt.data.command || ''
+    activity.openUrl(`yoda-skill://${appId}/?command=${command}`, form || 'cut')
     next()
   })
 
