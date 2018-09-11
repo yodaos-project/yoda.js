@@ -8,6 +8,8 @@ function KeyboardHandler (runtime) {
   this.firstLongPressTime = null
   this.micMuted = false
   this.runtime = runtime
+
+  this.listeners = {}
 }
 
 KeyboardHandler.prototype.init = function init () {
@@ -24,8 +26,15 @@ KeyboardHandler.prototype.listen = function listen () {
     this.currentKeyCode = event.keyCode
     logger.info(`keydown: ${event.keyCode}`)
 
-    var map = config.keydown
+    var listener = this.listeners[String(event.keyCode)]
+    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
+      logger.info(`Delegating keydown '${event.keyCode}' to app ${listener}.`)
+      var app = this.runtime.loader.getAppById(listener)
+      app && app.emit('keydown', event)
+      return
+    }
 
+    var map = config.keydown
     var descriptor = map[String(event.keyCode)]
     if (typeof descriptor !== 'object') {
       logger.info(`No handler registered for keydown '${event.keyCode}'.`)
@@ -43,6 +52,14 @@ KeyboardHandler.prototype.listen = function listen () {
     if (this.firstLongPressTime != null) {
       this.firstLongPressTime = null
       logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
+    }
+
+    var listener = this.listeners[String(event.keyCode)]
+    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
+      logger.info(`Delegating keyup '${event.keyCode}' to app ${listener}.`)
+      var app = this.runtime.loader.getAppById(listener)
+      app && app.emit('keyup', event)
+      return
     }
 
     /** Click Events */
@@ -81,10 +98,26 @@ KeyboardHandler.prototype.listen = function listen () {
 
   this.input.on('click', event => {
     logger.info(`click: ${event.keyCode}`)
+
+    var listener = this.listeners[String(event.keyCode)]
+    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
+      logger.info(`Delegating click '${event.keyCode}' to app ${listener}.`)
+      var app = this.runtime.loader.getAppById(listener)
+      app && app.emit('click', event)
+    }
   })
 
   this.input.on('dbclick', event => {
     logger.info(`double click: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
+
+    var listener = this.listeners[String(event.keyCode)]
+    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
+      logger.info(`Delegating dbclick '${event.keyCode}' to app ${listener}.`)
+      var app = this.runtime.loader.getAppById(listener)
+      app && app.emit('dbclick', event)
+      return
+    }
+
     var map = {
       116: () => {
         if (this.runtime.waitingForAwake === true) {
@@ -113,8 +146,15 @@ KeyboardHandler.prototype.listen = function listen () {
     var timeDelta = event.keyTime - this.firstLongPressTime
     logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
 
-    var map = config.longpress
+    var listener = this.listeners[String(event.keyCode)]
+    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
+      logger.info(`Delegating longpress '${event.keyCode}' to app ${listener}.`)
+      var app = this.runtime.loader.getAppById(listener)
+      app && app.emit('longpress', event)
+      return
+    }
 
+    var map = config.longpress
     var descriptor = map[String(event.keyCode)]
     if (typeof descriptor !== 'object') {
       logger.info(`No handler registered for longpress '${event.keyCode}'.`)
