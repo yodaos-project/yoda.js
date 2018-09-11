@@ -30,6 +30,7 @@ test('test onVoiceCommand', (t) => {
   var appT = function (appId) {
     return {
       create: function () {
+        this.app = appI[appId]
         return Promise.resolve(appI[appId])
       },
       destruct: function () {

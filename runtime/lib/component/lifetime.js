@@ -89,19 +89,6 @@ LaVieEnPile.prototype.getAppDataById = function getAppDataById (appId) {
 }
 
 /**
- * Get running app instance by app id.
- * @param {string} appId -
- * @returns {AppDescriptor | undefined} app instance, or undefined if app is not running.
- */
-LaVieEnPile.prototype.getAppById = function getAppById (appId) {
-  var executor = this.loader.getExecutorByAppId(appId)
-  if (executor == null) {
-    return null
-  }
-  return executor.app
-}
-
-/**
  * Get if app is running in background (neither inactive nor active in stack).
  * @param {string} appId -
  * @returns {boolean} true if in background, false otherwise.
@@ -134,7 +121,7 @@ LaVieEnPile.prototype.isAppInactive = function isAppInactive (appId) {
  * @returns {boolean} true if running, false otherwise.
  */
 LaVieEnPile.prototype.isAppRunning = function isAppRunning (appId) {
-  return this.getAppById(appId) != null
+  return this.loader.getAppById(appId) != null
 }
 
 /**
@@ -165,7 +152,7 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
   if (appCreated) {
     /** No need to recreate app */
     logger.info('app is already running, skip creating', appId)
-    return Promise.resolve(this.getAppById(appId))
+    return Promise.resolve(this.loader.getAppById(appId))
   }
 
   // Launch app
@@ -452,7 +439,7 @@ LaVieEnPile.prototype.setForegroundById = function (appId, form) {
  * @returns {Promise<ActivityDescriptor>} LifeCycle events are asynchronous.
  */
 LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) {
-  var app = this.getAppById(appId)
+  var app = this.loader.getAppById(appId)
   if (app == null) {
     return Promise.reject(new Error(`App '${appId}' not created yet.`))
   }
@@ -508,7 +495,7 @@ LaVieEnPile.prototype.destroyAll = function (options) {
 
   var self = this
   var ids = this.loader.getAppIds()
-    .filter(id => this.getAppById(id) != null)
+    .filter(id => this.loader.getAppById(id) != null)
   self.activeAppStack = []
   this.onStackReset()
   /** destroy apps in stack in a reversed order */
