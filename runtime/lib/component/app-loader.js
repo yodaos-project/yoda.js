@@ -39,6 +39,15 @@ AppChargeur.prototype.getExecutorByAppId = function getExecutorByAppId (appId) {
 }
 
 /**
+ * Get running app instance by app id.
+ * @param {string} appId -
+ * @returns {App | AppDescriptor | undefined} app instance, or undefined if app is not running.
+ */
+AppChargeur.prototype.getAppById = function getAppById (appId) {
+  return _.get(this.executors, `${appId}.app`)
+}
+
+/**
  * Directly set an executor for appId and populate its skills and permissions.
  *
  * @param {string} appId

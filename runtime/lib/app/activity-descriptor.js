@@ -16,6 +16,7 @@ module.exports.ActivityDescriptor = ActivityDescriptor
 module.exports.LightDescriptor = LightDescriptor
 module.exports.MultimediaDescriptor = MultimediaDescriptor
 module.exports.TtsDescriptor = TtsDescriptor
+module.exports.KeyboardDescriptor = KeyboardDescriptor
 
 /**
  * @memberof yodaRT.activity
@@ -74,6 +75,14 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.TtsClient} tts
    */
   this.tts = new TtsDescriptor(this, appId, runtime)
+
+  /**
+   * The `KeyboardClient` is used to control behaviors of key code events.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {yodaRT.activity.Activity.KeyboardClient} keyboard
+   */
+  this.keyboard = new KeyboardDescriptor(this, appId, runtime)
 
   /**
    * Get current `appId`.
@@ -858,6 +867,86 @@ Object.assign(TtsDescriptor.prototype,
     }
   }
 )
+
+/**
+ * @memberof yodaRT.activity.Activity
+ * @class KeyboardClient
+ * @hideconstructor
+ * @extends EventEmitter
+ */
+function KeyboardDescriptor (activityDescriptor, appId, runtime) {
+  EventEmitter.call(this)
+  this._activityDescriptor = activityDescriptor
+  this._appId = appId
+  this._runtime = runtime
+}
+inherits(KeyboardDescriptor, EventEmitter)
+KeyboardDescriptor.prototype.toJSON = function toJSON () {
+  return KeyboardDescriptor.prototype
+}
+
+Object.assign(KeyboardDescriptor.prototype,
+  {
+    type: 'namespace'
+  },
+  {
+    /**
+     * The keydown event is fired when a key is pressed down.
+     * @event yodaRT.activity.Activity.KeyboardClient#keyup
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    keyup: {
+      type: 'event'
+    },
+    /**
+     * The keyup event is fired when a key is released.
+     * @event yodaRT.activity.Activity.KeyboardClient#keydown
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    keydown: {
+      type: 'event'
+    }
+  },
+  {
+    /**
+     * Intercepts all events for key code until restores default behavior by KeyboardClient.restoreDefaults
+     * @memberof yodaRT.activity.Activity.KeyboardClient
+     * @instance
+     * @function preventDefaults
+     * @param {number} keyCode -
+     * @returns {Promise<void>}
+     */
+    preventDefaults: {
+      type: 'method',
+      returns: 'promise',
+      fn: function preventDefaults (keyCode) {
+        if (typeof keyCode !== 'number') {
+          return Promise.reject(new Error('Expect a string on first argument of keyboard.preventDefaults.'))
+        }
+        return this._runtime.preventKeyDefaults(this._appId, keyCode)
+      }
+    },
+    /**
+     * Restore default behavior of key code.
+     * @memberof yodaRT.activity.Activity.KeyboardClient
+     * @instance
+     * @function restoreDefaults
+     * @param {number} keyCode -
+     * @returns {Promise<void>}
+     */
+    restoreDefaults: {
+      type: 'method',
+      returns: 'promise',
+      fn: function restoreDefaults (keyCode) {
+        if (typeof keyCode !== 'number') {
+          return Promise.reject(new Error('Expect a string on first argument of keyboard.restoreDefaults.'))
+        }
+        return this._runtime.restoreKeyDefaults(this._appId, keyCode)
+      }
+    }
+  })
 
 /**
  *
