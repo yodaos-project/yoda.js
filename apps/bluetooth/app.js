@@ -5,26 +5,42 @@ var logger = require('logger')('eventReq')
 var property = require('@yoda/property')
 module.exports = function (activity) {
   var player = null
-  var start = null
   var uuid = property.get('ro.boot.serialno') || ''
   var name = 'Rokid-Me-' + uuid.substr(-6)
+  var bluetoothState = null
   var STRING_BROADCAST = '蓝牙已打开，请使用手机搜索设备'
   var STRING_CONNECED = '连接蓝牙成功'
+  var STRING_DISCONNECED = '蓝牙断开连接'
   var STRING_CLOSED = '蓝牙已关闭'
 
   function broadcast () {
-    player = bluetooth.getPlayer()
+    if (player === null) { player = bluetooth.getPlayer() }
     setTimeout(() => {
-      start = player.start(name)
-      if (start) {
-        speakAndExit(STRING_BROADCAST + name)
+      if (bluetoothState === null) {
+        player.start(name)
       }
     }, 1000)
     player.on('stateupdate', function (message) {
-      if (message.connect_name && message.connect_state === 'connected') {
+      if ((message.a2dpstate === 'opened') && (message.connect_state === 'connected') && (message.play_state ===
+        'invailed')) {
+        bluetoothState = 'opened'
         activity.setForeground()
           .then(() => {
-            speakAndExit(STRING_CONNECED)
+            speakAndExit(STRING_CONNECED + message.connect_name)
+          })
+      } else if ((message.a2dpstate === 'opened') && (message.connect_state === 'invailed') && (message.play_state ===
+        'invailed')) {
+        bluetoothState = 'opened'
+        activity.setForeground()
+          .then(() => {
+            speakAndExit(STRING_BROADCAST + name)
+          })
+      } else if ((message.a2dpstate === 'opened') && (message.connect_state === 'disconnected') && (message.play_state ===
+        'invailed')) {
+        bluetoothState = 'opened'
+        activity.setForeground()
+          .then(() => {
+            speakAndExit(STRING_DISCONNECED)
           })
       }
     }
@@ -35,6 +51,7 @@ module.exports = function (activity) {
     if (player) {
       player.end()
       player.disconnect()
+      bluetoothState = null
     }
     activity.tts.speak(STRING_CLOSED)
       .then(() => {
@@ -95,7 +112,6 @@ module.exports = function (activity) {
 
   activity.on('resume', () => {
     logger.log('bluetooth music is resume')
-    startMusic()
   })
 
   activity.on('request', function (nlp, action) {
