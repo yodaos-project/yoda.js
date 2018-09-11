@@ -5,13 +5,17 @@
  */
 
 var native = require('./system.node')
+
 /**
  * Reboot the system.
  * @function reboot
  * @returns {Boolean}
  * @private
  */
-exports.reboot = native.reboot
+exports.reboot = function reboot () {
+  process.nextTick(() => native.reboot())
+  return true
+}
 
 /**
  * Verify the OTA image, including hash(md5) check, section check and header check.
@@ -59,4 +63,21 @@ exports.diskUsage = function diskUsage (path) {
     return TypeError('Expect a string on first argument of diskUsage')
   }
   return native.diskUsage(path)
+}
+
+/**
+ * convert  a  string  representation  of time to a time `tm` structure.
+ * @function parseDateString
+ * @param {string} date - the date string.
+ * @param {string} format - the format.
+ * @returns {Date} the returned date.
+ */
+exports.parseDateString = function parseDateString (date, format) {
+  if (typeof date !== 'string') {
+    throw new TypeError('date must be a string.')
+  }
+  if (typeof format !== 'string') {
+    throw new TypeError('format must be a string')
+  }
+  return native.strptime(date, format)
 }
