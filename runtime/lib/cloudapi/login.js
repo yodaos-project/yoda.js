@@ -1,9 +1,11 @@
 'use strict'
 
+var system = require('@yoda/system')
 var https = require('https')
 var qs = require('querystring')
 var crypto = require('crypto')
 var exec = require('child_process').exec
+var sync = require('../date-sync').sync
 var property = require('@yoda/property')
 var logger = require('logger')('login')
 var env = require('../env')()
@@ -68,6 +70,9 @@ function login (callback) {
         'Content-Length': params.length
       }
     }, (response) => {
+      // sync date from service
+      sync(response.headers.date)
+
       var list = []
       response.on('data', (chunk) => list.push(chunk))
       response.once('end', () => {
