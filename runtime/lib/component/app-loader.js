@@ -198,7 +198,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, executor, skillIds,
     if (currSkillId != null) {
       throw new Error(`metadata.hosts '${name}' by '${currSkillId}' exists, declaring by ${appId}.`)
     }
-    this.hostSkillIdMap[host] = skillId
+    this.hostSkillIdMap[name] = skillId
   })
 
   this.runtime.permission.load(appId, permissions)
