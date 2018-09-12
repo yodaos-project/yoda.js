@@ -49,39 +49,50 @@ module.exports = function (activity) {
     var init = _.get(options, 'init', false)
 
     logger.info(`trying to set volume to ${vol}`)
-    if (vol > 0 && vol <= 100) {
-      if (AudioManager.isMuted()) {
-        setUnmute({ recover: false })
-      }
+    return Promise.all(
+      (() => {
+        /**
+         * Try reconfigure and set volume
+         */
+        var localVol = vol
+        if (localVol < 0) {
+          localVol = 0
+        } else if (localVol > 100) {
+          localVol = 100
+        }
 
-      /** normal range, set volume as it is */
-      AudioManager.setVolume(vol)
-      volume = vol
-      if (init) {
-        return
-      }
-      return activity.light.play('system://setVolume', {
-        volume: vol,
-        action: _.get(options, 'action')
-      }).then(() => {
-        return activity.exit()
-      })
-    }
+        if (AudioManager.isMuted()) {
+          /** if device is already muted, unmute it. */
+          setUnmute({ recover: false })
+        }
 
-    /** handles out of range conditions */
-    if (vol <= 0) {
-      setMute({ source: 'indirect' })
-    }
+        AudioManager.setVolume(localVol)
+        volume = localVol
+        if (init) {
+          return Promise.resolve()
+        }
+        return activity.light.play('system://setVolume', {
+          volume: localVol,
+          action: _.get(options, 'action')
+        })
+      })(),
+      (() => {
+        if (vol > 0 && vol <= 100) {
+          /** if volume to be set is in normal range, skip following */
+          return Promise.resolve()
+        }
+        /** handles out of range conditions */
+        if (vol <= 0) {
+          setMute({ source: 'indirect' })
+        }
 
-    if (silent) {
-      return activity.light.play('system://setVolume', {
-        volume: vol,
-        action: options.action || ''
-      }).then(() => {
-        return activity.exit()
-      })
-    }
-    return speakAndExit(STRING_RANGE_ERROR)
+        if (silent) {
+          /** do not announce anything if silence is demanded. */
+          return Promise.resolve()
+        }
+        return speakAndExit(STRING_RANGE_ERROR)
+      })()
+    ).then(() => activity.exit())
   }
 
   /**
