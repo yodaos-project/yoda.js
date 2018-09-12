@@ -9,38 +9,21 @@ function Tts (options) {
 }
 
 Tts.prototype.speak = function (appId, text) {
-  return new Promise((resolve, reject) => {
-    this.options.permit.invoke('check', [appId, 'ACCESS_TTS'])
-      .then((res) => {
-        logger.log('ttsd say', res, appId, text)
-        if (res['0'] === 'true') {
-          // unmute if current is muted.
-          if (AudioManager.isMuted()) {
-            AudioManager.setMute(false)
-          }
-          var req = this.options.tts.speak(text)
-          if (this.handle[appId]) {
-            try {
-              setTimeout(() => {
-                this.handle[appId].stop()
-                delete this.handle[appId]
-                this.handle[appId] = req
-              }, 0)
-            } catch (error) {
-              logger.log(`try to stop prev tts failed with appId: ${appId}`)
-            }
-          }
-          logger.log(`response tts id: ${req.id}`)
-          resolve(req.id)
-        } else {
-          reject(new Error('permission deny'))
-        }
-      })
-      .catch((err) => {
-        logger.log('ttsd say error', appId, text, err)
-        reject(new Error('can not connect to vui'))
-      })
-  })
+  // unmute if current is muted.
+  if (AudioManager.isMuted()) {
+    AudioManager.setMute(false)
+  }
+  var req = this.options.tts.speak(text)
+  if (this.handle[appId]) {
+    try {
+      this.handle[appId].stop()
+      delete this.handle[appId]
+      this.handle[appId] = req
+    } catch (error) {
+      logger.log(`try to stop prev tts failed with appId: ${appId}`)
+    }
+  }
+  return req.id
 }
 
 Tts.prototype.stop = function (appId) {
