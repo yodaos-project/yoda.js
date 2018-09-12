@@ -4,7 +4,6 @@ var Service = require('./service')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
 var logger = require('logger')('lightd')
-var LightRenderingContext = require('./effects')
 
 var dbusService = Dbus.registerService('session', 'com.service.light')
 var dbusObject = dbusService.createObject('/rokid/light')
@@ -17,7 +16,6 @@ var permit = new Remote(dbusService._dbus, {
 })
 
 var service = new Service({
-  effect: new LightRenderingContext(),
   permit: permit
 })
 
@@ -84,7 +82,7 @@ dbusApis.addMethod('setConfigFree', {
   in: ['s'],
   out: []
 }, function (appId, cb) {
-  service.setConfigFree()
+  service.setHide()
   cb(null)
 })
 
