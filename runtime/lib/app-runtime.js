@@ -57,6 +57,8 @@ function AppRuntime (paths) {
   // volume module
   this.volume = null
   this.prevVolume = -1
+  /** microphone was reset on runtime start up */
+  this.micMuted = false
   this.handle = {}
   // support cloud api. etc.. login
   this.cloudApi = null
@@ -333,6 +335,26 @@ AppRuntime.prototype.openUrl = function (url, options) {
       logger.error(`open url error with appId: ${appId}`, error)
       return this.life.destroyAppById(appId)
     })
+}
+
+/**
+ *
+ * @param {boolean} [mute] - set mic to mute, switch mute if not given.
+ */
+AppRuntime.prototype.setMicMute = function setMicMute (mute) {
+  if (mute === this.micMuted) {
+    return Promise.resolve()
+  }
+  /** mute */
+  var muted = !this.micMuted
+  this.micMuted = muted
+  this.emit('micMute', muted)
+  if (muted) {
+    return this.openUrl('yoda-skill://volume/mic_mute_effect', { preemptive: false })
+      .then(() => muted)
+  }
+  return this.openUrl('yoda-skill://volume/mic_unmute_effect', { preemptive: false })
+    .then(() => muted)
 }
 
 /**

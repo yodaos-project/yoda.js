@@ -6,7 +6,6 @@ module.exports = KeyboardHandler
 function KeyboardHandler (runtime) {
   this.currentKeyCode = null
   this.firstLongPressTime = null
-  this.micMuted = false
   this.preventSubsequent = false
   this.runtime = runtime
 
@@ -71,15 +70,7 @@ KeyboardHandler.prototype.listen = function listen () {
     /** Click Events */
     var map = {
       113: () => {
-        /** mute */
-        var muted = !this.micMuted
-        this.micMuted = muted
-        this.runtime.emit('micMute', muted)
-        if (muted) {
-          this.runtime.openUrl('yoda-skill://volume/mic_mute_effect', { preemptive: false })
-          return
-        }
-        this.runtime.openUrl('yoda-skill://volume/mic_unmute_effect', { preemptive: false })
+        this.runtime.setMicMute(/** switch microphone state */)
       },
       116: () => {
         /** exit all app */
