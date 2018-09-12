@@ -16,7 +16,7 @@ test('module->system: verifyOtaImage', t => {
 /**
  * bug id = 1304
  */
-test('module->diskusage: path must be needed', t => {
+test.skip('module->diskusage: path must be needed', t => {
   t.plan(1)
   t.throws(() => {
     sys.diskUsage()
@@ -32,7 +32,7 @@ test('module->diskusage: path is emtpy string', t => {
   t.end()
 })
 
-test('module->diskusage: path is null ', t => {
+test.skip('module->diskusage: path is null ', t => {
   t.plan(1)
   t.throws(() => {
     sys.diskUsage(null)
