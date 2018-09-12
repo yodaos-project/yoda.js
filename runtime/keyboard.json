@@ -17,6 +17,7 @@
     "113": {
       "repeat": false,
       "timeDelta": 2000,
+      "preventSubsequent": true,
       "url": "yoda-skill://bluetooth/bluetooth_broadcast",
       "options": {}
     },
