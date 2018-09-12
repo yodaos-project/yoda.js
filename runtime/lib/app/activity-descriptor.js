@@ -891,8 +891,8 @@ Object.assign(KeyboardDescriptor.prototype,
   },
   {
     /**
-     * The keydown event is fired when a key is pressed down.
-     * @event yodaRT.activity.Activity.KeyboardClient#keyup
+     * The keyup event is fired when a key is released.
+     * @event yodaRT.activity.Activity.KeyboardClient#keydown
      * @param {object} event -
      * @param {number} event.keyCode -
      */
@@ -900,8 +900,8 @@ Object.assign(KeyboardDescriptor.prototype,
       type: 'event'
     },
     /**
-     * The keyup event is fired when a key is released.
-     * @event yodaRT.activity.Activity.KeyboardClient#keydown
+     * The keydown event is fired when a key is pressed down.
+     * @event yodaRT.activity.Activity.KeyboardClient#keyup
      * @param {object} event -
      * @param {number} event.keyCode -
      */
