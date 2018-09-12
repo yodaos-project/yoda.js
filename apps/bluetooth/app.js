@@ -72,7 +72,7 @@ module.exports = function (activity) {
       player.pause()
     }
   }
-  /**
+
   function resumeMusic () {
     player = bluetooth.getPlayer()
     if (player) {
@@ -82,6 +82,7 @@ module.exports = function (activity) {
 
   function nextMusic () {
     player = bluetooth.getPlayer()
+    logger.log('bluetooth music is nextMusic')
     if (player) {
       player.next()
     }
@@ -93,7 +94,6 @@ module.exports = function (activity) {
       player.previous()
     }
   }
-  */
 
   function speakAndExit (text) {
     return activity.tts.speak(text)
@@ -109,11 +109,6 @@ module.exports = function (activity) {
     activity.exit()
     speakAndExit(STRING_CLOSED)
   })
-
-  activity.on('resume', () => {
-    logger.log('bluetooth music is resume')
-  })
-
   activity.on('request', function (nlp, action) {
     switch (nlp.intent) {
       case 'bluetooth_broadcast':
@@ -124,20 +119,21 @@ module.exports = function (activity) {
         break
       case 'play_bluetoothmusic':
         logger.log('play_bluetoothmusic music is startmusic')
-        startMusic()
+        activity.openUrl(`yoda-skill://bluetooth/bluetooth_start_bluetooth_music`, 'scene')
         break
-        /* case 'next':
-            nextMusic()
-            break
-          case 'previous':
-            previousMusic()
-            break
-          case 'stop':
-            pauseMusic()
-            break
-          case 'resume':
-            resumeMusic()
-            break */
+      case 'next':
+        logger.log('bluetooth music is next')
+        nextMusic()
+        break
+      case 'previous':
+        previousMusic()
+        break
+      case 'stop':
+        pauseMusic()
+        break
+      case 'resume':
+        resumeMusic()
+        break
       default:
         activity.exit()
         break
@@ -148,6 +144,9 @@ module.exports = function (activity) {
     switch (url.pathname) {
       case '/bluetooth_broadcast':
         broadcast()
+        break
+      case '/bluetooth_start_bluetooth_music':
+        startMusic()
         break
     }
   })
