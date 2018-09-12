@@ -10,7 +10,8 @@
     "extapp": true,
     "skills": [
       "@bluetooth",
-      "73F9C00420AA472B914E5C051282945C"
+      "73F9C00420AA472B914E5C051282945C",
+      "RDDE53259D334860BA9E98CB3AB6C001"
     ],
     "permission": [
       "ACCESS_TTS",
@@ -19,7 +20,7 @@
     "hosts": [
       {
         "name": "bluetooth",
-        "skillId": "@bluetooth"
+        "skillId": "RDDE53259D334860BA9E98CB3AB6C001"
       }
     ]
   },
