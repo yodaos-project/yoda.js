@@ -11,7 +11,7 @@ module.exports = function setStandby (light, data, callback) {
     repeat = Math.floor(leds / 4)
   }
   var circle = function () {
-    light.breathing(255, 50, 0, 1100, 15, (r, g, b, lastFrame) => {
+    light.breathing(255, 50, 0, 1100, 26, (r, g, b, lastFrame) => {
       light.clear()
       if (repeat <= 0) {
         console.log('NOTICE: LED number is less then 4, what you see may not be the effect you want')
