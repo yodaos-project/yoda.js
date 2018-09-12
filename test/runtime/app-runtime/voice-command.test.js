@@ -6,7 +6,7 @@ var helper = require('../../helper')
 
 var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
 
-test('test onVoiceCommand', (t) => {
+test.skip('test onVoiceCommand', (t) => {
   AppRuntime.prototype.startDbusAppService = function () {}
   AppRuntime.prototype.handleMqttMessage = function () {}
   AppRuntime.prototype.listenDbusSignals = function () {}
