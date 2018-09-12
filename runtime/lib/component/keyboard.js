@@ -22,7 +22,7 @@ KeyboardHandler.prototype.destruct = function destruct () {
 }
 
 KeyboardHandler.prototype.listen = function listen () {
-  this.input.on('keydown', event => {
+  this.input.on('keydown', listenerWrap(event => {
     this.currentKeyCode = event.keyCode
     logger.info(`keydown: ${event.keyCode}`)
 
@@ -41,9 +41,9 @@ KeyboardHandler.prototype.listen = function listen () {
       return
     }
     this.runtime.openUrl(descriptor.url, descriptor.options)
-  })
+  }))
 
-  this.input.on('keyup', event => {
+  this.input.on('keyup', listenerWrap(event => {
     logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
     if (this.currentKeyCode !== event.keyCode) {
       logger.info(`Keyup a difference key '${event.keyCode}'.`)
@@ -91,9 +91,9 @@ KeyboardHandler.prototype.listen = function listen () {
       return
     }
     handler()
-  })
+  }))
 
-  this.input.on('click', event => {
+  this.input.on('click', listenerWrap(event => {
     logger.info(`click: ${event.keyCode}`)
 
     var listener = this.listeners[String(event.keyCode)]
@@ -102,9 +102,9 @@ KeyboardHandler.prototype.listen = function listen () {
       var app = this.runtime.loader.getAppById(listener)
       app && app.emit('click', event)
     }
-  })
+  }))
 
-  this.input.on('dbclick', event => {
+  this.input.on('dbclick', listenerWrap(event => {
     logger.info(`double click: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
 
     var listener = this.listeners[String(event.keyCode)]
@@ -128,9 +128,9 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`No handler registered for dbclick '${event.keyCode}'.`)
       handler()
     }
-  })
+  }))
 
-  this.input.on('longpress', event => {
+  this.input.on('longpress', listenerWrap(event => {
     if (this.currentKeyCode !== event.keyCode) {
       this.firstLongPressTime = null
       return
@@ -172,5 +172,15 @@ KeyboardHandler.prototype.listen = function listen () {
       this.preventSubsequent = true
     }
     this.runtime.openUrl(descriptor.url, descriptor.options)
-  })
+  }))
+}
+
+function listenerWrap (fn, receiver) {
+  return function () {
+    try {
+      fn.apply(receiver, arguments)
+    } catch (err) {
+      logger.error('Unexpected error on handling key events', err && err.message, err && err.stack)
+    }
+  }
 }
