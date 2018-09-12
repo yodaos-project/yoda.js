@@ -6,7 +6,7 @@ module.exports = function (light, data, callback) {
 
   function delayAndShutdown () {
     light.requestAnimationFrame(() => {
-      light.transition({ r: 255, g: 255, b: 255 }, { r: 0, g: 0, b: 0 }, 130, 4, (r, g, b, lastFrame) => {
+      light.transition({ r: 255, g: 255, b: 255 }, { r: 0, g: 0, b: 0 }, 130, 26, (r, g, b, lastFrame) => {
         for (var i = 0; i < pos; i++) {
           light.pixel(i, r, g, b)
         }
@@ -20,6 +20,7 @@ module.exports = function (light, data, callback) {
 
   var player = light.sound('system://volume.wav')
 
+  light.fill(0, 0, 0)
   for (var i = 0; i < pos; i++) {
     light.pixel(i, 255, 255, 255)
   }
