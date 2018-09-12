@@ -204,21 +204,22 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   var future = Promise.resolve()
 
-  if (this.carrierId) {
+  // temporary carrier id store
+  var cid = this.carrierId
+  this.carrierId = carrierId
+  if (cid) {
     /**
      * if previous app is started by a carrier,
      * exit the carrier before next steps.
      */
-    // temporary carrier id store
-    var cid = this.carrierId
     logger.info('previous app started by a carrier', cid)
     future = future.then(() => {
+      /** prevent to destroy app that going to be activated. */
       var ids = [ cid ].concat(this.activeAppStack).filter(it => it !== appId)
       /** all apps in stack are going to be destroyed, no need to recover */
       return Promise.all(ids.map(id => this.destroyAppById(id)))
     })
   }
-  this.carrierId = carrierId
 
   if (appId === this.getCurrentAppId()) {
     /**
@@ -240,13 +241,22 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
       this.inactiveAppIds.splice(idx, 1)
     }
   }
-  future = this.onLifeCycle(appId, 'resume')
+  future = future.then(() => this.onLifeCycle(appId, 'resume'))
 
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
   var deferred = () => {
     this.activeAppStack.push(appId)
     this.onStackUpdate()
+  }
+
+  if (cid === appId) {
+    /**
+     * If activating previously carrier app,
+     * directly promote it to top of stack and skip preemption
+     * since all other apps has been destroyed
+     */
+    return future.then(() => deferred())
   }
 
   if (form === 'scene') {
@@ -317,19 +327,32 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
 
   var deactivating = this.destroyAppById(appId)
 
-  if (this.carrierId) {
-    /** if app is started by a carrier, unset the flag on exit */
-    this.carrierId = null
-  }
+  var carrierId = this.carrierId
+  /** if app is started by a carrier, unset the flag on exit */
+  this.carrierId = null
 
   if (!recover) {
     return deactivating
+  }
+
+  if (carrierId) {
+    /**
+     * If app is brought up by a carrier, re-activate the carrier on exit of app.
+     */
+    logger.info(`app is brought up by a carrier '${carrierId}', recovering.`)
+    return deactivating.then(() => {
+      return this.activateAppById(carrierId)
+    })
   }
 
   logger.info('recovering previous app on deactivating.')
   return deactivating.then(() => {
     var lastAppId = this.getCurrentAppId()
     if (lastAppId) {
+      /**
+       * Since last app is already on top of stack, no need to re-activate it,
+       * a simple life cycle event is sufficient.
+       */
       return this.onLifeCycle(lastAppId, 'resume')
     }
   })
