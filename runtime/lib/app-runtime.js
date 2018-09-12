@@ -259,8 +259,6 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   }
   var form = _.get(action, 'response.action.form')
 
-  this.updateCloudStack(nlp.appId, form)
-
   var appId
   if (nlp.cloud) {
     appId = '@yoda/cloudappclient'
@@ -278,7 +276,9 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
         logger.info(`app is not preemptive, skip activating app ${appId}`)
         return Promise.resolve()
       }
+
       logger.info(`app is preemptive, activating app ${appId}`)
+      this.updateCloudStack(nlp.appId, form)
       return this.life.activateAppById(appId, form, carrierId)
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
@@ -314,7 +314,6 @@ AppRuntime.prototype.openUrl = function (url, options) {
     logger.info(`No app registered for skill host '${urlObj.hostname}'.`)
     return Promise.resolve(false)
   }
-  this.updateCloudStack(skillId, form)
   var appId = this.loader.getAppIdBySkillId(skillId)
 
   return this.life.createApp(appId)
@@ -323,7 +322,9 @@ AppRuntime.prototype.openUrl = function (url, options) {
         logger.info(`app is not preemptive, skip activating app ${appId}`)
         return Promise.resolve()
       }
+
       logger.info(`app is preemptive, activating app ${appId}`)
+      this.updateCloudStack(skillId, form)
       return this.life.activateAppById(appId, form, carrierId)
     })
     .then(() => this.life.onLifeCycle(appId, 'url', [ urlObj ]))
