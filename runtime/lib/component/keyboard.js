@@ -7,6 +7,7 @@ function KeyboardHandler (runtime) {
   this.currentKeyCode = null
   this.firstLongPressTime = null
   this.micMuted = false
+  this.preventSubsequent = false
   this.runtime = runtime
 
   this.listeners = {}
@@ -47,6 +48,11 @@ KeyboardHandler.prototype.listen = function listen () {
     logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
     if (this.currentKeyCode !== event.keyCode) {
       logger.info(`Keyup a difference key '${event.keyCode}'.`)
+      return
+    }
+    if (this.preventSubsequent) {
+      this.preventSubsequent = false
+      logger.info(`Event keyup prevented '${event.keyCode}'.`)
       return
     }
     if (this.firstLongPressTime != null) {
@@ -144,6 +150,11 @@ KeyboardHandler.prototype.listen = function listen () {
     var timeDelta = event.keyTime - this.firstLongPressTime
     logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
 
+    if (this.preventSubsequent) {
+      logger.info(`Event longpress prevented '${event.keyCode}'.`)
+      return
+    }
+
     var listener = this.listeners[String(event.keyCode)]
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
       logger.info(`Delegating longpress '${event.keyCode}' to app ${listener}.`)
@@ -165,6 +176,9 @@ KeyboardHandler.prototype.listen = function listen () {
     if (timeDelta < descriptor.timeDelta) {
       logger.info(`Time delta is not ready for key longpress '${event.keyCode}'.`)
       return
+    }
+    if (descriptor.preventSubsequent) {
+      this.preventSubsequent = true
     }
     this.runtime.openUrl(descriptor.url, descriptor.options)
   })
