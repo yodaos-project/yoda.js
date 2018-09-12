@@ -1,16 +1,20 @@
 'use strict'
 
 var logger = require('logger')('lightService')
+var LightRenderingContextManager = require('./effects')
 
 var LIGHT_SOURCE = '/opt/light/'
 
 var setAwake = require(`${LIGHT_SOURCE}awake.js`)
 var setSpeaking = require(`${LIGHT_SOURCE}setSpeaking.js`)
 
+var manager = new LightRenderingContextManager()
+
 function Light (options) {
   this.playerHandle = {}
   this.options = options
   this.prev = null
+  this.currentContext = null
   this.degree = 0
   this.init()
 }
@@ -18,6 +22,19 @@ function Light (options) {
 Light.prototype.init = function () {
   // TODO
   this.setHide()
+}
+
+Light.prototype.getContext = function () {
+  var self = this
+  var context = manager.getContext()
+  this.currentContext = context
+  context._getCurrentId = function () {
+    if (self.currentContext) {
+      return self.currentContext._id
+    }
+    return -1
+  }
+  return context
 }
 
 Light.prototype.stopPrev = function (keep) {
@@ -29,6 +46,7 @@ Light.prototype.stopPrev = function (keep) {
     }
     this.prev = null
   }
+  this.currentContext = null
 }
 
 Light.prototype.loadfile = function (uri, data, callback) {
@@ -36,7 +54,8 @@ Light.prototype.loadfile = function (uri, data, callback) {
   try {
     handle = require(uri)
     this.stopPrev(data && data.keep)
-    this.prev = handle(this.options.effect, data || {}, dedup(callback))
+    var context = this.getContext()
+    this.prev = handle(context, data || {}, dedup(callback))
   } catch (error) {
     logger.error(`load effect file error from path: ${uri}`, error)
     callback(error)
@@ -45,7 +64,8 @@ Light.prototype.loadfile = function (uri, data, callback) {
 
 Light.prototype.setAwake = function () {
   this.stopPrev()
-  this.prev = setAwake(this.options.effect, {}, function noop () {})
+  var context = this.getContext()
+  this.prev = setAwake(context, {}, function noop () {})
   this.prev.name = 'setAwake'
 }
 
@@ -58,9 +78,11 @@ Light.prototype.setDegree = function (degree) {
 
 Light.prototype.setHide = function () {
   this.stopPrev()
-  this.options.effect.stop()
-  this.options.effect.clear()
-  this.options.effect.render()
+  if (this.currentContext) {
+    this.currentContext.stop()
+    this.currentContext.clear()
+    this.currentContext.render()
+  }
 }
 
 Light.prototype.setLoading = function () {
@@ -72,7 +94,8 @@ Light.prototype.setLoading = function () {
     }
   }
   var hook = require(`${LIGHT_SOURCE}loading.js`)
-  this.prev = hook(this.options.effect, {
+  var context = this.getContext()
+  this.prev = hook(context, {
     degree: this.degree || 0
   }, function noop () {})
 }
@@ -80,7 +103,8 @@ Light.prototype.setLoading = function () {
 Light.prototype.setStandby = function () {
   this.stopPrev()
   var hook = require(`${LIGHT_SOURCE}setStandby.js`)
-  this.prev = hook(this.options.effect, {}, function noop () {})
+  var context = this.getContext()
+  this.prev = hook(context, {}, function noop () {})
 }
 
 Light.prototype.setVolume = function (volume) {
@@ -92,23 +116,18 @@ Light.prototype.setVolume = function (volume) {
     }
   }
   var hook = require(`${LIGHT_SOURCE}setVolume.js`)
-  this.prev = hook(this.options.effect, {
+  var context = this.getContext()
+  this.prev = hook(context, {
     volume: +volume
   }, function noop () {})
   this.prev.name = 'setVolume'
 }
 
-Light.prototype.setConfigFree = function () {
-  this.stopPrev()
-  this.options.effect.stop()
-  this.options.effect.clear()
-  this.options.effect.render()
-}
-
 Light.prototype.setWelcome = function () {
   this.stopPrev()
   var hook = require(`${LIGHT_SOURCE}setWelcome.js`)
-  this.prev = hook(this.options.effect, {}, function noop () {})
+  var context = this.getContext()
+  this.prev = hook(context, {}, function noop () {})
 }
 
 Light.prototype.appSound = function (appId, name) {
@@ -150,7 +169,8 @@ Light.prototype.appSound = function (appId, name) {
 Light.prototype.setPickup = function (duration, callback) {
   this.stopPrev()
   var hook = require(`${LIGHT_SOURCE}setPickup.js`)
-  this.prev = hook(this.options.effect, {
+  var context = this.getContext()
+  this.prev = hook(context, {
     duration: duration,
     degree: this.degree
   }, callback)
@@ -158,7 +178,8 @@ Light.prototype.setPickup = function (duration, callback) {
 
 Light.prototype.setSpeaking = function () {
   this.stopPrev(true)
-  this.prev = setSpeaking(this.options.effect, {}, function noop () {})
+  var context = this.getContext()
+  this.prev = setSpeaking(context, {}, function noop () {})
 }
 
 module.exports = Light
