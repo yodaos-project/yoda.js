@@ -431,6 +431,23 @@ Object.assign(ActivityDescriptor.prototype,
         }
         return this._runtime.openUrl(url, options)
       }
+    },
+    /**
+     * Mute microphone if `mute` is true, or unmute microphone if `mute` is false.
+     * Switch microphone mute state if `mute` is not set.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function setMicMute
+     * @param {boolean} [mute] - set mic to mute, switch mute if not given.
+     * @returns {Promise<boolean>} Promise of mic muted
+     */
+    setMicMute: {
+      type: 'method',
+      returns: 'promises',
+      fn: function setMicMute (mute) {
+        return this._runtime.setMicMute(mute)
+      }
     }
   }
 )
