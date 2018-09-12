@@ -444,7 +444,7 @@ Object.assign(ActivityDescriptor.prototype,
      */
     setMicMute: {
       type: 'method',
-      returns: 'promises',
+      returns: 'promise',
       fn: function setMicMute (mute) {
         return this._runtime.setMicMute(mute)
       }
