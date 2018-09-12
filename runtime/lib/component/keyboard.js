@@ -120,12 +120,10 @@ KeyboardHandler.prototype.listen = function listen () {
 
     var map = {
       116: () => {
-        if (this.runtime.waitingForAwake === true) {
-          this.runtime.waitingForAwake = false
-          this.runtime.startApp('@network', {
-            intent: 'system_setup'
-          }, {})
-        }
+        this.runtime.waitingForAwake = false
+        this.runtime.startApp('@network', {
+          intent: 'system_setup'
+        }, {})
       }
     }
     var handler = map[event.keyCode]
