@@ -26,7 +26,7 @@ module.exports = function (activity) {
         bluetoothState = 'opened'
         activity.setForeground()
           .then(() => {
-            speakAndExit(STRING_CONNECED + message.connect_name)
+            speakAndExit(STRING_CONNECED)
           })
       } else if ((message.a2dpstate === 'opened') && (message.connect_state === 'invailed') && (message.play_state ===
         'invailed')) {
@@ -74,9 +74,8 @@ module.exports = function (activity) {
   }
 
   function resumeMusic () {
-    player = bluetooth.getPlayer()
     if (player) {
-      player.resume()
+      player.play()
     }
   }
 
@@ -91,7 +90,7 @@ module.exports = function (activity) {
   function previousMusic () {
     player = bluetooth.getPlayer()
     if (player) {
-      player.previous()
+      player.prev()
     }
   }
 
@@ -103,12 +102,18 @@ module.exports = function (activity) {
   activity.on('pause', () => {
     pauseMusic()
   })
+
+  activity.on('resume', () => {
+    resumeMusic()
+  })
+
   activity.on('destroy', () => {
     pauseMusic()
-    player.disconnect()
+    player.end()
     activity.exit()
     speakAndExit(STRING_CLOSED)
   })
+
   activity.on('request', function (nlp, action) {
     switch (nlp.intent) {
       case 'bluetooth_broadcast':
@@ -118,14 +123,12 @@ module.exports = function (activity) {
         disconnect()
         break
       case 'play_bluetoothmusic':
-        logger.log('play_bluetoothmusic music is startmusic')
         activity.openUrl(`yoda-skill://bluetooth/bluetooth_start_bluetooth_music`, 'scene')
         break
       case 'next':
-        logger.log('bluetooth music is next')
         nextMusic()
         break
-      case 'previous':
+      case 'pre':
         previousMusic()
         break
       case 'stop':
