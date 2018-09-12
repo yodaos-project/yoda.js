@@ -92,7 +92,12 @@ function entry () {
       }
       speechV.start(options)
       speechT.start(options)
-      require('@yoda/ota/network').cloudgw = new CloudGW(options)
+      var cloudgw = new CloudGW(options)
+      require('@yoda/ota/network').cloudgw = cloudgw
+      cloudApi.updateBasicInfo(cloudgw)
+        .catch(err => {
+          logger.error('Unexpected error on updating basic info', err.stack)
+        })
 
       // implementation interface
       var props = Object.assign({}, config, {
