@@ -7,7 +7,7 @@ module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
   var STRING_RANGE_ERROR = '音量调节范围为0到10'
   var STRING_SHOW_VOLUME = '当前音量为'
-  var STRING_SHOW_MUTED = '设备已静音'
+  var STRING_SHOW_MUTED = '设备已静音，已帮你调回到百分之三十'
 
   var mutedBy
   var volume = 60
@@ -147,7 +147,7 @@ module.exports = function (activity) {
     if (!def) {
       def = defaultVolume
     }
-    setVolume(def)
+    setVolume(def, options)
   }
 
   function micMute (muted) {
@@ -164,6 +164,7 @@ module.exports = function (activity) {
     switch (nlp.intent) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
+          setUnmute({ init: true })
           speakAndExit(STRING_SHOW_MUTED)
         } else {
           speakAndExit(STRING_SHOW_VOLUME + Math.floor(getVolume() / partition))
