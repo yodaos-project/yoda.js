@@ -57,7 +57,8 @@ function login (callback) {
       deviceTypeId: type || undefined,
       time: time,
       sign: sign,
-      userId: userId
+      userId: userId,
+      namespaces: 'custom_config',
     })
     logger.log('start /login request')
 
@@ -90,6 +91,7 @@ function login (callback) {
             config.deviceTypeId = data.deviceTypeId
             config.key = data.key
             config.secret = data.secret
+            config.extraInfo = data.extraInfo
             callback(null, config)
           }
         } catch (err) {

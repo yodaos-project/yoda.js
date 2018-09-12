@@ -4,7 +4,7 @@ var test = require('tape')
 var zeromq = require('zeromq')
 var bluetooth = require('@yoda/bluetooth')
 
-test('start command', (t) => {
+test.skip('start command', (t) => {
   var btName = 'foobar'
   var socket = zeromq.socket('sub')
   var isopened = false
@@ -33,7 +33,7 @@ test('start command', (t) => {
   }, 1000)
 })
 
-test('write stream buffer', (t) => {
+test.skip('write stream buffer', (t) => {
   var btName = 'foobar'
   var socket = zeromq.socket('sub')
   var isopened = false
@@ -62,7 +62,7 @@ test('write stream buffer', (t) => {
   }, 1000)
 })
 
-test('handle data listener', (t) => {
+test.skip('handle data listener', (t) => {
   var btName = 'foobar'
   var socket = zeromq.socket('sub')
   var source = zeromq.socket('pub')

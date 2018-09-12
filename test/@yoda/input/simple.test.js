@@ -2,16 +2,16 @@
 
 var test = require('tape')
 var createInput = require('@yoda/input')
-
-var inputEvent = createInput() // init
+var inputEvent
 
 test('type check', function (t) {
+  inputEvent = createInput()
   t.equal(typeof inputEvent, 'object')
   t.end()
 })
 
 // id:1302
-test('input should listen and stop', (t) => {
+test.skip('input should listen and stop', (t) => {
   inputEvent.on('keyup', (event) => {
     console.log('keyup', event.keyCode)
   })

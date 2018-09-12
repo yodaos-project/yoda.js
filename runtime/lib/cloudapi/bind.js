@@ -55,7 +55,22 @@ function bindDevice (notify) {
       }
       return Promise.reject(err)
     }
-  )
+  ).then((config) => {
+    try {
+      // custom_config
+      var customConfig = JSON.parse(config.extraInfo.custom_config)
+      property.set('sys.pickupswitch', customConfig.pickupswitch, 'persist')
+      property.set('sys.lightswitch', customConfig.lightswitch, 'persist')
+      property.set('sys.awakeswitch', customConfig.awakeswitch, 'persist')
+      var nightMode = JSON.parse(customConfig.nightMode)
+      property.set('sys.nightmode', nightMode.action, 'persist')
+      property.set('sys.nightmode.start', nightMode.startTime, 'persist')
+      property.set('sys.nightmode.end', nightMode.endTime, 'persist')
+    } catch (err) {
+      logger.error(`load custom config failure with ${err && err.message}`)
+    }
+    return config
+  })
 }
 
 function unBindDevice () {
