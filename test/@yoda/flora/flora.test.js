@@ -8,7 +8,7 @@ var errUri = 'unix:/data/flora-error'
 var okUri = 'unix:/data/floras'
 var crypto = require('crypto')
 
-test.skip('module->flora->connect: err uri', t => {
+test('module->flora->connect: err uri', t => {
   var client = floraFactory.connect(errUri, 0)
   t.equal(client, undefined, 'err uri return undefined')
   t.end()
@@ -309,7 +309,7 @@ test.skip('module->flora->Caps: write method', t => {
     a: 1,
     b: 2
   })
-  //TODO: error
+  // TODO: error
   caps.write(caps)
   postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
 
@@ -355,7 +355,7 @@ test.skip('module->flora->Caps: get method', t => {
     logger.info(msg)
     t.ok(msg.get(0) instanceof floraFactory.Caps, 'subcaps')
     t.equal(typeof msg.get(0).get(0), 'string')
-    t.equal(msg.get(0).get(0).get(0), undefined) //TODO: err
+    t.equal(msg.get(0).get(0).get(0), undefined) // TODO: err
     t.equal(msg.get(0).get(0), 'this is subcaps msg')
     t.equal(msg.get(1), 'this is a caps msg')
     t.equal(msg.get(2), undefined)
@@ -531,32 +531,426 @@ test.skip('module->flora->Caps: writeDouble method', t => {
   recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
 })
 
-test.skip('module->flora->connect buffer', t => {
-  var int32 = 32
-  var int64 = 64
-  var hello = 'hello flora'
+/**
+ * bug id = 1363
+ */
+test.skip('module->flora->connect buffer, default 0', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
-  var msgName = `msg type test[${msgId}]`
+  var msgName = `msg buffer test[${msgId}]`
 
-  var recvClient = floraFactory.connect(okUri, 1)
+  var recvClient = floraFactory.connect(okUri, 0)
   t.equal(typeof recvClient, 'object')
   recvClient.on('recv_post', (name, type, msg) => {
     t.equal(name, msgName, `recv post name: ${name}`)
     t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+    console.log(msg.get(0).length)
     recvClient.close()
     t.end()
   })
   recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
 
-  var postClient = floraFactory.connect(okUri, 1)
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  var length = 32693 // TODO: err 目前最大支持32693
+  var hello = Buffer.alloc(length, 0x74, 'utf8')
+  console.log(hello.length)
+
+  var caps = new floraFactory.Caps()
+  caps.write(hello.toString('utf8'))
+  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+
+  postClient.close()
+})
+
+/**
+ * bug id = 1363
+ */
+test.skip('module->flora->connect buffer, set value', t => {
+  var msgId = crypto.randomBytes(5).toString('hex')
+  var msgName = `msg buffer test[${msgId}]`
+
+  var recvClient = floraFactory.connect(okUri, 8000)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    t.equal(name, msgName, `recv post name: ${name}`)
+    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    console.log(msg.get(0).length)
+    recvClient.close()
+    t.end()
+  })
+  recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
+
+  var postClient = floraFactory.connect(okUri, 8000)
+  t.equal(typeof postClient, 'object')
+  var length = 32693
+  var hello = Buffer.alloc(length, 0x74, 'utf8')
+  console.log(hello.length)
+
+  var caps = new floraFactory.Caps()
+  caps.write(hello.toString('utf8'))
+  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+
+  postClient.close()
+})
+
+test.skip('module->flora->client: instant msg, unsubscribe msg', t => {
+  var int32 = 32
+  var int64 = 64
+  var hello = 'hello flora'
+  var msgId = crypto.randomBytes(5).toString('hex')
+  var msgName = `instant msg test[${msgId}]`
+  var count = 0
+
+  var recvClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    count++
+    t.equal(name, msgName, `recv post name: ${name}`)
+    t.equal(type, floraFactory.MSGTYPE_INSTANT, `recv post type: ${type}`)
+    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
+    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
+    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+  })
+  recvClient.subscribe(msgName, floraFactory.MSGTYPE_INSTANT)
+
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  var caps = new floraFactory.Caps()
+  caps.writeInt32(int32)
+  caps.writeInt64(int64)
+  caps.write(hello)
+  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+
+  recvClient.unsubscribe(msgName, floraFactory.MSGTYPE_INSTANT)
+
+  var caps2 = new floraFactory.Caps()
+  caps2.write(hello)
+  caps2.writeInt32(int32)
+  caps2.writeInt64(int64)
+  postClient.post(msgName, caps2, floraFactory.MSGTYPE_INSTANT)
+  postClient.close()
+
+  setTimeout(() => {
+    t.equal(count, 1)
+    recvClient.close()
+    t.end()
+  }, 2000)
+})
+
+test.skip('module->flora->client: instant msg, unsubscribe err type', t => {
+  var int32 = 32
+  var int64 = 64
+  var hello = 'hello flora'
+  var msgId = crypto.randomBytes(5).toString('hex')
+  var msgName = `instant msg test[${msgId}]`
+  var count = 0
+
+  var recvClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    count++
+    t.equal(name, msgName, `recv post name: ${name}`)
+    t.equal(type, floraFactory.MSGTYPE_INSTANT, `recv post type: ${type}`)
+    if (count === 1) {
+      t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
+      t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
+      t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+    }
+    if (count === 2) {
+      t.equal(msg.get(0), hello, `recv post msg[0] ${msg.get(0)}`)
+      t.equal(msg.get(1), int32, `recv post msg[1] ${msg.get(1)}`)
+      t.equal(msg.get(2), int64, `recv post msg[2] ${msg.get(2)}`)
+      recvClient.close()
+      t.end()
+    }
+  })
+  recvClient.subscribe(msgName, floraFactory.MSGTYPE_INSTANT)
+
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  var caps = new floraFactory.Caps()
+  caps.writeInt32(int32)
+  caps.writeInt64(int64)
+  caps.write(hello)
+  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+
+  recvClient.unsubscribe(msgName, floraFactory.MSGTYPE_PERSIST)
+
+  var caps2 = new floraFactory.Caps()
+  caps2.write(hello)
+  caps2.writeInt32(int32)
+  caps2.writeInt64(int64)
+  postClient.post(msgName, caps2, floraFactory.MSGTYPE_INSTANT)
+  postClient.close()
+})
+
+test.skip('module->flora->client: persist msg, subscribe->send->unsubscribe->send', t => {
+  var int32 = 32
+  var int64 = 64
+  var hello = 'hello flora'
+  var msgId = crypto.randomBytes(5).toString('hex')
+  var msgName = `instant msg test[${msgId}]`
+  var count = 0
+
+  var recvClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    count++
+    t.equal(name, msgName, `recv post name: ${name}`)
+    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
+    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
+    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+  })
+  recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
+
+  var postClient = floraFactory.connect(okUri, 0)
   t.equal(typeof postClient, 'object')
   var caps = new floraFactory.Caps()
   caps.writeInt32(int32)
   caps.writeInt64(int64)
   caps.write(hello)
   postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+
+  recvClient.unsubscribe(msgName, floraFactory.MSGTYPE_PERSIST)
+
+  var caps2 = new floraFactory.Caps()
+  caps2.write(hello)
+  caps2.writeInt32(int32)
+  caps2.writeInt64(int64)
+  postClient.post(msgName, caps2, floraFactory.MSGTYPE_PERSIST)
   postClient.close()
+
+  setTimeout(() => {
+    t.equal(count, 1)
+    recvClient.close()
+    t.end()
+  }, 2000)
+})
+
+test.skip('module->flora->client: persist msg, send->subscribe->unsubscribe->send', t => {
+  var int32 = 32
+  var int64 = 64
+  var hello = 'hello flora'
+  var msgId = crypto.randomBytes(5).toString('hex')
+  var msgName = `instant msg test[${msgId}]`
+  var count = 0
+
+  var recvClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    count++
+    t.equal(name, msgName, `recv post name: ${name}`)
+    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
+    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
+    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+  })
+
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  var caps = new floraFactory.Caps()
+  caps.writeInt32(int32)
+  caps.writeInt64(int64)
+  caps.write(hello)
+  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+
+  recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
+  setTimeout(() => {
+    recvClient.unsubscribe(msgName, floraFactory.MSGTYPE_PERSIST)
+    var caps2 = new floraFactory.Caps()
+    caps2.write(hello)
+    caps2.writeInt32(int32)
+    caps2.writeInt64(int64)
+    postClient.post(msgName, caps2, floraFactory.MSGTYPE_PERSIST)
+    postClient.close()
+    setTimeout(() => {
+      t.equal(count, 1)
+      recvClient.close()
+      t.end()
+    }, 2000)
+  }, 1000)
+})
+
+test.skip('module->flora->client: persist msg, unsubscribe err type', t => {
+  var int32 = 32
+  var int64 = 64
+  var hello = 'hello flora'
+  var msgId = crypto.randomBytes(5).toString('hex')
+  var msgName = `instant msg test[${msgId}]`
+  var count = 0
+
+  var recvClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    count++
+    t.equal(name, msgName, `recv post name: ${name}`)
+    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    if (count === 1) {
+      t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
+      t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
+      t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+    }
+    if (count === 2) {
+      t.equal(msg.get(0), hello, `recv post msg[0] ${msg.get(0)}`)
+      t.equal(msg.get(1), int32, `recv post msg[1] ${msg.get(1)}`)
+      t.equal(msg.get(2), int64, `recv post msg[2] ${msg.get(2)}`)
+      recvClient.close()
+      t.end()
+    }
+  })
+
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  var caps = new floraFactory.Caps()
+  caps.writeInt32(int32)
+  caps.writeInt64(int64)
+  caps.write(hello)
+  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+
+  recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
+  setTimeout(() => {
+    recvClient.unsubscribe(msgName, floraFactory.MSGTYPE_INSTANT)
+    var caps2 = new floraFactory.Caps()
+    caps2.write(hello)
+    caps2.writeInt32(int32)
+    caps2.writeInt64(int64)
+    postClient.post(msgName, caps2, floraFactory.MSGTYPE_PERSIST)
+    postClient.close()
+  }, 1000)
+})
+
+test.skip('module->flora->client: close recv', t => {
+  var int32 = 32
+  var int64 = 64
+  var hello = 'hello flora'
+  var msgId = crypto.randomBytes(5).toString('hex')
+  var msgName = `close test[${msgId}]`
+  var count = 0
+
+  var recvClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    count++
+    t.equal(name, msgName, `recv post name: ${name}`)
+    t.equal(type, floraFactory.MSGTYPE_INSTANT, `recv post type: ${type}`)
+    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
+    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
+    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+    recvClient.close()
+    var caps2 = new floraFactory.Caps()
+    caps2.write(hello)
+    caps2.writeInt32(int32)
+    caps2.writeInt64(int64)
+    postClient.post(msgName, caps2, floraFactory.MSGTYPE_INSTANT)
+    postClient.close()
+    setTimeout(() => {
+      t.equal(count, 1)
+      t.end()
+    }, 1000)
+  })
+  recvClient.subscribe(msgName, floraFactory.MSGTYPE_INSTANT)
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  var caps = new floraFactory.Caps()
+  caps.writeInt32(int32)
+  caps.writeInt64(int64)
+  caps.write(hello)
+  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+})
+
+test.skip('module->flora->client: close post', t => {
+  var int32 = 32
+  var int64 = 64
+  var hello = 'hello flora'
+  var msgId = crypto.randomBytes(5).toString('hex')
+  var msgName = `close test[${msgId}]`
+
+  var recvClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    t.fail('should not recv msg')
+  })
+  recvClient.subscribe(msgName, floraFactory.MSGTYPE_INSTANT)
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  postClient.close()
+  var caps = new floraFactory.Caps()
+  caps.writeInt32(int32)
+  caps.writeInt64(int64)
+  caps.write(hello)
+  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+  setTimeout(() => {
+    recvClient.close()
+    t.end()
+  }, 2000)
+})
+
+/**
+ * bug id = 1364
+ */
+test.skip('module->flora->client: loop create connection', t => {
+  for (var count = 0; count < 20; count++) {
+    var client = floraFactory.connect(okUri, 0)
+    t.equal(typeof client, 'object')
+    setTimeout(() => {
+      client.close()
+    }, 5 * count)
+  }
+  setTimeout(() => {
+    t.end()
+  }, 2000)
+})
+
+test.skip('module->flora->client: loop post msg', t => {
+  var recvClient = floraFactory.connect(okUri, 0)
+  var count = 0
+  recvClient.on('recv_post', (name, type, msg) => {
+    t.equal(name, `id=${count}`, `name is id=${count}`)
+    t.equal(msg.get(0), `hello${count}`, `value is hello${count}`)
+    count++
+  })
+  for (var i = 0; i < 100; i++) {
+    recvClient.subscribe(`id=${i}`, floraFactory.MSGTYPE_INSTAN)
+  }
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  for (var j = 0; j < 100; j++) {
+    var caps = new floraFactory.Caps()
+    caps.write(`hello${j}`)
+    logger.info(`i=${j}`)
+    postClient.post(`id=${j}`, caps, floraFactory.MSGTYPE_INSTANT)
+  }
+  setTimeout(() => {
+    t.equal(count, 100)
+    recvClient.close()
+    postClient.close()
+    t.end()
+  }, 3000)
+})
+
+test('module->flora->client: disconnect event', t => {
+  var recvClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.on('recv_post', (name, type, msg) => {
+    logger.info('recv_post')
+    logger.info(name)
+    logger.info(type)
+    logger.info(msg)
+  })
+  recvClient.on('disconnected', (name, type, msg) => {
+    t.pass('disconnected event')
+  })
+  recvClient.subscribe('disconnect event', floraFactory.MSGTYPE_INSTAN)
+  var postClient = floraFactory.connect(okUri, 0)
+  t.equal(typeof postClient, 'object')
+  var caps = new floraFactory.Caps()
+  caps.write(`hello flora!`)
+  postClient.post('disconnect event', caps, floraFactory.MSGTYPE_INSTANT)
+
+  setTimeout(() => {
+    recvClient.close()
+    postClient.close()
+    t.end()
+  }, 10000)
 })
