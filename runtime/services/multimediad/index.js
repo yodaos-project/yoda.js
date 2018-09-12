@@ -76,15 +76,22 @@ dbusApis.addMethod('start', {
 }, function (appId, url, streamType, cb) {
   logger.log('multimedia play', appId, url, streamType)
   if (appId && url) {
-    service.start(appId, url, streamType)
-      .then((id) => {
-        logger.log('return', id, typeof id)
-        cb(null, id)
+    permit.invoke('check', [appId, 'ACCESS_MULTIMEDIA'])
+      .then((res) => {
+        if (res && res['0'] === 'true') {
+          var id = service.start(appId, url, streamType)
+          cb(null, '' + id)
+        } else {
+          logger.log('permission deny')
+          cb(null, '-1')
+        }
       })
-      .catch(() => {
-        cb(null, '-1')
+      .catch((err) => {
+        logger.log('multimedia play error', appId, url, err)
+        logger.log('can not connect to vui')
       })
   } else {
+    logger.log('start: url and appId are required')
     cb(null, '-1')
   }
 })
