@@ -131,14 +131,21 @@ dbusApis.addMethod('speak', {
   out: ['s']
 }, function (appId, text, cb) {
   if (appId && text) {
-    logger.log(`speak: ${text} ${appId}`)
-    service.speak(appId, text)
-      .then((id) => {
-        cb(null, '' + id)
+    logger.log(`speak request: ${text} ${appId}`)
+
+    permit.invoke('check', [appId, 'ACCESS_TTS'])
+      .then((res) => {
+        logger.log('ttsd check:', res, appId)
+        if (res['0'] === 'true') {
+          var id = service.speak(appId, text)
+          cb(null, '' + id)
+        } else {
+          cb(null, '-1')
+        }
       })
       .catch((err) => {
-        logger.log(`speak error: `, err)
-        cb(null, '-1')
+        logger.log('ttsd check error', appId, err)
+        logger.log('can not connect to vui')
       })
   } else {
     // TODO: error handler?

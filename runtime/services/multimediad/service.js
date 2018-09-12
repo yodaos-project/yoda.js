@@ -14,32 +14,23 @@ function MultiMedia (options) {
 inherits(MultiMedia, EventEmitter)
 
 MultiMedia.prototype.start = function (appId, url, streamType) {
-  return new Promise((resolve, reject) => {
-    this.options.permit.invoke('check', [appId, 'ACCESS_MULTIMEDIA'])
-      .then((res) => {
-        if (res && res['0'] === 'true') {
-          if (this.handle[appId]) {
-            this.handle[appId].stop()
-          }
-          var player
-          if (streamType === 'alarm') {
-            player = new MediaPlayer(AudioManager.STREAM_ALARM)
-          } else {
-            player = new MediaPlayer(AudioManager.STREAM_PLAYBACK)
-          }
-          this.listenEvent(player, appId)
-          player.start(url)
-          this.handle[appId] = player
-          resolve('' + player.id)
-        } else {
-          reject(new Error('permission deny'))
-        }
-      })
-      .catch((err) => {
-        logger.log('multimedia play error', appId, url, err)
-        reject(new Error('can not connect to vui'))
-      })
-  })
+  if (this.handle[appId]) {
+    try {
+      this.handle[appId].stop()
+    } catch (error) {
+      logger.log(`try to stop prev player error, appId: ${appId}`)
+    }
+  }
+  var player
+  if (streamType === 'alarm') {
+    player = new MediaPlayer(AudioManager.STREAM_ALARM)
+  } else {
+    player = new MediaPlayer(AudioManager.STREAM_PLAYBACK)
+  }
+  this.listenEvent(player, appId)
+  player.start(url)
+  this.handle[appId] = player
+  return player.id
 }
 
 MultiMedia.prototype.stop = function (appId) {
