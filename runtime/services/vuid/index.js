@@ -15,11 +15,18 @@ var floraConfig = require('../../flora-config.json')
 
 ;(function init () {
   // if DEBUG, we put raw events
+  activateProcess()
   initFloraClient()
   entry()
 })()
 
+function activateProcess () {
+  // currently this is a workaround for nextTick missing.
+  setInterval(() => false, 1000)
+}
+
 function initFloraClient () {
+  logger.info('start initializing flora client')
   var cli = floraFactory.connect(floraConfig.uri, floraConfig.bufsize)
   if (!cli) {
     logger.log('flora connect failed, try again after', floraConfig.reconnInterval, 'milliseconds')
@@ -39,6 +46,7 @@ function initFloraClient () {
   })
   cli.subscribe('rokid.turen.voice_coming', floraFactory.MSGTYPE_INSTANT)
   cli.subscribe('rokid.turen.local_awake', floraFactory.MSGTYPE_INSTANT)
+  cli.subscribe('rokid.speech.extra', floraFactory.MSGTYPE_INSTANT)
   cli.subscribe('rokid.speech.inter_asr', floraFactory.MSGTYPE_INSTANT)
   cli.subscribe('rokid.speech.final_asr', floraFactory.MSGTYPE_INSTANT)
   cli.subscribe('rokid.speech.nlp', floraFactory.MSGTYPE_INSTANT)
@@ -111,16 +119,17 @@ function turenMute (mute) {
 function entry () {
   logger.debug('vui is ready')
 
+  var voiceCtx = { lastFaked: false }
   var runtime = new AppRuntime(['/opt/apps'])
   runtime.cloudApi = cloudApi
   runtime.volume = AudioManager
 
   runtime.on('setStack', function onSetStack (stack) {
-    logger.log('setStack', stack)
+    logger.log(`setStack ${stack}`)
     updateStack(stack)
   })
   runtime.on('setPickup', function onSetPickup (isPickup) {
-    logger.log('setPickup ', isPickup)
+    logger.log(`start pickup ${isPickup}`)
     turenPickup(isPickup)
   })
   runtime.on('micMute', function onMicMute (mute) {
@@ -128,6 +137,7 @@ function entry () {
   })
   floraMsgHandlers['rokid.turen.voice_coming'] = function (msg) {
     logger.log('voice coming')
+    voiceCtx.lastFaked = false
     runtime.onEvent('voice coming', {})
   }
   floraMsgHandlers['rokid.turen.local_awake'] = function (msg) {
@@ -146,8 +156,21 @@ function entry () {
     logger.log('asr end', asr)
     runtime.onEvent('asr end', { asr: asr })
   }
+  floraMsgHandlers['rokid.speech.extra'] = function (msg) {
+    var data = JSON.parse(msg.get(0))
+    if (data.activation === 'fake') {
+      voiceCtx.lastFaked = true
+      runtime.onEvent('asr fake')
+    }
+  }
   floraMsgHandlers['rokid.speech.nlp'] = function (msg) {
-    logger.log('nlp', msg.get(0), 'action', msg.get(1))
+    if (voiceCtx.lastFaked) {
+      logger.info('skip nlp, because last voice is fake')
+      voiceCtx.lastFaked = false
+      return
+    }
+
+    logger.log(`NLP(${msg.get(0)}), action(${msg.get(1)})`)
     var data = {}
     data.asr = ''
     try {
@@ -198,7 +221,7 @@ function entry () {
         masterId: property.get('persist.system.user.userId')
       })
       runtime.onGetPropAll = () => props
-      runtime.onReLogin()
+      runtime.doLogin()
       handleMQTT(mqttAgent, runtime)
     }).catch((err) => {
       logger.error('initializing occurrs error', err && err.stack)
