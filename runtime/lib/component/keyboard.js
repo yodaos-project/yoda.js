@@ -40,7 +40,7 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`No handler registered for keydown '${event.keyCode}'.`)
       return
     }
-    this.runtime.openUrl(descriptor.url, descriptor.options)
+    this.openUrl(descriptor.url, descriptor.options)
   }))
 
   this.input.on('keyup', listenerWrap(event => {
@@ -171,8 +171,15 @@ KeyboardHandler.prototype.listen = function listen () {
     if (descriptor.preventSubsequent) {
       this.preventSubsequent = true
     }
-    this.runtime.openUrl(descriptor.url, descriptor.options)
+    this.openUrl(descriptor.url, descriptor.options)
   }))
+}
+
+KeyboardHandler.prototype.openUrl = function openUrl (url, options) {
+  this.runtime.openUrl(url, options)
+    .catch(err => {
+      logger.error(`Unexpected error on opening url '${url}'`, err && err.message, err && err.stack)
+    })
 }
 
 function listenerWrap (fn, receiver) {
