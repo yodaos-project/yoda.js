@@ -110,7 +110,8 @@ Skill.prototype.transform = function (directives, append) {
   var mediaActMap = {
     'PAUSE': 'pause',
     'PLAY': 'play',
-    'RESUME': 'resume'
+    'RESUME': 'resume',
+    'STOP': 'stop'
   }
   directives.forEach((ele) => {
     var tdt = {}
