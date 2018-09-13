@@ -7,6 +7,7 @@ var AppRuntime = require('../../lib/app-runtime')
 var CloudGW = require('@yoda/cloudgw')
 var logger = require('logger')('main')
 var ota = require('@yoda/ota')
+var globalEnv = require('../../lib/env')()
 var floraFactory = require('@yoda/flora')
 var floraCli
 var speechAuthInfo
@@ -67,8 +68,10 @@ function initFloraClient () {
 
 function updateSpeechPrepareOptions () {
   if (floraCli && speechAuthInfo) {
-    var uri = 'wss://' + speechAuthInfo.host + ':' + speechAuthInfo.port + '/api'
+    var uri = 'wss://apigwws.open.rokid.com:443/api'
     var msg = new floraFactory.Caps()
+    if (speechAuthInfo.uri)
+      uri = speechAuthInfo.uri
     msg.write(uri)
     msg.write(speechAuthInfo.key)
     msg.write(speechAuthInfo.deviceTypeId)
@@ -177,8 +180,7 @@ function entry () {
       // load the system configuration
       var config = mqttAgent.config
       var options = {
-        host: 'apigwws.open.rokid.com',
-        port: 443,
+        uri: globalEnv.speechUri,
         key: config.key,
         secret: config.secret,
         deviceTypeId: config.deviceTypeId,
