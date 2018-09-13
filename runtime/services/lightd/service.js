@@ -2,6 +2,8 @@
 
 var logger = require('logger')('lightService')
 var LightRenderingContextManager = require('./effects')
+var AudioManager = require('@yoda/audio').AudioManager
+var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 
 var LIGHT_SOURCE = '/opt/light/'
 
@@ -144,7 +146,8 @@ Light.prototype.appSound = function (appId, name) {
   }
   var player
   try {
-    player = this.options.effect.sound(name)
+    player = new MediaPlayer(AudioManager.STREAM_SYSTEM)
+    player.start(name)
     // free the player handle after playbackcomplete or error event
     player.on('playbackcomplete', () => {
       logger.log(`playbackcomplete ${name}`)
