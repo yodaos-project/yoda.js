@@ -7,8 +7,7 @@
 var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
 var AudioManager = require('@yoda/audio').AudioManager
-var util = require('util')
-var inherits = util.inherits
+var inherits = require('util').inherits
 var Url = require('url')
 
 var _ = require('@yoda/util')._
@@ -1169,12 +1168,20 @@ AppRuntime.prototype.destruct = function destruct () {
   this.keyboard.destruct()
 }
 
+function handleErrorCallbacks(cbs, msg) {
+  var cb;
+  var err = new Error(msg)
+
+  for (cb in cbs) {
+    cb(err)
+  }
+}
+
 function getFloraClient () {
   if (floraClient) { return floraClient }
   floraClient = floraFactory.connect(floraConfig.uri, floraConfig.bufsize)
   if (!floraClient) {
-    logger.log('connect flora service failed, try again after', floraConfig.reconnInterval, 'milliseconds')
-    setTimeout(getFloraClient, floraConfig.reconnInterval)
+    logger.log('connect flora service failed')
     return undefined
   }
   var subNames = [
@@ -1196,7 +1203,7 @@ function getFloraClient () {
         err = ex
       }
     } else {
-      err = msg.get(0)
+      err = new Error("speech put_text return error: " + msg.get(0))
       idx = msg.get(2)
     }
     if (typeof floraCallbacks[idx] === 'function') {
@@ -1207,9 +1214,13 @@ function getFloraClient () {
   floraClient.subscribe(subNames[0], floraFactory.MSGTYPE_INSTANT)
   floraClient.subscribe(subNames[1], floraFactory.MSGTYPE_INSTANT)
   floraClient.on('disconnected', function () {
-    logger.log('flora disconnected, reconnect after', floraConfig.reconnInterval, 'milliseconds')
+    logger.log('flora disconnected')
     floraClient.close()
-    setTimeout(getFloraClient, floraConfig.reconnInterval)
+    floraClient = undefined
+    var cbs = floraCallbacks
+    // clear pending callback functions
+    floraCallbacks = []
+    process.nextTick(() => handleErrorCallbacks(cbs, "flora client disconnected"))
   })
   return floraClient
 }
@@ -1223,7 +1234,8 @@ AppRuntime.prototype.getNlpResult = function (asr, cb) {
     caps.write(asr2nlpId)
     caps.writeInt32(asr2nlpSeq)
     floraCallbacks[asr2nlpSeq++] = cb
-    // TODO: erase callback function from 'floraCallbacks' if timeout
     cli.post('rokid.speech.put_text', caps, floraFactory.MSGTYPE_INSTANT)
+  } else {
+    process.nextTick(() => cb(new Error('flora service connect failed')))
   }
 }
