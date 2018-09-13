@@ -906,6 +906,22 @@ AppRuntime.prototype.startDbusAppService = function () {
     }
     self.mockNLPResponse(nlp, action)
   })
+  extapp.addMethod('mockAsr', {
+    in: ['s'],
+    out: ['s']
+  }, function mockAsr (text, cb) {
+    logger.info('Mocking asr', text)
+    self.getNlpResult(text, function (err, nlp, action) {
+      if (err) {
+        cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
+        throw err
+      }
+      logger.info('mocking asr got nlp result for', text, nlp, action)
+      return self.onVoiceCommand(text, nlp, action)
+        .then(() => cb(null, JSON.stringify({ ok: true, nlp: nlp, action: action })),
+          err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack })))
+    })
+  })
   extapp.addMethod('setBackground', {
     in: ['s'],
     out: ['b']
