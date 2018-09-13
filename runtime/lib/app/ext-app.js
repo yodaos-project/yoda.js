@@ -82,8 +82,13 @@ EventBus.prototype.eventTable = [ 'test', 'ping', 'status-report', 'subscribe', 
   'subscribe-ack', 'event-ack' ]
 
 EventBus.prototype.onMessage = function onMessage (message) {
-  logger.debug('Received child message', message)
   var type = message.type
+  if (type === 'status-report' || type === 'subscribe') {
+    logger.debug(`Received child message ${message.type} => ${message.event}`)
+  } else {
+    logger.debug(`Received child message `+
+     `${message.type}(${message.invocationId || -1}) ${message.namespace}.${message.method}`)
+  }
   if (this.eventTable.indexOf(type) < 0) {
     logger.warn(`VuiDaemon received unknown ipc message type '${message.type}' from app.`)
     return

@@ -53,6 +53,10 @@ function keepAlive (appId) {
   })
 }
 
+function activate () {
+  setInterval(() => false, 1000)
+}
+
 function main () {
   if (!target) {
     logger.error('Target is required.')
@@ -89,4 +93,5 @@ function main () {
 }
 
 module.exports = main
-main()
+
+activate(), main()
