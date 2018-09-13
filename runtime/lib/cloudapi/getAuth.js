@@ -1,11 +1,11 @@
 'use strict'
 
 var crypto = require('crypto')
-var qs = require('querystring')
 
 function gensigh (data) {
+  var queryString = `key=${data.key}&device_type_id=${data.deviceTypeId}&device_id=${data.deviceId}&service=${data.service}&version=${data.version}&time=${data.time}&secret=${data.secret}`
   return crypto.createHash('md5')
-    .update(qs.stringify(data))
+    .update(queryString)
     .digest('hex')
     .toUpperCase()
 }
@@ -16,8 +16,8 @@ function getAuth (config) {
   }
   var data = {
     key: config.key,
-    device_type_id: config.device_type_id,
-    device_id: config.device_id,
+    deviceTypeId: config.deviceTypeId,
+    deviceId: config.deviceId,
     service: 'rest',
     version: '1',
     time: Math.floor(Date.now() / 1000),
@@ -28,8 +28,8 @@ function getAuth (config) {
     `time=${data.time}`,
     `sign=${gensigh(data)}`,
     `key=${data.key}`,
-    `device_type_id=${data.device_type_id}`,
-    `device_id=${data.device_id}`,
+    `device_type_id=${data.deviceTypeId}`,
+    `device_id=${data.deviceId}`,
     `service=${data.service}`
   ].join(';')
 }
