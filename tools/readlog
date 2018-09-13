@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -e
+
+adb shell logread -f -e iotjs \
+  | egrep --color=always '.*(daemon\.err|ERROR).*|$'
