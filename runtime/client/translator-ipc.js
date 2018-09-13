@@ -179,7 +179,7 @@ var listenMap = {
 
 function listenIpc () {
   process.on('message', function onMessage (message) {
-    logger.debug('Received VuiDaemon message', message)
+    logger.debug(`Received VuiDaemon message ${message.type} ${message}`)
 
     var handle = listenMap[message.type]
     if (handle == null) {
