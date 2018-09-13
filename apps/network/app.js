@@ -2,9 +2,9 @@
 
 var logger = require('logger')('@network')
 var bluetooth = require('@yoda/bluetooth')
-var messageStream
 var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
+var messageStream = bluetooth.getMessageStream()
 
 module.exports = function (app) {
   var started = false
