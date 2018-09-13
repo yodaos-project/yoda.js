@@ -6,7 +6,8 @@
 
 var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
-var inherits = require('util').inherits
+var util = require('util')
+var inherits = util.inherits
 var Url = require('url')
 
 var _ = require('@yoda/util')._
@@ -23,6 +24,12 @@ var Permission = require('./component/permission')
 var AppLoader = require('./component/app-loader')
 var Keyboard = require('./component/keyboard')
 var Lifetime = require('./component/lifetime')
+var floraFactory = require('@yoda/flora')
+var floraConfig = require('../flora-config.json')
+var floraClient
+var asr2nlpId = 'js-AppRuntime'
+var floraCallbacks = []
+var asr2nlpSeq = 0
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -1063,4 +1070,63 @@ AppRuntime.prototype.startDbusAppService = function () {
 
 AppRuntime.prototype.destruct = function destruct () {
   this.keyboard.destruct()
+}
+
+function getFloraClient () {
+  if (floraClient) { return floraClient }
+  floraClient = floraFactory.connect(floraConfig.uri, floraConfig.bufsize)
+  if (!floraClient) {
+    logger.log('connect flora service failed, try again after', floraConfig.reconnInterval, 'milliseconds')
+    setTimeout(getFloraClient, floraConfig.reconnInterval)
+    return undefined
+  }
+  var subNames = [
+    'rokid.speech.nlp.' + asr2nlpId,
+    'rokid.speech.error.' + asr2nlpId
+  ]
+  floraClient.on('recv_post', function (name, type, msg) {
+    var nlp
+    var action
+    var err
+    var idx
+    if (name === subNames[0]) {
+      try {
+        nlp = JSON.parse(msg.get(0))
+        action = JSON.parse(msg.get(1))
+        idx = msg.get(2)
+      } catch (ex) {
+        logger.log('nlp/action parse failed, discarded')
+        err = ex
+      }
+    } else {
+      err = msg.get(0)
+      idx = msg.get(2)
+    }
+    if (util.isFunction(floraCallbacks[idx])) {
+      floraCallbacks[idx](err, nlp, action)
+      delete floraCallbacks[idx]
+    }
+  })
+  floraClient.subscribe(subNames[0], floraFactory.MSGTYPE_INSTANT)
+  floraClient.subscribe(subNames[1], floraFactory.MSGTYPE_INSTANT)
+  floraClient.on('disconnected', function () {
+    logger.log('flora disconnected, reconnect after', floraConfig.reconnInterval, 'milliseconds')
+    floraClient.close()
+    setTimeout(getFloraClient, floraConfig.reconnInterval)
+  })
+  return floraClient
+}
+
+AppRuntime.prototype.getNlpResult = function (asr, cb) {
+  if (!util.isString(asr) || !util.isFunction(cb)) { return }
+  var cli = getFloraClient()
+  if (cli) {
+    var caps = new floraFactory.Caps()
+    caps.write(asr)
+    caps.write(asr2nlpId)
+    caps.writeInt32(asr2nlpSeq)
+    floraCallbacks[asr2nlpSeq++] = cb
+    // TODO: erase callback function from 'floraCallbacks' if timeout
+    cli.post('rokid.speech.put_text', caps, floraFactory.MSGTYPE_INSTANT)
+  }
 }
