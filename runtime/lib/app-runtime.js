@@ -6,6 +6,7 @@
 
 var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
+var AudioManager = require('@yoda/audio').AudioManager
 var util = require('util')
 var inherits = util.inherits
 var Url = require('url')
@@ -36,7 +37,7 @@ perf.stub('init')
 
 /**
  * @memberof yodaRT
- * @constructor
+ * @class
  * @param {Array} paths - the pathname
  */
 function AppRuntime (paths) {
@@ -51,39 +52,30 @@ function AppRuntime (paths) {
   }
 
   this.cloudSkillIdStack = []
-  // save the skill's id domain
   this.domain = {
     cut: '',
     scene: '',
     active: ''
   }
-
   // manager app's permission
   this.permission = new Permission(this)
-
-  // volume module
-  this.volume = null
+  this.volume = null 
   this.prevVolume = -1
-  /** microphone was reset on runtime start up */
-  this.micMuted = false
+  this.micMuted = false     // microphone was reset on runtime start up
   this.handle = {}
-  // support cloud api. etc.. login
-  this.cloudApi = null
-  // to identify the first start
-  this.online = undefined
-  // to identify is login or not
-  this.login = undefined
-  // to identify network switch from connected to disconnected
-  this.waitingForAwake = undefined
-
+  this.cloudApi = null      // support cloud api. etc.. login
+  this.online = undefined   // to identify the first start
+  this.login = undefined    // to identify is login or not
+  this.waitingForAwake = undefined  // to identify network switch from connected to disconnected
   this.micMuted = false
-
   this.forceUpdateAvailable = false
+  this.voiceCtx = {
+    lastFaked: false
+  }
 
-  // 启动extapp dbus接口
   this.startDbusAppService()
-  // 处理mqtt事件
   this.handleMqttMessage()
+
   // handle keyboard/button events
   this.keyboard = new Keyboard(this)
   this.keyboard.init()
@@ -92,18 +84,28 @@ function AppRuntime (paths) {
   this.listenDbusSignals()
   // identify load app complete
   this.loadAppComplete = false
-  // 加载APP
   this.loader = new AppLoader(this)
   this.life = new Lifetime(this.loader)
   this.life.on('stack-reset', () => {
     this.resetCloudStack()
   })
-  this.loadApps(paths)
+
+  // initializing the whole process...
+  this.loadApps(paths).then(() => {
+    if (wifi.getNetworkState() === wifi.NETSERVER_CONNECTED) {
+      this.onEvent('connected')
+    }
+  })
 }
 inherits(AppRuntime, EventEmitter)
 
+/**
+ * Load applications from the given paths
+ * @param {Array} paths - the loaded paths.
+ */
 AppRuntime.prototype.loadApps = function loadApps (paths) {
-  this.loader.loadPaths(paths)
+  logger.info('start loading applications')
+  return this.loader.loadPaths(paths)
     .then(() => {
       this.loadAppComplete = true
       logger.log('load app complete')
@@ -111,6 +113,9 @@ AppRuntime.prototype.loadApps = function loadApps (paths) {
     })
 }
 
+/**
+ * Start the daemon apps.
+ */
 AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
   var self = this
   var daemons = Object.keys(self.loader.executors).map(appId => {
@@ -139,112 +144,196 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
 }
 
 /**
+ * Reset the appearance includes light and volume.
+ * @private
+ */
+AppRuntime.prototype.resetAppearance = function resetAppearance () {
+  clearTimeout(this.handle.setVolume)
+  if (this.prevVolume > 0) {
+    AudioManager.setVolume(this.prevVolume)
+    this.prevVolume = -1
+  }
+  this.lightMethod('setHide', [''])
+}
+
+/**
+ * Handle the "voice coming" event.
+ * @private
+ */
+AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
+  var min = 30
+  var vol = AudioManager.getVolume()
+  if (this.online === false) {
+    // Do noting when there is no network
+    return
+  }
+  if (vol > min) {
+    this.prevVolume = vol
+    AudioManager.setVolume(min)
+    this.handle.setVolume = setTimeout(() => {
+      AudioManager.setVolume(vol)
+      this.prevVolume = -1
+    }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
+  }
+  this.lightMethod('setAwake', [''])
+  if (this.forceUpdateAvailable) {
+    logger.info('pending force update, delegates activity to @ota.')
+    this.forceUpdateAvailable = false
+    ota.getInfoOfPendingUpgrade((err, info) => {
+      if (err || info == null) {
+        logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
+        return
+      }
+      logger.info('got pending update info', info)
+      this.startApp('@ota', { intent: 'force_upgrade', _info: info }, {})
+    })
+  }
+}
+
+/**
+ * Handle the "voice local awake" event.
+ * @private
+ */
+AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
+  // guide the user to double-click the button
+  if (this.waitingForAwake === true) {
+    this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
+    return
+  }
+  if (this.online !== true) {
+    // start @network app
+    this.startApp('@network', {
+      intent: 'user_says'
+    }, {})
+    // Do noting when there is no network
+    return
+  }
+  this.lightMethod('setDegree', ['', '' + (data.sl || 0)])
+}
+
+/**
+ * Handle the "asr end" event.
+ * @private
+ */
+AppRuntime.prototype.handleAsrEnd = function handleAsrEnd () {
+  this.lightMethod('setLoading', [''])
+}
+
+/**
+ * Handle the "asr fake" event.
+ * @private
+ */
+AppRuntime.prototype.handleAsrFake = function handleAsrFake () {
+  logger.info('asr fake')
+  this.resetAppearance()
+}
+
+/**
+ * Handle the "nlp" event.
+ * @private
+ */
+AppRuntime.prototype.handleNlpResult = function handleNlpResult (data) {
+  this.resetAppearance()
+  this.onVoiceCommand(data.asr, data.nlp, data.action)
+}
+
+/**
+ * Fires when the network is connected.
+ * @private
+ */
+AppRuntime.prototype.handleNetworkConnected = function handleNetworkConnected () {
+  if (this.loadAppComplete === false) {
+    return
+  }
+  if (this.online === false || this.online === undefined) {
+    if (this.online === undefined) {
+      logger.log('first login')
+    } else {
+      logger.log('relogin')
+    }
+    this.reconnect()
+
+    /** Announce last installed ota changelog and clean up ota files */
+    ota.getInfoIfFirstUpgradedBoot((err, info) => {
+      if (err || info == null) {
+        logger.error('failed to fetch upgraded info, skipping', err && err.stack)
+        return
+      }
+      this.startApp('@ota', { intent: 'on_first_boot_after_upgrade', _info: info }, {})
+    })
+  }
+  this.online = true
+}
+
+/**
+ * Fires when the network is disconnected.
+ * @private
+ */
+AppRuntime.prototype.handleNetworkDisconnected = function handleNetworkDisconnected () {
+  // waiting for the app load complete
+  if (this.loadAppComplete === false) {
+    return
+  }
+  // trigger disconnected event when network state is switched or when it is first activated.
+  if (this.online === true || this.online === undefined) {
+    // start network app here
+    this.disconnect()
+  }
+  this.online = false
+}
+
+/**
+ * Handle cloud events.
+ * @private
+ */
+AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
+  logger.log('cloud event', data)
+  this.sendNLPToApp('@network', {
+    intent: 'cloud_status'
+  }, {
+    code: data.code,
+    msg: data.msg
+  })
+}
+
+/**
  * 接收turen的speech事件
  * @param {string} name
  * @param {object} data
  * @private
  */
 AppRuntime.prototype.onEvent = function (name, data) {
-  var min = 30
-  var volume = this.volume.getVolume()
-  if (name === 'voice coming') {
-    if (this.online !== true) {
-      // Do noting when there is no network
-      return
-    }
-    if (volume > min) {
-      this.prevVolume = volume
-      this.volume.setVolume(min)
-      this.handle.setVolume = setTimeout(() => {
-        this.volume.setVolume(volume)
-        this.prevVolume = -1
-      }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
-    }
-    this.lightMethod('setAwake', [''])
-    if (this.forceUpdateAvailable) {
-      logger.info('pending force update, delegates activity to @ota.')
-      this.forceUpdateAvailable = false
-      ota.getInfoOfPendingUpgrade((err, info) => {
-        if (err || info == null) {
-          logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
-          return
-        }
-        logger.info('got pending update info', info)
-        this.startApp('@ota', { intent: 'force_upgrade', _info: info }, {})
-      })
-    }
-  } else if (name === 'voice local awake') {
-    // guide the user to double-click the button
-    if (this.waitingForAwake === true) {
-      this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
-      return
-    }
-    if (this.online !== true) {
-      // start @network app
-      this.startApp('@network', {
-        intent: 'user_says'
-      }, {})
-      // Do noting when there is no network
-      return
-    }
-    this.lightMethod('setDegree', ['', '' + (data.sl || 0)])
-  } else if (name === 'asr pending') {
-
-  } else if (name === 'asr end') {
-    this.lightMethod('setLoading', [''])
-  } else if (name === 'nlp') {
-    clearTimeout(this.handle.setVolume)
-    if (this.prevVolume > 0) {
-      this.volume.setVolume(this.prevVolume)
-      this.prevVolume = -1
-    }
-    this.lightMethod('setHide', [''])
-    this.onVoiceCommand(data.asr, data.nlp, data.action)
-  } else if (name === 'connected') {
-    // waiting for the app load complete
-    if (this.loadAppComplete === false) {
-      return
-    }
-    if (this.online === false || this.online === undefined) {
-      if (this.online === undefined) {
-        logger.log('first login')
-      } else {
-        logger.log('relogin')
-      }
-      this.onReconnected()
-      this.emit('reconnected')
-
-      /** Announce last installed ota changelog and clean up ota files */
-      ota.getInfoIfFirstUpgradedBoot((err, info) => {
-        if (err || info == null) {
-          logger.error('failed to fetch upgraded info, skipping', err && err.stack)
-          return
-        }
-        this.startApp('@ota', { intent: 'on_first_boot_after_upgrade', _info: info }, {})
-      })
-    }
-    this.online = true
-  } else if (name === 'disconnected') {
-    // waiting for the app load complete
-    if (this.loadAppComplete === false) {
-      return
-    }
-    // trigger disconnected event when network state is switched or when it is first activated.
-    if (this.online === true || this.online === undefined) {
-      // start network app here
-      this.onDisconnected()
-      this.emit('disconnected')
-    }
-    this.online = false
-  // trigger by cloud api, network app should send it to mobile app
-  } else if (name === 'cloud event') {
-    logger.log('cloud event', data)
-    this.sendNLPToApp('@network', {
-      intent: 'cloud_status'
-    }, {
-      code: data.code,
-      msg: data.msg
-    })
+  var handler = null
+  switch (name) {
+    case 'voice coming':
+      handler = this.handleVoiceComing
+      break
+    case 'voice local awake':
+      handler = this.handleVoiceLocalAwake
+      break
+    case 'asr end':
+      handler = this.handleAsrEnd
+      break
+    case 'asr fake':
+      handler = this.handleAsrFake
+      break
+    case 'nlp':
+      handler = this.handleNlpResult
+      break
+    case 'connected':
+      handler = this.handleNetworkConnected
+      break
+    case 'disconnected':
+      handler = this.handleNetworkDisconnected
+      break
+    case 'cloud event':
+      handler = this.handleCloudEvent
+      break
+  }
+  if (typeof handler !== 'function') {
+    logger.info(`skip event "${name}", because no handler`)
+  } else {
+    handler.call(this, data)
   }
 }
 
@@ -601,17 +690,7 @@ AppRuntime.prototype.sendNLPToApp = function (skillId, nlp, action) {
 }
 
 /**
- * 接收Mqtt的topic
- * @param {string} topic
- * @param {string} message
- * @private
- */
-AppRuntime.prototype.onMqttMessage = function (topic, message) {
-  this.emit(topic, message)
-}
-
-/**
- * 处理Mqtt的topic
+ * handle MQTT messages.
  * @private
  */
 AppRuntime.prototype.handleMqttMessage = function () {
@@ -745,19 +824,20 @@ AppRuntime.prototype.onGetPropAll = function () {
 /**
  * @private
  */
-AppRuntime.prototype.onReconnected = function () {
+AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
   // only if switch network
   if (this.waitingForAwake === true) {
     this.waitingForAwake = false
   }
   this.lightMethod('setConfigFree', ['system'])
+  this.emit('reconnected')
 }
 
 /**
  * @private
  */
-AppRuntime.prototype.onDisconnected = function () {
+AppRuntime.prototype.disconnect = function () {
   if (this.login === true) {
     // waiting for user awake or button event in order to switch to network config
     this.waitingForAwake = true
@@ -769,12 +849,13 @@ AppRuntime.prototype.onDisconnected = function () {
     }, {})
   }
   this.login = false
+  this.emit('disconnected')
 }
 
 /**
  * @private
  */
-AppRuntime.prototype.onReLogin = function () {
+AppRuntime.prototype.doLogin = function () {
   this.destroyAll()
   this.login = true
   perf.stub('started')

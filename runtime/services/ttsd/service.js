@@ -18,13 +18,17 @@ Tts.prototype.speak = function (appId, text) {
     try {
       this.handle[appId].stop()
       delete this.handle[appId]
-      req = this.options.tts.speak(text)
-      this.handle[appId] = req
     } catch (error) {
       logger.log(`try to stop prev tts failed with appId: ${appId}`)
     }
   }
-  return req.id
+  try {
+    req = this.options.tts.speak(text)
+    this.handle[appId] = req
+    return req.id
+  } catch (err) {
+    return -1
+  }
 }
 
 Tts.prototype.stop = function (appId) {
