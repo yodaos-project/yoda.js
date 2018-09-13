@@ -44,8 +44,6 @@ module.exports = function (app) {
   var bleEnable = false
   var sleepTimer
 
-  bleEnable = true
-
   var scanHandle = null
   var WifiList = []
 
@@ -114,13 +112,15 @@ module.exports = function (app) {
     if (started === true) {
       return
     }
+    started = true
     messageStream = bluetooth.getMessageStream()
     setTimeout(() => {
       messageStream.start(BLE_NAME)
+      logger.log('open ble success')
+      bleEnable = true
       app.light.play('system://setStandby.js')
       // start timer
       timerAndSleep()
-      started = true
     }, 1000)
 
     messageStream.on('handshaked', (message) => {
