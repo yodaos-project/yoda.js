@@ -78,7 +78,6 @@ function login (callback) {
       response.on('data', (chunk) => list.push(chunk))
       response.once('end', () => {
         var contents = Buffer.concat(list).toString()
-        logger.log('request /login response ok')
         try {
           var body = JSON.parse(contents)
           if (!body.success) {
