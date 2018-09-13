@@ -16,6 +16,16 @@ module.exports = function (activity) {
         [ eve ].concat(Array.prototype.slice.call(arguments, 0)))
     })
   })
+  activity.on('test-invoke', (method, params) => {
+    activity[method].apply(activity, params)
+      .then(res => eventProxy.emit('test', {
+        event: 'invoke',
+        result: res
+      }), err => eventProxy.emit('test', {
+        event: 'invoke',
+        error: err.message
+      }))
+  })
 }
 
 module.exports.proxy = eventProxy
