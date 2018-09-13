@@ -101,6 +101,26 @@ test('should test-invoke', t => {
   descriptor.emit('test-invoke', 'setPickup', [ 'arg1', 'arg2' ])
 })
 
+test('should test-invoke', t => {
+  t.plan(3)
+  var runtime = new EventEmitter()
+  runtime.setPickup = function setPickup (pickup, duration) {
+    t.strictEqual(pickup, 'arg1')
+    t.strictEqual(duration, 'arg2')
+  }
+  var descriptor = lightApp('@test', target, runtime)
+  proxy.on('test', event => {
+    if (event.event !== 'invoke') {
+      return
+    }
+    t.looseEqual(event.result, null)
+    t.end()
+    proxy.removeAllListeners()
+  })
+
+  descriptor.emit('test-invoke', 'setPickup', [ 'arg1', 'arg2' ])
+})
+
 test('should receive life cycle events', t => {
   proxy.removeAllListeners()
   t.plan(6)
@@ -140,6 +160,7 @@ test('should receive life cycle events', t => {
 })
 
 test('should populate methods', t => {
+<<<<<<< HEAD
   lightApp('@test', target, {})
     .then(app => {
       var activity = app.activity
