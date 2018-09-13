@@ -4,7 +4,7 @@ var test = require('tape')
 var prop = require('@yoda/property')
 var fs = require('fs')
 
-test('module->property->set value: key starting with persist.', t => {
+test('module->property->set method: key starting with persist.', t => {
   t.plan(2)
   prop.set('persist.test.a', 'test.a')
   t.equal(prop.get('persist.test.a'), 'test.a')
@@ -13,7 +13,7 @@ test('module->property->set value: key starting with persist.', t => {
   t.end()
 })
 
-test('module->property->set value: key starting with persist-', t => {
+test('module->property->set method: key starting with persist-', t => {
   t.plan(2)
   prop.set('persist-test.a', 'test.a')
   t.equal(prop.get('persist-test.a'), 'test.a')
@@ -23,7 +23,7 @@ test('module->property->set value: key starting with persist-', t => {
   t.end()
 })
 
-test('module->property->set value: key starting with ro.', t => {
+test('module->property->set method: key starting with ro.', t => {
   t.plan(2)
   prop.set('ro.test.a', 'test.a')
   t.equal(prop.get('ro.test.a'), 'test.a')
@@ -35,7 +35,7 @@ test('module->property->set value: key starting with ro.', t => {
 /**
  * the key starts with ro.*, these key and values are readonly.
  */
-test('module->property->set value: readonly key', t => {
+test('module->property->set method: readonly key', t => {
   t.plan(4)
   var usid = prop.get('ro.boot.usid')
   var device = prop.get('ro.rokid.device')
@@ -52,21 +52,21 @@ test('module->property->set value: readonly key', t => {
   t.end()
 })
 
-test('module->property->set value: normal key', t => {
+test('module->property->set method: normal key', t => {
   t.plan(1)
   prop.set('test_key', 'foobar')
   t.equal(prop.get('test_key'), 'foobar')
   t.end()
 })
 
-test('module->property->set value: normal key, set value typeof number', t => {
+test('module->property->set method: normal key, set method typeof number', t => {
   t.plan(1)
   prop.set('number_key', 2)
   t.equal(typeof prop.get('number_key'), 'string')
   t.end()
 })
 
-test('module->property->set value: normal key, set key typeof number', t => {
+test('module->property->set method: normal key, set key typeof number', t => {
   t.plan(2)
   t.throws(() => {
     prop.set(3, '4')
@@ -75,22 +75,27 @@ test('module->property->set value: normal key, set key typeof number', t => {
   t.end()
 })
 
-/**
- * bug id = 1291
- */
-test('module->property->set value: normal key, set long key ', t => {
-  t.plan(1)
+test('module->property->set method: set long key ', t => {
+  var key = 'test_key.aaa.bbb.ccc.ddd.fff.ggg.ppp.www.rrr.eee.vvv.bbb.nnn.mmm'
   t.throws(() => {
-    var key = 'test_key.aaa.bbb.ccc.ddd.fff.ggg.ppp.www.rrr.eee.vvv.bbb.nnn.mmm'
     prop.set(key, 'test')
-  }, /key is too long/)
+  }, /key is too long/, 'key is too long')
+  t.equal(prop.get(key), '')
+  t.end()
+})
+
+test.skip('module->property->set method: set long value', t => {
+  var key = 'test_key.long.vaule'
+  var value = 'aaaa.bbbb.cccc.dddd.eeee.ffff.mmmm.qqqq.wwww.eeee.rrrr.tttt.uuuu.tttt.yyyy.uuuu.iiii.oooo.pppp'
+  prop.set(key, value)
+  t.equal(prop.get(key), value)
   t.end()
 })
 
 /**
  * bug id = 1292
  */
-test('module->property->set value: normal key, set key ', t => {
+test.skip('module->property->set method: set key with special symbol', t => {
   t.plan(1)
   t.throws(() => {
     prop.set('test_key.&', 'test')
@@ -98,7 +103,7 @@ test('module->property->set value: normal key, set key ', t => {
   t.end()
 })
 
-test('module->property->get value', function (t) {
+test('module->property->get method', function (t) {
   t.plan(3)
   t.equal(typeof prop.get('ro.build.version.release'), 'string')
   t.equal(typeof prop.get('ro.rokid.build.platform'), 'string')
@@ -106,7 +111,7 @@ test('module->property->get value', function (t) {
   t.end()
 })
 
-test('module->property->get value : key is null', function (t) {
+test('module->property->get method: key is null', function (t) {
   t.plan(1)
   t.throws(() => {
     prop.get(null)
@@ -114,7 +119,7 @@ test('module->property->get value : key is null', function (t) {
   t.end()
 })
 
-test('module->property->set value : key is null', function (t) {
+test('module->property->set method: key is null', function (t) {
   t.plan(1)
   t.throws(() => {
     prop.set(null)
@@ -125,7 +130,7 @@ test('module->property->set value : key is null', function (t) {
 /**
  * bug id = 1303
  */
-test('module->property->set value : value must be needed', function (t) {
+test.skip('module->property->set method: value must be needed', function (t) {
   t.plan(1)
   t.throws(() => {
     prop.set('test_key.xxxxx')
