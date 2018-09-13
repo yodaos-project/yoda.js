@@ -12,39 +12,53 @@ var proxy = require('../fixture/simple-app').proxy
 var target = path.join(helper.paths.fixture, 'simple-app')
 var ActivityDescriptor = Descriptors.ActivityDescriptor
 var MultimediaDescriptor = Descriptors.MultimediaDescriptor
+var LightDescriptor = Descriptors.LightDescriptor
+var TtsDescriptor = Descriptors.TtsDescriptor
 
-test('should listen events', t => {
-  proxy.removeAllListeners()
-  var runtime = new EventEmitter()
-
-  lightApp('@test', target, runtime)
-    .then(descriptor => {
-      var activityEvents = Object.keys(ActivityDescriptor.prototype).filter(key => {
-        var desc = ActivityDescriptor.prototype[key]
-        return desc.type === 'event'
-      })
-      var multimediaEvents = Object.keys(MultimediaDescriptor.prototype).filter(key => {
-        var desc = MultimediaDescriptor.prototype[key]
-        return desc.type === 'event'
-      })
-
-      activityEvents.forEach(it => {
-        t.assert(descriptor.listeners(it).length > 0, `event '${it}' should have been listened.`)
-      })
-      multimediaEvents.forEach(it => {
-        t.assert(descriptor.media.listeners(it).length > 0, `media event '${it}' should have been listened.`)
-      })
-
-      t.end()
-    })
-    .catch(err => {
-      t.error(err)
-      t.end()
-    })
+Object.assign(ActivityDescriptor.prototype, {
+  'test-invoke': {
+    type: 'event'
+  }
 })
 
-test('should subscribe event-ack', t => {
+test('should listen all events', t => {
+  var runtime = new EventEmitter()
+  var descriptor = lightApp('@test', target, runtime)
+  var descriptors = [ActivityDescriptor, MultimediaDescriptor, LightDescriptor, TtsDescriptor]
+  descriptors.forEach(des => {
+    var events = Object.keys(des.prototype).filter(key => {
+      var desc = des.prototype[key]
+      return desc.type === 'event'
+    })
+    var listenDesc
+    var name
+    switch (des) {
+      case ActivityDescriptor:
+        listenDesc = descriptor
+        name = 'activity'
+        break
+      case MultimediaDescriptor:
+        listenDesc = descriptor.media
+        name = 'media'
+        break
+      case LightDescriptor:
+        listenDesc = descriptor.light
+        name = 'light'
+        break
+      case TtsDescriptor:
+        listenDesc = descriptor.tts
+        name = 'tts'
+        break
+    }
+    events.forEach(it => {
+      t.assert(listenDesc.listeners(it).length > 0, `${name} event '${it}' should have been listened.`)
+    })
+  })
+  t.end()
   proxy.removeAllListeners()
+})
+
+test.skip('should subscribe event-ack', t => {
   var runtime = new EventEmitter()
   lightApp('@test', target, runtime)
     .then(descriptor => {
@@ -67,6 +81,26 @@ test('should subscribe event-ack', t => {
     })
 })
 
+test('should test-invoke', t => {
+  t.plan(3)
+  var runtime = new EventEmitter()
+  runtime.setPickup = function setPickup (pickup, duration) {
+    t.strictEqual(pickup, 'arg1')
+    t.strictEqual(duration, 'arg2')
+  }
+  var descriptor = lightApp('@test', target, runtime)
+  proxy.on('test', event => {
+    if (event.event !== 'invoke') {
+      return
+    }
+    t.looseEqual(event.result, null)
+    t.end()
+    proxy.removeAllListeners()
+  })
+
+  descriptor.emit('test-invoke', 'setPickup', [ 'arg1', 'arg2' ])
+})
+
 test('should receive life cycle events', t => {
   proxy.removeAllListeners()
   t.plan(6)
@@ -83,7 +117,7 @@ test('should receive life cycle events', t => {
     t.pass('event `destroyed` received')
   })
 
-  var nlp = { intent: { } }
+  var nlp = { intent: {} }
   var action = { appId: '@test' }
   proxy.on('request', (gotNlp, gotAction) => {
     t.strictEqual(gotNlp, nlp, 'nlp comparison')
@@ -106,7 +140,6 @@ test('should receive life cycle events', t => {
 })
 
 test('should populate methods', t => {
-  proxy.removeAllListeners()
   lightApp('@test', target, {})
     .then(app => {
       var activity = app.activity
