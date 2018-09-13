@@ -293,7 +293,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch((error) => {
       logger.error(`create app error with appId: ${appId}`, error)
-      return this.life.destroyAppById(appId)
+      return this.life.destroyAppById(appId, { force: true })
     })
 }
 
@@ -340,7 +340,7 @@ AppRuntime.prototype.openUrl = function (url, options) {
     .then(() => true)
     .catch((error) => {
       logger.error(`open url error with appId: ${appId}`, error)
-      return this.life.destroyAppById(appId)
+      return this.life.destroyAppById(appId, { force: true })
     })
 }
 

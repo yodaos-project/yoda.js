@@ -6,10 +6,6 @@ var target = process.argv[2]
 
 function getActivityDescriptor (appId) {
   return new Promise((resolve, reject) => {
-    var timer = setTimeout(() => {
-      reject(new Error('ActivityDescriptor not received for 1s.'))
-    }, 1000)
-
     process.on('message', onMessage)
     process.send({
       type: 'status-report',
@@ -22,11 +18,9 @@ function getActivityDescriptor (appId) {
         return
       }
       if (typeof message.result !== 'object') {
-        clearTimeout(timer)
         process.removeListener('message', onMessage)
         return reject(new Error('Nil result on message descriptor.'))
       }
-      clearTimeout(timer)
       process.removeListener('message', onMessage)
       resolve(message.result)
     }
@@ -71,7 +65,7 @@ function main () {
   var handle = require(main)
   logger.log(`load main: ${main}`)
 
-  var appId = pkg.metadata.skills[0]
+  var appId = pkg.name
 
   getActivityDescriptor(appId)
     .then(descriptor => {
@@ -88,7 +82,8 @@ function main () {
       process.send({
         type: 'status-report',
         status: 'error',
-        error: error.message
+        error: error.message,
+        stack: error.stack
       })
     })
 }
