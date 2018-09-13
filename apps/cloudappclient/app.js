@@ -93,6 +93,17 @@ module.exports = activity => {
         .catch(() => {
           next()
         })
+    } else if (dt.action === 'stop') {
+      activity.media.stop()
+        .then(() => {
+          sos.sendEventRequest('media', 'stop', dt.data, {
+            itemId: dt.data.item.itemId,
+            token: dt.data.item.token
+          }, next)
+        })
+        .catch(() => {
+          next()
+        })
     }
   })
 
