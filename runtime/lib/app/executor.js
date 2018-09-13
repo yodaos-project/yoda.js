@@ -53,7 +53,7 @@ Executor.prototype.create = function () {
         return app
       }, err => {
         logger.info('Unexpected error on starting ext-app', err.message, err.stack)
-        this.runtime.exitAppByIdForce(this.appId)
+        throw err
       })
   }
 }

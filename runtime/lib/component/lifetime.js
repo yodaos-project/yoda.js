@@ -536,6 +536,8 @@ LaVieEnPile.prototype.destroyAll = function (options) {
  * **Also destroy daemon apps.**
  *
  * @param {string} appId -
+ * @param {object} [options] -
+ * @param {boolean} [options.force=false] -
  * @returns {Promise<void>}
  */
 LaVieEnPile.prototype.destroyAppById = function (appId, options) {
