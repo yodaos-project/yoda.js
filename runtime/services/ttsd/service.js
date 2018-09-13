@@ -13,11 +13,12 @@ Tts.prototype.speak = function (appId, text) {
   if (AudioManager.isMuted()) {
     AudioManager.setMute(false)
   }
-  var req = this.options.tts.speak(text)
+  var req
   if (this.handle[appId]) {
     try {
       this.handle[appId].stop()
       delete this.handle[appId]
+      req = this.options.tts.speak(text)
       this.handle[appId] = req
     } catch (error) {
       logger.log(`try to stop prev tts failed with appId: ${appId}`)
