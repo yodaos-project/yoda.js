@@ -61,7 +61,7 @@ module.exports = function (activity) {
           localVol = 100
         }
 
-        if (AudioManager.isMuted()) {
+        if (AudioManager.isMuted() && localVol > 0) {
           /** if device is already muted, unmute it. */
           setUnmute({ recover: false })
         }
@@ -86,7 +86,7 @@ module.exports = function (activity) {
           setMute({ source: 'indirect' })
         }
 
-        if (silent) {
+        if (silent || init) {
           /** do not announce anything if silence is demanded. */
           return Promise.resolve()
         }
