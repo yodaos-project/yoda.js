@@ -213,7 +213,6 @@ Manager.prototype.append = function (nlp, action) {
     this.skills[pos].onrequest(action.response.action.directives || [])
   } else {
     logger.log(`skill ${action.appId} not in stack, append ignore`)
-    // this.onrequest(nlp, action)
   }
 }
 
@@ -287,12 +286,18 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
   if (type === 'tts') {
     eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
       logger.log(`====> tts response: ${response}`)
+      if (response === '{}') {
+        return cb && cb()
+      }
       var action = JSON.parse(response)
       this.append(null, action)
       cb && cb()
     })
   } else if (type === 'media') {
     eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
+      if (response === '{}') {
+        return cb && cb()
+      }
       var action = JSON.parse(response)
       this.append(null, action)
       cb && cb()
