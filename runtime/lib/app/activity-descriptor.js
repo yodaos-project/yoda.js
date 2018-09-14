@@ -223,14 +223,15 @@ Object.assign(ActivityDescriptor.prototype,
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function exit
+     * @param {object} [options] -
+     * @param {boolean} [options.clearContext] - also clears contexts
      * @returns {Promise<void>}
      */
     exit: {
       type: 'method',
       returns: 'promise',
-      fn: function exit () {
-        this._runtime.life.deactivateAppById(this._appId)
-        return Promise.resolve()
+      fn: function exit (options) {
+        return this._runtime.exitAppById(this._appId, options)
       }
     },
     /**

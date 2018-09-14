@@ -520,16 +520,25 @@ AppRuntime.prototype.destroyAll = function (options) {
 }
 
 /**
+ *
  * 更新App stack
  * @private
+ * @param {string} skillId -
+ * @param {'cut' | 'scene'} form -
+ * @param {object} [options] -
+ * @param {boolean} [options.isActive] - if update currently active skillId
  */
-AppRuntime.prototype.updateCloudStack = function (skillId, form) {
+AppRuntime.prototype.updateCloudStack = function (skillId, form, options) {
+  var isActive = _.get(options, 'isActive', true)
+  if (isActive) {
+    this.domain.active = skillId
+  }
+
   if (form === 'cut') {
     this.domain.cut = skillId
   } else if (form === 'scene') {
     this.domain.scene = skillId
   }
-  this.domain.active = skillId
   var ids = [this.domain.scene, this.domain.cut].map(it => {
     /**
      * Exclude local convenience app from cloud skill stack
@@ -599,6 +608,25 @@ AppRuntime.prototype.restoreKeyDefaults = function restoreKeyDefaults (appId, ke
     this.keyboard.listeners[key] = null
   }
   return Promise.resolve()
+}
+
+/**
+ *
+ * @param {string} appId -
+ * @param {object} [options] -
+ * @param {boolean} [options.clearContext] - also clears contexts
+ */
+AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
+  var clearContext = _.get(options, 'clearContext', false)
+  if (clearContext) {
+    if (appId === this.loader.getAppIdBySkillId(this.domain.scene)) {
+      this.updateCloudStack('', 'scene', { isActive: false })
+    }
+    if (appId === this.loader.getAppIdBySkillId(this.domain.cut)) {
+      this.updateCloudStack('', 'cut', { isActive: false })
+    }
+  }
+  return this.life.deactivateAppById(this._appId)
 }
 
 /**
