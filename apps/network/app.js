@@ -233,6 +233,7 @@ module.exports = function (app) {
   }
 
   // update wifi list, wifi list will upate in services now
+  // eslint-disable-next-line no-unused-vars
   function startScan () {
     clearInterval(scanHandle)
     scanHandle = setInterval(function () {
@@ -247,6 +248,7 @@ module.exports = function (app) {
   }
 
   // stop update wifi list
+  // eslint-disable-next-line no-unused-vars
   function stopScan () {
     clearInterval(scanHandle)
   }

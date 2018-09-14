@@ -22,43 +22,46 @@ Object.assign(ActivityDescriptor.prototype, {
 })
 
 test('should listen all events', t => {
-  var runtime = new EventEmitter()
-  var descriptor = lightApp('@test', target, runtime)
-  var descriptors = [ActivityDescriptor, MultimediaDescriptor, LightDescriptor, TtsDescriptor]
-  descriptors.forEach(des => {
-    var events = Object.keys(des.prototype).filter(key => {
-      var desc = des.prototype[key]
-      return desc.type === 'event'
-    })
-    var listenDesc
-    var name
-    switch (des) {
-      case ActivityDescriptor:
-        listenDesc = descriptor
-        name = 'activity'
-        break
-      case MultimediaDescriptor:
-        listenDesc = descriptor.media
-        name = 'media'
-        break
-      case LightDescriptor:
-        listenDesc = descriptor.light
-        name = 'light'
-        break
-      case TtsDescriptor:
-        listenDesc = descriptor.tts
-        name = 'tts'
-        break
-    }
-    events.forEach(it => {
-      t.assert(listenDesc.listeners(it).length > 0, `${name} event '${it}' should have been listened.`)
-    })
-  })
-  t.end()
   proxy.removeAllListeners()
+  var runtime = new EventEmitter()
+  var descriptors = [ActivityDescriptor, MultimediaDescriptor, LightDescriptor, TtsDescriptor]
+  lightApp('@test', target, runtime)
+    .then(descriptor => {
+      descriptors.forEach(des => {
+        var events = Object.keys(des.prototype).filter(key => {
+          var desc = des.prototype[key]
+          return desc.type === 'event'
+        })
+        var listenDesc
+        var name
+        switch (des) {
+          case ActivityDescriptor:
+            listenDesc = descriptor
+            name = 'activity'
+            break
+          case MultimediaDescriptor:
+            listenDesc = descriptor.media
+            name = 'media'
+            break
+          case LightDescriptor:
+            listenDesc = descriptor.light
+            name = 'light'
+            break
+          case TtsDescriptor:
+            listenDesc = descriptor.tts
+            name = 'tts'
+            break
+        }
+        events.forEach(it => {
+          t.assert(listenDesc.listeners(it).length > 0, `${name} event '${it}' should have been listened.`)
+        })
+      })
+      t.end()
+    })
 })
 
-test.skip('should subscribe event-ack', t => {
+test('should subscribe event-ack', t => {
+  proxy.removeAllListeners()
   var runtime = new EventEmitter()
   lightApp('@test', target, runtime)
     .then(descriptor => {
@@ -82,43 +85,24 @@ test.skip('should subscribe event-ack', t => {
 })
 
 test('should test-invoke', t => {
+  proxy.removeAllListeners()
   t.plan(3)
   var runtime = new EventEmitter()
   runtime.setPickup = function setPickup (pickup, duration) {
     t.strictEqual(pickup, 'arg1')
     t.strictEqual(duration, 'arg2')
   }
-  var descriptor = lightApp('@test', target, runtime)
-  proxy.on('test', event => {
-    if (event.event !== 'invoke') {
-      return
-    }
-    t.looseEqual(event.result, null)
-    t.end()
-    proxy.removeAllListeners()
-  })
-
-  descriptor.emit('test-invoke', 'setPickup', [ 'arg1', 'arg2' ])
-})
-
-test('should test-invoke', t => {
-  t.plan(3)
-  var runtime = new EventEmitter()
-  runtime.setPickup = function setPickup (pickup, duration) {
-    t.strictEqual(pickup, 'arg1')
-    t.strictEqual(duration, 'arg2')
-  }
-  var descriptor = lightApp('@test', target, runtime)
-  proxy.on('test', event => {
-    if (event.event !== 'invoke') {
-      return
-    }
-    t.looseEqual(event.result, null)
-    t.end()
-    proxy.removeAllListeners()
-  })
-
-  descriptor.emit('test-invoke', 'setPickup', [ 'arg1', 'arg2' ])
+  lightApp('@test', target, runtime)
+    .then(descriptor => {
+      proxy.on('test', event => {
+        if (event.event !== 'invoke') {
+          return
+        }
+        t.looseEqual(event.result, null)
+        t.end()
+      })
+      descriptor.emit('test-invoke', 'setPickup', [ 'arg1', 'arg2' ])
+    })
 })
 
 test('should receive life cycle events', t => {
@@ -160,7 +144,7 @@ test('should receive life cycle events', t => {
 })
 
 test('should populate methods', t => {
-<<<<<<< HEAD
+  proxy.removeAllListeners()
   lightApp('@test', target, {})
     .then(app => {
       var activity = app.activity

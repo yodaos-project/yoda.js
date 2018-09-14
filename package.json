@@ -3,6 +3,7 @@
   "version": "7.27.0",
   "scripts": {
     "prerestart": "tools/runtime-install",
+    "pre-push": "npm run lint",
     "restart": "tools/runtime-op restart",
     "lint": "npm run lint-js && npm run lint-cc",
     "lint-js": "standard",
@@ -22,6 +23,7 @@
     "apilevel": 0.5
   },
   "devDependencies": {
+    "husky": "^1.0.0-rc.14",
     "ink-docstrap": "^1.3.2",
     "jsdoc": "^3.5.5",
     "standard": "^11.0.1",

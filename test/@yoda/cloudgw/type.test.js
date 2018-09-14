@@ -23,14 +23,23 @@ test('valid parameter', (t) => {
     'key': 'XXX',
     'secret': 'XXX'
   }
-  t.doesNotThrow(() => { new Cloudgw(config) }, new RegExp('illegal parameter'), 'valid parameter')
+  t.doesNotThrow(() => {
+    // eslint-disable-next-line no-new
+    new Cloudgw(config)
+  }, new RegExp('illegal parameter'), 'valid parameter')
   t.end()
 })
 
 test('illegal parameter', (t) => {
   // throws id：1325
-  t.throws(() => { new Cloudgw(null) }, new RegExp('Expect a string on config.key.'), 'config is null')
-  t.throws(() => { new Cloudgw({}) }, new RegExp('Expect a string on config.key.'), 'config is {}')
+  t.throws(() => {
+    // eslint-disable-next-line no-new
+    new Cloudgw(null)
+  }, new RegExp('Expect a string on config.key.'), 'config is null')
+  t.throws(() => {
+    // eslint-disable-next-line no-new
+    new Cloudgw({})
+  }, new RegExp('Expect a string on config.key.'), 'config is {}')
 
   config = {
     'deviceId': null,
@@ -38,7 +47,10 @@ test('illegal parameter', (t) => {
     'key': 'XXX',
     'secret': 'XXX'
   }
-  t.throws(() => { new Cloudgw(config) }, new RegExp('Expect a string on config.deviceId.'), 'deviceId is null')
+  t.throws(() => {
+    // eslint-disable-next-line no-new
+    new Cloudgw(config)
+  }, new RegExp('Expect a string on config.deviceId.'), 'deviceId is null')
 
   config = {
     'deviceId': 'XXX',
@@ -46,7 +58,10 @@ test('illegal parameter', (t) => {
     'key': 'XXX',
     'secret': 'XXX'
   }
-  t.throws(() => { new Cloudgw(config) }, new RegExp('Expect a string on config.deviceTypeId.'), 'deviceTypeId is null')
+  t.throws(() => {
+    // eslint-disable-next-line no-new
+    new Cloudgw(config)
+  }, new RegExp('Expect a string on config.deviceTypeId.'), 'deviceTypeId is null')
 
   config = {
     'deviceId': 'XXX',
@@ -54,7 +69,10 @@ test('illegal parameter', (t) => {
     'key': null,
     'secret': 'XXX'
   }
-  t.throws(() => { new Cloudgw(config) }, new RegExp('Expect a string on config.key.'), 'key is null')
+  t.throws(() => {
+    // eslint-disable-next-line no-new
+    new Cloudgw(config)
+  }, new RegExp('Expect a string on config.key.'), 'key is null')
 
   config = {
     'deviceId': 'XXX',
@@ -62,7 +80,10 @@ test('illegal parameter', (t) => {
     'key': 'XXX',
     'secret': null
   }
-  t.throws(() => { new Cloudgw(config) }, new RegExp('Expect a string on config.secret.'), 'secret is null')
+  t.throws(() => {
+    // eslint-disable-next-line no-new
+    new Cloudgw(config)
+  }, new RegExp('Expect a string on config.secret.'), 'secret is null')
 
   t.end()
 })

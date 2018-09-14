@@ -15,7 +15,7 @@ function sync (source) {
   }
   var str = [
     [date.year, date.month, date.date].join('-'),
-    [date.hours, date.minutes, date.seconds].join(':'),
+    [date.hours, date.minutes, date.seconds].join(':')
   ].join(' ')
 
   var cmd = `date -s "${str}"`

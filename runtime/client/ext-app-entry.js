@@ -94,4 +94,5 @@ function main () {
 
 module.exports = main
 
-activate(), main()
+activate()
+main()

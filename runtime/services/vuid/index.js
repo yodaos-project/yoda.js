@@ -78,8 +78,7 @@ function updateSpeechPrepareOptions () {
   if (floraCli && speechAuthInfo) {
     var uri = 'wss://apigwws.open.rokid.com:443/api'
     var msg = new floraFactory.Caps()
-    if (speechAuthInfo.uri)
-      uri = speechAuthInfo.uri
+    if (speechAuthInfo.uri) { uri = speechAuthInfo.uri }
     msg.write(uri)
     msg.write(speechAuthInfo.key)
     msg.write(speechAuthInfo.deviceTypeId)

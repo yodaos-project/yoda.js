@@ -34,20 +34,19 @@
  * ```
  */
 
-var native_ctor = require('./flora-cli.node')
-var util = require('util')
+var nativeCtor = require('./flora-cli.node')
 var logger = require('logger')('flora')
 
-function dummy_callback () {
+function dummyCallback () {
 }
 
 /**
  * @class
  */
 function Client () {
-  this.callbacks = new Array()
-  this.callbacks[0] = dummy_callback
-  this.callbacks[1] = dummy_callback
+  this.callbacks = []
+  this.callbacks[0] = dummyCallback
+  this.callbacks[1] = dummyCallback
 }
 
 /**
@@ -65,8 +64,8 @@ function Client () {
  * @param {module:@yoda/flora~FloraClientCallback} cb - callback function
  */
 Client.prototype.on = function (name, cb) {
-  if (name && util.isFunction(cb)) {
-    if (name == 'recv_post') { this.callbacks[0] = cb } else if (name == 'disconnected') { this.callbacks[1] = cb }
+  if (name && typeof cb === 'function') {
+    if (name === 'recv_post') { this.callbacks[0] = cb } else if (name === 'disconnected') { this.callbacks[1] = cb }
   }
 }
 
@@ -148,7 +147,7 @@ exports.CLI_ECONN = -3
  * @classdesc utility of data struct serialize
  */
 function Caps () {
-  this.pairs = new Array()
+  this.pairs = []
 }
 
 Caps.INT32 = 105 // 'i'
@@ -166,7 +165,7 @@ Caps.OBJECT = 79 // 'O'
  * @param {Number} i32 - int32 value
  */
 Caps.prototype.writeInt32 = function (i32) {
-  if (!util.isNumber(i32)) { return }
+  if (typeof i32 !== 'number') { return }
   var p = { type: Caps.INT32, value: i32 }
   this.pairs.push(p)
 }
@@ -178,7 +177,7 @@ Caps.prototype.writeInt32 = function (i32) {
  * @param {Number} i64 - int64 value
  */
 Caps.prototype.writeInt64 = function (i64) {
-  if (!util.isNumber(i64)) { return }
+  if (typeof i64 !== 'number') { return }
   var p = { type: Caps.INT64, value: i64 }
   this.pairs.push(p)
 }
@@ -190,7 +189,7 @@ Caps.prototype.writeInt64 = function (i64) {
  * @param {Number} f - float value
  */
 Caps.prototype.writeFloat = function (f) {
-  if (!util.isNumber(f)) { return }
+  if (typeof f !== 'number') { return }
   var p = { type: Caps.FLOAT, value: f }
   this.pairs.push(p)
 }
@@ -202,7 +201,7 @@ Caps.prototype.writeFloat = function (f) {
  * @param {Number} d - double value
  */
 Caps.prototype.writeDouble = function (d) {
-  if (!util.isNumber(d)) { return }
+  if (typeof d !== 'number') { return }
   var p = { type: Caps.DOUBLE, value: d }
   this.pairs.push(p)
 }
@@ -215,7 +214,7 @@ Caps.prototype.writeDouble = function (d) {
  */
 Caps.prototype.write = function (v) {
   var p
-  if (util.isString(v)) {
+  if (typeof v === 'string') {
     p = { type: Caps.STRING, value: v }
   } else if (v instanceof Uint8Array) {
     p = { type: Caps.BINARY, value: v }
@@ -233,7 +232,7 @@ Caps.prototype.write = function (v) {
  * @return member value
  */
 Caps.prototype.get = function (idx) {
-  if (!util.isNumber(idx)) { return undefined }
+  if (typeof idx !== 'number') { return undefined }
   if (idx < 0 || idx >= this.pairs.length) { return undefined }
   return this.pairs[idx].value
 }
@@ -248,8 +247,8 @@ Caps.prototype.get = function (idx) {
 exports.connect = function (uri, bufsize) {
   var cli = new Client()
   cli.__caps_ctor__ = Caps
-  var r = native_ctor.connect(uri, bufsize, cli)
-  if (r != this.CLI_SUCCESS) {
+  var r = nativeCtor.connect(uri, bufsize, cli)
+  if (r !== this.CLI_SUCCESS) {
     logger.log('connect ' + uri + ' failed: ' + r)
     return undefined
   }
