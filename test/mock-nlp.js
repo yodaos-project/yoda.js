@@ -63,4 +63,4 @@ var response = {
   }
 }
 
-runtime.onEvent('nlp', JSON.stringify(response))
+runtime.onTurenEvent('nlp', JSON.stringify(response))
