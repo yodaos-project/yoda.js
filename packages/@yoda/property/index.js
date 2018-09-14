@@ -30,7 +30,7 @@ function normalize (key, flag) {
   if (key === '') {
     throw new TypeError('key must not be empty string')
   }
-  if (!/^[a-z0-9\.\-_]+$/i.test(key)) {
+  if (!/^[a-z0-9.\-_]+$/i.test(key)) {
     throw new TypeError('invalid key, it must be string with dot')
   }
 

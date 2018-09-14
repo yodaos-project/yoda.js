@@ -86,7 +86,7 @@ EventBus.prototype.onMessage = function onMessage (message) {
   if (type === 'status-report' || type === 'subscribe') {
     logger.debug(`Received child message ${message.type} => ${message.event}`)
   } else {
-    logger.debug(`Received child message `+
+    logger.debug(`Received child message ` +
      `${message.type}(${message.invocationId || -1}) ${message.namespace}.${message.method}`)
   }
   if (this.eventTable.indexOf(type) < 0) {

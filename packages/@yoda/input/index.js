@@ -19,6 +19,7 @@ var events = [
 var ACTION_CLICK = 1
 var ACTION_DB_CLICK = 2
 var ACTION_LONG_CLICK = 3
+// eslint-disable-next-line no-unused-vars
 var ACTION_SLIDE = 4
 
 /**

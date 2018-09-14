@@ -59,14 +59,14 @@ function AppRuntime (paths) {
   }
   // manager app's permission
   this.permission = new Permission(this)
-  this.volume = null 
+  this.volume = null
   this.prevVolume = -1
-  this.micMuted = false     // microphone was reset on runtime start up
+  this.micMuted = false // microphone was reset on runtime start up
   this.handle = {}
-  this.cloudApi = null      // support cloud api. etc.. login
-  this.online = undefined   // to identify the first start
-  this.login = undefined    // to identify is login or not
-  this.waitingForAwake = undefined  // to identify network switch from connected to disconnected
+  this.cloudApi = null // support cloud api. etc.. login
+  this.online = undefined // to identify the first start
+  this.login = undefined // to identify is login or not
+  this.waitingForAwake = undefined // to identify network switch from connected to disconnected
   this.micMuted = false
   this.forceUpdateAvailable = false
   this.voiceCtx = {
@@ -1199,7 +1199,7 @@ function getFloraClient () {
       err = msg.get(0)
       idx = msg.get(2)
     }
-    if (util.isFunction(floraCallbacks[idx])) {
+    if (typeof floraCallbacks[idx] === 'function') {
       floraCallbacks[idx](err, nlp, action)
       delete floraCallbacks[idx]
     }
@@ -1215,7 +1215,7 @@ function getFloraClient () {
 }
 
 AppRuntime.prototype.getNlpResult = function (asr, cb) {
-  if (!util.isString(asr) || !util.isFunction(cb)) { return }
+  if (typeof asr !== 'string' || typeof cb !== 'function') { return }
   var cli = getFloraClient()
   if (cli) {
     var caps = new floraFactory.Caps()

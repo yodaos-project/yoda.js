@@ -130,6 +130,7 @@ test.skip('module->tts->createTts method test case: normal options params', t =>
   }
   var tts = ttsModule.createTts(config.cloudgw)
   var req = tts.speak('你好若琪', (err) => {
+    t.error(err)
     t.equal(req.state, 'end', `tts : id=${req.id} callback`)
     tts.disconnect()
     t.end()

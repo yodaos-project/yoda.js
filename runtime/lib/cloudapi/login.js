@@ -1,6 +1,5 @@
 'use strict'
 
-var system = require('@yoda/system')
 var https = require('https')
 var qs = require('querystring')
 var crypto = require('crypto')
@@ -58,7 +57,7 @@ function login (callback) {
       time: time,
       sign: sign,
       userId: userId,
-      namespaces: 'custom_config',
+      namespaces: 'custom_config'
     })
     logger.log('start /login request')
 
