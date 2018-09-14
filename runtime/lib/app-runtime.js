@@ -1005,7 +1005,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     self.getNlpResult(text, function (err, nlp, action) {
       if (err) {
         cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
-        throw err
+        return
       }
       logger.info('mocking asr got nlp result for', text, nlp, action)
       return self.onVoiceCommand(text, nlp, action)
