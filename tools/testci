@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+patternPrefix='/data/workspace/test/'
+resultDir='./test/.result'
+
+function testit() {
+  local scripts="
+export BLUETOOTH_CHANNEL_PREFIX=/tmp > /dev/null;
+iotjs /usr/lib/node_modules/tape/bin/tape.js '/data/workspace/test/$1/**/*.test.js'
+"
+  adb shell $scripts
+}
+
+function test_package() {
+  testit "@yoda/$1" > "$resultDir/@yoda.$1.tap"
+}
+
+function test_runtime() {
+  testit "runtime" > "$resultDir/runtime.tap"
+}
+
+function init() {
+  tools/runtime-install -t
+  rm -rf $resultDir/*
+  mkdir -p $resultDir
+}
+
+init
+test_package 'audio'
+test_package 'bluetooth'
+test_package 'cloudgw'
+test_package 'flora'
+test_package 'input'
+test_package 'light'
+test_package 'multimedia'
+test_package 'ota'
+test_package 'property'
+test_package 'system'
+test_package 'tts'
+test_package 'util'
+test_package 'wifi'
+test_runtime
+
+node ./tools/helper/merge-tests.js > ./test/.result/summary.json
