@@ -44,17 +44,15 @@ function keepAlive (appId) {
       type: 'ping',
       appId: appId
     })
-  }, 60 * 60 * 1000)
+  }, 10 * 60 * 1000)
+  var nextTickTrigger = setInterval(() => {}, 1000)
   process.on('message', message => {
     if (message.type === 'pong') {
       logger.info('Received pong from VuiDaemon, stop pinging.')
-      clearTimeout(timer)
+      clearInterval(timer)
+      clearInterval(nextTickTrigger)
     }
   })
-}
-
-function activate () {
-  setInterval(() => false, 1000)
 }
 
 function main () {
@@ -71,6 +69,8 @@ function main () {
 
   var appId = pkg.name
 
+  keepAlive(appId)
+
   getActivityDescriptor(appId)
     .then(descriptor => {
       var activity = translate(descriptor)
@@ -81,7 +81,6 @@ function main () {
         type: 'status-report',
         status: 'ready'
       })
-      keepAlive(appId)
     }).catch(error => {
       process.send({
         type: 'status-report',
@@ -93,6 +92,4 @@ function main () {
 }
 
 module.exports = main
-
-activate()
 main()

@@ -28,7 +28,7 @@ function createExtApp (appId, target, runtime) {
   descriptor._childProcess = cp
   logger.info(`Forked child app ${target}.`)
 
-  var eventBus = new EventBus(descriptor, cp)
+  var eventBus = new EventBus(descriptor, cp, appId)
   var onMessage = eventBus.onMessage.bind(eventBus)
   cp.on('message', onMessage)
   cp.on('disconnect', function onDisconnected () {
@@ -68,11 +68,13 @@ function createExtApp (appId, target, runtime) {
  *
  * @param {ActivityDescriptor} descriptor
  * @param {childProcess.ChildProcess} socket
+ * @param {string} appId
  */
-function EventBus (descriptor, socket) {
+function EventBus (descriptor, socket, appId) {
   EventEmitter.call(this)
   this.descriptor = descriptor
   this.socket = socket
+  this.appId = appId
   this.eventSynTable = {}
   this.eventSyn = 0
 }
@@ -83,16 +85,11 @@ EventBus.prototype.eventTable = [ 'test', 'ping', 'status-report', 'subscribe', 
 
 EventBus.prototype.onMessage = function onMessage (message) {
   var type = message.type
-  if (type === 'status-report' || type === 'subscribe') {
-    logger.debug(`Received child message ${message.type} => ${message.event}`)
-  } else {
-    logger.debug(`Received child message ` +
-     `${message.type}(${message.invocationId || -1}) ${message.namespace}.${message.method}`)
-  }
   if (this.eventTable.indexOf(type) < 0) {
-    logger.warn(`VuiDaemon received unknown ipc message type '${message.type}' from app.`)
+    logger.warn(`VuiDaemon received unknown ipc message type '${type}' from app.`)
     return
   }
+  logger.debug(`Received child message from ${this.appId}, type: ${type}`)
   this[type](message)
 }
 
@@ -100,6 +97,7 @@ EventBus.prototype.test = function onTest () { /** nothing to do with test */ }
 EventBus.prototype.ping = function onPing () { /** nothing to do with ping */ }
 
 EventBus.prototype['status-report'] = function onStatusReport (message) {
+  logger.debug(`Received child ${this.appId} status report: ${message.status}`)
   switch (message.status) {
     case 'initiating': {
       this.socket.send({
@@ -127,6 +125,9 @@ EventBus.prototype.subscribe = function onSubscribe (message) {
   var event = message.event
   var namespace = message.namespace
 
+  var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}`
+  logger.debug(`Received child ${this.appId} subscription: ${eventStr}`)
+
   var nsObj = this.descriptor
   if (namespace != null) {
     nsObj = nsObj[namespace]
@@ -153,6 +154,7 @@ EventBus.prototype.invoke = function onInvoke (message) {
   var params = message.params
 
   var methodStr = `Activity.${namespace ? namespace + '.' : ''}${method}`
+  logger.debug(`Received child ${this.appId} invocation(${invocationId}): ${methodStr}`)
 
   var nsObj = this.descriptor
   if (namespace != null) {
@@ -191,6 +193,9 @@ EventBus.prototype['subscribe-ack'] = function onSubscribeAck (message) {
   var self = this
   var event = message.event
   var namespace = message.namespace
+
+  var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}`
+  logger.debug(`Received child ${this.appId} ack-subscription: ${eventStr}`)
 
   var nsObj = this.descriptor
   if (namespace != null) {
