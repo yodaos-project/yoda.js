@@ -22,10 +22,10 @@ module.exports = activity => {
   })
 
   directive.do('frontend', 'tts', function (dt, next) {
+    logger.log(`exe dt: tts.${dt.action}`)
     if (dt.action === 'say') {
       activity.media.pause()
       ttsClient.speak(dt.data.item.tts, function (name) {
-        logger.log('====> tts event ' + name)
         if (name === 'start') {
           sos.sendEventRequest('tts', 'start', dt.data, dt.data.item.itemId)
         } else if (name === 'end') {
@@ -39,12 +39,14 @@ module.exports = activity => {
         .then(() => {
           sos.sendEventRequest('tts', 'cancel', dt.data, dt.data.item.itemId, next)
         })
-        .catch(() => {
+        .catch((err) => {
+          logger.log('tts stop failed', err)
           next()
         })
     }
   })
   directive.do('frontend', 'media', function (dt, next) {
+    logger.log(`exe dt: media.${dt.action}`)
     if (dt.action === 'play') {
       mediaClient.start(dt.data.item.url, function (name, args) {
         if (name === 'prepared') {
@@ -68,7 +70,8 @@ module.exports = activity => {
             token: dt.data.item.token
           }, next)
         })
-        .catch(() => {
+        .catch((err) => {
+          logger.log('media pause failed', err)
           next()
         })
     } else if (dt.action === 'resume') {
@@ -79,8 +82,8 @@ module.exports = activity => {
             token: dt.data.item.token
           }, next)
         })
-        .catch(() => {
-          next()
+        .catch((err) => {
+          logger.log('media resume failed', err)
         })
     } else if (dt.action === 'cancel') {
       activity.media.stop()
@@ -90,7 +93,8 @@ module.exports = activity => {
             token: dt.data.item.token
           }, next)
         })
-        .catch(() => {
+        .catch((err) => {
+          logger.log('media stop failed', err)
           next()
         })
     } else if (dt.action === 'stop') {
@@ -101,15 +105,17 @@ module.exports = activity => {
             token: dt.data.item.token
           }, next)
         })
-        .catch(() => {
+        .catch((err) => {
+          logger.log('media stop failed', err)
           next()
         })
     }
   })
 
   directive.do('frontend', 'confirm', function (dt, next) {
-    activity.setConfirm(dt.data.confirmIntent, dt.data.confirmSlot, [], '')
+    activity.setPickup(true)
       .then(() => {
+        logger.log('setConfirm success')
         next()
       })
       .catch((error) => {
@@ -120,7 +126,14 @@ module.exports = activity => {
 
   directive.do('frontend', 'pickup', function (dt, next) {
     activity.setPickup(true)
-    next()
+      .then(() => {
+        logger.log('setPickup success')
+        next()
+      })
+      .catch(() => {
+        logger.log('setPickup failed')
+        next()
+      })
   })
 
   directive.do('frontend', 'native', function (dt, next) {
@@ -129,7 +142,14 @@ module.exports = activity => {
     var form = dt.data.packageInfo && dt.data.packageInfo.form
     var command = dt.data.command || ''
     activity.openUrl(`yoda-skill://${appId}/?command=${command}`, form || 'cut')
-    next()
+      .then(() => {
+        logger.log('url open success')
+        next()
+      })
+      .catch((err) => {
+        logger.log('url open failed', err)
+        next()
+      })
   })
 
   activity.on('ready', function () {
