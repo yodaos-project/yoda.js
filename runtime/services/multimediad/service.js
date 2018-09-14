@@ -86,6 +86,11 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
   })
   player.on('playbackcomplete', () => {
     // free handle after playbackcomplete
+    try {
+      this.handle[appId].stop()
+    } catch (error) {
+      logger.debug(`try to stop player error with appId: ${appId}`)
+    }
     delete this.handle[appId]
     this.emit('playbackcomplete', '' + player.id)
   })
@@ -97,6 +102,11 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
   })
   player.on('error', () => {
     // free handle when something goes wrong
+    try {
+      this.handle[appId].stop()
+    } catch (error) {
+      logger.debug(`try to stop player error with appId: ${appId}`)
+    }
     delete this.handle[appId]
     this.emit('error', '' + player.id)
   })
