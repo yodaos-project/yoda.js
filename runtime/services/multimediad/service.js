@@ -6,10 +6,9 @@ var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var inherits = require('util').inherits
 var logger = require('logger')('multimediaService')
 
-function MultiMedia (options) {
+function MultiMedia () {
   EventEmitter.call(this)
   this.handle = {}
-  this.options = options
 }
 inherits(MultiMedia, EventEmitter)
 
@@ -17,6 +16,7 @@ MultiMedia.prototype.start = function (appId, url, streamType) {
   if (this.handle[appId]) {
     try {
       this.handle[appId].stop()
+      delete this.handle[appId]
     } catch (error) {
       logger.log(`try to stop prev player error, appId: ${appId}`)
     }
