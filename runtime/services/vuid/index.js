@@ -28,7 +28,7 @@ function activateProcess () {
 
 function initFloraClient () {
   logger.info('start initializing flora client')
-  var cli = floraFactory.connect(floraConfig.uri, floraConfig.bufsize)
+  var cli = floraFactory.connect(floraConfig.uri + '#vui', floraConfig.bufsize)
   if (!cli) {
     logger.log('flora connect failed, try again after', floraConfig.reconnInterval, 'milliseconds')
     setTimeout(initFloraClient, floraConfig.reconnInterval)
@@ -40,7 +40,7 @@ function initFloraClient () {
       cb(msg)
     }
   })
-  cli.on('disconnect', function () {
+  cli.on('disconnected', function () {
     logger.log('flora disconnected, try reconnect')
     floraCli.close()
     initFloraClient()
@@ -69,7 +69,7 @@ function initFloraClient () {
   // no intermediate asr
   msg.writeInt32(0)
   // vad begin
-  msg.writeInt32(0)
+  msg.writeInt32(globalEnv.speechVadBegin)
   cli.post('rokid.speech.options', msg, floraFactory.MSGTYPE_PERSIST)
   floraCli = cli
 }
@@ -113,7 +113,7 @@ function turenPickup (isPickup) {
 function turenMute (mute) {
   if (floraCli) {
     var msg = new floraFactory.Caps()
-    msg.writeInt32(mute ? 1 : 0)
+    msg.writeInt32(mute ? 0 : 1)
     floraCli.post('rokid.turen.mute', msg, floraFactory.MSGTYPE_INSTANT)
   }
 }
