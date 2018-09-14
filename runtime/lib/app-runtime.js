@@ -108,8 +108,15 @@ AppRuntime.prototype.loadApps = function loadApps (paths) {
     .then(() => {
       this.loadAppComplete = true
       logger.log('load app complete')
-      return this.openUrl('yoda-skill://volume/init', { preemptive: false })
+      return this.initiate()
     })
+}
+
+AppRuntime.prototype.initiate = function initiate () {
+  if (!this.loadAppComplete) {
+    return Promise.reject(new Error('Apps not loaded yet, try again later.'))
+  }
+  return this.openUrl('yoda-skill://volume/init', { preemptive: false })
 }
 
 /**
@@ -452,57 +459,64 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute) {
  * @private
  * @param {object} [options]
  * @param {boolean} [options.resetServices]
+ * @returns {Promise<void>}
  */
 AppRuntime.prototype.destroyAll = function (options) {
   var resetServices = _.get(options, 'resetServices', true)
 
+  var promises = []
+
   /**
    * Destroy all apps, then restart daemon apps
    */
-  this.life.destroyAll({ force: true })
-    .then(() => this.startDaemonApps())
+  promises.push(this.life.destroyAll({ force: true })
+    .then(() => this.startDaemonApps()))
   // 清空正在运行的所有App
   this.cloudSkillIdStack = []
   // this.resetCloudStack()
 
   if (!resetServices) {
-    return
+    return Promise.all(promises)
   }
 
   // reset service
-  this.lightMethod('reset', [])
-    .then((res) => {
-      if (res && res[0] === true) {
-        logger.log('reset lightd success')
-      } else {
-        logger.log('reset lightd failed')
-      }
-    })
-    .catch((error) => {
-      logger.log('reset lightd error', error)
-    })
-  this.multimediaMethod('reset', [])
-    .then((res) => {
-      if (res && res[0] === true) {
-        logger.log('reset multimediad success')
-      } else {
-        logger.log('reset multimediad failed')
-      }
-    })
-    .catch((error) => {
-      logger.log('reset multimediad error', error)
-    })
-  this.ttsMethod('reset', [])
-    .then((res) => {
-      if (res && res[0] === true) {
-        logger.log('reset ttsd success')
-      } else {
-        logger.log('reset ttsd failed')
-      }
-    })
-    .catch((error) => {
-      logger.log('reset ttsd error', error)
-    })
+  promises = promises.concat([
+    this.lightMethod('reset', [])
+      .then((res) => {
+        if (res && res[0] === true) {
+          logger.log('reset lightd success')
+        } else {
+          logger.log('reset lightd failed')
+        }
+      })
+      .catch((error) => {
+        logger.log('reset lightd error', error)
+      }),
+    this.multimediaMethod('reset', [])
+      .then((res) => {
+        if (res && res[0] === true) {
+          logger.log('reset multimediad success')
+        } else {
+          logger.log('reset multimediad failed')
+        }
+      })
+      .catch((error) => {
+        logger.log('reset multimediad error', error)
+      }),
+    this.ttsMethod('reset', [])
+      .then((res) => {
+        if (res && res[0] === true) {
+          logger.log('reset ttsd success')
+        } else {
+          logger.log('reset ttsd failed')
+        }
+      })
+      .catch((error) => {
+        logger.log('reset ttsd error', error)
+      })
+  ])
+
+  return Promise.all(promises)
 }
 
 /**
@@ -851,6 +865,8 @@ AppRuntime.prototype.disconnect = function () {
  */
 AppRuntime.prototype.doLogin = function () {
   this.destroyAll()
+    .then(() => this.initiate())
+
   this.login = true
   perf.stub('started')
   // not need to play startup music after relogin
