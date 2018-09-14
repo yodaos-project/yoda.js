@@ -73,7 +73,6 @@ KeyboardHandler.prototype.listen = function listen () {
         this.runtime.setMicMute(/** switch microphone state */)
       },
       116: () => {
-        /** exit all app */
         if (this.runtime.online !== true) {
           // start @network app
           this.runtime.sendNLPToApp('@network', {
@@ -81,7 +80,12 @@ KeyboardHandler.prototype.listen = function listen () {
           }, {})
           return
         }
-        this.runtime.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
+        if (this.runtime.life.getCurrentAppId()) {
+          /** exit all app */
+          this.runtime.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
+          return
+        }
+        this.runtime.setPickup(true)
       }
     }
 
