@@ -37,9 +37,6 @@ var lightd = new Remote(dbusService._dbus, {
 var service = new Service({
   get tts () {
     return _TTS
-  },
-  get permit () {
-    return permit
   }
 })
 
@@ -146,6 +143,7 @@ dbusApis.addMethod('speak', {
       .catch((err) => {
         logger.log('ttsd check error', appId, err)
         logger.log('can not connect to vui')
+        cb(null, '-1')
       })
   } else {
     // TODO: error handler?

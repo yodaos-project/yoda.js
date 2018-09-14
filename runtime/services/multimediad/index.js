@@ -15,9 +15,7 @@ var permit = new Remote(dbusService._dbus, {
   dbusInterface: 'com.rokid.permission'
 })
 
-var service = new Service({
-  permit: permit
-})
+var service = new Service()
 
 service.on('prepared', function (id, dur, pos) {
   logger.log('multimediad prepared', Array.prototype.slice.call(arguments, 0))
@@ -89,6 +87,7 @@ dbusApis.addMethod('start', {
       .catch((err) => {
         logger.log('multimedia play error', appId, url, err)
         logger.log('can not connect to vui')
+        cb(null, '-1')
       })
   } else {
     logger.log('start: url and appId are required')
