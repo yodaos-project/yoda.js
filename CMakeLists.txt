@@ -42,7 +42,6 @@ endmacro()
 # remote packages
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
 YodaGitPackage(tape https://github.com/shadow-node/tape.git master)
-YodaGitPackage(turen https://github.com/Rokid/node-turen.git master)
 
 # local packages
 YodaLocalPackage(yoda-audio @yoda/audio)
@@ -55,7 +54,6 @@ YodaLocalPackage(yoda-multimedia @yoda/multimedia)
 YodaLocalPackage(yoda-ota @yoda/ota)
 YodaLocalPackage(yoda-property @yoda/property)
 YodaLocalPackage(yoda-system @yoda/system)
-YodaLocalPackage(yoda-speech @yoda/speech)
 YodaLocalPackage(yoda-tts @yoda/tts)
 YodaLocalPackage(yoda-util @yoda/util)
 YodaLocalPackage(yoda-wifi @yoda/wifi)
