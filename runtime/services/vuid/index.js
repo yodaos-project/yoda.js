@@ -140,29 +140,29 @@ function entry () {
   floraMsgHandlers['rokid.turen.voice_coming'] = function (msg) {
     logger.log('voice coming')
     voiceCtx.lastFaked = false
-    runtime.onEvent('voice coming', {})
+    runtime.onTurenEvent('voice coming', {})
   }
   floraMsgHandlers['rokid.turen.local_awake'] = function (msg) {
     logger.log('voice local awake')
     var data = {}
     data.sl = msg.get(0)
-    runtime.onEvent('voice local awake', data)
+    runtime.onTurenEvent('voice local awake', data)
   }
   floraMsgHandlers['rokid.speech.inter_asr'] = function (msg) {
     var asr = msg.get(0)
     logger.log('asr pending', asr)
-    runtime.onEvent('asr pending', asr)
+    runtime.onTurenEvent('asr pending', asr)
   }
   floraMsgHandlers['rokid.speech.final_asr'] = function (msg) {
     var asr = msg.get(0)
     logger.log('asr end', asr)
-    runtime.onEvent('asr end', { asr: asr })
+    runtime.onTurenEvent('asr end', { asr: asr })
   }
   floraMsgHandlers['rokid.speech.extra'] = function (msg) {
     var data = JSON.parse(msg.get(0))
     if (data.activation === 'fake') {
       voiceCtx.lastFaked = true
-      runtime.onEvent('asr fake')
+      runtime.onTurenEvent('asr fake')
     }
   }
   floraMsgHandlers['rokid.speech.nlp'] = function (msg) {
@@ -182,7 +182,7 @@ function entry () {
       logger.log('nlp/action parse failed, discarded.')
       return
     }
-    runtime.onEvent('nlp', data)
+    runtime.onTurenEvent('nlp', data)
   }
   floraMsgHandlers['rokid.speech.error'] = function (msg) {
   }
@@ -194,7 +194,7 @@ function entry () {
 
     // login -> mqtt
     cloudApi.connect((code, msg) => {
-      runtime.onEvent('cloud event', {
+      runtime.handleCloudEvent({
         code: code,
         msg: msg
       })

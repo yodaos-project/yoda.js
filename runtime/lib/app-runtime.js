@@ -92,7 +92,7 @@ function AppRuntime (paths) {
   // initializing the whole process...
   this.loadApps(paths).then(() => {
     if (wifi.getNetworkState() === wifi.NETSERVER_CONNECTED) {
-      this.onEvent('connected')
+      this.handleNetworkConnected()
     }
   })
 }
@@ -301,7 +301,11 @@ AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
  * @param {object} data
  * @private
  */
-AppRuntime.prototype.onEvent = function (name, data) {
+AppRuntime.prototype.onTurenEvent = function (name, data) {
+  if (this.micMuted) {
+    logger.error('Mic muted, unexpected event from Turen:', name)
+    return
+  }
   var handler = null
   switch (name) {
     case 'voice coming':
@@ -318,15 +322,6 @@ AppRuntime.prototype.onEvent = function (name, data) {
       break
     case 'nlp':
       handler = this.handleNlpResult
-      break
-    case 'connected':
-      handler = this.handleNetworkConnected
-      break
-    case 'disconnected':
-      handler = this.handleNetworkDisconnected
-      break
-    case 'cloud event':
-      handler = this.handleCloudEvent
       break
   }
   if (typeof handler !== 'function') {
@@ -1105,9 +1100,9 @@ AppRuntime.prototype.startDbusAppService = function () {
       if (data.upgrade === true) {
         self.startApp('@upgrade', {}, {})
       } else if (data['Wifi'] === false || data['Network'] === false) {
-        self.onEvent('disconnected', {})
+        self.handleNetworkDisconnected()
       } else if (data['Network'] === true && !self.online) {
-        self.onEvent('connected', {})
+        self.handleNetworkConnected()
       } else if (data['msg']) {
         self.sendNLPToApp('@network', {
           intent: 'wifi_status'
@@ -1134,7 +1129,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     out: ['b']
   }, function (asr, nlp, action, cb) {
     console.log('sendintent', asr, nlp, action)
-    self.onEvent('nlp', {
+    self.onTurenEvent('nlp', {
       asr: asr,
       nlp: nlp,
       action: action
