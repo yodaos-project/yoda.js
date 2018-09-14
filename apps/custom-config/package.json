@@ -1,0 +1,33 @@
+{
+  "name": "@yoda/custom-config",
+  "version": "1.0.0",
+  "description": "custom config app for Rokid",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "metadata": {
+    "skills": [
+      "@custom-config",
+      "RF68BD0FD30340ECBB926023072A8179"
+    ],
+    "permission": [
+      "ACCESS_TTS",
+      "ACCESS_VOICE_COMMAND",
+      "INTERRUPT"
+    ],
+    "hosts": [
+      {
+        "name": "custom-config",
+        "skillId": "RF68BD0FD30340ECBB926023072A8179"
+      }
+    ]
+  },
+  "keywords": [
+    "custom-config",
+    "rokid",
+    "skill"
+  ],
+  "author": "suchenglong <chenglong.su@rokid.com>",
+  "license": "UNLICENSED"
+}

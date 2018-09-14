@@ -224,6 +224,8 @@ function entry () {
       runtime.onGetPropAll = () => props
       runtime.doLogin()
       handleMQTT(mqttAgent, runtime)
+      logger.info('load custom-config: ' + config.extraInfo.custom_config)
+      runtime.onLoadCustomConfig(config.extraInfo.custom_config)
     }).catch((err) => {
       logger.error('initializing occurrs error', err && err.stack)
     })
@@ -281,5 +283,9 @@ function handleMQTT (mqtt, runtime) {
   mqtt.on('sys_update_available', () => {
     logger.info('received upgrade command from mqtt, running ota in background.')
     ota.runInBackground()
+  })
+  mqtt.on('custom_config', function (data) {
+    logger.info('handleMQTT-->custom_config: ' + data)
+    runtime.onCustomConfig(data)
   })
 }

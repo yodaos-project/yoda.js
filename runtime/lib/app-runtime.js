@@ -732,6 +732,7 @@ AppRuntime.prototype.sendNLPToApp = function (skillId, nlp, action) {
 AppRuntime.prototype.handleMqttMessage = function () {
   this.on('cloud_forward', this.onCloudForward.bind(this))
   this.on('reset_settings', this.onResetSettings.bind(this))
+  this.on('custom_config', this.onCustomConfig.bind(this))
 }
 
 /**
@@ -761,6 +762,102 @@ AppRuntime.prototype.onResetSettings = function (message) {
   }
 }
 
+/**
+ *  处理App发送的自定义配置，包括自定义激活词、夜间模式、唤醒音效开关、待机灯光开关、连续对话开关
+ * @param {string} message
+ * @private
+ */
+AppRuntime.prototype.onCustomConfig = function (message) {
+  var appendUrl = (pathname, params) => {
+    var url = `yoda-skill://custom-config/${pathname}?`
+    var queryString = (params) => {
+      var query = ''
+      for (var key in params) {
+        var value = params[key]
+        query += `&${key}=${value}`
+      }
+      url += query
+      return url
+    }
+    return queryString(params)
+  }
+  var msg = null
+  try {
+    if (typeof message === 'object') {
+      msg = message
+    } else if (typeof message === 'string') {
+      msg = JSON.parse(message)
+    }
+  } catch (err) {
+    logger.error(err)
+    return
+  }
+  var option = {
+    preemptive: true,
+    form: 'cut'
+  }
+  if (msg.nightMode) {
+    option.preemptive = false
+    this.openUrl(appendUrl('nightMode', msg.nightMode), option)
+  } else if (msg.vt_words) {
+    option.preemptive = false
+    this.openUrl(appendUrl('vt_words', msg.vt_words), option)
+  } else if (msg.continuousDialog) {
+    this.openUrl(appendUrl('continuousDialog', msg.continuousDialog), option)
+  } else if (msg.wakeupSoundEffects) {
+    this.openUrl(appendUrl('wakeupSoundEffects', msg.wakeupSoundEffects), option)
+  } else if (msg.standbyLight) {
+    this.openUrl(appendUrl('standbyLight', msg.standbyLight), option)
+  }
+}
+
+/**
+ * @private
+ */
+AppRuntime.prototype.onLoadCustomConfig = function (config) {
+  var customConfig = JSON.parse(config)
+  if (customConfig.vt_words) {
+    // TODO(suchenglong) should inset vt word for first load from server
+  }
+  if (customConfig.continuousDialog) {
+    var continuousDialogObj = customConfig.continuousDialog
+    var continueObj = JSON.parse(continuousDialogObj)
+    continueObj.isFirstLoad = true
+    var continuousDialog = {
+      continuousDialog: continueObj
+    }
+    this.onCustomConfig(continuousDialog)
+  }
+  if (customConfig.standbyLight) {
+    var standbyLightText = customConfig.standbyLight
+    var standbyLightObj = JSON.parse(standbyLightText)
+    standbyLightObj.isFirstLoad = true
+    var standbyLight = {
+      standbyLight: standbyLightObj
+    }
+    this.onCustomConfig(standbyLight)
+  }
+
+  if (customConfig.wakeupSoundEffects) {
+    var wakeupSoundEffectsText = customConfig.wakeupSoundEffects
+    var wakeupSoundEffectsObj = JSON.parse(wakeupSoundEffectsText)
+    wakeupSoundEffectsObj.isFirstLoad = true
+    var wakeupSoundEffects = {
+      wakeupSoundEffects: wakeupSoundEffectsObj
+    }
+    this.onCustomConfig(wakeupSoundEffects)
+  }
+
+  if (customConfig.nightMode) {
+    var nightModeText = customConfig.nightMode
+    var nightModeObj = JSON.parse(nightModeText)
+    nightModeObj.isFirstLoad = true
+    var nightMode = {
+      nightMode: nightModeObj
+    }
+    this.onCustomConfig(nightMode)
+  }
+}
 /**
  * @private
  */
@@ -1207,8 +1304,8 @@ AppRuntime.prototype.destruct = function destruct () {
   this.keyboard.destruct()
 }
 
-function handleErrorCallbacks(cbs, msg) {
-  var cb;
+function handleErrorCallbacks (cbs, msg) {
+  var cb
   var err = new Error(msg)
 
   for (cb in cbs) {
@@ -1242,7 +1339,7 @@ function getFloraClient () {
         err = ex
       }
     } else {
-      err = new Error("speech put_text return error: " + msg.get(0))
+      err = new Error('speech put_text return error: ' + msg.get(0))
       idx = msg.get(2)
     }
     if (typeof floraCallbacks[idx] === 'function') {
@@ -1259,7 +1356,7 @@ function getFloraClient () {
     var cbs = floraCallbacks
     // clear pending callback functions
     floraCallbacks = []
-    process.nextTick(() => handleErrorCallbacks(cbs, "flora client disconnected"))
+    process.nextTick(() => handleErrorCallbacks(cbs, 'flora client disconnected'))
   })
   return floraClient
 }
