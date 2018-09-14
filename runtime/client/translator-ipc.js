@@ -157,6 +157,7 @@ var listenMap = {
       logger.error(`Params of event message '${channel}' is not an array.`)
       return
     }
+    logger.debug(`Received VuiDaemon event ${channel}`)
     return eventBus.emit(channel, msg.params)
   },
   'event-syn': msg => {
@@ -165,10 +166,12 @@ var listenMap = {
       logger.error(`Params of event message '${channel}' is not an array.`)
       return
     }
+    logger.debug(`Received VuiDaemon ack-event ${channel}`)
     return eventBus.emit(channel, msg.eventId, msg.params)
   },
   promise: msg => {
     var channel = `promise:${msg.invocationId}`
+    logger.debug(`Received VuiDaemon resolved ${channel}`)
     return eventBus.emit(channel, msg)
   },
   'fatal-error': msg => {
@@ -179,8 +182,6 @@ var listenMap = {
 
 function listenIpc () {
   process.on('message', function onMessage (message) {
-    logger.debug(`Received VuiDaemon message ${message.type} ${message}`)
-
     var handle = listenMap[message.type]
     if (handle == null) {
       logger.info(`Unhandled Ipc message type '${message.type}'.`)
