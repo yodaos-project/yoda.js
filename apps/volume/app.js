@@ -119,6 +119,7 @@ module.exports = function (activity) {
   function initVolume () {
     var vol = getVolume()
     logger.info(`init volume to ${vol}`)
+    vol = vol || defaultVolume
     setVolume(vol, { init: true })
     setUnmute({ recover: false })
   }
