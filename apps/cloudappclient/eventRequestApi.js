@@ -4,10 +4,10 @@ var https = require('https')
 var crypto = require('crypto')
 var qs = require('querystring')
 var logger = require('logger')('eventReq')
-var cloudGW = require('/usr/lib/yoda/runtime/env.json')
+var env = require('/usr/lib/yoda/runtime/lib/env')()
 
 var CONFIG = null
-var DEFAULT_HOST = cloudGW.cloudgw.restful || 'apigwrest.open.rokid.com'
+var DEFAULT_HOST = env.cloudgw.restful || 'apigwrest.open.rokid.com'
 var DEFAULT_URI = '/v1/skill/dispatch/sendEvent'
 
 function gensigh (data) {
