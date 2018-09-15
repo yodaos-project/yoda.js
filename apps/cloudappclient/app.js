@@ -8,6 +8,8 @@ var _ = require('@yoda/util')._
 
 var Manager = require('./manager')
 
+var needResume = false
+
 module.exports = activity => {
   // create an extapp
   var directive = new Directive()
@@ -20,6 +22,10 @@ module.exports = activity => {
   sos.on('updateStack', (stack) => {
     logger.log('updateStack', stack)
     activity.syncCloudAppIdStack(stack)
+  })
+  sos.on('empty', () => {
+    needResume = false
+    activity.setBackground()
   })
 
   directive.do('frontend', 'tts', function (dt, next) {
@@ -177,12 +183,16 @@ module.exports = activity => {
 
   activity.on('pause', function () {
     logger.log(this.appId + ' paused')
+    needResume = true
     sos.pause()
   })
 
   activity.on('resume', function () {
     logger.log(this.appId + ' resumed')
-    sos.resume()
+    if (needResume) {
+      needResume = false
+      sos.resume()
+    }
   })
 
   activity.on('request', function (nlp, action) {

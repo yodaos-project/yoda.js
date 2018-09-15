@@ -223,6 +223,9 @@ Manager.prototype.next = function (skill) {
     return
   }
   this.skills.pop()
+  if (this.skills.length <= 0) {
+    return this.emit('empty')
+  }
   cur = this.getCurrentSkill()
   if (cur !== false) {
     cur.emit('resume')
