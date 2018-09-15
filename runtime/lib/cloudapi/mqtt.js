@@ -16,34 +16,31 @@ function MqttAgent (config) {
   // for dev: kamino开发阶段使用
   this.userId = property.get('persist.system.user.userId')
   this.config = config
-  this.register().then(() => {
-    this.reConnect()
-  }).catch((err) => {
-    logger.error(err)
-  })
+  this.initialize()
 }
 inherits(MqttAgent, EventEmitter)
 
-MqttAgent.prototype.register = function () {
-  var self = this
-  return new Promise((resolve, reject) => {
-    mqttRegister.registry(this.userId, this.config, function (err, data) {
-      if (err) {
-        reject(err)
-      } else {
-        self.mqttOptions = data
-        resolve(data)
-      }
-    })
+MqttAgent.prototype.initialize = function initialize () {
+  this.register((err) => {
+    if (err) {
+      logger.error('register error with error', err && err.stack)
+      return this.initialize()
+    }
+    this.connect()
   })
 }
 
-MqttAgent.prototype.reConnect = function () {
-  if (handle) {
-    handle.disconnect()
-    handle.removeAllListeners()
-    handle = null
-  }
+MqttAgent.prototype.register = function (cb) {
+  mqttRegister.registry(this.userId, this.config, (err, data) => {
+    if (err) {
+      return cb(err)
+    }
+    this.mqttOptions = data
+    cb(null)
+  })
+}
+
+MqttAgent.prototype.connect = function () {
   handle = mqtt.connect(endpoint, {
     clientId: this.mqttOptions.username,
     username: this.mqttOptions.username,
@@ -56,16 +53,12 @@ MqttAgent.prototype.reConnect = function () {
     handle.subscribe(channelId)
     logger.info('subscribed', channelId)
   })
-  handle.on('reconnect', () => {
-    logger.info('reconnecting mqtt service')
-  })
   handle.on('offline', () => {
     logger.error(`offline, reconnecting`)
-    this.register().then(() => {
-      this.reConnect()
-    }).catch((err) => {
-      logger.error(err)
-    })
+    handle.disconnect()
+    handle.removeAllListeners()
+    handle = null
+    this.initialize()
   })
   handle.on('message', this.onMessage.bind(this))
   handle.on('error', (err) => {
