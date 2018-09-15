@@ -458,10 +458,12 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute) {
  * 给所有App发送destroy事件，销毁所有App
  * @private
  * @param {object} [options]
- * @param {boolean} [options.resetServices]
+ * @param {object} [options.force=true]
+ * @param {boolean} [options.resetServices=true]
  * @returns {Promise<void>}
  */
 AppRuntime.prototype.destroyAll = function (options) {
+  var force = _.get(options, 'force', true)
   var resetServices = _.get(options, 'resetServices', true)
 
   var promises = []
@@ -469,7 +471,7 @@ AppRuntime.prototype.destroyAll = function (options) {
   /**
    * Destroy all apps, then restart daemon apps
    */
-  promises.push(this.life.destroyAll({ force: true })
+  promises.push(this.life.destroyAll({ force: force })
     .then(() => this.startDaemonApps()))
   // 清空正在运行的所有App
   this.cloudSkillIdStack = []
