@@ -19,6 +19,13 @@ var floraConfig = require('../../flora-config.json')
   activateProcess()
   initFloraClient()
   entry()
+
+  process.nextTick = function fakeNextTick (fn) {
+    var params = Array.prototype.slice.call(arguments, 1)
+    setTimeout(() => {
+      fn.apply(global, params)
+    }, 0)
+  }
 })()
 
 function activateProcess () {
