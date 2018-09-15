@@ -3,7 +3,7 @@
 export NODE_PRIORITIZED_PATH=/usr/lib/node_modules
 
 while true; do
-  /usr/bin/iotjs /usr/lib/yoda/ota/index.js
+  /usr/bin/iotjs /usr/lib/yoda/runtime/services/otad/index.js
   status=$?
   printf "OTA exited for code $status\n"
   if test $status = 0; then
