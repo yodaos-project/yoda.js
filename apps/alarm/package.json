@@ -1,0 +1,37 @@
+{
+  "name": "@alarm",
+  "version": "1.0.0",
+  "description": "Alarm for Rokid",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "metadata": {
+    "extapp": true,
+    "daemon": true,
+    "skills": [
+      "R507AD024F9A4E358B9493BBC11C852F",
+      "R05A20771E99463ABEBCDFDDE34B07E2"
+    ],
+    "permission": [
+      "ACCESS_NETWORK_STATE",
+      "ACCESS_TTS",
+      "ACCESS_MULTIMEDIA",
+      "ACCESS_SOUND",
+      "INTERRUPT"
+    ],
+    "hosts": [
+      {
+        "name": "r507ad024f9a4e358b9493bbc11c852f",
+        "skillId": "R507AD024F9A4E358B9493BBC11C852F"
+      }
+    ]
+  },
+  "keywords": [
+    "alarm",
+    "rokid",
+    "skill"
+  ],
+  "author": "jian.jiang",
+  "license": "MIT"
+}
