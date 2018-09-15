@@ -14,18 +14,19 @@ var _ = require('@yoda/util')._
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 var wifi = require('@yoda/wifi')
+var floraFactory = require('@yoda/flora')
 
 var env = require('./env')()
 var perf = require('./performance')
 var dbusConfig = require('../dbus-config.json')
+var floraConfig = require('../flora-config.json')
 var DbusRemoteCall = require('./dbus-remote-call')
 var DbusAppExecutor = require('./app/dbus-app-executor')
 var Permission = require('./component/permission')
 var AppLoader = require('./component/app-loader')
 var Keyboard = require('./component/keyboard')
 var Lifetime = require('./component/lifetime')
-var floraFactory = require('@yoda/flora')
-var floraConfig = require('../flora-config.json')
+
 var floraClient
 var asr2nlpId = 'js-AppRuntime'
 var floraCallbacks = []
@@ -37,9 +38,8 @@ perf.stub('init')
 /**
  * @memberof yodaRT
  * @class
- * @param {Array} paths - the pathname
  */
-function AppRuntime (paths) {
+function AppRuntime () {
   EventEmitter.call(this)
   this.config = {
     host: env.cloudgw.wss,
@@ -56,8 +56,6 @@ function AppRuntime (paths) {
     scene: '',
     active: ''
   }
-  // manager app's permission
-  this.permission = new Permission(this)
   this.volume = null
   this.prevVolume = -1
   this.micMuted = false // microphone was reset on runtime start up
@@ -72,31 +70,47 @@ function AppRuntime (paths) {
     lastFaked: false
   }
 
-  this.startDbusAppService()
-  this.handleMqttMessage()
+  this.dbusSignalRegistry = new EventEmitter()
 
+  // manager app's permission
+  this.permission = new Permission(this)
   // handle keyboard/button events
   this.keyboard = new Keyboard(this)
-  this.keyboard.init()
-
-  this.dbusSignalRegistry = new EventEmitter()
-  this.listenDbusSignals()
   // identify load app complete
   this.loadAppComplete = false
   this.loader = new AppLoader(this)
   this.life = new Lifetime(this.loader)
+}
+inherits(AppRuntime, EventEmitter)
+
+/**
+ * Start AppRuntime
+ *
+ * @param {string[]} paths -
+ * @returns {Promise<void>}
+ */
+AppRuntime.prototype.init = function init (paths) {
+  if (this.inited) {
+    return Promise.resolve()
+  }
+
+  this.startDbusAppService()
+  this.handleMqttMessage()
+  this.listenDbusSignals()
+
+  this.keyboard.init()
   this.life.on('stack-reset', () => {
     this.resetCloudStack()
   })
-
   // initializing the whole process...
-  this.loadApps(paths).then(() => {
+  return this.loadApps(paths).then(() => {
     if (wifi.getNetworkState() === wifi.NETSERVER_CONNECTED) {
       this.handleNetworkConnected()
     }
+
+    this.inited = true
   })
 }
-inherits(AppRuntime, EventEmitter)
 
 /**
  * Load applications from the given paths
@@ -112,6 +126,9 @@ AppRuntime.prototype.loadApps = function loadApps (paths) {
     })
 }
 
+/**
+ * Initiate/Re-initiate runtime configs
+ */
 AppRuntime.prototype.initiate = function initiate () {
   if (!this.loadAppComplete) {
     return Promise.reject(new Error('Apps not loaded yet, try again later.'))
@@ -1017,6 +1034,27 @@ AppRuntime.prototype.doLogin = function () {
 }
 
 /**
+ *
+ * @param {string} text -
+ * @returns {Promise<object[]>}
+ */
+AppRuntime.prototype.mockAsr = function mockAsr (text) {
+  logger.info('Mocking asr', text)
+  return new Promise((resolve, reject) => {
+    this.getNlpResult(text, (err, nlp, action) => {
+      if (err) {
+        return reject(err)
+      }
+      resolve([nlp, action])
+    })
+  }).then(res => {
+    logger.info('mocking asr got nlp result for', text, res[0], res[1])
+    return this.onVoiceCommand(text, res[0], res[1])
+      .then(() => res)
+  })
+}
+
+/**
  * 启动extApp dbus接口
  * @private
  */
@@ -1128,17 +1166,11 @@ AppRuntime.prototype.startDbusAppService = function () {
     in: ['s'],
     out: ['s']
   }, function mockAsr (text, cb) {
-    logger.info('Mocking asr', text)
-    self.getNlpResult(text, function (err, nlp, action) {
-      if (err) {
-        cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
-        return
-      }
-      logger.info('mocking asr got nlp result for', text, nlp, action)
-      return self.onVoiceCommand(text, nlp, action)
-        .then(() => cb(null, JSON.stringify({ ok: true, nlp: nlp, action: action })),
-          err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack })))
-    })
+    self.mockAsr(text)
+      .then(
+        res => cb(null, JSON.stringify({ ok: true, nlp: res[0], action: res[1] })),
+        err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
+      )
   })
   extapp.addMethod('setBackground', {
     in: ['s'],

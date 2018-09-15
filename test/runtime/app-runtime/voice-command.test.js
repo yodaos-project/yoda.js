@@ -7,11 +7,6 @@ var helper = require('../../helper')
 var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
 
 test.skip('test onVoiceCommand', (t) => {
-  AppRuntime.prototype.startDbusAppService = function () {}
-  AppRuntime.prototype.handleMqttMessage = function () {}
-  AppRuntime.prototype.listenDbusSignals = function () {}
-  AppRuntime.prototype.loadApps = function () {}
-
   var destroyAll = AppRuntime.prototype.destroyAll
   AppRuntime.prototype.destroyAll = function destroyAllProxy () {
     return destroyAll.call(this, { resetServices: false })
@@ -45,7 +40,7 @@ test.skip('test onVoiceCommand', (t) => {
     testCutInterrupt: appT('testCutInterrupt')
   }
 
-  var runtime = new AppRuntime([])
+  var runtime = new AppRuntime()
   runtime.loader.executors = executors
   runtime.loader.skillIdAppIdMap = {
     testSceneCreate: 'testSceneCreate',
