@@ -122,9 +122,10 @@ function entry () {
   logger.debug('vui is ready')
 
   var voiceCtx = { lastFaked: false }
-  var runtime = new AppRuntime(['/opt/apps'])
+  var runtime = new AppRuntime()
   runtime.cloudApi = cloudApi
   runtime.volume = AudioManager
+  runtime.init(['/opt/apps'])
 
   runtime.on('setStack', function onSetStack (stack) {
     logger.log(`setStack ${stack}`)
