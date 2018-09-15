@@ -45,14 +45,22 @@ function keepAlive (appId) {
       appId: appId
     })
   }, 10 * 60 * 1000)
-  var nextTickTrigger = setInterval(() => {}, 1000)
   process.on('message', message => {
     if (message.type === 'pong') {
       logger.info('Received pong from VuiDaemon, stop pinging.')
       clearInterval(timer)
-      clearInterval(nextTickTrigger)
     }
   })
+  /**
+   * FIXME: some native add-on callbacks do not trigger process.nextTick
+   * shall be fixed in N-API make callback
+   */
+  process.nextTick = function fakeNextTick (fn) {
+    var params = Array.prototype.slice.call(arguments, 1)
+    setTimeout(() => {
+      fn.apply(global, params)
+    }, 0)
+  }
 }
 
 function main () {
