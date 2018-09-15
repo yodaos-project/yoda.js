@@ -49,7 +49,7 @@ module.exports = function (activity) {
     var init = _.get(options, 'init', false)
 
     logger.info(`trying to set volume to ${vol}`)
-    return Promise.all(
+    return Promise.all([
       (() => {
         /**
          * Try reconfigure and set volume
@@ -92,7 +92,7 @@ module.exports = function (activity) {
         }
         return speakAndExit(STRING_RANGE_ERROR)
       })()
-    ).then(() => activity.exit())
+    ]).then(() => activity.exit())
   }
 
   /**

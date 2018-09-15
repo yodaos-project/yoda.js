@@ -645,7 +645,7 @@ AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
       this.updateCloudStack('', 'cut', { isActive: false })
     }
   }
-  return this.life.deactivateAppById(this._appId)
+  return this.life.deactivateAppById(appId)
 }
 
 /**
