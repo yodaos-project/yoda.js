@@ -3,14 +3,15 @@
 var bluetooth = require('@yoda/bluetooth')
 var logger = require('logger')('eventReq')
 var property = require('@yoda/property')
+var wifi = require('@yoda/wifi')
 module.exports = function (activity) {
   var player = null
   var uuid = property.get('ro.boot.serialno') || ''
   var name = 'Rokid-Me-' + uuid.substr(-6)
   var bluetoothState = null
+  var playState = null
   var STRING_BROADCAST = '蓝牙已打开，请使用手机搜索设备'
   var STRING_CONNECED = '连接蓝牙成功'
-  var STRING_DISCONNECED = '蓝牙断开连接'
   var STRING_CLOSED = '蓝牙已关闭'
 
   function broadcast () {
@@ -23,25 +24,24 @@ module.exports = function (activity) {
     player.on('stateupdate', function (message) {
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'connected') && (message.play_state ===
         'invailed')) {
-        bluetoothState = 'opened'
-        activity.setForeground()
-          .then(() => {
-            speakAndExit(STRING_CONNECED)
-          })
+        bluetoothState = 'connected'
+        if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
+          activity.setForeground().then(() => { speakAndExit(STRING_CONNECED + name) })
+        } else {
+          activity.setForeground().then(() => { mediaAndExit('system://connectbluetooth.ogg') })
+        }
       } else if ((message.a2dpstate === 'opened') && (message.connect_state === 'invailed') && (message.play_state ===
         'invailed')) {
         bluetoothState = 'opened'
-        activity.setForeground()
-          .then(() => {
-            speakAndExit(STRING_BROADCAST + name)
-          })
+        if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
+          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST + name) })
+        } else {
+          activity.setForeground().then(() => { mediaAndExit('system://openbluetooth.ogg') })
+        }
       } else if ((message.a2dpstate === 'opened') && (message.connect_state === 'disconnected') && (message.play_state ===
         'invailed')) {
-        bluetoothState = 'opened'
-        activity.setForeground()
-          .then(() => {
-            speakAndExit(STRING_DISCONNECED)
-          })
+        bluetoothState = 'disconnected'
+        activity.setForeground().then(() => { mediaAndExit('system://closebluetooth.ogg') })
       }
     }
     )
@@ -61,9 +61,10 @@ module.exports = function (activity) {
 
   function startMusic () {
     player = bluetooth.getPlayer()
-    if (player) {
+    if (player && (bluetoothState === 'connected')) {
       player.play()
-    }
+      playState = true
+    } else { activity.setForeground().then(() => { mediaAndExit('system://playbluetootherror.ogg') }) }
   }
 
   function pauseMusic () {
@@ -99,15 +100,20 @@ module.exports = function (activity) {
       .then(() => activity.setBackground())
   }
 
+  function mediaAndExit (text) {
+    return activity.playSound(text)
+      .then(() => activity.setBackground())
+  }
   activity.on('pause', () => {
     pauseMusic()
   })
 
   activity.on('resume', () => {
-    resumeMusic()
+    if (playState) { resumeMusic() }
   })
 
   activity.on('destroy', () => {
+    playState = false
     pauseMusic()
     player.end()
     activity.exit()
