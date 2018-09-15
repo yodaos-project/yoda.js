@@ -95,7 +95,7 @@ Cloudgw.prototype.request = function request (path, data, options, callback) {
 
   var host = options.host || defaultHost
 
-  data = JSON.stringify(data)
+  data = Buffer.from(JSON.stringify(data))
   logger.info(`request https://${host}${path}`)
   var authorization = getAuth(Object.assign({}, options, this.config))
   var req = https.request({
