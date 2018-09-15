@@ -4,6 +4,7 @@ var Directive = require('./directive').Directive
 var TtsEventHandle = require('./ttsEventHandle')
 var MediaEventHandle = require('./mediaEventHandle')
 var logger = require('logger')('cloudAppClient')
+var _ = require('@yoda/util')._
 
 var Manager = require('./manager')
 
@@ -27,17 +28,17 @@ module.exports = activity => {
       activity.media.pause()
       ttsClient.speak(dt.data.item.tts, function (name) {
         if (name === 'start') {
-          sos.sendEventRequest('tts', 'start', dt.data, dt.data.item.itemId)
+          sos.sendEventRequest('tts', 'start', dt.data, _.get(dt, 'data.item.itemId'))
         } else if (name === 'end') {
-          sos.sendEventRequest('tts', 'end', dt.data, dt.data.item.itemId, next)
+          sos.sendEventRequest('tts', 'end', dt.data, _.get(dt, 'data.item.itemId'), next)
         } else if (name === 'cancel') {
-          sos.sendEventRequest('tts', 'cancel', dt.data, dt.data.item.itemId, next)
+          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), next)
         }
       })
     } else if (dt.action === 'cancel') {
       activity.tts.stop()
         .then(() => {
-          sos.sendEventRequest('tts', 'cancel', dt.data, dt.data.item.itemId, next)
+          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), next)
         })
         .catch((err) => {
           logger.log('tts stop failed', err)
@@ -51,14 +52,14 @@ module.exports = activity => {
       mediaClient.start(dt.data.item.url, function (name, args) {
         if (name === 'prepared') {
           sos.sendEventRequest('media', 'prepared', dt.data, {
-            itemId: dt.data.item.itemId,
+            itemId: _.get(dt, 'data.item.itemId'),
             duration: args[0],
             progress: args[1]
           })
         } else if (name === 'playbackcomplete') {
           sos.sendEventRequest('media', 'playbackcomplete', dt.data, {
-            itemId: dt.data.item.itemId,
-            token: dt.data.item.token
+            itemId: _.get(dt, 'data.item.itemId'),
+            token: _.get(dt, 'data.item.token')
           }, next)
         }
       })
@@ -66,8 +67,8 @@ module.exports = activity => {
       activity.media.pause()
         .then(() => {
           sos.sendEventRequest('media', 'pause', dt.data, {
-            itemId: dt.data.item.itemId,
-            token: dt.data.item.token
+            itemId: _.get(dt, 'data.item.itemId'),
+            token: _.get(dt, 'data.item.token')
           }, next)
         })
         .catch((err) => {
@@ -78,8 +79,8 @@ module.exports = activity => {
       activity.media.resume()
         .then(() => {
           sos.sendEventRequest('media', 'resume', dt.data, {
-            itemId: dt.data.item.itemId,
-            token: dt.data.item.token
+            itemId: _.get(dt, 'data.item.itemId'),
+            token: _.get(dt, 'data.item.token')
           }, next)
         })
         .catch((err) => {
@@ -89,8 +90,8 @@ module.exports = activity => {
       activity.media.stop()
         .then(() => {
           sos.sendEventRequest('media', 'cancel', dt.data, {
-            itemId: dt.data.item.itemId,
-            token: dt.data.item.token
+            itemId: _.get(dt, 'data.item.itemId'),
+            token: _.get(dt, 'data.item.token')
           }, next)
         })
         .catch((err) => {
@@ -101,8 +102,8 @@ module.exports = activity => {
       activity.media.stop()
         .then(() => {
           sos.sendEventRequest('media', 'stop', dt.data, {
-            itemId: dt.data.item.itemId,
-            token: dt.data.item.token
+            itemId: _.get(dt, 'data.item.itemId'),
+            token: _.get(dt, 'data.item.token')
           }, next)
         })
         .catch((err) => {
@@ -138,10 +139,10 @@ module.exports = activity => {
 
   directive.do('frontend', 'native', function (dt, next) {
     // notice: current form default value is 'cut'
-    var appId = dt.data.packageInfo && dt.data.packageInfo.name
-    var form = dt.data.packageInfo && dt.data.packageInfo.form
+    var appId = _.get(dt, 'data.packageInfo.name', '')
+    var form = _.get(dt, 'data.packageInfo.form', 'cut')
     var command = dt.data.command || ''
-    activity.openUrl(`yoda-skill://${appId}/?command=${command}`, form || 'cut')
+    activity.openUrl(`yoda-skill://${appId}/?command=${command}`, form)
       .then(() => {
         logger.log('url open success')
         next()
