@@ -20,7 +20,7 @@ module.exports = function (activity) {
     }
     return activity.tts.speak(text).then(() => {
       if (ismuted) { AudioManager.setMute(true) }
-      activity.exit()
+      return activity.exit()
     })
   }
 
@@ -92,7 +92,7 @@ module.exports = function (activity) {
         }
         return speakAndExit(STRING_RANGE_ERROR)
       })()
-    ]).then(() => activity.exit())
+    ])
   }
 
   /**
@@ -120,8 +120,8 @@ module.exports = function (activity) {
     var vol = getVolume()
     logger.info(`init volume to ${vol}`)
     vol = vol || defaultVolume
-    setVolume(vol, { init: true })
-    setUnmute({ recover: false })
+    return setVolume(vol, { init: true })
+      .then(() => setUnmute({ recover: false }))
   }
 
   /**
@@ -141,6 +141,7 @@ module.exports = function (activity) {
     if (volume < 0) {
       volume = defaultVolume
     }
+    return Promise.resolve()
   }
 
   function setUnmute (options) {
@@ -150,7 +151,7 @@ module.exports = function (activity) {
     AudioManager.setMute(false)
 
     if (!recover) {
-      return
+      return Promise.resolve()
     }
     var def
     if (mutedBy === 'direct') {
@@ -159,7 +160,7 @@ module.exports = function (activity) {
     if (!def) {
       def = defaultVolume
     }
-    setVolume(def, options)
+    return setVolume(def, options)
   }
 
   function micMute (muted) {
@@ -177,7 +178,7 @@ module.exports = function (activity) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
           setUnmute({ init: true })
-          speakAndExit(STRING_SHOW_MUTED)
+            .then(() => speakAndExit(STRING_SHOW_MUTED))
         } else {
           speakAndExit(STRING_SHOW_VOLUME + Math.floor(getVolume() / partition))
         }
@@ -187,34 +188,41 @@ module.exports = function (activity) {
         break
       case 'set_volume':
         setVolume(format(nlp.slots) * partition)
+          .then(() => activity.exit())
         break
       case 'add_volume_num':
         incVolume(format(nlp.slots) * partition)
+          .then(() => activity.exit())
         break
       case 'dec_volume_num':
         decVolume(format(nlp.slots) * partition)
+          .then(() => activity.exit())
         break
       case 'volumeup':
       case 'volume_too_low':
         incVolume(100 / partition)
+          .then(() => activity.exit())
         break
       case 'volumedown':
       case 'volume_too_high':
         decVolume(100 / partition)
+          .then(() => activity.exit())
         break
       case 'volumemin':
         setVolume(10)
+          .then(() => activity.exit())
         break
       case 'volumemax':
         setVolume(100)
+          .then(() => activity.exit())
         break
       case 'volumemute':
         setMute()
-        activity.exit()
+          .then(() => activity.exit())
         break
       case 'cancelmute':
         setUnmute()
-        activity.exit()
+          .then(() => activity.exit())
         break
       default:
         activity.exit()
@@ -228,15 +236,15 @@ module.exports = function (activity) {
     switch (url.pathname) {
       case '/init':
         initVolume()
-        activity.exit()
+          .then(() => activity.exit())
         break
       case '/volume_up':
         incVolume(100 / partition, { silent: silent })
-        activity.exit()
+          .then(() => activity.exit())
         break
       case '/volume_down':
         decVolume(100 / partition, { silent: silent })
-        activity.exit()
+          .then(() => activity.exit())
         break
       case '/mic_mute_effect':
         micMute(true)
