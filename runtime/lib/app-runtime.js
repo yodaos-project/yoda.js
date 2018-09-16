@@ -825,6 +825,9 @@ AppRuntime.prototype.onCustomConfig = function (message) {
  * @private
  */
 AppRuntime.prototype.onLoadCustomConfig = function (config) {
+  if (config === undefined) {
+    return
+  }
   var customConfig = JSON.parse(config)
   if (customConfig.vt_words) {
     // TODO(suchenglong) should inset vt word for first load from server
