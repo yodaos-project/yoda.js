@@ -106,6 +106,8 @@ AppRuntime.prototype.init = function init (paths) {
   return this.loadApps(paths).then(() => {
     if (wifi.getNetworkState() === wifi.NETSERVER_CONNECTED) {
       this.handleNetworkConnected()
+    } else {
+      this.handleNetworkDisconnected()
     }
 
     this.inited = true
