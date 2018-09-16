@@ -369,7 +369,7 @@ function buildYodaOS(linktoFn) {
   nav.push(buildNavHeading('YodaOS'))
   nav.push(buildNavLink('readme', `<a href="index.html">Quick Start</a>`))
   nav.push(buildNavItem(linktoFn('yodaRT.activity.Activity', 'Activity')))
-  nav.push(buildNavItem(linktoFn('yodaRT.LightRenderingContext', 'LightRenderingContext')))
+  nav.push(buildNavItem(linktoFn('yodaRT.light.LightRenderingContext', 'LightRenderingContext')))
 
   return nav
 }
@@ -715,6 +715,8 @@ exports.publish = function(taffyData, opts, tutorials) {
         return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>'
       case 'error':
         return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error">Error</a>'
+      case 'function':
+        return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function">function</a>'
       case 'null':
         return '<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Null">Null</a>'
       // Node.js Types
