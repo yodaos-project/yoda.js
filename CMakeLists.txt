@@ -41,7 +41,6 @@ endmacro()
 
 # remote packages
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
-YodaGitPackage(tape https://github.com/shadow-node/tape.git master)
 
 # local packages
 YodaLocalPackage(yoda-audio @yoda/audio)
