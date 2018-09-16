@@ -20,7 +20,7 @@
     "shadow": "0.10.x"
   },
   "manifest": {
-    "apilevel": 0.5
+    "apilevel": 0.6
   },
   "devDependencies": {
     "husky": "^1.0.0-rc.14",
