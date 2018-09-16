@@ -1,6 +1,7 @@
 var logger = require('logger')('keyboard')
 var Input = require('@yoda/input')
 var config = require('../../keyboard.json')
+var wifi = require('@yoda/wifi')
 
 module.exports = KeyboardHandler
 function KeyboardHandler (runtime) {
@@ -121,7 +122,12 @@ KeyboardHandler.prototype.listen = function listen () {
 
     var map = {
       116: () => {
-        this.runtime.waitingForAwake = false
+        // user manually clear WIFI
+        wifi.disableAll()
+        logger.log('user manually clear WIFI')
+        this.runtime.waitingForAwake = undefined // for identify startup
+        this.runtime.online = undefined
+        this.runtime.login = undefined
         this.runtime.startApp('@network', {
           intent: 'system_setup'
         }, {})
