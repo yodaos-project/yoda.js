@@ -1,5 +1,9 @@
 'use strict'
 
+/**
+ * @namespace yodaRT.light
+ */
+
 var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var light = require('@yoda/light')
@@ -8,10 +12,10 @@ var Map = require('pseudomap')
 var logger = require('logger')('effects')
 
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
-
+var SYSTEMCACHE = new Map()
 var PLAYERCACHE = new LRU({
   max: 1,
-  dispose: (key, val) => {
+  dispose: function (key, val) {
     try {
       val._stop()
     } catch (error) {
@@ -19,12 +23,21 @@ var PLAYERCACHE = new LRU({
     }
   }
 })
-var SYSTEMCACHE = new Map()
 
 module.exports = LightRenderingContextManager
 
+ /**
+ * @typedef Color
+ * @memberof yodaRT.light
+ * @property {number} r - the red color.
+ * @property {number} g - the green color.
+ * @property {number} b - the blue color.
+ * @property {number} a - the alpha.
+ */
 /**
- * manager lightRendering context
+ * @memberof yodaRT.light
+ * @class LightRenderingContextManager
+ * @classdesc The manager for LightRenderingContext objects.
  */
 function LightRenderingContextManager () {
   this.id = 0
@@ -32,7 +45,7 @@ function LightRenderingContextManager () {
 
 /**
  * create a new lightRendering context
- * @returns {LightRenderingContext} a LightRenderingContext instance
+ * @returns {LightRenderingContext} a `LightRenderingContext` instance
  */
 LightRenderingContextManager.prototype.getContext = function () {
   var context = new LightRenderingContext()
@@ -41,27 +54,33 @@ LightRenderingContextManager.prototype.getContext = function () {
 }
 
 /**
- * lightRendering context
+ * @memberof yodaRT.light
+ * @class LightRenderingContext
+ * @classdesc The `LightRenderingContext` object is provided for rendering your 
+ *            light and sound effects.
  */
 function LightRenderingContext () {
   this._id = -1
   this._handleId = 0
   this._handle = {}
-
   this.ledsConfig = light.getProfile()
 }
 
 /**
- * get the id being rendered
+ * Get the id being rendered
+ * @private
+ * @returns {Number} the rendered id.
  */
 LightRenderingContext.prototype._getCurrentId = function () {
   return -1
 }
 
 /**
- * play sound
- * @param {String} uri - the sound resource uri
- * @param {String} [self] - as prefix path if uri start with 'self://' protocol
+ * Play sound by given resource URI.
+ * @method sound
+ * @memberof yodaRT.light.LightRenderingContext
+ * @param {string} uri - the sound resource uri
+ * @param {string} [self] - as prefix path if uri start with 'self://' protocol
  * @returns {MediaPlayer} a MediaPlayer instance
  */
 LightRenderingContext.prototype.sound = function (uri, self) {
@@ -110,8 +129,10 @@ LightRenderingContext.prototype.sound = function (uri, self) {
 }
 
 /**
- * clear all timer and clear last frame
- * @param {Boolean} keep - if keep is true will not clear the last frame
+ * Clear all timer and clear last frame.
+ * @method stop
+ * @memberof yodaRT.light.LightRenderingContext
+ * @param {boolean} keep - if keep is true will not clear the last frame.
  */
 LightRenderingContext.prototype.stop = function (keep) {
   for (var i in this._handle) {
@@ -127,7 +148,9 @@ LightRenderingContext.prototype.stop = function (keep) {
 }
 
 /**
- * render the effect.
+ * Render the effect.
+ * @method render
+ * @memberof yodaRT.light.LightRenderingContext
  */
 LightRenderingContext.prototype.render = function () {
   if (this._getCurrentId() !== this._id) {
@@ -137,7 +160,9 @@ LightRenderingContext.prototype.render = function () {
 }
 
 /**
- * clear the effects buffer.
+ * Clear the effects buffer.
+ * @method clear
+ * @memberof yodaRT.light.LightRenderingContext
  */
 LightRenderingContext.prototype.clear = function () {
   if (this._getCurrentId() !== this._id) {
@@ -147,13 +172,14 @@ LightRenderingContext.prototype.clear = function () {
 }
 
 /**
- * write a single pixel.
- * @param {Number} pos - the position of the pixel to be written
- * @param {Number} r - Red value. from 0 to 255
- * @param {Number} g - Green value. from 0 to 255
- * @param {Number} b - Red value. from 0 to 255
- * @param {Number} a - Transparency value. from 0 to 1
- *
+ * Write a single pixel.
+ * @method pixel
+ * @memberof yodaRT.light.LightRenderingContext
+ * @param {number} pos - the position of the pixel to be written
+ * @param {number} r - Red value. from 0 to 255
+ * @param {number} g - Green value. from 0 to 255
+ * @param {number} b - Red value. from 0 to 255
+ * @param {number} a - Transparency value. from 0 to 1
  */
 LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
@@ -163,11 +189,13 @@ LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
 }
 
 /**
- * fill all pixels to the specified color
- * @param {Number} r - Red value. from 0 to 255
- * @param {Number} g - Green value. from 0 to 255
- * @param {Number} b - Red value. from 0 to 255
- * @param {Number} a - Transparency value. from 0 to 1
+ * Fill all pixels to the specified color.
+ * @method fill
+ * @memberof yodaRT.light.LightRenderingContext
+ * @param {number} r - Red value. from 0 to 255
+ * @param {number} g - Green value. from 0 to 255
+ * @param {number} b - Red value. from 0 to 255
+ * @param {number} a - Transparency value. from 0 to 1
  */
 LightRenderingContext.prototype.fill = function (r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
@@ -177,9 +205,11 @@ LightRenderingContext.prototype.fill = function (r, g, b, a) {
 }
 
 /**
- * Perform callback after the specified time
- * @param {Function} cb - callback
- * @param {Number} interval - millisecond
+ * Perform callback after the specified time.
+ * @method requestAnimationFrame
+ * @memberof yodaRT.light.LightRenderingContext
+ * @param {function} cb - callback
+ * @param {number} interval - millisecond
  */
 LightRenderingContext.prototype.requestAnimationFrame = function (cb, interval) {
   if (this._getCurrentId() !== this._id) {
@@ -194,11 +224,13 @@ LightRenderingContext.prototype.requestAnimationFrame = function (cb, interval) 
 }
 
 /**
- * make a transition. the fourth parameter will be true in callback when transition end
- * @param {yodaRT.Color} from - Specify the starting color of the transition
- * @param {yodaRT.Color} to - Specify the end color of the transition
- * @param {Number} duration - Specify the duration of the transition
- * @param {Number} fps - Specify the fps of the transition
+ * Make a transition. the fourth parameter will be true in callback when transition end.
+ * @method transition
+ * @memberof yodaRT.light.LightRenderingContext
+ * @param {yodaRT.light.Color} from - Specify the starting color of the transition
+ * @param {yodaRT.light.Color} to - Specify the end color of the transition
+ * @param {number} duration - Specify the duration of the transition
+ * @param {number} fps - Specify the fps of the transition
  * @param {Function} cb - a function to receive rgb color in transitions
  */
 LightRenderingContext.prototype.transition = function (from, to, duration, fps, cb) {
@@ -258,7 +290,9 @@ LightRenderingContext.prototype.transition = function (from, to, duration, fps, 
 }
 
 /**
- * make a breathing effect. the fourth parameter will be true in callback when breathing end
+ * Make a breathing effect. the fourth parameter will be true in callback when breathing end.
+ * @method breathing
+ * @memberof yodaRT.light.LightRenderingContext
  * @param {Number} r - Red value of the breathing effect
  * @param {Number} g - Green value of the breathing effect
  * @param {Number} b - Blue value of the breathing effect
