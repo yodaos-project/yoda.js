@@ -95,7 +95,6 @@ AppRuntime.prototype.init = function init (paths) {
   }
 
   this.startDbusAppService()
-  this.handleMqttMessage()
   this.listenDbusSignals()
 
   this.keyboard.init()
@@ -492,7 +491,7 @@ AppRuntime.prototype.destroyAll = function (options) {
    */
   promises.push(this.life.destroyAll({ force: force })
     .then(() => this.startDaemonApps()))
-  // 清空正在运行的所有App
+  // deleting the running app
   this.cloudSkillIdStack = []
   // this.resetCloudStack()
 
@@ -744,16 +743,6 @@ AppRuntime.prototype.sendNLPToApp = function (skillId, nlp, action) {
   } else {
     logger.log(`send NLP to App failed, AppId ${appId} not in active, active app: ${curAppId}`)
   }
-}
-
-/**
- * handle MQTT messages.
- * @private
- */
-AppRuntime.prototype.handleMqttMessage = function () {
-  this.on('cloud_forward', this.onCloudForward.bind(this))
-  this.on('reset_settings', this.onResetSettings.bind(this))
-  this.on('custom_config', this.onCustomConfig.bind(this))
 }
 
 /**

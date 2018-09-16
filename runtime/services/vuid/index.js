@@ -293,7 +293,6 @@ function handleMQTT (mqtt, runtime) {
     ota.runInBackground()
   })
   mqtt.on('custom_config', function (data) {
-    logger.info('handleMQTT-->custom_config: ' + data)
     runtime.onCustomConfig(data)
   })
 }
