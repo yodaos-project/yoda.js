@@ -16,7 +16,7 @@ Wormhole.prototype.init = function init (mqttClient) {
 
 Wormhole.prototype.handlers = {
   asr: function (asr) {
-    this.runtime.getNlpResult(asr, function (err, nlp, action) {
+    this.runtime.getNlpResult(asr, (err, nlp, action) => {
       if (err) {
         console.error(`occurrs some error in speechT`)
       } else {
