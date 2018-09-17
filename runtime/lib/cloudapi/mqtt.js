@@ -82,7 +82,7 @@ MqttAgent.prototype.onMessage = function (channel, message) {
   if (msg.topic === 'version') {
     this.sendToApp('version', 'ok')
   } else {
-    this.emit(msg.topic, msg.text)
+    this.emit('message', msg.topic, msg.text)
   }
 }
 

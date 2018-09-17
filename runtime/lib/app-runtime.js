@@ -26,6 +26,7 @@ var Permission = require('./component/permission')
 var AppLoader = require('./component/app-loader')
 var Keyboard = require('./component/keyboard')
 var Lifetime = require('./component/lifetime')
+var Wormhole = require('./component/wormhole')
 
 var floraClient
 var asr2nlpId = 'js-AppRuntime'
@@ -80,6 +81,7 @@ function AppRuntime () {
   this.loadAppComplete = false
   this.loader = new AppLoader(this)
   this.life = new Lifetime(this.loader)
+  this.wormhole = new Wormhole(this)
 }
 inherits(AppRuntime, EventEmitter)
 

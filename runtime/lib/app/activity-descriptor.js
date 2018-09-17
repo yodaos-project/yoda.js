@@ -17,6 +17,7 @@ module.exports.LightDescriptor = LightDescriptor
 module.exports.MultimediaDescriptor = MultimediaDescriptor
 module.exports.TtsDescriptor = TtsDescriptor
 module.exports.KeyboardDescriptor = KeyboardDescriptor
+module.exports.WormholeDescriptor = WormholeDescriptor
 
 /**
  * @memberof yodaRT.activity
@@ -83,6 +84,14 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.KeyboardClient} keyboard
    */
   this.keyboard = new KeyboardDescriptor(this, appId, runtime)
+
+  /**
+   * The `WormholeClient` is used to send or receive mqtt message to/from Rokid.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {yodaRT.activity.Activity.WormholeClient} wormhole
+   */
+  this.wormhole = new WormholeDescriptor(this, appId, runtime)
 
   /**
    * Get current `appId`.
@@ -963,6 +972,47 @@ Object.assign(KeyboardDescriptor.prototype,
       }
     }
   })
+
+/**
+ * @memberof yodaRT.activity.Activity
+ * @class WormholeClient
+ * @hideconstructor
+ * @extends EventEmitter
+ */
+function WormholeDescriptor (activityDescriptor, appId, runtime) {
+  EventEmitter.call(this)
+  this._activityDescriptor = activityDescriptor
+  this._appId = appId
+  this._runtime = runtime
+}
+inherits(WormholeDescriptor, EventEmitter)
+WormholeDescriptor.prototype.toJSON = function toJSON () {
+  return WormholeDescriptor.prototype
+}
+
+Object.assign(
+  {
+    type: 'namespace'
+  },
+  {
+    /**
+     * Send message to Rokid App.
+     * @memberof yodaRT.activity.Activity.WormholeClient
+     * @instance
+     * @function sendToApp
+     * @param {string} topic -
+     * @param {any} data -
+     * @returns {Promise<void>}
+     */
+    sendToApp: {
+      type: 'method',
+      returns: 'promise',
+      sendToApp: function sendToApp (topic, data) {
+        return this._runtime.wormhole.sendToApp(topic, data)
+      }
+    }
+  }
+)
 
 /**
  *
