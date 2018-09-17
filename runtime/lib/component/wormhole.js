@@ -27,6 +27,9 @@ Wormhole.prototype.handlers = {
   cloud_forward: function (data) {
     this.runtime.onCloudForward(data)
   },
+  forward: function (data) {
+    this.runtime.onForward(data)
+  },
   get_volume: function (data) {
     var res = {
       type: 'Volume',

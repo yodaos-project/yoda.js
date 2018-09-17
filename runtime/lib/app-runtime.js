@@ -764,6 +764,41 @@ AppRuntime.prototype.onCloudForward = function (message) {
 }
 
 /**
+ * handle mqtt forward message
+ * @param {string} message string receive from mqtt
+ */
+AppRuntime.prototype.onForward = function (message) {
+  var data = {}
+  try {
+    data = JSON.parse(message)
+  } catch (error) {
+    data = {}
+    logger.debug('parse mqtt forward message error: message -> ', message)
+    return
+  }
+
+  var mockNlp = {
+    cloud: false,
+    intent: 'RokidAppChannelForward',
+    forwardContent: data.content,
+    getInfos: data.getInfos,
+    appId: data.appId || data.domain
+  }
+  var mockAction = {
+    appId: data.appId || data.domain,
+    version: '2.0.0',
+    startWithActiveWord: false,
+    response: {
+      action: {
+        appId: data.appId || data.domain,
+        form: 'cut'
+      }
+    }
+  }
+  this.onVoiceCommand('', mockNlp, mockAction)
+}
+
+/**
  * 处理App发送的恢复出厂设置
  * @param {string} message
  * @private
