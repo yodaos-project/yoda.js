@@ -1,17 +1,21 @@
 'use strict'
 
-var cloudApi = require('../../lib/cloudapi')
+var logger = require('logger')('main')
+
 var property = require('@yoda/property')
 var AudioManager = require('@yoda/audio').AudioManager
-var AppRuntime = require('../../lib/app-runtime')
 var CloudGW = require('@yoda/cloudgw')
-var logger = require('logger')('main')
-var globalEnv = require('../../lib/env')()
 var floraFactory = require('@yoda/flora')
+var _ = require('@yoda/util')._
+
+var globalEnv = require('../../lib/env')()
+var cloudApi = require('../../lib/cloudapi')
+var AppRuntime = require('../../lib/app-runtime')
+var floraConfig = require('../../flora-config.json')
+
 var floraCli
 var speechAuthInfo
 var floraMsgHandlers = {}
-var floraConfig = require('../../flora-config.json')
 
 ;(function init () {
   // if DEBUG, we put raw events
@@ -231,8 +235,8 @@ function entry () {
       runtime.onGetPropAll = () => props
       runtime.doLogin()
       runtime.wormhole.init(mqttAgent)
-      logger.info('load custom-config: ' + config.extraInfo.custom_config)
-      runtime.onLoadCustomConfig(config.extraInfo.custom_config)
+      logger.info('load custom-config:', _.get(config, 'extraInfo.custom_config', {}))
+      runtime.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', {}))
     }).catch((err) => {
       logger.error('initializing occurrs error', err && err.stack)
     })
