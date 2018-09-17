@@ -697,7 +697,7 @@ exports.publish = function(taffyData, opts, tutorials) {
 
   // add template helpers
   view.find = find
-  view.linkto = function(longname, linkText, cssClass, fragmentId) {
+  view.linkto = function (longname, linkText, cssClass, fragmentId) {
     // preload JavaScript and Node.js type links.
     switch (longname.toLowerCase()) {
       // ECMA Types
@@ -724,6 +724,11 @@ exports.publish = function(taffyData, opts, tutorials) {
         return '<a href="https://nodejs.org/dist/latest-v10.x/docs/api/events.html#events_class_eventemitter">EventEmitter</a>'
       case 'buffer':
         return '<a href="https://nodejs.org/dist/latest-v10.x/docs/api/buffer.html#buffer_class_buffer">Buffer</a>'
+    }
+    var regex = /Promise\.<(.+)>/;
+    var matched = regex.exec(longname);
+    if (matched) {
+      return `<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/promise">Promise</a>&lt;${view.linkto(matched[1])}&gt;`;
     }
     // common links.
     return linkto(longname, linkText, cssClass, fragmentId);
