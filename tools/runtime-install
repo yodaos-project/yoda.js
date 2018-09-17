@@ -85,6 +85,7 @@ function install_test() {
   shell "rm -rf /usr/lib/node_modules/tape"
   shell "mkdir -p /usr/lib/node_modules/tape"
   push "node_modules/tape/*" "/usr/lib/node_modules/tape"
+  push "node_modules/@yoda/*" "/usr/lib/node_modules/@yoda"
 
   shell "rm -rf /data/workspace/test"
   shell "mkdir -p /data/workspace/test"

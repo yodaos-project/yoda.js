@@ -894,6 +894,7 @@ Object.assign(TtsDescriptor.prototype,
 )
 
 /**
+ * > stability: experimental
  * @memberof yodaRT.activity.Activity
  * @class KeyboardClient
  * @hideconstructor
@@ -916,26 +917,7 @@ Object.assign(KeyboardDescriptor.prototype,
   },
   {
     /**
-     * The keyup event is fired when a key is released.
-     * @event yodaRT.activity.Activity.KeyboardClient#keydown
-     * @param {object} event -
-     * @param {number} event.keyCode -
-     */
-    keyup: {
-      type: 'event'
-    },
-    /**
-     * The keydown event is fired when a key is pressed down.
-     * @event yodaRT.activity.Activity.KeyboardClient#keyup
-     * @param {object} event -
-     * @param {number} event.keyCode -
-     */
-    keydown: {
-      type: 'event'
-    },
-    /**
-     * stability: 0
-     * @private
+     * > stability: experimental
      * @event yodaRT.activity.Activity.KeyboardClient#click
      * @param {object} event -
      * @param {number} event.keyCode -
@@ -944,8 +926,7 @@ Object.assign(KeyboardDescriptor.prototype,
       type: 'event'
     },
     /**
-     * stability: 0
-     * @private
+     * > stability: experimental
      * @event yodaRT.activity.Activity.KeyboardClient#dbclick
      * @param {object} event -
      * @param {number} event.keyCode -
@@ -954,8 +935,7 @@ Object.assign(KeyboardDescriptor.prototype,
       type: 'event'
     },
     /**
-     * stability: 0
-     * @private
+     * > stability: experimental
      * @event yodaRT.activity.Activity.KeyboardClient#longpress
      * @param {object} event -
      * @param {number} event.keyCode -
@@ -967,6 +947,8 @@ Object.assign(KeyboardDescriptor.prototype,
   {
     /**
      * Intercepts all events for key code until restores default behavior by KeyboardClient.restoreDefaults
+     *
+     * > stability: experimental
      * @memberof yodaRT.activity.Activity.KeyboardClient
      * @instance
      * @function preventDefaults
@@ -976,15 +958,20 @@ Object.assign(KeyboardDescriptor.prototype,
     preventDefaults: {
       type: 'method',
       returns: 'promise',
-      fn: function preventDefaults (keyCode) {
+      fn: function preventDefaults (keyCode, event) {
         if (typeof keyCode !== 'number') {
           return Promise.reject(new Error('Expect a string on first argument of keyboard.preventDefaults.'))
         }
-        return this._runtime.preventKeyDefaults(this._appId, keyCode)
+        if (event != null && typeof event !== 'string') {
+          return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))
+        }
+        return this._runtime.keyboard.preventKeyDefaults(this._appId, keyCode, event)
       }
     },
     /**
      * Restore default behavior of key code.
+     *
+     * > stability: experimental
      * @memberof yodaRT.activity.Activity.KeyboardClient
      * @instance
      * @function restoreDefaults
@@ -994,11 +981,14 @@ Object.assign(KeyboardDescriptor.prototype,
     restoreDefaults: {
       type: 'method',
       returns: 'promise',
-      fn: function restoreDefaults (keyCode) {
+      fn: function restoreDefaults (keyCode, event) {
         if (typeof keyCode !== 'number') {
           return Promise.reject(new Error('Expect a string on first argument of keyboard.restoreDefaults.'))
         }
-        return this._runtime.restoreKeyDefaults(this._appId, keyCode)
+        if (event != null && typeof event !== 'string') {
+          return Promise.reject(new Error('Expect a string on second argument of keyboard.restoreDefaults.'))
+        }
+        return this._runtime.keyboard.restoreKeyDefaults(this._appId, keyCode, event)
       }
     }
   })
