@@ -10,7 +10,11 @@ function KeyboardHandler (runtime) {
   this.preventSubsequent = false
   this.runtime = runtime
 
-  this.listeners = {}
+  this.listeners = {
+    click: {},
+    dbclick: {},
+    longpress: {}
+  }
 }
 
 KeyboardHandler.prototype.init = function init () {
@@ -26,14 +30,6 @@ KeyboardHandler.prototype.listen = function listen () {
   this.input.on('keydown', listenerWrap(event => {
     this.currentKeyCode = event.keyCode
     logger.info(`keydown: ${event.keyCode}`)
-
-    var listener = this.listeners[String(event.keyCode)]
-    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-      logger.info(`Delegating keydown '${event.keyCode}' to app ${listener}.`)
-      var app = this.runtime.loader.getAppById(listener)
-      app && app.keyboard.emit('keydown', event)
-      return
-    }
 
     var map = config.keydown
     var descriptor = map[String(event.keyCode)]
@@ -58,14 +54,6 @@ KeyboardHandler.prototype.listen = function listen () {
     if (this.firstLongPressTime != null) {
       this.firstLongPressTime = null
       logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
-    }
-
-    var listener = this.listeners[String(event.keyCode)]
-    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-      logger.info(`Delegating keyup '${event.keyCode}' to app ${listener}.`)
-      var app = this.runtime.loader.getAppById(listener)
-      app && app.keyboard.emit('keyup', event)
-      return
     }
 
     /** Click Events */
@@ -101,23 +89,30 @@ KeyboardHandler.prototype.listen = function listen () {
   this.input.on('click', listenerWrap(event => {
     logger.info(`click: ${event.keyCode}`)
 
-    var listener = this.listeners[String(event.keyCode)]
+    var listener = this.listeners.click[String(event.keyCode)]
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-      logger.info(`Delegating click '${event.keyCode}' to app ${listener}.`)
       var app = this.runtime.loader.getAppById(listener)
-      app && app.keyboard.emit('click', event)
+      if (app) {
+        logger.info(`Delegating click '${event.keyCode}' to app ${listener}.`)
+        app.keyboard.emit('click', event)
+        return
+      }
+      logger.info(`App ${listener} is not active, skip click '${event.keyCode}' delegation.`)
     }
   }))
 
   this.input.on('dbclick', listenerWrap(event => {
-    logger.info(`double click: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
+    logger.info(`dbclick: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
 
-    var listener = this.listeners[String(event.keyCode)]
+    var listener = this.listeners.dbclick[String(event.keyCode)]
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-      logger.info(`Delegating dbclick '${event.keyCode}' to app ${listener}.`)
       var app = this.runtime.loader.getAppById(listener)
-      app && app.keyboard.emit('dbclick', event)
-      return
+      if (app) {
+        logger.info(`Delegating dbclick '${event.keyCode}' to app ${listener}.`)
+        app.keyboard.emit('dbclick', event)
+        return
+      }
+      logger.info(`App ${listener} is not active, skip dbclick '${event.keyCode}' delegation.`)
     }
 
     var map = {
@@ -156,12 +151,16 @@ KeyboardHandler.prototype.listen = function listen () {
       return
     }
 
-    var listener = this.listeners[String(event.keyCode)]
+    var listener = this.listeners.longpress[String(event.keyCode)]
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-      logger.info(`Delegating longpress '${event.keyCode}' to app ${listener}.`)
       var app = this.runtime.loader.getAppById(listener)
-      app && app.keyboard.emit('longpress', event)
-      return
+      if (app) {
+        logger.info(`Delegating longpress '${event.keyCode}' to app ${listener}.`)
+        this.preventSubsequent = true
+        app.keyboard.emit('longpress', event)
+        return
+      }
+      logger.info(`App ${listener} is not active, skip longpress '${event.keyCode}' delegation.`)
     }
 
     var map = config.longpress
@@ -183,6 +182,32 @@ KeyboardHandler.prototype.listen = function listen () {
     }
     this.openUrl(descriptor.url, descriptor.options)
   }))
+}
+
+KeyboardHandler.prototype.preventKeyDefaults = function preventKeyDefaults (appId, keyCode, event) {
+  var key = String(keyCode)
+  var events = Object.keys(this.listeners)
+  if (event != null && events.indexOf(event) >= 0) {
+    events = [ event ]
+  }
+  events.forEach(it => {
+    this.listeners[it][key] = appId
+  })
+  return Promise.resolve()
+}
+
+KeyboardHandler.prototype.restoreKeyDefaults = function restoreKeyDefaults (appId, keyCode, event) {
+  var key = String(keyCode)
+  var events = Object.keys(this.listeners)
+  if (event != null && events.indexOf(event) >= 0) {
+    events = [ event ]
+  }
+  events.forEach(it => {
+    if (this.listeners[it][key] === appId) {
+      this.listeners[it][key] = null
+    }
+  })
+  return Promise.resolve()
 }
 
 KeyboardHandler.prototype.openUrl = function openUrl (url, options) {
