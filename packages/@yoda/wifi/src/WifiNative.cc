@@ -105,6 +105,11 @@ JS_FUNCTION(Scan) {
   return jerry_create_boolean(true);
 }
 
+JS_FUNCTION(ResetWifi) {
+  wifi_clear_scan_results();
+  return jerry_create_boolean(true);
+}
+
 JS_FUNCTION(Save) {
   wifi_save_network();
   return jerry_create_boolean(true);
@@ -118,6 +123,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "disableAll", DisableAll);
   iotjs_jval_set_method(exports, "reconfigure", Reconfigure);
   iotjs_jval_set_method(exports, "resetDns", ResetDns);
+  iotjs_jval_set_method(exports, "resetWifi", ResetWifi);
   iotjs_jval_set_method(exports, "scan", Scan);
   iotjs_jval_set_method(exports, "save", Save);
 }

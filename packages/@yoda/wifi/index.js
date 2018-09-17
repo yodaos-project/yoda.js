@@ -121,6 +121,12 @@ module.exports = {
    */
   resetDns: native.resetDns,
   /**
+   * Reset the WIFI, it removes all the history WIFI config.
+   * @function resetWifi
+   * @returns {Boolean}
+   */
+  resetWifi: native.resetWifi,
+  /**
    * scan the wifi list, and use `getWifiList()` to get the results.
    * @function scan
    * @returns {Boolean}
