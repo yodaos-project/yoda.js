@@ -9,7 +9,7 @@ var result = fs.readdirSync(resultRoot).reduce((result, filename) => {
   var parser = new TapParser()
   var currTest
   parser.on('comment', (msg) => {
-    msg = msg.replace(/^\# /, '').replace('\n', '')
+    msg = msg.replace(/^# /, '').replace('\n', '')
     currTest = result.tests[msg] = []
   })
   parser.on('assert', (data) => {
