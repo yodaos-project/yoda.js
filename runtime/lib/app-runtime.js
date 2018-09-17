@@ -14,6 +14,7 @@ var _ = require('@yoda/util')._
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 var wifi = require('@yoda/wifi')
+var property = require('@yoda/property')
 var system = require('@yoda/system')
 var floraFactory = require('@yoda/flora')
 
@@ -783,6 +784,26 @@ AppRuntime.prototype.onForward = function (message) {
     }
   }
   this.onVoiceCommand('', mockNlp, mockAction)
+}
+
+/**
+ * handle mqtt unbind topic
+ * @param {string} message string receive from mqtt
+ */
+AppRuntime.prototype.unBindDevice = function (message) {
+  this.cloudApi.unBindDevice()
+    .then(() => {
+      property.set('persist.system.user.userId', '')
+      wifi.resetWifi()
+      logger.info('unbind device success')
+      this.login = undefined
+      this.online = undefined
+      this.waitingForAwake = undefined
+      this.handleNetworkDisconnected()
+    })
+    .catch((err) => {
+      logger.error('unbind device error', err)
+    })
 }
 
 /**

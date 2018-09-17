@@ -74,6 +74,9 @@ Wormhole.prototype.handlers = {
   },
   custom_config: function (data) {
     this.runtime.onCustomConfig(data)
+  },
+  UNIVERSAL_UNBIND: function (data) {
+    this.runtime.unBindDevice(data)
   }
 }
 

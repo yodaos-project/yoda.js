@@ -3,6 +3,7 @@
 var os = require('os')
 var property = require('@yoda/property')
 var _ = require('@yoda/util')._
+var logger = require('logger')('cloudApi')
 
 var device = require('./bind')
 var MqttAgent = require('./mqtt')
@@ -51,4 +52,11 @@ exports.resetSettings = function resetSettings (cloudgw) {
         resolve(data)
       })
   })
+}
+
+exports.unBindDevice = function () {
+  return device.unBindDevice()
+    .catch((err) => {
+      logger.debug('unBindDevice failed', err)
+    })
 }
