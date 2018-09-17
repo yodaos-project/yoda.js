@@ -53,6 +53,12 @@ compose([
 })
 
 function main (done) {
+  // clean the recovery state if it is ok or error.
+  var recoveryState = system.getRecoveryState().recovery_state
+  if (recoveryState === 'recovery_ok' ||
+    recoveryState === 'recovery_error') {
+    system.onRecoveryComplete()
+  }
   ota.runInCurrentContext(function onOTA (err, info) {
     logger.info('ota ran')
     if (err) {
