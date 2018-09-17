@@ -44,6 +44,8 @@ function bindDevice (notify) {
     function (config) {
       notify('101', strings.LOGIN_DONE)
       notify('201', strings.BIND_MASTER_DONE)
+      // copy config to global variable for unBindDevice function
+      CONFIG = Object.assign({}, config)
       return config
     },
     function (err) {
