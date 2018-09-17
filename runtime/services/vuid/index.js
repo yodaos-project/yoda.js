@@ -6,7 +6,6 @@ var AudioManager = require('@yoda/audio').AudioManager
 var AppRuntime = require('../../lib/app-runtime')
 var CloudGW = require('@yoda/cloudgw')
 var logger = require('logger')('main')
-var ota = require('@yoda/ota')
 var globalEnv = require('../../lib/env')()
 var floraFactory = require('@yoda/flora')
 var floraCli
@@ -231,68 +230,11 @@ function entry () {
       })
       runtime.onGetPropAll = () => props
       runtime.doLogin()
-      handleMQTT(mqttAgent, runtime)
+      runtime.wormhole.init(mqttAgent)
       logger.info('load custom-config: ' + config.extraInfo.custom_config)
       runtime.onLoadCustomConfig(config.extraInfo.custom_config)
     }).catch((err) => {
       logger.error('initializing occurrs error', err && err.stack)
     })
-  })
-}
-
-function handleMQTT (mqtt, runtime) {
-  mqtt.on('asr', function (asr) {
-    runtime.getNlpResult(asr, function (err, nlp, action) {
-      if (err) {
-        console.error(`occurrs some error in speechT`)
-      } else {
-        logger.info('MQTT command: get nlp result for asr', asr, nlp, action)
-        runtime.onVoiceCommand(asr, nlp, action)
-      }
-    })
-  })
-  mqtt.on('cloud_forward', function (data) {
-    runtime.onCloudForward(data)
-  })
-  mqtt.on('get_volume', function (data) {
-    var res = {
-      type: 'Volume',
-      event: 'ON_VOLUME_CHANGE',
-      template: JSON.stringify({
-        mediaCurrent: '' + AudioManager.getVolume(),
-        mediaTotal: '100',
-        alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
-        alarmTotal: '100'
-      }),
-      appid: ''
-    }
-    logger.log('response topic get_volume ->', res)
-    mqtt.sendToApp('event', JSON.stringify(res))
-  })
-  mqtt.on('set_volume', function (data) {
-    var msg = JSON.parse(data)
-    if (msg.music !== undefined) {
-      AudioManager.setVolume(msg.music)
-    }
-    var res = {
-      type: 'Volume',
-      event: 'ON_VOLUME_CHANGE',
-      template: JSON.stringify({
-        mediaCurrent: '' + AudioManager.getVolume(),
-        mediaTotal: '100',
-        alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
-        alarmTotal: '100'
-      }),
-      appid: ''
-    }
-    logger.log('response topic set_volume ->', res)
-    mqtt.sendToApp('event', JSON.stringify(res))
-  })
-  mqtt.on('sys_update_available', () => {
-    logger.info('received upgrade command from mqtt, running ota in background.')
-    ota.runInBackground()
-  })
-  mqtt.on('custom_config', function (data) {
-    runtime.onCustomConfig(data)
   })
 }
