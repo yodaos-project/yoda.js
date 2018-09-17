@@ -180,7 +180,7 @@ module.exports = function (activity) {
           setUnmute({ init: true })
             .then(() => speakAndExit(STRING_SHOW_MUTED))
         } else {
-          speakAndExit(STRING_SHOW_VOLUME + Math.floor(getVolume() / partition))
+          speakAndExit(STRING_SHOW_VOLUME + Math.ceil(getVolume() / partition))
         }
         break
       case 'set_volume_percent':
