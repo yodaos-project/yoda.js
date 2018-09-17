@@ -177,10 +177,12 @@ MediaPlayer.prototype.resume = function () {
  * @param {function} callback - get called when seek complete
  */
 MediaPlayer.prototype.seek = function (pos, callback) {
-  if (typeof callback === 'function') {
-    this._seekcompleteCb = callback
-  }
-  return this._handle.seek(pos)
+  process.nextTick(() => {
+    if (typeof callback === 'function') {
+      this._seekcompleteCb = callback
+    }
+    return this._handle.seek(pos)
+  })
 }
 
 /**
