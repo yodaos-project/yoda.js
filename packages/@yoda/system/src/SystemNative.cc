@@ -6,8 +6,7 @@
 #include <time.h>
 
 JS_FUNCTION(Reboot) {
-  system("reboot");
-  return jerry_create_boolean(true);
+  return jerry_create_number(system("reboot"));
 }
 
 JS_FUNCTION(VerifyOtaImage) {
@@ -63,8 +62,9 @@ JS_FUNCTION(GetRecoveryState) {
 
 JS_FUNCTION(SetRecoveryOk) {
   struct boot_cmd cmd;
+  const char* state = BOOTSTATE_NONE;
   memset(&cmd, 0, sizeof(cmd));
-  cmd.recovery_state = BOOTSTATE_NONE;
+  strncpy(cmd.recovery_state, state, strlen(state) + 1);
   int status = set_recovery_cmd_status(&cmd);
   return jerry_create_number(status);
 }
