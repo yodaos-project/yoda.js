@@ -11,7 +11,8 @@
     ],
     "permission": [
       "ACCESS_TTS",
-      "ACCESS_MULTIMEDIA"
+      "ACCESS_MULTIMEDIA",
+      "INTERRUPT"
     ]
   },
   "directories": {

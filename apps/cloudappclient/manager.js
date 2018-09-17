@@ -274,6 +274,10 @@ Manager.prototype.updateStack = function () {
 }
 
 Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
+  if (!data.appId) {
+    logger.log('no appId, ignore eventRequest')
+    return cb && cb()
+  }
   if (type === 'tts' && name === 'cancel') {
     if (this.getCurrentSkill().appId === data.appId) {
       logger.log('current tts cancel event, ignore')
