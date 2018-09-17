@@ -26,7 +26,7 @@ var PLAYERCACHE = new LRU({
 
 module.exports = LightRenderingContextManager
 
- /**
+/**
  * @typedef Color
  * @memberof yodaRT.light
  * @property {number} r - the red color.
@@ -56,7 +56,7 @@ LightRenderingContextManager.prototype.getContext = function () {
 /**
  * @memberof yodaRT.light
  * @class LightRenderingContext
- * @classdesc The `LightRenderingContext` object is provided for rendering your 
+ * @classdesc The `LightRenderingContext` object is provided for rendering your
  *            light and sound effects.
  */
 function LightRenderingContext () {
