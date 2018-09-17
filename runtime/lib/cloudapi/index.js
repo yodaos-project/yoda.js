@@ -40,3 +40,15 @@ exports.updateBasicInfo = function updateBasicInfo (cloudgw, info) {
       })
   })
 }
+
+exports.resetSettings = function resetSettings (cloudgw) {
+  return new Promise((resolve, reject) => {
+    cloudgw.request('/v1/device/deviceManager/resetRoki', {},
+      (err, data) => {
+        if (err) {
+          return reject(err)
+        }
+        resolve(data)
+      })
+  })
+}
