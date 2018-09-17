@@ -932,6 +932,36 @@ Object.assign(KeyboardDescriptor.prototype,
      */
     keydown: {
       type: 'event'
+    },
+    /**
+     * stability: 0
+     * @private
+     * @event yodaRT.activity.Activity.KeyboardClient#click
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    click: {
+      type: 'event'
+    },
+    /**
+     * stability: 0
+     * @private
+     * @event yodaRT.activity.Activity.KeyboardClient#dbclick
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    dbclick: {
+      type: 'event'
+    },
+    /**
+     * stability: 0
+     * @private
+     * @event yodaRT.activity.Activity.KeyboardClient#longpress
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    longpress: {
+      type: 'event'
     }
   },
   {
