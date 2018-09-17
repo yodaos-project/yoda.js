@@ -41,8 +41,30 @@ exports.prepareOta = function prepareOta (path) {
 
 /**
  * @private
+ * @function getRecoveryState
  */
-exports.GetOtaFlag = native.GetOtaFlag
+exports.getRecoveryState = function getRecoveryState () {
+  return native.getRecoveryState()
+}
+
+/**
+ * Set the system as recovery mode.
+ *
+ * @function diskUsage
+ * @param {string} path - the path to be analyzed
+ * @returns {module:@yoda/system~DiskUsage}
+ */
+exports.setRecoveryMode = function () {
+  return native.setRecoveryMode()
+}
+
+/**
+ * @private
+ * @function setRecoveryOk
+ */
+exports.onRecoveryComplete = function onRecoveryComplete () {
+  return native.setRecoveryOk()
+}
 
 /**
  * @typedef DiskUsage

@@ -48,7 +48,7 @@ JS_FUNCTION(PrepareOta) {
   return jerry_create_number(status);
 }
 
-JS_FUNCTION(GetOtaFlag) {
+JS_FUNCTION(GetRecoveryState) {
   int status;
   struct boot_cmd cmd;
   memset(&cmd, 0, sizeof(cmd));
@@ -59,6 +59,19 @@ JS_FUNCTION(GetOtaFlag) {
   iotjs_jval_set_property_string_raw(jval, "recovery_path", cmd.recovery_path);
   iotjs_jval_set_property_string_raw(jval, "recovery_state", cmd.recovery_state);
   return jval;
+}
+
+JS_FUNCTION(SetRecoveryOk) {
+  struct boot_cmd cmd;
+  memset(&cmd, 0, sizeof(cmd));
+  cmd.recovery_state = BOOTSTATE_NONE;
+  int status = set_recovery_cmd_status(&cmd);
+  return jerry_create_number(status);
+}
+
+JS_FUNCTION(SetRecoveryMode) {
+  set_boot_flush_data();
+  return jerry_create_boolean(true);
 }
 
 JS_FUNCTION(DiskUsage) {
@@ -114,9 +127,12 @@ JS_FUNCTION(Strptime) {
 }
 
 void init(jerry_value_t exports) {
+  iotjs_jval_set_method(exports, "reboot", Reboot);
   iotjs_jval_set_method(exports, "verifyOtaImage", VerifyOtaImage);
   iotjs_jval_set_method(exports, "prepareOta", PrepareOta);
-  iotjs_jval_set_method(exports, "reboot", Reboot);
+  iotjs_jval_set_method(exports, "getRecoveryState", GetRecoveryState);
+  iotjs_jval_set_method(exports, "setRecoveryMode", SetRecoveryMode);
+  iotjs_jval_set_method(exports, "setRecoveryOk", SetRecoveryOk);
   iotjs_jval_set_method(exports, "diskUsage", DiskUsage);
   iotjs_jval_set_method(exports, "strptime", Strptime);
 }
