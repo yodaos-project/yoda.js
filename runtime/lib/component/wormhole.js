@@ -1,5 +1,6 @@
-var logger = require('logger')('wormhole')
+'use strict'
 
+var logger = require('logger')('wormhole')
 var AudioManager = require('@yoda/audio').AudioManager
 var ota = require('@yoda/ota')
 
@@ -68,6 +69,9 @@ Wormhole.prototype.handlers = {
     logger.info('received upgrade command from mqtt, running ota in background.')
     ota.runInBackground()
   },
+  reset_settings: function (data) {
+    this.runtime.onResetSettings()
+  },
   custom_config: function (data) {
     this.runtime.onCustomConfig(data)
   }
@@ -78,7 +82,7 @@ Wormhole.prototype.onMessage = function onMessage (topic, text) {
   if (typeof handler !== 'function') {
     return
   }
-  handler(text)
+  handler.call(this, text)
 }
 
 Wormhole.prototype.sendToApp = function sendToApp (topic, data) {

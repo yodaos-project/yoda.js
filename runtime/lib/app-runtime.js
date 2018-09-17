@@ -14,6 +14,7 @@ var _ = require('@yoda/util')._
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 var wifi = require('@yoda/wifi')
+var system = require('@yoda/system')
 var floraFactory = require('@yoda/flora')
 
 var env = require('./env')()
@@ -804,9 +805,18 @@ AppRuntime.prototype.onForward = function (message) {
  * @private
  */
 AppRuntime.prototype.onResetSettings = function (message) {
-  if (message === '1') {
-    logger.log('当前不支持恢复出厂设置')
+  if (this.cloudApi == null) {
+    return Promise.reject(new Error('CloudApi not ready.'))
   }
+
+  var CloudGw = require('@yoda/cloudgw')
+  var opts = this.onGetPropAll()
+  var cloudgw = new CloudGw(opts)
+  this.cloudApi.resetSettings(cloudgw).then(() => {
+    logger.info('system is already reset')
+    system.setRecoveryMode()
+    process.nextTick(system.reboot)
+  })
 }
 
 /**
