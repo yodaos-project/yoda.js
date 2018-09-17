@@ -12,6 +12,8 @@ function sync (source) {
   if (date.hours + TIMEZONE >= 24) {
     date.date += 1
     date.hours = date.hours + TIMEZONE - 24
+  } else {
+    date.hours += TIMEZONE
   }
   var str = [
     [date.year, date.month, date.date].join('-'),
