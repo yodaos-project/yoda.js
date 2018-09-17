@@ -31,7 +31,7 @@ KeyboardHandler.prototype.listen = function listen () {
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
       logger.info(`Delegating keydown '${event.keyCode}' to app ${listener}.`)
       var app = this.runtime.loader.getAppById(listener)
-      app && app.emit('keydown', event)
+      app && app.keyboard.emit('keydown', event)
       return
     }
 
@@ -64,7 +64,7 @@ KeyboardHandler.prototype.listen = function listen () {
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
       logger.info(`Delegating keyup '${event.keyCode}' to app ${listener}.`)
       var app = this.runtime.loader.getAppById(listener)
-      app && app.emit('keyup', event)
+      app && app.keyboard.emit('keyup', event)
       return
     }
 
@@ -105,7 +105,7 @@ KeyboardHandler.prototype.listen = function listen () {
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
       logger.info(`Delegating click '${event.keyCode}' to app ${listener}.`)
       var app = this.runtime.loader.getAppById(listener)
-      app && app.emit('click', event)
+      app && app.keyboard.emit('click', event)
     }
   }))
 
@@ -116,7 +116,7 @@ KeyboardHandler.prototype.listen = function listen () {
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
       logger.info(`Delegating dbclick '${event.keyCode}' to app ${listener}.`)
       var app = this.runtime.loader.getAppById(listener)
-      app && app.emit('dbclick', event)
+      app && app.keyboard.emit('dbclick', event)
       return
     }
 
@@ -160,7 +160,7 @@ KeyboardHandler.prototype.listen = function listen () {
     if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
       logger.info(`Delegating longpress '${event.keyCode}' to app ${listener}.`)
       var app = this.runtime.loader.getAppById(listener)
-      app && app.emit('longpress', event)
+      app && app.keyboard.emit('longpress', event)
       return
     }
 
