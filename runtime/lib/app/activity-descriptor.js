@@ -615,7 +615,7 @@ Object.assign(MultimediaDescriptor.prototype,
           isAlarm = streamType === 'alarm'
         }
         var impatient = _.get(options, 'impatient', true)
-        url = yodaPath.transformPathScheme(url, LIGHT_SOURCE, this._appHome + '/light', {
+        url = yodaPath.transformPathScheme(url, MEDIA_SOURCE, this._appHome + '/media', {
           allowedScheme: [ 'http', 'https' ]
         })
         logger.log('playing multimedia', url)
