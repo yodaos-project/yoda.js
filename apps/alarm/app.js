@@ -4,12 +4,28 @@ var wifi = require('@yoda/wifi')
 var logger = require('logger')('alarm')
 var Cron = require('./node-cron')
 var fs = require('fs')
+var request = require('./request')
 
 module.exports = function (activity) {
   var scheduleHandler = new Cron.Schedule()
+  var jobQueue = []
   activity.on('create', function () {
     var state = wifi.getNetworkState()
     if (state === wifi.NETSERVER_CONNECTED) {
+      request({
+        activity: activity,
+        intent: 'sync_alarm',
+        callback: (res) => {
+          logger.log('res.data', JSON.parse(res))
+          var resObj = JSON.parse(res)
+          var alarmList = (resObj.data || {}).alarmList || []
+          var command = {}
+          for (var i = 0; i < alarmList.length; i++) {
+            command[alarmList[i].id] = alarmList[i]
+          }
+          initAlarm(command)
+        }
+      })
       logger.log('alarm should get config from cloud')
     } else {
       getTasksFromConfig(function (command) {
@@ -33,6 +49,39 @@ module.exports = function (activity) {
   activity.on('url', url => {
     logger.log('url!!!', url.query)
     var command = JSON.parse(decodeURI(url.query.slice(8)))
+    doTask(command)
+  })
+
+  activity.on('request', function (nlp, action) {
+    var command = {}
+    if (nlp.intent === 'RokidAppChannelForward') {
+      command = JSON.parse(nlp.forwardContent.command)
+      doTask(command)
+    }
+  })
+
+  activity.on('destory', function () {
+    logger.log(this.appId + ' destoryed')
+  })
+
+  function initAlarm (command) {
+    for (var i in command) {
+      var commandOpt = {
+        id: command[i].id,
+        createTime: command[i].createTime,
+        type: command[i].type,
+        tts: command[i].tts,
+        url: command[i].url,
+        mode: command[i].mode,
+        time: command[i].time,
+        date: command[i].date
+      }
+      var pattern = transferPattern(command[i].date, command[i].time, command[i].repeatType)
+      startTask(commandOpt, pattern)
+    }
+    logger.log('alarm init')
+  }
+  function doTask (command) {
     if (command.length > 0) {
       for (var i = 0; i < command.length; i++) {
         var commandOpt = {
@@ -41,11 +90,13 @@ module.exports = function (activity) {
           type: command[i].type,
           tts: command[i].tts,
           url: command[i].url,
-          mode: command[i].mode
+          mode: command[i].mode,
+          time: command[i].time,
+          date: command[i].date
         }
 
         if (command[i].flag === 'add' || command[i].flag === 'edit') {
-          var pattern = transferPattern(command[i].date, command[i].time)
+          var pattern = transferPattern(command[i].date, command[i].time, command[i].repeatType)
           setConfig(command[i], 'add')
           startTask(commandOpt, pattern)
         }
@@ -58,13 +109,10 @@ module.exports = function (activity) {
         }
       }
     }
-  })
-
-  activity.on('destory', function () {
-    logger.log(this.appId + ' destoryed')
-  })
+  }
 
   function startTask (commandOpt, pattern) {
+    logger.log(commandOpt.id, ' alarm start')
     scheduleHandler.create(pattern, function () {
       taskCallback(commandOpt, commandOpt.mode)
     }, commandOpt)
@@ -92,12 +140,22 @@ module.exports = function (activity) {
     }, tick)
   }
 
-  function transferPattern (date, time) {
-    var dateArr = date.split(':')
+  function transferPattern (date, time, repeatType) {
     time = time.split(':')
     var s = time[2]
     var m = time[1]
     var h = time[0]
+    if (['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'].indexOf(repeatType) >= 0) {
+      var weekNum = repeatType.split('D')[1]
+      return s + ' ' + m + ' ' + h + ' * * ' + weekNum
+    }
+    if (repeatType === 'WEEKEND') {
+      return s + ' ' + m + ' ' + h + ' * * 1-5'
+    }
+    if (repeatType === 'WEEKDAY') {
+      return s + ' ' + m + ' ' + h + ' * * 6,0'
+    }
+    var dateArr = date.split(':')
     var day = dateArr[2] === '**' ? '*' : dateArr[2]
     var month = dateArr[1] === '**' ? '*' : dateArr[1]
     return s + ' ' + m + ' ' + h + ' ' + day + ' ' + month + ' *'
@@ -119,8 +177,14 @@ module.exports = function (activity) {
   }
 
   function taskCallback (option, mode) {
-    logger.log(option.id, ' start~!')
+    logger.log(option.id, ' start~!', jobQueue)
+    if (jobQueue.indexOf(option.id) > -1) {
+      return
+    }
+
+    jobQueue.push(option.id)
     var jobConf = scheduleHandler.getJobConfig(option.id)
+    // logger.log(jobConf, ' jobConf~!')
     if (!jobConf) {
       logger.log('alarm' + option.id + ' cannot run')
       clearTask(mode, option)
@@ -132,14 +196,24 @@ module.exports = function (activity) {
     if (option.type === 'Remind') {
       tts = scheduleHandler.combineReminderTts()
       activity.setForeground().then(() => {
+        // send card to app
+        request({
+          activity: activity,
+          intent: 'send_card',
+          businessParams: {
+            alarmId: option.id
+          }
+        })
         if (state === wifi.NETSERVER_CONNECTED) {
           activity.tts.speak(tts || option.tts).then(() => {
-            scheduleHandler.clearReminderQueue()
-            clearTask(mode, option)
-            activity.setBackground()
+            activity.media.start('system://reminder_default.mp3', 'alarm').then(() => {
+              scheduleHandler.clearReminderQueue()
+              clearTask(mode, option)
+              activity.setBackground()
+            })
           })
         } else {
-          activity.media.start('/opt/media/startup1.ogg', 'alarm').then(() => {
+          activity.media.start('system://reminder_default.mp3', 'alarm').then(() => {
             clearTask(mode, option)
             activity.setBackground()
           })
@@ -150,37 +224,36 @@ module.exports = function (activity) {
       activity.setForeground().then(() => {
         return activity.media.setLoopMode(true)
       }).then(() => {
+        // send card to app
+        request({
+          activity: activity,
+          intent: 'send_card',
+          businessParams: {
+            alarmId: option.id
+          }
+        })
         if (state === wifi.NETSERVER_CONNECTED) {
-          activity.media.start('/opt/media/alarm_default_ringtone.mp3', 'alarm').then(() => {
-            clearTask(mode, option)
-            activity.setBackground()
+          activity.tts.speak(option.tts).then(() => {
+            activity.media.start(option.url, 'alarm').then(() => {
+              clearTask(mode, option)
+              activity.setBackground()
+            })
           })
         } else {
-          activity.media.start('/opt/media/alarm_default_ringtone.mp3', 'alarm').then(() => {
+          activity.media.start('system://alarm_default_ringtone.mp3', 'alarm').then(() => {
             clearTask(mode, option)
             activity.setBackground()
           })
         }
       })
-      // activity.setForeground().then(()=>{
-      //   activity.media.setLoopMode(true).then(()=>{
-      //     if (state === wifi.NETSERVER_CONNECTED) {
-      //       activity.media.start('/opt/media/alarm_default_ringtone.mp3', 'alarm').then(()=>{
-      //         clearTask(mode, option)
-      //         activity.setBackground()
-      //       })
-      //     } else {
-      //       activity.media.start('/opt/media/alarm_default_ringtone.mp3', 'alarm').then(()=>{
-      //         clearTask(mode, option)
-      //         activity.setBackground()
-      //       })
-      //     }
-      //   })
-      // })
     }
   }
 
   function clearTask (mode, option) {
+    var idx = jobQueue.indexOf(option.id)
+    if (idx > -1) {
+      jobQueue.splice(idx, 1)
+    }
     if (mode === 'single') {
       scheduleHandler.clear(option.id)
       setConfig(option, 'remove')

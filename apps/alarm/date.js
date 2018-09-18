@@ -111,15 +111,14 @@ Date.prototype.substractMonth = function () {
 }
 
 Date.prototype.substractDay = function () {
-  var spec = daySpec(this.getFullYear())
+  // var spec = daySpec(this.getFullYear())
   var d = this.getDate() - 1
 
-  if (d > spec[this.getMonth()]) {
-    d = 1
-
-    this.setDate(d)
-    this.substractMonth()
-  }
+  // if (d > spec[this.getMonth()]) {
+  //   d = 1
+  //   this.setDate(d)
+  //   this.substractMonth()
+  // }
 
   this.setDate(d)
 }
