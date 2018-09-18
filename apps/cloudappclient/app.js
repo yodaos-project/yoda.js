@@ -172,7 +172,7 @@ module.exports = activity => {
     logger.log('get CONFIG from OS')
     activity.get('all')
       .then((result) => {
-        logger.log('get prop success', result)
+        logger.log('get prop success')
         sos.setEventRequestConfig(result || {})
       })
       .catch((error) => {

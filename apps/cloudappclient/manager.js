@@ -11,6 +11,7 @@ function Skill (exe, nlp, action) {
   EventEmitter.call(this)
   this.appId = action.appId
   this.form = action.response.action.form
+  this.shouldEndSession = action.response.action.shouldEndSession
   this.directives = []
   this.paused = false
   this.task = 0
@@ -20,10 +21,12 @@ function Skill (exe, nlp, action) {
 }
 inherits(Skill, EventEmitter)
 
-Skill.prototype.onrequest = function (directives, append) {
+Skill.prototype.onrequest = function (action, append) {
+  var directives = action.response.action.directives || []
   if (directives === undefined || directives.length <= 0) {
     return
   }
+  this.shouldEndSession = action.response.action.shouldEndSession
   logger.log(`skill ${this.appId} onrequest`)
   this.transform(directives || [], append)
   logger.log(`${this.appId} pause: ${this.paused}`, this.directives)
@@ -37,6 +40,12 @@ Skill.prototype.handleEvent = function () {
     logger.log(this.appId + ' emit start', this.directives)
     this.paused = false
     this.task++
+    var resume = true
+    this.directives.forEach((value) => {
+      if (value.type === 'media' && ['stop', 'pause', 'resume'].indexOf(value.action) > -1) {
+        resume = false
+      }
+    })
     this.exe.execute(this.directives, 'frontend', () => {
       this.task--
       logger.info('execute end', this.appId, this.directives, this.paused)
@@ -44,6 +53,13 @@ Skill.prototype.handleEvent = function () {
         return
       }
       if (this.task > 0) {
+        if (this.shouldEndSession === false && resume) {
+          this.exe.execute([{
+            type: 'media',
+            action: 'resume',
+            data: {}
+          }], 'frontend')
+        }
         return
       }
       if (this.directives.length > 0) {
@@ -170,7 +186,7 @@ Manager.prototype.onrequest = function (nlp, action) {
   logger.log('sos onrequest')
   var pos = this.findByAppId(action.appId)
   if (pos > -1) {
-    this.skills[pos].onrequest(action.response.action.directives)
+    this.skills[pos].onrequest(action)
   } else {
     var skill = new Skill(this.exe, nlp, action)
     if (action.response.action.form === 'scene') {
@@ -210,7 +226,7 @@ Manager.prototype.append = function (nlp, action) {
   var pos = this.findByAppId(action.appId)
   if (pos > -1) {
     logger.log(`skill ${action.appId}  index ${pos} append request`)
-    this.skills[pos].onrequest(action.response.action.directives || [])
+    this.skills[pos].onrequest(action)
   } else {
     logger.log(`skill ${action.appId} not in stack, append ignore`)
   }

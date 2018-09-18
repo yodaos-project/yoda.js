@@ -35,20 +35,32 @@ MultiMedia.prototype.start = function (appId, url, streamType) {
 
 MultiMedia.prototype.stop = function (appId) {
   if (this.handle[appId]) {
-    this.handle[appId].stop()
+    try {
+      this.handle[appId].stop()
+    } catch (error) {
+      logger.debug('try to stop player errer with appId: ', appId)
+    }
     delete this.handle[appId]
   }
 }
 
 MultiMedia.prototype.pause = function (appId) {
   if (this.handle[appId]) {
-    this.handle[appId].pause()
+    try {
+      this.handle[appId].pause()
+    } catch (error) {
+      logger.debug('try to pause player errer with appId: ', appId)
+    }
   }
 }
 
 MultiMedia.prototype.resume = function (appId) {
-  if (this.handle[appId] && !this.handle[appId].playing) {
-    this.handle[appId].resume()
+  try {
+    if (this.handle[appId] && !this.handle[appId].playing) {
+      this.handle[appId].resume()
+    }
+  } catch (error) {
+    logger.debug('try to resume player errer with appId: ', appId)
   }
 }
 
@@ -74,7 +86,12 @@ MultiMedia.prototype.setLoopMode = function (appId, mode) {
 
 MultiMedia.prototype.seek = function (appId, position, callback) {
   if (this.handle[appId]) {
-    this.handle[appId].seek(position, callback)
+    try {
+      this.handle[appId].seek(position, callback)
+    } catch (error) {
+      logger.debug('try to seek player errer with appId: ', appId)
+      callback(new Error('player error'))
+    }
   } else {
     callback(new Error('player instance not found'))
   }
