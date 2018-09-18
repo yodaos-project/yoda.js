@@ -8,15 +8,17 @@ function testit() {
 export BLUETOOTH_CHANNEL_PREFIX=/tmp > /dev/null;
 iotjs /usr/lib/node_modules/tape/bin/tape.js '/data/workspace/test/$1/**/*.test.js'
 "
-  adb shell $scripts
+  adb shell $scripts | ./node_modules/.bin/tap-nyan
 }
 
 function test_package() {
-  testit "@yoda/$1" > "$resultDir/@yoda.$1.tap"
+  # testit "@yoda/$1" > "$resultDir/@yoda.$1.tap"
+  testit "@yoda/$1"
 }
 
 function test_runtime() {
-  testit "runtime" > "$resultDir/runtime.tap"
+  # testit "runtime" > "$resultDir/runtime.tap"
+  testit "runtime"
 }
 
 function init() {
@@ -41,4 +43,4 @@ test_package 'util'
 test_package 'wifi'
 test_runtime
 
-node ./tools/helper/merge-tests.js > ./test/.result/summary.json
+# node ./tools/helper/merge-tests.js > ./test/.result/summary.json

@@ -6,9 +6,7 @@ var ota = require('@yoda/ota')
 var fs = require('fs')
 var upgradeDir = '/data/upgrade'
 var infoFile = upgradeDir + '/info.json'
-var property = require('@yoda/property')
-var systemVersionProp = 'ro.build.version.release'
-var info1= {
+var info1 = {
   imageUrl: '/test/test',
   authorize: '',
   changelog: 'yyyyyy',
@@ -19,7 +17,7 @@ var info1= {
   status: 'downloaded'
 }
 
-var info2= {
+var info2 = {
   imageUrl: '/test/test',
   authorize: '',
   changelog: 'yyyyyy',
@@ -30,12 +28,12 @@ var info2= {
   status: 'downloading'
 }
 
-test('if info .json has downloaded,getInfoOfPendingUpgrade should return null info',t=>{
+test('if info .json has downloaded,getInfoOfPendingUpgrade should return null info', t => {
   t.plan(2)
-  fs.writeFile(infoFile,JSON.stringify(info1) , (err) => {
-    ota.getInfoOfPendingUpgrade((err,info) =>{
-      if(err){
-        logger.info(err+"==============")
+  fs.writeFile(infoFile, JSON.stringify(info1), () => {
+    ota.getInfoOfPendingUpgrade((err, info) => {
+      if (err) {
+        logger.info(err + '==============')
       }
       t.ok(err == null)
       t.ok(info != null)
@@ -44,10 +42,10 @@ test('if info .json has downloaded,getInfoOfPendingUpgrade should return null in
   })
 })
 
-test('if info .json has downloading,getInfoOfPendingUpgrade should return null null',t=>{
+test('if info .json has downloading,getInfoOfPendingUpgrade should return null null', t => {
   t.plan(2)
-  fs.writeFile(infoFile,JSON.stringify(info2) , (err) => {
-    ota.getInfoOfPendingUpgrade((err,info) =>{
+  fs.writeFile(infoFile, JSON.stringify(info2), () => {
+    ota.getInfoOfPendingUpgrade((err, info) => {
       t.ok(err == null)
       t.ok(info == null)
       t.end()
@@ -55,10 +53,10 @@ test('if info .json has downloading,getInfoOfPendingUpgrade should return null n
   })
 })
 
-test('if info .json not existed,getInfoOfPendingUpgrade should return null null',t=>{
+test('if info .json not existed,getInfoOfPendingUpgrade should return null null', t => {
   t.plan(2)
-  fs.writeFile(infoFile,JSON.stringify(info2) , (err) => {
-    fs.unlink(infoFile, (err) => {
+  fs.writeFile(infoFile, JSON.stringify(info2), () => {
+    fs.unlink(infoFile, () => {
       ota.getInfoOfPendingUpgrade((err, info) => {
         t.ok(err == null)
         t.ok(info == null)

@@ -30,10 +30,9 @@ test('start command', (t) => {
 
   var messageStream = bluetooth.getMessageStream()
   setTimeout(() => {
-    //after socket connect successfully,try send cmd message 'ON'
+    // after socket connect successfully,try send cmd message 'ON'
     messageStream.start(btName)
-    //after socket connect successfully,double try send cmd message 'ON'
+    // after socket connect successfully,double try send cmd message 'ON'
     messageStream.start(btName1)
   }, 1000)
 })
-

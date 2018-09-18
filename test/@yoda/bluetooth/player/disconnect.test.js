@@ -17,7 +17,7 @@ test('disconnect command', (t) => {
       t.equal(msg.command, 'ON', 'the command is ON')
       t.equal(msg.name, btName, `the btName is ${btName}`)
       isopened = true
-    }else {
+    } else {
       t.equal(msg.command, 'OFF', 'the command is OFF')
       socket.close()
       isopened = false
@@ -25,15 +25,15 @@ test('disconnect command', (t) => {
   })
   var player = bluetooth.getPlayer()
   setTimeout(() => {
-    //after socket connect successfully,try send cmd message 'ON'
+    // after socket connect successfully,try send cmd message 'ON'
     player.start(btName)
     setTimeout(() => {
       player.disconnect()
       setTimeout(() => {
         player.start(btName)
-        t.ok(isopened == false)
+        t.ok(isopened === false)
         t.end()
       }, 2000)
     }, 1000)
-  },1000)
+  }, 1000)
 })

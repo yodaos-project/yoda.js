@@ -2,16 +2,14 @@
 
 var test = require('tape')
 var light = require('@yoda/light')
-var logger = require('logger')('fill.test')
-
 
 test('fill default buffer should be ok', t => {
   t.plan(2)
   light.enable()
-  light.fill(255,255,255,1)
+  light.fill(255, 255, 255, 1)
   t.ok(light.write())
   setTimeout(() => {
-    light.fill(255,0,0,1)
+    light.fill(255, 0, 0, 1)
     t.ok(light.write())
     t.end()
   }, 1500)
