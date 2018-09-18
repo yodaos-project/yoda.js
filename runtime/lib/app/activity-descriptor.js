@@ -60,7 +60,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @instance
    * @member {yodaRT.activity.Activity.LightClient} light
    */
-  this.light = new LightDescriptor(this, appId, runtime)
+  this.light = new LightDescriptor(this, appId, appHome, runtime)
 
   /**
    * The `MediaClient` is used to control multimedia APIs.
@@ -68,7 +68,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @instance
    * @member {yodaRT.activity.Activity.MediaClient} media
    */
-  this.media = new MultimediaDescriptor(this, appId, runtime)
+  this.media = new MultimediaDescriptor(this, appId, appHome, runtime)
 
   /**
    * The `TtsClient` is used to control TextToSpeech APIs.
@@ -76,7 +76,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @instance
    * @member {yodaRT.activity.Activity.TtsClient} tts
    */
-  this.tts = new TtsDescriptor(this, appId, runtime)
+  this.tts = new TtsDescriptor(this, appId, appHome, runtime)
 
   /**
    * The `KeyboardClient` is used to control behaviors of key code events.
@@ -84,7 +84,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @instance
    * @member {yodaRT.activity.Activity.KeyboardClient} keyboard
    */
-  this.keyboard = new KeyboardDescriptor(this, appId, runtime)
+  this.keyboard = new KeyboardDescriptor(this, appId, appHome, runtime)
 
   /**
    * The `WormholeClient` is used to send or receive mqtt message to/from Rokid.
@@ -92,7 +92,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @instance
    * @member {yodaRT.activity.Activity.WormholeClient} wormhole
    */
-  this.wormhole = new WormholeDescriptor(this, appId, runtime)
+  this.wormhole = new WormholeDescriptor(this, appId, appHome, runtime)
 
   /**
    * Get current `appId`.
@@ -467,10 +467,11 @@ Object.assign(ActivityDescriptor.prototype,
  * @hideconstructor
  * @extends EventEmitter
  */
-function LightDescriptor (activityDescriptor, appId, runtime) {
+function LightDescriptor (activityDescriptor, appId, appHome, runtime) {
   EventEmitter.call(this)
   this._activityDescriptor = activityDescriptor
   this._appId = appId
+  this._appHome = appHome
   this._runtime = runtime
 }
 inherits(LightDescriptor, EventEmitter)
@@ -530,10 +531,11 @@ Object.assign(LightDescriptor.prototype,
  * @hideconstructor
  * @extends EventEmitter
  */
-function MultimediaDescriptor (activityDescriptor, appId, runtime) {
+function MultimediaDescriptor (activityDescriptor, appId, appHome, runtime) {
   EventEmitter.call(this)
   this._activityDescriptor = activityDescriptor
   this._appId = appId
+  this._appHome = appHome
   this._runtime = runtime
 }
 inherits(MultimediaDescriptor, EventEmitter)
@@ -793,10 +795,11 @@ Object.assign(MultimediaDescriptor.prototype,
  * @hideconstructor
  * @extends EventEmitter
  */
-function TtsDescriptor (activityDescriptor, appId, runtime) {
+function TtsDescriptor (activityDescriptor, appId, appHome, runtime) {
   EventEmitter.call(this)
   this._activityDescriptor = activityDescriptor
   this._appId = appId
+  this._appHome = appHome
   this._runtime = runtime
 }
 inherits(TtsDescriptor, EventEmitter)
@@ -929,10 +932,11 @@ Object.assign(TtsDescriptor.prototype,
  * @hideconstructor
  * @extends EventEmitter
  */
-function KeyboardDescriptor (activityDescriptor, appId, runtime) {
+function KeyboardDescriptor (activityDescriptor, appId, appHome, runtime) {
   EventEmitter.call(this)
   this._activityDescriptor = activityDescriptor
   this._appId = appId
+  this._appHome = appHome
   this._runtime = runtime
 }
 inherits(KeyboardDescriptor, EventEmitter)
@@ -1028,10 +1032,11 @@ Object.assign(KeyboardDescriptor.prototype,
  * @hideconstructor
  * @extends EventEmitter
  */
-function WormholeDescriptor (activityDescriptor, appId, runtime) {
+function WormholeDescriptor (activityDescriptor, appId, appHome, runtime) {
   EventEmitter.call(this)
   this._activityDescriptor = activityDescriptor
   this._appId = appId
+  this._appHome = appHome
   this._runtime = runtime
 }
 inherits(WormholeDescriptor, EventEmitter)
