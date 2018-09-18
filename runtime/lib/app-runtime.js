@@ -325,6 +325,41 @@ AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
 }
 
 /**
+ * Handle power button activation.
+ * - if not connected to network yet, disable bluetooth broadcast.
+ * - if there are apps actively running, terminates all apps.
+ * - otherwise set device actively pickup.
+ */
+AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
+  if (this.online !== true) {
+    // start @network app
+    return this.sendNLPToApp('@network', {
+      intent: 'into_sleep'
+    }, {})
+  }
+  if (this.life.getCurrentAppId()) {
+    /** exit all app */
+    return this.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
+  }
+  return this.setPickup(true)
+}
+
+/**
+ * Reset network and start procedure of configuring network.
+ */
+AppRuntime.prototype.resetNetwork = function resetNetwork () {
+  // user manually clear WIFI
+  wifi.disableAll()
+  logger.log('user manually clear WIFI')
+  this.waitingForAwake = undefined
+  this.online = undefined
+  this.login = undefined
+  return this.startApp('@network', {
+    intent: 'system_setup'
+  }, {})
+}
+
+/**
  * 接收turen的speech事件
  * @param {string} name
  * @param {object} data
