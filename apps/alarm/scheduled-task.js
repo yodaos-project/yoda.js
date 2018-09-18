@@ -1,75 +1,92 @@
 'use strict'
 
-module.exports = (function () {
-  /**
-   * Creates a new scheduled task.
-   *
-   * @param {Task} task - task to schedule.
-   * @param {boolean} options - whether to start the task immediately.
-   */
-  function ScheduledTask (task, options) {
-    var self = this
-    task.on('started', function () {
-      self.status = 'running'
-    })
-
-    task.on('done', function () {
-      self.status = 'waiting'
-    })
-
-    task.on('failed', function () {
-      self.status = 'failed'
-    })
-    this.task = function () {
-      task.update(new Date())
-    }
-
-    this.tick = null
-    if (options.scheduled !== false) {
-      this.start()
-    }
-  }
+/**
+* Creates a new scheduled task.
+*
+* @param {Task} task - task to schedule.
+* @param {*} options - task options.
+*/
+function ScheduledTask (task, options) {
+  // var timezone = options.timezone;
 
   /**
-   * Starts updating the task.
-   *
-   * @returns {ScheduledTask} instance of this task.
-   */
-  ScheduledTask.prototype.start = function () {
+  * Starts updating the task.
+  *
+  * @return {ScheduledTask} instance of this task.
+  */
+  this.start = () => {
     this.status = 'scheduled'
     if (this.task && !this.tick) {
-      this.tick = setInterval(this.task, 1000)
+      this.tick = setTimeout(this.task.bind(this), 1000)
     }
 
     return this
   }
 
   /**
-   * Stops updating the task.
-   *
-   * @returns {ScheduledTask} instance of this task.
-   */
-  ScheduledTask.prototype.stop = function () {
+* Stops updating the task.
+*
+* @return {ScheduledTask} instance of this task.
+*/
+  this.stop = () => {
     this.status = 'stoped'
     if (this.tick) {
-      clearInterval(this.tick)
+      clearTimeout(this.tick)
       this.tick = null
     }
 
     return this
   }
 
-  ScheduledTask.prototype.getStatus = function () {
+  /**
+* Returns the current task status.
+*
+* @return {string} current task status.
+* The return may be:
+* - scheduled: when a task is scheduled and waiting to be executed.
+* - running: the task status while the task is executing.
+* - stoped: when the task is stoped.
+* - destroyed: whe the task is destroyed, in that status the task cannot be re-started.
+* - failed: a task is maker as failed when the previous execution fails.
+*/
+  this.getStatus = () => {
     return this.status
   }
+
   /**
-   * Destroys the scheduled task.
-   */
-  ScheduledTask.prototype.destroy = function () {
+* Destroys the scheduled task.
+*/
+  this.destroy = () => {
     this.stop()
-    this.task = null
     this.status = 'destroyed'
+
+    this.task = null
   }
 
-  return ScheduledTask
-}())
+  task.on('started', () => {
+    this.status = 'running'
+  })
+
+  task.on('done', () => {
+    this.status = 'scheduled'
+  })
+
+  task.on('failed', () => {
+    this.status = 'failed'
+  })
+
+  this.task = () => {
+    var date = new Date()
+    this.tick = setTimeout(this.task.bind(this),
+      1000 - date.getMilliseconds())
+    task.update(date)
+  }
+
+  this.tick = null
+
+  if (options.scheduled !== false) {
+    this.start()
+  }
+}
+
+module.exports = ScheduledTask

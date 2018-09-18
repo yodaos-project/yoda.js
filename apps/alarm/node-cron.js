@@ -24,8 +24,10 @@ module.exports = (function () {
      *      3. only clocks: run the last setting clock.
      */
     function compareTask (id, current, refered) {
+      console.log('compareTask')
       var currentInterval = parser.parseExpressionSync(current.expression)
       var referedInterval = parser.parseExpressionSync(refered.expression)
+      console.log(currentInterval.next().getTime(), referedInterval.next().getTime(), '==========')
       // no concurrency alarm or reminder
       if (Math.floor(currentInterval.next().getTime() / 1000) !== Math.floor(referedInterval.next().getTime() / 1000)) {
         return true
@@ -154,11 +156,13 @@ module.exports = (function () {
         }
       }
       if (self.jobs.hasOwnProperty(param.id)) {
+        console.log(param.id + ' destroyed!')
         self.jobs[param.id].job.destroy()
         delete self.jobs[param.id]
       }
       var task = new Task(expression, func)
       var scheduleJob = new ScheduledTask(task, options)
+      console.log(param.id + ' created!')
       // var jobVessel = {};
       if (scheduleJob) {
         self.jobs[param.id] = {
@@ -169,7 +173,9 @@ module.exports = (function () {
           expression: expression,
           createTime: param.createTime,
           tts: param.tts,
-          url: param.url
+          url: param.url,
+          time: param.time,
+          date: param.date
         }
       }
       return scheduleJob
