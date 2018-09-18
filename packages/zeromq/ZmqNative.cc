@@ -33,8 +33,9 @@ static void iotjs_zmq_poll_cb(uv_poll_t* handle, int status, int events) {
   jerry_value_t onread = iotjs_jval_get_property(jthis, "onread");
   jerry_value_t onerror = iotjs_jval_get_property(jthis, "onerror");
   if (status != 0) {
-    jerry_value_t error = jerry_create_error(
-      JERRY_ERROR_TYPE, (jerry_char_t*)"I/O status: socket not ready !=0.");
+    jerry_value_t error =
+        jerry_create_error(JERRY_ERROR_TYPE,
+                           (jerry_char_t*)"I/O status: socket not ready !=0.");
     jerry_value_t jargv[1] = { error };
     jerry_call_function(onerror, jthis, jargv, 1);
     jerry_release_value(error);
@@ -253,4 +254,3 @@ void init(jerry_value_t exports) {
 }
 
 NODE_MODULE(zmq, init)
-

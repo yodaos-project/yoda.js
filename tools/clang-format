@@ -1,3 +1,40 @@
 #!/usr/bin/env bash
 
-find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file
+help="
+Usage:
+  -i    Inplace edit files.
+
+Example:
+  $ ./tools/clang-format -i
+"
+
+inplace='NO'
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -i)
+      inplace='YES'
+      ;;
+    --help)
+      printf "$help"
+      exit
+      ;;
+    -h)
+      printf "$help"
+      exit
+      ;;
+    -*)
+      echo "Illegal option $1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+if test $inplace = 'YES'; then
+  find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file -i
+fi
+
+rep_count=$(find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file -output-replacements-xml | grep -c '<replacement ')
+
+if ! test $rep_count = 0; then
+  exit 1
+fi
