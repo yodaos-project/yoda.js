@@ -54,7 +54,7 @@ CronExpression.constraints = [
   [ 0, 59 ], // Minute
   [ 0, 23 ], // Hour
   [ 1, 31 ], // Day of month
-  [ 0, 11 ], // Month
+  [ 1, 12 ], // Month
   [ 0, 6 ] // Day of week
 ]
 
@@ -64,18 +64,18 @@ CronExpression.constraints = [
  */
 CronExpression.aliases = {
   month: {
-    jan: 0,
-    feb: 1,
-    mar: 2,
-    apr: 3,
-    may: 4,
-    jun: 5,
-    jul: 6,
-    aug: 7,
-    sep: 8,
-    oct: 9,
-    nov: 10,
-    dec: 11
+    jan: 1,
+    feb: 2,
+    mar: 3,
+    apr: 4,
+    may: 5,
+    jun: 6,
+    jul: 7,
+    aug: 8,
+    sep: 9,
+    oct: 10,
+    nov: 11,
+    dec: 12
   },
 
   dayOfWeek: {
@@ -308,12 +308,11 @@ CronExpression._validateTimespan = function (current, end) {
  */
 CronExpression.prototype._findSchedule = function () {
   // Validate timespan
-  if (!CronExpression._validateTimespan(this._currentDate, this._endDate)) {
-    throw new Error('Out of the timespan range')
-  }
+  // if (!CronExpression._validateTimespan(this._currentDate, this._endDate)) {
+  //   throw new Error('Out of the timespan range')
+  // }
 
   var current = new Date(this._currentDate.toISOString())
-
   function findNearest (value, sequence) {
     for (var i = 0, c = sequence.length; i < c; i++) {
       if (sequence[i] >= value) {
@@ -340,21 +339,16 @@ CronExpression.prototype._findSchedule = function () {
   // Reset
   if (this._fields.second.length === 1 && this._fields.second[0] === 0) {
     current.setSeconds(0)
-    // current.substractMinute();
+    current.addMinute()
   } else {
-    // current.substractSecond();
+    current.addSecond()
   }
 
   // Iterate and match schedule
   while (true) {
-    // Validate timespan
-    if (!CronExpression._validateTimespan(current, this._endDate)) {
-      throw new Error('Out of the timespan range')
-    }
-
     // Match month
     if (!matchSchedule(current.getMonth(), this._fields.month)) {
-      current.substractMonth()
+      current.addMonth()
       current.setDate(1)
       current.setHours(0)
       current.setMinutes(0)
@@ -364,7 +358,7 @@ CronExpression.prototype._findSchedule = function () {
 
     // Match day of month
     if (!matchSchedule(current.getDate(), this._fields.dayOfMonth)) {
-      current.substractDay()
+      current.addDay()
       current.setHours(0)
       current.setMinutes(0)
       current.setSeconds(0)
@@ -373,16 +367,15 @@ CronExpression.prototype._findSchedule = function () {
 
     // Match day of week
     if (!matchSchedule(current.getDay(), this._fields.dayOfWeek)) {
-      current.substractDay()
+      current.addDay()
       current.setHours(0)
       current.setMinutes(0)
       current.setSeconds(0)
       continue
     }
-
     // Match hour
     if (!matchSchedule(current.getHours(), this._fields.hour)) {
-      current.substractHour()
+      current.addHour()
       current.setMinutes(0)
       current.setSeconds(0)
       continue
@@ -390,20 +383,18 @@ CronExpression.prototype._findSchedule = function () {
 
     // Match minute
     if (!matchSchedule(current.getMinutes(), this._fields.minute)) {
-      current.substractMinute()
+      current.addMinute()
       current.setSeconds(0)
       continue
     }
 
     // Match second
     if (!matchSchedule(current.getSeconds(), this._fields.second)) {
-      current.substractSecond()
+      current.addSecond()
       continue
     }
-
     break
   }
-
   return current
 }
 
