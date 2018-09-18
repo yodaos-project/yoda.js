@@ -38,7 +38,7 @@ function createExtApp (appId, target, runtime) {
     logger.error(`Unexpected error on child process '${target}'`, err.message, err.stack)
   })
   cp.on('exit', (code, signal) => {
-    logger.info(`Child process exited with code ${code}, signal ${signal}`)
+    logger.info(`${appId} exited with code ${code}, signal ${signal}`)
     descriptor.emit('exit', code, signal)
   })
   descriptor.once('destruct', () => {
