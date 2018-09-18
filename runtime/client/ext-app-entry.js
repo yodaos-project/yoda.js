@@ -1,6 +1,9 @@
 'use strict'
 
 var logger = require('logger')('ext-app-client')
+
+require('@yoda/oh-my-little-pony')
+
 var translate = require('./translator-ipc').translate
 var target = process.argv[2]
 
@@ -51,16 +54,6 @@ function keepAlive (appId) {
       clearInterval(timer)
     }
   })
-  /**
-   * FIXME: some native add-on callbacks do not trigger process.nextTick
-   * shall be fixed in N-API make callback
-   */
-  process.nextTick = function fakeNextTick (fn) {
-    var params = Array.prototype.slice.call(arguments, 1)
-    setTimeout(() => {
-      fn.apply(global, params)
-    }, 0)
-  }
 }
 
 function main () {

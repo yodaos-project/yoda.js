@@ -2,6 +2,7 @@
 
 var logger = require('logger')('main')
 
+require('@yoda/oh-my-little-pony').catchUncaughtError('/data/system/yodart-err.log')
 var property = require('@yoda/property')
 var AudioManager = require('@yoda/audio').AudioManager
 var CloudGW = require('@yoda/cloudgw')
@@ -22,13 +23,6 @@ var floraMsgHandlers = {}
   activateProcess()
   initFloraClient()
   entry()
-
-  process.nextTick = function fakeNextTick (fn) {
-    var params = Array.prototype.slice.call(arguments, 1)
-    setTimeout(() => {
-      fn.apply(global, params)
-    }, 0)
-  }
 })()
 
 function activateProcess () {
@@ -235,8 +229,7 @@ function entry () {
       runtime.onGetPropAll = () => props
       runtime.doLogin()
       runtime.wormhole.init(mqttAgent)
-      logger.info('load custom-config:', _.get(config, 'extraInfo.custom_config', {}))
-      runtime.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', {}))
+      runtime.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
     }).catch((err) => {
       logger.error('initializing occurrs error', err && err.stack)
     })

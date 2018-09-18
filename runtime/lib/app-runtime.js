@@ -11,6 +11,7 @@ var inherits = require('util').inherits
 var Url = require('url')
 
 var _ = require('@yoda/util')._
+var safeParse = require('@yoda/util').json.safeParse
 var logger = require('logger')('yoda')
 var ota = require('@yoda/ota')
 var wifi = require('@yoda/wifi')
@@ -917,49 +918,58 @@ AppRuntime.prototype.onLoadCustomConfig = function (config) {
   if (config === undefined) {
     return
   }
-  var customConfig = JSON.parse(config)
-  if (customConfig.vt_words) {
+  var customConfig = safeParse(config)
+  if (_.get(customConfig, 'vt_words')) {
     // TODO(suchenglong) should inset vt word for first load from server
   }
-  if (customConfig.continuousDialog) {
+  if (_.get(customConfig, 'continuousDialog')) {
     var continuousDialogObj = customConfig.continuousDialog
-    var continueObj = JSON.parse(continuousDialogObj)
-    continueObj.isFirstLoad = true
-    var continuousDialog = {
-      continuousDialog: continueObj
+    var continueObj = safeParse(continuousDialogObj)
+    if (continueObj) {
+      continueObj.isFirstLoad = true
+      var continuousDialog = {
+        continuousDialog: continueObj
+      }
+      this.onCustomConfig(continuousDialog)
     }
-    this.onCustomConfig(continuousDialog)
   }
-  if (customConfig.standbyLight) {
+  if (_.get(customConfig, 'standbyLight')) {
     var standbyLightText = customConfig.standbyLight
-    var standbyLightObj = JSON.parse(standbyLightText)
-    standbyLightObj.isFirstLoad = true
-    var standbyLight = {
-      standbyLight: standbyLightObj
+    var standbyLightObj = safeParse(standbyLightText)
+    if (standbyLightObj) {
+      standbyLightObj.isFirstLoad = true
+      var standbyLight = {
+        standbyLight: standbyLightObj
+      }
+      this.onCustomConfig(standbyLight)
     }
-    this.onCustomConfig(standbyLight)
   }
 
-  if (customConfig.wakeupSoundEffects) {
+  if (_.get(customConfig, 'wakeupSoundEffects')) {
     var wakeupSoundEffectsText = customConfig.wakeupSoundEffects
-    var wakeupSoundEffectsObj = JSON.parse(wakeupSoundEffectsText)
-    wakeupSoundEffectsObj.isFirstLoad = true
-    var wakeupSoundEffects = {
-      wakeupSoundEffects: wakeupSoundEffectsObj
+    var wakeupSoundEffectsObj = safeParse(wakeupSoundEffectsText)
+    if (wakeupSoundEffectsObj) {
+      wakeupSoundEffectsObj.isFirstLoad = true
+      var wakeupSoundEffects = {
+        wakeupSoundEffects: wakeupSoundEffectsObj
+      }
+      this.onCustomConfig(wakeupSoundEffects)
     }
-    this.onCustomConfig(wakeupSoundEffects)
   }
 
-  if (customConfig.nightMode) {
+  if (_.get(customConfig, 'nightMode')) {
     var nightModeText = customConfig.nightMode
-    var nightModeObj = JSON.parse(nightModeText)
-    nightModeObj.isFirstLoad = true
-    var nightMode = {
-      nightMode: nightModeObj
+    var nightModeObj = safeParse(nightModeText)
+    if (nightModeObj) {
+      nightModeObj.isFirstLoad = true
+      var nightMode = {
+        nightMode: nightModeObj
+      }
+      this.onCustomConfig(nightMode)
     }
-    this.onCustomConfig(nightMode)
   }
 }
+
 /**
  * @private
  */

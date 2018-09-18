@@ -45,40 +45,6 @@ var systemVersionProp = 'ro.build.version.release'
 
 /**
  * @private
- * @param {string} dir
- * @param {Function} callback
- */
-function mkdirp (dir, callback) {
-  fs.mkdir(dir, function onMkdir (err) {
-    if (err == null) {
-      return callback(null)
-    }
-    if (err.code === 'ENOENT') {
-      mkdirp(path.dirname(dir), function onMkdirp (err) {
-        if (err) {
-          return callback(err)
-        }
-        mkdirp(dir, callback)
-      }) /** mkdirp */
-      return
-    }
-    fs.stat(dir, function onStat (err, stat) {
-      if (err) {
-        return callback(err)
-      }
-      if (!stat.isDirectory()) {
-        var eexist = new Error('Path exists')
-        eexist.path = dir
-        eexist.code = 'EEXIST'
-        return callback(eexist)
-      }
-      return callback(null)
-    }) /** fs.stat */
-  }) /** fs.mkdir */
-}
-
-/**
- * @private
  * @param {string[]} files
  * @param {Function} callback
  */
@@ -112,7 +78,7 @@ function getImagePath (info) {
  * @param {module:@yoda/ota~lockCallback} callback
  */
 function lockInfo (callback) {
-  mkdirp(upgradeDir, function onMkdirp (err) {
+  yodaUtil.fs.mkdirp(upgradeDir, function onMkdirp (err) {
     if (err) callback(err)
     lockfile.lock(infoLock, { stale: 60 * 1000 }, function onLock (err) {
       if (err) {
@@ -375,7 +341,7 @@ function runInCurrentContext (callback) {
   /** prepare to run */
   compose([
     /** make work dir */
-    cb => mkdirp(upgradeDir, cb),
+    cb => yodaUtil.fs.mkdirp(upgradeDir, cb),
     cb => lockfile.lock(procLock, { stale: /** 30m */ 30 * 60 * 1000 }, cb)
   ], err => {
     if (err) {
