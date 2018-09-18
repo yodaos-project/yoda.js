@@ -68,8 +68,10 @@ JS_FUNCTION(GetWifiList) {
   for (uint32_t i = 0; i < list.num; i++) {
     jerry_value_t jitem = jerry_create_object();
     jerry_value_t jssid_name = jerry_create_string((const jerry_char_t*)"ssid");
-    jerry_value_t jssid_val = jerry_create_string((const jerry_char_t*)list.ssid[i].ssid);
-    jerry_value_t jsig_name = jerry_create_string((const jerry_char_t*)"signal");
+    jerry_value_t jssid_val =
+        jerry_create_string((const jerry_char_t*)list.ssid[i].ssid);
+    jerry_value_t jsig_name =
+        jerry_create_string((const jerry_char_t*)"signal");
     jerry_value_t jsig_val = jerry_create_number(list.ssid[i].sig);
 
     jerry_set_property(jitem, jssid_name, jssid_val);

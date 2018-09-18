@@ -37,11 +37,10 @@ extern iotjs_bufferwrap_t* iotjs_bufferwrap_from_jbuffer(
 extern char* iotjs_bufferwrap_buffer(iotjs_bufferwrap_t* bufferwrap);
 extern size_t iotjs_bufferwrap_length(iotjs_bufferwrap_t* bufferwrap);
 extern jerry_value_t iotjs_bufferwrap_create_buffer(size_t len);
-extern size_t iotjs_bufferwrap_copy(iotjs_bufferwrap_t* bufferwrap, const char* src,
-                                    size_t len);
+extern size_t iotjs_bufferwrap_copy(iotjs_bufferwrap_t* bufferwrap,
+                                    const char* src, size_t len);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 #endif // ZMQ_NATIVE_H
-

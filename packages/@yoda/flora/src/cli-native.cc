@@ -24,7 +24,8 @@ public:
         flag = ((uint16_t*)v)[0];
         flag >>= 6;
         if (flag != 0)
-          printf("JMemCheck: id(%d) %p, ref count %d\n", values[i].second, v, flag);
+          printf("JMemCheck: id(%d) %p, ref count %d\n", values[i].second, v,
+flag);
       }
     }
   }
@@ -39,17 +40,16 @@ private:
 
 static JMemCheck jmem_check;
 
-static bool foreach_func(const jerry_value_t name, const jerry_value_t value, void* data) {
-  jerry_size_t size = jerry_get_string_size(name);
-  jerry_char_t str[size + 1];
-  jerry_string_to_char_buffer(name, str, size);
-  str[size] = '\0';
+static bool foreach_func(const jerry_value_t name, const jerry_value_t value,
+void* data) { jerry_size_t size = jerry_get_string_size(name); jerry_char_t
+str[size + 1]; jerry_string_to_char_buffer(name, str, size); str[size] = '\0';
   jerry_type_t tp = jerry_value_get_type(value);
   printf("foreach: name = %s, value type = %d\n", str, tp);
 }
 */
 
-static jerry_value_t caps_to_jobject(iotjs_flora_cli_t* handle, shared_ptr<Caps>& caps) {
+static jerry_value_t caps_to_jobject(iotjs_flora_cli_t* handle,
+                                     shared_ptr<Caps>& caps) {
   uint32_t size = caps->size();
   jerry_value_t exports;
   jerry_value_t arr;
@@ -194,9 +194,8 @@ static shared_ptr<Caps> jobject_to_caps(jerry_value_t jcaps) {
 }
 
 class NativeCallback : public flora::ClientCallback {
-public:
-  void recv_post(const char* name, uint32_t msgtype,
-      shared_ptr<Caps>& msg) {
+ public:
+  void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg) {
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
     list<AsyncCallbackInfo>::iterator it;
 
@@ -229,7 +228,7 @@ public:
     _this->handle_callback();
   }
 
-private:
+ private:
   void handle_callback() {
     // TODO: 可能此时iotjs_flora_cli_t已经释放，如何避免？
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
@@ -253,10 +252,12 @@ private:
     }
   }
 
-  void js_call_recv_post(const string& name, uint32_t msgtype, shared_ptr<Caps>& msg) {
+  void js_call_recv_post(const string& name, uint32_t msgtype,
+                         shared_ptr<Caps>& msg) {
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
     jerry_value_t this_obj = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
-    jerry_value_t cb_func = iotjs_jval_get_property(this_obj, "native_callback");
+    jerry_value_t cb_func =
+        iotjs_jval_get_property(this_obj, "native_callback");
     jerry_value_t jargs[2];
     jerry_value_t ele;
     jargs[0] = jerry_create_number(0);
@@ -280,7 +281,8 @@ private:
   void js_call_disconnected() {
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
     jerry_value_t this_obj = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
-    jerry_value_t cb_func = iotjs_jval_get_property(this_obj, "native_callback");
+    jerry_value_t cb_func =
+        iotjs_jval_get_property(this_obj, "native_callback");
     jerry_value_t jargs[1];
     jargs[0] = jerry_create_number(1);
     jerry_call_function(cb_func, this_obj, jargs, 1);
@@ -289,7 +291,7 @@ private:
     // jerry_release_value(this_obj);
   }
 
-public:
+ public:
   iotjs_flora_cli_t* thisptr = nullptr;
 };
 
@@ -312,7 +314,7 @@ static iotjs_flora_cli_t* iotjs_flora_cli_create(jerry_value_t jcli) {
   jcli = jerry_acquire_value(jcli);
 
   iotjs_jobjectwrap_initialize(&_this->jobjectwrap, jcli,
-      &this_module_native_info);
+                               &this_module_native_info);
   return fcli;
 }
 
@@ -320,7 +322,8 @@ static iotjs_flora_cli_t* iotjs_flora_cli_create(jerry_value_t jcli) {
 // int msgsize
 JS_FUNCTION(Connect) {
   if (jargc < 3) {
-    return JS_CREATE_ERROR(COMMON, "arguments: string uri, int msgsize, Client instance");
+    return JS_CREATE_ERROR(
+        COMMON, "arguments: string uri, int msgsize, Client instance");
   }
   jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
   jerry_char_t strbuf[size + 1];
@@ -344,7 +347,8 @@ JS_FUNCTION(Connect) {
   // jerry_release_value(proto1);
   iotjs_flora_cli_t* inst = iotjs_flora_cli_create(jcli);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, inst);
-  uv_async_init(uv_default_loop(), &_this->async, NativeCallback::async_callback);
+  uv_async_init(uv_default_loop(), &_this->async,
+                NativeCallback::async_callback);
   _this->async.data = cb;
   _this->stl_st->cli = cli;
   _this->callback = cb;
@@ -393,7 +397,8 @@ JS_FUNCTION(Unsubscribe) {
 
 JS_FUNCTION(Post) {
   if (jargc < 3) {
-    return JS_CREATE_ERROR(COMMON, "arguments: string name, array msgcontent, int type");
+    return JS_CREATE_ERROR(
+        COMMON, "arguments: string name, array msgcontent, int type");
   }
   JS_DECLARE_THIS_PTR(flora_cli, thisptr);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
