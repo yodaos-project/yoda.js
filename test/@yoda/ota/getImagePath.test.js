@@ -9,12 +9,10 @@ var info = {
   checksum: '99d7bdf3ecf03f3fd081d7b835c7347f'
 }
 
-var expectedImagePath='/data/upgrade/99d7bdf3ecf03f3fd081d7b835c7347f.img';
-
-test('get imagePath should be ok',t => {
+test('get imagePath should be ok', t => {
   t.plan(1)
   var imagePath = ota.getImagePath(info)
   t.ok(imagePath !== null)
-  logger.log("========="+ imagePath + "========")
+  logger.log('=========' + imagePath + '========')
   t.end()
 })

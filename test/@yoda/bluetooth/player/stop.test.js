@@ -3,10 +3,8 @@
 var test = require('tape')
 var zeromq = require('zeromq')
 var bluetooth = require('@yoda/bluetooth')
-var logger = require('logger')('stream')
 
 test('stop command receive success', (t) => {
-  logger
   var btName = 'foobar'
   var socket = zeromq.socket('sub')
   var isopened = false

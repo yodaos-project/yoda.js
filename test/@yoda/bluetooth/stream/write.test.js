@@ -4,7 +4,6 @@ var test = require('tape')
 var zeromq = require('zeromq')
 var bluetooth = require('@yoda/bluetooth')
 
-
 test('write stream buffer', (t) => {
   var btName = 'foobar'
   var socket = zeromq.socket('sub')
