@@ -397,6 +397,33 @@ AppRuntime.prototype.onTurenEvent = function (name, data) {
 }
 
 /**
+ * Start a session of monologue. In session of monologue, no other apps could preempt top of stack.
+ *
+ * Note that monologues automatically ends on unexpected exit of apps.
+ *
+ * @param {string} appId
+ */
+AppRuntime.prototype.startMonologue = function (appId) {
+  if (appId !== this.life.getCurrentAppId()) {
+    return Promise.reject(new Error(`App ${appId} is not currently on top of stack.`))
+  }
+  this.life.monopolist = appId
+  return Promise.resolve()
+}
+
+/**
+ * Stop a session of monologue started previously.
+ *
+ * @param {string} appId
+ */
+AppRuntime.prototype.stopMonologue = function (appId) {
+  if (this.life.monopolist === appId) {
+    this.life.monopolist = null
+  }
+  return Promise.resolve()
+}
+
+/**
  * 解析服务端返回的NLP，并执行App生命周期
  * @private
  * @param {string} asr 语音识别后的文字
