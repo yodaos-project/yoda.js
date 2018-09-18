@@ -169,7 +169,9 @@ module.exports = (function () {
           expression: expression,
           createTime: param.createTime,
           tts: param.tts,
-          url: param.url
+          url: param.url,
+          time: param.time,
+          date: param.date
         }
       }
       return scheduleJob

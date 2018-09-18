@@ -1,5 +1,5 @@
 {
-  "name": "@alarm",
+  "name": "@yoda/alarm",
   "version": "1.0.0",
   "description": "Alarm for Rokid",
   "main": "app.js",
