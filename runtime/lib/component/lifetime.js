@@ -54,6 +54,11 @@ function LaVieEnPile (loader) {
    * might be sufficient.
    */
   this.carrierId = null
+  /**
+   * Some app may have permissions to monopolize top of stack,
+   * in which case, no other apps could interrupts it's monologue.
+   */
+  this.monopolist = null
 }
 /**
  * On stack updated, might have be de-bounced
@@ -133,6 +138,24 @@ LaVieEnPile.prototype.isDaemonApp = function isDaemonApp (appId) {
   return _.get(this.loader.getExecutorByAppId(appId), `daemon`) === true
 }
 
+/**
+ * Determines if top of stack is monopolized.
+ *
+ * If LaVieEnPile#monopolist is set, yet following conditions not matched, monopolization would be revoked:
+ * - is current app
+ * - app is alive
+ */
+LaVieEnPile.prototype.isMonopolized = function isMonopolized () {
+  if (typeof this.monopolist === 'string') {
+    if (this.getCurrentAppId() === this.monopolist &&
+      this.loader.getAppById(this.monopolist) != null) {
+      return true
+    }
+    this.monopolist = null
+  }
+  return false
+}
+
 // MARK: - END Getters
 
 // MARK: - Stack Manipulation
@@ -197,6 +220,10 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   if (form == null) {
     form = 'cut'
+  }
+
+  if (this.isMonopolized()) {
+    return Promise.reject(new Error(`App ${this.monopolist} monopolized top of stack.`))
   }
 
   var wasScene = _.get(this.appDataMap, `${appId}.form`) === 'scene'
@@ -313,6 +340,10 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
  */
 LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, options) {
   var recover = _.get(options, 'recover', true)
+
+  if (this.monopolist === appId) {
+    this.monopolist = null
+  }
 
   var idx = this.activeAppStack.indexOf(appId)
   if (idx < 0) {

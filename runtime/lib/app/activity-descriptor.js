@@ -417,6 +417,46 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
+     * Start a session of monologue. In session of monologue, no other apps could preempt top of stack.
+     *
+     * It requires the permission `ACCESS_MONOPOLIZATION`.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function startMonologue
+     * @returns {Promise<void>}
+     */
+    startMonologue: {
+      type: 'method',
+      returns: 'promise',
+      fn: function startMonologue () {
+        if (!this._runtime.permission.check(this._appId, 'ACCESS_MONOPOLIZATION')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
+        return this._runtime.startMonologue(this._appId)
+      }
+    },
+    /**
+     * Stop a session of monologue started previously.
+     *
+     * It requires the permission `ACCESS_MONOPOLIZATION`.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function stopMonologue
+     * @returns {Promise<void>}
+     */
+    stopMonologue: {
+      type: 'method',
+      returns: 'promise',
+      fn: function stopMonologue () {
+        if (!this._runtime.permission.check(this._appId, 'ACCESS_MONOPOLIZATION')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
+        return this._runtime.stopMonologue(this._appId)
+      }
+    },
+    /**
      * Use this method to open the specified resource. If the specified URL could
      * be handled by another app, YodaOS launches that app and passes the URL to it.
      * (Launching the app brings the other app to the foreground.) If no app is
