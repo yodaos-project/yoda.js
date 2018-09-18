@@ -5,7 +5,6 @@
  * @param {YodaRT.Activity} activity
  */
 module.exports = function (activity) {
-
   activity.on('ready', (key) => {
     process.send({
       type: 'ready-test',
@@ -80,7 +79,6 @@ module.exports = function (activity) {
         result: err.message
       })
     })
-
   })
 
   activity.on('test-invoke', (method, params) => {
@@ -132,5 +130,4 @@ module.exports = function (activity) {
       args: [arg1, arg2]
     })
   })
-
 }

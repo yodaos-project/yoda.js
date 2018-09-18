@@ -18,7 +18,7 @@ Object.assign(ActivityDescriptor.prototype, {
   testMethod: {
     type: 'method',
     returns: 'promise',
-    fn: function testMethod() {
+    fn: function testMethod () {
       return this._runtime.testMethod.apply(this._runtime, arguments)
     }
   },
@@ -46,13 +46,13 @@ Object.assign(ActivityDescriptor.prototype, {
       key: 'key',
       value: 'value'
     }
-  },
+  }
 })
 Object.assign(LightDescriptor.prototype, {
   lighttest: {
     type: 'method',
     returns: 'promise',
-    fn: function lighttest(num) {
+    fn: function lighttest (num) {
       return new Promise((resolve, reject) => {
         if (num >= 0) {
           resolve('true')
@@ -335,7 +335,7 @@ test('should invoke methods and callback', t => {
     foo: 'bar'
   }
   var runtime = {
-    testMethod: function testMethod(arg1, arg2) {
+    testMethod: function testMethod (arg1, arg2) {
       t.strictEqual(arg1, 'foo')
       t.strictEqual(arg2, 'bar')
       return Promise.resolve(expectedData)
@@ -363,7 +363,7 @@ test.skip('double subscription on event-ack', t => {
     'test-suback': {
       type: 'event-ack',
       trigger: 'get'
-    },
+    }
   })
   var appHome = path.join(helper.paths.fixture, 'ext-app')
   var runtime = {}
