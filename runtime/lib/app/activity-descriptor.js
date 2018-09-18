@@ -1039,7 +1039,7 @@ WormholeDescriptor.prototype.toJSON = function toJSON () {
   return WormholeDescriptor.prototype
 }
 
-Object.assign(
+Object.assign(WormholeDescriptor.prototype,
   {
     type: 'namespace'
   },
@@ -1056,7 +1056,7 @@ Object.assign(
     sendToApp: {
       type: 'method',
       returns: 'promise',
-      sendToApp: function sendToApp (topic, data) {
+      fn: function sendToApp (topic, data) {
         return this._runtime.wormhole.sendToApp(topic, data)
       }
     }
