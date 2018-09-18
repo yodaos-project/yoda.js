@@ -7,6 +7,7 @@
 var logger = require('logger')('activity')
 var inherits = require('util').inherits
 var _ = require('@yoda/util')._
+var yodaPath = require('@yoda/util').path
 var EventEmitter = require('events').EventEmitter
 
 var MEDIA_SOURCE = '/opt/media/'
@@ -375,7 +376,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function playSound (uri) {
-        var absPath = pathTransform(uri, MEDIA_SOURCE, this._appHome + '/media')
+        var absPath = yodaPath.transformPathScheme(uri, MEDIA_SOURCE, this._appHome + '/media')
         return this._runtime.lightMethod('appSound', [this._appId, absPath])
       }
     },
@@ -496,7 +497,7 @@ Object.assign(LightDescriptor.prototype,
       returns: 'promise',
       fn: function play (uri, args) {
         var argString = JSON.stringify(args || {})
-        var absPath = pathTransform(uri, LIGHT_SOURCE, this._appHome + '/light')
+        var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, this._appHome + '/light')
         logger.log('playing light effect', absPath)
         return this._runtime.lightMethod('play', [this._appId, absPath, argString])
           .then((res) => {
@@ -596,14 +597,26 @@ Object.assign(MultimediaDescriptor.prototype,
      * @instance
      * @function start
      * @param {string} uri
-     * @param {boolean} [isAlarm=false]
+     * @param {object} [options]
+     * @param {object.boolean} [options.impatient=true]
+     * @param {object.string} [options.streamType]
      * @returns {Promise<string>} multimedia player id
      */
     start: {
       type: 'method',
       returns: 'promise',
-      fn: function start (url, isAlarm) {
+      fn: function start (url, isAlarm, options) {
         var self = this
+        if (typeof isAlarm === 'object') {
+          options = isAlarm
+          var streamType = _.get(options, 'streamType')
+          isAlarm = streamType === 'alarm'
+        }
+        var impatient = _.get(options, 'impatient', true)
+        url = yodaPath.transformPathScheme(url, LIGHT_SOURCE, this._appHome + '/light', {
+          allowedScheme: [ 'http', 'https' ]
+        })
+        logger.log('playing multimedia', url)
         return self._runtime.multimediaMethod('start', [self._appId, url, isAlarm ? 'alarm' : ''])
           .then((result) => {
             var multimediaId = result[0]
@@ -612,21 +625,37 @@ Object.assign(MultimediaDescriptor.prototype,
             if (multimediaId === '-1') {
               throw new Error('Unexpected multimediad error.')
             }
-            var channel = `callback:multimedia:${multimediaId}`
-            self._activityDescriptor._registeredDbusSignals.push(channel)
-            self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
-              if (['playbackcomplete', 'error'].indexOf(event) >= 0) {
-                /** stop listening upcoming events for channel */
-                self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
-                var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
-                self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
+
+            return new Promise((resolve, reject) => {
+              if (impatient) {
+                resolve(multimediaId)
               }
 
-              EventEmitter.prototype.emit.apply(self,
-                [event, multimediaId].concat(Array.prototype.slice.call(arguments, 1)))
-            })
+              var channel = `callback:multimedia:${multimediaId}`
+              self._activityDescriptor._registeredDbusSignals.push(channel)
+              self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
+                if (['playbackcomplete', 'error'].indexOf(event) >= 0) {
+                  /** stop listening upcoming events for channel */
+                  self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
+                  var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
+                  self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
+                }
 
-            return multimediaId
+                EventEmitter.prototype.emit.apply(self,
+                  [event, multimediaId].concat(Array.prototype.slice.call(arguments, 1)))
+
+                if (impatient) {
+                  return
+                }
+
+                if (event === 'playbackcomplete') {
+                  return resolve()
+                }
+                if (event === 'error') {
+                  return reject(new Error('Unexpected ttsd error'))
+                }
+              })
+            })
           })
       }
     },
@@ -1033,26 +1062,3 @@ Object.assign(
     }
   }
 )
-
-/**
- *
- * @private
- * @param {string} name
- * @param {string} prefix
- * @param {string} home
- */
-function pathTransform (name, prefix, home) {
-  var len = name.length
-  var absPath = ''
-  // etc.. system://path/to/sound.ogg
-  if (len > 9 && name.substr(0, 9) === 'system://') {
-    absPath = prefix + name.substr(9)
-    // etc.. self://path/to/sound.ogg
-  } else if (len > 7 && name.substr(0, 7) === 'self://') {
-    absPath = home + '/' + name.substr(7)
-    // etc.. path/to/sound.ogg
-  } else {
-    absPath = home + '/' + name
-  }
-  return absPath
-}
