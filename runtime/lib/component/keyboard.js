@@ -1,7 +1,8 @@
 var logger = require('logger')('keyboard')
 var Input = require('@yoda/input')
+var _ = require('@yoda/util')._
+
 var config = require('../../keyboard.json')
-var wifi = require('@yoda/wifi')
 
 module.exports = KeyboardHandler
 function KeyboardHandler (runtime) {
@@ -9,6 +10,7 @@ function KeyboardHandler (runtime) {
   this.firstLongPressTime = null
   this.preventSubsequent = false
   this.runtime = runtime
+  this.config = config
 
   this.listeners = {
     click: {},
@@ -26,18 +28,50 @@ KeyboardHandler.prototype.destruct = function destruct () {
   this.input.disconnect()
 }
 
+KeyboardHandler.prototype.execute = function execute (descriptor) {
+  if (descriptor.url) {
+    if (typeof descriptor.url !== 'string') {
+      logger.error('Malformed descriptor, url is not a string.', descriptor)
+      return
+    }
+    var options = _.get(descriptor, 'options', {})
+    if (typeof options !== 'object') {
+      logger.error('Malformed descriptor, options is not an object.', descriptor)
+      return
+    }
+    return this.runtime.openUrl(descriptor.url, options)
+      .catch(err => {
+        logger.error(`Unexpected error on opening url '${descriptor.url}'`, err && err.message, err && err.stack)
+      })
+  }
+  if (descriptor.runtimeMethod) {
+    var method = this.runtime[descriptor.runtimeMethod]
+    var params = _.get(descriptor, 'params', [])
+    if (typeof method !== 'function') {
+      logger.error('Malformed descriptor, runtime method not found.', descriptor)
+      return
+    }
+    if (!Array.isArray(params)) {
+      logger.error('Malformed descriptor, params is not an array.', descriptor)
+      return
+    }
+
+    return method.apply(this.runtime, params)
+  }
+  logger.error('Unknown descriptor', descriptor)
+}
+
 KeyboardHandler.prototype.listen = function listen () {
   this.input.on('keydown', listenerWrap(event => {
     this.currentKeyCode = event.keyCode
     logger.info(`keydown: ${event.keyCode}`)
 
-    var map = config.keydown
-    var descriptor = map[String(event.keyCode)]
+    var descriptor = _.get(this.config, `${event.keyCode}.keydown`)
     if (typeof descriptor !== 'object') {
       logger.info(`No handler registered for keydown '${event.keyCode}'.`)
       return
     }
-    this.openUrl(descriptor.url, descriptor.options)
+    this.execute(descriptor)
   }))
 
   this.input.on('keyup', listenerWrap(event => {
@@ -56,34 +90,12 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
     }
 
-    /** Click Events */
-    var map = {
-      113: () => {
-        this.runtime.setMicMute(/** switch microphone state */)
-      },
-      116: () => {
-        if (this.runtime.online !== true) {
-          // start @network app
-          this.runtime.sendNLPToApp('@network', {
-            intent: 'into_sleep'
-          }, {})
-          return
-        }
-        if (this.runtime.life.getCurrentAppId()) {
-          /** exit all app */
-          this.runtime.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
-          return
-        }
-        this.runtime.setPickup(true)
-      }
-    }
-
-    var handler = map[event.keyCode]
-    if (typeof handler !== 'function') {
+    var descriptor = _.get(this.config, `${event.keyCode}.keyup`)
+    if (typeof descriptor !== 'object') {
       logger.info(`No handler registered for keyup '${event.keyCode}'.`)
       return
     }
-    handler()
+    this.execute(descriptor)
   }))
 
   this.input.on('click', listenerWrap(event => {
@@ -99,6 +111,13 @@ KeyboardHandler.prototype.listen = function listen () {
       }
       logger.info(`App ${listener} is not active, skip click '${event.keyCode}' delegation.`)
     }
+
+    var descriptor = _.get(this.config, `${event.keyCode}.click`)
+    if (typeof descriptor !== 'object') {
+      logger.info(`No handler registered for click '${event.keyCode}'.`)
+      return
+    }
+    this.execute(descriptor)
   }))
 
   this.input.on('dbclick', listenerWrap(event => {
@@ -115,24 +134,12 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`App ${listener} is not active, skip dbclick '${event.keyCode}' delegation.`)
     }
 
-    var map = {
-      116: () => {
-        // user manually clear WIFI
-        wifi.disableAll()
-        logger.log('user manually clear WIFI')
-        this.runtime.waitingForAwake = undefined // for identify startup
-        this.runtime.online = undefined
-        this.runtime.login = undefined
-        this.runtime.startApp('@network', {
-          intent: 'system_setup'
-        }, {})
-      }
-    }
-    var handler = map[event.keyCode]
-    if (handler) {
+    var descriptor = _.get(this.config, `${event.keyCode}.dbclick`)
+    if (typeof descriptor !== 'object') {
       logger.info(`No handler registered for dbclick '${event.keyCode}'.`)
-      handler()
+      return
     }
+    this.execute(descriptor)
   }))
 
   this.input.on('longpress', listenerWrap(event => {
@@ -163,24 +170,24 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`App ${listener} is not active, skip longpress '${event.keyCode}' delegation.`)
     }
 
-    var map = config.longpress
-    var descriptor = map[String(event.keyCode)]
+    var descriptor = _.get(this.config, `${event.keyCode}.longpress`)
     if (typeof descriptor !== 'object') {
       logger.info(`No handler registered for longpress '${event.keyCode}'.`)
       return
     }
-    if (!descriptor.repeat && timeDelta > descriptor.timeDelta) {
+    var expectedTimeDelta = _.get(descriptor, 'timeDelta', 0)
+    if (!descriptor.repeat && timeDelta > expectedTimeDelta) {
       logger.info(`Handler is not repetitive for key longpress '${event.keyCode}'.`)
       return
     }
-    if (timeDelta < descriptor.timeDelta) {
+    if (timeDelta < expectedTimeDelta) {
       logger.info(`Time delta is not ready for key longpress '${event.keyCode}'.`)
       return
     }
     if (descriptor.preventSubsequent) {
       this.preventSubsequent = true
     }
-    this.openUrl(descriptor.url, descriptor.options)
+    this.execute(descriptor)
   }))
 }
 
@@ -208,13 +215,6 @@ KeyboardHandler.prototype.restoreKeyDefaults = function restoreKeyDefaults (appI
     }
   })
   return Promise.resolve()
-}
-
-KeyboardHandler.prototype.openUrl = function openUrl (url, options) {
-  this.runtime.openUrl(url, options)
-    .catch(err => {
-      logger.error(`Unexpected error on opening url '${url}'`, err && err.message, err && err.stack)
-    })
 }
 
 function listenerWrap (fn, receiver) {

@@ -1,39 +1,53 @@
 {
-  "keydown": {
-    "114": {
+  "113": {
+    "keyup": {
+      "runtimeMethod": "setMicMute",
+      "params": []
+    },
+    "longpress":  {
+      "repeat": false,
+      "timeDelta": 2000,
+      "preventSubsequent": true,
+      "url": "yoda-skill://bluetooth/bluetooth_broadcast",
+      "options": {}
+    }
+  },
+  "114": {
+    "keydown": {
       "url": "yoda-skill://volume/volume_down?partition=16",
       "options": {
         "preemptive": false
       }
     },
-    "115": {
+    "longpress": {
+      "repeat": true,
+      "url": "yoda-skill://volume/volume_down?partition=16",
+      "options": {
+        "preemptive": false
+      }
+    }
+  },
+  "115": {
+    "keydown": {
+      "url": "yoda-skill://volume/volume_up?partition=16",
+      "options": {
+        "preemptive": false
+      }
+    },
+    "longpress": {
+      "repeat": true,
       "url": "yoda-skill://volume/volume_up?partition=16",
       "options": {
         "preemptive": false
       }
     }
   },
-  "longpress": {
-    "113": {
-      "repeat": false,
-      "timeDelta": 2000,
-      "preventSubsequent": true,
-      "url": "yoda-skill://bluetooth/bluetooth_broadcast",
-      "options": {}
+  "116": {
+    "click": {
+      "runtimeMethod": "handlePowerActivation"
     },
-    "114": {
-      "repeat": true,
-      "url": "yoda-skill://volume/volume_down?partition=16",
-      "options": {
-        "preemptive": false
-      }
-    },
-    "115": {
-      "repeat": true,
-      "url": "yoda-skill://volume/volume_up?partition=16",
-      "options": {
-        "preemptive": false
-      }
+    "dbclick": {
+      "runtimeMethod": "resetNetwork"
     }
   }
 }
