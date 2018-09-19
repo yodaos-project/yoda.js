@@ -4,6 +4,10 @@
 static inline rk_stream_type_t iotjs_audiomgr_get_stream_type(int stream) {
   if (stream == STREAM_TTS) {
     return STREAM_TTS;
+  } else if (stream == STREAM_RING) {
+    return STREAM_RING;
+  } else if (stream == STREAM_VOICE_CALL) {
+    return STREAM_VOICE_CALL;
   } else if (stream == STREAM_ALARM) {
     return STREAM_ALARM;
   } else if (stream == STREAM_PLAYBACK) {
@@ -64,6 +68,13 @@ JS_FUNCTION(GetStreamVolume) {
   return jerry_create_number(vol);
 }
 
+JS_FUNCTION(GetStreamPlayingStatus) {
+  int stream = JS_GET_ARG(0, number);
+  rk_stream_type_t type = iotjs_audiomgr_get_stream_type(stream);
+  int result = rk_get_stream_playing_status(type);
+  return jerry_create_boolean(result);
+}
+
 void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "isMuted", IsMuted);
   iotjs_jval_set_method(exports, "setMute", SetMute);
@@ -72,6 +83,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "getMediaVolume", GetMediaVolume);
   iotjs_jval_set_method(exports, "setStreamVolume", SetStreamVolume);
   iotjs_jval_set_method(exports, "getStreamVolume", GetStreamVolume);
+  iotjs_jval_set_method(exports, "getStreamPlayingStatus", GetStreamPlayingStatus);
 
 #define IOTJS_SET_CONSTANT(jobj, name)                                    \
   do {                                                                    \
@@ -84,6 +96,8 @@ void init(jerry_value_t exports) {
 
   IOTJS_SET_CONSTANT(exports, STREAM_AUDIO);
   IOTJS_SET_CONSTANT(exports, STREAM_TTS);
+  IOTJS_SET_CONSTANT(exports, STREAM_RING);
+  IOTJS_SET_CONSTANT(exports, STREAM_VOICE_CALL);
   IOTJS_SET_CONSTANT(exports, STREAM_ALARM);
   IOTJS_SET_CONSTANT(exports, STREAM_PLAYBACK);
   IOTJS_SET_CONSTANT(exports, STREAM_SYSTEM);

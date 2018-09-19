@@ -45,6 +45,10 @@ function _getVolume (stream) {
   }
 }
 
+function _getPlayingStatus (stream) {
+  return native.getStreamPlayingStatus(stream.id)
+}
+
 function defineStream (id, name, options) {
   options = options || {}
   var stream = AudioBase[id] = {
@@ -80,6 +84,18 @@ AudioManager.STREAM_AUDIO = native.STREAM_AUDIO
  * @member {Number} STREAM_TTS  - Used to identify the volume of audio streams for tts.
  */
 AudioManager.STREAM_TTS = native.STREAM_TTS
+
+/**
+ * @memberof module:@yoda/audio~AudioManager
+ * @member {Number} STREAM_RING  - Used to identify the volume of audio streams for ring.
+ */
+AudioManager.STREAM_RING = native.STREAM_RING
+
+/**
+ * @memberof module:@yoda/audio~AudioManager
+ * @member {Number} STREAM_RING  - Used to identify the volume of audio streams for voice call.
+ */
+AudioManager.STREAM_VOICE_CALL = native.STREAM_VOICE_CALL
 
 /**
  * @memberof module:@yoda/audio~AudioManager
@@ -148,6 +164,7 @@ AudioManager.setVolume = function (type, vol) {
     AudioManager.setVolume(AudioManager.STREAM_AUDIO, vol)
     AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
     AudioManager.setVolume(AudioManager.STREAM_TTS, vol)
+    AudioManager.setVolume(AudioManager.STREAM_RING, vol)
     return
   }
 
@@ -220,6 +237,25 @@ AudioManager.setVolumeShaper = function setVolumeShaper (shaper) {
 }
 
 /**
+ * Get the playing status of the given stream.
+ * @memberof module:@yoda/audio~AudioManager
+ * @method getPlayingStatus
+ * @param {Number} [stream=AudioManager.STREAM_AUDIO] - The stream type.
+ * @throws {TypeError} invalid stream type
+ * @returns {Boolean} true: stream is connected and playing, false: stream is unconnected.
+ */
+AudioManager.getPlayingStatus = function (stream) {
+  if (stream !== undefined) {
+    if (!AudioBase[stream]) {
+      throw new TypeError('invalid stream type')
+    }
+    return _getPlayingStatus(AudioBase[stream])
+  } else {
+    return _getPlayingStatus(AudioBase[native.STREAM_TTS])
+  }
+}
+
+/**
  * Get the human readable string for the stream type
  * @method getStreamName
  * @returns {string} return the stream type name, "audio", "tts", "playback", "alarm" and "system".
@@ -231,6 +267,8 @@ AudioManager.getStreamName = function getStreamName (type) {
 ;(function init () {
   defineStream(native.STREAM_AUDIO, 'audio')
   defineStream(native.STREAM_TTS, 'tts')
+  defineStream(native.STREAM_RING, 'ring')
+  defineStream(native.STREAM_VOICE_CALL, 'voiceCall')
   defineStream(native.STREAM_PLAYBACK, 'playback')
   defineStream(native.STREAM_ALARM, 'alarm')
   defineStream(native.STREAM_SYSTEM, 'system', {
