@@ -336,11 +336,10 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
       intent: 'into_sleep'
     }, {})
   }
-  if (this.life.getCurrentAppId()) {
-    /** exit all app */
-    return this.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
-  }
-  return this.setPickup(true)
+
+  /** exit all app */
+  return this.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
+    .then(() => this.setPickup(true))
 }
 
 /**
@@ -769,7 +768,7 @@ AppRuntime.prototype.startApp = function (skillId, nlp, action, options) {
   }
   action.response.action.appId = skillId
   action.response.action.form = 'cut'
-  this.onVoiceCommand('', nlp, action, options)
+  return this.onVoiceCommand('', nlp, action, options)
 }
 
 /**
