@@ -112,7 +112,7 @@ module.exports = function (activity) {
   }
 
   function startTask (commandOpt, pattern) {
-    logger.log('alarm start')
+    logger.log(' alarm start')
     scheduleHandler.create(pattern, function () {
       taskCallback(commandOpt, commandOpt.mode)
     }, commandOpt)
@@ -184,7 +184,6 @@ module.exports = function (activity) {
 
     jobQueue.push(option.id)
     var jobConf = scheduleHandler.getJobConfig(option.id)
-    // logger.log(jobConf, ' jobConf~!')
     if (!jobConf) {
       logger.log('alarm' + option.id + ' cannot run')
       clearTask(mode, option)
@@ -206,7 +205,7 @@ module.exports = function (activity) {
         })
         if (state === wifi.NETSERVER_CONNECTED) {
           activity.tts.speak(tts || option.tts).then(() => {
-            activity.media.start('system://reminder_default.mp3', 'alarm').then(() => {
+            activity.media.start('system://reminder_default.mp3', { streamType: 'alarm' }).then(() => {
               scheduleHandler.clearReminderQueue()
               clearTask(mode, option)
               activity.setBackground()
