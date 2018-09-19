@@ -38,11 +38,9 @@ function login (callback) {
     if (!secret) {
       return callback(new Error('can not get secret'))
     }
-    var config = {}
-    if (config && config.disableAutoRefresh) {
-      return callback(null)
+    var config = {
+      device_type_id: property.get('ro.boot.devicetypeid')
     }
-
     var type = config['device_type_id'] || ''
     if (type === 'rokid_test_type_id') {
       type = ''

@@ -11,7 +11,7 @@ module.exports = function (activity) {
   var bluetoothState = null
   var playState = null
   var STRING_BROADCAST = '蓝牙已打开，请使用手机搜索设备'
-  var STRING_CONNECED = '连接蓝牙成功'
+  var STRING_CONNECED = '已连接上你的'
   var STRING_CLOSED = '蓝牙已关闭'
 
   function broadcast () {
