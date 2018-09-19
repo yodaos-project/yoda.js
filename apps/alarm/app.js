@@ -6,48 +6,36 @@ var Cron = require('./node-cron')
 var fs = require('fs')
 var request = require('./request')
 
+var configFilePath = '/data/AppData/alarm/config.json'
 module.exports = function (activity) {
   var scheduleHandler = new Cron.Schedule()
   var jobQueue = []
   activity.on('create', function () {
+    addConfigFile()
     var state = wifi.getNetworkState()
     if (state === wifi.NETSERVER_CONNECTED) {
       request({
         activity: activity,
         intent: 'sync_alarm',
         callback: (res) => {
-          logger.log('res.data', JSON.parse(res))
           var resObj = JSON.parse(res)
           var alarmList = (resObj.data || {}).alarmList || []
           var command = {}
           for (var i = 0; i < alarmList.length; i++) {
             command[alarmList[i].id] = alarmList[i]
           }
-          initAlarm(command)
+          initAlarm(command, true)
         }
       })
       logger.log('alarm should get config from cloud')
     } else {
       getTasksFromConfig(function (command) {
-        for (var i in command) {
-          var commandOpt = {
-            id: command[i].id,
-            createTime: command[i].createTime,
-            type: command[i].type,
-            tts: command[i].tts,
-            url: command[i].url,
-            mode: command[i].mode
-          }
-          var pattern = transferPattern(command[i].date, command[i].time)
-          startTask(commandOpt, pattern)
-        }
-        logger.log('alarm init')
+        this.initAlarm(command)
       })
     }
   })
 
   activity.on('url', url => {
-    logger.log('url!!!', url.query)
     var command = JSON.parse(decodeURI(url.query.slice(8)))
     doTask(command)
   })
@@ -64,7 +52,15 @@ module.exports = function (activity) {
     logger.log(this.appId + ' destoryed')
   })
 
-  function initAlarm (command) {
+  function addConfigFile () {
+    fs.stat(configFilePath, function (err, stat) {
+      logger.log(err && err.stack)
+      if (!stat || !stat.isFile()) {
+        fs.appendFile(configFilePath, '{}')
+      }
+    })
+  }
+  function initAlarm (command, isUpdateNative) {
     for (var i in command) {
       var commandOpt = {
         id: command[i].id,
@@ -78,6 +74,7 @@ module.exports = function (activity) {
       }
       var pattern = transferPattern(command[i].date, command[i].time, command[i].repeatType)
       startTask(commandOpt, pattern)
+      isUpdateNative && setConfig(command[i], 'add')
     }
     logger.log('alarm init')
   }
@@ -119,9 +116,10 @@ module.exports = function (activity) {
   }
   function getTasksFromConfig (callback) {
     var parseJson = {}
-    fs.readFile('/data/AppData/alarm/config.json', 'utf8', function readFileCallback (err, data) {
+    // data/AppData/alarm
+    fs.readFile(configFilePath, 'utf8', function readFileCallback (err, data) {
       if (err) throw err
-      parseJson = JSON.parse(data)
+      parseJson = JSON.parse(data || '{}')
       callback(parseJson)
     })
   }
@@ -161,16 +159,16 @@ module.exports = function (activity) {
     return s + ' ' + m + ' ' + h + ' ' + day + ' ' + month + ' *'
   }
   function setConfig (options, mode) {
-    fs.readFile('/data/AppData/alarm/config.json', 'utf8', function readFileCallback (err, data) {
+    fs.readFile(configFilePath, 'utf8', function readFileCallback (err, data) {
       if (err) throw err
-      var parseJson = JSON.parse(data)
+      var parseJson = JSON.parse(data || '{}')
       if (mode === 'add') {
         parseJson[options.id] = options
       }
       if (mode === 'remove') {
         delete parseJson[options.id]
       }
-      fs.writeFile('/data/AppData/alarm/config.json', JSON.stringify(parseJson), function (err) {
+      fs.writeFile(configFilePath, JSON.stringify(parseJson), function (err) {
         if (err) throw err
       })
     })
