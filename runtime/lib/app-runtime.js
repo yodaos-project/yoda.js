@@ -347,6 +347,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
  */
 AppRuntime.prototype.resetNetwork = function resetNetwork () {
   // user manually clear WIFI
+  wifi.resetWifi()
   wifi.disableAll()
   logger.log('user manually clear WIFI')
   this.waitingForAwake = undefined
@@ -855,6 +856,7 @@ AppRuntime.prototype.unBindDevice = function (message) {
     .then(() => {
       property.set('persist.system.user.userId', '')
       wifi.resetWifi()
+      wifi.disableAll()
       logger.info('unbind device success')
       this.login = undefined
       this.online = undefined
