@@ -7,7 +7,7 @@ module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
   var STRING_RANGE_ERROR = '音量调节范围为0到10'
   var STRING_SHOW_VOLUME = '当前音量为'
-  var STRING_SHOW_MUTED = '设备已静音，已帮你调回到百分之三十'
+  var STRING_SHOW_MUTED = '设备已静音，已帮你调回到'
 
   var mutedBy
   var volume = 60
@@ -178,7 +178,7 @@ module.exports = function (activity) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
           setUnmute({ init: true })
-            .then(() => speakAndExit(STRING_SHOW_MUTED))
+            .then(() => speakAndExit(STRING_SHOW_MUTED + Math.ceil(getVolume() / partition)))
         } else {
           speakAndExit(STRING_SHOW_VOLUME + Math.ceil(getVolume() / partition))
         }
