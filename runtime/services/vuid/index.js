@@ -56,7 +56,6 @@ function initFloraClient () {
   cli.subscribe('rokid.speech.final_asr', floraFactory.MSGTYPE_INSTANT)
   cli.subscribe('rokid.speech.nlp', floraFactory.MSGTYPE_INSTANT)
   cli.subscribe('rokid.speech.error', floraFactory.MSGTYPE_INSTANT)
-  cli.subscribe('rokid.speech.cancel', floraFactory.MSGTYPE_INSTANT)
 
   updateSpeechPrepareOptions()
 
@@ -190,8 +189,6 @@ function entry () {
     runtime.onTurenEvent('nlp', data)
   }
   floraMsgHandlers['rokid.speech.error'] = function (msg) {
-  }
-  floraMsgHandlers['rokid.speech.cancel'] = function (msg) {
   }
 
   runtime.on('reconnected', function () {
