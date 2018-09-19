@@ -60,7 +60,6 @@ function AppRuntime () {
     scene: '',
     active: ''
   }
-  this.volume = null
   this.prevVolume = -1
   this.micMuted = false // microphone was reset on runtime start up
   this.handle = {}
@@ -1127,28 +1126,34 @@ AppRuntime.prototype.disconnect = function () {
  * @private
  */
 AppRuntime.prototype.doLogin = function () {
-  this.destroyAll()
-    .then(() => this.initiate())
+  var deferred = () => {
+    this.login = true
+    perf.stub('started')
+    // not need to play startup music after relogin
+    if (this.waitingForAwake === undefined) {
+      this.lightMethod('setWelcome', [])
+    }
+    this.waitingForAwake = undefined
 
-  this.login = true
-  perf.stub('started')
-  // not need to play startup music after relogin
-  if (this.waitingForAwake === undefined) {
-    this.lightMethod('setWelcome', [])
+    var config = JSON.stringify(this.onGetPropAll())
+    return this.ttsMethod('connect', [config])
+      .then((res) => {
+        if (!res) {
+          logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
+        } else {
+          logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
+        }
+      })
+      .catch((error) => {
+        logger.log('send CONFIG to ttsd failed: call method failed', error)
+      })
   }
-  this.waitingForAwake = undefined
 
-  var config = JSON.stringify(this.onGetPropAll())
-  this.ttsMethod('connect', [config])
-    .then((res) => {
-      if (!res) {
-        logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
-      } else {
-        logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
-      }
-    })
-    .catch((error) => {
-      logger.log('send CONFIG to ttsd failed: call method failed', error)
+  return this.destroyAll()
+    .then(() => this.initiate(), err => logger.error('Unexpected error on destroying all apps', err.stack))
+    .then(deferred, err => {
+      logger.error('Unexpected error on runtime.initiate', err.stack)
+      return deferred()
     })
 }
 

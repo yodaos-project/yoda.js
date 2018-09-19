@@ -165,13 +165,11 @@ AudioManager.setVolume = function (type, vol) {
     AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
     AudioManager.setVolume(AudioManager.STREAM_TTS, vol)
     AudioManager.setVolume(AudioManager.STREAM_RING, vol)
+    AudioManager.setVolume(AudioManager.STREAM_SYSTEM, vol)
     return
   }
 
   var stream = AudioBase[type]
-  if (stream.readonly) {
-    throw new Error(`stream type "${stream.name}" is readonly`)
-  }
   return _storeVolume(stream, vol)
 }
 
@@ -271,7 +269,5 @@ AudioManager.getStreamName = function getStreamName (type) {
   defineStream(native.STREAM_VOICE_CALL, 'voiceCall')
   defineStream(native.STREAM_PLAYBACK, 'playback')
   defineStream(native.STREAM_ALARM, 'alarm')
-  defineStream(native.STREAM_SYSTEM, 'system', {
-    readonly: true
-  })
+  defineStream(native.STREAM_SYSTEM, 'system')
 })()

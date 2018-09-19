@@ -4,7 +4,6 @@ var logger = require('logger')('main')
 
 require('@yoda/oh-my-little-pony').catchUncaughtError('/data/system/yodart-err.log')
 var property = require('@yoda/property')
-var AudioManager = require('@yoda/audio').AudioManager
 var CloudGW = require('@yoda/cloudgw')
 var floraFactory = require('@yoda/flora')
 var _ = require('@yoda/util')._
@@ -127,7 +126,6 @@ function entry () {
   var voiceCtx = { lastFaked: false }
   var runtime = new AppRuntime()
   runtime.cloudApi = cloudApi
-  runtime.volume = AudioManager
   runtime.init(['/opt/apps'])
 
   runtime.on('setStack', function onSetStack (stack) {
