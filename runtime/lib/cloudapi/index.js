@@ -28,7 +28,7 @@ exports.updateBasicInfo = function updateBasicInfo (cloudgw, info) {
   info = Object.assign({}, info, {
     ota: property.get('ro.build.version.release'),
     mac: _.get(networkInterface, 'mac'),
-    lan_ip: _.get(networkInterface, 'address'),
+    lan_ip: _.get(networkInterface, 'address')
   })
   return new Promise((resolve, reject) => {
     cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',

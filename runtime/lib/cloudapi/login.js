@@ -39,7 +39,7 @@ function login (callback) {
       return callback(new Error('can not get secret'))
     }
     var config = {
-      device_type_id: property.get('ro.boot.devicetypeid'),
+      device_type_id: property.get('ro.boot.devicetypeid')
     }
     var type = config['device_type_id'] || ''
     if (type === 'rokid_test_type_id') {
