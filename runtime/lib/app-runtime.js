@@ -1493,7 +1493,7 @@ function getFloraClient () {
       }
     } else {
       err = new Error('speech put_text return error: ' + msg.get(0))
-      idx = msg.get(2)
+      idx = msg.get(1)
     }
     if (typeof floraCallbacks[idx] === 'function') {
       floraCallbacks[idx](err, nlp, action)
