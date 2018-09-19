@@ -31,6 +31,7 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
+adb shell "mount -o remount,rw /"
 adb shell mkdir -p /data/workspace/helper/ >/dev/null
 adb push ./tools/helper/send-asr.js /data/workspace/helper/ >/dev/null
 adb shell "iotjs /data/workspace/helper/send-asr.js '$asr' $verbose"
