@@ -83,7 +83,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "getMediaVolume", GetMediaVolume);
   iotjs_jval_set_method(exports, "setStreamVolume", SetStreamVolume);
   iotjs_jval_set_method(exports, "getStreamVolume", GetStreamVolume);
-  iotjs_jval_set_method(exports, "getStreamPlayingStatus", GetStreamPlayingStatus);
+  iotjs_jval_set_method(exports, "getStreamPlayingStatus",
+                        GetStreamPlayingStatus);
 
 #define IOTJS_SET_CONSTANT(jobj, name)                                    \
   do {                                                                    \
