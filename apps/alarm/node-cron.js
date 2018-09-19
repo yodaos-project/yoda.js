@@ -24,10 +24,8 @@ module.exports = (function () {
      *      3. only clocks: run the last setting clock.
      */
     function compareTask (id, current, refered) {
-      console.log('compareTask')
       var currentInterval = parser.parseExpressionSync(current.expression)
       var referedInterval = parser.parseExpressionSync(refered.expression)
-      console.log(currentInterval.next().getTime(), referedInterval.next().getTime(), '==========')
       // no concurrency alarm or reminder
       if (Math.floor(currentInterval.next().getTime() / 1000) !== Math.floor(referedInterval.next().getTime() / 1000)) {
         return true
@@ -61,7 +59,9 @@ module.exports = (function () {
       var sortQueue = self.reminderQueue.sort()
       var combinedTTS = ''
       for (var i = 0; i < sortQueue.length; i++) {
-        combinedTTS += self.jobs[sortQueue[i]].tts
+        if (self.jobs[sortQueue[i]]) {
+          combinedTTS += self.jobs[sortQueue[i]].tts
+        }
       }
       return combinedTTS
     }
