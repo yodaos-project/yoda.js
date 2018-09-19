@@ -640,26 +640,26 @@ Object.assign(MultimediaDescriptor.prototype,
      * @function start
      * @param {string} uri
      * @param {object} [options]
-     * @param {object.boolean} [options.impatient=true]
-     * @param {object.string} [options.streamType]
+     * @param {boolean} [options.impatient=true]
+     * @param {'alarm' | 'playback'} [options.streamType='playback']
      * @returns {Promise<string>} multimedia player id
      */
     start: {
       type: 'method',
       returns: 'promise',
-      fn: function start (url, isAlarm, options) {
+      fn: function start (url, options) {
         var self = this
-        if (typeof isAlarm === 'object') {
-          options = isAlarm
-          var streamType = _.get(options, 'streamType')
-          isAlarm = streamType === 'alarm'
-        }
         var impatient = _.get(options, 'impatient', true)
+        var streamType = _.get(options, 'streamType', 'playback')
+        if (typeof streamType !== 'string') {
+          return Promise.reject(new Error('Expect string on options.streamType.'))
+        }
+
         url = yodaPath.transformPathScheme(url, MEDIA_SOURCE, this._appHome + '/media', {
           allowedScheme: [ 'http', 'https' ]
         })
         logger.log('playing multimedia', url)
-        return self._runtime.multimediaMethod('start', [self._appId, url, isAlarm ? 'alarm' : ''])
+        return self._runtime.multimediaMethod('start', [self._appId, url, streamType])
           .then((result) => {
             var multimediaId = result[0]
             logger.log('create media player', result)
