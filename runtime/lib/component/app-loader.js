@@ -18,6 +18,7 @@ module.exports = AppChargeur
  */
 function AppChargeur (runtime) {
   this.runtime = runtime
+  this.AppExecutor = AppExecutor
 
   this.skillIdAppIdMap = {}
   this.hostSkillIdMap = {}
@@ -171,7 +172,7 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
         throw new Error(`metadata.permission is not valid at ${root}.`)
       }
 
-      var executor = new AppExecutor(pkgInfo, root, appId, this.runtime)
+      var executor = new this.AppExecutor(pkgInfo, root, appId, this.runtime)
       this.__loadApp(appId, executor, skillIds, hosts, permissions)
     })
 }
