@@ -5,20 +5,21 @@ resultDir='./test/.result'
 
 function testit() {
   local scripts="
+mkdir -p /data/floras;
+rm -rf /tmp/command;
 export BLUETOOTH_CHANNEL_PREFIX=/tmp > /dev/null;
 iotjs /usr/lib/node_modules/tape/bin/tape.js '/data/workspace/test/$1/**/*.test.js'
 "
-  adb shell $scripts | ./node_modules/.bin/tap-nyan
+  echo "start testing $1"
+  adb shell $scripts > "$resultDir/$2.tap"
 }
 
 function test_package() {
-  # testit "@yoda/$1" > "$resultDir/@yoda.$1.tap"
-  testit "@yoda/$1"
+  testit "@yoda/$1" "@yoda.$1"
 }
 
 function test_runtime() {
-  # testit "runtime" > "$resultDir/runtime.tap"
-  testit "runtime"
+  testit "runtime" "runtime"
 }
 
 function init() {
@@ -29,13 +30,13 @@ function init() {
 
 init
 test_package 'audio'
-test_package 'bluetooth'
+# test_package 'bluetooth'
 test_package 'cloudgw'
 test_package 'flora'
 test_package 'input'
 test_package 'light'
-test_package 'multimedia'
-test_package 'ota'
+# test_package 'multimedia'
+# test_package 'ota'
 test_package 'property'
 test_package 'system'
 test_package 'tts'
@@ -43,4 +44,5 @@ test_package 'util'
 test_package 'wifi'
 test_runtime
 
-# node ./tools/helper/merge-tests.js > ./test/.result/summary.json
+node ./tools/helper/merge-tests.js > ./test/.result/summary.json
+cat ./test/.result/summary.json

@@ -17,10 +17,10 @@ test('start command', (t) => {
     if (!isopened) {
       t.equal(msg.command, 'ON', 'the command is ON')
       t.equal(msg.name, btName, `the btName is ${btName}`)
-      // bluetooth.disconnect()
       isopened = true
     } else {
-      t.equal(msg.command, 'ON', 'the command is ON')
+      bluetooth.disconnect()
+      t.equal(msg.command, 'ON', 'the command is still ON')
       t.equal(msg.name, btName1, `the btName is ${btName1}`)
       t.end()
       socket.close()
@@ -30,9 +30,9 @@ test('start command', (t) => {
 
   var messageStream = bluetooth.getMessageStream()
   setTimeout(() => {
-    // after socket connect successfully,try send cmd message 'ON'
+    // after socket connect successfully, try send cmd message 'ON'
     messageStream.start(btName)
-    // after socket connect successfully,double try send cmd message 'ON'
+    // after socket connect successfully, double try send cmd message 'ON'
     messageStream.start(btName1)
   }, 1000)
 })

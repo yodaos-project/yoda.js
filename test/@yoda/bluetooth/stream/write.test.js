@@ -22,7 +22,7 @@ test('write stream buffer', (t) => {
       socket.close()
       bluetooth.disconnect()
       isopened = false
-      setTimeout(t.end, 500)
+      t.end()
     }
   })
 

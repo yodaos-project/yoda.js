@@ -19,9 +19,9 @@ test('disconnect command', (t) => {
       isopened = true
     } else {
       t.equal(msg.command, 'OFF', 'the command is OFF')
-      t.end()
       socket.close()
       isopened = false
+      t.end()
     }
   })
 
@@ -32,9 +32,9 @@ test('disconnect command', (t) => {
     setTimeout(() => {
       messageStream.disconnect()
       setTimeout(() => {
-        messageStream.start(btName)
+        // FIXME(Yorkie): where needs to start btName?
+        // messageStream.start(btName)
         t.ok(isopened === false)
-        t.end()
       }, 2000)
     }, 1000)
   }, 1000)

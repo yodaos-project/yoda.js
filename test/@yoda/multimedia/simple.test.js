@@ -3,7 +3,6 @@
 var test = require('tape')
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var AudioManager = require('@yoda/audio').AudioManager
-// var logger = require('logger')('simple.test')
 
 test('should play a wakeup music', (t) => {
   t.plan(3)
@@ -204,6 +203,7 @@ test('start different audio type', (t) => {
       // t.equal(player.playing, true, 'start play' + audio)
       t.pass()
       player.disconnect()
+      console.log('disconnect', audio)
     })
     player.start('/data/workspace/test/fixture/audio/' + audio)
   })

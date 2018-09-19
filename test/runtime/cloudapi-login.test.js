@@ -5,7 +5,7 @@ var prop = require('@yoda/property')
 var helper = require('../helper')
 var login = require(`${helper.paths.runtime}/lib/cloudapi/login`)
 
-test('login', function (t) {
+test.skip('login', function (t) {
   t.plan(4)
   login().then((data) => {
     t.equal(data.deviceId, prop.get('ro.boot.serialno'), 'the login device id is checked')

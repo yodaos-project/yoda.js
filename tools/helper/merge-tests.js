@@ -7,16 +7,23 @@ var resultRoot = path.join(__dirname, '../../test/.result')
 
 var result = fs.readdirSync(resultRoot).reduce((result, filename) => {
   var parser = new TapParser()
-  var currTest
+  var currMsg
   parser.on('comment', (msg) => {
     msg = msg.replace(/^# /, '').replace('\n', '')
-    currTest = result.tests[msg] = []
+    currMsg = msg
   })
   parser.on('assert', (data) => {
+    if (!currMsg) {
+      return
+    }
     result.total += 1
     data.ok ? result.pass += 1 : result.fail += 1
-    if (currTest) {
-      currTest.push({ ok: data.ok, name: data.name })
+    if (!data.ok) {
+      result.tests.push({
+        filename: filename,
+        testcase: currMsg,
+        assert: data
+      })
     }
   })
   var contents = fs.readFileSync(`${resultRoot}/${filename}`)
@@ -26,7 +33,7 @@ var result = fs.readdirSync(resultRoot).reduce((result, filename) => {
   pass: 0,
   fail: 0,
   total: 0,
-  tests: {}
+  tests: []
 })
 
 console.log(JSON.stringify(result, null, 2))

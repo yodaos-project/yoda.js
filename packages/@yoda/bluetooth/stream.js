@@ -115,6 +115,7 @@ BluetoothMessageStream.prototype.end = function end () {
  */
 BluetoothMessageStream.prototype.disconnect = function disconnect () {
   this.end()
+  this.removeAllListeners()
   process.nextTick(() => {
     this._eventSocket.close()
   })
