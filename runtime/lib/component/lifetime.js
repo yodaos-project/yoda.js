@@ -460,8 +460,6 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
 /**
  * Preempts top of stack and switch app to foreground.
  *
- * Does nothing if app is not running in background.
- *
  * Possible subsequent calls:
  *   - LaVieEnPile#deactivateAppById
  *   - LaVieEnPile#setBackgroundById
@@ -471,8 +469,7 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
  */
 LaVieEnPile.prototype.setForegroundById = function (appId, form) {
   if (!this.isBackgroundApp(appId)) {
-    logger.info('app is not in background, skipping', appId)
-    return Promise.resolve()
+    logger.warn('app is not in background, yet trying to set foreground', appId)
   }
   logger.info('set foreground', appId)
   return this.activateAppById(appId, form)
