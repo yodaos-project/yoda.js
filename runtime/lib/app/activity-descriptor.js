@@ -341,7 +341,7 @@ Object.assign(ActivityDescriptor.prototype,
         if (!this._runtime.permission.check(this._appId, 'INTERRUPT')) {
           return Promise.reject(new Error('Permission denied.'))
         }
-        if (form != null && (form !== 'cut' || form !== 'scene')) {
+        if (form != null && (form !== 'cut' && form !== 'scene')) {
           return Promise.reject(new TypeError(`Expect 'cut' or 'scene' on first argument of setForeground.`))
         }
         return this._runtime.life.setForegroundById(this._appId, form).then(() => {})
