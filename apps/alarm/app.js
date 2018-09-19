@@ -206,7 +206,7 @@ module.exports = function (activity) {
           })
         } else {
           // TODO(aina): need to change local media file (file not provided)
-          activity.media.start('/opt/media/startup1.ogg', 'alarm').then(() => {
+          activity.media.start('/opt/media/startup1.ogg', { streamType: 'alarm' }).then(() => {
             clearTask(mode, option)
             activity.setBackground()
           })
@@ -227,13 +227,13 @@ module.exports = function (activity) {
         })
         if (state === wifi.NETSERVER_CONNECTED) {
           activity.tts.speak(option.tts).then(() => {
-            activity.media.start(option.url, 'alarm').then(() => {
+            activity.media.start(option.url, { streamType: 'alarm' }).then(() => {
               clearTask(mode, option)
               activity.setBackground()
             })
           })
         } else {
-          activity.media.start('/opt/media/alarm_default_ringtone.mp3', 'alarm').then(() => {
+          activity.media.start('/opt/media/alarm_default_ringtone.mp3', { streamType: 'alarm' }).then(() => {
             clearTask(mode, option)
             activity.setBackground()
           })
