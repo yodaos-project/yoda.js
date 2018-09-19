@@ -27,6 +27,14 @@ function createExtApp (appId, target, runtime) {
   })
   descriptor._childProcess = cp
   logger.info(`Forked child app ${target}.`)
+  var send = cp.send
+  cp.send = function sendProxy () {
+    if (cp.killed) {
+      logger.info(`Child process ${appId} has benn killed, skip sending`)
+      return
+    }
+    send.apply(cp, arguments)
+  }
 
   var eventBus = new EventBus(descriptor, cp, appId)
   var onMessage = eventBus.onMessage.bind(eventBus)
