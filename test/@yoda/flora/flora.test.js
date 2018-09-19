@@ -5,7 +5,7 @@ var logger = require('logger')('flora-test')
 var floraFactory = require('@yoda/flora')
 
 var errUri = 'unix:/data/flora-error'
-var okUri = 'unix:/data/floras'
+var okUri = 'unix:/var/run/flora.sock'
 var crypto = require('crypto')
 
 test('module->flora->connect: err uri', t => {

@@ -119,7 +119,9 @@ BluetoothPlayer.prototype.prev = function () {
  */
 BluetoothPlayer.prototype.disconnect = function disconnect () {
   this.end()
-  this._eventSocket.close()
+  process.nextTick(() => {
+    this._eventSocket.close()
+  })
 }
 
 exports.BluetoothPlayer = BluetoothPlayer

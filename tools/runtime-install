@@ -68,7 +68,6 @@ function push() {
 }
 
 function install_os() {
-  shell "mount -o remount,rw /"
   shell "rm -rf /usr/lib/yoda/runtime"
   push "./runtime" "/usr/lib/yoda/"
 
@@ -98,6 +97,8 @@ function install_resources() {
   push "./res/light" "/opt/"
   push "./res/media" "/opt/"
 }
+
+shell "mount -o remount,rw /"
 
 if test "$os" = "YES"; then
   install_os
