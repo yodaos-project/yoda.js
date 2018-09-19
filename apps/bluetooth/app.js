@@ -30,9 +30,10 @@ module.exports = function (activity) {
     player.on('stateupdate', function (message) {
       logger.debug('stateupdate', message)
       if (message.play_state === 'played') {
-        return activity.setForeground()
+        playState = true
+        return activity.setForeground('scene')
       }
-      if (message.a2dpstate === 'opened' && message.connect_state === 'disconnected') {
+      if (bluetoothState === 'connected' && message.connect_state === 'disconnected') {
         bluetoothState = 'disconnected'
         return activity.setForeground().then(() => {
           return activity.playSound('system://closebluetooth.ogg')
@@ -44,9 +45,13 @@ module.exports = function (activity) {
         (message.play_state === 'invailed')) {
         bluetoothState = 'connected'
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => { speakAndExit(STRING_CONNECED + name) })
+          activity.setForeground().then(() => {
+            speakAndExit(STRING_CONNECED + message.connect_name)
+          })
         } else {
-          activity.setForeground().then(() => { mediaAndExit('system://connectbluetooth.ogg') })
+          activity.setForeground().then(() => {
+            mediaAndExit('system://connectbluetooth.ogg')
+          })
         }
       }
     })
@@ -63,11 +68,11 @@ module.exports = function (activity) {
   }
 
   function startMusic () {
-    activity.setForeground().then(() => {
+    activity.setForeground('scene').then(() => {
       player = bluetooth.getPlayer()
       if (player && bluetoothState === 'connected') {
-        player.play()
         playState = true
+        player.play()
       } else {
         mediaAndExit('system://playbluetootherror.ogg')
       }
@@ -82,6 +87,7 @@ module.exports = function (activity) {
   }
 
   function resumeMusic () {
+    player = bluetooth.getPlayer()
     if (player) {
       player.play()
     }
@@ -104,12 +110,12 @@ module.exports = function (activity) {
 
   function speakAndExit (text) {
     return activity.tts.speak(text)
-      .then(() => activity.setBackground())
+      .then(() => !playState && activity.setBackground())
   }
 
   function mediaAndExit (text) {
     return activity.playSound(text)
-      .then(() => activity.setBackground())
+      .then(() => !playState && activity.setBackground())
   }
 
   activity.on('pause', () => {
