@@ -68,7 +68,6 @@ function AppRuntime () {
   this.online = undefined // to identify the first start
   this.login = undefined // to identify is login or not
   this.waitingForAwake = undefined // to identify network switch from connected to disconnected
-  this.micMuted = false
   this.forceUpdateAvailable = false
   this.voiceCtx = {
     lastFaked: false
