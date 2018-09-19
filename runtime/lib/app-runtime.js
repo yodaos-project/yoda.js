@@ -188,7 +188,7 @@ AppRuntime.prototype.resetAppearance = function resetAppearance () {
  * @private
  */
 AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
-  var min = 30
+  var min = 10
   var vol = AudioManager.getVolume()
   if (this.online === false) {
     // Do noting when there is no network
