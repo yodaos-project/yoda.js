@@ -115,13 +115,15 @@ function turenPickup (isPickup) {
 function turenMute (mute) {
   if (floraCli) {
     var msg = new floraFactory.Caps()
-    msg.writeInt32(mute ? 0 : 1)
+    /** if mute is true, set rokid.turen.mute to 1 to disable turen */
+    msg.writeInt32(mute ? 1 : 0)
     floraCli.post('rokid.turen.mute', msg, floraFactory.MSGTYPE_INSTANT)
   }
 }
 
 function entry () {
   logger.debug('vui is ready')
+  turenMute(false)
 
   var voiceCtx = { lastFaked: false }
   var runtime = new AppRuntime()
