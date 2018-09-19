@@ -112,14 +112,14 @@ module.exports = function (activity) {
   }
 
   function startTask (commandOpt, pattern) {
-    logger.log(commandOpt.id, ' alarm start')
+    logger.log('alarm start')
     scheduleHandler.create(pattern, function () {
       taskCallback(commandOpt, commandOpt.mode)
     }, commandOpt)
   }
   function getTasksFromConfig (callback) {
     var parseJson = {}
-    fs.readFile('./config.json', 'utf8', function readFileCallback (err, data) {
+    fs.readFile('/data/AppData/alarm/config.json', 'utf8', function readFileCallback (err, data) {
       if (err) throw err
       parseJson = JSON.parse(data)
       callback(parseJson)
@@ -161,7 +161,7 @@ module.exports = function (activity) {
     return s + ' ' + m + ' ' + h + ' ' + day + ' ' + month + ' *'
   }
   function setConfig (options, mode) {
-    fs.readFile('./config.json', 'utf8', function readFileCallback (err, data) {
+    fs.readFile('/data/AppData/alarm/config.json', 'utf8', function readFileCallback (err, data) {
       if (err) throw err
       var parseJson = JSON.parse(data)
       if (mode === 'add') {
@@ -170,7 +170,7 @@ module.exports = function (activity) {
       if (mode === 'remove') {
         delete parseJson[options.id]
       }
-      fs.writeFile('./config.json', JSON.stringify(parseJson), function (err) {
+      fs.writeFile('/data/AppData/alarm/config.json', JSON.stringify(parseJson), function (err) {
         if (err) throw err
       })
     })
@@ -213,7 +213,7 @@ module.exports = function (activity) {
             })
           })
         } else {
-          activity.media.start('system://reminder_default.mp3', 'alarm').then(() => {
+          activity.media.start('system://reminder_default.mp3', { streamType: 'alarm' }).then(() => {
             clearTask(mode, option)
             activity.setBackground()
           })
@@ -234,13 +234,13 @@ module.exports = function (activity) {
         })
         if (state === wifi.NETSERVER_CONNECTED) {
           activity.tts.speak(option.tts).then(() => {
-            activity.media.start(option.url, 'alarm').then(() => {
+            activity.media.start(option.url, { streamType: 'alarm' }).then(() => {
               clearTask(mode, option)
               activity.setBackground()
             })
           })
         } else {
-          activity.media.start('system://alarm_default_ringtone.mp3', 'alarm').then(() => {
+          activity.media.start('system://alarm_default_ringtone.mp3', { streamType: 'alarm' }).then(() => {
             clearTask(mode, option)
             activity.setBackground()
           })
