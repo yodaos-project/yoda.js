@@ -89,6 +89,8 @@ MediaPlayer.prototype._initialize = function () {
  * @private
  */
 MediaPlayer.prototype.onprepared = function () {
+  var vol = AudioManager.getVolume(this._stream)
+  this.setVolume(vol)
   /**
    * Prepared event, media resource is loaded
    * @event module:@yoda/multimedia~MediaPlayer#prepared
@@ -142,8 +144,6 @@ MediaPlayer.prototype.start = function (uri) {
   if (!uri) {
     throw new Error('url must be a valid string')
   }
-  var vol = AudioManager.getVolume(this._stream)
-  this.setVolume(vol)
   return this._handle.prepare(uri)
 }
 
