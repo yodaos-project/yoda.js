@@ -222,7 +222,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     form = 'cut'
   }
 
-  if (this.isMonopolized()) {
+  if (this.isMonopolized() && appId !== this.monopolist) {
     return Promise.reject(new Error(`App ${this.monopolist} monopolized top of stack.`))
   }
 
