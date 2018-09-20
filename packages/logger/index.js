@@ -106,6 +106,10 @@ function createLoggerFunction (level) {
     if (loggingServer.isAvailable()) {
       loggingServer.send(line)
     } else {
+      // FIXME(Yorkie): check if the log is too long, just limit the maximum size is 1000.
+      if (line.length >= 1000) {
+        line = line.slice(0, 1000) + '...'
+      }
       console[level](line)
     }
   }
