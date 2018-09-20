@@ -519,6 +519,25 @@ AppRuntime.prototype.openUrl = function (url, options) {
 
 /**
  *
+ * @param {string} appId -
+ * @param {object} [options]
+ * @param {'cut' | 'scene'} [options.form='cut'] - running form of the activity.
+ * @param {string} [options.skillId] - update cloud skill stack if specified.
+ */
+AppRuntime.prototype.setForegroundById = function setForegroundById (appId, options) {
+  var skillId = _.get(options, 'skillId')
+  var form = _.get(options, 'form', 'cut')
+  if (skillId) {
+    if (this.loader.getAppIdBySkillId(skillId) !== appId) {
+      return Promise.reject(new Error(`skill id '${skillId}' not owned by app ${appId}.`))
+    }
+    this.updateCloudStack(skillId, form)
+  }
+  return this.life.setForegroundById(appId, form)
+}
+
+/**
+ *
  * @param {boolean} [mute] - set mic to mute, switch mute if not given.
  */
 AppRuntime.prototype.setMicMute = function setMicMute (mute) {
