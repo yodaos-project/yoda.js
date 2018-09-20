@@ -10,6 +10,8 @@ module.exports = function (activity) {
   var uuid = property.get('ro.boot.serialno') || ''
   var name = 'Rokid-Me-' + uuid.substr(-6)
   var bluetoothState = null
+  var OPENTIMEOUT = 60000
+  var connectBlutoothName = null
   var playState = null
   var STRING_BROADCAST = '蓝牙已打开，请使用手机搜索设备'
   var STRING_CONNECED = '已连接上你的'
@@ -18,12 +20,23 @@ module.exports = function (activity) {
   function broadcast () {
     player = bluetooth.getPlayer()
     setTimeout(() => {
-      if (bluetoothState === null) {
+      if ((bluetoothState === null) || (bluetoothState === 'disconnected')) {
         player.start(name)
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
           speakAndExit(STRING_BROADCAST + name)
         } else {
           mediaAndExit('system://openbluetooth.ogg')
+        }
+        setTimeout(() => {
+          if (!playState) {
+            disconnect()
+          }
+        }, OPENTIMEOUT)
+      } else if (bluetoothState === 'connected') {
+        if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
+          speakAndExit(STRING_CONNECED + connectBlutoothName)
+        } else {
+          mediaAndExit('system://connectbluetooth.ogg')
         }
       }
     }, 1000)
@@ -44,6 +57,7 @@ module.exports = function (activity) {
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'connected') &&
         (message.play_state === 'invailed')) {
         bluetoothState = 'connected'
+        connectBlutoothName = message.connect_name
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
           activity.setForeground().then(() => {
             speakAndExit(STRING_CONNECED + message.connect_name)
