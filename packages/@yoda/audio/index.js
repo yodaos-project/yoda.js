@@ -165,7 +165,6 @@ AudioManager.setVolume = function (type, vol) {
     AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
     AudioManager.setVolume(AudioManager.STREAM_TTS, vol)
     AudioManager.setVolume(AudioManager.STREAM_RING, vol)
-    AudioManager.setVolume(AudioManager.STREAM_SYSTEM, vol)
     return
   }
 
@@ -187,7 +186,7 @@ AudioManager.getVolume = function (stream) {
     }
     return _getVolume(AudioBase[stream])
   } else {
-    return _getVolume(AudioBase[native.STREAM_TTS])
+    return _getVolume(AudioBase[native.STREAM_AUDIO])
   }
 }
 
