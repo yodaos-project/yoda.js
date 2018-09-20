@@ -48,3 +48,40 @@ test('monopolization', t => {
       t.end()
     })
 })
+
+test('monopolist could be activated repetitively', t => {
+  mock.restore()
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.appLoader)
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      life.monopolist = '1'
+
+      t.strictEqual(life.isMonopolized(), false, 'monologue shall not be started by app not on top of stack')
+
+      return life.activateAppById('1')
+    })
+    .then(() => {
+      life.monopolist = '1'
+      t.strictEqual(life.getCurrentAppId(), '1')
+      t.strictEqual(life.isMonopolized(), true, 'monologue shall be started by app top of stack')
+
+      return life.activateAppById('1')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1')
+      t.strictEqual(life.isMonopolized(), true, 'monologue shall be started by app top of stack')
+
+      return life.destroyAppById('1')
+    })
+    .then(() => {
+      t.strictEqual(life.isMonopolized(), false, 'monologue shall not be continue by app not on top of stack')
+
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
