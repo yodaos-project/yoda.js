@@ -36,6 +36,7 @@ Skill.prototype.handleEvent = function () {
     logger.log(this.appId + ' emit start', this.directives)
     this.paused = false
     this.task++
+    // should not resume when user manually pause or stop media
     var resume = true
     this.directives.forEach((value) => {
       if (value.type === 'media' && ['stop', 'pause', 'resume'].indexOf(value.action) > -1) {
@@ -49,6 +50,7 @@ Skill.prototype.handleEvent = function () {
         return
       }
       if (this.task > 0) {
+        // media can resume after execute a tts directive
         if (this.shouldEndSession === false && resume) {
           this.exe.execute([{
             type: 'media',

@@ -188,3 +188,27 @@ test('manager3: test scene destroy', (t) => {
   // cut app complete
   manager.skills[0].emit('exit')
 })
+
+test('manager3: test skill exit event', (t) => {
+  t.plan(2)
+  var manager = new Manager(null, Skill)
+  eventBus.on('start:appid-cut-test-exit', () => {
+    t.pass('appid-cut-test-exit emit start')
+    manager.skills[0].emit('exit')
+  })
+  manager.on('empty', () => {
+    t.pass('manager3 emit empty')
+  })
+
+  manager.onrequest({
+    appId: 'appid-cut-test-exit'
+  }, {
+    appId: 'appid-cut-test-exit',
+    response: {
+      action: {
+        form: 'cut',
+        shouldEndSession: false
+      }
+    }
+  })
+})
