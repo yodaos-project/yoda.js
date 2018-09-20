@@ -330,21 +330,30 @@ Object.assign(ActivityDescriptor.prototype,
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function setForeground
-     * @param {string} [form] - the running form of the activity, available value are: cut
+     * @param {'cut' | 'scene' | object} [options]
+     * @param {'cut' | 'scene'} [options.form] - the running form of the activity, available value are: cut
      *                          or scene.
+     * @param {string} [options.skillId] - update cloud skill stack if specified.
      * @return {Promise<void>}
      */
     setForeground: {
       type: 'method',
       returns: 'promise',
-      fn: function setForeground (form) {
+      fn: function setForeground (options) {
         if (!this._runtime.permission.check(this._appId, 'INTERRUPT')) {
           return Promise.reject(new Error('Permission denied.'))
+        }
+        var form
+        if (typeof options === 'string') {
+          form = options
+          options = null
+        } else {
+          form = _.get(options, 'form')
         }
         if (form != null && (form !== 'cut' && form !== 'scene')) {
           return Promise.reject(new TypeError(`Expect 'cut' or 'scene' on first argument of setForeground.`))
         }
-        return this._runtime.life.setForegroundById(this._appId, form).then(() => {})
+        return this._runtime.setForegroundById(this._appId, Object.assign({ form: form }, options)).then(() => {})
       }
     },
     /**
