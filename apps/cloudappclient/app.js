@@ -4,6 +4,7 @@ var Directive = require('./directive').Directive
 var TtsEventHandle = require('./ttsEventHandle')
 var MediaEventHandle = require('./mediaEventHandle')
 var logger = require('logger')('cloudAppClient')
+var Skill = require('./skill')
 var _ = require('@yoda/util')._
 
 var Manager = require('./manager')
@@ -14,7 +15,7 @@ module.exports = activity => {
   // create an extapp
   var directive = new Directive()
   // skill os
-  var sos = new Manager(directive)
+  var sos = new Manager(directive, Skill)
   // tts, media event handle
   var ttsClient = new TtsEventHandle(activity.tts)
   var mediaClient = new MediaEventHandle(activity.media)
@@ -38,7 +39,7 @@ module.exports = activity => {
         } else if (name === 'end') {
           sos.sendEventRequest('tts', 'end', dt.data, _.get(dt, 'data.item.itemId'), next)
         } else if (name === 'cancel') {
-          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), next)
+          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), function noop () {})
         }
       })
     } else if (dt.action === 'cancel') {

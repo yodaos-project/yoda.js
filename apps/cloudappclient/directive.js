@@ -59,13 +59,12 @@ Directive.prototype.run = function run (type, cb) {
         type: ''
       }
     }
+    console.log(`run dt: ${next.type} ${next.action || ''}`)
     if (next.type === 'tts') {
-      console.log('run tts ' + type, typeof self.cb[type].tts)
       self.cb[type].tts.call(self, next, function () {
         handle(dt)
       })
     } else if (next.type === 'media') {
-      console.log('run media ' + type, typeof self.cb[type].media)
       self.cb[type].media.call(self, next, function () {
         handle(dt)
       })
