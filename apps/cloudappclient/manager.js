@@ -39,9 +39,9 @@ Manager.prototype.onrequest = function (nlp, action) {
         this.skills.push(skill)
       }
     }
-    skill.emit('start')
     skill.on('exit', this.next.bind(this, skill))
     this.emit('updateStack', this.updateStack())
+    skill.emit('start')
   }
 }
 
