@@ -1042,7 +1042,7 @@ Object.assign(KeyboardDescriptor.prototype,
       returns: 'promise',
       fn: function preventDefaults (keyCode, event) {
         if (typeof keyCode !== 'number') {
-          return Promise.reject(new Error('Expect a string on first argument of keyboard.preventDefaults.'))
+          return Promise.reject(new Error('Expect a number on first argument of keyboard.preventDefaults.'))
         }
         if (event != null && typeof event !== 'string') {
           return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))

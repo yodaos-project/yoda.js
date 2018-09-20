@@ -13,6 +13,8 @@ function KeyboardHandler (runtime) {
   this.config = config
 
   this.listeners = {
+    keydown: {},
+    keyup: {},
     click: {},
     dbclick: {},
     longpress: {}
@@ -61,10 +63,29 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
   logger.error('Unknown descriptor', descriptor)
 }
 
+KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
+  var listener = _.get(this.listeners, `${type}.${event.keyCode}`)
+  if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
+    var app = this.runtime.loader.getAppById(listener)
+    if (app) {
+      logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
+      app.keyboard.emit(type, event)
+      return true
+    }
+    logger.info(`App ${listener} is not active, skip ${type} '${event.keyCode}' delegation.`)
+  }
+  return false
+}
+
 KeyboardHandler.prototype.listen = function listen () {
   this.input.on('keydown', listenerWrap(event => {
     this.currentKeyCode = event.keyCode
     logger.info(`keydown: ${event.keyCode}`)
+
+    if (this.handleAppListener('keydown', event)) {
+      logger.info(`Delegated keydown to app.`)
+      return
+    }
 
     var descriptor = _.get(this.config, `${event.keyCode}.keydown`)
     if (typeof descriptor !== 'object') {
@@ -90,6 +111,11 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
     }
 
+    if (this.handleAppListener('keyup', event)) {
+      logger.info(`Delegated keyup to app.`)
+      return
+    }
+
     var descriptor = _.get(this.config, `${event.keyCode}.keyup`)
     if (typeof descriptor !== 'object') {
       logger.info(`No handler registered for keyup '${event.keyCode}'.`)
@@ -101,15 +127,9 @@ KeyboardHandler.prototype.listen = function listen () {
   this.input.on('click', listenerWrap(event => {
     logger.info(`click: ${event.keyCode}`)
 
-    var listener = this.listeners.click[String(event.keyCode)]
-    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-      var app = this.runtime.loader.getAppById(listener)
-      if (app) {
-        logger.info(`Delegating click '${event.keyCode}' to app ${listener}.`)
-        app.keyboard.emit('click', event)
-        return
-      }
-      logger.info(`App ${listener} is not active, skip click '${event.keyCode}' delegation.`)
+    if (this.handleAppListener('click', event)) {
+      logger.info(`Delegated click to app.`)
+      return
     }
 
     var descriptor = _.get(this.config, `${event.keyCode}.click`)
@@ -123,15 +143,9 @@ KeyboardHandler.prototype.listen = function listen () {
   this.input.on('dbclick', listenerWrap(event => {
     logger.info(`dbclick: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
 
-    var listener = this.listeners.dbclick[String(event.keyCode)]
-    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-      var app = this.runtime.loader.getAppById(listener)
-      if (app) {
-        logger.info(`Delegating dbclick '${event.keyCode}' to app ${listener}.`)
-        app.keyboard.emit('dbclick', event)
-        return
-      }
-      logger.info(`App ${listener} is not active, skip dbclick '${event.keyCode}' delegation.`)
+    if (this.handleAppListener('dbclick', event)) {
+      logger.info(`Delegated dbclick to app.`)
+      return
     }
 
     var descriptor = _.get(this.config, `${event.keyCode}.dbclick`)
@@ -158,16 +172,9 @@ KeyboardHandler.prototype.listen = function listen () {
       return
     }
 
-    var listener = this.listeners.longpress[String(event.keyCode)]
-    if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-      var app = this.runtime.loader.getAppById(listener)
-      if (app) {
-        logger.info(`Delegating longpress '${event.keyCode}' to app ${listener}.`)
-        this.preventSubsequent = true
-        app.keyboard.emit('longpress', event)
-        return
-      }
-      logger.info(`App ${listener} is not active, skip longpress '${event.keyCode}' delegation.`)
+    if (this.handleAppListener('longpress', event)) {
+      logger.info(`Delegated longpress to app.`)
+      return
     }
 
     var descriptor = _.get(this.config, `${event.keyCode}.longpress`)
