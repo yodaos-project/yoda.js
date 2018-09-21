@@ -94,12 +94,35 @@ BluetoothMessageStream.prototype._send = function (cmdstr, name) {
 
 /**
  * start the message stream.
- * @param {String} name - the bluetooth name.
+ * @param {string} name - the bluetooth name.
+ * @param {boolean} always - if true, always start until success.
+ * @param {function} onerror
  * @returns {Null}
  */
-BluetoothMessageStream.prototype.start = function start (name) {
-  this._end = false
-  return this._send('ON', name)
+BluetoothMessageStream.prototype.start = function start (name, always, onerror) {
+  if (always) {
+    var count = 0
+    var timer = setInterval(() => {
+      if (count >= 20) {
+        clearInterval(timer)
+        // throw the connect error.
+        var err = new Error('bluetooth connect failed')
+        if (typeof onerror === 'function') {
+          onerror(err)
+        } else {
+          throw err
+        }
+      } else {
+        count += 1
+        this.start(name)
+      }
+    })
+    this.once('opened', () => clearInterval(timer))
+    this.start(name)
+  } else {
+    this._end = false
+    this._send('ON', name)
+  }
 }
 
 /**
