@@ -84,6 +84,18 @@ LightRenderingContext.prototype._getCurrentId = function () {
  * @returns {MediaPlayer} a MediaPlayer instance
  */
 LightRenderingContext.prototype.sound = function (uri, self) {
+  // nothing to do if currently state is playing
+  if (AudioManager.getPlayingStatus(AudioManager.STREAM_AUDIO) ||
+    AudioManager.getPlayingStatus(AudioManager.STREAM_TTS) ||
+    AudioManager.getPlayingStatus(AudioManager.STREAM_VOICE_CALL) ||
+    AudioManager.getPlayingStatus(AudioManager.STREAM_PLAYBACK) ||
+    AudioManager.getPlayingStatus(AudioManager.STREAM_ALARM) ||
+    AudioManager.getPlayingStatus(AudioManager.STREAM_RING) ||
+    AudioManager.getPlayingStatus(AudioManager.STREAM_SYSTEM)
+  ) {
+    logger.log('currently state is playing, ignore audio')
+    return
+  }
   if (this._getCurrentId() !== this._id) {
     return
   }
