@@ -246,6 +246,10 @@ module.exports = function (activity) {
         decVolume(100 / partition, { silent: silent })
           .then(() => activity.exit())
         break
+      case '/unmute':
+        setUnmute({ init: /** prevent any possible audio */true })
+          .then(() => activity.exit())
+        break
       case '/mic_mute_effect':
         micMute(true)
           .then(() => activity.exit())

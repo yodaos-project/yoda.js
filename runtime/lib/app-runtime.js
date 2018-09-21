@@ -174,7 +174,9 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
  * Reset the appearance includes light and volume.
  * @private
  */
-AppRuntime.prototype.resetAppearance = function resetAppearance () {
+AppRuntime.prototype.resetAppearance = function resetAppearance (options) {
+  var unmute = _.get(options, 'unmute')
+
   clearTimeout(this.handle.setVolume)
   if (this.prevVolume > 0) {
     if (this.prevVolume === AudioManager.getVolume()) {
@@ -189,6 +191,11 @@ AppRuntime.prototype.resetAppearance = function resetAppearance () {
     }
     this.prevVolume = -1
   }
+
+  if (unmute && AudioManager.isMuted()) {
+    this.openUrl('yoda-skill://volume/unmute', { preemptive: false })
+  }
+
   this.lightMethod('setHide', [''])
 }
 
@@ -268,7 +275,7 @@ AppRuntime.prototype.handleAsrFake = function handleAsrFake () {
  * @private
  */
 AppRuntime.prototype.handleNlpResult = function handleNlpResult (data) {
-  this.resetAppearance()
+  this.resetAppearance({ unmute: true })
   this.onVoiceCommand(data.asr, data.nlp, data.action)
 }
 
