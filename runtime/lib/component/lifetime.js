@@ -306,6 +306,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
      */
     logger.info(`on cut app '${appId}' preempting, pausing previous scene app`)
     return future.then(() => this.onLifeCycle(lastAppId, 'pause'))
+      .catch(err => logger.warn('Unexpected error on pausing previous app', err.stack))
       .then(deferred)
   }
 
@@ -385,6 +386,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
        * a simple life cycle event is sufficient.
        */
       return this.onLifeCycle(lastAppId, 'resume')
+        .catch(err => logger.warn('Unexpected error on restoring previous app', err.stack))
     }
   })
 }
@@ -404,7 +406,7 @@ LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack () 
   function step (appId) {
     /** all apps in stack are going to be deactivated, no need to recover */
     return self.deactivateAppById(appId, { recover: false })
-      .catch(err => logger.error('Unexpected error on deactivating app', appId, err))
+      .catch(err => logger.warn('Unexpected error on deactivating app', appId, err))
   }
 }
 
@@ -487,12 +489,12 @@ LaVieEnPile.prototype.setForegroundById = function (appId, form) {
  * @param {string} appId - app id
  * @param {string} event - event name to be emitted
  * @param {any[]} params -
- * @returns {Promise<ActivityDescriptor>} LifeCycle events are asynchronous.
+ * @returns {Promise<ActivityDescriptor | undefined>} LifeCycle events are asynchronous.
  */
 LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) {
   var app = this.loader.getAppById(appId)
   if (app == null) {
-    return Promise.reject(new Error(`App '${appId}' not created yet.`))
+    return Promise.reject(new Error(`Trying to send life cycle '${event}' to app '${appId}', yet it's not created.`))
   }
 
   logger.info('on life cycle', event, appId)
@@ -554,7 +556,7 @@ LaVieEnPile.prototype.destroyAll = function (options) {
 
   function step (appId) {
     return self.destroyAppById(appId, { force: force })
-      .catch(err => logger.error('Unexpected error on destroying app', appId, err))
+      .catch(err => logger.warn('Unexpected error on destroying app', appId, err))
   }
 }
 
@@ -585,6 +587,7 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
       this.inactiveAppIds.push(appId)
     }
     return this.onLifeCycle(appId, 'destroy')
+      .catch(err => logger.warn('Unexpected error on life cycle destroy previous app', err.stack))
   }
 
   if (inactiveIdx >= 0) {
@@ -601,7 +604,7 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
 
   return this.onLifeCycle(appId, 'destroy')
     .then(deferred, err => {
-      logger.error('Unexpected error on send destroy event to app.', err.stack)
+      logger.warn('Unexpected error on send destroy event to app.', err.stack)
       return deferred()
     })
 }
