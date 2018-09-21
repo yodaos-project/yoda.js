@@ -161,15 +161,41 @@ AudioManager.setVolume = function (type, vol) {
   }
 
   if (type === null) {
-    AudioManager.setVolume(AudioManager.STREAM_AUDIO, vol)
-    AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
-    AudioManager.setVolume(AudioManager.STREAM_TTS, vol)
-    AudioManager.setVolume(AudioManager.STREAM_RING, vol)
+    ;[
+      AudioManager.STREAM_AUDIO,
+      AudioManager.STREAM_PLAYBACK,
+      AudioManager.STREAM_TTS,
+      AudioManager.STREAM_RING,
+      AudioManager.STREAM_SYSTEM
+    ].forEach(it => AudioManager.setVolume(it, vol))
     return
   }
 
   var stream = AudioBase[type]
   return _storeVolume(stream, vol)
+}
+
+/**
+ * Set the volume to user land streams.
+ *
+ * Streams would be set:
+ * - STREAM_AUDIO
+ * - STREAM_PLAYBACK
+ * - STREAM_TTS
+ * - STREAM_RING
+ *
+ * @memberof module:@yoda/audio~AudioManager
+ * @method setUserLandVolume
+ * @param {Number} vol - The volume to set
+ * @throws {TypeError} vol must be a number
+ */
+AudioManager.setUserLandVolume = function setUserLandVolume (vol) {
+  ;[
+    AudioManager.STREAM_AUDIO,
+    AudioManager.STREAM_PLAYBACK,
+    AudioManager.STREAM_TTS,
+    AudioManager.STREAM_RING
+  ].forEach(it => AudioManager.setVolume(it, vol))
 }
 
 /**

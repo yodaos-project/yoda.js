@@ -177,7 +177,16 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
 AppRuntime.prototype.resetAppearance = function resetAppearance () {
   clearTimeout(this.handle.setVolume)
   if (this.prevVolume > 0) {
-    AudioManager.setVolume(this.prevVolume)
+    if (this.prevVolume === AudioManager.getVolume()) {
+      AudioManager.setUserLandVolume(this.prevVolume)
+    } else {
+      /**
+       * if volume is changed in picking up voice,
+       * delta is applied afterwards to all volume channel.
+       */
+      var delta = 10 /** current volume */ - AudioManager.getVolume()
+      AudioManager.setVolume(this.prevVolume - delta)
+    }
     this.prevVolume = -1
   }
   this.lightMethod('setHide', [''])
@@ -196,10 +205,9 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
   }
   if (vol > min) {
     this.prevVolume = vol
-    AudioManager.setVolume(min)
+    AudioManager.setUserLandVolume(min)
     this.handle.setVolume = setTimeout(() => {
-      AudioManager.setVolume(vol)
-      this.prevVolume = -1
+      this.resetAppearance()
     }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
   }
   this.lightMethod('setAwake', [''])
