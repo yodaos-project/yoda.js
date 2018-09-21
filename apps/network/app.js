@@ -114,14 +114,15 @@ module.exports = function (app) {
     }
     started = true
     messageStream = bluetooth.getMessageStream()
-    setTimeout(() => {
-      messageStream.start(BLE_NAME)
-      logger.log('open ble success')
-      bleEnable = true
-      app.light.play('system://setStandby.js')
-      // start timer
-      timerAndSleep()
-    }, 1000)
+    messageStream.start(BLE_NAME, true, (err) => {
+      logger.error(err && err.stack)
+      // FIXME(Yorkie): needs tell bind is unavailable?
+    })
+    logger.log('open ble success')
+    bleEnable = true
+    app.light.play('system://setStandby.js')
+    // start timer
+    timerAndSleep()
 
     messageStream.on('handshaked', (message) => {
       app.playSound('system://wifi/ble_connected.ogg')
