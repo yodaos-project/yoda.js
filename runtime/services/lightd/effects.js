@@ -84,20 +84,30 @@ LightRenderingContext.prototype._getCurrentId = function () {
  * @returns {MediaPlayer} a MediaPlayer instance
  */
 LightRenderingContext.prototype.sound = function (uri, self) {
+  var mockPlayer = {
+    stop: function () {
+      // nothing to do
+    }
+  }
+  var playing = [
+    AudioManager.STREAM_VOICE_CALL,
+    AudioManager.STREAM_PLAYBACK,
+    AudioManager.STREAM_ALARM,
+    AudioManager.STREAM_RING
+  ].reduce((accu, it) => {
+    var ret = AudioManager.getPlayingStatus(it)
+    if (ret) {
+      logger.info(`${AudioManager.getStreamName(it)} is playing`)
+    }
+    return accu || ret
+  }, false)
   // nothing to do if currently state is playing
-  if (AudioManager.getPlayingStatus(AudioManager.STREAM_AUDIO) ||
-    AudioManager.getPlayingStatus(AudioManager.STREAM_TTS) ||
-    AudioManager.getPlayingStatus(AudioManager.STREAM_VOICE_CALL) ||
-    AudioManager.getPlayingStatus(AudioManager.STREAM_PLAYBACK) ||
-    AudioManager.getPlayingStatus(AudioManager.STREAM_ALARM) ||
-    AudioManager.getPlayingStatus(AudioManager.STREAM_RING) ||
-    AudioManager.getPlayingStatus(AudioManager.STREAM_SYSTEM)
-  ) {
+  if (playing) {
     logger.log('currently state is playing, ignore audio')
-    return
+    return mockPlayer
   }
   if (this._getCurrentId() !== this._id) {
-    return
+    return mockPlayer
   }
   var isSystem = false
   var len = uri.length
@@ -128,16 +138,14 @@ LightRenderingContext.prototype.sound = function (uri, self) {
     PLAYERCACHE.set(absPath, sounder)
   }
 
-  sounder._stop = sounder.stop
-  sounder.stop = function stop () {
+  mockPlayer.stop = function () {
     try {
       sounder.pause()
     } catch (error) {
       logger.log(`try to pause ${absPath} error`)
     }
   }
-
-  return sounder
+  return mockPlayer
 }
 
 /**
