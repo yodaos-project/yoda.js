@@ -58,12 +58,27 @@ module.exports = (function () {
       }
       var sortQueue = self.reminderQueue.sort()
       var combinedTTS = ''
+      var reminderList = []
       for (var i = 0; i < sortQueue.length; i++) {
-        if (self.jobs[sortQueue[i]]) {
-          combinedTTS += self.jobs[sortQueue[i]].tts
+        var jobObj = self.jobs[sortQueue[i]]
+        if (jobObj) {
+          combinedTTS += jobObj.tts
+          reminderList.push({
+            id: jobObj.id,
+            createTime: jobObj.createTime,
+            type: jobObj.type,
+            tts: jobObj.tts,
+            url: jobObj.url,
+            mode: jobObj.mode,
+            time: jobObj.time,
+            date: jobObj.date
+          })
         }
       }
-      return combinedTTS
+      return {
+        combinedTTS: combinedTTS,
+        reminderList: reminderList
+      }
     }
     /**
      * clear reminders tts queue
@@ -92,12 +107,13 @@ module.exports = (function () {
             createTime: self.jobs[key].createTime
           }
           var compareResult = compareTask(id, currentObj, referedObj)
-          if (!compareResult) {
-            isRunnable = false
-            // return false;
+          if (currentObj.type === 'Remind') {
+            isRunnable = true
+            break
+          } else {
+            isRunnable = compareResult
             break
           }
-          isRunnable = true
         } else {
           isRunnable = true
         }
