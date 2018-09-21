@@ -171,6 +171,9 @@ module.exports = function (activity) {
       case 'resume':
         resumeMusic()
         break
+      case 'connect_phone':
+        broadcast()
+        break
       default:
         activity.exit()
         break
