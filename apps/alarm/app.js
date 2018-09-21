@@ -55,8 +55,10 @@ module.exports = function (activity) {
   function addConfigFile () {
     fs.stat(configFilePath, function (err, stat) {
       logger.log(err && err.stack)
-      if (!stat || !stat.isFile()) {
-        fs.appendFile(configFilePath, '{}')
+      if (err) {
+        fs.writeFile(configFilePath, '{}', function (err) {
+          logger.log(err && err.stack)
+        })
       }
     })
   }
