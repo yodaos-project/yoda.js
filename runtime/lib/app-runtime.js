@@ -1184,7 +1184,17 @@ AppRuntime.prototype.doLogin = function () {
       })
   }
 
-  return this.destroyAll()
+  var sendReady = () => {
+    var ids = this.loader.getAppIds()
+      .filter(id => this.loader.getAppById(id) != null)
+    return Promise.all(ids.map(it => this.life.onLifeCycle(it, 'ready')))
+  }
+
+  return this.startDaemonApps()
+    .then(sendReady, err => {
+      logger.error('Unexpected error on starting daemon apps', err.stack)
+      return sendReady()
+    })
     .then(() => this.initiate(), err => logger.error('Unexpected error on destroying all apps', err.stack))
     .then(deferred, err => {
       logger.error('Unexpected error on runtime.initiate', err.stack)
