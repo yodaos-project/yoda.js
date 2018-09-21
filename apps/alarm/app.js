@@ -1,10 +1,12 @@
 'use strict'
+
 var AudioManager = require('@yoda/audio').AudioManager
 var wifi = require('@yoda/wifi')
 var logger = require('logger')('alarm')
 var Cron = require('./node-cron')
 var fs = require('fs')
 var request = require('./request')
+var yodaUtil = require('@yoda/util')
 
 var configFilePath = '/data/AppData/alarm/config.json'
 module.exports = function (activity) {
@@ -56,24 +58,33 @@ module.exports = function (activity) {
     fs.stat(configFilePath, function (err, stat) {
       logger.log(err && err.stack)
       if (err) {
-        fs.writeFile(configFilePath, '{}', function (err) {
-          logger.log(err && err.stack)
+        yodaUtil.fs.mkdirp('/data/AppData/alarm', (err) => {
+          if (err) {
+            logger.error(err)
+            return
+          }
+          fs.writeFile(configFilePath, '{}', function (err) {
+            logger.log(err && err.stack)
+          })
         })
       }
     })
   }
+  function formatCommandData (commandObj) {
+    return {
+      id: commandObj.id,
+      createTime: commandObj.createTime,
+      type: commandObj.type,
+      tts: commandObj.tts,
+      url: commandObj.url,
+      mode: commandObj.mode,
+      time: commandObj.time,
+      date: commandObj.date
+    }
+  }
   function initAlarm (command, isUpdateNative) {
     for (var i in command) {
-      var commandOpt = {
-        id: command[i].id,
-        createTime: command[i].createTime,
-        type: command[i].type,
-        tts: command[i].tts,
-        url: command[i].url,
-        mode: command[i].mode,
-        time: command[i].time,
-        date: command[i].date
-      }
+      var commandOpt = formatCommandData(command[i])
       var pattern = transferPattern(command[i].date, command[i].time, command[i].repeatType)
       startTask(commandOpt, pattern)
       isUpdateNative && setConfig(command[i], 'add')
@@ -83,17 +94,7 @@ module.exports = function (activity) {
   function doTask (command) {
     if (command.length > 0) {
       for (var i = 0; i < command.length; i++) {
-        var commandOpt = {
-          id: command[i].id,
-          createTime: command[i].createTime,
-          type: command[i].type,
-          tts: command[i].tts,
-          url: command[i].url,
-          mode: command[i].mode,
-          time: command[i].time,
-          date: command[i].date
-        }
-
+        var commandOpt = formatCommandData(command[i])
         if (command[i].flag === 'add' || command[i].flag === 'edit') {
           var pattern = transferPattern(command[i].date, command[i].time, command[i].repeatType)
           setConfig(command[i], 'add')
@@ -145,15 +146,22 @@ module.exports = function (activity) {
     var s = time[2]
     var m = time[1]
     var h = time[0]
-    if (['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'].indexOf(repeatType) >= 0) {
-      var weekNum = repeatType.split('D')[1]
-      return s + ' ' + m + ' ' + h + ' * * ' + weekNum
-    }
-    if (repeatType === 'WEEKEND') {
-      return s + ' ' + m + ' ' + h + ' * * 1-5'
-    }
-    if (repeatType === 'WEEKDAY') {
-      return s + ' ' + m + ' ' + h + ' * * 6,0'
+    switch (repeatType) {
+      case 'D1':
+      case 'D2':
+      case 'D3':
+      case 'D4':
+      case 'D5':
+      case 'D6':
+      case 'D7':
+        var weekNum = repeatType.split('D')[1]
+        return s + ' ' + m + ' ' + h + ' * * ' + weekNum
+      case 'WEEKEND':
+        return s + ' ' + m + ' ' + h + ' * * 1-5'
+      case 'WEEKDAY':
+        return s + ' ' + m + ' ' + h + ' * * 6,0'
+      default:
+        break
     }
     var dateArr = date.split(':')
     var day = dateArr[2] === '**' ? '*' : dateArr[2]
@@ -193,7 +201,8 @@ module.exports = function (activity) {
     var tts = option.tts
     var state = wifi.getNetworkState()
     if (option.type === 'Remind') {
-      tts = scheduleHandler.combineReminderTts()
+      var sameReminder = scheduleHandler.combineReminderTts()
+      tts = sameReminder.combinedTTS
       activity.setForeground().then(() => {
         // send card to app
         request({
@@ -203,20 +212,20 @@ module.exports = function (activity) {
             alarmId: option.id
           }
         })
+      }).then(() => {
         if (state === wifi.NETSERVER_CONNECTED) {
-          activity.tts.speak(tts || option.tts).then(() => {
-            activity.media.start('system://reminder_default.mp3', { streamType: 'alarm' }).then(() => {
-              scheduleHandler.clearReminderQueue()
-              clearTask(mode, option)
-              activity.setBackground()
-            })
-          })
-        } else {
-          activity.media.start('system://reminder_default.mp3', { streamType: 'alarm' }).then(() => {
-            clearTask(mode, option)
-            activity.setBackground()
-          })
+          return activity.tts.speak(tts || option.tts)
         }
+      }).then(() => {
+        return activity.media.start('system://reminder_default.mp3', { streamType: 'alarm' })
+      }).then(() => {
+        scheduleHandler.clearReminderQueue()
+        var reminderList = sameReminder.reminderList
+        var reminderLen = reminderList.length
+        for (var k = 0; k < reminderLen; k++) {
+          clearTask(mode, reminderList[k])
+        }
+        activity.setBackground()
       })
     } else {
       controlAudio(0.5, 0.1, 1000, 5)
@@ -231,19 +240,19 @@ module.exports = function (activity) {
             alarmId: option.id
           }
         })
+      }).then(() => {
         if (state === wifi.NETSERVER_CONNECTED) {
-          activity.tts.speak(option.tts).then(() => {
-            activity.media.start(option.url, { streamType: 'alarm' }).then(() => {
-              clearTask(mode, option)
-              activity.setBackground()
-            })
-          })
-        } else {
-          activity.media.start('system://alarm_default_ringtone.mp3', { streamType: 'alarm' }).then(() => {
-            clearTask(mode, option)
-            activity.setBackground()
-          })
+          return activity.tts.speak(option.tts)
         }
+      }).then(() => {
+        if (state === wifi.NETSERVER_CONNECTED) {
+          return activity.media.start(option.url, { streamType: 'alarm' })
+        } else {
+          return activity.media.start('system://alarm_default_ringtone.mp3', { streamType: 'alarm' })
+        }
+      }).then(() => {
+        clearTask(mode, option)
+        activity.setBackground()
       })
     }
   }
