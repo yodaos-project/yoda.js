@@ -23,9 +23,9 @@ module.exports = function (activity) {
       if ((bluetoothState === null) || (bluetoothState === 'disconnected')) {
         player.start(name)
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          speakAndExit(STRING_BROADCAST + name)
+          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST + name) })
         } else {
-          mediaAndExit('system://openbluetooth.ogg')
+          activity.setForeground().then(() => { mediaAndExit('system://openbluetooth.ogg') })
         }
         setTimeout(() => {
           if (!playState) {
@@ -34,9 +34,9 @@ module.exports = function (activity) {
         }, OPENTIMEOUT)
       } else if (bluetoothState === 'connected') {
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          speakAndExit(STRING_CONNECED + connectBlutoothName)
+          activity.setForeground().then(() => { speakAndExit(STRING_CONNECED + connectBlutoothName) })
         } else {
-          mediaAndExit('system://connectbluetooth.ogg')
+          activity.setForeground().then(() => { mediaAndExit('system://connectbluetooth.ogg') })
         }
       }
     }, 1000)
