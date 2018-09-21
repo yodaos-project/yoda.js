@@ -51,3 +51,28 @@ test('app preemption', t => {
       t.end()
     })
 })
+
+test('shall not throw on activating if previous app is not alive', t => {
+  mock.restore()
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
+
+  Promise.all(_.times(1).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      life.activeAppStack.push('1')
+      life.appDataMap['1'] = {}
+
+      t.strictEqual(life.getCurrentAppId(), '1', 'app 1 shall be active thought it\'s not alive')
+
+      return life.activateAppById('0')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0')
+
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
