@@ -22,7 +22,13 @@ Skill.prototype.onrequest = function (action, append) {
   if (directives === undefined || directives.length <= 0) {
     return
   }
+  logger.log(`--> shouldEndSession: ${this.shouldEndSession}`)
+  // exit self if shouldEndSession is true
+  if (this.shouldEndSession) {
+    return this.emit('exit')
+  }
   this.shouldEndSession = action.response.action.shouldEndSession
+  logger.log(`--> update shouldEndSession: ${this.shouldEndSession}`)
   logger.log(`skill ${this.appId} onrequest`)
   this.transform(directives || [], append)
   logger.log(`${this.appId} pause: ${this.paused}`, this.directives)
@@ -35,6 +41,7 @@ Skill.prototype.handleEvent = function () {
   this.on('start', () => {
     logger.log(this.appId + ' emit start', this.directives)
     this.paused = false
+    // In order to identify how many tasks are currently running
     this.task++
     // should not resume when user manually pause or stop media
     var resume = true
@@ -44,13 +51,19 @@ Skill.prototype.handleEvent = function () {
       }
     })
     this.exe.execute(this.directives, 'frontend', () => {
+      // A task is completed
       this.task--
       logger.info('execute end', this.appId, this.directives, this.paused)
+      // If the skill is in the pause state, then nothing is done.
       if (this.paused === true) {
         return
       }
+      if (this.shouldEndSession) {
+        return this.emit('exit')
+      }
+      // If there are still tasks that are not completed, do nothind.
       if (this.task > 0) {
-        // media can resume after execute a tts directive
+        // The media should resume after playing tts
         if (this.shouldEndSession === false && resume) {
           this.exe.execute([{
             type: 'media',
@@ -60,11 +73,13 @@ Skill.prototype.handleEvent = function () {
         }
         return
       }
+      // continue perform the remaining tasks, if any.
       if (this.directives.length > 0) {
         return this.emit('start')
       }
       this.directives = []
       logger.log(`${this.appId} exit because exe complete`)
+      // exit self. nothing to do
       this.emit('exit')
     })
   })
@@ -93,12 +108,16 @@ Skill.prototype.handleEvent = function () {
       action: 'resume',
       data: {}
     }], 'frontend')
+    this.paused = false
     if (this.directives.length > 0) {
       this.task++
       this.exe.execute(this.directives, 'frontend', () => {
         this.task--
         if (this.paused === true) {
           return
+        }
+        if (this.shouldEndSession) {
+          return this.emit('exit')
         }
         if (this.task > 0) {
           return
@@ -110,7 +129,6 @@ Skill.prototype.handleEvent = function () {
         this.emit('exit')
       })
     }
-    this.paused = false
   })
   this.on('destroy', () => {
     logger.log(this.appId + ' emit destroy')
