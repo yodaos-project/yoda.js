@@ -16,6 +16,7 @@ module.exports = function (activity) {
   var STRING_BROADCAST = '蓝牙已打开，请使用手机搜索设备'
   var STRING_CONNECED = '已连接上你的'
   var STRING_CLOSED = '蓝牙已关闭'
+  var BLUETOOTH_MUSIC_ID = 'RDDE53259D334860BA9E98CB3AB6C001'
 
   function broadcast () {
     player = bluetooth.getPlayer()
@@ -44,7 +45,7 @@ module.exports = function (activity) {
       logger.debug('stateupdate', message)
       if (message.play_state === 'played') {
         playState = true
-        return activity.setForeground('scene')
+        return activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
       }
       if (bluetoothState === 'connected' && message.connect_state === 'disconnected') {
         bluetoothState = 'disconnected'
@@ -82,7 +83,7 @@ module.exports = function (activity) {
   }
 
   function startMusic () {
-    activity.setForeground('scene').then(() => {
+    activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID }).then(() => {
       player = bluetooth.getPlayer()
       if (player && bluetoothState === 'connected') {
         playState = true
@@ -157,7 +158,7 @@ module.exports = function (activity) {
         disconnect()
         break
       case 'play_bluetoothmusic':
-        activity.openUrl(`yoda-skill://bluetooth/bluetooth_start_bluetooth_music`, 'scene')
+        activity.openUrl(`yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music`, 'scene')
         break
       case 'next':
         nextMusic()
