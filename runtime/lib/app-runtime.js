@@ -275,7 +275,7 @@ AppRuntime.prototype.handleAsrFake = function handleAsrFake () {
  * @private
  */
 AppRuntime.prototype.handleNlpResult = function handleNlpResult (data) {
-  this.resetAppearance({ unmute: true })
+  clearTimeout(this.handle.setVolume)
   this.onVoiceCommand(data.asr, data.nlp, data.action)
 }
 
@@ -467,7 +467,16 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve()
   }
 
-  return this.life.createApp(appId)
+  var future = Promise.resolve()
+  var prevId = this.life.getCurrentAppId()
+  if (prevId) {
+    future = Promise.all([
+      this.ttsMethod('stop', [ prevId ]),
+      this.multimediaMethod('pause', [ prevId ])
+    ])
+  }
+
+  return future.then(() => this.life.createApp(appId))
     .then(() => {
       if (!preemptive) {
         logger.info(`app is not preemptive, skip activating app ${appId}`)
@@ -478,7 +487,10 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
       this.updateCloudStack(nlp.appId, form)
       return this.life.activateAppById(appId, form, carrierId)
     })
-    .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
+    .then(() => Promise.all([
+      this.life.onLifeCycle(appId, 'request', [ nlp, action ]),
+      this.resetAppearance({ unmute: true })
+    ]))
     .catch((error) => {
       logger.error(`create app error with appId: ${appId}`, error)
       return this.life.destroyAppById(appId, { force: true })
@@ -1190,16 +1202,18 @@ AppRuntime.prototype.doLogin = function () {
     return Promise.all(ids.map(it => this.life.onLifeCycle(it, 'ready')))
   }
 
-  return this.startDaemonApps()
-    .then(sendReady, err => {
-      logger.error('Unexpected error on starting daemon apps', err.stack)
-      return sendReady()
-    })
-    .then(() => this.initiate(), err => logger.error('Unexpected error on destroying all apps', err.stack))
-    .then(deferred, err => {
-      logger.error('Unexpected error on runtime.initiate', err.stack)
-      return deferred()
-    })
+  return Promise.all([
+    this.startDaemonApps()
+      .then(sendReady, err => {
+        logger.error('Unexpected error on starting daemon apps', err.stack)
+        return sendReady()
+      }).catch(err => logger.error('Unexpected error on destroying all apps', err.stack)),
+    this.initiate()
+      .then(deferred, err => {
+        logger.error('Unexpected error on runtime.initiate', err.stack)
+        return deferred()
+      })
+  ])
 }
 
 /**
