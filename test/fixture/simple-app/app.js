@@ -9,13 +9,22 @@ var eventProxy = new EventEmitter()
  * @param {YodaRT.Activity} activity
  */
 module.exports = function (activity) {
-  ;['create', 'pause', 'resume', 'destroy', 'request'].forEach(eve => {
+  ;['create', 'pause', 'resume', 'destroy', 'request', 'test-ack'].forEach(eve => {
     activity.on(eve, function onEvent () {
       EventEmitter.prototype.emit.apply(
         eventProxy,
         [ eve ].concat(Array.prototype.slice.call(arguments, 0)))
     })
   })
+
+  ;['end'].forEach(eve => {
+    activity.tts.on(eve, function onEvent () {
+      EventEmitter.prototype.emit.apply(
+        eventProxy,
+        [ 'tts:' + eve ].concat(Array.prototype.slice.call(arguments, 0)))
+    })
+  })
+
   activity.on('test-invoke', (method, params) => {
     activity[method].apply(activity, params)
       .then(res => eventProxy.emit('test', {
