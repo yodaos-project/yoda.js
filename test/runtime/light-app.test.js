@@ -11,51 +11,57 @@ var proxy = require('../fixture/simple-app').proxy
 
 var target = path.join(helper.paths.fixture, 'simple-app')
 var ActivityDescriptor = Descriptors.ActivityDescriptor
-var MultimediaDescriptor = Descriptors.MultimediaDescriptor
-var LightDescriptor = Descriptors.LightDescriptor
-var TtsDescriptor = Descriptors.TtsDescriptor
 
 Object.assign(ActivityDescriptor.prototype, {
   'test-invoke': {
     type: 'event'
+  },
+  'test-ack': {
+    type: 'event-ack',
+    trigger: 'onTestAck'
   }
 })
 
-test('should listen all events', t => {
+test('should listen no events if no listener presents', t => {
   proxy.removeAllListeners()
   var runtime = new EventEmitter()
-  var descriptors = [ActivityDescriptor, MultimediaDescriptor, LightDescriptor, TtsDescriptor]
+  lightApp('@test', path.join(helper.paths.fixture, 'noop-app'), runtime)
+    .then(descriptor => {
+      t.strictEqual(descriptor.listeners().length, 0)
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('should listen events in need', t => {
+  proxy.removeAllListeners()
+  var runtime = new EventEmitter()
   lightApp('@test', target, runtime)
     .then(descriptor => {
-      descriptors.forEach(des => {
-        var events = Object.keys(des.prototype).filter(key => {
-          var desc = des.prototype[key]
-          return desc.type === 'event'
-        })
-        var listenDesc
-        var name
-        switch (des) {
-          case ActivityDescriptor:
-            listenDesc = descriptor
-            name = 'activity'
-            break
-          case MultimediaDescriptor:
-            listenDesc = descriptor.media
-            name = 'media'
-            break
-          case LightDescriptor:
-            listenDesc = descriptor.light
-            name = 'light'
-            break
-          case TtsDescriptor:
-            listenDesc = descriptor.tts
-            name = 'tts'
-            break
-        }
-        events.forEach(it => {
-          t.assert(listenDesc.listeners(it).length > 0, `${name} event '${it}' should have been listened.`)
-        })
+      ;['create', 'pause', 'resume', 'destroy', 'request'].forEach(it => {
+        t.assert(descriptor.listeners(it).length > 0, `listener of '${it}' shall presents.`)
       })
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('should listen events in nested namespaces in need', t => {
+  proxy.removeAllListeners()
+  var runtime = new EventEmitter()
+  lightApp('@test', target, runtime)
+    .then(descriptor => {
+      t.assert(descriptor.tts.listeners('end').length > 0, `listener of 'tts.end' shall presents.`)
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
       t.end()
     })
 })
@@ -65,13 +71,11 @@ test('should subscribe event-ack', t => {
   var runtime = new EventEmitter()
   lightApp('@test', target, runtime)
     .then(descriptor => {
-      var activityEvents = Object.keys(ActivityDescriptor.prototype).filter(key => {
-        var desc = ActivityDescriptor.prototype[key]
-        return desc.type === 'event-ack'
-      })
+      var activityEvents = ['test-ack']
 
       activityEvents.forEach(it => {
-        var eventDescriptor = descriptor[it]
+        var eventDescriptor = ActivityDescriptor.prototype[it]
+        console.log(eventDescriptor)
         t.strictEqual(typeof descriptor[eventDescriptor.trigger], 'function',
           `event-ack '${it}' should have been subscribed.`)
       })

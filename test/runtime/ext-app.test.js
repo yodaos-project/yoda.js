@@ -9,10 +9,7 @@ var Descriptors = require(`${helper.paths.runtime}/lib/app/activity-descriptor`)
 var extApp = require(`${helper.paths.runtime}/lib/app/ext-app`)
 
 var ActivityDescriptor = Descriptors.ActivityDescriptor
-var MultimediaDescriptor = Descriptors.MultimediaDescriptor
-var TtsDescriptor = Descriptors.TtsDescriptor
 var LightDescriptor = Descriptors.LightDescriptor
-var KeyboardDescriptor = Descriptors.KeyboardDescriptor
 
 Object.assign(ActivityDescriptor.prototype, {
   testMethod: {
@@ -69,7 +66,6 @@ test('create ext-app: appHome is null', t => {
   extApp('@test/ipc-test', null, runtime).then(descriptor => {
     t.fail('appHome is null')
   }, err => {
-    console.log(err)
     t.ok(err !== null)
     t.end()
   })
@@ -80,59 +76,56 @@ test('create ext-app: runtime is err path', t => {
   extApp('@test/ipc-test', appHome, null).then(descriptor => {
     t.fail('appHome is err path')
   }, err => {
-    console.log(err)
     t.ok(err !== null)
     t.end()
   })
 })
 
-test('should listen events', t => {
+test('should listen no events if no listener presents', t => {
+  var target = path.join(helper.paths.fixture, 'noop-app')
+
+  var runtime = new EventEmitter()
+  extApp('@test', target, runtime)
+    .then(descriptor => {
+      t.strictEqual(descriptor.listeners().length, 0)
+      descriptor.destruct()
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('should listen events in need', t => {
   var target = path.join(helper.paths.fixture, 'simple-app')
 
   var runtime = new EventEmitter()
   extApp('@test', target, runtime)
     .then(descriptor => {
-      console.log(descriptor)
-      var activityEvents = Object.keys(ActivityDescriptor.prototype).filter(key => {
-        var desc = ActivityDescriptor.prototype[key]
-        return desc.type === 'event'
+      ;['create', 'pause', 'resume', 'destroy', 'request'].forEach(it => {
+        t.assert(descriptor.listeners(it).length > 0, `listener of '${it}' shall presents.`)
       })
-      var multimediaEvents = Object.keys(MultimediaDescriptor.prototype).filter(key => {
-        var desc = MultimediaDescriptor.prototype[key]
-        return desc.type === 'event'
-      })
-      var ttsEvent = Object.keys(TtsDescriptor.prototype).filter(key => {
-        var desc = TtsDescriptor.prototype[key]
-        return desc.type === 'event'
-      })
-      var lightEvent = Object.keys(LightDescriptor.prototype).filter(key => {
-        var desc = LightDescriptor.prototype[key]
-        return desc.type === 'event'
-      })
-      var keyboardEvent = Object.keys(KeyboardDescriptor.prototype).filter(key => {
-        var desc = KeyboardDescriptor.prototype[key]
-        return desc.type === 'event'
-      })
-
-      activityEvents.forEach(it => {
-        t.assert(descriptor.listeners(it).length > 0, `event '${it}' should have been listened.`)
-      })
-      multimediaEvents.forEach(it => {
-        t.assert(descriptor.media.listeners(it).length > 0, `media event '${it}' should have been listened.`)
-      })
-      ttsEvent.forEach(it => {
-        t.assert(descriptor.tts.listeners(it).length > 0, `tts event ${it} should have been listened.`)
-      })
-      lightEvent.forEach(it => {
-        t.assert(descriptor.light.listeners(it).length > 0, `light event ${it} should have been listened.`)
-      })
-      keyboardEvent.forEach(it => {
-        t.assert(descriptor.keyboard.listeners(it).length > 0, `keyboard event ${it} should have been listened.`)
-      })
-
       descriptor.destruct()
       t.end()
-    }, err => {
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('should listen events in nested namespaces in need', t => {
+  var target = path.join(helper.paths.fixture, 'simple-app')
+
+  var runtime = new EventEmitter()
+  extApp('@test', target, runtime)
+    .then(descriptor => {
+      t.assert(descriptor.tts.listeners('end').length > 0, `listener of 'tts.end' shall presents.`)
+      descriptor.destruct()
+      t.end()
+    })
+    .catch(err => {
       t.error(err)
       t.end()
     })
@@ -173,8 +166,6 @@ test('add test method, return reject', t => {
       t.equal(descriptor.light.lighttest.returns, 'promise')
       descriptor.emit('light-test', 'lighttest', -9)
       descriptor._childProcess.on('message', message => {
-        console.log('message')
-        console.log(message)
         if (message.type !== 'test' && message.event !== 'invoke') {
           return
         }
@@ -193,7 +184,6 @@ test('add descriptor type = value', t => {
   var runtime = new EventEmitter()
   extApp('@test', target, runtime)
     .then(descriptor => {
-      console.log(descriptor)
       descriptor.emit('resume', 'testValueString', 'testValueObject', 'testValueNumber')
       descriptor._childProcess.on('message', message => {
         t.equal(message.string, descriptor.testValueString.value, 'string')
@@ -204,7 +194,6 @@ test('add descriptor type = value', t => {
       descriptor.destruct()
       t.end()
     }, err => {
-      console.log('testtest test')
       t.error(err)
       t.end()
     })

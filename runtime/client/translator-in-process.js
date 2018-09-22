@@ -33,6 +33,7 @@ var EventEmitter = require('events')
 var PropertyDescriptions = {
   namespace: function Namespace (name, descriptor/** , namespace, nsProfile */) {
     var ns = new EventEmitter()
+    var events = []
     Object.keys(descriptor).forEach(step)
     /**
      * Since descriptions of activity descriptor are attached to ActivityDescriptor.prototype,
@@ -48,11 +49,24 @@ var PropertyDescriptions = {
       if (descriptorTypes.indexOf(propDescriptor.type) < 0) {
         return
       }
+      if ([ 'event', 'event-ack' ].indexOf(propDescriptor.type) >= 0) {
+        events.push(key)
+        return
+      }
       var ret = PropertyDescriptions[propDescriptor.type](key, propDescriptor, ns, descriptor)
       if (propDescriptor.type !== 'event') {
         ns[key] = ret
       }
     }
+
+    ns.on('newListener', event => {
+      var idx = events.indexOf(event)
+      if (idx < 0) {
+        return
+      }
+      var propDescriptor = descriptor[event]
+      PropertyDescriptions[propDescriptor.type](event, propDescriptor, ns, descriptor)
+    })
     return ns
   },
   method: function Method (name, descriptor, namespace, nsDescriptor) {
