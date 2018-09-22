@@ -70,6 +70,7 @@ function main () {
 
   var appId = pkg.name
 
+  logger = require('logger')(`entry-${appId}`)
   keepAlive(appId)
 
   getActivityDescriptor(appId)
@@ -94,3 +95,8 @@ function main () {
 
 module.exports = main
 main()
+
+process.once('disconnect', () => {
+  logger.info('IPC disconnected, exiting self.')
+  process.exit(233)
+})
