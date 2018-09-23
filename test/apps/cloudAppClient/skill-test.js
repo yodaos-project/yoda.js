@@ -1,5 +1,6 @@
+'use strict'
+
 var test = require('tape')
-var EventEmitter = require('events').EventEmitter
 var helper = require('../../helper')
 var Skill = require(`${helper.paths.apps}/cloudappclient/skill.js`)
 
