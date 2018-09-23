@@ -1,7 +1,7 @@
 'use strict'
 
 var fs = require('fs')
-var property = require('property')
+var property = require('@yoda/property')
 var logger = require('logger')('watchdog')
 
 var WATCHDOG_NODE = '/dev/watchdog'
