@@ -3,6 +3,13 @@
 var logger = require('logger')('main')
 
 require('@yoda/oh-my-little-pony').catchUncaughtError('/data/system/yodart-err.log')
+require('./watchdog').startFeeding((err) => {
+  if (err) {
+    logger.error(`watchdog failed to create(${err && err.message}), just exits`)
+    process.exit(1)
+  }
+})
+
 var property = require('@yoda/property')
 var CloudGW = require('@yoda/cloudgw')
 var floraFactory = require('@yoda/flora')
