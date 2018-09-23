@@ -17,7 +17,7 @@ var PLAYERCACHE = new LRU({
   max: 1,
   dispose: function (key, val) {
     try {
-      val._stop()
+      val.stop()
     } catch (error) {
       logger.log(`PlayerCache: try to stop ${key} error`)
     }
@@ -135,7 +135,7 @@ LightRenderingContext.prototype.sound = function (uri, self) {
   } else {
     sounder = new MediaPlayer(AudioManager.STREAM_SYSTEM)
     sounder.start(absPath)
-    PLAYERCACHE.set(absPath, sounder)
+    cache.set(absPath, sounder)
   }
 
   mockPlayer.stop = function () {
