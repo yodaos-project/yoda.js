@@ -6,35 +6,33 @@
 
 var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
-var AudioManager = require('@yoda/audio').AudioManager
 var inherits = require('util').inherits
 var Url = require('url')
 
+var logger = require('logger')('yoda')
+
 var _ = require('@yoda/util')._
 var safeParse = require('@yoda/util').json.safeParse
-var logger = require('logger')('yoda')
+var AudioManager = require('@yoda/audio').AudioManager
 var ota = require('@yoda/ota')
+var CloudGW = require('@yoda/cloudgw')
 var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
 var system = require('@yoda/system')
-var floraFactory = require('@yoda/flora')
 
+var dbusConfig = require('../dbus-config.json')
+
+var CloudApi = require('./cloudapi')
 var env = require('./env')()
 var perf = require('./performance')
-var dbusConfig = require('../dbus-config.json')
-var floraConfig = require('../flora-config.json')
 var DbusRemoteCall = require('./dbus-remote-call')
 var DbusAppExecutor = require('./app/dbus-app-executor')
 var Permission = require('./component/permission')
 var AppLoader = require('./component/app-loader')
+var Flora = require('./component/flora')
 var Keyboard = require('./component/keyboard')
 var Lifetime = require('./component/lifetime')
 var Wormhole = require('./component/wormhole')
-
-var floraClient
-var asr2nlpId = 'js-AppRuntime'
-var floraCallbacks = []
-var asr2nlpSeq = 0
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -63,17 +61,15 @@ function AppRuntime () {
   this.prevVolume = -1
   this.micMuted = false // microphone was reset on runtime start up
   this.handle = {}
-  this.cloudApi = null // support cloud api. etc.. login
+  this.cloudApi = CloudApi // support cloud api. etc.. login
   this.online = undefined // to identify the first start
   this.login = undefined // to identify is login or not
   this.waitingForAwake = undefined // to identify network switch from connected to disconnected
   this.forceUpdateAvailable = false
-  this.voiceCtx = {
-    lastFaked: false
-  }
 
   this.dbusSignalRegistry = new EventEmitter()
 
+  this.flora = new Flora(this)
   // manager app's permission
   this.permission = new Permission(this)
   // handle keyboard/button events
@@ -96,6 +92,8 @@ AppRuntime.prototype.init = function init (paths) {
   if (this.inited) {
     return Promise.resolve()
   }
+  this.flora.init()
+  this.flora.turenMute(false)
 
   this.startDbusAppService()
   this.listenDbusSignals()
@@ -574,7 +572,7 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute) {
   /** mute */
   var muted = !this.micMuted
   this.micMuted = muted
-  this.emit('micMute', muted)
+  this.flora.turenMute(muted)
   if (muted) {
     return this.openUrl('yoda-skill://volume/mic_mute_effect', { preemptive: false })
       .then(() => muted)
@@ -686,14 +684,15 @@ AppRuntime.prototype.updateCloudStack = function (skillId, form, options) {
     }
     return it
   })
-  this.emit('setStack', ids.join(':'))
+  var stack = ids.join(':')
+  this.flora.updateStack(stack)
 }
 
 AppRuntime.prototype.resetCloudStack = function () {
   this.domain.cut = ''
   this.domain.scene = ''
   this.domain.active = ''
-  this.emit('setStack', this.domain.scene + ':' + this.domain.cut)
+  this.flora.updateStack(this.domain.scene + ':' + this.domain.cut)
 }
 
 /**
@@ -702,7 +701,7 @@ AppRuntime.prototype.resetCloudStack = function () {
  * @private
  */
 AppRuntime.prototype.setPickup = function (isPickup, duration) {
-  this.emit('setPickup', isPickup)
+  this.flora.turenPickup(isPickup)
   if (isPickup !== true) {
     return Promise.resolve()
   }
@@ -713,9 +712,6 @@ AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs)
   var currAppId = this.life.getCurrentAppId()
   if (currAppId !== appId) {
     return Promise.reject(new Error(`App is not currently active app, active app: ${currAppId}.`))
-  }
-  if (this.cloudApi == null) {
-    return Promise.reject(new Error('CloudApi not ready.'))
   }
   return new Promise((resolve, reject) => {
     this.cloudApi.sendConfirm(this.domain.active, intent, slot, options, attrs, (error) => {
@@ -1148,7 +1144,44 @@ AppRuntime.prototype.reconnect = function () {
     this.waitingForAwake = false
   }
   this.lightMethod('setConfigFree', ['system'])
-  this.emit('reconnected')
+
+  logger.log('yoda reconnecting')
+
+  // login -> mqtt
+  this.cloudApi.connect((code, msg) => {
+    this.handleCloudEvent({
+      code: code,
+      msg: msg
+    })
+  }).then((mqttAgent) => {
+    // load the system configuration
+    var config = mqttAgent.config
+    var options = {
+      uri: env.speechUri,
+      key: config.key,
+      secret: config.secret,
+      deviceTypeId: config.deviceTypeId,
+      deviceId: config.deviceId
+    }
+    var cloudgw = new CloudGW(options)
+    require('@yoda/ota/network').cloudgw = cloudgw
+    this.cloudApi.updateBasicInfo(cloudgw)
+      .catch(err => {
+        logger.error('Unexpected error on updating basic info', err.stack)
+      })
+    this.flora.updateSpeechPrepareOptions(options)
+
+    // implementation interface
+    var props = Object.assign({}, config, {
+      masterId: property.get('persist.system.user.userId')
+    })
+    this.onGetPropAll = () => props
+    this.doLogin()
+    this.wormhole.init(mqttAgent)
+    this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
+  }).catch((err) => {
+    logger.error('initializing occurrs error', err && err.stack)
+  })
 }
 
 /**
@@ -1224,7 +1257,7 @@ AppRuntime.prototype.doLogin = function () {
 AppRuntime.prototype.mockAsr = function mockAsr (text) {
   logger.info('Mocking asr', text)
   return new Promise((resolve, reject) => {
-    this.getNlpResult(text, (err, nlp, action) => {
+    this.flora.getNlpResult(text, (err, nlp, action) => {
       if (err) {
         return reject(err)
       }
@@ -1519,76 +1552,5 @@ AppRuntime.prototype.startDbusAppService = function () {
 
 AppRuntime.prototype.destruct = function destruct () {
   this.keyboard.destruct()
-}
-
-function handleErrorCallbacks (cbs, msg) {
-  var cb
-  var err = new Error(msg)
-
-  for (cb in cbs) {
-    cb(err)
-  }
-}
-
-function getFloraClient () {
-  if (floraClient) { return floraClient }
-  floraClient = floraFactory.connect(floraConfig.uri, floraConfig.bufsize)
-  if (!floraClient) {
-    logger.log('connect flora service failed')
-    return undefined
-  }
-  var subNames = [
-    'rokid.speech.nlp.' + asr2nlpId,
-    'rokid.speech.error.' + asr2nlpId
-  ]
-  floraClient.on('recv_post', function (name, type, msg) {
-    var nlp
-    var action
-    var err
-    var idx
-    if (name === subNames[0]) {
-      try {
-        nlp = JSON.parse(msg.get(0))
-        action = JSON.parse(msg.get(1))
-        idx = msg.get(2)
-      } catch (ex) {
-        logger.log('nlp/action parse failed, discarded')
-        err = ex
-      }
-    } else {
-      err = new Error('speech put_text return error: ' + msg.get(0))
-      idx = msg.get(1)
-    }
-    if (typeof floraCallbacks[idx] === 'function') {
-      floraCallbacks[idx](err, nlp, action)
-      delete floraCallbacks[idx]
-    }
-  })
-  floraClient.subscribe(subNames[0], floraFactory.MSGTYPE_INSTANT)
-  floraClient.subscribe(subNames[1], floraFactory.MSGTYPE_INSTANT)
-  floraClient.on('disconnected', function () {
-    logger.log('flora disconnected')
-    floraClient.close()
-    floraClient = undefined
-    var cbs = floraCallbacks
-    // clear pending callback functions
-    floraCallbacks = []
-    process.nextTick(() => handleErrorCallbacks(cbs, 'flora client disconnected'))
-  })
-  return floraClient
-}
-
-AppRuntime.prototype.getNlpResult = function (asr, cb) {
-  if (typeof asr !== 'string' || typeof cb !== 'function') { return }
-  var cli = getFloraClient()
-  if (cli) {
-    var caps = new floraFactory.Caps()
-    caps.write(asr)
-    caps.write(asr2nlpId)
-    caps.writeInt32(asr2nlpSeq)
-    floraCallbacks[asr2nlpSeq++] = cb
-    cli.post('rokid.speech.put_text', caps, floraFactory.MSGTYPE_INSTANT)
-  } else {
-    process.nextTick(() => cb(new Error('flora service connect failed')))
-  }
+  this.flora.destruct()
 }
