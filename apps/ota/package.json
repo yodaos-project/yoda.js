@@ -6,10 +6,17 @@
   "metadata": {
     "skills": [
       "@ota",
-      "R07D6E0137294FFBBFEF623315220FD4"
+      "R07D6E0137294FFBBFEF623315220FD4",
+      "com.rokid.system.upgrade"
     ],
     "permission": [
       "ACCESS_TTS"
+    ],
+    "hosts": [
+      {
+        "name": "ota",
+        "skillId": "@ota"
+      }
     ]
   },
   "scripts": {
