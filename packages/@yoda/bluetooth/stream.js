@@ -101,24 +101,7 @@ BluetoothMessageStream.prototype._send = function (cmdstr, name) {
  */
 BluetoothMessageStream.prototype.start = function start (name, always, onerror) {
   if (always) {
-    var count = 0
-    var timer = setInterval(() => {
-      if (count >= 20) {
-        clearInterval(timer)
-        // throw the connect error.
-        var err = new Error('bluetooth connect failed')
-        if (typeof onerror === 'function') {
-          onerror(err)
-        } else {
-          throw err
-        }
-      } else {
-        count += 1
-        this.start(name)
-      }
-    })
-    this.once('opened', () => clearInterval(timer))
-    this.start(name)
+    helper.startWithRetry(name, this, onerror, 20)
   } else {
     this._end = false
     this._send('ON', name)
@@ -130,18 +113,14 @@ BluetoothMessageStream.prototype.start = function start (name, always, onerror) 
  */
 BluetoothMessageStream.prototype.end = function end () {
   this._end = true
-  return this._send('OFF')
+  process.nextTick(() => this._send('OFF'))
 }
 
 /**
  * disconnect the event socket
  */
 BluetoothMessageStream.prototype.disconnect = function disconnect () {
-  this.end()
-  this.removeAllListeners()
-  process.nextTick(() => {
-    this._eventSocket.close()
-  })
+  return helper.disconnectAfterClose(this, 2000)
 }
 
 /**
