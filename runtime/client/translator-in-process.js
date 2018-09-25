@@ -89,10 +89,11 @@ var PropertyDescriptions = {
       throw new Error(`Double subscription on event-ack descriptor '${name}'.`)
     }
     nsDescriptor[descriptor.trigger] = function onEventTrigger () {
+      var params = Array.prototype.slice.call(arguments, 0)
       return Promise.resolve().then(() =>
         EventEmitter.prototype.emit.apply(
           namespace,
-          [ name ].concat(Array.prototype.slice.call(arguments, 0))
+          [ name ].concat(params)
         )
       )
     }
