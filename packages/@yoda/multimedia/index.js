@@ -144,7 +144,9 @@ MediaPlayer.prototype.start = function (uri) {
   if (!uri) {
     throw new Error('url must be a valid string')
   }
-  return this._handle.prepare(uri)
+  this._uri = uri
+  this._handle.prepare(uri)
+  this._prepared = true
 }
 
 /**
@@ -154,6 +156,7 @@ MediaPlayer.prototype.start = function (uri) {
  * > Don't use the instance anymore when you stopped it.
  */
 MediaPlayer.prototype.stop = function () {
+  this._prepared = false
   return this._handle.stop()
 }
 
@@ -168,6 +171,9 @@ MediaPlayer.prototype.pause = function () {
  * resume the paused media.
  */
 MediaPlayer.prototype.resume = function () {
+  if (this._uri && this._prepared !== true) {
+    return this.start(this._uri)
+  }
   return this._handle.resume()
 }
 
