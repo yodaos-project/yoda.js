@@ -290,11 +290,16 @@ function checkDiskAvailability (imageSize, destPath, callback) {
  */
 function downloadImage (info, callback) {
   var dest = getImagePath(info)
+  var totalSize
   compose([
     cb => otaNetwork.fetchImageSize(info.imageUrl, cb),
-    (cb, imageSize) => checkDiskAvailability(imageSize, dest, cb),
+    (cb, imageSize) => {
+      totalSize = imageSize
+      checkDiskAvailability(imageSize, dest, cb)
+    },
     cb => {
       info.status = 'downloading'
+      info.totalSize = totalSize
       writeInfo(info, cb)
     },
     cb => otaNetwork.doDownloadImage(info.imageUrl, dest, { noCheckCertificate: true }, cb),
@@ -533,6 +538,64 @@ function getInfoOfPendingUpgrade (callback) {
   })
 }
 
+/**
+ * Get a report for apps presenting current OTA informations.
+ *
+ * @param {Function} callback
+ */
+function getMqttOtaReport (callback) {
+  var localVersion = property.get(systemVersionProp)
+  var newInfo
+  compose([
+    cb => otaNetwork.fetchOtaInfo(localVersion, cb),
+    (cb, info) => {
+      newInfo = info
+      logger.info('got ota info', JSON.stringify(info))
+      if (info.code === 'NO_IMAGE' || !info.version) {
+        /** no available updates */
+        return compose.Break({
+          checkCode: 0,
+          currentVersion: property.get(systemVersionProp),
+          version: property.get(systemVersionProp),
+          changelog: info.changelog
+        })
+      }
+      readInfo(cb)
+    },
+    (cb, info) => {
+      if (info == null ||
+        info.version !== newInfo.version ||
+        info.checksum !== newInfo.checksum) {
+        return cb(null, {
+          checkCode: 1,
+          currentVersion: property.get(systemVersionProp),
+          version: newInfo.version,
+          changelog: newInfo.changelog,
+          updateAvailable: false
+        })
+      }
+      return cb(null, info)
+    },
+    (cb, info) => {
+      var imgPath = getImagePath(info)
+      fs.stat(imgPath, (err, stat) => {
+        if (err) {
+          return cb(null, info)
+        }
+        cb(null, {
+          checkCode: 1,
+          currentVersion: property.get(systemVersionProp),
+          version: info.version,
+          changelog: info.changelog,
+          downloadedSize: stat.size,
+          downloadProgress: stat.size / info.totalSize,
+          updateAvailable: stat.size === info.totalSize
+        })
+      })
+    }
+  ], callback)
+}
+
 module.exports.getImagePath = getImagePath
 module.exports.readInfo = readInfo
 module.exports.readInfoAndClear = readInfoAndClear
@@ -547,6 +610,7 @@ module.exports.runInBackground = runInBackground
 module.exports.getAvailableInfo = getAvailableInfo
 module.exports.getInfoIfFirstUpgradedBoot = getInfoIfFirstUpgradedBoot
 module.exports.getInfoOfPendingUpgrade = getInfoOfPendingUpgrade
+module.exports.getMqttOtaReport = getMqttOtaReport
 Object.assign(module.exports, otaNetwork)
 /**
  * Change ota working directory in unit tests

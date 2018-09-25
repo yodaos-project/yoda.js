@@ -1,5 +1,6 @@
 'use strict'
 
+var _ = require('@yoda/util')._
 var ota = require('@yoda/ota')
 var system = require('@yoda/system')
 var logger = require('logger')('otap')
@@ -21,13 +22,25 @@ var intentHandler = {
  */
 module.exports = function (activity) {
   activity.on('request', function (nlp, action) {
-    var handler = intentHandler[nlp.intent]
+    var intent = nlp.intent
+    if (intent === 'RokidAppChannelForward') {
+      intent = _.get(nlp, 'forwardContent.intent')
+    }
+    var handler = intentHandler[intent]
     if (handler == null) {
       return activity.tts.speak('什么升级')
         .then(() => activity.exit())
     }
     logger.info(`OtaApp got nlp ${nlp.intent}`)
     handler(activity, nlp, action)
+  })
+
+  activity.on('url', function (url) {
+    switch (url.pathname) {
+      case '/mqtt/check_update':
+        mqttCheckUpdate(activity)
+        break
+    }
   })
 }
 
@@ -109,4 +122,17 @@ function forceUpgrade (activity, nlp) {
   }
   activity.tts.speak(info.changelog)
     .then(() => system.reboot())
+}
+
+function mqttCheckUpdate (activity) {
+  ota.getMqttOtaReport(function onReport (error, report) {
+    if (error) {
+      logger.error('mqtt check update', error)
+      return
+    }
+    if (report.checkCode !== 0 && !report.updateAvailable) {
+      ota.runInBackground()
+    }
+    activity.wormhole.sendToApp('sys_update_available', report)
+  })
 }

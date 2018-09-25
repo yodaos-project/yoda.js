@@ -2,7 +2,6 @@
 
 var logger = require('logger')('wormhole')
 var AudioManager = require('@yoda/audio').AudioManager
-var ota = require('@yoda/ota')
 
 module.exports = Wormhole
 function Wormhole (runtime) {
@@ -67,7 +66,7 @@ Wormhole.prototype.handlers = {
   },
   sys_update_available: function () {
     logger.info('received upgrade command from mqtt, running ota in background.')
-    ota.runInBackground()
+    this.runtime.openUrl('yoda-skill://ota/mqtt/check_update', { preemptive: false })
   },
   reset_settings: function (data) {
     this.runtime.onResetSettings()
