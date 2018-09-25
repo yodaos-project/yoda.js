@@ -1,7 +1,7 @@
 'use strict'
 
 var bluetooth = require('@yoda/bluetooth')
-var logger = require('logger')('eventReq')
+var logger = require('logger')('bluetooth')
 var property = require('@yoda/property')
 var wifi = require('@yoda/wifi')
 
