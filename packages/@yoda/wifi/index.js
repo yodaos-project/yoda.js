@@ -17,33 +17,33 @@ var keyMethods = {
 /**
  * Describe the WI-FI information.
  * @typedef WifiInfo
- * @property {String} ssid - The ssid of the router.
- * @property {Number} signal - The signal of the router, it's range are (0, -100).
+ * @property {string} ssid - The ssid of the router.
+ * @property {number} signal - The signal of the router, it's range are (0, -100).
  */
 
 module.exports = {
   /**
-   * @var WIFI_INIVATE {Number} - wifi is invalid
+   * @var WIFI_INIVATE {number} - wifi is invalid
    */
   WIFI_INIVATE: 0,
   /**
-   * @var WIFI_SCANING {Number} - wifi is scanning, just waiting
+   * @var WIFI_SCANING {number} - wifi is scanning, just waiting
    */
   WIFI_SCANING: 1,
   /**
-   * @var WIFI_CONNECTED {Number} - wifi is connected.
+   * @var WIFI_CONNECTED {number} - wifi is connected.
    */
   WIFI_CONNECTED: 2,
   /**
-   * @var WIFI_UNCONNECTED {Number} - the wifi is disconnected.
+   * @var WIFI_UNCONNECTED {number} - the wifi is disconnected.
    */
   WIFI_UNCONNECTED: 3,
   /**
-   * @var NETSERVER_CONNECTED {Number} - the networking is connected.
+   * @var NETSERVER_CONNECTED {number} - the networking is connected.
    */
   NETSERVER_CONNECTED: 4,
   /**
-   * @var NETSERVER_UNCONNECTED {Number} - the networking is disconnected.
+   * @var NETSERVER_UNCONNECTED {number} - the networking is disconnected.
    */
   NETSERVER_UNCONNECTED: 5,
   /**
@@ -52,11 +52,11 @@ module.exports = {
    * is connected in interval.
    *
    * @function joinNetwork
-   * @param {String} ssid - the wifi name
-   * @param {String} [psk] - the wifi psk, an empty string or blanks would be ignored.
-   * @param {String} [method=WPA2PSK] - the key method, available
+   * @param {string} ssid - the wifi name
+   * @param {string} [psk] - the wifi psk, an empty string or blanks would be ignored.
+   * @param {string} [method=WPA2PSK] - the key method, available
    *                 methods are: "WPA2PSK", "WPAPSK", "WEP", "NONE".
-   * @returns {Number}
+   * @returns {number}
    * @throws {Error} ssid must be a string.
    * @example
    * var wifi = require('@yoda/wifi')
@@ -82,7 +82,7 @@ module.exports = {
   /**
    * Get current wifi state.
    * @function getWifiState
-   * @returns {Number} available numbers are "WIFI_INIVATE", "WIFI_SCANING",
+   * @returns {number} available numbers are "WIFI_INIVATE", "WIFI_SCANING",
    *                   "WIFI_CONNECTED" and "WIFI_UNCONNECTED".
    * @example
    * var wifi = require('@yoda/wifi')
@@ -94,7 +94,7 @@ module.exports = {
   /**
    * Get current networking state.
    * @function getNetworkState
-   * @returns {Number} the same to getWifiState but for networking.
+   * @returns {number} the same to getWifiState but for networking.
    * @example
    * var wifi = require('@yoda/wifi')
    * if (wifi.getNetworkState() === wifi.NETSERVER_CONNECTED) {
@@ -109,33 +109,43 @@ module.exports = {
    */
   getWifiList: native.getWifiList,
   /**
-   * Disable all the WI-FI.
+   * Enable scaning the WI-FI passively, it starts to scan and connect from histroy
+   * list automatically once the connection state is disconnected.
+   *
+   * @function enableScanPassively
+   * @returns {number} the status code.
+   */
+  enableScanPassively: native.enableScanPassively,
+  /**
+   * Disable the WI-FI.
+   * It is to disconnect the current WI-FI, and doesn't do any scan after that.
+   *
    * @function disableAll
-   * @returns {Number} the status code.
+   * @returns {number} the status code.
    */
   disableAll: native.disableAll,
   /**
    * Reset the DNS resolver, commonly it needs a call when network is connected.
    * @function resetDns
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   resetDns: native.resetDns,
   /**
    * Reset the WIFI, it removes all the history WIFI config.
    * @function resetWifi
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   resetWifi: native.resetWifi,
   /**
    * scan the wifi list, and use `getWifiList()` to get the results.
    * @function scan
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   scan: native.scan,
   /**
    * Save the current WI-FI config in local file, in usual `/etc/wpa_supplicant`.
    * @function save
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   save: native.save
 }

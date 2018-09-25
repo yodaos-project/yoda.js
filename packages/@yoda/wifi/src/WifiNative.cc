@@ -87,6 +87,11 @@ JS_FUNCTION(GetWifiList) {
   return jlist;
 }
 
+JS_FUNCTION(EnableScanPassively) {
+  int r = wifi_enable_all_network();
+  return jerry_create_number(r);
+}
+
 JS_FUNCTION(DisableAll) {
   int r = wifi_disable_all_network();
   return jerry_create_number(r);
@@ -122,6 +127,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "getWifiState", GetWifiState);
   iotjs_jval_set_method(exports, "getNetworkState", GetNetworkState);
   iotjs_jval_set_method(exports, "getWifiList", GetWifiList);
+  iotjs_jval_set_method(exports, "enableScanPassively", EnableScanPassively);
   iotjs_jval_set_method(exports, "disableAll", DisableAll);
   iotjs_jval_set_method(exports, "reconfigure", Reconfigure);
   iotjs_jval_set_method(exports, "resetDns", ResetDns);

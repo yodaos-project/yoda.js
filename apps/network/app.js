@@ -162,6 +162,7 @@ module.exports = function (app) {
               sCode: '-12',
               sMsg: 'wifi连接超时'
             })
+            stopConnectWIFI()
             app.playSound('system://wifi/connect_timeout.ogg')
           } else {
             logger.log('connect wifi success')
@@ -170,6 +171,7 @@ module.exports = function (app) {
               sCode: '11',
               sMsg: 'wifi连接成功'
             })
+            wifi.enableScanPassively()
             wifi.save()
           }
         })
@@ -214,6 +216,7 @@ module.exports = function (app) {
   }
 
   function stopConnectWIFI () {
+    wifi.disableAll()
     clearTimeout(pooling)
     clearTimeout(connectTimeout)
     connecting = false
