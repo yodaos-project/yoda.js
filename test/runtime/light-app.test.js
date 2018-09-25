@@ -68,18 +68,24 @@ test('should listen events in nested namespaces in need', t => {
 
 test('should subscribe event-ack', t => {
   proxy.removeAllListeners()
+  t.plan(3)
   var runtime = new EventEmitter()
+
+  proxy.on('test-ack', (arg1, arg2) => {
+    t.strictEqual(arg1, 'arg1')
+    t.strictEqual(arg2, 'arg2')
+  })
+
   lightApp('@test', target, runtime)
     .then(descriptor => {
-      var activityEvents = ['test-ack']
+      var eventDescriptor = ActivityDescriptor.prototype['test-ack']
 
-      activityEvents.forEach(it => {
-        var eventDescriptor = ActivityDescriptor.prototype[it]
-        console.log(eventDescriptor)
-        t.strictEqual(typeof descriptor[eventDescriptor.trigger], 'function',
-          `event-ack '${it}' should have been subscribed.`)
-      })
+      t.strictEqual(typeof descriptor[eventDescriptor.trigger], 'function',
+        `event-ack test-ack should have been subscribed.`)
 
+      return descriptor[eventDescriptor.trigger]('arg1', 'arg2')
+    })
+    .then(() => {
       t.end()
     })
     .catch(err => {
