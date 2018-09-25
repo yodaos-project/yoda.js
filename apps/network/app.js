@@ -18,8 +18,11 @@ module.exports = function (app) {
     psk: ''
   }
   var connectTimeout, pooling
-
-  var BLE_NAME = 'Rokid-Me-' + uuid.substr(-6)
+  var BLE_NAME = [
+    'Rokid',
+    property.get('ro.rokid.build.productname') || 'Me',
+    uuid.substr(-6)
+  ].join('-')
   logger.log(BLE_NAME)
 
   var WIFI_STATUS = {
