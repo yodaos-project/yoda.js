@@ -47,6 +47,7 @@ module.exports = function (activity) {
   function setVolume (vol, options) {
     var silent = _.get(options, 'silent', false)
     var init = _.get(options, 'init', false)
+    var action = _.get(options, 'action')
 
     logger.info(`trying to set volume to ${vol}`)
     return Promise.all([
@@ -66,6 +67,7 @@ module.exports = function (activity) {
           setUnmute({ recover: false })
         }
 
+        var prevVolume = getVolume()
         AudioManager.setVolume(localVol)
         volume = localVol
         if (init) {
@@ -73,7 +75,7 @@ module.exports = function (activity) {
         }
         return activity.light.play('system://setVolume', {
           volume: localVol,
-          action: _.get(options, 'action')
+          action: action || (localVol <= prevVolume ? 'decrease' : 'increase')
         })
       })(),
       (() => {
