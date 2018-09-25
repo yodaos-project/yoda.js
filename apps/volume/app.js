@@ -186,7 +186,8 @@ module.exports = function (activity) {
         }
         break
       case 'set_volume_percent':
-        speakAndExit(STRING_RANGE_ERROR)
+        setVolume(format(nlp.slots))
+          .then(() => activity.exit())
         break
       case 'set_volume':
         setVolume(format(nlp.slots) * partition)
@@ -238,27 +239,21 @@ module.exports = function (activity) {
     switch (url.pathname) {
       case '/init':
         initVolume()
-          .then(() => activity.exit())
         break
       case '/volume_up':
         incVolume(100 / partition, { silent: silent })
-          .then(() => activity.exit())
         break
       case '/volume_down':
         decVolume(100 / partition, { silent: silent })
-          .then(() => activity.exit())
         break
       case '/unmute':
         setUnmute({ init: /** prevent any possible audio */true })
-          .then(() => activity.exit())
         break
       case '/mic_mute_effect':
         micMute(true)
-          .then(() => activity.exit())
         break
       case '/mic_unmute_effect':
         micMute(false)
-          .then(() => activity.exit())
         break
     }
   })
