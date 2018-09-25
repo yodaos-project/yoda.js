@@ -237,6 +237,7 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
 AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
   // guide the user to double-click the button
   if (this.waitingForAwake === true) {
+    wifi.enableScanPassively()
     this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
     return
   }
