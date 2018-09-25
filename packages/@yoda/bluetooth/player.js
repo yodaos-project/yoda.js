@@ -21,16 +21,41 @@ function BluetoothPlayer () {
       if (this._end) {
         return
       }
+
+      var msg = JSON.parse(buffer + '')
+      if (msg.action === 'volumechange') {
+        /**
+         * When the volume needs to be changed from bluetooth service.
+         * @event module:@yoda/bluetooth.BluetoothPlayer#opened
+         */
+        // FIXME(Yorkie): control volume internally.
+        return this.emit('volumechange', msg)
+      }
+      // only if the connect_state && play_state is invalid, mapped as `opened`.
+      if (msg.a2dpstate === 'opened' &&
+        msg.connect_state === 'invalid' &&
+        msg.play_state === 'invalid') {
+        /**
+         * When the bluetooth(a2dp) is opened.
+         * @event module:@yoda/bluetooth.BluetoothPlayer#opened
+         */
+        this.emit('opened')
+      } else if (msg.a2dpstate === 'closed') {
+        /**
+         * When the bluetooth(a2dp) is closed.
+         * @event module:@yoda/bluetooth.BluetoothPlayer#closed
+         */
+        this.emit('closed')
+      }
       /**
        * When play state updates.
        * @event module:@yoda/bluetooth.BluetoothPlayer#stateupdate
-       * @type {Object}
-       * @property {String} a2dpstate - the a2dp state
-       * @property {String} connect_state - if the connect
-       * @property {String} connect_name - the connected device name
-       * @property {String} play_state - the state of playing on the peer device
+       * @type {object}
+       * @property {string} a2dpstate - the a2dp state
+       * @property {string} connect_state - if the connect
+       * @property {string} connect_name - the connected device name
+       * @property {string} play_state - the state of playing on the peer device
        */
-      var msg = JSON.parse(buffer + '')
       this.emit('stateupdate', msg)
     } catch (err) {
       /**
@@ -57,12 +82,18 @@ BluetoothPlayer.prototype._send = function (cmdstr, name) {
 
 /**
  * Start the bluetooth player.
- * @param {String} name - the bluetooth name.
+ * @param {string} name - the bluetooth name.
+ * @param {boolean} always - if true, always start until success.
+ * @param {function} onerror
  * @returns {Null}
  */
-BluetoothPlayer.prototype.start = function start (name) {
-  this._end = false
-  return this._send('ON', name)
+BluetoothPlayer.prototype.start = function start (name, always, onerror) {
+  if (always) {
+    helper.startWithRetry(name, this, onerror, 20)
+  } else {
+    this._end = false
+    this._send('ON', name)
+  }
 }
 
 /**
@@ -71,7 +102,7 @@ BluetoothPlayer.prototype.start = function start (name) {
  */
 BluetoothPlayer.prototype.end = function () {
   this._end = true
-  return this._send('OFF')
+  process.nextTick(() => this._send('OFF'))
 }
 
 /**
@@ -118,10 +149,7 @@ BluetoothPlayer.prototype.prev = function () {
  * disconnect the event socket
  */
 BluetoothPlayer.prototype.disconnect = function disconnect () {
-  this.end()
-  process.nextTick(() => {
-    this._eventSocket.close()
-  })
+  return helper.disconnectAfterClose(this, 2000)
 }
 
 exports.BluetoothPlayer = BluetoothPlayer

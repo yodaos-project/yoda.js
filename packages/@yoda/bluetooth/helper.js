@@ -29,7 +29,42 @@ function closeCmdSocket () {
   }
 }
 
+function startWithRetry (name, handle, onerror, maxCount) {
+  var count = 0
+  var timer = setInterval(() => {
+    if (count >= maxCount) {
+      clearInterval(timer)
+      // throw the connect error.
+      var err = new Error('bluetooth connect failed')
+      if (typeof onerror === 'function') {
+        onerror(err)
+      } else {
+        throw err
+      }
+    } else {
+      count += 1
+      handle.start(name)
+    }
+  })
+  handle.once('opened', () => clearInterval(timer))
+  handle.start(name)
+}
+
+function closeSocket (handle) {
+  handle.removeAllListeners()
+  handle._eventSocket.close()
+}
+
+function disconnectAfterClose (handle, timeout) {
+  var close = closeSocket.bind(null, handle)
+  handle.end()
+  handle.once('closed', close)
+  setTimeout(close, timeout)
+}
+
 exports.CHANNEL_PREFIX = CHANNEL_PREFIX
 exports.getSocket = getSocket
 exports.getCmdSocket = getCmdSocket
 exports.closeCmdSocket = closeCmdSocket
+exports.startWithRetry = startWithRetry
+exports.disconnectAfterClose = disconnectAfterClose
