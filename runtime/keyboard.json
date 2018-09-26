@@ -1,15 +1,29 @@
 {
   "113": {
-    "keyup": {
+    "click": {
       "runtimeMethod": "setMicMute",
       "params": []
     },
-    "longpress":  {
-      "repeat": false,
-      "timeDelta": 2000,
-      "preventSubsequent": true,
+    "dbclick": {
       "url": "yoda-skill://bluetooth/bluetooth_broadcast",
       "options": {}
+    },
+    "longpress-2000": {
+      "repeat": false,
+      "timeDelta": 2000,
+      "preventSubsequent": false,
+      "runtimeMethod": "lightMethod",
+      "params": [
+        "appSound",
+        [ "@yoda", "/opt/media/key_config_notify.ogg" ]
+      ]
+    },
+    "longpress-7000": {
+      "repeat": false,
+      "timeDelta": 7000,
+      "preventSubsequent": true,
+      "runtimeMethod": "resetNetwork",
+      "params": []
     }
   },
   "114": {
@@ -43,11 +57,8 @@
     }
   },
   "116": {
-    "click": {
+    "keydown": {
       "runtimeMethod": "handlePowerActivation"
-    },
-    "dbclick": {
-      "runtimeMethod": "resetNetwork"
     }
   }
 }
