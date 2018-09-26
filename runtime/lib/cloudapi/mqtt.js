@@ -13,14 +13,14 @@ var handle = null
 
 function MqttAgent (config) {
   EventEmitter.call(this)
-  // for dev: kamino开发阶段使用
-  this.userId = property.get('persist.system.user.userId')
   this.config = config
+  this.userId = property.get('system.user.userId', 'persist')
   this.initialize()
 }
 inherits(MqttAgent, EventEmitter)
 
 MqttAgent.prototype.initialize = function initialize () {
+  this.disconnect()
   this.register((err) => {
     if (err) {
       logger.error('register error with error', err && err.stack)
@@ -30,7 +30,7 @@ MqttAgent.prototype.initialize = function initialize () {
   })
 }
 
-MqttAgent.prototype.register = function (cb) {
+MqttAgent.prototype.register = function register (cb) {
   mqttRegister.registry(this.userId, this.config, (err, data) => {
     if (err) {
       return cb(err)
@@ -40,7 +40,7 @@ MqttAgent.prototype.register = function (cb) {
   })
 }
 
-MqttAgent.prototype.connect = function () {
+MqttAgent.prototype.connect = function connect () {
   handle = mqtt.connect(endpoint, {
     clientId: this.mqttOptions.username,
     username: this.mqttOptions.username,
@@ -49,36 +49,44 @@ MqttAgent.prototype.connect = function () {
     reconnectPeriod: -1
   })
   handle.on('connect', () => {
-    var channelId = `u/${this.userId}/deviceType/${this.config.deviceTypeId}/deviceId/${this.config.deviceId}/rc`
+    var userId = this.userId
+    var deviceId = this.config.deviceId
+    var deviceTypeId = this.config.deviceTypeId
+    var channelId = `u/${userId}/deviceType/${deviceTypeId}/deviceId/${deviceId}/rc`
     handle.subscribe(channelId)
     logger.info('subscribed', channelId)
   })
   handle.on('offline', () => {
     logger.error(`offline, reconnecting`)
-    handle.disconnect()
-    handle.removeAllListeners()
-    handle = null
     this.initialize()
   })
   handle.on('message', this.onMessage.bind(this))
   handle.on('error', (err) => {
-    logger.error('MQTT connecting error:')
-    logger.error(err && err.stack)
+    logger.error(`MQTT connecting error(${err && err.stack})`)
+    this.initialize()
   })
 }
 
-MqttAgent.prototype.onMessage = function (channel, message) {
+MqttAgent.prototype.disconnect = function disconnect () {
+  if (handle) {
+    handle.disconnect()
+    handle.removeAllListeners()
+    handle = null
+  }
+}
+
+MqttAgent.prototype.onMessage = function onMessage (channel, message) {
   var msg
   try {
     msg = JSON.parse(message + '')
-  } catch (error) {
+  } catch (err) {
     msg = {}
-    logger.log(error)
-    logger.log('parse error with message: ', channel, message + '')
-    logger.log(message.toString('hex'))
+    logger.error(err && err.stack)
+    logger.error('parse error with message: ', channel, message + '')
+    logger.error(message.toString('hex'))
     return
   }
-  logger.log('mqtt message with topic ->', msg.topic, '; text ->', msg.text)
+  logger.info(`mqtt message with topic -> ${msg.topic}; text -> ${msg.text}`)
   if (msg.topic === 'version') {
     this.sendToApp('version', 'ok')
   } else {
@@ -86,9 +94,8 @@ MqttAgent.prototype.onMessage = function (channel, message) {
   }
 }
 
-MqttAgent.prototype.sendToApp = function (topic, text) {
-  logger.log('mqtt send channel:', `u/${this.userId}/rc`)
-  // console.log('--------------------------->', this.config, this.userId)
+MqttAgent.prototype.sendToApp = function sendToApp (topic, text) {
+  logger.info('mqtt send channel:', `u/${this.userId}/rc`)
   handle.publish(`u/${this.userId}/rc`, JSON.stringify({
     reviceDevice: {
       accountId: this.userId
@@ -101,7 +108,7 @@ MqttAgent.prototype.sendToApp = function (topic, text) {
     text: text,
     messageId: Date.now() + ''
   }))
-  logger.log('mqtt send message to app with topic ->', topic, '; text ->', text)
+  logger.info('mqtt send message to app with topic ->', topic, '; text ->', text)
 }
 
 module.exports = MqttAgent
