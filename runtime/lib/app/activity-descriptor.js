@@ -19,6 +19,7 @@ module.exports.MultimediaDescriptor = MultimediaDescriptor
 module.exports.TtsDescriptor = TtsDescriptor
 module.exports.KeyboardDescriptor = KeyboardDescriptor
 module.exports.WormholeDescriptor = WormholeDescriptor
+module.exports.TurenDescriptor = TurenDescriptor
 
 /**
  * @memberof yodaRT.activity
@@ -93,6 +94,14 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.WormholeClient} wormhole
    */
   this.wormhole = new WormholeDescriptor(this, appId, appHome, runtime)
+
+  /**
+   * The `TurenClient` is used to communication with turen
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {yodaRT.activity.Activity.TurenClient} turen
+   */
+  this.turen = new TurenDescriptor(this, appId, appHome, runtime)
 
   /**
    * Get current `appId`.
@@ -1093,6 +1102,58 @@ Object.assign(KeyboardDescriptor.prototype,
       }
     }
   })
+
+function TurenDescriptor (activityDescriptor, appId, appHome, runtime) {
+  EventEmitter.call(this)
+  this._activityDescriptor = activityDescriptor
+  this._appId = appId
+  this._appHome = appHome
+  this._runtime = runtime
+}
+inherits(TurenDescriptor, EventEmitter)
+TurenDescriptor.prototype.toJSON = function toJSON () {
+  return TurenDescriptor.prototype
+}
+
+Object.assign(TurenDescriptor.prototype,
+  {
+    type: 'namespace'
+  },
+  {
+    /**
+     * add the actiovation word
+     * @memberof yodaRT.activity.Activity.TurenClient
+     * @instance
+     * @function addVtWord
+     * @param {string} activationTxt -
+     * @param {string} activationPy -
+     * @returns {Promise<void>}
+     */
+    addVtWord: {
+      type: 'method',
+      returns: 'promise',
+      fn: function addVtWord (activationTxt, activationPy) {
+        return this._runtime.flora.addVtWord(activationTxt, activationPy)
+      }
+    },
+
+    /**
+     * delete the activation word
+     * @memberof yodaRT.activity.Activity.TurenClient
+     * @instance
+     * @function deleteVtWord
+     * @param {string} activationTxt -
+     * @returns {Promise<void>}
+     */
+    deleteVtWord: {
+      type: 'method',
+      returns: 'promise',
+      fn: function deleteVtWord (activationTxt) {
+        return this._runtime.flora.deleteVtWord(activationTxt)
+      }
+    }
+  }
+)
 
 /**
  * @memberof yodaRT.activity.Activity

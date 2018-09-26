@@ -21,6 +21,9 @@ module.exports = function customConfig (activity) {
   var INTENT_KEEP_CONFIRM_SWITCH = 'pickupswitch'
   var SWITCH_OPEN = 'open'
   var SWITCH_CLOSE = 'close'
+  var SWITCH_VT_UPDATE = 'update'
+  var SWITCH_VT_ADD = 'add'
+  var VT_WORDS_TOPIC = 'custom_config'
   this.startTime = null
   this.endTime = null
   this.inNightMode = false
@@ -28,6 +31,9 @@ module.exports = function customConfig (activity) {
   this.deltaTime = null
   this.waitForCloseTimer = null
   this.waitForNextTimer = null
+  this.oldTxt = null
+  this.py = null
+  this.txt = null
 
   activity.on('request', (nlp, action) => {
     var intent = nlp.intent
@@ -60,7 +66,10 @@ module.exports = function customConfig (activity) {
       this.endTime = queryObj.endTime
       nightMode(action)
     } else if (urlObj.pathname === '/vt_words') {
-      // need deal vtwords: add/update/delete...
+      this.oldTxt = queryObj.oldTxt
+      this.txt = queryObj.txt
+      this.py = queryObj.py
+      onVtWordSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/continuousDialog') {
       onPickupSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/wakeupSoundEffects') {
@@ -69,6 +78,35 @@ module.exports = function customConfig (activity) {
       onLightSwitchStatusChanged(action, isFirstLoad)
     }
   })
+
+  function onVtWordSwitchStatusChanged (action, isFirstLoad) {
+    if (action && !isFirstLoad) {
+      if (action === SWITCH_VT_UPDATE) {
+        activity.turen.deleteVtWord(this.oldTxt)
+        activity.turen.addVtWord(this.txt, this.py)
+        sendSuccessStatusToApp(action, true)
+      } else if (action === SWITCH_VT_ADD) {
+        activity.turen.addVtWord(this.txt, this.py)
+        sendSuccessStatusToApp(action, true)
+      } else {
+        activity.turen.deleteVtWord(this.txt)
+        sendSuccessStatusToApp(action, true)
+      }
+    }
+  }
+
+  function sendSuccessStatusToApp (action, setStatus) {
+    var sendObj = {
+      vt_words: [{
+        py: this.py,
+        oldTxt: this.oldTxt,
+        txt: this.txt,
+        action: action,
+        success: setStatus
+      }]
+    }
+    activity.wormhole.sendToApp(VT_WORDS_TOPIC, sendObj)
+  }
 
   function onPickupSwitchStatusChanged (action, isFirstLoad) {
     if (action) {
