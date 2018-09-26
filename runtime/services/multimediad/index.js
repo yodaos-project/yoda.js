@@ -37,6 +37,16 @@ service.on('playbackcomplete', function (id) {
     [id, 'playbackcomplete']
   )
 })
+service.on('cancel', function (id) {
+  logger.log('multimediad canceled', Array.prototype.slice.call(arguments, 0))
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    'ss',
+    [id, 'cancel']
+  )
+})
 service.on('bufferingupdate', function (id) {
   logger.log('multimediad buffering update', Array.prototype.slice.call(arguments, 0))
   dbusService._dbus.emitSignal(

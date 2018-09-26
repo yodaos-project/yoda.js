@@ -616,6 +616,14 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'event'
     },
     /**
+     * When the media playback is canceled.
+     * @event yodaRT.activity.Activity.MediaClient#cancel
+     * @param {string} id - multimedia player id
+     */
+    cancel: {
+      type: 'event'
+    },
+    /**
      * When buffering progress is updates.
      * @event yodaRT.activity.Activity.MediaClient#bufferingupdate
      * @param {string} id - multimedia player id
@@ -685,7 +693,7 @@ Object.assign(MultimediaDescriptor.prototype,
               var channel = `callback:multimedia:${multimediaId}`
               self._activityDescriptor._registeredDbusSignals.push(channel)
               self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
-                if (['playbackcomplete', 'error'].indexOf(event) >= 0) {
+                if (['playbackcomplete', 'error', 'cancel'].indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
                   self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)

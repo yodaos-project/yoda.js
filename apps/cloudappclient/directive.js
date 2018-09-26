@@ -1,5 +1,7 @@
 'use strict'
 
+var logger = require('logger')('cloudapp-directive')
+
 function Directive () {
   this.frontend = []
   this.background = []
@@ -18,7 +20,7 @@ function Directive () {
 Directive.prototype.execute = function execute (dt, type, cb) {
   this[type] = dt || []
   this.run(type, cb)
-  console.log('start run dt')
+  logger.info('start run dt')
 }
 
 Directive.prototype.stop = function (type, cb) {
@@ -59,29 +61,44 @@ Directive.prototype.run = function run (type, cb) {
         type: ''
       }
     }
-    console.log(`run dt: ${next.type} ${next.action || ''}`)
+    logger.info(`run dt: ${type} ${next.type} ${next.action || ''}`)
     if (next.type === 'tts') {
-      self.cb[type].tts.call(self, next, function () {
+      self.cb[type].tts.call(self, next, function (isCancel) {
+        if (isCancel) {
+          return cb && cb()
+        }
         handle(dt)
       })
     } else if (next.type === 'media') {
-      self.cb[type].media.call(self, next, function () {
+      self.cb[type].media.call(self, next, function (isCancel) {
+        if (isCancel) {
+          return cb && cb()
+        }
         handle(dt)
       })
     } else if (next.type === 'confirm') {
-      self.cb[type].confirm.call(self, next, function () {
+      self.cb[type].confirm.call(self, next, function (isCancel) {
+        if (isCancel) {
+          return cb && cb()
+        }
         handle(dt)
       })
     } else if (next.type === 'pickup') {
-      self.cb[type].pickup.call(self, next, function () {
+      self.cb[type].pickup.call(self, next, function (isCancel) {
+        if (isCancel) {
+          return cb && cb()
+        }
         handle(dt)
       })
     } else if (next.type === 'native') {
-      self.cb[type].native.call(self, next, function () {
+      self.cb[type].native.call(self, next, function (isCancel) {
+        if (isCancel) {
+          return cb && cb()
+        }
         handle(dt)
       })
     } else {
-      console.log('all directive complete')
+      logger.info('all directive complete')
       cb && cb()
     }
   }

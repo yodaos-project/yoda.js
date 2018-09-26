@@ -39,7 +39,9 @@ module.exports = activity => {
         } else if (name === 'end') {
           sos.sendEventRequest('tts', 'end', dt.data, _.get(dt, 'data.item.itemId'), next)
         } else if (name === 'cancel') {
-          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), function noop () {})
+          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), function stop () {
+            next(true)
+          })
         }
       })
     } else if (dt.action === 'cancel') {
@@ -68,6 +70,14 @@ module.exports = activity => {
             itemId: _.get(dt, 'data.item.itemId'),
             token: _.get(dt, 'data.item.token')
           }, next)
+        } else if (name === 'cancel' || name === 'error') {
+          sos.sendEventRequest('media', name, dt.data, {
+            itemId: _.get(dt, 'data.item.itemId'),
+            token: _.get(dt, 'data.item.token')
+          }, function cancel () {
+            logger.info('canceled media event')
+            next(true)
+          })
         }
       })
     } else if (dt.action === 'pause') {

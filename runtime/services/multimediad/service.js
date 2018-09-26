@@ -15,6 +15,8 @@ inherits(MultiMedia, EventEmitter)
 MultiMedia.prototype.start = function (appId, url, streamType) {
   if (this.handle[appId]) {
     try {
+      var id = this.handle[appId].id
+      this.emit('cancel', '' + id)
       this.handle[appId].stop()
       delete this.handle[appId]
     } catch (error) {
@@ -36,7 +38,10 @@ MultiMedia.prototype.start = function (appId, url, streamType) {
 MultiMedia.prototype.stop = function (appId) {
   if (this.handle[appId]) {
     try {
+      var id = this.handle[appId].id
+      this.emit('cancel', '' + id)
       this.handle[appId].stop()
+      delete this.handle[appId]
     } catch (error) {
       logger.debug('try to stop player errer with appId: ', appId)
     }

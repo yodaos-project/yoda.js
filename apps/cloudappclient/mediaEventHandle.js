@@ -1,5 +1,7 @@
 'use strict'
 
+var logger = require('logger')('cloudapp-media-handle')
+
 function MediaEventHandle (mediaClient) {
   this.mediaClient = mediaClient
   this.callbackHandle = {}
@@ -13,6 +15,9 @@ MediaEventHandle.prototype.handleEvent = function () {
   })
   this.mediaClient.on('playbackcomplete', (mediaId) => {
     this.handle(mediaId, 'playbackcomplete')
+  })
+  this.mediaClient.on('cancel', (mediaId) => {
+    this.handle(mediaId, 'cancel')
   })
   this.mediaClient.on('bufferingupdate', (mediaId) => {
     this.handle(mediaId, 'bufferingupdate')
@@ -28,8 +33,9 @@ MediaEventHandle.prototype.handleEvent = function () {
 MediaEventHandle.prototype.handle = function (mediaId, name, args) {
   if (typeof this.callbackHandle[`mediacb:${mediaId}`] === 'function') {
     this.callbackHandle[`mediacb:${mediaId}`](name, args || [])
-    if (name === 'playbackcomplete' || name === 'error') {
-      this.callbackHandle[`mediacb:${mediaId}`] = null
+    if (name === 'playbackcomplete' || name === 'error' || name === 'cancel') {
+      logger.info(`deleted mediacb handler ${mediaId}`)
+      delete this.callbackHandle[`mediacb:${mediaId}`]
     }
   }
 }
