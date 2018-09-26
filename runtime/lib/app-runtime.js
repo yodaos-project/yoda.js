@@ -368,7 +368,7 @@ AppRuntime.prototype.resetNetwork = function resetNetwork () {
   this.online = undefined
   this.login = undefined
   return this.startApp('@network', {
-    intent: 'system_setup'
+    intent: 'manual_setup'
   }, {})
 }
 
