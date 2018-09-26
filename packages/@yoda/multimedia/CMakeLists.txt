@@ -2,22 +2,39 @@ cmake_minimum_required(VERSION 3.0)
 project(node-multimedia CXX)
 set(CMAKE_CXX_STANDARD 11)
 
-add_library(node-multimedia MODULE
-  src/MultimediaNative.cc
+add_library(node-mediaplayer MODULE
+  src/MediaPlayer.cc
 )
-target_include_directories(node-multimedia PRIVATE
+target_include_directories(node-mediaplayer PRIVATE
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/librplayer
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
 )
 
-target_link_libraries(node-multimedia iotjs rplayer avformat avutil)
-set_target_properties(node-multimedia PROPERTIES
+target_link_libraries(node-mediaplayer iotjs rplayer avformat avutil)
+set_target_properties(node-mediaplayer PROPERTIES
   PREFIX ""
   SUFFIX ".node"
-  OUTPUT_NAME "multimedia"
+  OUTPUT_NAME "mediaplayer"
   LINK_FLAGS "-rdynamic")
 
-install(TARGETS node-multimedia DESTINATION ${CMAKE_INSTALL_DIR})
-install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR})
+add_library(node-wavplayer MODULE src/WavPlayer.cc)
+target_include_directories(node-wavplayer PRIVATE
+  ../../../include
+  ${CMAKE_INCLUDE_DIR}/include
+  ${CMAKE_INCLUDE_DIR}/usr/include
+  ${CMAKE_INCLUDE_DIR}/usr/include/librplayer
+  ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
+)
+
+target_link_libraries(node-wavplayer iotjs rplayer avformat avutil)
+set_target_properties(node-wavplayer PROPERTIES
+  PREFIX ""
+  SUFFIX ".node"
+  OUTPUT_NAME "wavplayer"
+)
+
+install(TARGETS node-mediaplayer DESTINATION ${CMAKE_INSTALL_DIR})
+install(TARGETS node-wavplayer DESTINATION ${CMAKE_INSTALL_DIR})
+install(FILES index.js mediaplayer.js wavplayer.js DESTINATION ${CMAKE_INSTALL_DIR})

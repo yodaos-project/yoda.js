@@ -1,4 +1,4 @@
-#include "MultimediaNative.h"
+#include "MediaPlayer.h"
 
 enum PlayerEventType {
   MULTIMEDIA_PLAYER_NOOP = 0,
@@ -415,4 +415,4 @@ void init(jerry_value_t exports) {
   jerry_release_value(events);
 }
 
-NODE_MODULE(tts, init)
+NODE_MODULE(MediaPlayer, init)
