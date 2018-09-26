@@ -7,6 +7,8 @@ var globalEnv = require('../env')()
 
 var asr2nlpId = 'js-AppRuntime'
 var asr2nlpSeq = 0
+var VT_WORDS_ADD_WORD_TAG = 'rokid.turen.addVtWord'
+var VT_WORDS_DEL_WORD_TAG = 'rokid.turen.removeVtWord'
 
 module.exports = Flora
 /**
@@ -280,6 +282,29 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, cb) {
   caps.writeInt32(asr2nlpSeq)
   this.asr2nlpCallbacks[asr2nlpSeq++] = cb
   this.floraCli.post('rokid.speech.put_text', caps, floraFactory.MSGTYPE_INSTANT)
+}
+
+/**
+ * Add the activation
+ * @param {string} activationTxt
+ * @param {string} activationPy
+ */
+Flora.prototype.addVtWord = function addVtWord (activationTxt, activationPy) {
+  var caps = new floraFactory.Caps()
+  caps.write(activationTxt)
+  caps.write(activationPy)
+  caps.writeInt32(0)
+  this.floraCli.post(VT_WORDS_ADD_WORD_TAG, caps, floraFactory.MSGTYPE_INSTANT)
+}
+
+/**
+ * Delete the activation
+ * @param {string} activationTxt
+ */
+Flora.prototype.deleteVtWord = function deleteVtWord (activationTxt) {
+  var caps = new floraFactory.Caps()
+  caps.write(activationTxt)
+  this.floraCli.post(VT_WORDS_DEL_WORD_TAG, caps, floraFactory.MSGTYPE_INSTANT)
 }
 
 /**
