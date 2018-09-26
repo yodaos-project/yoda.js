@@ -156,7 +156,7 @@ test('longpress: repetitive longpress', t => {
     t.pass('invoked')
   }
 
-  keyboard.input.emit('keydown', { keyCode: 233 })
+  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 0 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 500 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1000 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1500 })
@@ -186,7 +186,7 @@ test('longpress: non-repetitive longpress', t => {
     t.pass('invoked')
   }
 
-  keyboard.input.emit('keydown', { keyCode: 233 })
+  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 0 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 500 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1000 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1500 })
@@ -212,6 +212,7 @@ test('longpress: prevent subsequent keyup event', t => {
       },
       longpress: {
         repeat: false,
+        timeDelta: 500,
         preventSubsequent: true,
         runtimeMethod: 'foobar'
       }
@@ -222,9 +223,46 @@ test('longpress: prevent subsequent keyup event', t => {
     t.pass('invoked')
   }
 
-  keyboard.input.emit('keydown', { keyCode: 233 })
+  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 0 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 500 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1000 })
+  keyboard.input.emit('keyup', { keyCode: 233 })
+
+  runtime.destruct()
+})
+
+test('longpress: multiple endpoints for time delta', t => {
+  t.plan(2)
+  var runtime = new AppRuntime()
+  var keyboard = new Keyboard(runtime)
+
+  keyboard.input = new EventEmitter()
+  keyboard.listen()
+
+  keyboard.config = {
+    '233': {
+      'longpress-2000': {
+        repeat: false,
+        timeDelta: 2000,
+        preventSubsequent: false,
+        runtimeMethod: 'foobar'
+      },
+      'longpress-5000': {
+        repeat: false,
+        timeDelta: 5000,
+        preventSubsequent: true,
+        runtimeMethod: 'foobar'
+      }
+    }
+  }
+
+  runtime.foobar = function () {
+    t.pass('invoked')
+  }
+
+  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 2000 })
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 4000 })
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 7000 })
   keyboard.input.emit('keyup', { keyCode: 233 })
 
   runtime.destruct()

@@ -81,6 +81,9 @@ KeyboardHandler.prototype.listen = function listen () {
   this.input.on('keydown', listenerWrap(event => {
     this.currentKeyCode = event.keyCode
     logger.info(`keydown: ${event.keyCode}`)
+    if (this.firstLongPressTime == null) {
+      this.firstLongPressTime = event.keyTime
+    }
 
     if (this.handleAppListener('keydown', event)) {
       logger.info(`Delegated keydown to app.`)
@@ -161,9 +164,6 @@ KeyboardHandler.prototype.listen = function listen () {
       this.firstLongPressTime = null
       return
     }
-    if (this.firstLongPressTime == null) {
-      this.firstLongPressTime = event.keyTime
-    }
     var timeDelta = event.keyTime - this.firstLongPressTime
     logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
 
@@ -178,6 +178,9 @@ KeyboardHandler.prototype.listen = function listen () {
     }
 
     var descriptor = _.get(this.config, `${event.keyCode}.longpress`)
+    if (descriptor == null) {
+      descriptor = _.get(this.config, `${event.keyCode}.longpress-${timeDelta}`)
+    }
     if (typeof descriptor !== 'object') {
       logger.info(`No handler registered for longpress '${event.keyCode}'.`)
       return
