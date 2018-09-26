@@ -1200,6 +1200,7 @@ AppRuntime.prototype.disconnect = function () {
     }, {})
   }
   this.login = false
+  this.wormhole.setOffline()
   this.emit('disconnected')
 }
 

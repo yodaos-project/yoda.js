@@ -26,7 +26,7 @@ function getSign (data) {
 }
 
 function registry (userId, config, cb) {
-  logger.log('start request /api/registryByKey with userId:', userId)
+  logger.info('start request /api/registryByKey with userId:', userId)
   var data = load(config)
   var msg = JSON.stringify({
     appKey: data.key,
@@ -48,15 +48,16 @@ function registry (userId, config, cb) {
       'Content-Length': msg.length
     }
   }, (response) => {
+    logger.info(`${response.statusCode} /api/registryByKey`)
+
     var list = []
     response.on('data', (chunk) => list.push(chunk))
     response.once('end', () => {
       var data, err, msg
       msg = Buffer.concat(list).toString()
-      logger.log('request /api/registryByKey response received')
       try {
         data = JSON.parse(msg)
-        // 判断是否注册成功
+        // check if logged in.
         if (data && data.error) {
           err = new Error(data.error)
         }

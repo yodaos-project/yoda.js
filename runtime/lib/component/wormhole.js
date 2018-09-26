@@ -9,13 +9,14 @@ function Wormhole (runtime) {
 }
 
 Wormhole.prototype.init = function init (mqttClient) {
+  logger.info('initialize the wormhole with a new mqtt connection.')
   this.mqtt = mqttClient
   this.mqtt.on('message', this.onMessage.bind(this))
 }
 
 Wormhole.prototype.handlers = {
   asr: function (asr) {
-    this.runtime.getNlpResult(asr, (err, nlp, action) => {
+    this.runtime.flora.getNlpResult(asr, (err, nlp, action) => {
       if (err) {
         console.error(`occurrs some error in speechT`)
       } else {
@@ -93,4 +94,8 @@ Wormhole.prototype.sendToApp = function sendToApp (topic, data) {
   }
   this.mqtt.sendToApp(topic, JSON.stringify(data))
   return Promise.resolve()
+}
+
+Wormhole.prototype.setOffline = function setOffline () {
+  this.mqtt.disconnect()
 }
