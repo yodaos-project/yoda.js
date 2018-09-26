@@ -300,9 +300,12 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
     }, {})
   }
 
-  /** exit all app */
-  return this.startApp('ROKID.SYSTEM', { intent: 'ROKID.SYSTEM.EXIT' }, {})
-    .then(() => this.setPickup(true))
+  if (this.life.getCurrentAppId()) {
+    /** exit all app if there is apps actively running */
+    return this.destroyAll({ force: false })
+  }
+
+  return this.setPickup(true)
 }
 
 /**
