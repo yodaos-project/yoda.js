@@ -325,6 +325,10 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
  * Reset network and start procedure of configuring network.
  */
 AppRuntime.prototype.resetNetwork = function resetNetwork () {
+  /**
+   * reset should welcome so that welcome effect could be played on re-login
+   */
+  this.shouldWelcome = true
   return this.custodian.resetNetwork()
 }
 
@@ -862,12 +866,8 @@ AppRuntime.prototype.unBindDevice = function (message) {
   this.cloudApi.unBindDevice()
     .then(() => {
       property.set('persist.system.user.userId', '')
-      /**
-       * reset should welcome so that welcome effect could be played on re-login
-       */
-      this.shouldWelcome = true
       logger.info('unbind device success')
-      return this.custodian.resetNetwork()
+      return this.resetNetwork()
     })
     .catch((err) => {
       logger.error('unbind device error', err)
