@@ -43,7 +43,7 @@ module.exports = function (app) {
     '-201': 'system://wifi/bind_master_failed.ogg'
   }
 
-  var DEFAULT_SLEEP_TIME = 5 * 60 * 1000
+  var DEFAULT_SLEEP_TIME = 1 * 60 * 1000
   var SLEEP_TIME = +property.get('app.network.sleeptime') || DEFAULT_SLEEP_TIME
   var bleEnable = false
   var sleepTimer
@@ -121,6 +121,14 @@ module.exports = function (app) {
     if (started === true) {
       return
     }
+
+    logger.log('recv app request:', nlp.intent)
+
+    if (nlp.intent === 'manual_setup') {
+      wifi.disableAll()
+    } else {
+      wifi.enableScanPassively()
+    }
     started = true
     sleeping = false
     messageStream = bluetooth.getMessageStream()
@@ -141,7 +149,7 @@ module.exports = function (app) {
     })
 
     messageStream.on('data', function (message) {
-      logger.log('message: ' + message)
+      logger.log('message:', message)
       // retimer
       timerAndSleep()
 
@@ -281,6 +289,7 @@ module.exports = function (app) {
 
   function timerAndSleep () {
     clearTimeout(sleepTimer)
+    logger.log('setup timer for intoSleep')
     sleepTimer = setTimeout(function sleep () {
       intoSleep()
     }, SLEEP_TIME)
@@ -295,6 +304,7 @@ module.exports = function (app) {
       bleEnable = false
       logger.log('closed ble')
     }
+    wifi.enableScanPassively()
     sleeping = true
     started = false
   }
