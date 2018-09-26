@@ -1,5 +1,7 @@
 'use strict'
 
+var logger = require('logger')('cloudapp-tts-handle')
+
 function TtsEventHandle (ttsClient) {
   this.ttsClient = ttsClient
   this.callbackHandle = {}
@@ -8,19 +10,19 @@ function TtsEventHandle (ttsClient) {
 
 TtsEventHandle.prototype.handleEvent = function () {
   this.ttsClient.on('start', (ttsId) => {
-    console.log(`id:${ttsId} start`)
+    logger.info(`id:${ttsId} start`)
     this.handle(ttsId, 'start')
   })
   this.ttsClient.on('end', (ttsId) => {
-    console.log(`id:${ttsId} end`)
+    logger.info(`id:${ttsId} end`)
     this.handle(ttsId, 'end')
   })
   this.ttsClient.on('cancel', (ttsId) => {
-    console.log(`id:${ttsId} cancel`)
+    logger.info(`id:${ttsId} cancel`)
     this.handle(ttsId, 'cancel')
   })
   this.ttsClient.on('error', (ttsId) => {
-    console.log(`id:${ttsId} cancel`)
+    logger.info(`id:${ttsId} cancel`)
     this.handle(ttsId, 'error')
   })
 }
@@ -38,7 +40,7 @@ TtsEventHandle.prototype.speak = function (tts, eventHandle) {
   this.ttsClient.speak(tts, {
     impatient: true
   }).then((ttsId) => {
-    console.log(`speak id:${ttsId}`)
+    logger.info(`speak id:${ttsId}`)
     this.callbackHandle[`ttscb:${ttsId}`] = eventHandle
   })
 }

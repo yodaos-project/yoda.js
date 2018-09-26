@@ -2,9 +2,9 @@
 
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
+var logger = require('logger')('app-manager')
 var eventRequest = require('./eventRequestApi')
 var eventRequestMap = require('./eventRequestMap.json')
-var logger = require('logger')('manager')
 
 function Manager (exe, Skill) {
   EventEmitter.call(this)
@@ -126,9 +126,10 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     logger.log('no appId, ignore eventRequest')
     return cb && cb()
   }
-  if (type === 'tts' && name === 'cancel') {
+  if ((type === 'tts' || type === 'media') && name === 'cancel') {
+    logger.info(`ignored ${type} cancel event`)
     if (this.getCurrentSkill().appId === data.appId) {
-      logger.log('current tts cancel event, ignore')
+      logger.log(`current ${type} cancel event, ignore`)
       cb && cb()
       return
     }
