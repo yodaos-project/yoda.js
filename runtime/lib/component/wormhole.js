@@ -97,5 +97,8 @@ Wormhole.prototype.sendToApp = function sendToApp (topic, data) {
 }
 
 Wormhole.prototype.setOffline = function setOffline () {
+  if (this.mqtt == null) {
+    return
+  }
   this.mqtt.disconnect()
 }
