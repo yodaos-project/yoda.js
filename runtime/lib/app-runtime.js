@@ -418,21 +418,24 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     ])
   }
 
-  return future.then(() => this.life.createApp(appId))
+  return future
+    .then(() => {
+      this.resetAppearance({ unmute: true })
+      return this.life.createApp(appId)
+    })
     .then(() => {
       if (!preemptive) {
         logger.info(`app is not preemptive, skip activating app ${appId}`)
-        return Promise.resolve()
+        return
       }
 
       logger.info(`app is preemptive, activating app ${appId}`)
       this.updateCloudStack(nlp.appId, form)
       return this.life.activateAppById(appId, form, carrierId)
     })
-    .then(() => Promise.all([
-      this.life.onLifeCycle(appId, 'request', [ nlp, action ]),
-      this.resetAppearance({ unmute: true })
-    ]))
+    .then(() => {
+      return this.life.onLifeCycle(appId, 'request', [ nlp, action ])
+    })
     .catch((error) => {
       logger.error(`create app error with appId: ${appId}`, error)
       return this.life.destroyAppById(appId, { force: true })
