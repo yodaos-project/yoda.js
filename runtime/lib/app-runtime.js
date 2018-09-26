@@ -28,6 +28,7 @@ var perf = require('./performance')
 var DbusRemoteCall = require('./dbus-remote-call')
 var DbusAppExecutor = require('./app/dbus-app-executor')
 var Permission = require('./component/permission')
+var Custodian = require('./component/custodian')
 var AppLoader = require('./component/app-loader')
 var Flora = require('./component/flora')
 var Keyboard = require('./component/keyboard')
@@ -62,13 +63,12 @@ function AppRuntime () {
   this.micMuted = false // microphone was reset on runtime start up
   this.handle = {}
   this.cloudApi = CloudApi // support cloud api. etc.. login
-  this.online = undefined // to identify the first start
-  this.login = undefined // to identify is login or not
-  this.waitingForAwake = undefined // to identify network switch from connected to disconnected
+  this.shouldWelcome = true
   this.forceUpdateAvailable = false
 
   this.dbusSignalRegistry = new EventEmitter()
 
+  this.custodian = new Custodian(this)
   this.flora = new Flora(this)
   // manager app's permission
   this.permission = new Permission(this)
@@ -104,12 +104,7 @@ AppRuntime.prototype.init = function init (paths) {
   })
   // initializing the whole process...
   return this.loadApps(paths).then(() => {
-    if (wifi.getNetworkState() === wifi.NETSERVER_CONNECTED) {
-      this.handleNetworkConnected()
-    } else {
-      this.handleNetworkDisconnected()
-    }
-
+    this.custodian.prepareNetwork()
     this.inited = true
   })
 }
@@ -202,12 +197,14 @@ AppRuntime.prototype.resetAppearance = function resetAppearance (options) {
  * @private
  */
 AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
-  var min = 10
-  var vol = AudioManager.getVolume()
-  if (this.online === false) {
-    // Do noting when there is no network
+  if (!this.custodian.isPrepared()) {
+    // Do noting when network is not ready
+    logger.warn('Network not connected, skip incoming voice')
     return
   }
+
+  var min = 10
+  var vol = AudioManager.getVolume()
   if (vol > min) {
     this.prevVolume = vol
     AudioManager.setUserLandVolume(min)
@@ -235,21 +232,18 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
  * @private
  */
 AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
-  // guide the user to double-click the button
-  if (this.waitingForAwake === true) {
-    wifi.enableScanPassively()
-    this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
-    return
-  }
-  if (this.online !== true) {
-    // start @network app
-    this.startApp('@network', {
+  if (this.custodian.isConfiguringNetwork()) {
+    // start @network app if not logged in yet
+    return this.startApp('@network', {
       intent: 'user_says'
     }, {})
-    // Do noting when there is no network
-    return
   }
-  this.lightMethod('setDegree', ['', '' + (data.sl || 0)])
+  if (this.custodian.isNetworkUnavailable()) {
+    // guide the user to double-click the button
+    logger.warn('Device is initiated, yet disconnected from network. Network may be re-configured.')
+    return this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
+  }
+  return this.lightMethod('setDegree', ['', '' + (data.sl || 0)])
 }
 
 /**
@@ -279,51 +273,6 @@ AppRuntime.prototype.handleNlpResult = function handleNlpResult (data) {
 }
 
 /**
- * Fires when the network is connected.
- * @private
- */
-AppRuntime.prototype.handleNetworkConnected = function handleNetworkConnected () {
-  if (this.loadAppComplete === false) {
-    return
-  }
-  if (this.online === false || this.online === undefined) {
-    if (this.online === undefined) {
-      logger.log('first login')
-    } else {
-      logger.log('relogin')
-    }
-    this.reconnect()
-
-    /** Announce last installed ota changelog and clean up ota files */
-    ota.getInfoIfFirstUpgradedBoot((err, info) => {
-      if (err || info == null) {
-        logger.error('failed to fetch upgraded info, skipping', err && err.stack)
-        return
-      }
-      this.startApp('@ota', { intent: 'on_first_boot_after_upgrade', _info: info }, {})
-    })
-  }
-  this.online = true
-}
-
-/**
- * Fires when the network is disconnected.
- * @private
- */
-AppRuntime.prototype.handleNetworkDisconnected = function handleNetworkDisconnected () {
-  // waiting for the app load complete
-  if (this.loadAppComplete === false) {
-    return
-  }
-  // trigger disconnected event when network state is switched or when it is first activated.
-  if (this.online === true || this.online === undefined) {
-    // start network app here
-    this.disconnect()
-  }
-  this.online = false
-}
-
-/**
  * Handle cloud events.
  * @private
  */
@@ -344,8 +293,8 @@ AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
  * - otherwise set device actively pickup.
  */
 AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
-  if (this.online !== true) {
-    // start @network app
+  if (this.custodian.isConfiguringNetwork()) {
+    // start @network app if network is not connected
     return this.sendNLPToApp('@network', {
       intent: 'into_sleep'
     }, {})
@@ -360,16 +309,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
  * Reset network and start procedure of configuring network.
  */
 AppRuntime.prototype.resetNetwork = function resetNetwork () {
-  // user manually clear WIFI
-  wifi.resetWifi()
-  wifi.disableAll()
-  logger.log('user manually clear WIFI')
-  this.waitingForAwake = undefined
-  this.online = undefined
-  this.login = undefined
-  return this.startApp('@network', {
-    intent: 'manual_setup'
-  }, {})
+  return this.custodian.resetNetwork()
 }
 
 /**
@@ -905,13 +845,12 @@ AppRuntime.prototype.unBindDevice = function (message) {
   this.cloudApi.unBindDevice()
     .then(() => {
       property.set('persist.system.user.userId', '')
-      wifi.resetWifi()
-      wifi.disableAll()
+      /**
+       * reset should welcome so that welcome effect could be played on re-login
+       */
+      this.shouldWelcome = true
       logger.info('unbind device success')
-      this.login = undefined
-      this.online = undefined
-      this.waitingForAwake = undefined
-      this.handleNetworkDisconnected()
+      return this.custodian.resetNetwork()
     })
     .catch((err) => {
       logger.error('unbind device error', err)
@@ -1147,10 +1086,6 @@ AppRuntime.prototype.onGetPropAll = function () {
  */
 AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
-  // only if switch network
-  if (this.waitingForAwake === true) {
-    this.waitingForAwake = false
-  }
   this.lightMethod('setConfigFree', ['system'])
 
   logger.log('yoda reconnecting')
@@ -1184,45 +1119,28 @@ AppRuntime.prototype.reconnect = function () {
       masterId: property.get('persist.system.user.userId')
     })
     this.onGetPropAll = () => props
-    this.doLogin()
+    this.onLoggedIn()
     this.wormhole.init(mqttAgent)
     this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
   }).catch((err) => {
-    logger.error('initializing occurrs error', err && err.stack)
+    logger.error('initializing occurs error', err && err.stack)
   })
 }
 
 /**
  * @private
  */
-AppRuntime.prototype.disconnect = function () {
-  if (this.login === true) {
-    // waiting for user awake or button event in order to switch to network config
-    this.waitingForAwake = true
-    logger.log('network switch, try to relogin, waiting for user awake or button event')
-  } else {
-    logger.log('network disconnected, please connect to wifi first')
-    this.startApp('@network', {
-      intent: 'system_setup'
-    }, {})
-  }
-  this.login = false
-  this.wormhole.setOffline()
-  this.emit('disconnected')
-}
+AppRuntime.prototype.onLoggedIn = function () {
+  this.custodian.onLoggedIn()
 
-/**
- * @private
- */
-AppRuntime.prototype.doLogin = function () {
   var deferred = () => {
-    this.login = true
     perf.stub('started')
     // not need to play startup music after relogin
-    if (this.waitingForAwake === undefined) {
+    if (this.shouldWelcome) {
+      this.shouldWelcome = false
+      logger.info('announce welcome')
       this.lightMethod('setWelcome', [])
     }
-    this.waitingForAwake = undefined
 
     var config = JSON.stringify(this.onGetPropAll())
     return this.ttsMethod('connect', [config])
@@ -1301,7 +1219,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     out: ['b']
   }, function (appId, objectPath, ifaceName, cb) {
     logger.info('dbus registering app', appId, objectPath, ifaceName)
-    if (!self.login) {
+    if (!self.custodian.isPrepared()) {
       /** prevent app to invoke runtime methods if runtime is not logged in yet */
       return cb(null, false)
     }
@@ -1500,14 +1418,18 @@ AppRuntime.prototype.startDbusAppService = function () {
     in: ['s'],
     out: ['b']
   }, function (status, cb) {
+    if (this.loadAppComplete === false) {
+      // waiting for the app load complete
+      return cb(null, false)
+    }
     try {
       var data = JSON.parse(status)
       if (data.upgrade === true) {
         self.startApp('@upgrade', {}, {})
       } else if (data['Wifi'] === false || data['Network'] === false) {
-        self.handleNetworkDisconnected()
-      } else if (data['Network'] === true && !self.online) {
-        self.handleNetworkConnected()
+        self.custodian.onNetworkDisconnect()
+      } else if (data['Network'] === true) {
+        self.custodian.onNetworkConnect()
       } else if (data['msg']) {
         self.sendNLPToApp('@network', {
           intent: 'wifi_status'
