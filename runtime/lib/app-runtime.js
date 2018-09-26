@@ -752,10 +752,17 @@ AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
 AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
   logger.log('register dbus app with id: ', appId)
   var executor = new DbusAppExecutor(objectPath, ifaceName, appId, this)
-  this.loader.setExecutorForAppId(appId, executor, {
-    skills: [ appId ],
-    permission: ['ACCESS_TTS', 'ACCESS_MULTIMEDIA']
-  })
+  try {
+    this.loader.setExecutorForAppId(appId, executor, {
+      skills: [ appId ],
+      permission: ['ACCESS_TTS', 'ACCESS_MULTIMEDIA']
+    })
+  } catch (err) {
+    if (_.startsWith(err.message, 'AppId exists')) {
+      return
+    }
+    throw err
+  }
 }
 
 /**
@@ -1294,12 +1301,17 @@ AppRuntime.prototype.startDbusAppService = function () {
     out: ['b']
   }, function (appId, objectPath, ifaceName, cb) {
     logger.info('dbus registering app', appId, objectPath, ifaceName)
-    if (self.login === true) {
-      self.registerDbusApp(appId, objectPath, ifaceName)
-      cb(null, true)
-    } else {
-      cb(null, false)
+    if (!self.login) {
+      /** prevent app to invoke runtime methods if runtime is not logged in yet */
+      return cb(null, false)
     }
+    try {
+      self.registerDbusApp(appId, objectPath, ifaceName)
+    } catch (err) {
+      logger.error('Unexpected error on registering dbus app', appId, err && err.stack)
+      return cb(null, false)
+    }
+    cb(null, true)
   })
   extapp.addMethod('destroy', {
     in: ['s'],
