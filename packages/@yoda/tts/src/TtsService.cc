@@ -125,3 +125,8 @@ terminate:
     tts_handle->release();
   return false;
 }
+
+void TtsService::reconnect() {
+  if (tts_handle.get())
+    tts_handle->reconn();
+}

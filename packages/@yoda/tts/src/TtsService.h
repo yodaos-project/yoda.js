@@ -35,6 +35,7 @@ class TtsService {
   int speak(const char*);
   int cancel(int id);
   int disconnect();
+  void reconnect();
 
   static void* PollEvent(void*);
 

@@ -146,6 +146,8 @@ Flora.prototype.init = function init () {
   msg.writeInt32(0)
   // vad begin
   msg.writeInt32(globalEnv.speechVadBegin)
+  // max voice fragment size
+  msg.writeInt32(globalEnv.speechVoiceFragment)
   cli.post('rokid.speech.options', msg, floraFactory.MSGTYPE_PERSIST)
   this.floraCli = cli
 }

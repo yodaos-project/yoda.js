@@ -171,6 +171,10 @@ TtsProxy.prototype.disconnect = function () {
   this._handle.disconnect()
 }
 
+TtsProxy.prototype.reconnect = function () {
+  this._handle.reconnect()
+}
+
 function createHandle (options) {
   if (!options) { throw new TypeError('options is required') }
   if (!options.deviceId) { throw new TypeError('options.deviceId is required') }

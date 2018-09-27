@@ -189,6 +189,17 @@ JS_FUNCTION(Disconnect) {
   return jerry_create_boolean(true);
 }
 
+JS_FUNCTION(Reconnect) {
+  JS_DECLARE_THIS_PTR(tts, tts);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, tts);
+
+  if (_this->handle == NULL) {
+    return JS_CREATE_ERROR(COMMON, "tts is not initialized");
+  }
+  _this->handle->reconnect();
+  return jerry_create_undefined();
+}
+
 void init(jerry_value_t exports) {
   jerry_value_t jconstructor = jerry_create_external_function(TTS);
   iotjs_jval_set_property_jval(exports, "TtsWrap", jconstructor);
@@ -198,6 +209,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "speak", Speak);
   iotjs_jval_set_method(proto, "cancel", Cancel);
   iotjs_jval_set_method(proto, "disconnect", Disconnect);
+  iotjs_jval_set_method(proto, "reconnect", Reconnect);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
   jerry_release_value(proto);
