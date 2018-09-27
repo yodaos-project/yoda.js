@@ -36,5 +36,6 @@ fi
 rep_count=$(find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file -output-replacements-xml | grep -c '<replacement ')
 
 if ! test $rep_count = 0; then
+  find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file
   exit 1
 fi

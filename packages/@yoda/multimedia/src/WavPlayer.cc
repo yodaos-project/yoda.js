@@ -27,7 +27,7 @@ static void DoInitPlayer(napi_env env, void* data) {
 
   c->_result = prePrepareWavPlayer((const char**)(c->_filenames), c->_filesize);
 
-  for (size_t i=0; i<c->_filesize; i++) {
+  for (size_t i = 0; i < c->_filesize; i++) {
     if (c->_filenames[i] != NULL) {
       free(c->_filenames[i]);
       c->_filenames[i] = NULL;
@@ -50,19 +50,23 @@ static void AfterInitPlayer(napi_env env, napi_status status, void* data) {
   napi_value argv[1];
   if (c->_result == -1) {
     napi_value message;
-    NAPI_CALL_RETURN_VOID(env, napi_create_string_utf8(env, "Init WavPlayer Error", NAPI_AUTO_LENGTH, &message));
-    NAPI_CALL_RETURN_VOID(env, napi_create_error(env, NULL,  message, &argv[0]));
+    NAPI_CALL_RETURN_VOID(env,
+                          napi_create_string_utf8(env, "Init WavPlayer Error",
+                                                  NAPI_AUTO_LENGTH, &message));
+    NAPI_CALL_RETURN_VOID(env, napi_create_error(env, NULL, message, &argv[0]));
   } else {
     NAPI_CALL_RETURN_VOID(env, napi_get_null(env, &argv[0]));
   }
 
   napi_value callback;
-  NAPI_CALL_RETURN_VOID(env, napi_get_reference_value(env, c->_callback, &callback));
+  NAPI_CALL_RETURN_VOID(env,
+                        napi_get_reference_value(env, c->_callback, &callback));
   napi_value global;
   NAPI_CALL_RETURN_VOID(env, napi_get_global(env, &global));
 
   napi_value result;
-  NAPI_CALL_RETURN_VOID(env, napi_call_function(env, global, callback, 1, argv, &result));
+  NAPI_CALL_RETURN_VOID(env, napi_call_function(env, global, callback, 1, argv,
+                                                &result));
 
   NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, c->_callback));
   NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, c->_request));
@@ -99,18 +103,23 @@ static napi_value InitPlayer(napi_env env, napi_callback_info info) {
     NAPI_CALL(env, napi_get_element(env, nval_filenames, i, &nval_filename));
 
     size_t size = 0;
-    NAPI_CALL(env, napi_get_value_string_utf8(env, nval_filename, NULL, 0, &size));
+    NAPI_CALL(env,
+              napi_get_value_string_utf8(env, nval_filename, NULL, 0, &size));
     char* filename = (char*)malloc(size + 1);
-    NAPI_CALL(env, napi_get_value_string_utf8(env, nval_filename, filename, size + 1, &size));
+    NAPI_CALL(env, napi_get_value_string_utf8(env, nval_filename, filename,
+                                              size + 1, &size));
     filename[size] = 0;
     filenames[i] = filename;
   }
 
   napi_value resource_name;
-  NAPI_CALL(env, napi_create_string_utf8(env, "initPlayer", NAPI_AUTO_LENGTH, &resource_name));
-  NAPI_CALL(env, napi_create_reference(env, argv[1], 1, &(the_carrier->_callback)));
-  NAPI_CALL(env, napi_create_async_work(env, argv[1],
-            resource_name, DoInitPlayer, AfterInitPlayer, the_carrier, &(the_carrier->_request)));
+  NAPI_CALL(env, napi_create_string_utf8(env, "initPlayer", NAPI_AUTO_LENGTH,
+                                         &resource_name));
+  NAPI_CALL(env,
+            napi_create_reference(env, argv[1], 1, &(the_carrier->_callback)));
+  NAPI_CALL(env, napi_create_async_work(env, argv[1], resource_name,
+                                        DoInitPlayer, AfterInitPlayer,
+                                        the_carrier, &(the_carrier->_request)));
   return NULL;
 }
 
@@ -139,19 +148,24 @@ static void AfterPreparePlayer(napi_env env, napi_status status, void* data) {
   napi_value argv[1];
   if (c->_result == -1) {
     napi_value message;
-    NAPI_CALL_RETURN_VOID(env, napi_create_string_utf8(env, "Prepare WavPlayer Error", NAPI_AUTO_LENGTH, &message));
-    NAPI_CALL_RETURN_VOID(env, napi_create_error(env, NULL,  message, &argv[0]));
+    NAPI_CALL_RETURN_VOID(env,
+                          napi_create_string_utf8(env,
+                                                  "Prepare WavPlayer Error",
+                                                  NAPI_AUTO_LENGTH, &message));
+    NAPI_CALL_RETURN_VOID(env, napi_create_error(env, NULL, message, &argv[0]));
   } else {
     NAPI_CALL_RETURN_VOID(env, napi_get_null(env, &argv[0]));
   }
 
   napi_value callback;
-  NAPI_CALL_RETURN_VOID(env, napi_get_reference_value(env, c->_callback, &callback));
+  NAPI_CALL_RETURN_VOID(env,
+                        napi_get_reference_value(env, c->_callback, &callback));
   napi_value global;
   NAPI_CALL_RETURN_VOID(env, napi_get_global(env, &global));
 
   napi_value result;
-  NAPI_CALL_RETURN_VOID(env, napi_call_function(env, global, callback, 1, argv, &result));
+  NAPI_CALL_RETURN_VOID(env, napi_call_function(env, global, callback, 1, argv,
+                                                &result));
 
   NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, c->_callback));
   NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, c->_request));
@@ -165,7 +179,7 @@ static napi_value Prepare(napi_env env, napi_callback_info info) {
   napi_value argv[4];
   NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
-  if (argc != 4){
+  if (argc != 4) {
     napi_throw_error(env, nullptr, "The argument number is wrong.");
     return NULL;
   }
@@ -173,12 +187,14 @@ static napi_value Prepare(napi_env env, napi_callback_info info) {
   size_t size = 0;
   NAPI_CALL(env, napi_get_value_string_utf8(env, argv[0], NULL, 0, &size));
   char* filename = (char*)malloc(size + 1);
-  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[0], filename, size + 1, &size));
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[0], filename, size + 1,
+                                            &size));
   filename[size] = 0;
 
   NAPI_CALL(env, napi_get_value_string_utf8(env, argv[1], NULL, 0, &size));
   char* tag = (char*)malloc(size + 1);
-  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[1], tag, size + 1, &size));
+  NAPI_CALL(env,
+            napi_get_value_string_utf8(env, argv[1], tag, size + 1, &size));
   tag[size] = 0;
 
   bool holdconnect = false;
@@ -190,10 +206,13 @@ static napi_value Prepare(napi_env env, napi_callback_info info) {
   the_carrier->_holdconnect = holdconnect;
 
   napi_value resource_name;
-  NAPI_CALL(env, napi_create_string_utf8(env, "preparePlayer", NAPI_AUTO_LENGTH, &resource_name));
-  NAPI_CALL(env, napi_create_reference(env, argv[3], 1, &(the_carrier->_callback)));
-  NAPI_CALL(env, napi_create_async_work(env, argv[3],
-            resource_name, DoPreparePlayer, AfterPreparePlayer, the_carrier, &(the_carrier->_request)));
+  NAPI_CALL(env, napi_create_string_utf8(env, "preparePlayer", NAPI_AUTO_LENGTH,
+                                         &resource_name));
+  NAPI_CALL(env,
+            napi_create_reference(env, argv[3], 1, &(the_carrier->_callback)));
+  NAPI_CALL(env, napi_create_async_work(env, argv[3], resource_name,
+                                        DoPreparePlayer, AfterPreparePlayer,
+                                        the_carrier, &(the_carrier->_request)));
   NAPI_CALL(env, napi_queue_async_work(env, the_carrier->_request));
 
   return NULL;
@@ -213,12 +232,11 @@ static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
     DECLARE_NAPI_PROPERTY("initPlayer", InitPlayer),
     DECLARE_NAPI_PROPERTY("prepare", Prepare),
-    DECLARE_NAPI_PROPERTY("start", Start),
-    DECLARE_NAPI_PROPERTY("stop", Stop)
+    DECLARE_NAPI_PROPERTY("start", Start), DECLARE_NAPI_PROPERTY("stop", Stop)
   };
 
-  NAPI_CALL(env,
-      napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc));
+  NAPI_CALL(env, napi_define_properties(env, exports,
+                                        sizeof(desc) / sizeof(*desc), desc));
 
   return exports;
 }
