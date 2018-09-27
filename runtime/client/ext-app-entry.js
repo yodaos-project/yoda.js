@@ -61,6 +61,7 @@ function main () {
     logger.error('Target is required.')
     process.exit(-1)
   }
+  process.title = `${process.argv[0]} yoda-app ${target}`
   var pkg = require(`${target}/package.json`)
   logger.log(`load target: ${target}/package.json`)
 
