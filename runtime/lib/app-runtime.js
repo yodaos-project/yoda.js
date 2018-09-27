@@ -103,6 +103,7 @@ AppRuntime.prototype.init = function init (paths) {
     this.resetCloudStack()
   })
   // initializing the whole process...
+  this.resetServices()
   return this.loadApps(paths).then(() => {
     this.custodian.prepareNetwork()
     this.inited = true
@@ -570,8 +571,15 @@ AppRuntime.prototype.destroyAll = function (options) {
     return Promise.all(promises)
   }
 
-  // reset service
-  promises = promises.concat([
+  promises.concat(this.resetServices())
+
+  return Promise.all(promises)
+}
+
+AppRuntime.prototype.resetServices = function resetServices () {
+  logger.info('resetting services')
+
+  return Promise.all([
     this.lightMethod('reset', [])
       .then((res) => {
         if (res && res[0] === true) {
@@ -606,8 +614,6 @@ AppRuntime.prototype.destroyAll = function (options) {
         logger.log('reset ttsd error', error)
       })
   ])
-
-  return Promise.all(promises)
 }
 
 /**
@@ -789,7 +795,7 @@ AppRuntime.prototype.startApp = function (skillId, nlp, action, options) {
 AppRuntime.prototype.sendNLPToApp = function (skillId, nlp, action) {
   var curAppId = this.life.getCurrentAppId()
   var appId = this.loader.getAppIdBySkillId(skillId)
-  if (curAppId === appId) {
+  if (appId != null && curAppId === appId) {
     nlp.cloud = false
     nlp.appId = skillId
     action = {
