@@ -6,7 +6,7 @@ JS_FUNCTION(GetProperty) {
     return JS_CREATE_ERROR(COMMON, "key must be a string");
 
   jerry_size_t keylen = jerry_get_string_size(jargv[0]);
-  char key[keylen];
+  char key[keylen + 1];
 
   size_t check =
       jerry_string_to_char_buffer(jargv[0], (jerry_char_t*)key, keylen);

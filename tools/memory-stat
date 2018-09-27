@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+while :
+do
+  #iotjs /data/workspace/helper/send-asr.js 我要听歌
+  ps -eo pid,rss,args | grep -E "iotjs" | grep -v grep
+  free
+  echo =========`date "+%Y-%m-%d %H:%M:%S"`===========
+  sleep 5
+done
