@@ -1,5 +1,9 @@
 'use strict'
 
+require('@yoda/oh-my-little-pony')
+  .catchUncaughtError('/data/system/multimediad-err.log')
+
+var _ = require('@yoda/util')._
 var Service = require('./service')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
@@ -156,13 +160,13 @@ dbusApis.addMethod('seek', {
 }, function (appId, position, cb) {
   logger.log('seek', position, typeof position)
   if (appId && position !== '' && +position >= 0) {
-    service.seek(appId, +position, (error) => {
+    service.seek(appId, +position, _.once((error) => {
       if (error) {
         cb(null, false)
       } else {
         cb(null, true)
       }
-    })
+    }))
   } else {
     cb(null, false)
   }

@@ -67,3 +67,16 @@ function mapSeries (iterable, mapper) {
       })
   }
 }
+
+module.exports.once = once
+function once (callback) {
+  var called = false
+  var ret
+  return function dedupCallback () {
+    if (!called) {
+      called = true
+      ret = callback.apply(this, arguments)
+    }
+    return ret
+  }
+}

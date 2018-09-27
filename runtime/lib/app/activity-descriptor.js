@@ -834,7 +834,7 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function seek (pos) {
-        return this._runtime.multimediaMethod('seek', [this._appId, pos])
+        return this._runtime.multimediaMethod('seek', [this._appId, String(pos)])
           .then((res) => {
             if (res && res[0] === true) {
               return
