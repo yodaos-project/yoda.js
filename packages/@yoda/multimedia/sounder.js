@@ -1,11 +1,8 @@
 'use strict'
 
 var native = require('./wavplayer.node')
-var inherits = require('util').inherits
 var AudioManager = require('@yoda/audio').AudioManager
 var EventEmitter = require('events').EventEmitter
-
-var sounderInstance = null
 var ready = false
 
 /**

@@ -8,7 +8,7 @@ var AudioManager = require('@yoda/audio').AudioManager
 /**
  * @class
  * @memberof module:@yoda/multimedia
- * @description The MediaPlayer includes support for playing variety of common media types, so that you can 
+ * @description The MediaPlayer includes support for playing variety of common media types, so that you can
  *              easily integrate audio into your applications.
  *
  * ```js
