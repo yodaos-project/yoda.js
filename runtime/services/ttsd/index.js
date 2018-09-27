@@ -85,7 +85,7 @@ function reConnect (CONFIG) {
     })
     _TTS.on('end', function (id, errno) {
       logger.log('ttsd end', id)
-      lightd.invoke('stop', '@yoda/ttsd', '/opt/light/setSpeaking.js')
+      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
@@ -96,7 +96,7 @@ function reConnect (CONFIG) {
     })
     _TTS.on('cancel', function (id, errno) {
       logger.log('ttsd cancel', id)
-      lightd.invoke('stop', '@yoda/ttsd', '/opt/light/setSpeaking.js')
+      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
@@ -107,7 +107,7 @@ function reConnect (CONFIG) {
     })
     _TTS.on('error', function (id, errno) {
       logger.log('ttsd error', id)
-      lightd.invoke('stop', '@yoda/ttsd', '/opt/light/setSpeaking.js')
+      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
