@@ -9,7 +9,7 @@ var LIGHT_SOURCE = '/opt/light/'
 var maxUserspaceLayers = 3
 var maxSystemspaceLayers = 100
 
-var setSpeaking = require(`${LIGHT_SOURCE}/setSpeaking.js`)
+var setSpeaking = require(`${LIGHT_SOURCE}setSpeaking.js`)
 
 var manager = new LightRenderingContextManager()
 
@@ -17,7 +17,7 @@ function Light (options) {
   // load system light config
   this.systemspace = {}
   try {
-    this.systemspace = require(`${LIGHT_SOURCE}/config.json`)
+    this.systemspace = require(`${LIGHT_SOURCE}config.json`)
   } catch (error) {
     logger.log(`load systemspace light config error, use default`)
     logger.error(error)
@@ -118,7 +118,7 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
     })
     this.prev = handle(context, data || {}, () => {
       setTimeout(() => {
-        this.prevCallback()
+        this.prevCallback && this.prevCallback()
       }, 0)
     })
     this.prevUri = uri
@@ -343,13 +343,13 @@ Light.prototype.setHide = function () {
 
 Light.prototype.setLoading = function (appId) {
   logger.log('set loading')
-  var uri = `${LIGHT_SOURCE}/loading.js`
+  var uri = `${LIGHT_SOURCE}loading.js`
   this.loadfile(appId, uri, {}, function noop () {})
 }
 
 Light.prototype.setStandby = function () {
   this.stopPrev()
-  var hook = require(`${LIGHT_SOURCE}/setStandby.js`)
+  var hook = require(`${LIGHT_SOURCE}setStandby.js`)
   var context = this.getContext()
   this.prev = hook(context, {}, function noop () {})
 }
@@ -362,7 +362,7 @@ Light.prototype.setVolume = function (volume) {
       this.stopPrev()
     }
   }
-  var hook = require(`${LIGHT_SOURCE}/setVolume.js`)
+  var hook = require(`${LIGHT_SOURCE}setVolume.js`)
   var context = this.getContext()
   this.prev = hook(context, {
     volume: +volume
@@ -372,7 +372,7 @@ Light.prototype.setVolume = function (volume) {
 
 Light.prototype.setWelcome = function () {
   this.stopPrev()
-  var hook = require(`${LIGHT_SOURCE}/setWelcome.js`)
+  var hook = require(`${LIGHT_SOURCE}setWelcome.js`)
   var context = this.getContext()
   this.prev = hook(context, {}, function noop () {})
 }
@@ -415,7 +415,7 @@ Light.prototype.appSound = function (appId, name) {
 }
 
 Light.prototype.setPickup = function (appId, duration) {
-  var uri = `${LIGHT_SOURCE}/setPickup.js`
+  var uri = `${LIGHT_SOURCE}setPickup.js`
   this.loadfile(appId, uri, {
     degree: this.degree,
     duration: +duration
