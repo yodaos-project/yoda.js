@@ -1,5 +1,42 @@
 #!/usr/bin/env bash
 set -e
 
-adb shell logread -f -e iotjs \
-  | egrep --color=always '.*(daemon\.err|ERROR).*|$'
+help="
+Usage:
+  -e <expression>
+
+Example:
+  $ ./tools/readlog
+  $ ./tools/readlog -e DEBUG
+"
+
+expression=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -e)
+      expression="$2"
+      shift
+      ;;
+    --help)
+      printf "$help"
+      exit
+      ;;
+    -h)
+      printf "$help"
+      exit
+      ;;
+    --*)
+      echo "Illegal option $1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+if test -z "$expression"; then
+  adb shell logread -f -e iotjs \
+    | egrep --line-buffered --color=always '.*(daemon\.err|ERROR).*|$'
+else
+  adb shell logread -f -e iotjs \
+    | grep --line-buffered -e "$expression" \
+    | egrep --line-buffered --color=always '.*(daemon\.err|ERROR).*|$'
+fi
