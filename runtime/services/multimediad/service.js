@@ -95,8 +95,9 @@ MultiMedia.prototype.seek = function (appId, position, callback) {
       this.handle[appId].seek(position, callback)
     } catch (error) {
       logger.debug('try to seek player errer with appId: ', appId)
-      callback(new Error('player error'))
+      return callback(new Error('player error'))
     }
+    callback()
   } else {
     callback(new Error('player instance not found'))
   }
