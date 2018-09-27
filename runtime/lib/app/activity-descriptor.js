@@ -689,7 +689,7 @@ Object.assign(MultimediaDescriptor.prototype,
         logger.log('playing multimedia', url)
         return self._runtime.multimediaMethod('start', [self._appId, url, streamType])
           .then((result) => {
-            var multimediaId = result[0]
+            var multimediaId = _.get(result, '0', '-1')
             logger.log('create media player', result)
 
             if (multimediaId === '-1') {
@@ -932,7 +932,7 @@ Object.assign(TtsDescriptor.prototype,
         var impatient = _.get(options, 'impatient', false)
         return self._runtime.ttsMethod('speak', [self._appId, text])
           .then((args) => {
-            var ttsId = args[0]
+            var ttsId = _.get(args, '0', '-1')
             logger.log(`tts register ${ttsId}`)
 
             if (ttsId === '-1') {

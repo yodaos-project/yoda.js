@@ -1,5 +1,8 @@
 'use strict'
 
+require('@yoda/oh-my-little-pony')
+  .catchUncaughtError('/data/system/ttsd-err.log')
+
 var Service = require('./service')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
