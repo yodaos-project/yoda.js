@@ -8,7 +8,6 @@ var messageStream = bluetooth.getMessageStream()
 
 module.exports = function (app) {
   var started = false
-  var sleeping = false
   var uuid = property.get('ro.boot.serialno') || ''
   // connecting to wifi or not
   var connecting = false
@@ -91,11 +90,6 @@ module.exports = function (app) {
 
       return
     }
-    if (sleeping && nlp.intent === 'user_says') {
-      // do  nothing
-      logger.log('sleeping mode now, ignore voice')
-      return
-    }
     // user say again
     if (started && nlp.intent === 'user_says') {
       this.playSound('system://wifi/setup_network.ogg')
@@ -130,7 +124,6 @@ module.exports = function (app) {
       wifi.enableScanPassively()
     }
     started = true
-    sleeping = false
     messageStream = bluetooth.getMessageStream()
     messageStream.start(BLE_NAME, true, (err) => {
       logger.error(err && err.stack)
@@ -305,7 +298,6 @@ module.exports = function (app) {
       logger.log('closed ble')
     }
     wifi.enableScanPassively()
-    sleeping = true
     started = false
   }
 }
