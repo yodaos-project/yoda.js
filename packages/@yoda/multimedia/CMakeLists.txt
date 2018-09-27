@@ -37,4 +37,4 @@ set_target_properties(node-wavplayer PROPERTIES
 
 install(TARGETS node-mediaplayer DESTINATION ${CMAKE_INSTALL_DIR})
 install(TARGETS node-wavplayer DESTINATION ${CMAKE_INSTALL_DIR})
-install(FILES index.js mediaplayer.js wavplayer.js DESTINATION ${CMAKE_INSTALL_DIR})
+install(FILES index.js mediaplayer.js sounder.js DESTINATION ${CMAKE_INSTALL_DIR})
