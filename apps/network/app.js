@@ -293,7 +293,7 @@ module.exports = function (app) {
   function intoSleep () {
     logger.log('start sleep ......')
     clearTimeout(sleepTimer)
-    app.light.stop()
+    app.light.stop('system://setStandby.js')
     if (bleEnable) {
       messageStream.end()
       bleEnable = false

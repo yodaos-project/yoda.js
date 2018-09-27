@@ -44,7 +44,7 @@ dbusApis.addMethod('play', {
   } catch (error) {
     logger.log(`parse args error: ${args}, appId: ${appId}`)
   }
-  service.loadfile(name, data, (error) => {
+  service.loadfile(appId, name, data, (error) => {
     if (error) {
       cb(null, false)
     } else {
@@ -53,11 +53,19 @@ dbusApis.addMethod('play', {
   })
 })
 
+dbusApis.addMethod('stop', {
+  in: ['s', 's'],
+  out: ['b']
+}, function (appId, name, cb) {
+  service.stopFile(appId, name)
+  cb(null, true)
+})
+
 dbusApis.addMethod('setAwake', {
   in: ['s'],
   out: []
 }, function (appId, cb) {
-  service.setAwake()
+  service.setAwake(appId)
   cb(null)
 })
 
@@ -65,7 +73,7 @@ dbusApis.addMethod('setDegree', {
   in: ['s', 's'],
   out: []
 }, function (appId, degree, cb) {
-  service.setDegree(+degree)
+  service.setDegree(appId, +degree)
   cb(null)
 })
 
@@ -73,7 +81,7 @@ dbusApis.addMethod('setLoading', {
   in: ['s'],
   out: []
 }, function (appId, cb) {
-  service.setLoading()
+  service.setLoading(appId)
   cb(null)
 })
 
@@ -144,10 +152,10 @@ dbusApis.addMethod('reset', {
 })
 
 dbusApis.addMethod('setPickup', {
-  in: ['s'],
+  in: ['s', 's'],
   out: ['b']
-}, function (duration, cb) {
-  service.setPickup(+duration)
+}, function (appId, duration, cb) {
+  service.setPickup(appId, +duration)
   cb(null, true)
 })
 

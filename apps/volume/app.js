@@ -73,7 +73,7 @@ module.exports = function (activity) {
         if (init) {
           return Promise.resolve()
         }
-        return activity.light.play('system://setVolume', {
+        return activity.light.play('system://setVolume.js', {
           volume: localVol,
           action: action || (localVol <= prevVolume ? 'decrease' : 'increase')
         })
@@ -167,11 +167,19 @@ module.exports = function (activity) {
 
   function micMute (muted) {
     /** Only light effects, actual mic mute operation has been handled by runtime */
-    return activity.light.play('system://setMuted', {
-      muted: muted
-    }).then(() => {
-      return activity.exit()
-    })
+    if (muted) {
+      return activity.light.play('system://setMuted.js', {
+        muted: true
+      }).then(() => {
+        return activity.exit()
+      })
+    } else {
+      return activity.light.stop('system://setMuted.js', {
+        muted: false
+      }).then(() => {
+        return activity.exit()
+      })
+    }
   }
 
   activity.on('request', function (nlp, action) {
