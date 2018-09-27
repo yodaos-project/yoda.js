@@ -6,7 +6,7 @@ var Manager = require(`${helper.paths.apps}/cloudappclient/manager.js`)
 
 var eventBus = new EventEmitter()
 
-function Skill(exe, nlp, action) {
+function Skill (exe, nlp, action) {
   EventEmitter.call(this)
   this.appId = action.appId
   this.form = action.response.action.form
@@ -688,7 +688,6 @@ test.skip('manager test-8: resume updateStack, scene->cut->scene', t => {
       }
     }
   })
-
 })
 
 test('manager test-9: destroy updateStack, cut->scene->cut', t => {
@@ -745,7 +744,6 @@ test('manager test-9: destroy updateStack, cut->scene->cut', t => {
         }
       }
     })
-
   })
   eventBus.on('pause:appid-test9-scene', () => {
     t.pass('appid-test9-scene emit pause')
@@ -780,5 +778,4 @@ test('manager test-9: destroy updateStack, cut->scene->cut', t => {
       }
     }
   })
-
 })

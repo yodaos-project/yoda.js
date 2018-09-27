@@ -2,7 +2,7 @@
 
 var logger = require('logger')('mock-directive')
 
-function MockDirective() {
+function MockDirective () {
   this.frontend = []
   this.background = []
   this.cb = {
@@ -17,7 +17,7 @@ function MockDirective() {
   }
 }
 
-MockDirective.prototype.execute = function execute(dt, type, cb) {
+MockDirective.prototype.execute = function execute (dt, type, cb) {
   logger.info('directive execute')
 }
 
@@ -29,7 +29,7 @@ MockDirective.prototype.resume = function (type, cb) {
   logger.info('directive resume')
 }
 
-MockDirective.prototype.run = function run(type, cb) {
+MockDirective.prototype.run = function run (type, cb) {
   logger.info('directive run')
 }
 
