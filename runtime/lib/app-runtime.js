@@ -171,23 +171,36 @@ AppRuntime.prototype.resetAppearance = function resetAppearance (options) {
   var unmute = _.get(options, 'unmute')
 
   clearTimeout(this.handle.setVolume)
-  if (this.prevVolume > 0) {
-    if (this.prevVolume === AudioManager.getVolume()) {
-      AudioManager.setUserLandVolume(this.prevVolume)
-    } else {
-      /**
-       * if volume is changed in picking up voice,
-       * delta is applied afterwards to all volume channel.
-       */
-      var delta = 10 /** current volume */ - AudioManager.getVolume()
-      AudioManager.setVolume(this.prevVolume - delta)
-    }
-    this.prevVolume = -1
+  if (this.prevVolume < 0) {
+    /**
+     * no previous session of configuring appearance.
+     */
+    return
   }
 
-  if (unmute && AudioManager.isMuted()) {
-    this.openUrl('yoda-skill://volume/unmute', { preemptive: false })
+  if (this.prevVolume === AudioManager.getVolume()) {
+    AudioManager.setUserLandVolume(this.prevVolume)
+  } else {
+    /**
+     * if volume is changed in picking up voice,
+     * delta is applied afterwards to all volume channel.
+     */
+    var delta = 10 /** current volume */ - AudioManager.getVolume()
+    AudioManager.setVolume(this.prevVolume - delta)
   }
+  this.prevVolume = -1
+
+  process.nextTick(() => {
+    if (unmute && AudioManager.isMuted()) {
+      /**
+       * Restore previous volume on NLP incoming if device is muted,
+       * put procedure to next tick to prevent volume app get unexpected state.
+       * Yet since this is the first job on next tick, tts/media of apps are scheduled after
+       * alteration of AudioManger.
+       */
+      this.openUrl('yoda-skill://volume/unmute', { preemptive: false })
+    }
+  })
 
   this.lightMethod('setHide', [''])
 }
@@ -409,20 +422,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve()
   }
 
-  var future = Promise.resolve()
-  var prevId = this.life.getCurrentAppId()
-  if (prevId) {
-    future = Promise.all([
-      this.ttsMethod('stop', [ prevId ]),
-      this.multimediaMethod('pause', [ prevId ])
-    ])
-  }
-
-  return future
-    .then(() => {
-      this.resetAppearance({ unmute: true })
-      return this.life.createApp(appId)
-    })
+  return this.life.createApp(appId)
     .then(() => {
       if (!preemptive) {
         logger.info(`app is not preemptive, skip activating app ${appId}`)
@@ -434,6 +434,17 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
       return this.life.activateAppById(appId, form, carrierId)
     })
     .then(() => {
+      var prevId = this.life.getCurrentAppId()
+      if (prevId == null) {
+        return
+      }
+      return Promise.all([
+        this.ttsMethod('stop', [ prevId ]),
+        this.multimediaMethod('pause', [ prevId ])
+      ])
+    })
+    .then(() => {
+      this.resetAppearance({ unmute: true })
       return this.life.onLifeCycle(appId, 'request', [ nlp, action ])
     })
     .catch((error) => {
