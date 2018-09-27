@@ -1,5 +1,8 @@
 'use strict'
 
+require('@yoda/oh-my-little-pony')
+  .catchUncaughtError('/data/system/lightd-err.log')
+
 var Service = require('./service')
 var Dbus = require('dbus')
 var Sounder = require('@yoda/multimedia').Sounder
