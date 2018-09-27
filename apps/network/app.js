@@ -120,8 +120,10 @@ module.exports = function (app) {
 
     if (nlp.intent === 'manual_setup') {
       wifi.disableAll()
-    } else {
+    } else if (nlp.intent === 'system_setup') {
       wifi.enableScanPassively()
+    } else {
+      return
     }
     started = true
     messageStream = bluetooth.getMessageStream()
