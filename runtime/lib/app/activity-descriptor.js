@@ -10,8 +10,8 @@ var _ = require('@yoda/util')._
 var yodaPath = require('@yoda/util').path
 var EventEmitter = require('events').EventEmitter
 
-var MEDIA_SOURCE = '/opt/media/'
-var LIGHT_SOURCE = '/opt/light/'
+var MEDIA_SOURCE = '/opt/media'
+var LIGHT_SOURCE = '/opt/light'
 
 module.exports.ActivityDescriptor = ActivityDescriptor
 module.exports.LightDescriptor = LightDescriptor
@@ -567,8 +567,19 @@ Object.assign(LightDescriptor.prototype,
     stop: {
       type: 'method',
       returns: 'promise',
-      fn: function stop () {
-        return this._runtime.lightMethod('setHide', [this._appId])
+      fn: function stop (uri) {
+        if (uri && typeof uri === 'string') {
+          var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, this._appHome + '/light')
+          return this._runtime.lightMethod('stop', [this._appId, absPath])
+            .then((res) => {
+              if (res && res[0] === true) {
+                return
+              }
+              throw new Error('stop light failed')
+            })
+        } else {
+          return Promise.reject(new Error('the args of uri must be a string'))
+        }
       }
     }
   }
