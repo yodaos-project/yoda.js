@@ -20,7 +20,8 @@ MultiMedia.prototype.start = function (appId, url, streamType) {
       this.handle[appId].stop()
       delete this.handle[appId]
     } catch (error) {
-      logger.log(`try to stop prev player error, appId: ${appId}`)
+      logger.error(`try to stop prev player error, appId: ${appId}`, error.stack)
+      throw error
     }
   }
   var player
@@ -43,7 +44,7 @@ MultiMedia.prototype.stop = function (appId) {
       this.handle[appId].stop()
       delete this.handle[appId]
     } catch (error) {
-      logger.debug('try to stop player errer with appId: ', appId)
+      logger.error('try to stop player errer with appId: ', appId, error.stack)
     }
     delete this.handle[appId]
   }
@@ -54,7 +55,7 @@ MultiMedia.prototype.pause = function (appId) {
     try {
       this.handle[appId].pause()
     } catch (error) {
-      logger.debug('try to pause player errer with appId: ', appId)
+      logger.error('try to pause player errer with appId: ', appId, error.stack)
     }
   }
 }
@@ -65,7 +66,7 @@ MultiMedia.prototype.resume = function (appId) {
       this.handle[appId].resume()
     }
   } catch (error) {
-    logger.debug('try to resume player errer with appId: ', appId)
+    logger.error('try to resume player errer with appId: ', appId, error.stack)
   }
 }
 
@@ -94,7 +95,7 @@ MultiMedia.prototype.seek = function (appId, position, callback) {
     try {
       this.handle[appId].seek(position, callback)
     } catch (error) {
-      logger.debug('try to seek player errer with appId: ', appId)
+      logger.error('try to seek player errer with appId: ', appId, error.stack)
       return callback(new Error('player error'))
     }
     callback()
@@ -112,7 +113,7 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
     try {
       this.handle[appId].stop()
     } catch (error) {
-      logger.debug(`try to stop player error with appId: ${appId}`)
+      logger.error(`try to stop player error with appId: ${appId}`, error.stack)
     }
     delete this.handle[appId]
     this.emit('playbackcomplete', '' + player.id)
@@ -128,7 +129,7 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
     try {
       this.handle[appId].stop()
     } catch (error) {
-      logger.debug(`try to stop player error with appId: ${appId}`)
+      logger.error(`try to stop player error with appId: ${appId}`, error.stack)
     }
     delete this.handle[appId]
     this.emit('error', '' + player.id)
@@ -141,7 +142,7 @@ MultiMedia.prototype.reset = function () {
       this.handle[index].stop()
     }
   } catch (error) {
-    logger.log('error when try to stop all player')
+    logger.error('error when try to stop all player', error.stack)
   }
   this.handle = {}
 }
