@@ -1,4 +1,7 @@
 {
+  "config": {
+    "longpressWindow": 500
+  },
   "113": {
     "click": {
       "runtimeMethod": "setMicMute",
