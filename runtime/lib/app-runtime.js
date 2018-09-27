@@ -673,7 +673,7 @@ AppRuntime.prototype.setPickup = function (isPickup, duration) {
   if (isPickup !== true) {
     return Promise.resolve()
   }
-  return this.lightMethod('setPickup', ['' + (duration || 6000)])
+  return this.lightMethod('setPickup', ['@Yoda', '' + (duration || 6000)])
 }
 
 AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {
