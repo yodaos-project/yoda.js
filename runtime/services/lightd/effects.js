@@ -6,10 +6,12 @@
 
 var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
+var Sounder = require('@yoda/multimedia').Sounder
 var light = require('@yoda/light')
 var LRU = require('lru-cache')
 var Map = require('pseudomap')
 var logger = require('logger')('effects')
+var path = require('path')
 
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 var SYSTEMCACHE = new Map()
@@ -123,6 +125,16 @@ LightRenderingContext.prototype.sound = function (uri, self) {
     // etc.. /path/to/sound.ogg
     absPath = uri
   }
+
+  if (path.extname(absPath) === '.wav') {
+    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, true, (err) => {
+      if (err) {
+        logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
+      }
+    })
+    return mockPlayer
+  }
+
   var cache = PLAYERCACHE
   if (isSystem) {
     cache = SYSTEMCACHE

@@ -7,7 +7,7 @@
 
 typedef struct {
   char** _filenames;
-  int _filesize;
+  int _filenum;
   int _result;
   napi_ref _callback;
   napi_async_work _request;
@@ -25,9 +25,9 @@ typedef struct {
 static void DoInitPlayer(napi_env env, void* data) {
   init_carrier* c = static_cast<init_carrier*>(data);
 
-  c->_result = prePrepareWavPlayer((const char**)(c->_filenames), c->_filesize);
+  c->_result = prePrepareWavPlayer((const char**)(c->_filenames), c->_filenum);
 
-  for (size_t i = 0; i < c->_filesize; i++) {
+  for (size_t i = 0; i < c->_filenum; i++) {
     if (c->_filenames[i] != NULL) {
       free(c->_filenames[i]);
       c->_filenames[i] = NULL;
@@ -96,7 +96,7 @@ static napi_value InitPlayer(napi_env env, napi_callback_info info) {
   char** filenames = (char**)malloc(filesize);
   memset(filenames, 0, filesize);
   the_carrier->_filenames = filenames;
-  the_carrier->_filesize = filesize;
+  the_carrier->_filenum = length;
 
   for (int i = 0; i < length; i++) {
     napi_value nval_filename;
@@ -120,6 +120,7 @@ static napi_value InitPlayer(napi_env env, napi_callback_info info) {
   NAPI_CALL(env, napi_create_async_work(env, argv[1], resource_name,
                                         DoInitPlayer, AfterInitPlayer,
                                         the_carrier, &(the_carrier->_request)));
+  NAPI_CALL(env, napi_queue_async_work(env, the_carrier->_request));
   return NULL;
 }
 

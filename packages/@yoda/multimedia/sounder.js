@@ -3,7 +3,6 @@
 var native = require('./wavplayer.node')
 var AudioManager = require('@yoda/audio').AudioManager
 var EventEmitter = require('events').EventEmitter
-var ready = false
 
 /**
  * @class
@@ -15,17 +14,20 @@ var ready = false
  * var AudioManager = require('@yoda/audio').AudioManager
  * var Sounder = require('@yoda/multimedia').Sounder
  *
- * var filenames = ['/opt/media/volume.wav', '/opt/media/wakeup.wav']
- * Sounder.init(filenames, (err) => {
- *   if (err instanceof Error) {
- *     console.log('init player error')
- *     return -1
- *   }
- *   console.log('init done')
- *   return 1
+ * Sounder.once('ready', () => {
+ *   logger.info('wav audio loaded')
  * })
- *
- * Sounder.play('/opt/media/volume.wav')
+ * Sounder.once('error', (err) => {
+ *   if (err) {
+ *     logger.error(err && err.stack)
+ *   }
+ * })
+ * Sounder.init([
+ *   '/opt/media/volume.wav',
+ *   '/opt/media/wakeup.wav'])
+ * Sounder.play(absPath, AudioManager.STREAM_SYSTEM, false, (err)=>{
+ *   logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
+ * })
  * ```
  */
 var Sounder = new EventEmitter()
@@ -38,26 +40,21 @@ var Sounder = new EventEmitter()
  * @throws {Error} the sounder player has been ready.
  */
 Sounder.init = function init (filenames) {
-  if (ready === true) {
-    throw new Error('the sounder player has been ready.')
-  } else {
-    native.initPlayer(filenames, (err) => {
-      if (err) {
-        /**
-         * When the sounder player occurs error.
-         * @event module:@yoda/multimedia.Sounder#error
-         */
-        Sounder.emit('error', err)
-      } else {
-        ready = true
-        /**
-         * When the sounder player is ready.
-         * @event module:@yoda/multimedia.Sounder#ready
-         */
-        Sounder.emit('ready')
-      }
-    })
-  }
+  native.initPlayer(filenames, (err) => {
+    if (err) {
+      /**
+       * When the sounder player occurs error.
+       * @event module:@yoda/multimedia.Sounder#error
+       */
+      Sounder.emit('error', err)
+    } else {
+      /**
+       * When the sounder player is ready.
+       * @event module:@yoda/multimedia.Sounder#ready
+       */
+      Sounder.emit('ready')
+    }
+  })
 }
 
 function _playSound (filename, stream, holdconnection, callback) {
@@ -91,11 +88,7 @@ function _playSound (filename, stream, holdconnection, callback) {
  * @throw {Error} player is not ready, please use `ready` event.
  */
 Sounder.play = function play (filename, stream, holdconnection, callback) {
-  if (ready === false) {
-    throw new Error('player is not ready, please use `ready` event')
-  } else {
-    _playSound(filename, stream, holdconnection, callback)
-  }
+  _playSound(filename, stream, holdconnection, callback)
 }
 
 /**
@@ -105,11 +98,7 @@ Sounder.play = function play (filename, stream, holdconnection, callback) {
  * @throw {Error} player is not ready, please use `ready` event.
  */
 Sounder.stop = function stop () {
-  if (ready === false) {
-    throw new Error('player is not ready, please use `ready` event')
-  } else {
-    return native.stop()
-  }
+  return native.stop()
 }
 
 module.exports = Sounder
