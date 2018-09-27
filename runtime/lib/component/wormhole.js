@@ -92,13 +92,14 @@ Wormhole.prototype.sendToApp = function sendToApp (topic, data) {
   if (this.mqtt == null) {
     return Promise.reject(new Error('MQTT not ready'))
   }
-  this.mqtt.sendToApp(topic, JSON.stringify(data))
   return Promise.resolve()
+    .then(() => this.mqtt.sendToApp(topic, JSON.stringify(data)))
 }
 
 Wormhole.prototype.setOffline = function setOffline () {
   if (this.mqtt == null) {
     return
   }
+  logger.info('disconnecting mqtt proactively')
   this.mqtt.disconnect()
 }

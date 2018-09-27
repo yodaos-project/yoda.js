@@ -79,6 +79,7 @@ Custodian.prototype.resetNetwork = function resetNetwork () {
   logger.log('reset network')
   wifi.resetWifi()
   wifi.disableAll()
+  this.runtime.wormhole.setOffline()
 
   this._networkConnected = false
   this._loggedIn = false
