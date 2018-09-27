@@ -12,6 +12,8 @@ function KeyboardHandler (runtime) {
   this.runtime = runtime
   this.config = config
 
+  this.longpressWindow = _.get(this.config, 'config.longpressWindow', 500)
+
   this.listeners = {
     keydown: {},
     keyup: {},
@@ -22,7 +24,7 @@ function KeyboardHandler (runtime) {
 }
 
 KeyboardHandler.prototype.init = function init () {
-  this.input = Input()
+  this.input = Input(_.get(this.config, 'config', {}))
   this.listen()
 }
 
@@ -165,6 +167,7 @@ KeyboardHandler.prototype.listen = function listen () {
       return
     }
     var timeDelta = event.keyTime - this.firstLongPressTime
+    timeDelta = Math.ceil(timeDelta / this.longpressWindow) * this.longpressWindow
     logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
 
     if (this.preventSubsequent) {
