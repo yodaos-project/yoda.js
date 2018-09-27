@@ -189,40 +189,6 @@ test('skills have cut skill, loop add scene skill', t => {
   t.end()
 })
 
-test('skills add random type skill', t => {
-  var manager = new Manager(directive, Skill)
-  for (var i = 0; i < 40; i++) {
-    if (i % 3 === 0 && manager.skills.length === 1) {
-      var skill = manager.skills[0]
-      mockAction.response.action.form = 'cut'
-      mockAction.appId = `cut-skill-${i}`
-      manager.onrequest(mockNlp, mockAction)
-      if (skill.form === 'cut') {
-        t.equal(manager.skills.length, 1)
-        var sk = manager.skills[0]
-        t.equal(sk.appId, mockAction.appId, `skill is ${sk.appId}`)
-        t.equal(sk.form, mockAction.response.action.form, `skill form is ${sk.form}`)
-      } else {
-        t.equal(manager.skills.length, 2)
-        var sskill = manager.skills[0]
-        t.equal(sskill.form, 'scene', `skill form is ${sskill.form}`)
-        var cskill = manager.skills[1]
-        t.equal(cskill.appId, mockAction.appId, `skill form is ${cskill.appId}`)
-        t.equal(cskill.form, 'cut', `skill form is ${cskill.form}`)
-      }
-    } else {
-      mockAction.response.action.form = 'scene'
-      mockAction.appId = `scene-skill-${i}`
-      manager.onrequest(mockNlp, mockAction)
-      t.equal(manager.skills.length, 1)
-      var sskill = manager.skills[0]
-      t.equal(sskill.appId, mockAction.appId, `skill form is ${sskill.appId}`)
-      t.equal(sskill.form, 'scene', `skill form is ${sskill.form}`)
-    }
-  }
-  t.end()
-})
-
 test('skills is null, append cut skill', t => {
   var manager = new Manager(directive, Skill)
   mockAction.response.action.form = 'cut'
