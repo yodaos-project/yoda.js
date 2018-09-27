@@ -58,7 +58,8 @@ function reConnect (CONFIG) {
     _CONFIG.deviceTypeId === CONFIG.deviceTypeId &&
     _CONFIG.key === CONFIG.key &&
     _CONFIG.secret === CONFIG.secret) {
-    logger.log('skip this connect, because the same config')
+    logger.log('reconnect with same config')
+    _TTS.reconnect()
     return
   }
 
