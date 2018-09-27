@@ -2,6 +2,7 @@
 
 var Service = require('./service')
 var Dbus = require('dbus')
+var Sounder = require('@yoda/multimedia').Sounder
 var Remote = require('../../lib/dbus-remote-call.js')
 var logger = require('logger')('lightd')
 
@@ -14,6 +15,20 @@ var permit = new Remote(dbusService._dbus, {
   dbusObjectPath: '/com/permission',
   dbusInterface: 'com.rokid.permission'
 })
+
+Sounder.once('ready', () => {
+  logger.info('wav audio loaded')
+})
+Sounder.once('error', (err) => {
+  logger.error(err && err.stack)
+})
+Sounder.init([
+  '/opt/media/volume.wav',
+  '/opt/media/awake_01.wav',
+  '/opt/media/awake_02.wav',
+  '/opt/media/awake_03.wav',
+  '/opt/media/awake_04.wav',
+  '/opt/media/awake_05.wav'])
 
 var service = new Service({
   permit: permit
