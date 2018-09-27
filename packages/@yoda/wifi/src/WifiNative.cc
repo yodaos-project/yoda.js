@@ -16,7 +16,7 @@ JS_FUNCTION(JoinNetwork) {
   // parse the ssid
   if (jerry_value_is_string(jargv[0])) {
     ssidlen = jerry_get_string_size(jargv[0]);
-    jerry_char_t ssid_buf[ssidlen];
+    jerry_char_t ssid_buf[ssidlen + 1];
     jerry_string_to_char_buffer(jargv[0], ssid_buf, ssidlen);
     ssid_buf[ssidlen] = '\0';
     strncpy(config.ssid, (const char*)ssid_buf, ssidlen);
@@ -32,7 +32,7 @@ JS_FUNCTION(JoinNetwork) {
     if (psklen == 0 || key_mgmt == WIFI_KEY_NONE) {
       config.key_mgmt = WIFI_KEY_NONE;
     } else {
-      jerry_char_t psk_buf[psklen];
+      jerry_char_t psk_buf[psklen + 1];
       jerry_string_to_char_buffer(jargv[1], psk_buf, psklen);
       psk_buf[psklen] = '\0';
       strncpy(config.psk, (const char*)psk_buf, psklen);
@@ -79,6 +79,7 @@ JS_FUNCTION(GetWifiList) {
     jerry_set_property_by_index(jlist, i, jitem);
 
     // release
+    jerry_release_value(jsig_val);
     jerry_release_value(jssid_name);
     jerry_release_value(jssid_val);
     jerry_release_value(jsig_name);

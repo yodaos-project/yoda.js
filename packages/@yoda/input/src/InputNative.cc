@@ -209,6 +209,8 @@ void InputEventHandler::OnGestureEvent(uv_async_t* async) {
 }
 
 void InputEventHandler::AfterCallback(uv_handle_t* handle) {
+  uv_async_t* async = (uv_async_t*)handle;
+  delete async->data;
   delete handle;
 }
 

@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+store_interval=60
+ps_grep="/usr/bin/iotjs|turenproc|speech-service|flora-dispatcher|bluetooth_service|pulseaudio|dbus-daemon"
+
+help="
+Usage:
+  -i [interval] memory snapshot interval
+              default value is ${store_interval} seconds
+  -f [format] a regex expression used for \`ps aux | grep -E \$fromat\`
+              default value is $ps_grep
+Example:
+  $ memory-viewer -i 60 -f \"iotjs|turen\"
+
+This tool is used for collect memory data over a time and present the data in a line chart
+Enter ^C to stop collect data and generatte line chart
+"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -i)
+      store_interval="$2"
+      shift
+      ;;
+    -f)
+      ps_grep="$2"
+      shift
+      ;;
+    --help)
+      printf "$help"
+      exit
+      ;;
+    -h)
+      printf "$help"
+      exit
+      ;;
+    --*)
+      echo "Illegal option $1"
+      exit
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+mount -o remount,rw /
+
+start_time=`date "+%Y-%m-%d-%H:%M:%S"`
+store_file=`pwd`/memory-data-$start_time.html
+data_tmp_file=`pwd`/.memory-data-$start_time.js
+
+echo "collect interval: ${store_interval}s"
+echo "collect process regex: ${ps_grep}"
+echo "store file: ${store_file}"
+echo "Enter ^C to stop collect memory data"
+echo "Collecting memory data..."
+
+echo "[" > $data_tmp_file
+
+store_data() {
+  echo "]" >> $data_tmp_file
+  echo_templatte='<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width,height=device-height">
+      <title>memory view</title>
+      <style>::-webkit-scrollbar{display:none;}html,body{overflow:hidden;height:100%;margin:0;}</style>
+  </head>
+  <body>
+  <div id="mountNode"></div>
+  <script>/*Fixing iframe window.innerHeight 0 issue in Safari*/document.body.clientHeight;</script>
+  <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g2-3.2.8/dist/g2.min.js"></script>
+  <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.data-set-0.9.6/dist/data-set.min.js"></script>
+  <script>
+  var data = ${data};
+
+  var chart = new G2.Chart({
+    container: "mountNode",
+    forceFit: true,
+    height: window.innerHeight
+  });
+  chart.source(data, {
+    month: {
+      range: [0, 1]
+    }
+  });
+  chart.tooltip({
+    crosshairs: {
+      type: "line"
+    }
+  });
+  chart.axis("mem", {
+    label: {
+      formatter: function formatter(val) {
+        return val + "KB";
+      }
+    }
+  });
+  chart.line().position("time*mem").color("args");
+  chart.point().position("time*mem").color("args").size(4).shape("circle").style({
+    stroke: "#fff",
+    lineWidth: 1
+  });
+  chart.render();
+  </script>
+  </body>
+  </html>
+  '
+  mem_data=`cat $data_tmp_file`
+  echo ${echo_templatte/\$\{data\}/$mem_data} > $store_file
+  echo "store file: $store_file"
+  rm -f $data_tmp_file
+}
+
+trap 'store_data; exit 0;' INT TERM
+trap 'echo "ignore SIGHUP"' HUP
+
+times=0
+while :
+do
+  IFS=$'\n'
+  now=`date "+%H:%M:%S"`
+  # echo "storing $((++times)) times at $now"
+  cmds=($(ps -eo pid,rss,args | grep -E $ps_grep | grep -v grep))
+  cmds_len=${#cmds[@]}
+  for ((i=0;i<cmds_len;++i))
+  {
+    cmd=${cmds[i]}
+    cmd_pid=`echo $cmd | awk '{print $1}'`
+    cmd_mem=`echo $cmd | awk '{print $2}'`
+    # cmd_args=$cmd | sed -e 's/\([0-9]\+\)//' | sed -e 's/\([0-9]\+\)//'
+    cmd_args=`echo $cmd | sed "s/$cmd_pid//" | sed "s/$cmd_mem//" | sed 's/^[ \t]*//'`
+    echo "{pid:$cmd_pid,mem:$cmd_mem,args:\"$cmd_args\",time:\"$now\"}," >> $data_tmp_file
+  }
+  mem_free=`cat /proc/meminfo | grep MemAvailable | awk '{print $2}'`
+  if [ ! $mem_free ]; then
+    mem_free=0
+  fi
+  echo "{pid:0,mem:$mem_free,args:\"free\",time:\"$now\"}," >> $data_tmp_file
+  sleep $store_interval
+done
