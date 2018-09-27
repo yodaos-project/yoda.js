@@ -95,6 +95,9 @@ MqttAgent.prototype.onMessage = function onMessage (channel, message) {
 }
 
 MqttAgent.prototype.sendToApp = function sendToApp (topic, text) {
+  if (handle == null) {
+    throw new Error('mqtt is not connected yet')
+  }
   logger.info('mqtt send channel:', `u/${this.userId}/rc`)
   handle.publish(`u/${this.userId}/rc`, JSON.stringify({
     reviceDevice: {
