@@ -45,7 +45,7 @@ function startWithRetry (name, handle, onerror, maxCount) {
       count += 1
       handle.start(name)
     }
-  })
+  }, 200)
   handle.once('opened', () => clearInterval(timer))
   handle.start(name)
 }
