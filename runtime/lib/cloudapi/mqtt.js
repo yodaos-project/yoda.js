@@ -41,6 +41,9 @@ MqttAgent.prototype.register = function register (cb) {
 }
 
 MqttAgent.prototype.connect = function connect () {
+  if (handle != null) {
+    this.disconnect()
+  }
   handle = mqtt.connect(endpoint, {
     clientId: this.mqttOptions.username,
     username: this.mqttOptions.username,
