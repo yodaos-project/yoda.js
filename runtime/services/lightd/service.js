@@ -92,6 +92,7 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
   var zIndex
   var self = this
   try {
+    logger.info(uri, data)
     var isSystemUri = this.isSystemURI(uri)
     // format z-index.
     if (isSystemUri) {
