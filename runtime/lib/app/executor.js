@@ -32,11 +32,16 @@ Executor.prototype.create = function () {
   if (this.daemon && this.app != null) {
     return Promise.resolve(this.app)
   }
+  if (this.creating) {
+    return Promise.reject(new Error(`Executor is creating app ${this.appId}.`))
+  }
+  this.creating = true
 
   if (this.type === 'light') {
     return lightApp(this.appId, this.appHome, this.runtime)
       .then(app => {
         this.app = app
+        this.creating = false
         app.emit('ready')
         return app
       })
@@ -45,9 +50,11 @@ Executor.prototype.create = function () {
       .then(app => {
         logger.info('Ext-app successfully started')
         this.app = app
+        this.creating = false
         app.once('exit', () => {
           logger.info(`${this.appId} exited.`)
           this.app = null
+          this.runtime.appGC(this.appId)
         })
         app.emit('ready')
         return app

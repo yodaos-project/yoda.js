@@ -277,16 +277,26 @@ Light.prototype.mockPlayer = function (context) {
   }
 }
 
+/**
+ *
+ * @param {string} appId -
+ * @param {string} [uri] - stop given light resource, if not specified, stop all light bound to the app
+ */
 Light.prototype.stopFile = function (appId, uri) {
   var isFind = false
   // systemspace is always higher than userspace
   for (var j = 0; j < this.systemspaceZIndex.length; j++) {
-    if (this.systemspaceZIndex[j] && this.systemspaceZIndex[j].uri === uri &&
-        this.prevAppId === appId) {
-      // clear z-index
-      this.systemspaceZIndex[j] = null
-      logger.log('clear systemspace layers')
-      isFind = true
+    if (this.systemspaceZIndex[j] == null) {
+      continue
+    }
+    if (uri && this.systemspaceZIndex[j].uri !== uri) {
+      continue
+    }
+    // clear z-index
+    this.systemspaceZIndex[j] = null
+    logger.log('clear systemspace layer', j)
+    isFind = true
+    if (uri) {
       break
     }
   }
@@ -294,19 +304,26 @@ Light.prototype.stopFile = function (appId, uri) {
   if (!isFind) {
     // find which z-index need to resume
     for (var i = this.userspaceZIndex.length - 1; i >= 0; i--) {
-      if (this.userspaceZIndex[i] && this.userspaceZIndex[i].uri === uri &&
-          this.prevAppId === appId) {
-        // clear z-index
-        this.userspaceZIndex[i] = null
-        logger.log('clear userspace layers')
+      if (this.userspaceZIndex[i] == null) {
+        continue
+      }
+      if (uri && this.userspaceZIndex[i].uri !== uri) {
+        continue
+      }
+      // clear z-index
+      this.userspaceZIndex[i] = null
+      logger.log('clear userspace layer', i)
+      if (uri) {
         break
       }
     }
   }
   // stop light if currently is rendering
-  if (this.prev && this.prevUri === uri) {
-    logger.log(`stop resume light: ${uri}`)
-    this.stopPrev()
+  if (this.prev && this.prevAppId === appId) {
+    if (!uri || this.prevUri === uri) {
+      logger.log(`stop resume light: ${uri}`)
+      this.stopPrev()
+    }
   }
   // try to resume next layer
   this.resume()

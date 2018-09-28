@@ -668,6 +668,15 @@ AppRuntime.prototype.resetCloudStack = function () {
   this.flora.updateStack(this.domain.scene + ':' + this.domain.cut)
 }
 
+AppRuntime.prototype.appGC = function appGC (appId) {
+  logger.info('Collecting resources of app', appId)
+  return Promise.all([
+    this.lightMethod('stop', [ appId, '' ]),
+    this.multimediaMethod('stop', [ appId ]),
+    this.ttsMethod('stop', [ appId ])
+  ]).catch(err => logger.error('Unexpected error on collecting resources of app', appId, err.stack))
+}
+
 /**
  * 调用speech的pickup
  * @param {boolean} isPickup
