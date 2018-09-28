@@ -184,8 +184,6 @@ JS_FUNCTION(Stop) {
 
   if (_this->handle == NULL)
     return JS_CREATE_ERROR(COMMON, "player native handle is not initialized");
-  if (!_this->listener->isPrepared())
-    return JS_CREATE_ERROR(COMMON, "player is not prepared");
 
   _this->handle->stop();
   uv_async_send(&_this->close_handle);
