@@ -222,6 +222,7 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
   if (vol > min) {
     this.prevVolume = vol
     AudioManager.setUserLandVolume(min)
+    clearTimeout(this.handle.setVolume)
     this.handle.setVolume = setTimeout(() => {
       this.resetAppearance()
     }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
