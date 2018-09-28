@@ -45,6 +45,10 @@ MediaEventHandle.prototype.start = function (url, eventHandle) {
     .then((mediaId) => {
       this.callbackHandle[`mediacb:${mediaId}`] = eventHandle
     })
+    .catch((error) => {
+      logger.error(`media play ${url} error: ${error}`)
+      eventHandle('error')
+    })
 }
 
 module.exports = MediaEventHandle

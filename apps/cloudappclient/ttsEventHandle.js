@@ -42,6 +42,9 @@ TtsEventHandle.prototype.speak = function (tts, eventHandle) {
   }).then((ttsId) => {
     logger.info(`speak id:${ttsId}`)
     this.callbackHandle[`ttscb:${ttsId}`] = eventHandle
+  }).catch((error) => {
+    logger.error(`tts speak error: ${error}`)
+    eventHandle('error')
   })
 }
 
