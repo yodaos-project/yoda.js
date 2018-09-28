@@ -183,6 +183,7 @@ Light.prototype.removeLayerByUri = function (uri) {
 }
 
 Light.prototype.resume = function () {
+  this.stopPrev()
   var resume = null
   var isSystemUri = false
   var zIndex = 0
@@ -214,7 +215,6 @@ Light.prototype.resume = function () {
   }
   if (resume) {
     try {
-      this.stopPrev()
       var handle = resume.handle
       var context = resume.context
       this.prevContext = context
