@@ -52,6 +52,48 @@ test('app preemption', t => {
     })
 })
 
+test('shall not deactivate app if app to be activated is in stack', t => {
+  mock.restore()
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
+
+  Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      mock.appLoader.getAppById('0').on('destroy', () => {
+        t.fail('app 0 shall not be destroyed')
+      })
+      return life.activateAppById('0', 'cut')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'cut app preempts top of stack')
+      return life.activateAppById('0', 'cut')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'cut app preempts top of stack')
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'scene app preempts top of stack')
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'scene app preempts top of stack')
+      return life.activateAppById('1', 'cut')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1', 'cut app preempts top of stack')
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'scene app preempts top of stack')
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('shall not throw on activating if previous app is not alive', t => {
   mock.restore()
   mock.mockAppExecutors(5)

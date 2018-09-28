@@ -289,7 +289,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   if (form === 'scene') {
     // Exit all apps in stack on incoming scene nlp
     logger.info(`on scene app '${appId}' preempting, deactivating all apps in stack.`)
-    return future.then(() => this.deactivateAppsInStack())
+    return future.then(() => this.deactivateAppsInStack({ excepts: [ appId ] }))
       .then(deferred)
   }
 
@@ -394,13 +394,22 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
 /**
  * Deactivate all apps in stack.
  *
+ * @param {object} [options] -
+ * @param {string[]} [options.excepts] - do not include these app on deactivation
  * @returns {Promise<void>}
  */
-LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack () {
+LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack (options) {
+  var excepts = _.get(options, 'excepts')
+
   var self = this
   var stack = self.activeAppStack
+  if (Array.isArray(excepts) && excepts.length > 0) {
+    logger.info('deactivating apps in stack, excepts', excepts)
+    stack = stack.filter(it => excepts.indexOf(it) < 0)
+  } else {
+    logger.info('deactivating apps in stack')
+  }
   /** deactivate apps in stack in a reversed order */
-  logger.info('deactivating apps in stack')
   return Promise.all(stack.map(step)) // .then(() => self.onStackReset())
 
   function step (appId) {
