@@ -56,7 +56,7 @@ module.exports = {
    * @param {string} [psk] - the wifi psk, an empty string or blanks would be ignored.
    * @param {string} [method=WPA2PSK] - the key method, available
    *                 methods are: "WPA2PSK", "WPAPSK", "WEP", "NONE".
-   * @returns {number}
+   * @returns {number} the wpa_supplicant network id
    * @throws {Error} ssid must be a string.
    * @example
    * var wifi = require('@yoda/wifi')
@@ -147,5 +147,12 @@ module.exports = {
    * @function save
    * @returns {boolean}
    */
-  save: native.save
+  save: native.save,
+  /**
+   * remove assign network depend on joinNetwork'id
+   * @function removeNetwork
+   * @param {int} id - joinNetwork return id
+   * @returns {number}
+   */
+  removeNetwork: native.removeNetwork
 }

@@ -45,7 +45,7 @@ JS_FUNCTION(JoinNetwork) {
   int r = wifi_join_network(&config);
   if (r != 0)
     return JS_CREATE_ERROR(COMMON, "join network failed");
-  return jerry_create_number(r);
+  return jerry_create_number(config.id);
 }
 
 JS_FUNCTION(GetWifiState) {
@@ -123,6 +123,22 @@ JS_FUNCTION(Save) {
   return jerry_create_boolean(true);
 }
 
+JS_FUNCTION(GetWifiConfigListNum) {
+  int num = 0;
+  int r = 0;
+
+  r = wifi_get_listnetwork(&num);
+  if (r != 0)
+    return JS_CREATE_ERROR(COMMON, "get wifi configure list error");
+  return jerry_create_number(num);
+}
+
+JS_FUNCTION(RemoveNetwork) {
+  int id = JS_GET_ARG(0, number);
+  int r = wifi_remove_network(&id);
+  return jerry_create_number(r);
+}
+
 void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "joinNetwork", JoinNetwork);
   iotjs_jval_set_method(exports, "getWifiState", GetWifiState);
@@ -135,6 +151,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "resetWifi", ResetWifi);
   iotjs_jval_set_method(exports, "scan", Scan);
   iotjs_jval_set_method(exports, "save", Save);
+  iotjs_jval_set_method(exports, "getWifiConfigListNum", GetWifiConfigListNum);
+  iotjs_jval_set_method(exports, "removeNetwork", RemoveNetwork);
 }
 
 NODE_MODULE(wifi, init)

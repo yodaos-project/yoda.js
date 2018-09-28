@@ -16,7 +16,7 @@ module.exports = function (app) {
     ssid: '',
     psk: ''
   }
-  var connectTimeout, pooling
+  var connectTimeout, pooling, connectId
   var BLE_NAME = [
     property.get('ro.rokid.build.productname') || 'Rokid-Me',
     uuid.substr(-6)
@@ -217,11 +217,14 @@ module.exports = function (app) {
       clearTimeout(pooling)
       cb(new Error('timeout'), false)
     }, 10000)
-    wifi.joinNetwork(data.S, data.P, '')
+    connectId = wifi.joinNetwork(data.S, data.P, '')
+    logger.log(`wifi current id is ${connectId}`)
   }
 
   function stopConnectWIFI () {
     wifi.disableAll()
+    logger.log(`wifi remove current id is ${connectId}`)
+    wifi.removeNetwork(connectId)
     clearTimeout(pooling)
     clearTimeout(connectTimeout)
     connecting = false
