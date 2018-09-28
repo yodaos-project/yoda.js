@@ -1,7 +1,6 @@
 #include "LightNative.h"
 #include <lumenflinger/LumenLight.h>
 
-using namespace android;
 LumenLight light;
 
 JS_FUNCTION(Enable) {
