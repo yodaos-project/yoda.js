@@ -203,7 +203,7 @@ AppRuntime.prototype.resetAppearance = function resetAppearance (options) {
     }
   })
 
-  this.lightMethod('setHide', [''])
+  this.lightMethod('stop', ['', '/opt/light/awake.js'])
 }
 
 /**
