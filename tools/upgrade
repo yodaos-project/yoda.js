@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -e
+
+help="
+Example:
+  $ ./tools/upgrade 'your-ota.img'
+"
+
+
+adb shell mkdir -p /data/workspace/helper/ >/dev/null
+adb push ./tools/helper/upgrade.js /data/workspace/helper/ >/dev/null
+
+adb push $1 /data/ota.img
+adb shell "iotjs /data/workspace/helper/upgrade.js '/data/ota.img'"
