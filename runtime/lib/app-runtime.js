@@ -449,7 +449,12 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
       ])
     })
     .then(() => {
-      this.resetAppearance({ unmute: true })
+      this.resetAppearance({
+        /**
+         * Prevent un-muting if upcoming volume app
+         */
+        unmute: appId !== '@yoda/volume'
+      })
       return this.life.onLifeCycle(appId, 'request', [ nlp, action ])
     })
     .catch((error) => {

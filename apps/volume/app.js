@@ -5,7 +5,7 @@ var _ = require('@yoda/util')._
 
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
-  var STRING_RANGE_ERROR = '音量调节范围为0到10'
+  var STRING_OUT_OF_RANGE_MAX = '音量已经是最大了'
   var STRING_SHOW_VOLUME = '当前音量为百分之'
   var STRING_SHOW_MUTED = '设备已静音，已帮你调回到百分之'
 
@@ -92,7 +92,11 @@ module.exports = function (activity) {
           /** do not announce anything if silence is demanded. */
           return Promise.resolve()
         }
-        return speakAndExit(STRING_RANGE_ERROR)
+        if (vol < 100) {
+          /** no need to announce volume range error if expected volume is lower than 100 */
+          return Promise.resolve()
+        }
+        return speakAndExit(STRING_OUT_OF_RANGE_MAX)
       })()
     ])
   }
