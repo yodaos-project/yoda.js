@@ -18,8 +18,7 @@ module.exports = function (app) {
   }
   var connectTimeout, pooling
   var BLE_NAME = [
-    'Rokid',
-    property.get('ro.rokid.build.productname') || 'Me',
+    property.get('ro.rokid.build.productname') || 'Rokid-Me',
     uuid.substr(-6)
   ].join('-')
   logger.log(BLE_NAME)
