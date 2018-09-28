@@ -31,6 +31,7 @@ function Light (options) {
   this.prevZIndex = null
   this.prevUri = null
   this.prevAppId = null
+  this.nextResumeHandle = null
   this.degree = 0
   this.userspaceZIndex = new Array(maxUserspaceLayers)
   this.init()
@@ -110,8 +111,9 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
     this.stopPrev(data && data.keep)
     var context = this.getContext()
     // this function can only be called once
+    clearTimeout(self.nextResumeHandle)
     this.prevCallback = dedup(function () {
-      setTimeout(() => {
+      self.nextResumeHandle = setTimeout(() => {
         self.resume()
       }, 0)
       callback()
@@ -211,6 +213,7 @@ Light.prototype.resume = function () {
   }
   if (resume) {
     try {
+      this.stopPrev()
       var handle = resume.handle
       var context = resume.context
       this.prevContext = context
