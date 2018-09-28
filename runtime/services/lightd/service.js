@@ -147,11 +147,36 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
       // do not resume light if currently light need resume too
       this.prevCallback = function noop () {}
       callback()
+    } else {
+      this.removeLayerByUri(uri)
     }
   } catch (error) {
     logger.error(`load effect file error from path: ${uri}`, error)
     callback(error)
   }
+}
+
+Light.prototype.removeLayerByUri = function (uri) {
+  var removed = false
+  for (var i = 0; i < this.systemspaceZIndex.length; i++) {
+    if (this.systemspaceZIndex[i] && this.systemspaceZIndex[i].uri === uri) {
+      removed = true
+      this.systemspaceZIndex[i] = null
+      break
+    }
+  }
+  if (removed) {
+    return removed
+  }
+
+  for (var j = 0; j < this.userspaceZIndex.length; j++) {
+    if (this.userspaceZIndex[i] && this.userspaceZIndex[i].uri === uri) {
+      removed = true
+      this.userspaceZIndex[i] = null
+      break
+    }
+  }
+  return removed
 }
 
 Light.prototype.resume = function () {

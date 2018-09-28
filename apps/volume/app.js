@@ -171,19 +171,8 @@ module.exports = function (activity) {
 
   function micMute (muted) {
     /** Only light effects, actual mic mute operation has been handled by runtime */
-    if (muted) {
-      return activity.light.play('system://setMuted.js', {
-        muted: true
-      }).then(() => {
-        return activity.exit()
-      })
-    } else {
-      return activity.light.stop('system://setMuted.js', {
-        muted: false
-      }).then(() => {
-        return activity.exit()
-      })
-    }
+    return activity.light.play('system://setMuted.js', { muted: muted })
+      .then(() => activity.exit())
   }
 
   activity.on('request', function (nlp, action) {

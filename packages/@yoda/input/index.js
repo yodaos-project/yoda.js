@@ -40,7 +40,7 @@ function InputEvent (options) {
 
   this._options = Object.assign({
     selectTimeout: 300,
-    dbclickTimeout: 500,
+    dbclickTimeout: 300,
     slideTimeout: 300
   }, options)
 
