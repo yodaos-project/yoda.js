@@ -10,10 +10,6 @@ module.exports = function (activity) {
   }
 
   activity.on('request', function (nlp, action) {
-    if (nlp.intent === 'battery_level') {
-      speakAndExit(STRING_NOBATTERY)
-    } else {
-      speakAndExit('你说什么?')
-    }
+    speakAndExit(STRING_NOBATTERY)
   })
 }
