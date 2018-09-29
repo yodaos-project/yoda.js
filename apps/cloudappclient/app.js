@@ -30,10 +30,11 @@ module.exports = activity => {
   })
 
   directive.do('frontend', 'tts', function (dt, next) {
-    logger.log(`exe dt: tts.${dt.action}`)
+    logger.log(`start dt: tts.${dt.action}`)
     if (dt.action === 'say') {
       activity.media.pause()
       ttsClient.speak(dt.data.item.tts, function (name) {
+        logger.log(`end dt: tts.${dt.action} ${name}`)
         if (name === 'start') {
           sos.sendEventRequest('tts', 'start', dt.data, _.get(dt, 'data.item.itemId'))
         } else if (name === 'end') {
@@ -47,10 +48,11 @@ module.exports = activity => {
     } else if (dt.action === 'cancel') {
       activity.tts.stop()
         .then(() => {
+          logger.log(`end dt: tts.${dt.action}`)
           sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), next)
         })
         .catch((err) => {
-          logger.log('tts stop failed', err)
+          logger.log(`end dt: tts.${dt.action} ${err}`)
           next()
         })
     }
