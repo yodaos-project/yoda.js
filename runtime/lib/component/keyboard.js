@@ -13,6 +13,7 @@ function KeyboardHandler (runtime) {
   this.config = config
 
   this.longpressWindow = _.get(this.config, 'config.longpressWindow', 500)
+  this.debounce = _.get(this.config, 'config.debounce', 0)
 
   this.listeners = {
     keydown: {},
@@ -97,7 +98,18 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`No handler registered for keydown '${event.keyCode}'.`)
       return
     }
-    this.execute(descriptor)
+    var debounce = _.get(descriptor, 'debounce', this.debounce)
+    if (debounce) {
+      if (descriptor.guard) {
+        logger.info(`discarding event keydown ${event.keyCode}`)
+        return
+      }
+      descriptor.guard = true
+      setTimeout(() => {
+        descriptor.guard = false
+      }, debounce)
+    }
+    return this.execute(descriptor)
   }))
 
   this.input.on('keyup', listenerWrap(event => {
@@ -126,7 +138,18 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`No handler registered for keyup '${event.keyCode}'.`)
       return
     }
-    this.execute(descriptor)
+    var debounce = _.get(descriptor, 'debounce', this.debounce)
+    if (debounce) {
+      if (descriptor.guard) {
+        logger.info(`discarding event keyup ${event.keyCode}`)
+        return
+      }
+      descriptor.guard = true
+      setTimeout(() => {
+        descriptor.guard = false
+      }, debounce)
+    }
+    return this.execute(descriptor)
   }))
 
   this.input.on('click', listenerWrap(event => {
@@ -142,7 +165,18 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`No handler registered for click '${event.keyCode}'.`)
       return
     }
-    this.execute(descriptor)
+    var debounce = _.get(descriptor, 'debounce', this.debounce)
+    if (debounce) {
+      if (descriptor.guard) {
+        logger.info(`discarding event click ${event.keyCode}`)
+        return
+      }
+      descriptor.guard = true
+      setTimeout(() => {
+        descriptor.guard = false
+      }, debounce)
+    }
+    return this.execute(descriptor)
   }))
 
   this.input.on('dbclick', listenerWrap(event => {
@@ -158,7 +192,18 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`No handler registered for dbclick '${event.keyCode}'.`)
       return
     }
-    this.execute(descriptor)
+    var debounce = _.get(descriptor, 'debounce', this.debounce)
+    if (debounce) {
+      if (descriptor.guard) {
+        logger.info(`discarding event dbclick ${event.keyCode}`)
+        return
+      }
+      descriptor.guard = true
+      setTimeout(() => {
+        descriptor.guard = false
+      }, debounce)
+    }
+    return this.execute(descriptor)
   }))
 
   this.input.on('longpress', listenerWrap(event => {
@@ -200,7 +245,7 @@ KeyboardHandler.prototype.listen = function listen () {
     if (descriptor.preventSubsequent) {
       this.preventSubsequent = true
     }
-    this.execute(descriptor)
+    return this.execute(descriptor)
   }))
 }
 

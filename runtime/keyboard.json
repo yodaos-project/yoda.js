@@ -1,13 +1,16 @@
 {
   "config": {
+    "debounce": 400,
     "longpressWindow": 500
   },
   "113": {
     "click": {
+      "debounce": 2000,
       "runtimeMethod": "setMicMute",
       "params": []
     },
     "dbclick": {
+      "debounce": 8000,
       "url": "yoda-skill://bluetooth/bluetooth_broadcast",
       "options": {}
     },
