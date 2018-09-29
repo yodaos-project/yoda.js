@@ -123,7 +123,19 @@ JS_FUNCTION(Save) {
   return jerry_create_boolean(true);
 }
 
-JS_FUNCTION(GetWifiConfigListNum) {
+JS_FUNCTION(GetLocalAddress) {
+  int r = 0;
+  char ip[16] = {0};
+
+  r = get_local_ip("wlan", ip);
+  if (r == -1) {
+    return jerry_create_boolean(false);
+  } else {
+    return jerry_create_string((const jerry_char_t*)ip);
+  }
+}
+
+JS_FUNCTION(GetNumOfHistory) {
   int num = 0;
   int r = 0;
 
@@ -151,7 +163,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "resetWifi", ResetWifi);
   iotjs_jval_set_method(exports, "scan", Scan);
   iotjs_jval_set_method(exports, "save", Save);
-  iotjs_jval_set_method(exports, "getWifiConfigListNum", GetWifiConfigListNum);
+  iotjs_jval_set_method(exports, "getLocalAddress", GetLocalAddress);
+  iotjs_jval_set_method(exports, "getNumOfHistory", GetNumOfHistory);
   iotjs_jval_set_method(exports, "removeNetwork", RemoveNetwork);
 }
 

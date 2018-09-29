@@ -5,6 +5,7 @@
  * @description Provides classes to manage Wi-Fi functions on the device.
  */
 
+var dns = require('dns')
 var native = require('./wifi.node')
 var keyMethods = {
   'WPA2PSK': 0,
@@ -78,6 +79,43 @@ module.exports = {
       psk = psk.trim()
     }
     return native.joinNetwork(ssid, psk, m)
+  },
+  /**
+   * This would check the current network.
+   * @function checkNetwork
+   * @param {number} timeout
+   * @param {function} callback
+   */
+  checkNetwork: function checkNetwork (timeout, callback) {
+    if (typeof callback !== 'function') {
+      throw new TypeError('callback must be a function')
+    }
+    var hasHistory = native.getNumOfHistory() > 0
+    if (!hasHistory) {
+      return callback(null, false)
+    }
+    var checkTimer = setTimeout(() => {
+      callback(null, false)
+    }, timeout || 30 * 1000)
+
+    var state = 'wifi'
+    var checkWifiStatus = setInterval(() => {
+      if (state === 'wifi') {
+        var s = native.getWifiState()
+        if (s === this.WIFI_CONNECTED) {
+          state = 'netserver'
+        }
+      } else if (state === 'netserver') {
+        var ip = native.getLocalAddress()
+        if (ip) {
+          dns.lookup('www.rokid.com', (err) => {
+            state = null
+            clearInterval(checkWifiStatus)
+            callback(null, err ? false : true)
+          })
+        }
+      }
+    }, 200)
   },
   /**
    * Get current wifi state.
