@@ -824,7 +824,7 @@ AppRuntime.prototype.sendNLPToApp = function (skillId, nlp, action) {
     action.response.action.form = 'cut'
     this.life.onLifeCycle(appId, 'request', [nlp, action])
   } else {
-    logger.log(`send NLP to App failed, AppId ${appId} not in active, active app: ${curAppId}`)
+    logger.log(`send NLP to App failed, AppId ${appId} not in active, active app: ${curAppId}`, nlp)
   }
 }
 
@@ -1456,7 +1456,7 @@ AppRuntime.prototype.startDbusAppService = function () {
     in: ['s'],
     out: ['b']
   }, function (status, cb) {
-    if (this.loadAppComplete === false) {
+    if (self.loadAppComplete === false) {
       // waiting for the app load complete
       return cb(null, false)
     }
@@ -1468,7 +1468,7 @@ AppRuntime.prototype.startDbusAppService = function () {
         self.custodian.onNetworkDisconnect()
       } else if (data['Network'] === true) {
         self.custodian.onNetworkConnect()
-      } else if (data['msg']) {
+      } else if (data['msg'] && self.custodian.isConfiguringNetwork()) {
         self.sendNLPToApp('@network', {
           intent: 'wifi_status'
         }, {
