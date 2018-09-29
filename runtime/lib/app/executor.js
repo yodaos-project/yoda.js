@@ -71,14 +71,10 @@ Executor.prototype.create = function () {
  * @returns {Promise<void>}
  */
 Executor.prototype.destruct = function destruct () {
-  if (this.app == null) {
-    return Promise.resolve()
+  if (this.app) {
+    this.app.destruct()
   }
   return Promise.resolve()
-    .then(() => {
-      this.app.destruct()
-      this.app = null
-    })
 }
 
 module.exports = Executor
