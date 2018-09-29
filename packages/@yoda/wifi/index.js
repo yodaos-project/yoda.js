@@ -187,6 +187,12 @@ module.exports = {
    */
   save: native.save,
   /**
+   * Get the number of the history.
+   * @function getNumOfHistory
+   * @returns {number}
+   */
+  getNumOfHistory: native.getNumOfHistory,
+  /**
    * remove assign network depend on joinNetwork'id
    * @function removeNetwork
    * @param {int} id - joinNetwork return id
