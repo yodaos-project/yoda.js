@@ -11,6 +11,7 @@ function Manager (exe, Skill) {
   this.exe = exe
   this.Skill = Skill
   this.skills = []
+  this.isAppActive = true
 }
 inherits(Manager, EventEmitter)
 
@@ -72,23 +73,27 @@ Manager.prototype.next = function (skill) {
   }
   this.skills.pop()
   if (this.skills.length <= 0) {
+    this.isAppActive = false
     return this.emit('empty')
   }
   cur = this.getCurrentSkill()
   if (cur !== false) {
     cur.emit('resume')
   }
-  this.emit('updateStack', this.updateStack())
+  // this.emit('updateStack', this.updateStack())
 }
 
 Manager.prototype.pause = function () {
+  this.isAppActive = false
   var cur = this.getCurrentSkill()
   if (cur !== false) {
+    // Skill.emit('pause', isAppPause)
     cur.emit('pause', true)
   }
 }
 
 Manager.prototype.resume = function () {
+  this.isAppActive = true
   var cur = this.getCurrentSkill()
   if (cur !== false) {
     cur.emit('resume')
@@ -96,11 +101,12 @@ Manager.prototype.resume = function () {
 }
 
 Manager.prototype.destroy = function () {
+  this.isAppActive = false
   for (var i = 0; i < this.skills.length; i++) {
     this.skills[i].emit('destroy')
   }
   this.skills = []
-  this.emit('updateStack', [])
+  // this.emit('updateStack', [])
 }
 
 Manager.prototype.getCurrentSkill = function () {
@@ -123,25 +129,24 @@ Manager.prototype.updateStack = function () {
 
 Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
   if (!data.appId) {
-    logger.log('no appId, ignore eventRequest')
+    logger.log('ignored eventRequest, because it is no appId given')
     return cb && cb()
   }
-  if ((type === 'tts' || type === 'media') && name === 'cancel') {
-    logger.info(`ignored ${type} cancel event`)
+  if ((type === 'tts' || type === 'media') && name === 'cancel' && this.isAppActive) {
     if (this.getCurrentSkill().appId === data.appId) {
-      logger.log(`current ${type} cancel event, ignore`)
+      logger.info(`ignored ${type} cancel eventRequest, because currently cloudappclient is inactive`)
       cb && cb()
       return
     }
   }
   if (data.disableEvent === true) {
-    logger.log('disable event, ignore')
+    logger.log('ignored eventRequest, bacause directive identify disableEvent as true')
     cb && cb()
     return
   }
   if (type === 'tts') {
     eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
-      logger.log(`====> tts response: ${response}`)
+      logger.log(`====> tts eventRequest response: ${response}`)
       if (response === '{}') {
         return cb && cb()
       }
@@ -151,6 +156,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     })
   } else if (type === 'media') {
     eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
+      logger.log(`====> media eventRequest response: ${response}`)
       if (response === '{}') {
         return cb && cb()
       }
