@@ -110,8 +110,9 @@ module.exports = {
         if (ip) {
           dns.lookup('www.rokid.com', (err) => {
             state = null
+            clearTimeout(checkTimer)
             clearInterval(checkWifiStatus)
-            callback(null, err ? false : true)
+            callback(null, !err)
           })
         }
       }

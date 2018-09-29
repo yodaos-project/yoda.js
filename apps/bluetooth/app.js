@@ -29,7 +29,7 @@ module.exports = function (activity) {
       if ((bluetoothState === null) || (bluetoothState === 'disconnected')) {
         player.start(name)
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST + name) })
+          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST + nameToSpeak) })
         } else {
           activity.setForeground().then(() => { mediaAndExit('system://openbluetooth.ogg') })
         }

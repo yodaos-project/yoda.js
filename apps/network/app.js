@@ -87,7 +87,7 @@ module.exports = function (app) {
           var networkInfo = _.get(url.query, 'networkStatus')
           if (!status || !networkInfo) {
             logger.log('wifi_status: invalid params, status', status, ', networkInfo', networkInfo)
-            break;
+            break
           }
           logger.log('wifi_status: status', status, ', networkInfo', networkInfo)
           var wifiStatus = WIFI_STATUS[status]
@@ -276,7 +276,7 @@ module.exports = function (app) {
     clearTimeout(sleepTimer)
     app.light.stop('system://setStandby.js')
     app.exit()
-    if (netStatus != STATUS_IDLE) {
+    if (netStatus !== STATUS_IDLE) {
       messageStream.end()
       netStatus = STATUS_IDLE
       logger.log('closed ble')

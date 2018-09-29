@@ -125,7 +125,7 @@ JS_FUNCTION(Save) {
 
 JS_FUNCTION(GetLocalAddress) {
   int r = 0;
-  char ip[16] = {0};
+  char ip[16] = { 0 };
 
   r = get_local_ip("wlan", ip);
   if (r == -1) {
