@@ -2,6 +2,7 @@
 
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
+var AudioManager = require('@yoda/audio')
 var helper = require('./helper')
 var a2dpsinkPath = `ipc://${helper.CHANNEL_PREFIX}/a2dpsink_event`
 
@@ -24,11 +25,11 @@ function BluetoothPlayer () {
 
       var msg = JSON.parse(buffer + '')
       if (msg.action === 'volumechange') {
+        AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, msg.value)
         /**
          * When the volume needs to be changed from bluetooth service.
          * @event module:@yoda/bluetooth.BluetoothPlayer#opened
          */
-        // FIXME(Yorkie): control volume internally.
         return this.emit('volumechange', msg)
       }
       // only if the connect_state && play_state is invalid, mapped as `opened`.
