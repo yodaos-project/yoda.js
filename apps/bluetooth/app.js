@@ -7,10 +7,11 @@ var wifi = require('@yoda/wifi')
 
 module.exports = function (activity) {
   var player = null
-  var uuid = property.get('ro.boot.serialno') || ''
-  var name = [
-    property.get('ro.rokid.build.productname') || 'Rokid-Me',
-    uuid.substr(-6)].join('-')
+
+  var uuid = (property.get('ro.boot.serialno') || '').substr(-6)
+  var productName = property.get('ro.rokid.build.productname') || 'Rokid-Me'
+  var name = [ productName, uuid ].join('-')
+  var nameToSpeak = [ productName, `<num=tel>${uuid}</num>` ].join('')
 
   var bluetoothState = null
   var connectBlutoothName = null
