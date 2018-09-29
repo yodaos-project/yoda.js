@@ -1,16 +1,29 @@
 #!/usr/bin/env bash
 
-store_interval=60
-ps_grep="/usr/bin/iotjs|turenproc|speech-service|flora-dispatcher|bluetooth_service|pulseaudio|dbus-daemon"
+store_interval=600
+# ps_grep="memory-viewer|iotjs|speech-service|flora-dispatcher\
+# |bluetooth_service|pulseaudio|dbus-daemon|homebase\
+# |logread|adbd|bsa_server|net_manager|logd|wifi_monitor|wpa_supplicant\
+# |turenproc"
+ps_grep="memory-viewer|iotjs|homebase"
+device_sn='all'
+adb_mode="false"
+flush_count=0
 
 help="
 Usage:
+  -a specific collected through adb shell
   -i [interval] memory snapshot interval
               default value is ${store_interval} seconds
   -f [format] a regex expression used for \`ps aux | grep -E \$fromat\`
               default value is $ps_grep
+  -d [sn] specific a sn to connect in adb mode, this param will be ignored if not in adbmode
+              data for all devices will be collected by default
+  -s [flush_count] flush the data to a file after collected n times,
+              default value is 100
+  -r [render_data_path] specific a data path to render it to a html
 Example:
-  $ memory-viewer -i 60 -f \"iotjs|turen\"
+  $ memory-viewer -i ${store_interval} -f \"$ps_grep\"
 
 This tool is used for collect memory data over a time and present the data in a line chart
 Enter ^C to stop collect data and generatte line chart
@@ -23,6 +36,28 @@ while [ $# -gt 0 ]; do
       ;;
     -f)
       ps_grep="$2"
+      shift
+      ;;
+    -a)
+      adb_mode="true"
+      ;;
+    -d)
+      device_sn=$2
+      shift
+      ;;
+    -r)
+      set -e
+      data_path=$2
+      store_path="$data_path.html"
+      mem_data=`cat $data_path`
+      echo_templatte='<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,height=device-height"><title>memory view</title><style>::-webkit-scrollbar{display:none;}html,body{overflow:hidden;height:100%;margin:0;}</style></head><body><div id="mountNode"></div><script>document.body.clientHeight;</script><script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g2-3.2.8/dist/g2.min.js"></script><script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.data-set-0.9.6/dist/data-set.min.js"></script><script>  var data = ${data};  var chart = new G2.Chart({    container: "mountNode",    forceFit: true,    height: window.innerHeight  });  chart.source(data, {    month: {      range: [0, 1]    }  });  chart.tooltip({    crosshairs: {      type: "line"    }  });  chart.axis("mem", {    label: {      formatter: function formatter(val) {        return val + "KB";      }    }  });  chart.line().position("time*mem").color("args");  chart.point().position("time*mem").color("args").size(4).shape("circle").style({    stroke: "#fff",    lineWidth: 1  });  chart.render();</script></body></html>'
+      echo ${echo_templatte/\$\{data\}/$mem_data} > $store_path
+      rm $data_path
+      echo "store path: $store_path"
+      exit
+      ;;
+    -s)
+      flush_count=$2
       shift
       ;;
     --help)
@@ -41,100 +76,86 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
-mount -o remount,rw /
+hostname=`uname -n`
+if [ hostname = "OpenWrt" ]; then
+  echo 'mount / with rw'
+  mount -o remount,rw /
+fi
 
-start_time=`date "+%Y-%m-%d-%H:%M:%S"`
-store_file=`pwd`/memory-data-$start_time.html
-data_tmp_file=`pwd`/.memory-data-$start_time.js
+ps_cmd="ps -eo pid,rss,args | grep -E '$ps_grep' | grep -v grep"
+free_cmd="cat /proc/meminfo | grep MemAvailable | awk '{print \$2}'"
 
-echo "collect interval: ${store_interval}s"
-echo "collect process regex: ${ps_grep}"
-echo "store file: ${store_file}"
-echo "Enter ^C to stop collect memory data"
-echo "Collecting memory data..."
-
-echo "[" > $data_tmp_file
-
-store_data() {
-  echo "]" >> $data_tmp_file
-  echo_templatte='<!DOCTYPE html>
-  <html lang="en">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width,height=device-height">
-      <title>memory view</title>
-      <style>::-webkit-scrollbar{display:none;}html,body{overflow:hidden;height:100%;margin:0;}</style>
-  </head>
-  <body>
-  <div id="mountNode"></div>
-  <script>/*Fixing iframe window.innerHeight 0 issue in Safari*/document.body.clientHeight;</script>
-  <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g2-3.2.8/dist/g2.min.js"></script>
-  <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.data-set-0.9.6/dist/data-set.min.js"></script>
-  <script>
-  var data = ${data};
-
-  var chart = new G2.Chart({
-    container: "mountNode",
-    forceFit: true,
-    height: window.innerHeight
-  });
-  chart.source(data, {
-    month: {
-      range: [0, 1]
-    }
-  });
-  chart.tooltip({
-    crosshairs: {
-      type: "line"
-    }
-  });
-  chart.axis("mem", {
-    label: {
-      formatter: function formatter(val) {
-        return val + "KB";
-      }
-    }
-  });
-  chart.line().position("time*mem").color("args");
-  chart.point().position("time*mem").color("args").size(4).shape("circle").style({
-    stroke: "#fff",
-    lineWidth: 1
-  });
-  chart.render();
-  </script>
-  </body>
-  </html>
-  '
-  mem_data=`cat $data_tmp_file`
-  echo ${echo_templatte/\$\{data\}/$mem_data} > $store_file
-  echo "store file: $store_file"
-  rm -f $data_tmp_file
+run_memory_cmd() {
+  host=$1
+  now=$2
+  datat_file_prefix=$3
+  if [ $adb_mode = "true" ]; then
+    ps_result=($(adb -s $host shell "$ps_cmd"))
+    free_result=($(adb -s $host shell "$free_cmd"))
+  else
+    ps_result=($(eval $ps_cmd))
+    free_result=($(eval $free))
+  fi
+  ps_echo=""
+  ps_len=${#ps_result[@]}
+  for ((i=0;i<ps_len;++i))
+  {
+    ps=${ps_result[i]}
+    ps_mem=`echo $ps | awk '{print $2}'`
+    ps_args=`echo $ps | sed "s/$ps_mem//"`
+    ps_echo="$ps_echo{\"mem\":$ps_mem,\"args\":\"$ps_args\",\"time\":\"$now\"},"
+  }
+  if [ ! $free_result ]; then
+    free_result=0
+  fi
+  ps_echo="$ps_echo{\"mem\":$free_result,\"args\":\"free\",\"time\":\"$now\"},"
+  data_path=`pwd`/mem-$datat_file_prefix-$host.json
+  if [ ! -f $data_path ]; then
+    echo '[{}]' > $data_path
+  fi
+  mem_data=`cat $data_path`
+  echo ${mem_data/\{\}/${ps_echo}\{\}} > $data_path
 }
 
-trap 'store_data; exit 0;' INT TERM
-trap 'echo "ignore SIGHUP"' HUP
+main() {
+  trap 'exit 0;' INT TERM
+  trap 'echo "ignore SIGHUP"' HUP
 
-times=0
-while :
-do
-  IFS=$'\n'
-  now=`date "+%H:%M:%S"`
-  # echo "storing $((++times)) times at $now"
-  cmds=($(ps -eo pid,rss,args | grep -E $ps_grep | grep -v grep))
-  cmds_len=${#cmds[@]}
-  for ((i=0;i<cmds_len;++i))
-  {
-    cmd=${cmds[i]}
-    cmd_pid=`echo $cmd | awk '{print $1}'`
-    cmd_mem=`echo $cmd | awk '{print $2}'`
-    # cmd_args=$cmd | sed -e 's/\([0-9]\+\)//' | sed -e 's/\([0-9]\+\)//'
-    cmd_args=`echo $cmd | sed "s/$cmd_pid//" | sed "s/$cmd_mem//" | sed 's/^[ \t]*//'`
-    echo "{pid:$cmd_pid,mem:$cmd_mem,args:\"$cmd_args\",time:\"$now\"}," >> $data_tmp_file
-  }
-  mem_free=`cat /proc/meminfo | grep MemAvailable | awk '{print $2}'`
-  if [ ! $mem_free ]; then
-    mem_free=0
-  fi
-  echo "{pid:0,mem:$mem_free,args:\"free\",time:\"$now\"}," >> $data_tmp_file
-  sleep $store_interval
-done
+  times=0
+  flush_times=0
+  dots="....."
+  spaces='     '
+  data_file_prefix=`date "+%Y-%m-%d-%H:%M:%S"`
+  while :
+  do
+    IFS=$'\n'
+    now=`date "+%Y-%m-%d-%H:%M:%S"`
+    ((++times))
+    dot_count=$(($times % 6))
+    echo -ne "Collecting memory data ${dots:0:$dot_count}${spaces:$dot_count}\r"
+    if [ $times -lt $store_interval ]; then
+      sleep 1
+      continue
+    fi
+    times=0
+    if [ $device_sn = "all" ]; then
+      adb_devices=($(adb devices | sed 1d | awk '{print $1}'))
+    else
+      adb_devices=($(adb devices | grep $device_sn | awk '{print $1}'))
+    fi
+
+    if [ $flush_count -gt 0 ] && [ $flush_times -ge $flush_count ]; then
+      data_file_prefix=`date "+%Y-%m-%d-%H:%M:%S"`
+      flush_times=0
+    fi
+    ((++flush_times))
+    devices_len=${#adb_devices[@]}
+    for ((i=0;i<devices_len;++i))
+    {
+      run_memory_cmd ${adb_devices[i]} $now $data_file_prefix
+    }
+    sleep 1
+  done
+}
+
+main
