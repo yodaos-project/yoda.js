@@ -7,6 +7,12 @@
     "extapp": true,
     "skills": [
       "@network"
+    ],
+    "hosts": [
+      {
+        "name": "network",
+        "skillId": "@network"
+      }
     ]
   },
   "scripts": {

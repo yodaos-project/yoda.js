@@ -4,147 +4,124 @@ var logger = require('logger')('@network')
 var bluetooth = require('@yoda/bluetooth')
 var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
+var _ = require('@yoda/util')._
+
+var started = false
 var messageStream = bluetooth.getMessageStream()
+var STATUS_IDLE = 0
+var STATUS_BLE_OPEN = 1
+var STATUS_CONNECTING_CONFIG_WIFI = 2
+var DEFAULT_SLEEP_TIME = 1 * 60 * 1000
+var WIFI_STATUS = {
+  'CTRL-EVENT-NETWORK-NOT-FOUND': {
+    topic: 'bind',
+    sCode: '-13',
+    sMsg: '没找到当前wifi'
+  },
+  'CTRL-EVENT-SSID-TEMP-DISABLED': {
+    topic: 'bind',
+    sCode: '-11',
+    sMsg: 'wifi密码错误'
+  }
+}
+var CLOUD_STATUS = {
+  '-101': 'system://wifi/login_failed.ogg',
+  '-201': 'system://wifi/bind_master_failed.ogg'
+}
 
 module.exports = function (app) {
-  var started = false
-  var uuid = property.get('ro.boot.serialno') || ''
-  // connecting to wifi or not
-  var connecting = false
+  var netStatus = STATUS_IDLE
+  var uuid = (property.get('ro.boot.serialno') || '').substr(-6)
   // save the current connected wifi config
   var prevWIFI = {
     ssid: '',
     psk: ''
   }
   var connectTimeout, pooling, connectId
-  var BLE_NAME = [
-    property.get('ro.rokid.build.productname') || 'Rokid-Me',
-    uuid.substr(-6)
-  ].join('-')
+  var productName = property.get('ro.rokid.build.productname') || 'Rokid-Me'
+  var BLE_NAME = [ productName, uuid ].join('-')
   logger.log(BLE_NAME)
 
-  var WIFI_STATUS = {
-    'CTRL-EVENT-NETWORK-NOT-FOUND': {
-      topic: 'bind',
-      sCode: '-13',
-      sMsg: '没找到当前wifi'
-    },
-    'CTRL-EVENT-SSID-TEMP-DISABLED': {
-      topic: 'bind',
-      sCode: '-11',
-      sMsg: 'wifi密码错误'
-    }
-  }
-
-  var CLOUD_STATUS = {
-    '-101': 'system://wifi/login_failed.ogg',
-    '-201': 'system://wifi/bind_master_failed.ogg'
-  }
-
-  var DEFAULT_SLEEP_TIME = 1 * 60 * 1000
   var SLEEP_TIME = +property.get('app.network.sleeptime') || DEFAULT_SLEEP_TIME
-  var bleEnable = false
   var sleepTimer
-
   var scanHandle = null
   var WifiList = []
 
-  wifi.scan()
+  app.on('destroyed', function () {
+    intoSleep()
+    bluetooth.disconnect()
+    logger.log('destroyed')
+  })
 
-  app.on('request', function (nlp, action) {
-    if (started && nlp.intent === 'wifi_status') {
-      // ignore wifi status if not connecting
-      if (connecting === false) {
-        return
-      }
-      var status = WIFI_STATUS[action.response.action.status]
-      if (status !== undefined) {
-        logger.log(status)
-        if (action.response.action.status === 'CTRL-EVENT-SSID-TEMP-DISABLED') {
-          var search = action.response.action.value.match(/ssid=".+"/)
-          if (search && `ssid="${prevWIFI.ssid}" psk="${prevWIFI.psk}"` === search[0]) {
-            stopConnectWIFI()
-            app.playSound('system://wifi/auth_failed.ogg')
-            sendWifiStatus(status)
-          }
-        } else {
-          stopConnectWIFI()
-          app.playSound('system://wifi/network_not_found.ogg')
-          sendWifiStatus(status)
+  app.on('url', url => {
+    var code, msg
+    logger.log('app recv url:', url.href)
+
+    switch (url.pathname) {
+      case '/cloud_status':
+        code = _.get(url.query, 'code')
+        msg = _.get(url.query, 'msg')
+        if (!code || !msg) {
+          logger.log('cloud_status: invalid params, code', code, ', msg', msg)
+          break
         }
-      }
-      logger.log('app report: ' + action.response.action.status)
-      return
+        sendWifiStatus({
+          topic: 'bind',
+          sCode: code,
+          sMsg: msg
+        })
+        var cloudStatus = CLOUD_STATUS[code]
+        if (cloudStatus) {
+          app.playSound(cloudStatus)
+        } else if (code === '201') {
+          // bind success, exit app
+          app.exit()
+        }
+        break
+      case '/setup':
+        setupNetworkByBle()
+        break
+      case '/wifi_status':
+        if (netStatus === STATUS_CONNECTING_CONFIG_WIFI) {
+          var status = _.get(url.query, 'status')
+          var networkInfo = _.get(url.query, 'networkStatus')
+          if (!status || !networkInfo) {
+            logger.log('wifi_status: invalid params, status', status, ', networkInfo', networkInfo)
+            break;
+          }
+          logger.log('wifi_status: status', status, ', networkInfo', networkInfo)
+          var wifiStatus = WIFI_STATUS[status]
+          if (wifiStatus !== undefined) {
+            if (status === 'CTRL-EVENT-SSID-TEMP-DISABLED') {
+              var search = networkInfo.match(/ssid=".+"/)
+              if (search && `ssid="${prevWIFI.ssid}" psk="${prevWIFI.psk}"` === search[0]) {
+                stopConnectWIFI()
+                app.playSound('system://wifi/auth_failed.ogg')
+                sendWifiStatus(wifiStatus)
+              }
+            } else {
+              stopConnectWIFI()
+              app.playSound('system://wifi/network_not_found.ogg')
+              sendWifiStatus(wifiStatus)
+            }
+          }
+        }
+        break
     }
-    if (started && nlp.intent === 'cloud_status') {
-      sendWifiStatus({
-        topic: 'bind',
-        sCode: action.response.action.code,
-        sMsg: action.response.action.msg
-      })
-      var cloudStatus = CLOUD_STATUS[action.response.action.code]
-      if (cloudStatus) {
-        app.playSound(cloudStatus)
-      }
+  })
 
-      return
-    }
-    // user say again
-    if (started && nlp.intent === 'user_says') {
-      this.playSound('system://wifi/setup_network.ogg')
-      // retimer
-      timerAndSleep()
-      return
-    }
-    if (started && nlp.intent === 'into_sleep') {
-      intoSleep()
-      return
-    }
-    // user voice active after into sleep
-    if (!started && nlp.intent === 'user_says') {
-      app.light.play('system://setStandby.js')
-      messageStream.start(BLE_NAME)
-      // retimer
-      timerAndSleep()
-      started = true
-      logger.log('user voice active')
-      return
-    }
-    // nothing to do
+  function initBleMessageStream (stream) {
     if (started === true) {
       return
     }
-
-    logger.log('recv app request:', nlp.intent)
-
-    if (nlp.intent === 'manual_setup') {
-      wifi.disableAll()
-    } else if (nlp.intent === 'system_setup') {
-      wifi.enableScanPassively()
-    } else {
-      return
-    }
     started = true
-    messageStream = bluetooth.getMessageStream()
-    messageStream.start(BLE_NAME, true, (err) => {
-      logger.error(err && err.stack)
-      // FIXME(Yorkie): needs tell bind is unavailable?
-    })
-    logger.log('open ble success')
-    bleEnable = true
-    app.light.play('system://setStandby.js')
-    // start timer
-    timerAndSleep()
-
-    messageStream.on('handshaked', (message) => {
+    stream.on('handshaked', (message) => {
       app.playSound('system://wifi/ble_connected.ogg')
-      // retimer
       timerAndSleep()
     })
 
-    messageStream.on('data', function (message) {
+    stream.on('data', function (message) {
       logger.log('message:', message)
-      // retimer
       timerAndSleep()
 
       if (message && message.topic && message.topic === 'getWifiList') {
@@ -160,7 +137,7 @@ module.exports = function (app) {
       }
       if (message && message.topic && message.topic === 'bind') {
         connectWIFI(message.data, (err, connect) => {
-          connecting = false
+          netStatus = STATUS_BLE_OPEN
           if (err || !connect) {
             sendWifiStatus({
               topic: 'bind',
@@ -176,29 +153,32 @@ module.exports = function (app) {
               sCode: '11',
               sMsg: 'wifi连接成功'
             })
-            wifi.enableScanPassively()
             wifi.save()
           }
         })
       }
     })
-  })
+  }
 
-  app.on('destroyed', function () {
-    // close ble if it is open
-    if (bleEnable) {
-      bluetooth.disconnect()
-      logger.log('ble closed')
-    }
-    clearTimeout(sleepTimer)
-    logger.log('destroyed')
-  })
+  function setupNetworkByBle () {
+    netStatus = STATUS_BLE_OPEN
+    wifi.disableAll()
+    logger.log('open ble with name', BLE_NAME)
+    initBleMessageStream(messageStream)
+    messageStream.start(BLE_NAME, true, (err) => {
+      logger.error(err && err.stack)
+      logger.log('open ble failed, name', BLE_NAME)
+      netStatus = STATUS_IDLE
+      // FIXME(Yorkie): needs tell bind is unavailable?
+    })
+    app.light.play('system://setStandby.js')
+    timerAndSleep()
+  }
 
   function connectWIFI (config, cb) {
-    if (connecting) return
-    connecting = true
     var data = config
 
+    netStatus = STATUS_CONNECTING_CONFIG_WIFI
     prevWIFI.ssid = data.S
     prevWIFI.psk = data.P
 
@@ -222,12 +202,10 @@ module.exports = function (app) {
   }
 
   function stopConnectWIFI () {
-    wifi.disableAll()
     logger.log(`wifi remove current id is ${connectId}`)
     wifi.removeNetwork(connectId)
     clearTimeout(pooling)
     clearTimeout(connectTimeout)
-    connecting = false
   }
 
   function getWIFIState (cb) {
@@ -288,6 +266,7 @@ module.exports = function (app) {
     clearTimeout(sleepTimer)
     logger.log('setup timer for intoSleep')
     sleepTimer = setTimeout(function sleep () {
+      logger.log('timer trigger intoSleep')
       intoSleep()
     }, SLEEP_TIME)
   }
@@ -296,12 +275,12 @@ module.exports = function (app) {
     logger.log('start sleep ......')
     clearTimeout(sleepTimer)
     app.light.stop('system://setStandby.js')
-    if (bleEnable) {
+    app.exit()
+    if (netStatus != STATUS_IDLE) {
       messageStream.end()
-      bleEnable = false
+      netStatus = STATUS_IDLE
       logger.log('closed ble')
     }
-    wifi.enableScanPassively()
-    started = false
+    app.exit()
   }
 }

@@ -51,8 +51,7 @@ module.exports = function customConfig (activity) {
   activity.on('url', (url) => {
     logger.info('on Url---->is called: ')
     var urlObj = Url.parse(url)
-    var queryObj = getParams(urlObj.query)
-    // var queryObj = urlObj.query
+    var queryObj = urlObj.query
     if (typeof queryObj === 'object') {
       logger.info('on Url----> query is object')
     } else if (typeof queryObj === 'string') {
@@ -250,16 +249,5 @@ module.exports = function customConfig (activity) {
     this.waitForNextTimer = setTimeout(() => {
       refreshNightMode(true)
     }, this.nextDeltaTime)
-  }
-
-  function getParams (queryString) {
-    var queryArr = queryString.split('&')
-    var params = {}
-    for (var i = 0; i < queryArr.length; i++) {
-      var pair = queryArr[i].split('=')
-      if (pair.length !== 2) continue
-      params[pair[0]] = pair[1]
-    }
-    return params
   }
 }

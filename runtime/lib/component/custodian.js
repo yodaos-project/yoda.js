@@ -4,6 +4,7 @@ var wifi = require('@yoda/wifi')
 
 module.exports = Custodian
 function Custodian (runtime) {
+  wifi.enableScanPassively()
   this.runtime = runtime
 
   /**
@@ -62,9 +63,7 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
     return
   }
   logger.log('network disconnected, please connect to wifi first')
-  this.runtime.startApp('@network', {
-    intent: 'system_setup'
-  }, {})
+  this.runtime.openUrl('yoda-skill://network/setup', { preemptive: true })
 }
 
 Custodian.prototype.onLoggedIn = function onLoggedIn () {
@@ -83,9 +82,7 @@ Custodian.prototype.resetNetwork = function resetNetwork () {
 
   this._networkConnected = false
   this._loggedIn = false
-  return this.runtime.startApp('@network', {
-    intent: 'manual_setup'
-  }, {})
+  this.runtime.openUrl('yoda-skill://network/setup', { preemptive: true })
 }
 
 Custodian.prototype.isPrepared = function isPrepared () {
@@ -105,7 +102,12 @@ Custodian.prototype.isConfiguringNetwork = function isConfiguringNetwork () {
 }
 
 Custodian.prototype.prepareNetwork = function prepareNetwork () {
-  if (wifi.getNumOfHistory() === 0) {
-    return this.onNetworkDisconnect()
+  if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
+    return this.onNetworkConnect()
   }
+  if (wifi.getNumOfHistory() > 0) {
+    logger.info('has histroy wifi, just skip')
+    return
+  }
+  return this.onNetworkDisconnect()
 }
