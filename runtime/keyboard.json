@@ -4,7 +4,7 @@
     "longpressWindow": 500
   },
   "113": {
-    "click": {
+    "keyup": {
       "debounce": 2000,
       "runtimeMethod": "setMicMute",
       "params": []

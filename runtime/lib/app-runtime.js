@@ -248,9 +248,7 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
 AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
   if (this.custodian.isConfiguringNetwork()) {
     // start @network app if not logged in yet
-    return this.startApp('@network', {
-      intent: 'user_says'
-    }, {})
+    return this.custodian.resetNetwork()
   }
   if (this.custodian.isNetworkUnavailable()) {
     // guide the user to double-click the button
@@ -292,12 +290,12 @@ AppRuntime.prototype.handleNlpResult = function handleNlpResult (data) {
  */
 AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
   logger.log('cloud event', data)
-  this.sendNLPToApp('@network', {
-    intent: 'cloud_status'
-  }, {
-    code: data.code,
-    msg: data.msg
-  })
+  if (this.custodian.isRegistering() &&
+    this.life.getCurrentAppId() === '@yoda/network') {
+    this.openUrl(`yoda-skill://network/cloud_status?code=${data.code}&msg=${data.msg}`, {
+      preemptive: false
+    })
+  }
 }
 
 /**
@@ -309,9 +307,7 @@ AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
 AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
   if (this.custodian.isConfiguringNetwork()) {
     // start @network app if network is not connected
-    return this.sendNLPToApp('@network', {
-      intent: 'into_sleep'
-    }, {})
+    return this.openUrl('yoda-skill://network/setup', { preemptive: false })
   }
 
   if (this.life.getCurrentAppId()) {
@@ -479,7 +475,7 @@ AppRuntime.prototype.openUrl = function (url, options) {
   var preemptive = _.get(options, 'preemptive', true)
   var carrierId = _.get(options, 'carrierId')
 
-  var urlObj = Url.parse(url)
+  var urlObj = Url.parse(url, true)
   if (urlObj.protocol !== 'yoda-skill:') {
     logger.info('Url protocol other than yoda-skill is not supported now.')
     return Promise.resolve(false)
@@ -505,7 +501,7 @@ AppRuntime.prototype.openUrl = function (url, options) {
     .then(() => this.life.onLifeCycle(appId, 'url', [ urlObj ]))
     .then(() => true)
     .catch((error) => {
-      logger.error(`open url error with appId: ${appId}`, error)
+      logger.error(`open url(${url}) error with appId: ${appId}`, error)
       return this.life.destroyAppById(appId, { force: true })
     })
 }
@@ -945,14 +941,12 @@ AppRuntime.prototype.onCustomConfig = function (message) {
     return
   }
   var option = {
-    preemptive: true,
+    preemptive: false,
     form: 'cut'
   }
   if (msg.nightMode) {
-    option.preemptive = false
     this.openUrl(appendUrl('nightMode', msg.nightMode), option)
   } else if (msg.vt_words) {
-    option.preemptive = false
     this.openUrl(appendUrl('vt_words', msg.vt_words[0]), option)
   } else if (msg.continuousDialog) {
     this.openUrl(appendUrl('continuousDialog', msg.continuousDialog), option)
@@ -1463,17 +1457,17 @@ AppRuntime.prototype.startDbusAppService = function () {
       var data = JSON.parse(status)
       if (data.upgrade === true) {
         self.startApp('@upgrade', {}, {})
+      } else if (self.life.getCurrentAppId() === '@yoda/network') {
+        if (data.msg) {
+          self.openUrl(
+            `yoda-skill://network/wifi_status?status=${data.msg}&value=${data.data}`, {
+              preemptive: false
+            })
+        } else if (data['Network'] === true) {
+          self.custodian.onNetworkConnect()
+        }
       } else if (data['Wifi'] === false || data['Network'] === false) {
         self.custodian.onNetworkDisconnect()
-      } else if (data['Network'] === true) {
-        self.custodian.onNetworkConnect()
-      } else if (data['msg'] && self.custodian.isConfiguringNetwork()) {
-        self.sendNLPToApp('@network', {
-          intent: 'wifi_status'
-        }, {
-          status: data['msg'],
-          value: data['data']
-        })
       }
       cb(null, true)
     } catch (err) {

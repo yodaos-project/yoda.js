@@ -4,7 +4,6 @@
   "description": "Battery Apps for Rokid",
   "main": "app.js",
   "metadata": {
-    "daemon": true,
     "skills": [
       "9CA6C0CBB4994F6A8732EA0863784C0E"
     ],
