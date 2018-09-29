@@ -105,9 +105,7 @@ Custodian.prototype.isConfiguringNetwork = function isConfiguringNetwork () {
 }
 
 Custodian.prototype.prepareNetwork = function prepareNetwork () {
-  if (wifi.getNetworkState() === wifi.NETSERVER_CONNECTED) {
-    this.onNetworkConnect()
-  } else {
-    this.onNetworkDisconnect()
+  if (wifi.getNumOfHistory() === 0) {
+    return this.onNetworkDisconnect()
   }
 }

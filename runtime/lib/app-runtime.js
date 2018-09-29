@@ -21,7 +21,6 @@ var property = require('@yoda/property')
 var system = require('@yoda/system')
 
 var dbusConfig = require('../dbus-config.json')
-
 var CloudApi = require('./cloudapi')
 var env = require('./env')()
 var perf = require('./performance')
