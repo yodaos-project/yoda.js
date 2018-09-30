@@ -60,6 +60,7 @@ Executor.prototype.create = function () {
         return app
       }, err => {
         logger.error('Unexpected error on starting ext-app', err.message, err.stack)
+        this.creating = false
         throw err
       })
   }
