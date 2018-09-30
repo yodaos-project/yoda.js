@@ -310,7 +310,6 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
 
   if (this.life.getCurrentAppId()) {
     /** exit all app if there is apps actively running */
-    this.resetCloudStack()
     return this.destroyAll({ force: false })
   }
 
@@ -545,16 +544,19 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute) {
 }
 
 /**
- * 给所有App发送destroy事件，销毁所有App
+ * Send 'destroy' event to all apps, also clears app contexts.
+ *
  * @private
  * @param {object} [options]
- * @param {object} [options.force=true]
+ * @param {object} [options.force=true] - Force quit all apps.
  * @param {boolean} [options.resetServices=true]
  * @returns {Promise<void>}
  */
 AppRuntime.prototype.destroyAll = function (options) {
   var force = _.get(options, 'force', true)
   var resetServices = _.get(options, 'resetServices', true)
+
+  this.resetCloudStack()
 
   var promises = []
 
