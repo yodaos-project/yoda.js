@@ -202,6 +202,14 @@ module.exports = function (activity) {
         decVolume(format(nlp.slots) * partition)
           .then(() => activity.exit())
         break
+      case 'add_volume_percent':
+        incVolume(format(nlp.slots))
+          .then(() => activity.exit())
+        break
+      case 'dec_volume_percent':
+        decVolume(format(nlp.slots))
+          .then(() => activity.exit())
+        break
       case 'volumeup':
       case 'volume_too_low':
         incVolume(100 / partition)
