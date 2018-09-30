@@ -301,9 +301,11 @@ DBus.prototype.amsexport = {
                 preemptive: false
               })
           }
-        } else if (data['Wifi'] === false || data['Network'] === false) {
+        }
+
+        if (data['Wifi'] === false || data['Network'] === false) {
           this.runtime.custodian.onNetworkDisconnect()
-        } else if (data['Network'] === true) {
+        } else if (data['Wifi'] === true || data['Network']) {
           this.runtime.custodian.onNetworkConnect()
         }
         cb(null, true)
