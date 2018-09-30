@@ -544,11 +544,13 @@ Object.assign(LightDescriptor.prototype,
   {
 
     /**
+     * play the given light effect
      * @memberof yodaRT.activity.Activity.LightClient
      * @instance
      * @function play
      * @param {string} uri - the light resource uri.
      * @param {object} args - the args.
+     * @param {number} [args.zIndex] number of layers to play. default minimum layer
      * @returns {Promise<void>}
      */
     play: {
@@ -568,9 +570,11 @@ Object.assign(LightDescriptor.prototype,
       }
     },
     /**
+     * stop the given light effect and clear from the recovery queue
      * @memberof yodaRT.activity.Activity.LightClient
      * @instance
      * @function stop
+     * @param {string} uri - the light resource uri.
      * @returns {Promise<void>}
      */
     stop: {
