@@ -25,15 +25,15 @@ function getSign (data) {
     .toUpperCase()
 }
 
-function registry (userId, config, cb) {
-  logger.info('start request /api/registryByKey with userId:', userId)
+function registry (config, cb) {
+  logger.info('request /api/registryByKey', config.masterId)
   var data = load(config)
   var msg = JSON.stringify({
     appKey: data.key,
     requestSign: getSign(data),
     deviceTypeId: data.device_type_id,
     deviceId: data.device_id,
-    accountId: userId,
+    accountId: config.masterId,
     service: data.service,
     time: `${data.time}`,
     version: data.version
