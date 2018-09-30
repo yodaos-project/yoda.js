@@ -1,5 +1,6 @@
 var EventEmitter = require('events')
 var inherits = require('util').inherits
+var logger = require('logger')('dbus-app')
 
 module.exports = Executor
 function Executor (objectPath, ifaceName, appId, runtime) {
@@ -11,8 +12,8 @@ function Executor (objectPath, ifaceName, appId, runtime) {
 }
 
 Executor.prototype.create = function () {
-  this.app = new DbusApp(this.appId, this.objectPath, this.ifaceName, this.runtime.service)
-
+  this.app = new DbusApp(this.appId, this.objectPath, this.ifaceName, this.runtime.dbusRegistry.service)
+  logger.info('created dbus app', this.appId)
   return Promise.resolve(this.app)
 }
 
