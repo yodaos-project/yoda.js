@@ -300,11 +300,11 @@ DBus.prototype.amsexport = {
               `yoda-skill://network/wifi_status?status=${data.msg}&value=${data.data}`, {
                 preemptive: false
               })
-          } else if (data['Network'] === true) {
-            this.runtime.custodian.onNetworkConnect()
           }
         } else if (data['Wifi'] === false || data['Network'] === false) {
           this.runtime.custodian.onNetworkDisconnect()
+        } else if (data['Network'] === true) {
+          this.runtime.custodian.onNetworkConnect()
         }
         cb(null, true)
       } catch (err) {

@@ -3,7 +3,6 @@
 var mqtt = require('mqtt')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
-var property = require('@yoda/property')
 var mqttRegister = require('./mqtt-register')
 var logger = require('logger')('mqtt')
 var env = require('../env')()
