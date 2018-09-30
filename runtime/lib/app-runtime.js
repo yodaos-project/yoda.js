@@ -420,6 +420,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     logger.log(`Local app '${nlp.appId}' not found.`)
     return Promise.resolve()
   }
+  var prevId = this.life.getCurrentAppId()
 
   return this.life.createApp(appId)
     .then(() => {
@@ -433,10 +434,10 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
       return this.life.activateAppById(appId, form, carrierId)
     })
     .then(() => {
-      var prevId = this.life.getCurrentAppId()
       if (prevId == null) {
         return
       }
+      logger.info('stopping previous tts/media', appId)
       return Promise.all([
         this.ttsMethod('stop', [ prevId ]),
         this.multimediaMethod('pause', [ prevId ])
