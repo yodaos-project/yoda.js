@@ -310,6 +310,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
 
   if (this.life.getCurrentAppId()) {
     /** exit all app if there is apps actively running */
+    this.resetCloudStack()
     return this.destroyAll({ force: false })
   }
 
