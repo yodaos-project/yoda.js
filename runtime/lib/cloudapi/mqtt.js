@@ -24,7 +24,10 @@ MqttAgent.prototype.initialize = function initialize () {
   this.register((err) => {
     if (err) {
       logger.error('register error with error', err && err.stack)
-      return this.initialize()
+      if (handle !== null) {
+        this.initialize()
+      }
+      return
     }
     this.connect()
   })
