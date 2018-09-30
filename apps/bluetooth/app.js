@@ -7,7 +7,6 @@ var wifi = require('@yoda/wifi')
 
 module.exports = function (activity) {
   var player = null
-
   var uuid = (property.get('ro.boot.serialno') || '').substr(-6)
   var productName = property.get('ro.rokid.build.productname') || 'Rokid-Me'
   var name = [ productName, uuid ].join('-')
@@ -16,20 +15,24 @@ module.exports = function (activity) {
   var bluetoothState = null
   var connectBlutoothName = null
   var playState = null
-  var STRING_BROADCAST = '蓝牙已打开，请使用手机搜索设备'
+  var STRING_BROADCAST = '蓝牙已打开，你可以在手机上找到'
+  var STRING_BROADCAST_END = '来连接我的蓝牙'
   var STRING_CONNECED = '已连接上你的'
   var STRING_CONNECEDFAILED = '未能连接上你的'
+  var DEVICE_NAME = '蓝牙设备'
   var STRING_OPENFAILED = '打开蓝牙失败'
-  var STRING_CLOSED = '蓝牙已关闭'
+  var STRING_OPENDISCONNECT = '蓝牙断开连接'
+  var STRING_ASK = '你可以对我说，若琪，打开蓝牙'
   var BLUETOOTH_MUSIC_ID = 'RDDE53259D334860BA9E98CB3AB6C001'
 
   function broadcast () {
     player = bluetooth.getPlayer()
     setTimeout(() => {
-      if ((bluetoothState === null) || (bluetoothState === 'disconnected')) {
+      if ((bluetoothState === null) || (bluetoothState === 'closed')) {
         player.start(name)
+        activity.light.play('system://bluetoothOpen.js')
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST + nameToSpeak) })
+          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST + nameToSpeak + STRING_BROADCAST_END) })
         } else {
           activity.setForeground().then(() => { mediaAndExit('system://openbluetooth.ogg') })
         }
@@ -48,15 +51,13 @@ module.exports = function (activity) {
         return activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
       }
       if (message.a2dpstate === 'closed') {
-        bluetoothState = 'disconnected'
+        bluetoothState = 'closed'
         if (!playState) { disconnect() }
       }
-      if (bluetoothState === 'connected' && message.connect_state === 'disconnected') {
+      if (message.connect_state === 'disconnected') {
         bluetoothState = 'disconnected'
-        return activity.setForeground().then(() => {
-          return activity.playSound('system://closebluetooth.ogg')
-        }).then(() => {
-          return activity.exit()
+        activity.setForeground().then(() => {
+          speakAndExit(STRING_OPENDISCONNECT)
         })
       }
       if ((message.a2dpstate === 'openfailed') && (message.connect_state === 'invailed') &&
@@ -75,9 +76,7 @@ module.exports = function (activity) {
         (message.play_state === 'invailed')) {
         connectBlutoothName = message.connect_name
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => {
-            speakAndExit(STRING_CONNECEDFAILED + message.connect_name)
-          })
+          if (message.connect_name === 'undefined') { activity.setForeground().then(() => { speakAndExit(STRING_CONNECEDFAILED + DEVICE_NAME) }) } else { activity.setForeground().then(() => { speakAndExit(STRING_CONNECEDFAILED + message.connect_name) }) }
         } else {
           activity.setForeground().then(() => {
             mediaAndExit('system://connectfailedbluetooth.ogg')
@@ -107,8 +106,9 @@ module.exports = function (activity) {
       player.disconnect()
       bluetoothState = null
     }
+    activity.light.stop('system://bluetoothOpen.js')
     activity.setForeground().then(() => {
-      speakAndExit(STRING_CLOSED)
+      mediaAndExit('system://closebluetooth.ogg')
     })
   }
 
@@ -181,6 +181,9 @@ module.exports = function (activity) {
 
   activity.on('request', function (nlp, action) {
     switch (nlp.intent) {
+      case 'ask_bluetooth':
+        speakAndExit(STRING_ASK)
+        break
       case 'bluetooth_broadcast':
         broadcast()
         break
