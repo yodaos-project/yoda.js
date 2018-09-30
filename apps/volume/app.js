@@ -243,7 +243,7 @@ module.exports = function (activity) {
   })
 
   activity.on('url', url => {
-    var partition = parseInt(_.get(url.query, 'partition', 16))
+    var partition = parseInt(_.get(url.query, 'partition', 10))
     var silent = _.get(url.query, 'silent') == null
     switch (url.pathname) {
       case '/init':
