@@ -19,7 +19,8 @@ Tts.prototype.speak = function (appId, text) {
       this.handle[appId].stop()
       delete this.handle[appId]
     } catch (error) {
-      logger.log(`try to stop prev tts failed with appId: ${appId}`)
+      logger.error(`try to stop prev tts failed with appId: ${appId}`, error.stack)
+      return -1
     }
   }
   try {
@@ -27,6 +28,7 @@ Tts.prototype.speak = function (appId, text) {
     this.handle[appId] = req
     return req.id
   } catch (err) {
+    logger.error('registering tts failure', err.stack)
     return -1
   }
 }
@@ -44,7 +46,7 @@ Tts.prototype.reset = function () {
       this.handle[index].stop()
     }
   } catch (error) {
-    logger.log('error when try to stop all tts')
+    logger.error('error when try to stop all tts', error.stack)
   }
   this.handle = {}
 }

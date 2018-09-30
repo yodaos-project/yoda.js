@@ -106,7 +106,7 @@ function reConnect (CONFIG) {
       )
     })
     _TTS.on('error', function (id, errno) {
-      logger.log('ttsd error', id)
+      logger.error('ttsd error', id, errno)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
       dbusService._dbus.emitSignal(
         '/tts/service',
@@ -144,15 +144,18 @@ dbusApis.addMethod('speak', {
         } else {
           cb(null, '-1')
         }
-      })
-      .catch((err) => {
-        logger.log('ttsd check error', appId, err)
+      }, (err) => {
+        logger.error('ttsd check error', appId, err)
         logger.log('can not connect to vui')
+        cb(null, '-1')
+      })
+      .catch(err => {
+        logger.error('unexpected error on speak', appId, err.stack)
         cb(null, '-1')
       })
   } else {
     // TODO: error handler?
-    logger.log(`speak error, appId and text expected`)
+    logger.error(`unexpected arguments: appId and text expected`, appId, text)
     cb(null, '-1')
   }
 })
