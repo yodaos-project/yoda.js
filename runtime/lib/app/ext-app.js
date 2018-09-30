@@ -50,8 +50,8 @@ function createExtApp (appId, target, runtime) {
     descriptor.emit('exit', code, signal)
   })
   descriptor.once('destruct', () => {
-    logger.info(`Activity end of life.`)
-    cp.kill()
+    logger.info(`Activity end of life, killing process in 10s.`)
+    setTimeout(() => cp.kill(), 10 * 1000)
   })
 
   return new Promise((resolve, reject) => {
