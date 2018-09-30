@@ -243,14 +243,17 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
  * @private
  */
 AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
-  if (this.custodian.isConfiguringNetwork()) {
-    // start @network app if not logged in yet
-    return this.custodian.resetNetwork()
+  if (this.life.getCurrentAppId() === '@yoda/network') {
+    this.openUrl('yoda-skill://network/renew')
+    return
   }
-  if (this.custodian.isNetworkUnavailable()) {
-    // guide the user to double-click the button
-    logger.warn('Device is initiated, yet disconnected from network. Network may be re-configured.')
-    this.custodian.prepareNetwork()
+  if (wifi.getNumOfHistory() === 0) {
+    this.openUrl('yoda-skill://network/setup', {
+      preemptive: true
+    })
+    return
+  }
+  if (wifi.getWifiState() !== wifi.WIFI_CONNECTED) {
     return this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
   }
   return this.lightMethod('setDegree', ['', '' + (data.sl || 0)])

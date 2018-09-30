@@ -99,9 +99,9 @@ BluetoothMessageStream.prototype._send = function (cmdstr, name) {
  * @param {function} onerror
  * @returns {Null}
  */
-BluetoothMessageStream.prototype.start = function start (name, always, onerror) {
+BluetoothMessageStream.prototype.start = function start (name, always, cb) {
   if (always) {
-    helper.startWithRetry(name, this, onerror, 20)
+    helper.startWithRetry(name, this, cb, 20)
   } else {
     this._end = false
     this._send('ON', name)
