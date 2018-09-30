@@ -5,8 +5,8 @@ var property = require('@yoda/property')
 
 module.exports = function customConfig (activity) {
   var CONFIG_FAILED = '设置失败'
-  var LIGHT_SWITCH_OPEN = '灯光已开启'
-  var LIGHT_SWITCH_CLOSE = '灯光已关闭'
+  var LIGHT_SWITCH_OPEN = '我现在没有待机灯光，你可以试试其他功能'
+  var LIGHT_SWITCH_CLOSE = '我现在没有待机灯光，你可以试试其他功能'
   var WAKE_SOUND_OPEN = '已为你开启'
   var WAKE_SOUND_CLOSE = '已关闭'
   var PICKUP_SWITCH_OPEN = '当前不支持连续对话'
