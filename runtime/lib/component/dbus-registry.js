@@ -187,13 +187,56 @@ DBus.prototype.extapp = {
 
           var channel = `callback:tts:${ttsId}`
           var app = this.runtime.loader.getAppById(appId)
-          this.once(channel, () => {
+          this.on(channel, event => {
+            if (['end', 'cancel', 'error'].indexOf(event) < 0) {
+              return
+            }
+            this.removeAllListeners(channel)
             this.service._dbus.emitSignal(
               app.objectPath,
               app.ifaceName,
               'onTtsComplete',
               's',
               [ttsId]
+            )
+          })
+        })
+    }
+  },
+  media: {
+    in: ['s'],
+    out: ['s'],
+    fn: function media (appId, url, cb) {
+      if (this.runtime.loader.getExecutorByAppId(appId) == null) {
+        return cb(null, '-1')
+      }
+      var permit = this.runtime.permission.check(appId, 'ACCESS_MULTIMEDIA')
+      if (!permit) {
+        return cb(null, '-1')
+      }
+      this.runtime.multimediaMethod('start', [appId, url, 'playback'])
+        .then((result) => {
+          var multimediaId = _.get(result, '0', '-1')
+          logger.log('create media player', multimediaId)
+
+          cb(null, multimediaId)
+          if (multimediaId === '-1') {
+            return
+          }
+
+          var channel = `callback:multimedia:${multimediaId}`
+          var app = this.runtime.loader.getAppById(appId)
+          this.on(channel, event => {
+            if (['playbackcomplete', 'cancel', 'error'].indexOf(event) < 0) {
+              return
+            }
+            this.removeAllListeners(channel)
+            this.service._dbus.emitSignal(
+              app.objectPath,
+              app.ifaceName,
+              'onMediaComplete',
+              's',
+              [multimediaId]
             )
           })
         })

@@ -29,6 +29,9 @@ function DbusApp (appId, objectPath, ifaceName, dbusService) {
   this.ifaceName = ifaceName
   this.dbusService = dbusService
 
+  this.on('resume', this._onEvent.bind(this, 'resume', appId))
+  this.on('pause', this._onEvent.bind(this, 'pause', appId))
+  this.on('destroy', this._onEvent.bind(this, 'destroy', appId))
   this.on('request', this._onEvent.bind(this, 'request', appId))
 }
 inherits(DbusApp, EventEmitter)
@@ -37,6 +40,24 @@ DbusApp.prototype._onEvent = function (name) {
   var params = Array.prototype.slice.call(arguments, 1)
   var eventName
   switch (name) {
+    case 'resume':
+      eventName = 'onResume'
+      params = [
+        params[0]
+      ]
+      break
+    case 'pause':
+      eventName = 'onPause'
+      params = [
+        params[0]
+      ]
+      break
+    case 'destroy':
+      eventName = 'onStop'
+      params = [
+        params[0]
+      ]
+      break
     case 'request':
       eventName = 'nlp'
       params = [
