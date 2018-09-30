@@ -44,7 +44,7 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
   logger.info('on network disconnect, once logged in?', this._loggedIn)
   this.runtime.wormhole.setOffline()
 
-  if (this._loggedIn) {
+  if (wifi.getNumOfHistory() > 0) {
     // waiting for user awake or button event in order to switch to network config
     logger.log('network switch, try to relogin, waiting for user awake or button event')
     return

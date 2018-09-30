@@ -29,15 +29,15 @@ function closeCmdSocket () {
   }
 }
 
-function startWithRetry (name, handle, onerror, maxCount) {
+function startWithRetry (name, handle, cb, maxCount) {
   var count = 0
   var timer = setInterval(() => {
     if (count >= maxCount) {
       clearInterval(timer)
       // throw the connect error.
       var err = new Error('bluetooth connect failed')
-      if (typeof onerror === 'function') {
-        onerror(err)
+      if (typeof cb === 'function') {
+        cb(err)
       } else {
         throw err
       }
@@ -46,7 +46,12 @@ function startWithRetry (name, handle, onerror, maxCount) {
       handle.start(name)
     }
   }, 200)
-  handle.once('opened', () => clearInterval(timer))
+  handle.once('opened', () => {
+    clearInterval(timer)
+    if (typeof cb === 'function') {
+      cb()
+    }
+  })
   handle.start(name)
 }
 
