@@ -730,6 +730,9 @@ Object.assign(MultimediaDescriptor.prototype,
                 if (event === 'playbackcomplete') {
                   return resolve()
                 }
+                if (event === 'cancel') {
+                  return reject(new Error('Media has been canceled'))
+                }
                 if (event === 'error') {
                   return reject(new Error('Unexpected ttsd error'))
                 }
