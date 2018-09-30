@@ -1,5 +1,4 @@
 var logger = require('logger')('custodian')
-var ota = require('@yoda/ota')
 var wifi = require('@yoda/wifi')
 
 module.exports = Custodian
@@ -31,18 +30,6 @@ Custodian.prototype.onNetworkConnect = function onNetworkConnect () {
   logger.info('on network connect')
 
   this.runtime.reconnect()
-  /** Announce last installed ota changelog and clean up ota files */
-  ota.getInfoIfFirstUpgradedBoot((err, info) => {
-    if (err) {
-      logger.error('failed to fetch upgraded info, skipping', err && err.stack)
-      return
-    }
-    if (info == null) {
-      logger.info('no available updates found on start up')
-      return
-    }
-    this.startApp('@ota', { intent: 'on_first_boot_after_upgrade', _info: info }, {})
-  })
 }
 
 /**

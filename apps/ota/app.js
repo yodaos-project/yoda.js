@@ -8,12 +8,7 @@ var logger = require('logger')('otap')
 var intentHandler = {
   start_sys_upgrade: checkUpdateAvailability,
   check_sys_upgrade: checkUpdateAvailability,
-  check_upgrade_num: whatsCurrentVersion,
-  /**
-   * Generated NLP
-   */
-  on_first_boot_after_upgrade: onFirstBootAfterUpgrade,
-  force_upgrade: forceUpgrade
+  check_upgrade_num: whatsCurrentVersion
 }
 
 /**
@@ -39,6 +34,12 @@ module.exports = function (activity) {
     switch (url.pathname) {
       case '/mqtt/check_update':
         mqttCheckUpdate(activity)
+        break
+      case '/on_first_boot_after_upgrade':
+        onFirstBootAfterUpgrade(activity, url)
+        break
+      case 'force_upgrade':
+        forceUpgrade(activity, url)
         break
     }
   })
@@ -74,7 +75,7 @@ function checkUpdateAvailability (activity) {
       return activity.tts.speak('准备升级失败')
         .then(() => activity.exit())
     }
-    return activity.tts.speak('你有新的版本可以升级，现在为你重启安装，成功升级后会及时告诉你')
+    return activity.tts.speak('开始系统升级，这会需要⼀些时间，请耐⼼等待。请不要拔插电源，现在为你重启安装，成功升级后会及时告诉你')
       .then(() => system.reboot())
   }) /** ota.getAvailableInfo */
 }
@@ -96,16 +97,16 @@ function isUpgradeSuitableNow () {
 /**
  *
  * @param {YodaRT.Activity} activity
- * @param {YodaRT.Request} nlp
+ * @param {URL} url
  */
-function onFirstBootAfterUpgrade (activity, nlp) {
-  var info = nlp._info
-  if (info == null || !info.changelog) {
-    return
+function onFirstBootAfterUpgrade (activity, url) {
+  var changelog = '系统升级完成'
+  if (_.get(url, 'query.changelog')) {
+    changelog += '<silence=1></silence>' + decodeURIComponent(url.query.changelog)
   }
 
   ota.resetOta(function onReset () {
-    activity.tts.speak(info.changelog)
+    activity.tts.speak(changelog)
       .then(() => activity.exit())
   })
 }
@@ -113,14 +114,10 @@ function onFirstBootAfterUpgrade (activity, nlp) {
 /**
  *
  * @param {YodaRT.Activity} activity
- * @param {YodaRT.Request} nlp
+ * @param {URL} url
  */
-function forceUpgrade (activity, nlp) {
-  var info = nlp._info
-  if (info == null || !info.changelog) {
-    return
-  }
-  activity.tts.speak(info.changelog)
+function forceUpgrade (activity, url) {
+  activity.tts.speak('嗨，收到重要升级，你可以在⼿机APP上了解升级内容，现在， 请保持电源连接，即将开始系统升级')
     .then(() => system.reboot())
 }
 
