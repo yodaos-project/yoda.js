@@ -9,12 +9,20 @@ var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var Sounder = require('@yoda/multimedia').Sounder
 var light = require('@yoda/light')
 var LRU = require('lru-cache')
-var Map = require('pseudomap')
 var logger = require('logger')('effects')
 var path = require('path')
 
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
-var SYSTEMCACHE = new Map()
+var SYSTEMCACHE = new LRU({
+  max: 1,
+  dispose: function (key, val) {
+    try {
+      val.stop()
+    } catch (error) {
+      logger.log(`SystemPlayerCache: try to stop ${key} error`)
+    }
+  }
+})
 var PLAYERCACHE = new LRU({
   max: 1,
   dispose: function (key, val) {
