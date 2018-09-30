@@ -15,7 +15,9 @@
     ],
     "permission": [
       "ACCESS_TTS",
-      "INTERRUPT"
+      "ACCESS_NETWORK_STATE",
+      "INTERRUPT",
+      "ACCESS_MULTIMEDIA"
     ],
     "hosts": [
       {
