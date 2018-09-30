@@ -74,6 +74,7 @@ Executor.prototype.create = function () {
 Executor.prototype.destruct = function destruct () {
   if (this.app) {
     this.app.destruct()
+    this.app = null
   }
   return Promise.resolve()
 }
