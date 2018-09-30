@@ -233,7 +233,7 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
         return
       }
       logger.info('got pending update info', info)
-      this.startApp('@ota', { intent: 'force_upgrade', _info: info }, {})
+      this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
     })
   }
 }
@@ -1106,11 +1106,12 @@ AppRuntime.prototype.onLoggedIn = function () {
   var deferred = () => {
     perf.stub('started')
     // not need to play startup music after relogin
+
     if (this.shouldWelcome) {
-      this.shouldWelcome = false
-      logger.info('announce welcome')
+      logger.info('announcing welcome')
       this.lightMethod('setWelcome', [])
     }
+    this.shouldWelcome = false
 
     var config = JSON.stringify(this.onGetPropAll())
     return this.ttsMethod('connect', [config])
