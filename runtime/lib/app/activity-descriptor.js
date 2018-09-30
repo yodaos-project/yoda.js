@@ -137,7 +137,7 @@ ActivityDescriptor.prototype.toString = function toString () {
 }
 ActivityDescriptor.prototype.destruct = function destruct () {
   this._registeredDbusSignals.forEach(it => {
-    this._runtime.dbusSignalRegistry.removeAllListeners(it)
+    this._runtime.dbusRegistry.removeAllListeners(it)
   })
   this.emit('destruct')
 }
@@ -712,10 +712,10 @@ Object.assign(MultimediaDescriptor.prototype,
 
               var channel = `callback:multimedia:${multimediaId}`
               self._activityDescriptor._registeredDbusSignals.push(channel)
-              self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
+              self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
                 if (['playbackcomplete', 'error', 'cancel'].indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
-                  self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
+                  self._runtime.dbusRegistry.removeListener(channel, onDbusSignal)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                   self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
                 }
@@ -950,12 +950,12 @@ Object.assign(TtsDescriptor.prototype,
             return new Promise((resolve, reject) => {
               var channel = `callback:tts:${ttsId}`
               self._activityDescriptor._registeredDbusSignals.push(channel)
-              self._runtime.dbusSignalRegistry.on(channel, function onDbusSignal (event) {
+              self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
                 logger.info('tts signals', channel, event)
 
                 if (['cancel', 'end', 'error'].indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
-                  self._runtime.dbusSignalRegistry.removeListener(channel, onDbusSignal)
+                  self._runtime.dbusRegistry.removeListener(channel, onDbusSignal)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                   self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
                 }

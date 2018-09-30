@@ -4,7 +4,6 @@
  * @namespace yodaRT
  */
 
-var dbus = require('dbus')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var Url = require('url')
@@ -20,13 +19,12 @@ var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
 var system = require('@yoda/system')
 
-var dbusConfig = require('../dbus-config.json')
 var CloudApi = require('./cloudapi')
 var env = require('./env')()
 var perf = require('./performance')
-var DbusRemoteCall = require('./dbus-remote-call')
 var DbusAppExecutor = require('./app/dbus-app-executor')
 var Permission = require('./component/permission')
+var DBusRegistry = require('./component/dbus-registry')
 var Custodian = require('./component/custodian')
 var AppLoader = require('./component/app-loader')
 var Flora = require('./component/flora')
@@ -65,7 +63,7 @@ function AppRuntime () {
   this.shouldWelcome = true
   this.forceUpdateAvailable = false
 
-  this.dbusSignalRegistry = new EventEmitter()
+  this.dbusRegistry = new DBusRegistry(this)
 
   this.custodian = new Custodian(this)
   this.flora = new Flora(this)
@@ -94,8 +92,7 @@ AppRuntime.prototype.init = function init (paths) {
   this.flora.init()
   this.flora.turenMute(false)
 
-  this.startDbusAppService()
-  this.listenDbusSignals()
+  this.dbusRegistry.init()
 
   this.keyboard.init()
   this.life.on('stack-reset', () => {
@@ -253,6 +250,7 @@ AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (dat
   if (this.custodian.isNetworkUnavailable()) {
     // guide the user to double-click the button
     logger.warn('Device is initiated, yet disconnected from network. Network may be re-configured.')
+    this.custodian.prepareNetwork()
     return this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
   }
   return this.lightMethod('setDegree', ['', '' + (data.sl || 0)])
@@ -1020,89 +1018,30 @@ AppRuntime.prototype.onLoadCustomConfig = function (config) {
  * @private
  */
 AppRuntime.prototype.lightMethod = function (name, args) {
-  return new Promise((resolve, reject) => {
-    var sig = args.map(() => 's').join('')
-    this.service._dbus.callMethod(
-      'com.service.light',
-      '/rokid/light',
-      'com.rokid.light.key',
-      name, sig, args, resolve)
-  })
+  return this.dbusRegistry.callMethod(
+    'com.service.light',
+    '/rokid/light',
+    'com.rokid.light.key',
+    name, args)
 }
 
 /**
  * @private
  */
 AppRuntime.prototype.ttsMethod = function (name, args) {
-  return new Promise((resolve, reject) => {
-    var sig = args.map(() => 's').join('')
-    this.service._dbus.callMethod(
-      'com.service.tts',
-      '/tts/service',
-      'tts.service',
-      name, sig, args, resolve)
-  })
-}
-
-AppRuntime.prototype.multimediaMethod = function (name, args) {
-  return new Promise((resolve, reject) => {
-    var sig = args.map(() => 's').join('')
-    this.service._dbus.callMethod(
-      'com.service.multimedia',
-      '/multimedia/service',
-      'multimedia.service',
-      name, sig, args, resolve)
-  })
-}
-
-AppRuntime.prototype.listenDbusSignals = function () {
-  var self = this
-  var proxy = new DbusRemoteCall(this.service._bus)
-  var ttsEvents = {
-    'ttsdevent': function onTtsEvent (msg) {
-      var channel = `callback:tts:${_.get(msg, 'args.0')}`
-      EventEmitter.prototype.emit.apply(
-        self.dbusSignalRegistry,
-        [ channel ].concat(msg.args.slice(1))
-      )
-    }
-  }
-  proxy.listen(
+  return this.dbusRegistry.callMethod(
     'com.service.tts',
     '/tts/service',
     'tts.service',
-    function onTtsEvent (msg) {
-      var handler = ttsEvents[msg && msg.name]
-      if (handler == null) {
-        logger.warn(`Unknown ttsd event type '${msg && msg.name}'.`)
-        return
-      }
-      handler(msg)
-    }
-  )
+    name, args)
+}
 
-  var multimediaEvents = {
-    'multimediadevent': function onMultimediaEvent (msg) {
-      var channel = `callback:multimedia:${_.get(msg, 'args.0')}`
-      EventEmitter.prototype.emit.apply(
-        self.dbusSignalRegistry,
-        [ channel ].concat(msg.args.slice(1))
-      )
-    }
-  }
-  proxy.listen(
+AppRuntime.prototype.multimediaMethod = function (name, args) {
+  return this.dbusRegistry.callMethod(
     'com.service.multimedia',
     '/multimedia/service',
     'multimedia.service',
-    function onMultimediaEvent (msg) {
-      var handler = multimediaEvents[msg && msg.name]
-      if (handler == null) {
-        logger.warn(`Unknown multimediad event type '${msg && msg.name}'.`)
-        return
-      }
-      handler(msg)
-    }
-  )
+    name, args)
 }
 
 /**
@@ -1228,296 +1167,8 @@ AppRuntime.prototype.mockAsr = function mockAsr (text) {
   })
 }
 
-/**
- * 启动extApp dbus接口
- * @private
- */
-AppRuntime.prototype.startDbusAppService = function () {
-  var self = this
-  var service = dbus.registerService('session', dbusConfig.service)
-  this.service = service
-
-  function createInterface (name) {
-    var object = service.createObject(dbusConfig[name].objectPath)
-    return object.createInterface(dbusConfig[name].interface)
-  }
-  /**
-   * Create extapp service
-   */
-  var extapp = createInterface('extapp')
-  extapp.addMethod('register', {
-    in: ['s', 's', 's'],
-    out: ['b']
-  }, function (appId, objectPath, ifaceName, cb) {
-    logger.info('dbus registering app', appId, objectPath, ifaceName)
-    if (!self.custodian.isPrepared()) {
-      /** prevent app to invoke runtime methods if runtime is not logged in yet */
-      return cb(null, false)
-    }
-    try {
-      self.registerDbusApp(appId, objectPath, ifaceName)
-    } catch (err) {
-      logger.error('Unexpected error on registering dbus app', appId, err && err.stack)
-      return cb(null, false)
-    }
-    cb(null, true)
-  })
-  extapp.addMethod('destroy', {
-    in: ['s'],
-    out: []
-  }, function (appId, cb) {
-    self.deleteDbusApp(appId)
-    cb(null)
-  })
-  extapp.addMethod('start', {
-    in: ['s'],
-    out: []
-  }, function (appId, cb) {
-    cb(null)
-  })
-  extapp.addMethod('setPickup', {
-    in: ['s', 's', 's'],
-    out: []
-  }, function (appId, isPickup, duration, cb) {
-    if (appId !== self.life.getCurrentAppId()) {
-      logger.log('set pickup permission deny')
-      cb(null)
-    } else {
-      self.setPickup(isPickup === 'true', +duration)
-      cb(null)
-    }
-  })
-  extapp.addMethod('setConfirm', {
-    in: ['s', 's', 's', 's', 's'],
-    out: ['b']
-  }, function (appId, intent, slot, options, attrs, cb) {
-    try {
-      options = JSON.parse(options)
-      attrs = JSON.parse(attrs)
-    } catch (error) {
-      logger.log('setConfirm Error: ', error)
-      cb(null, false)
-      return
-    }
-    self.setConfirm(appId, intent, slot, options, attrs)
-      .then(
-        () => cb(null, true),
-        (err) => {
-          logger.log(err)
-          cb(null, false)
-        }
-      )
-  })
-  extapp.addMethod('exit', {
-    in: ['s'],
-    out: []
-  }, function (appId, cb) {
-    if (appId !== self.life.getCurrentAppId()) {
-      logger.log('exit app permission deny')
-      cb(null)
-    } else {
-      self.life.deactivateAppById(appId, { force: true })
-      cb(null)
-    }
-  })
-  extapp.addMethod('destroyAll', {
-    in: [],
-    out: ['b']
-  }, function (cb) {
-    self.destroyAll()
-    cb(null, true)
-  })
-  extapp.addMethod('mockNLPResponse', {
-    in: ['s', 's', 's'],
-    out: []
-  }, function (appId, nlp, action, cb) {
-    cb(null)
-    try {
-      nlp = JSON.parse(nlp)
-      action = JSON.parse(action)
-    } catch (error) {
-      logger.log('mockNLPResponse, invalid nlp or action')
-      return
-    }
-    self.mockNLPResponse(nlp, action)
-  })
-  extapp.addMethod('mockAsr', {
-    in: ['s'],
-    out: ['s']
-  }, function mockAsr (text, cb) {
-    self.mockAsr(text)
-      .then(
-        res => cb(null, JSON.stringify({ ok: true, nlp: res[0], action: res[1] })),
-        err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
-      )
-  })
-  extapp.addMethod('setBackground', {
-    in: ['s'],
-    out: ['b']
-  }, function (appId, cb) {
-    if (appId) {
-      var result = self.life.setBackgroundById(appId)
-      cb(null, result)
-    } else {
-      cb(null, false)
-    }
-  })
-  extapp.addMethod('setForeground', {
-    in: ['s'],
-    out: ['b']
-  }, function (appId, cb) {
-    if (appId) {
-      var result = self.life.setForegroundById(appId)
-      cb(null, result)
-    } else {
-      cb(null, false)
-    }
-  })
-  extapp.addMethod('syncCloudAppIdStack', {
-    in: ['s'],
-    out: ['b']
-  }, function (stack, cb) {
-    self.syncCloudAppIdStack(JSON.parse(stack || '[]'))
-    cb(null, true)
-  })
-  extapp.addMethod('tts', {
-    in: ['s', 's'],
-    out: ['s']
-  }, function (appId, text, cb) {
-    if (self.loader.getExecutorByAppId(appId) == null) {
-      return cb(null, '-1')
-    }
-    var permit = self.permission.check(appId, 'ACCESS_TTS')
-    if (permit) {
-      self.ttsMethod('speak', [appId, text])
-        .then((res) => {
-          var ttsId = res[0]
-          cb(null, ttsId)
-          var channel = `callback:tts:${ttsId}`
-          var app = self.apps[appId]
-          if (ttsId !== '-1') {
-            self.dbusSignalRegistry.once(channel, function () {
-              self.service._dbus.emitSignal(
-                app.objectPath,
-                app.ifaceName,
-                'onTtsComplete',
-                's',
-                [ttsId]
-              )
-            })
-          }
-        })
-    } else {
-      cb(null, '-1')
-    }
-  })
-
-  /**
-   * Create prop service
-   */
-  var prop = createInterface('prop')
-  prop.addMethod('all', {
-    in: ['s'],
-    out: ['s']
-  }, function (appId, cb) {
-    var config = self.onGetPropAll()
-    cb(null, JSON.stringify(config))
-  })
-
-  /**
-   * Create permission service
-   */
-  var permission = createInterface('permission')
-  permission.addMethod('check', {
-    in: ['s', 's'],
-    out: ['s']
-  }, function (appId, name, cb) {
-    var permit = self.permission.check(appId, name)
-    logger.log('vui.permit', permit, appId, name)
-    if (permit) {
-      cb(null, 'true')
-    } else {
-      cb(null, 'false')
-    }
-  })
-
-  /**
-   * Create amsexport service
-   */
-  var amsexport = createInterface('amsexport')
-  amsexport.addMethod('ReportSysStatus', {
-    in: ['s'],
-    out: ['b']
-  }, function (status, cb) {
-    if (self.loadAppComplete === false) {
-      // waiting for the app load complete
-      return cb(null, false)
-    }
-    try {
-      var data = JSON.parse(status)
-      if (data.upgrade === true) {
-        self.startApp('@upgrade', {}, {})
-      } else if (self.life.getCurrentAppId() === '@yoda/network') {
-        if (data.msg) {
-          self.openUrl(
-            `yoda-skill://network/wifi_status?status=${data.msg}&value=${data.data}`, {
-              preemptive: false
-            })
-        } else if (data['Network'] === true) {
-          self.custodian.onNetworkConnect()
-        }
-      } else if (data['Wifi'] === false || data['Network'] === false) {
-        self.custodian.onNetworkDisconnect()
-      }
-      cb(null, true)
-    } catch (err) {
-      logger.error(err && err.stack)
-      cb(null, false)
-    }
-  })
-  amsexport.addMethod('SetTesting', {
-    in: ['s'],
-    out: ['b']
-  }, function (testing, cb) {
-    logger.log('set testing' + testing)
-    cb(null, true)
-  })
-  amsexport.addMethod('SendIntentRequest', {
-    in: ['s', 's', 's'],
-    out: ['b']
-  }, function (asr, nlp, action, cb) {
-    console.log('sendintent', asr, nlp, action)
-    self.onTurenEvent('nlp', {
-      asr: asr,
-      nlp: nlp,
-      action: action
-    })
-    cb(null, true)
-  })
-  amsexport.addMethod('Reload', {
-    in: [],
-    out: ['b']
-  }, function (cb) {
-    cb(null, true)
-  })
-  amsexport.addMethod('Ping', {
-    in: [],
-    out: ['b']
-  }, function (cb) {
-    logger.log('YodaOS is alive')
-    cb(null, true)
-  })
-  amsexport.addMethod('ForceUpdateAvailable', {
-    in: [],
-    out: []
-  }, function (cb) {
-    logger.info('force update available, waiting for incoming voice')
-    self.forceUpdateAvailable = true
-    cb(null)
-  })
-}
-
 AppRuntime.prototype.destruct = function destruct () {
   this.keyboard.destruct()
   this.flora.destruct()
+  this.dbusRegistry.destruct()
 }
