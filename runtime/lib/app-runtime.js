@@ -64,7 +64,6 @@ function AppRuntime () {
   this.forceUpdateAvailable = false
 
   this.dbusRegistry = new DBusRegistry(this)
-
   this.custodian = new Custodian(this)
   this.flora = new Flora(this)
   // manager app's permission
@@ -1064,18 +1063,15 @@ AppRuntime.prototype.onGetPropAll = function () {
 AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
   this.lightMethod('setConfigFree', ['system'])
-
   logger.log('yoda reconnecting')
 
   // login -> mqtt
-  this.cloudApi.connect((code, msg) => {
-    this.handleCloudEvent({
-      code: code,
-      msg: msg
-    })
-  }).then((mqttAgent) => {
+  var onNotify = (code, msg) => {
+    this.handleCloudEvent({ code: code, msg: msg })
+  }
+  this.cloudApi.connect(onNotify).then((mqtt) => {
     // load the system configuration
-    var config = mqttAgent.config
+    var config = mqtt.config
     var options = {
       uri: env.speechUri,
       key: config.key,
@@ -1091,16 +1087,20 @@ AppRuntime.prototype.reconnect = function () {
       })
     this.flora.updateSpeechPrepareOptions(options)
 
-    // implementation interface
-    var props = Object.assign({}, config, {
-      masterId: property.get('persist.system.user.userId')
-    })
-    this.onGetPropAll = () => props
+    // overwrite `onGetPropAll`.
+    this.onGetPropAll = function onGetPropAll () {
+      return Object.assign({}, config)
+    }
     this.onLoggedIn()
-    this.wormhole.init(mqttAgent)
+    this.wormhole.init(mqtt)
     this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
   }).catch((err) => {
-    logger.error('initializing occurs error', err && err.stack)
+    if (err && err.code === 'BIND_MASTER_REQUIRED') {
+      logger.error('bind master is required, just clear the local and enter network')
+      this.custodian.resetNetwork()
+    } else {
+      logger.error('initializing occurs error', err && err.stack)
+    }
   })
 }
 

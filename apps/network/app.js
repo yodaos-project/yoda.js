@@ -230,7 +230,7 @@ module.exports = function (app) {
         sMsg: 'wifi连接中'
       })
       logger.log(`start connect to wifi with SSID: ${data.S}`)
-      property.set('persist.system.user.userId', data.U)
+      property.set('app.network.masterId', data.U)
       app.playSound('system://wifi/prepare_connect_wifi.ogg')
       getWIFIState(cb)
       connectTimeout = setTimeout(() => {

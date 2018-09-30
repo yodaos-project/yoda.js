@@ -40,30 +40,41 @@ function deviceManager (config, pathname, callback) {
 
 function bindDevice (notify) {
   notify('100', strings.LOGIN_DOING)
-  return login().then(
-    function (config) {
-      notify('101', strings.LOGIN_DONE)
-      notify('201', strings.BIND_MASTER_DONE)
+  return login()
+    .then((config) => {
       // copy config to global variable for unBindDevice function
       CONFIG = Object.assign({}, config)
-      return config
-    },
-    function (err) {
+      var basicInfo = null
+      try {
+        basicInfo = JSON.parse(CONFIG.extraInfo.basic_info)
+        if (!basicInfo.master) {
+          throw new Error('bind master is required')
+        } else {
+          CONFIG.masterId = basicInfo.master
+        }
+      } catch (_) {
+        var err = new Error('bind master is required')
+        err.code = 'BIND_MASTER_REQUIRED'
+        throw err
+      }
+    })
+    .then(() => {
+      notify('101', strings.LOGIN_DONE)
+      notify('201', strings.BIND_MASTER_DONE)
+      return CONFIG
+    })
+    .catch((err) => {
+      if (err.code === 'BIND_MASTER_REQUIRED') {
+        throw err
+      }
       if (err.code === '100006' || err.code === '100007') {
         notify('101', strings.LOGIN_DONE)
         notify('-201', strings.BIND_MASTER_FAILURE)
       } else {
         notify('-101', strings.LOGIN_FAILURE)
       }
-      return Promise.reject(err)
-    }
-  ).then((config) => {
-    try {
-    } catch (err) {
-      logger.error(`load custom config failure with ${err && err.message}`)
-    }
-    return config
-  })
+      throw err
+    })
 }
 
 function unBindDevice () {

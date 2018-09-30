@@ -14,7 +14,6 @@ var handle = null
 function MqttAgent (config) {
   EventEmitter.call(this)
   this.config = config
-  this.userId = property.get('system.user.userId', 'persist')
   this.initialize()
 }
 inherits(MqttAgent, EventEmitter)
@@ -34,7 +33,7 @@ MqttAgent.prototype.initialize = function initialize () {
 }
 
 MqttAgent.prototype.register = function register (cb) {
-  mqttRegister.registry(this.userId, this.config, (err, data) => {
+  mqttRegister.registry(this.config, (err, data) => {
     if (err) {
       return cb(err)
     }
@@ -55,10 +54,10 @@ MqttAgent.prototype.connect = function connect () {
     reconnectPeriod: -1
   })
   handle.on('connect', () => {
-    var userId = this.userId
+    var masterId = this.config.masterId
     var deviceId = this.config.deviceId
     var deviceTypeId = this.config.deviceTypeId
-    var channelId = `u/${userId}/deviceType/${deviceTypeId}/deviceId/${deviceId}/rc`
+    var channelId = `u/${masterId}/deviceType/${deviceTypeId}/deviceId/${deviceId}/rc`
     handle.subscribe(channelId)
     logger.info('subscribed', channelId)
   })
@@ -104,10 +103,10 @@ MqttAgent.prototype.sendToApp = function sendToApp (topic, text) {
   if (handle == null) {
     throw new Error('mqtt is not connected yet')
   }
-  logger.info('mqtt send channel:', `u/${this.userId}/rc`)
-  handle.publish(`u/${this.userId}/rc`, JSON.stringify({
+  logger.info('mqtt send channel:', `u/${this.config.masterId}/rc`)
+  handle.publish(`u/${this.config.masterId}/rc`, JSON.stringify({
     reviceDevice: {
-      accountId: this.userId
+      accountId: this.config.masterId
     },
     sourceDevice: {
       deviceId: this.config.deviceId,

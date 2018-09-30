@@ -47,16 +47,20 @@ function login (callback) {
     }
     var time = Math.floor(Date.now() / 1000)
     var sign = md5(`${secret}${type}${uuid}${time}${secret}`)
-    var userId = property.get('persist.system.user.userId') || undefined
+    var userId = property.get('app.network.masterId') || undefined
 
-    var params = qs.stringify({
+    var opts = {
       deviceId: uuid,
       deviceTypeId: type || undefined,
       time: time,
       sign: sign,
-      userId: userId,
-      namespaces: 'custom_config'
-    })
+      namespaces: 'basic_info,custom_config'
+    }
+    if (userId) {
+      opts.userId = userId
+      property.set('app.network.masterId', '')
+    }
+    var params = qs.stringify(opts)
     logger.log('start /login request')
 
     var req = https.request({
