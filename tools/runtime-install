@@ -3,11 +3,12 @@ set -e
 
 help="
 Usage:
-  -t Only includes tests.
-  -r Only includes resources.
-  -a Include tests and resources.
+  -t          Only includes tests.
+  -r          Only includes resources.
+  -a          Include tests and resources.
+  --no-app    Exclude apps
 
-  -s Select which device to be installed on if multiple devices presents.
+  -s          Select which device to be installed on if multiple devices presents.
 
 Runtime installation by default, includes all packages, runtime, **no tests and resources**.
 
@@ -19,6 +20,7 @@ Example:
 os="YES"
 test="NO"
 resources="NO"
+exclude_app='NO'
 sn=""
 
 while [ $# -gt 0 ]; do
@@ -34,6 +36,9 @@ while [ $# -gt 0 ]; do
     -a)
       test="YES"
       resources="YES"
+      ;;
+    --no-app)
+      exclude_app="YES"
       ;;
     -s)
       sn="$2"
@@ -71,10 +76,6 @@ function install_os() {
   shell "rm -rf /usr/lib/yoda/runtime"
   push "./runtime" "/usr/lib/yoda/"
 
-  # apps
-  shell "rm -rf /opt/apps/*"
-  push "./apps/*" "/opt/apps/"
-
   # node_modules
   shell "mkdir -p /usr/lib/node_modules/@yoda"
   push "packages/*" "/usr/lib/node_modules"
@@ -98,6 +99,12 @@ function install_resources() {
   push "./res/media" "/opt/"
 }
 
+function install_apps {
+  # apps
+  shell "rm -rf /opt/apps/*"
+  push "./apps/*" "/opt/apps/"
+}
+
 shell "mount -o remount,rw /"
 
 if test "$os" = "YES"; then
@@ -110,4 +117,8 @@ fi
 
 if test "$test" = 'YES'; then
   install_test
+fi
+
+if test "$exclude_app" = 'NO'; then
+  install_apps
 fi
