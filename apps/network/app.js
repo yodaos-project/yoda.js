@@ -51,6 +51,10 @@ module.exports = function (app) {
   var scanHandle = null
   var WifiList = []
 
+  // scan wifi list when app startup
+  // phone app need get scan results of device, show list in phone app
+  wifi.scan()
+
   app.on('destroyed', function () {
     intoSleep()
     bluetooth.disconnect()
