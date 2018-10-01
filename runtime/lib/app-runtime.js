@@ -99,7 +99,20 @@ AppRuntime.prototype.init = function init (paths) {
   })
   // initializing the whole process...
   this.resetServices()
-  return this.loadApps(paths).then(() => {
+
+  var future = Promise.resolve()
+
+  if (property.get('sys.firstboot.init', 'persist') !== '1') {
+    // initializing play tts status
+    property.set('sys.firstboot.init', '1', 'persist')
+    future = future.then(() => {
+      return this.lightMethod('appSound', ['@Yoda', '/opt/media/firstboot.ogg'])
+    })
+  }
+
+  return future.then(() => {
+    return this.loadApps(paths)
+  }).then(() => {
     this.custodian.prepareNetwork()
     this.inited = true
   })
