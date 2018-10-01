@@ -14,7 +14,7 @@
 
 var native = require('./audio.node')
 var property = require('@yoda/property')
-
+var logger = require('logger')('audio')
 /**
  * This define the streams config
  */
@@ -257,6 +257,49 @@ AudioManager.setVolumeShaper = function setVolumeShaper (shaper) {
     }
   }
   return true
+}
+
+/**
+ * Modules that will record playing state
+ */
+var playingMap = {
+  bluetooth: 'audio.bluetooth.playing',
+  multimedia: 'audio.multimedia.playing',
+  tts: 'audio.tts.playing'
+}
+
+/**
+ * Set the playing state of the given modules.
+ * @memberof module:@yoda/audio~AudioManager
+ * @method setPlayingState
+ * @param {String} Specified module name - 'bluetooth', 'multimedia', 'tts'.
+ * @param {boolean} state - true: playing, false : stop
+ */
+AudioManager.setPlayingState = function setPlayingState (name, state) {
+  var key = playingMap[name]
+  if (!key) {
+    logger.error(`The module ${name} do not have playing state`)
+    return
+  }
+  property.set(key, state)
+}
+
+/**
+ * Get the playing state of all or specified modules.
+ * @memberof module:@yoda/audio~AudioManager
+ * @method getPlayingState
+ * @param {String} name - 'bluetooth', 'multimedia', 'tts'.
+ * @throws {TypeError} invalid audio name
+ * @returns {boolean} true: playing, false : stop
+ */
+AudioManager.getPlayingState = function getPlayingState (name) {
+  var key = playingMap[name]
+  if (key) {
+    return property.get(key) === 'true'
+  } else {
+    throw new TypeError('invalid audio name')
+  }
+  return false
 }
 
 /**

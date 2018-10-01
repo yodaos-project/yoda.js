@@ -5,6 +5,8 @@ var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var inherits = require('util').inherits
 var logger = require('logger')('multimediaService')
+var audioModuleName = 'multimedia'
+AudioManager.setPlayingState(audioModuleName, false)
 
 function MultiMedia () {
   EventEmitter.call(this)
@@ -42,6 +44,7 @@ MultiMedia.prototype.stop = function (appId) {
       var id = this.handle[appId].id
       this.emit('cancel', '' + id)
       this.handle[appId].stop()
+      AudioManager.setPlayingState(audioModuleName, false)
       delete this.handle[appId]
     } catch (error) {
       logger.error('try to stop player errer with appId: ', appId, error.stack)
@@ -54,6 +57,7 @@ MultiMedia.prototype.pause = function (appId) {
   if (this.handle[appId]) {
     try {
       this.handle[appId].pause()
+      AudioManager.setPlayingState(audioModuleName, false)
     } catch (error) {
       logger.error('try to pause player errer with appId: ', appId, error.stack)
     }
@@ -64,6 +68,7 @@ MultiMedia.prototype.resume = function (appId) {
   try {
     if (this.handle[appId] && !this.handle[appId].playing) {
       this.handle[appId].resume()
+      AudioManager.setPlayingState(audioModuleName, true)
     }
   } catch (error) {
     logger.error('try to resume player errer with appId: ', appId, error.stack)
@@ -107,6 +112,7 @@ MultiMedia.prototype.seek = function (appId, position, callback) {
 MultiMedia.prototype.listenEvent = function (player, appId) {
   player.on('prepared', () => {
     this.emit('prepared', '' + player.id, '' + player.duration, '' + player.position)
+    AudioManager.setPlayingState(audioModuleName, true)
   })
   player.on('playbackcomplete', () => {
     // free handle after playbackcomplete
@@ -117,12 +123,14 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
     }
     delete this.handle[appId]
     this.emit('playbackcomplete', '' + player.id)
+    AudioManager.setPlayingState(audioModuleName, false)
   })
   player.on('bufferingupdate', () => {
     this.emit('bufferingupdate', '' + player.id)
   })
   player.on('seekcomplete', () => {
     this.emit('seekcomplete', '' + player.id)
+    AudioManager.setPlayingState(audioModuleName, true)
   })
   player.on('error', () => {
     // free handle when something goes wrong
@@ -133,6 +141,7 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
     }
     delete this.handle[appId]
     this.emit('error', '' + player.id)
+    AudioManager.setPlayingState(audioModuleName, false)
   })
 }
 
@@ -141,6 +150,7 @@ MultiMedia.prototype.reset = function () {
     for (var index in this.handle) {
       this.handle[index].stop()
     }
+    AudioManager.setPlayingState(audioModuleName, false)
   } catch (error) {
     logger.error('error when try to stop all player', error.stack)
   }

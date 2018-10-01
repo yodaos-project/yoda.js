@@ -8,6 +8,9 @@ var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
 var TtsWrap = require('@yoda/tts')
 var logger = require('logger')('ttsd')
+var AudioManager = require('@yoda/audio').AudioManager
+var audioModuleName = 'tts'
+AudioManager.setPlayingState(audioModuleName, false)// vui prop definitions
 
 // vui prop definitions
 var VUI_SERVICE = 'com.rokid.AmsExport'
@@ -74,6 +77,7 @@ function reConnect (CONFIG) {
 
     _TTS.on('start', function (id, errno) {
       logger.log('ttsd start', id)
+      AudioManager.setPlayingState(audioModuleName, true)
       lightd.invoke('play', ['@yoda/ttsd', '/opt/light/setSpeaking.js', '{}'])
       dbusService._dbus.emitSignal(
         '/tts/service',
@@ -85,6 +89,7 @@ function reConnect (CONFIG) {
     })
     _TTS.on('end', function (id, errno) {
       logger.log('ttsd end', id)
+      AudioManager.setPlayingState(audioModuleName, false)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
       dbusService._dbus.emitSignal(
         '/tts/service',
@@ -96,6 +101,7 @@ function reConnect (CONFIG) {
     })
     _TTS.on('cancel', function (id, errno) {
       logger.log('ttsd cancel', id)
+      AudioManager.setPlayingState(audioModuleName, false)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
       dbusService._dbus.emitSignal(
         '/tts/service',
@@ -107,6 +113,7 @@ function reConnect (CONFIG) {
     })
     _TTS.on('error', function (id, errno) {
       logger.error('ttsd error', id, errno)
+      AudioManager.setPlayingState(audioModuleName, false)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
       dbusService._dbus.emitSignal(
         '/tts/service',
