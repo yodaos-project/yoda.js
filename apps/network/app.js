@@ -77,6 +77,10 @@ module.exports = function (app) {
         var cloudStatus = CLOUD_STATUS[code]
         if (cloudStatus) {
           app.playSound(cloudStatus)
+          if (connectId >= 0) {
+            wifi.removeNetwork(connectId)
+            connectId = undefined
+          }
         } else if (code === '201') {
           // bind success, exit app
           app.exit()
