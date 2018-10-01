@@ -2,7 +2,7 @@
 
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
-var logger = require('logger')('app-manager')
+var logger = require('logger')('cloudAppClient-manager')
 var eventRequest = require('./eventRequestApi')
 var eventRequestMap = require('./eventRequestMap.json')
 

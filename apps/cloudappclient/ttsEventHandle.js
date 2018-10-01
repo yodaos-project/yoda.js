@@ -1,6 +1,6 @@
 'use strict'
 
-var logger = require('logger')('cloudapp-tts-handle')
+var logger = require('logger')('cloudAppClient-tts-handle')
 
 function TtsEventHandle (ttsClient) {
   this.ttsClient = ttsClient

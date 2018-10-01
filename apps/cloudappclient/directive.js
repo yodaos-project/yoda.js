@@ -1,18 +1,18 @@
 'use strict'
 
-var logger = require('logger')('cloudapp-directive')
+var logger = require('logger')('cloudAppClient-directive')
 
 function Directive () {
   this.frontend = []
   this.background = []
   this.cb = {
     frontend: {
-      tts: function () {},
-      media: function () {}
+      tts: function () { },
+      media: function () { }
     },
     background: {
-      tts: function () {},
-      media: function () {}
+      tts: function () { },
+      media: function () { }
     }
   }
 }
@@ -53,6 +53,7 @@ Directive.prototype.run = function run (type, cb) {
   }
   var self = this
   var dt = this[type].shift()
+
   function handle (next) {
     if (self[type].length > 0) {
       dt = self[type].shift()

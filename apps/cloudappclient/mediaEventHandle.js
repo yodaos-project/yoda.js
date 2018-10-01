@@ -1,6 +1,6 @@
 'use strict'
 
-var logger = require('logger')('cloudapp-media-handle')
+var logger = require('logger')('cloudAppClient-media-handle')
 
 function MediaEventHandle (mediaClient) {
   this.mediaClient = mediaClient

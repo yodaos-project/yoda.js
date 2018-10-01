@@ -1,4 +1,4 @@
-var logger = require('logger')('skill')
+var logger = require('logger')('cloudAppClient-skill')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 
@@ -10,6 +10,7 @@ function Skill (exe, nlp, action) {
   this.shouldEndSession = action.response.action.shouldEndSession
   this.directives = []
   this.paused = false
+  this.isSkillActive = true
   this.task = 0
   this.exe = exe
   this.handleEvent()
@@ -46,6 +47,11 @@ Skill.prototype.handleEvent = function () {
     // should not resume when user manually pause or stop media
     var resume = true
     this.directives.forEach((value) => {
+      if (value.type === 'media' && ['play', 'resume'].indexOf(value.action) > -1) {
+        this.isSkillActive = true
+      } else {
+        this.isSkillActive = false
+      }
       if (value.type === 'media' && ['stop', 'pause', 'resume'].indexOf(value.action) > -1) {
         resume = false
       }
@@ -64,7 +70,7 @@ Skill.prototype.handleEvent = function () {
       // If there are still tasks that are not completed, do nothind.
       if (this.task > 0) {
         // The media should resume after playing tts
-        if (this.shouldEndSession === false && resume) {
+        if (this.shouldEndSession === false && resume && this.isSkillActive) {
           this.exe.execute([{
             type: 'media',
             action: 'resume',
@@ -103,31 +109,35 @@ Skill.prototype.handleEvent = function () {
   })
   this.on('resume', () => {
     logger.log(this.appId + ' emit resume')
-    this.exe.execute([{
-      type: 'media',
-      action: 'resume',
-      data: {}
-    }], 'frontend')
     this.paused = false
-    if (this.directives.length > 0) {
-      this.task++
-      this.exe.execute(this.directives, 'frontend', () => {
-        this.task--
-        if (this.paused === true) {
-          return
-        }
-        if (this.shouldEndSession) {
-          return this.emit('exit')
-        }
-        if (this.task > 0) {
-          return
-        }
-        if (this.directives.length > 0) {
-          return this.emit('start')
-        }
-        this.directives = []
-        this.emit('exit')
-      })
+    if (this.isSkillActive) {
+      this.exe.execute([{
+        type: 'media',
+        action: 'resume',
+        data: {}
+      }], 'frontend')
+      if (this.directives.length > 0) {
+        this.task++
+        this.exe.execute(this.directives, 'frontend', () => {
+          this.task--
+          if (this.paused === true) {
+            return
+          }
+          if (this.shouldEndSession) {
+            return this.emit('exit')
+          }
+          if (this.task > 0) {
+            return
+          }
+          if (this.directives.length > 0) {
+            return this.emit('start')
+          }
+          this.directives = []
+          this.emit('exit')
+        })
+      }
+    } else {
+      logger.info('user manually pause or stop media, should not resume')
     }
   })
   this.on('destroy', () => {
