@@ -41,7 +41,7 @@ var service = new Service({
 
 dbusApis.addMethod('play', {
   in: ['s', 's', 's'],
-  out: ['b']
+  out: ['b', 's']
 }, function (appId, name, args, cb) {
   var data = {}
   try {
@@ -51,9 +51,10 @@ dbusApis.addMethod('play', {
   }
   service.loadfile(appId, name, data, (error) => {
     if (error) {
-      cb(null, false)
+      logger.error(error)
+      cb(null, false, error.message || 'unknown error')
     } else {
-      cb(null, true)
+      cb(null, true, '')
     }
   })
 })
