@@ -3,7 +3,7 @@
 var https = require('https')
 var crypto = require('crypto')
 var qs = require('querystring')
-var logger = require('logger')('eventReq')
+var logger = require('logger')('cloudAppClient-eventReq')
 var env = require('/usr/lib/yoda/runtime/lib/env')()
 
 var CONFIG = null
