@@ -14,7 +14,7 @@ void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
   if (type == MULTIMEDIA_PLAYER_PREPARED) {
     this->prepared = true;
   }
-  if (this->prepared || event->type == MEDIA_ERROR) {
+  if (this->prepared || type == MEDIA_ERROR) {
     // only if prepared or event is MEDIA_ERROR, enables the notify
     uv_async_t* async_handle = new uv_async_t;
     iotjs_player_event_t* event = new iotjs_player_event_t;
