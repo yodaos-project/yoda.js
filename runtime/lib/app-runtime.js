@@ -211,6 +211,26 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
     logger.warn('Network not connected, skip incoming voice')
     return
   }
+  if (this.forceUpdateAvailable) {
+    /**
+     * Skip upcoming voice, announce available force update and start ota.
+     */
+    logger.info('pending force update, delegates activity to @ota.')
+    this.forceUpdateAvailable = false
+    return ota.getInfoOfPendingUpgrade((err, info) => {
+      if (err || info == null) {
+        logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
+        return
+      }
+      logger.info('got pending update info', info)
+      Promise.all([
+        this.setMicMute(true, { silent: true }),
+        this.setPickup(false)
+      ]).then(() =>
+        this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
+      ).then(() => this.startMonologue('@yoda/ota'))
+    })
+  }
 
   var min = 10
   var vol = AudioManager.getVolume()
@@ -223,18 +243,6 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
     }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
   }
   this.lightMethod('setAwake', [''])
-  if (this.forceUpdateAvailable) {
-    logger.info('pending force update, delegates activity to @ota.')
-    this.forceUpdateAvailable = false
-    ota.getInfoOfPendingUpgrade((err, info) => {
-      if (err || info == null) {
-        logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
-        return
-      }
-      logger.info('got pending update info', info)
-      this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
-    })
-  }
 }
 
 /**
@@ -530,7 +538,8 @@ AppRuntime.prototype.setForegroundById = function setForegroundById (appId, opti
  *
  * @param {boolean} [mute] - set mic to mute, switch mute if not given.
  */
-AppRuntime.prototype.setMicMute = function setMicMute (mute) {
+AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
+  var silent = _.get(options, 'silent', false)
   if (mute === this.micMuted) {
     return Promise.resolve()
   }
@@ -538,6 +547,11 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute) {
   var muted = !this.micMuted
   this.micMuted = muted
   this.flora.turenMute(muted)
+
+  if (silent) {
+    return Promise.resolve()
+  }
+
   if (muted) {
     return this.openUrl('yoda-skill://volume/mic_mute_effect', { preemptive: false })
       .then(() => muted)
@@ -687,7 +701,10 @@ AppRuntime.prototype.setPickup = function (isPickup, duration) {
   if (isPickup !== true) {
     return Promise.resolve()
   }
-  return this.lightMethod('setPickup', ['@Yoda', '' + (duration || 6000)])
+  if (isPickup) {
+    return this.lightMethod('setPickup', ['@yoda', '' + (duration || 6000)])
+  }
+  return this.lightMethod('stop', ['@yoda', ''])
 }
 
 AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {

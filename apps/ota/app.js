@@ -38,7 +38,7 @@ module.exports = function (activity) {
       case '/on_first_boot_after_upgrade':
         onFirstBootAfterUpgrade(activity, url)
         break
-      case 'force_upgrade':
+      case '/force_upgrade':
         forceUpgrade(activity, url)
         break
     }
