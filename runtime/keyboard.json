@@ -34,14 +34,14 @@
   },
   "114": {
     "keydown": {
-      "url": "yoda-skill://volume/volume_down?partition=16",
+      "url": "yoda-skill://volume/volume_down",
       "options": {
         "preemptive": false
       }
     },
     "longpress": {
       "repeat": true,
-      "url": "yoda-skill://volume/volume_down?partition=16",
+      "url": "yoda-skill://volume/volume_down",
       "options": {
         "preemptive": false
       }
@@ -49,14 +49,14 @@
   },
   "115": {
     "keydown": {
-      "url": "yoda-skill://volume/volume_up?partition=16",
+      "url": "yoda-skill://volume/volume_up",
       "options": {
         "preemptive": false
       }
     },
     "longpress": {
       "repeat": true,
-      "url": "yoda-skill://volume/volume_up?partition=16",
+      "url": "yoda-skill://volume/volume_up",
       "options": {
         "preemptive": false
       }

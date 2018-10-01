@@ -5,7 +5,7 @@ var _ = require('@yoda/util')._
 
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
-  var STRING_OUT_OF_RANGE_MAX = '音量已经是最大了'
+  var STRING_OUT_OF_RANGE_MAX = '已经是最⼤的⾳量了'
   var STRING_SHOW_VOLUME = '当前音量为百分之'
   var STRING_SHOW_MUTED = '设备已静音，已帮你调回到百分之'
 
@@ -25,11 +25,11 @@ module.exports = function (activity) {
   }
 
   function format (slots) {
-    try {
-      return parseInt(_.get(JSON.parse(slots.num1.value), 'number', 0))
-    } catch (err) {
-      return speakAndExit(STRING_COMMON_ERROR)
+    var val = parseFloat(_.get(JSON.parse(slots.num1.value), 'number', 0))
+    if (isNaN(val)) {
+      throw new Error('Unexpected error on parse nlp slots')
     }
+    return val
   }
 
   function getVolume () {
@@ -60,6 +60,11 @@ module.exports = function (activity) {
           localVol = 0
         } else if (localVol > 100) {
           localVol = 100
+        }
+        if (localVol % 1 >= 0.5) {
+          localVol = Math.ceil(localVol)
+        } else {
+          localVol = Math.floor(localVol)
         }
 
         if (AudioManager.isMuted() && localVol > 0) {
@@ -175,7 +180,21 @@ module.exports = function (activity) {
       .then(() => activity.exit())
   }
 
-  activity.on('request', function (nlp, action) {
+  function handleWrap (fn) {
+    return function () {
+      try {
+        return fn.apply(this, arguments)
+      } catch (err) {
+        if (err.tts) {
+          return speakAndExit(err.tts)
+        }
+        logger.error('Unexpected error on volume app', err.stack)
+        return speakAndExit(STRING_COMMON_ERROR)
+      }
+    }
+  }
+
+  activity.on('request', handleWrap(function (nlp, action) {
     var partition = 10
     switch (nlp.intent) {
       case 'showvolume':
@@ -190,10 +209,15 @@ module.exports = function (activity) {
         setVolume(format(nlp.slots))
           .then(() => activity.exit())
         break
-      case 'set_volume':
-        setVolume(format(nlp.slots) * partition)
+      case 'set_volume': {
+        var vol = format(nlp.slots)
+        if (vol < 10) {
+          vol = vol * partition
+        }
+        setVolume(vol)
           .then(() => activity.exit())
         break
+      }
       case 'add_volume_num':
         incVolume(format(nlp.slots) * partition)
           .then(() => activity.exit())
@@ -240,7 +264,7 @@ module.exports = function (activity) {
         activity.exit()
         break
     }
-  })
+  }))
 
   activity.on('url', url => {
     var partition = parseInt(_.get(url.query, 'partition', 10))
