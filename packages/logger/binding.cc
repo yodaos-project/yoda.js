@@ -16,17 +16,21 @@ static napi_value Print(napi_env env, napi_callback_info info) {
   int32_t level = -1;
   NAPI_CALL(env, napi_get_value_int32(env, argv[0], &level));
 
-  size_t s1 = 1024;
-  char tag[s1];
-  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[1], tag, s1 + 1, &s1));
-  tag[s1 - 1] = 0;
+  size_t s1 = 0;
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[1], NULL, 0, &s1));
+  char* tag = (char*)malloc(s1 + 1);
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[0], tag, s1 + 1, &s1));
+  tag[s1] = 0;
 
-  size_t s2 = 1024;
-  char text[s2];
-  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[2], text, s2 + 1, &s2));
-  text[s2 - 1] = 0;
+  size_t s2 = 0;
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[2], NULL, 0, &s2));
+  char* text = (char*)malloc(s2 + 1);
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[0], text, s2 + 1, &s2));
+  text[s2] = 0;
 
   jslog(level, NULL, 0, tag, text);
+  free(tag);
+  free(text);
   return NULL;
 }
 

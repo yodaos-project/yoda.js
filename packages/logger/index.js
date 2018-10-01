@@ -72,7 +72,7 @@ Logger.prototype.warn = createLoggerFunction('warn')
 Logger.prototype.error = createLoggerFunction('error')
 
 // disable cloud by default
-native.enableCloud(false)
+native.enableCloud(0)
 
 /**
  * @example
