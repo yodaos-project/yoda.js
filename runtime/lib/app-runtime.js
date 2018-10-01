@@ -913,9 +913,8 @@ AppRuntime.prototype.onForward = function (message) {
  * @param {string} message string receive from mqtt
  */
 AppRuntime.prototype.unBindDevice = function (message) {
-  this.cloudApi.unBindDevice()
+  return this.cloudApi.unBindDevice()
     .then(() => {
-      property.set('persist.system.user.userId', '')
       logger.info('unbind device success')
       return this.resetNetwork()
     })
