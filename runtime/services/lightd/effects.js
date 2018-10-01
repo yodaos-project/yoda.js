@@ -89,33 +89,29 @@ LightRenderingContext.prototype._getCurrentId = function () {
  * Play sound by given resource URI.
  * @method sound
  * @memberof yodaRT.light.LightRenderingContext
- * @param {string} uri - the sound resource uri
- * @param {string} [self] - as prefix path if uri start with 'self://' protocol
+ * @param {string} uri - the sound resource uri.
+ * @param {string} [self] - as prefix path if uri start with 'self://' protocol.
+ * @param {object} [options] - the options to play the audio.
+ * @param {boolean} [options.ignore=false] - ignore this system audio if others(tts, bt, music) are playing.
  * @returns {MediaPlayer} a MediaPlayer instance
  */
-LightRenderingContext.prototype.sound = function (uri, self) {
+LightRenderingContext.prototype.sound = function (uri, self, options) {
+  options = Object.assign({ ignore: false }, options)
   var mockPlayer = {
     stop: function () {
       // nothing to do
     }
   }
-  var playing = [
-    AudioManager.STREAM_VOICE_CALL,
-    AudioManager.STREAM_PLAYBACK,
-    AudioManager.STREAM_ALARM,
-    AudioManager.STREAM_RING
-  ].reduce((accu, it) => {
-    var ret = AudioManager.getPlayingStatus(it)
-    if (ret) {
-      logger.info(`${AudioManager.getStreamName(it)} is playing`)
-    }
-    return accu || ret
-  }, false)
-  // nothing to do if currently state is playing
-  if (playing) {
+
+  if (options.ignore && (AudioManager.getPlayingState('tts')
+    || AudioManager.getPlayingState('bluetooth')
+    || AudioManager.getPlayingState('multimedia'))) {
+
+    // nothing to do if currently state is playing
     logger.log('currently state is playing, ignore audio')
     return mockPlayer
   }
+
   if (this._getCurrentId() !== this._id) {
     return mockPlayer
   }
