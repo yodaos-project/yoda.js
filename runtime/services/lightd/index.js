@@ -120,8 +120,14 @@ dbusApis.addMethod('appSound', {
   out: ['b']
 }, function (appId, name, cb) {
   logger.log(`appSound: ${appId} ${name}`)
-  var result = service.appSound(appId, name)
-  cb(null, result)
+  service.appSound(appId, name, (error) => {
+    if (error) {
+      logger.log(`appSound error: ${appId}, ${name}, ${error}`)
+      cb(null, false)
+    } else {
+      cb(null, true)
+    }
+  })
 })
 
 dbusApis.addMethod('setWelcome', {

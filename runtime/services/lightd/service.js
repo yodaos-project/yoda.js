@@ -422,7 +422,7 @@ Light.prototype.setWelcome = function () {
   this.prev = hook(context, {}, function noop () {})
 }
 
-Light.prototype.appSound = function (appId, name) {
+Light.prototype.appSound = function (appId, name, cb) {
   if (this.playerHandle[appId]) {
     try {
       // if the frequency is too fast, an error will occur.
@@ -431,6 +431,7 @@ Light.prototype.appSound = function (appId, name) {
     } catch (error) {
       // if the previous one did not stop, ignore this time
       logger.log(`ignore request: appId [${appId}] sound: [${name}]`)
+      cb(new Error('ignore request because can not stop previous player'))
       return false
     }
   }
@@ -443,15 +444,18 @@ Light.prototype.appSound = function (appId, name) {
       logger.log(`playbackcomplete ${name}`)
       this.playerHandle[appId].stop()
       delete this.playerHandle[appId]
+      cb()
     })
     player.on('error', () => {
       logger.log(`error ${name}`)
       this.playerHandle[appId].stop()
       delete this.playerHandle[appId]
+      cb(new Error('player throw an error'))
     })
 
     this.playerHandle[appId] = player
   } catch (error) {
+    cb(error)
     logger.error(error)
     logger.log(`appSound play error: ${appId} [${name}]`)
     return false
