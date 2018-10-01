@@ -31,14 +31,13 @@ function Light (options) {
   this.prevZIndex = null
   this.prevUri = null
   this.prevAppId = null
-  this.nextResumeHandle = null
+  this.nextResumeTimerHandle = null
   this.degree = 0
   this.userspaceZIndex = new Array(maxUserspaceLayers)
   this.init()
 }
 
 Light.prototype.init = function () {
-  // TODO
   var layers = 0
   Object.keys(this.systemspace).forEach((key) => {
     // find max layer
@@ -92,7 +91,7 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
   var zIndex
   var self = this
   try {
-    logger.info(uri, data)
+    logger.info('request light uri:', appId, uri, data)
     var isSystemUri = this.isSystemURI(uri)
     // format z-index.
     if (isSystemUri) {
@@ -106,15 +105,15 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
     }
     var canRender = this.canRender(uri, zIndex)
     if (!canRender) {
-      return callback(new Error('permission deny'))
+      return callback(new Error('permission denied'))
     }
     handle = require(uri)
     this.stopPrev(data && data.keep)
     var context = this.getContext()
     // this function can only be called once
-    clearTimeout(self.nextResumeHandle)
+    clearTimeout(self.nextResumeTimerHandle)
     this.prevCallback = dedup(function () {
-      self.nextResumeHandle = setTimeout(() => {
+      self.nextResumeTimerHandle = setTimeout(() => {
         self.resume()
       }, 0)
       callback()

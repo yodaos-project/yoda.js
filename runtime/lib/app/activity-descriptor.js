@@ -565,7 +565,7 @@ Object.assign(LightDescriptor.prototype,
             if (res && res[0] === true) {
               return
             }
-            throw new Error('lighting effect throw an error')
+            throw new Error(res[1] || 'unknown light error')
           })
       }
     },
