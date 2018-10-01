@@ -4,116 +4,47 @@
  * @module logger
  * @description logger functionalities.
  *
- * It also supports transfering logs into another socket connection. It reads
- * the port number from the environment variable `LOG_PORT`, and send data
- * via tcp socket by the given port.
- *
- * For example,
- * ```shell
- * $ LOG_PORT=9000 iotjs test-logger-port.js
- * ```
  * The above command would starts a tcp server on the port 8000 for logs.
  */
 
 var util = require('util')
-var net = require('net')
+var native = require('./native')
 
-/**
- * @constructor
- * @param {Number} port - the logger port
- */
-function LoggingServer (port) {
-  // only support single socket
-  this._port = port
-  this._socket = null
-  if (typeof port === 'number') {
-    this._server = net.createServer({
-      allowHalfOpen: true
-    }, (socket) => {
-      if (this._socket) {
-        socket.end('connection refused')
-      } else {
-        this._socket = socket
-        socket.on('end', () => {
-          this._socket = null
-        })
-      }
-    })
-  }
+var logLevels = {
+  'verbose': 1,
+  'info': 2,
+  'debug': 3,
+  'warn': 4,
+  'error': 5
 }
-
-/**
- * send the message.
- * @param {String} msg - the message string
- */
-LoggingServer.prototype.send = function (msg) {
-  this._socket.send(msg)
-}
-
-/**
- * start the logger server.
- */
-LoggingServer.prototype.start = function () {
-  if (this._server) {
-    this._server.listen(this._port)
-  }
-  return this
-}
-
-/**
- * check if the logging socket is available.
- */
-LoggingServer.prototype.isAvailable = function () {
-  return this._socket instanceof net.Socket
-}
-
-/**
- * close the logging server, only use for testing
- */
-LoggingServer.prototype.destroy = function () {
-  if (this._server) {
-    this._server.close()
-  }
-  return this
-}
-
-// logger socket
-function createLoggingServer (port) {
-  var server = new LoggingServer(port)
-  return server.start()
-}
-
-var loggingServer = createLoggingServer(process.env.LOG_PORT)
 
 /**
  * @constructor
  * @param {String} name - the logger name
  */
 function Logger (name) {
-  if (!name) {
-    name = 'default'
-  }
-  this.name = name
+  this.name = name || 'default'
 }
 
 function createLoggerFunction (level) {
-  if (typeof level !== 'string') {
-    level = 'info'
+  level = logLevels[level]
+  if (!level || level < 1 || level > 5) {
+    level = 2 // info
   }
-  return function () {
+  return function printlog () {
     var now = new Date()
-    var line = `[${now.toISOString()}] ${level.toUpperCase()} <${this.name}> :: ` + util.format.apply(this, arguments)
-    if (loggingServer.isAvailable()) {
-      loggingServer.send(line)
-    } else {
-      // FIXME(Yorkie): check if the log is too long, just limit the maximum size is 1000.
-      if (line.length >= 1000) {
-        line = line.slice(0, 1000) + '...'
-      }
-      console[level](line)
+    var line = `[${now.toISOString()}] :: ` + util.format.apply(this, arguments)
+    if (line.length >= 1000) {
+      line = line.slice(0, 1000) + '...'
     }
+    native.print(level, this.name, line)
   }
 }
+
+/**
+ * log level: verbose
+ */
+Logger.prototype.verbose = createLoggerFunction('verbose')
 
 /**
  * log level: debug
@@ -140,12 +71,8 @@ Logger.prototype.warn = createLoggerFunction('warn')
  */
 Logger.prototype.error = createLoggerFunction('error')
 
-/**
- * close the logging server
- */
-Logger.prototype.closeServer = function closeServer () {
-  loggingServer.destroy()
-}
+// disable cloud by default
+native.enableCloud(false)
 
 /**
  * @example
@@ -157,7 +84,5 @@ Logger.prototype.closeServer = function closeServer () {
  * @param {String} name - the log tag
  */
 module.exports = function (name) {
-  var logger = new Logger(name)
-  // aliyun log?
-  return logger
+  return new Logger(name)
 }
