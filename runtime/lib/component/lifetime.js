@@ -465,7 +465,9 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   if (lastAppId == null) {
     return future
   }
-  return future.then(() => this.onLifeCycle(lastAppId, 'resume'))
+  return future.then(() =>
+    this.onLifeCycle(lastAppId, 'resume')
+      .catch(err => logger.error('Unexpected error on resuming previous app', err.stack)))
 }
 
 /**
