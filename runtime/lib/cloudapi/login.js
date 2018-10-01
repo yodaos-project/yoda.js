@@ -102,10 +102,12 @@ function login (callback) {
     })
     req.on('error', (err) => {
       logger.log('login request error', err)
-      if (retry <= 10) {
+      if (retry <= 2) {
         retry += 1
         logger.info('invalid certificate, try again once')
         return setTimeout(() => login(callback), 3000)
+      } else {
+        callback(err)
       }
     })
     req.write(params)
