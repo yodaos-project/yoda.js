@@ -118,16 +118,17 @@ KeyboardHandler.prototype.listen = function listen () {
       logger.info(`Keyup a difference key '${event.keyCode}'.`)
       return
     }
-    if (this.preventSubsequent) {
-      this.preventSubsequent = false
-      logger.info(`Event keyup prevented '${event.keyCode}'.`)
-      return
-    }
+
     if (this.firstLongPressTime != null) {
       this.firstLongPressTime = null
       logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
     }
 
+    if (this.preventSubsequent) {
+      this.preventSubsequent = false
+      logger.info(`Event keyup prevented '${event.keyCode}'.`)
+      return
+    }
     if (this.handleAppListener('keyup', event)) {
       logger.info(`Delegated keyup to app.`)
       return
