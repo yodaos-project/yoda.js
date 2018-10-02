@@ -299,7 +299,6 @@ AudioManager.getPlayingState = function getPlayingState (name) {
   } else {
     throw new TypeError('invalid audio name')
   }
-  return false
 }
 
 /**

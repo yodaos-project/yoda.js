@@ -48,7 +48,8 @@ static napi_value EnableCloud(napi_env env, napi_callback_info info) {
 
 static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = { DECLARE_NAPI_PROPERTY("print", Print),
-                                      DECLARE_NAPI_PROPERTY("enableCloud", EnableCloud) };
+                                      DECLARE_NAPI_PROPERTY("enableCloud",
+                                                            EnableCloud) };
   NAPI_CALL(env, napi_define_properties(env, exports,
                                         sizeof(desc) / sizeof(*desc), desc));
   return exports;
