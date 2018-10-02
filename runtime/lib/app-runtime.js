@@ -356,10 +356,9 @@ AppRuntime.prototype.handleAsrPending = function handleAsrPending () {
  */
 AppRuntime.prototype.handleAsrEnd = function handleAsrEnd () {
   this.__asrState = 'end'
-  this.lightMethod('setLoading', [''])
   this.resetAwaken({
     recover: /** no recovery shall be made on nlp coming */ false
-  })
+  }).then(() => this.lightMethod('setLoading', ['']))
 }
 
 /**
