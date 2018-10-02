@@ -658,11 +658,18 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
     return Promise.resolve()
   }
 
+  var future
   if (muted) {
-    return this.openUrl('yoda-skill://volume/mic_mute_effect', { preemptive: false })
-      .then(() => muted)
+    future = this.openUrl('yoda-skill://volume/mic_mute_effect', { preemptive: false })
+  } else {
+    future = this.openUrl('yoda-skill://volume/mic_unmute_effect', { preemptive: false })
   }
-  return this.openUrl('yoda-skill://volume/mic_unmute_effect', { preemptive: false })
+
+  if (this.__asrState === 'pending' && muted) {
+    future = future.then(() => this.resetAwaken())
+  }
+
+  return future
     .then(() => muted)
 }
 
