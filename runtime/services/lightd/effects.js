@@ -103,10 +103,9 @@ LightRenderingContext.prototype.sound = function (uri, self, options) {
     }
   }
 
-  if (options.ignore && (AudioManager.getPlayingState('tts')
-    || AudioManager.getPlayingState('bluetooth')
-    || AudioManager.getPlayingState('multimedia'))) {
-
+  if (options.ignore && (AudioManager.getPlayingState('tts') ||
+    AudioManager.getPlayingState('bluetooth') ||
+    AudioManager.getPlayingState('multimedia'))) {
     // nothing to do if currently state is playing
     logger.log('currently state is playing, ignore audio')
     return mockPlayer

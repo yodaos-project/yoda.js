@@ -230,11 +230,11 @@ static napi_value Stop(napi_env env, napi_callback_info info) {
 }
 
 static napi_value Init(napi_env env, napi_value exports) {
-  napi_property_descriptor desc[] = { DECLARE_NAPI_PROPERTY("initPlayer",
-                                                            InitPlayer),
-                                      DECLARE_NAPI_PROPERTY("prepare", Prepare),
-                                      DECLARE_NAPI_PROPERTY("start", Start),
-                                      DECLARE_NAPI_PROPERTY("stop", Stop) };
+  napi_property_descriptor desc[] = {
+    DECLARE_NAPI_PROPERTY("initPlayer", InitPlayer),
+    DECLARE_NAPI_PROPERTY("prepare", Prepare),
+    DECLARE_NAPI_PROPERTY("start", Start), DECLARE_NAPI_PROPERTY("stop", Stop)
+  };
 
   NAPI_CALL(env, napi_define_properties(env, exports,
                                         sizeof(desc) / sizeof(*desc), desc));
