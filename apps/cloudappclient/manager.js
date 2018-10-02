@@ -17,6 +17,8 @@ inherits(Manager, EventEmitter)
 
 Manager.prototype.onrequest = function (nlp, action) {
   logger.log('sos onrequest')
+  // call onrequest method, app is alive
+  this.isAppActive = true
   var pos = this.findByAppId(action.appId)
   if (pos > -1) {
     this.skills[pos].onrequest(action)
