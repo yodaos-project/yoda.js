@@ -19,7 +19,7 @@ DBus.prototype.init = function init () {
   var service = dbus.registerService('session', dbusConfig.service)
   this.service = service
 
-  ;['extapp', 'prop', 'permission', 'amsexport'].forEach(namespace => {
+  ;['extapp', 'prop', 'permission', 'amsexport', 'yodadebug'].forEach(namespace => {
     if (typeof this[namespace] !== 'object') {
       throw new TypeError(`Expect object on component.dbus.prototype.${namespace}.`)
     }
@@ -358,6 +358,29 @@ DBus.prototype.amsexport = {
       logger.info('force update available, waiting for incoming voice')
       this.runtime.forceUpdateAvailable = true
       cb(null)
+    }
+  }
+}
+
+DBus.prototype.yodadebug = {
+  GetLifetime: {
+    in: [],
+    out: ['s'],
+    fn: function (cb) {
+      cb(null, JSON.stringify({
+        ok: true,
+        result: {
+          activeAppStack: this.runtime.life.activeAppStack,
+          appDataMap: this.runtime.life.appDataMap,
+          inactiveAppIds: this.runtime.life.inactiveAppIds,
+          carrierId: this.runtime.life.carrierId,
+          monopolist: this.runtime.life.monopolist,
+          cloudAppStack: this.runtime.domain,
+          aliveApps: Object.keys(this.runtime.loader.executors).filter(appId => {
+            return this.runtime.loader.getAppById(appId) != null
+          })
+        }
+      }))
     }
   }
 }
