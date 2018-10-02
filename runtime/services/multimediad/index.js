@@ -122,13 +122,14 @@ dbusApis.addMethod('stop', {
 
 dbusApis.addMethod('pause', {
   in: ['s'],
-  out: []
+  out: ['b']
 }, function (appId, cb) {
   logger.log('multimedia pause', appId)
   if (appId) {
-    service.pause(appId)
+    var playing = service.pause(appId)
+    return cb(null, playing)
   }
-  cb(null)
+  cb(null, false)
 })
 
 dbusApis.addMethod('resume', {

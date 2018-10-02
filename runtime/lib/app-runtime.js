@@ -12,7 +12,6 @@ var logger = require('logger')('yoda')
 
 var _ = require('@yoda/util')._
 var safeParse = require('@yoda/util').json.safeParse
-var AudioManager = require('@yoda/audio').AudioManager
 var ota = require('@yoda/ota')
 var CloudGW = require('@yoda/cloudgw')
 var wifi = require('@yoda/wifi')
@@ -58,7 +57,6 @@ function AppRuntime () {
   }
   this.prevVolume = -1
   this.micMuted = false // microphone was reset on runtime start up
-  this.handle = {}
   this.cloudApi = CloudApi // support cloud api. etc.. login
   this.shouldWelcome = true
   this.forceUpdateAvailable = false
@@ -173,45 +171,102 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
 }
 
 /**
- * Reset the appearance includes light and volume.
- * @private
+ * Set device awaken state and appearance.
  */
-AppRuntime.prototype.resetAppearance = function resetAppearance (options) {
-  var unmute = _.get(options, 'unmute')
-
-  clearTimeout(this.handle.setVolume)
-  if (this.prevVolume < 0) {
-    /**
-     * no previous session of configuring appearance.
-     */
-    return
+AppRuntime.prototype.setAwaken = function setAwaken () {
+  if (this.__awaken) {
+    return Promise.resolve()
   }
+  this.__awaken = true
 
-  if (this.prevVolume === AudioManager.getVolume()) {
-    AudioManager.setUserLandVolume(this.prevVolume)
-  } else {
-    /**
-     * if volume is changed in picking up voice,
-     * delta is applied afterwards to all volume channel.
-     */
-    var delta = 10 /** current volume */ - AudioManager.getVolume()
-    AudioManager.setVolume(this.prevVolume - delta)
+  var currAppId = this.life.getCurrentAppId()
+
+  /**
+   * pause lifetime to prevent incoming app preemption;
+   * doesn't care when pauseLifetime ends.
+   */
+  this.life.pauseLifetime()
+
+  logger.info('awaking, pausing tts/media of app', currAppId)
+
+  /**
+   * no need to determine if tts is previously been paused.
+   */
+  this.__pausedTtsAppIdOnAwaken = currAppId
+  /**
+   * if media has been paused already, shall not be resumed on end of awaken
+   */
+  this.__pausedMediaAppIdOnAwaken = null
+  return Promise.all([
+    this.ttsMethod('pause', [ currAppId ]),
+    this.multimediaMethod('pause', [ currAppId ])
+      .then(val => {
+        if (_.get(val, '0', false)) {
+          this.__pausedMediaAppIdOnAwaken = currAppId
+        }
+      })
+  ]).then(() => this.lightMethod('setAwake', ['']))
+}
+
+/**
+ * Set device end of awaken and remove awaken effects.
+ *
+ * @private
+ * @param {object} [options] -
+ * @param {boolean} [options.recover] - if recover previous paused app
+ */
+AppRuntime.prototype.resetAwaken = function resetAwaken (options) {
+  var recover = _.get(options, 'recover', true)
+  if (!this.__awaken) {
+    logger.warn('runtime was not awaken, skipping reset awaken')
+    return Promise.resolve()
   }
-  this.prevVolume = -1
+  this.__awaken = false
+  logger.info('reset awaken, recovering?', recover)
 
-  process.nextTick(() => {
-    if (unmute && AudioManager.isMuted()) {
+  var promises = [
+    this.lightMethod('stop', ['', '/opt/light/awake.js']),
+    this.life.resumeLifetime({ recover: recover })
+  ]
+
+  var pausedTtsAppIdOnAwaken = this.__pausedTtsAppIdOnAwaken
+  this.__pausedTtsAppIdOnAwaken = null
+
+  if (!recover) {
+    if (pausedTtsAppIdOnAwaken) {
       /**
-       * Restore previous volume on NLP incoming if device is muted,
-       * put procedure to next tick to prevent volume app get unexpected state.
-       * Yet since this is the first job on next tick, tts/media of apps are scheduled after
-       * alteration of AudioManger.
+       * tts no need to be kept if recovering is discarded, stop it.
        */
-      this.openUrl('yoda-skill://volume/unmute', { preemptive: false })
+      logger.info('stop previously awaken paused tts of app', pausedTtsAppIdOnAwaken)
+      promises.push(
+        this.ttsMethod('stop', [ pausedTtsAppIdOnAwaken ])
+      )
     }
-  })
+    return Promise.all(promises)
+  }
 
-  this.lightMethod('stop', ['', '/opt/light/awake.js'])
+  var currentAppId = this.life.getCurrentAppId()
+  if (pausedTtsAppIdOnAwaken && pausedTtsAppIdOnAwaken === currentAppId) {
+    logger.info('resume previously awaken paused tts of app', pausedTtsAppIdOnAwaken)
+    promises.push(
+      this.ttsMethod('resume', [ pausedTtsAppIdOnAwaken ])
+    )
+  } else {
+    logger.info('skip resuming paused awaken tts of app', pausedTtsAppIdOnAwaken, 'current app', currentAppId)
+  }
+
+  var pausedMediaAppIdOnAwaken = this.__pausedMediaAppIdOnAwaken
+  this.__pausedMediaAppIdOnAwaken = null
+  if (pausedMediaAppIdOnAwaken && pausedMediaAppIdOnAwaken === currentAppId) {
+    logger.info('resume previously awaken paused media of app', pausedMediaAppIdOnAwaken)
+    promises.push(
+      this.multimediaMethod('resume', [ pausedMediaAppIdOnAwaken ])
+    )
+  } else {
+    logger.info('skip resuming paused awaken media of app', pausedTtsAppIdOnAwaken, 'current app', currentAppId)
+  }
+
+  return Promise.all(promises)
 }
 
 /**
@@ -224,38 +279,41 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
     logger.warn('Network not connected, skip incoming voice')
     return
   }
+
+  var future = this.setAwaken()
+  this.fakeVoiceComingTimer = setTimeout(() => {
+    logger.warn('detected a fake voice coming, resetting awaken')
+    this.resetAwaken()
+  }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
+
   if (this.forceUpdateAvailable) {
-    /**
-     * Skip upcoming voice, announce available force update and start ota.
-     */
-    logger.info('pending force update, delegates activity to @ota.')
-    this.forceUpdateAvailable = false
-    return ota.getInfoOfPendingUpgrade((err, info) => {
-      if (err || info == null) {
-        logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
-        return
-      }
-      logger.info('got pending update info', info)
-      Promise.all([
-        this.setMicMute(true, { silent: true }),
-        this.setPickup(false)
-      ]).then(() =>
-        this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
-      ).then(() => this.startMonologue('@yoda/ota'))
+    var deferred = () => {
+      /**
+       * Skip upcoming voice, announce available force update and start ota.
+       */
+      logger.info('pending force update, delegates activity to @ota.')
+      this.forceUpdateAvailable = false
+      return ota.getInfoOfPendingUpgrade((err, info) => {
+        if (err || info == null) {
+          logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
+          return
+        }
+        logger.info('got pending update info', info)
+        Promise.all([
+          this.setMicMute(true, { silent: true }),
+          this.setPickup(false)
+        ]).then(() =>
+          this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
+        ).then(() => this.startMonologue('@yoda/ota'))
+      })
+    }
+    future.then(deferred, err => {
+      logger.error('unexpected error on set awaken', err.stack)
+      deferred()
     })
   }
 
-  var min = 10
-  var vol = AudioManager.getVolume()
-  if (vol > min) {
-    this.prevVolume = vol
-    AudioManager.setUserLandVolume(min)
-    clearTimeout(this.handle.setVolume)
-    this.handle.setVolume = setTimeout(() => {
-      this.resetAppearance()
-    }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
-  }
-  this.lightMethod('setAwake', [''])
+  return future
 }
 
 /**
@@ -281,11 +339,24 @@ AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (dat
 }
 
 /**
+ * Handle the "asr pending" event.
+ * @private
+ */
+AppRuntime.prototype.handleAsrPending = function handleAsrPending () {
+  this.__asrState = 'pending'
+  clearTimeout(this.fakeVoiceComingTimer)
+}
+
+/**
  * Handle the "asr end" event.
  * @private
  */
 AppRuntime.prototype.handleAsrEnd = function handleAsrEnd () {
+  this.__asrState = 'end'
   this.lightMethod('setLoading', [''])
+  this.resetAwaken({
+    recover: /** no recovery shall be made on nlp coming */ false
+  })
 }
 
 /**
@@ -293,8 +364,29 @@ AppRuntime.prototype.handleAsrEnd = function handleAsrEnd () {
  * @private
  */
 AppRuntime.prototype.handleAsrFake = function handleAsrFake () {
-  logger.info('asr fake')
-  this.resetAppearance()
+  this.__asrState = 'fake'
+  this.resetAwaken()
+}
+
+/**
+ * Handle the "start voice" event.
+ * @private
+ */
+AppRuntime.prototype.handleStartVoice = function handleStartVoice () {
+  this.__pickingUp = true
+}
+
+/**
+ * Handle the "end voice" event.
+ * @private
+ */
+AppRuntime.prototype.handleEndVoice = function handleEndVoice () {
+  this.__pickingUp = false
+  logger.info('on end of voice, asr:', this.__asrState)
+  if (this.__asrState === 'end') {
+    return
+  }
+  this.resetAwaken()
 }
 
 /**
@@ -302,7 +394,6 @@ AppRuntime.prototype.handleAsrFake = function handleAsrFake () {
  * @private
  */
 AppRuntime.prototype.handleNlpResult = function handleNlpResult (data) {
-  clearTimeout(this.handle.setVolume)
   this.onVoiceCommand(data.asr, data.nlp, data.action)
 }
 
@@ -370,19 +461,29 @@ AppRuntime.prototype.onTurenEvent = function (name, data) {
     case 'voice local awake':
       handler = this.handleVoiceLocalAwake
       break
+    case 'asr pending':
+      handler = this.handleAsrPending
+      break
     case 'asr end':
       handler = this.handleAsrEnd
       break
     case 'asr fake':
       handler = this.handleAsrFake
       break
+    case 'start voice':
+      handler = this.handleStartVoice
+      break
+    case 'end voice':
+      handler = this.handleEndVoice
+      break
     case 'nlp':
       handler = this.handleNlpResult
       break
   }
   if (typeof handler !== 'function') {
-    logger.info(`skip event "${name}", because no handler`)
+    logger.info(`skip turen event "${name}" for no handler existing`)
   } else {
+    logger.debug(`handling turen event "${name}"`)
     handler.call(this, data)
   }
 }
@@ -444,7 +545,6 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     logger.log(`Local app '${nlp.appId}' not found.`)
     return Promise.resolve()
   }
-  var prevId = this.life.getCurrentAppId()
 
   return this.life.createApp(appId)
     .then(() => {
@@ -457,25 +557,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
       this.updateCloudStack(nlp.appId, form)
       return this.life.activateAppById(appId, form, carrierId)
     })
-    .then(() => {
-      if (prevId == null) {
-        return
-      }
-      logger.info('stopping previous tts/media', appId)
-      return Promise.all([
-        this.ttsMethod('stop', [ prevId ]),
-        this.multimediaMethod('pause', [ prevId ])
-      ])
-    })
-    .then(() => {
-      this.resetAppearance({
-        /**
-         * Prevent un-muting if upcoming volume app
-         */
-        unmute: appId !== '@yoda/volume'
-      })
-      return this.life.onLifeCycle(appId, 'request', [ nlp, action ])
-    })
+    .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch((error) => {
       logger.error(`create app error with appId: ${appId}`, error)
       return this.life.destroyAppById(appId, { force: true })

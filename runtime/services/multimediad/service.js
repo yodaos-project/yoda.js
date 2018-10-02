@@ -54,14 +54,22 @@ MultiMedia.prototype.stop = function (appId) {
 }
 
 MultiMedia.prototype.pause = function (appId) {
-  if (this.handle[appId]) {
-    try {
-      this.handle[appId].pause()
-      AudioManager.setPlayingState(audioModuleName, false)
-    } catch (error) {
-      logger.error('try to pause player errer with appId: ', appId, error.stack)
-    }
+  if (this.handle[appId] == null) {
+    return false
   }
+  var playing = false
+  try {
+    playing = this.handle[appId].playing
+  } catch (error) {
+    logger.error('try to get playing state of player error with appId: ', appId, error.stack)
+  }
+  try {
+    this.handle[appId].pause()
+    AudioManager.setPlayingState(audioModuleName, false)
+  } catch (error) {
+    logger.error('try to pause player error with appId: ', appId, error.stack)
+  }
+  return playing
 }
 
 MultiMedia.prototype.resume = function (appId) {
