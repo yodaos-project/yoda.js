@@ -15,8 +15,9 @@ module.exports = function (activity) {
   var bluetoothState = null
   var connectBlutoothName = null
   var playState = null
-  var STRING_BROADCAST = '蓝牙已打开，你可以在手机上找到'
-  var STRING_BROADCAST_END = '来连接我的蓝牙'
+  var STRING_BROADCAST = '蓝牙已打开'
+  var STRING_OPEN_BEGIN = '你可以在手机上找到'
+  var STRING_OPEN_END = '来连接我的蓝牙'
   var STRING_CONNECED = '已连接上你的'
   var STRING_CONNECEDFAILED = '未能连接上你的'
   var DEVICE_NAME = '蓝牙设备'
@@ -32,7 +33,7 @@ module.exports = function (activity) {
         player.start(name)
         activity.light.play('system://bluetoothOpen.js')
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST + nameToSpeak + STRING_BROADCAST_END) })
+          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST) })
         } else {
           activity.setForeground().then(() => { mediaAndExit('system://openbluetooth.ogg') })
         }
@@ -72,6 +73,10 @@ module.exports = function (activity) {
           })
         }
       }
+      if ((message.a2dpstate === 'opened') && (message.connect_state === 'invailed') &&
+      (message.play_state === 'invailed')) {
+        if (message.linknum === 0) { activity.setForeground().then(() => { speakAndExit(STRING_OPEN_BEGIN + nameToSpeak + STRING_OPEN_END) }) }
+      }
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'connected failed') &&
         (message.play_state === 'invailed')) {
         connectBlutoothName = message.connect_name
@@ -88,9 +93,11 @@ module.exports = function (activity) {
         bluetoothState = 'connected'
         connectBlutoothName = message.connect_name
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => {
-            speakAndExit(STRING_CONNECED + message.connect_name)
-          })
+          setTimeout(() => {
+            activity.setForeground().then(() => {
+              speakAndExit(STRING_CONNECED + message.connect_name)
+            })
+          }, 1000)// Temporary delay 1s, in order to prevent TTS synchronization play will burst.
         } else {
           activity.setForeground().then(() => {
             mediaAndExit('system://connectbluetooth.ogg')
