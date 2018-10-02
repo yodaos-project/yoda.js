@@ -1,8 +1,9 @@
 'use strict'
 
+var logger = require('logger')('bluetooth.player')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
-var AudioManager = require('@yoda/audio')
+var AudioManager = require('@yoda/audio').AudioManager
 var helper = require('./helper')
 var a2dpsinkPath = `ipc://${helper.CHANNEL_PREFIX}/a2dpsink_event`
 
@@ -20,12 +21,18 @@ function BluetoothPlayer () {
   this._eventSocket.on('message', (buffer) => {
     try {
       if (this._end) {
+        logger.info('zmq connection has been closed, just skip the message')
         return
       }
 
       var msg = JSON.parse(buffer + '')
       if (msg.action === 'volumechange') {
-        AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, msg.value)
+        var vol = msg.value
+        if (vol === undefined) {
+          vol = AudioManager.getVolume(AudioManager.STREAM_PLAYBACK)
+        }
+        AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
+        logger.info(`set volume ${vol} for bluetooth player`)
         /**
          * When the volume needs to be changed from bluetooth service.
          * @event module:@yoda/bluetooth.BluetoothPlayer#opened
