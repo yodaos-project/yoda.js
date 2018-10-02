@@ -53,7 +53,8 @@ Skill.prototype.handleEvent = function () {
       if (value.type === 'media' && ['play', 'resume'].indexOf(value.action) > -1) {
         this.isSkillActive = true
       }
-      if (value.type === 'media' && ['stop', 'pause', 'resume'].indexOf(value.action) > -1) {
+      // when dt have media, should not exe media resume
+      if (value.type === 'media' && ['stop', 'pause', 'resume', 'play'].indexOf(value.action) > -1) {
         resume = false
       }
     })
