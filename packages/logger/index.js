@@ -12,8 +12,8 @@ var native = require('./logger.node')
 
 var logLevels = {
   'verbose': 1,
-  'info': 2,
-  'debug': 3,
+  'debug': 2,
+  'info': 3,
   'warn': 4,
   'error': 5
 }
@@ -29,11 +29,10 @@ function Logger (name) {
 function createLoggerFunction (level) {
   level = logLevels[level]
   if (!level || level < 1 || level > 5) {
-    level = 2 // info
+    level = 3 // info
   }
   return function printlog () {
-    var now = new Date()
-    var line = `[${now.toISOString()}] :: ` + util.format.apply(this, arguments)
+    var line = util.format.apply(this, arguments)
     if (line.length >= 1000) {
       line = line.slice(0, 1000) + '...'
     }
