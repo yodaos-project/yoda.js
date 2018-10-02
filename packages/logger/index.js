@@ -8,7 +8,7 @@
  */
 
 var util = require('util')
-var native = require('./native')
+var native = require('./logger.node')
 
 var logLevels = {
   'verbose': 1,
