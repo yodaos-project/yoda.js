@@ -75,7 +75,10 @@ module.exports = function (activity) {
       }
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'invailed') &&
       (message.play_state === 'invailed')) {
-        if (message.linknum === 0) { activity.setForeground().then(() => { speakAndExit(STRING_OPEN_BEGIN + nameToSpeak + STRING_OPEN_END) }) }
+        if (message.linknum === 0) {
+          setTimeout(() => { activity.setForeground().then(() => { speakAndExit(STRING_OPEN_BEGIN + nameToSpeak + STRING_OPEN_END) }) }
+            , 3000)// Temporary delay 3s, in order to Preventing TTS broadcast loss.
+        }
       }
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'connected failed') &&
         (message.play_state === 'invailed')) {
