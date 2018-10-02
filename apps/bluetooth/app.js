@@ -31,7 +31,9 @@ module.exports = function (activity) {
     setTimeout(() => {
       if ((bluetoothState === null) || (bluetoothState === 'closed')) {
         player.start(name)
-        activity.light.play('system://bluetoothOpen.js')
+        activity.light.play('system://bluetoothOpen.js').catch((err) => {
+          logger.error('bluetooth music light play', err)
+        })
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
           activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST) })
         } else {
