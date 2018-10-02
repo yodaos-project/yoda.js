@@ -1,4 +1,5 @@
 var dbus = require('dbus').getBus('session')
+var _ = require('@yoda/util')._
 var compose = require('@yoda/util').compose
 
 var asr = process.argv[2]
@@ -9,8 +10,8 @@ compose([
   cb => {
     dbus.getInterface(
       'com.rokid.AmsExport',
-      '/activation/extapp',
-      'com.rokid.activation.extapp',
+      '/rokid/yoda/debug',
+      'rokid.yoda.Debug',
       cb
     )
   },
@@ -23,7 +24,9 @@ compose([
       console.error('Error: MockASR is not implemented in YodaRT, try install a newer version of YodaRT and try again.')
       return process.exit(1)
     }
-    iface.mockAsr(asr, cb)
+    var callback = _.once(cb)
+    iface.mockAsr(asr, callback)
+    setTimeout(() => callback(new Error('Mock ASR Timed out'), 10 * 1000))
   }
 ], function onDone (err, result) {
   if (err) {

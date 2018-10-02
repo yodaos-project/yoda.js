@@ -241,17 +241,6 @@ DBus.prototype.extapp = {
           })
         })
     }
-  },
-  mockAsr: {
-    in: ['s'],
-    out: ['s'],
-    fn: function mockAsr (text, cb) {
-      this.runtime.mockAsr(text)
-        .then(
-          res => cb(null, JSON.stringify({ ok: true, nlp: res[0], action: res[1] })),
-          err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
-        )
-    }
   }
 }
 
@@ -381,6 +370,17 @@ DBus.prototype.yodadebug = {
           })
         }
       }))
+    }
+  },
+  mockAsr: {
+    in: ['s'],
+    out: ['s'],
+    fn: function mockAsr (text, cb) {
+      this.runtime.mockAsr(text)
+        .then(
+          res => cb(null, JSON.stringify({ ok: true, nlp: res[0], action: res[1] })),
+          err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
+        )
     }
   }
 }
