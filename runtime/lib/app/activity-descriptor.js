@@ -974,11 +974,8 @@ Object.assign(TtsDescriptor.prototype,
                   return
                 }
 
-                if (event === 'end') {
+                if (['end', 'cancel'].indexOf(event) >= 0) {
                   return resolve()
-                }
-                if (event === 'cancel') {
-                  return reject(new Error('Tts canceled'))
                 }
                 if (event === 'error') {
                   return reject(new Error('Unexpected ttsd error'))

@@ -53,6 +53,12 @@ Flora.prototype.handlers = {
       this.runtime.onTurenEvent('asr fake')
     }
   },
+  'rokid.turen.start_voice': function (msg) {
+    this.runtime.onTurenEvent('start voice')
+  },
+  'rokid.speech.completed': function (msg) {
+    this.runtime.onTurenEvent('end voice')
+  },
   'rokid.speech.nlp': function (msg) {
     if (this.voiceCtx.lastFaked) {
       logger.info('skip nlp, because last voice is fake')

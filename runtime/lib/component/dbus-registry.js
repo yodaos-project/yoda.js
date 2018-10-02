@@ -365,6 +365,7 @@ DBus.prototype.yodadebug = {
           inactiveAppIds: this.runtime.life.inactiveAppIds,
           carrierId: this.runtime.life.carrierId,
           monopolist: this.runtime.life.monopolist,
+          appIdOnPause: this.runtime.life.appIdOnPause,
           cloudAppStack: this.runtime.domain,
           aliveApps: Object.keys(this.runtime.loader.executors).filter(appId => {
             return this.runtime.loader.getAppById(appId) != null

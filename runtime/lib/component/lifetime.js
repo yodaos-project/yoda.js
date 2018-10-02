@@ -59,6 +59,12 @@ function LaVieEnPile (loader) {
    * in which case, no other apps could interrupts it's monologue.
    */
   this.monopolist = null
+
+  /**
+   * Determines if lifetime is been paused globally by system.
+   * Especially used in device activation to pause currently running app.
+   */
+  this.appIdOnPause = null
 }
 /**
  * On stack updated, might have be de-bounced
@@ -211,9 +217,17 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
  * @param {string} appId -
  * @param {'cut' | 'scene'} [form] -
  * @param {string} [carrierId] - if app start activated by another app, that app shall be a carrier and be attached to the newly activated app.
+ * @param {object} [options] -
+ * @param {any[]} [options.resumeParams] -
  * @returns {Promise<void>}
  */
-LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, carrierId) {
+LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, carrierId, options) {
+  var resumeParams = _.get(options, 'resumeParams', [])
+
+  if (this.appIdOnPause != null) {
+    return Promise.reject(new Error('LaVieEnPile is paused'))
+  }
+
   if (!this.isAppRunning(appId)) {
     return Promise.reject(new Error(`App ${appId} is not running, launch it first.`))
   }
@@ -268,13 +282,13 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
       this.inactiveAppIds.splice(idx, 1)
     }
   }
-  future = future.then(() => this.onLifeCycle(appId, 'resume'))
 
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
   var deferred = () => {
     this.activeAppStack.push(appId)
     this.onStackUpdate()
+    return this.onLifeCycle(appId, 'resume', resumeParams)
   }
 
   if (cid === appId) {
@@ -352,7 +366,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
     logger.info('app is not in stack, skip deactivating', appId)
     return Promise.resolve()
   }
-  logger.info('deactivating app', appId)
+  logger.info('deactivating app', appId, ', recover?', recover)
 
   this.activeAppStack.splice(idx, 1)
   this.onStackUpdate()
@@ -379,6 +393,11 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
 
   logger.info('recovering previous app on deactivating.')
   return deactivating.then(() => {
+    if (this.appIdOnPause != null) {
+      logger.info('LaVieEnPile is paused, skip resuming on deactivation.')
+      return
+    }
+
     var lastAppId = this.getCurrentAppId()
     if (lastAppId) {
       /**
@@ -456,6 +475,11 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
      * No recover shall be taken if app is not active.
      */
     return Promise.resolve()
+  }
+
+  if (this.appIdOnPause != null) {
+    logger.info('LaVieEnPile is paused, skip resuming on setBackground.')
+    return future
   }
 
   /**
@@ -621,3 +645,67 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
 }
 
 // MARK: - END App Termination
+
+/**
+ * Pause lifetime intentionally by system.
+ * @returns {void}
+ */
+LaVieEnPile.prototype.pauseLifetime = function pauseLifetime () {
+  if (this.appIdOnPause != null) {
+    logger.info('LaVieEnPile already paused, skipping pausing.')
+    return Promise.resolve()
+  }
+  var currentAppId = this.appIdOnPause = this.getCurrentAppId()
+
+  logger.info('paused LaVieEnPile')
+
+  if (currentAppId == null) {
+    logger.info('no apps available to be paused.')
+    return Promise.resolve()
+  }
+  var form = _.get(this.getAppDataById(currentAppId), 'form', 'cut')
+  if (form !== 'scene') {
+    return this.deactivateAppById(currentAppId, { recover: false })
+      .catch(err => logger.warn('Unexpected error on pausing lifetime', currentAppId, err.stack))
+  }
+
+  return Promise.resolve()
+}
+
+/**
+ *
+ * @param {object} [options] -
+ * @param {boolean} [options.recover] - if previously stopped app shall be recovered
+ * @returns {Promise<void>}
+ */
+LaVieEnPile.prototype.resumeLifetime = function resumeLifetime (options) {
+  var recover = _.get(options, 'recover', false)
+
+  if (this.appIdOnPause == null) {
+    logger.warn('LaVieEnPile is not paused, yet trying to resume.')
+    return Promise.resolve()
+  }
+  var appIdOnPause = this.appIdOnPause
+  this.appIdOnPause = null
+
+  var currentAppId = this.getCurrentAppId()
+  logger.info('resuming LaVieEnPile, recover?', recover, 'app in pause:', appIdOnPause, 'current app:', currentAppId)
+
+  if (!recover) {
+    return Promise.resolve()
+  }
+  if (appIdOnPause != null && currentAppId === appIdOnPause) {
+    /**
+     * Since no app is allowed to preempt top of stack, only deactivation could change current app id.
+     * yet if current app is exactly the app on pause,
+     * resume of app at bottom of stack is not needed.
+     */
+    return Promise.resolve()
+  }
+
+  if (currentAppId == null) {
+    return Promise.resolve()
+  }
+  return this.onLifeCycle(currentAppId, 'resume')
+    .catch(err => logger.error('Unexpected error on resuming previous app', err.stack))
+}
