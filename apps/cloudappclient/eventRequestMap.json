@@ -9,7 +9,7 @@
     "playbackcomplete": "Media.FINISHED",
     "pause": "Media.PAUSED",
     "resume": "Media.STARTED",
-    "cancel": "Media.FINISHED",
-    "stop": "Media.FINISHED"
+    "cancel": "Media.PAUSED",
+    "stop": "Media.PAUSED"
   }
 }
