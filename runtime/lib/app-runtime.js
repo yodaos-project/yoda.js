@@ -174,8 +174,11 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
  * Set device awaken state and appearance.
  */
 AppRuntime.prototype.setAwaken = function setAwaken () {
+  var promises = []
   if (this.__awaken) {
-    return Promise.resolve()
+    promises.push(
+      this.resetAwaken({ recover: false })
+    )
   }
   this.__awaken = true
 
@@ -197,7 +200,7 @@ AppRuntime.prototype.setAwaken = function setAwaken () {
    * if media has been paused already, shall not be resumed on end of awaken
    */
   this.__pausedMediaAppIdOnAwaken = null
-  return Promise.all([
+  return Promise.all(promises.concat([
     this.ttsMethod('pause', [ currAppId ]),
     this.multimediaMethod('pause', [ currAppId ])
       .then(val => {
@@ -205,7 +208,7 @@ AppRuntime.prototype.setAwaken = function setAwaken () {
           this.__pausedMediaAppIdOnAwaken = currAppId
         }
       })
-  ]).then(() => this.lightMethod('setAwake', ['']))
+  ])).then(() => this.lightMethod('setAwake', ['']))
 }
 
 /**
