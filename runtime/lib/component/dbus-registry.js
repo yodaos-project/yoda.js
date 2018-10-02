@@ -1,6 +1,7 @@
 var dbus = require('dbus')
 var EventEmitter = require('events')
 var util = require('util')
+var path = require('path')
 
 var logger = require('logger')('dbus')
 var _ = require('@yoda/util')._
@@ -381,6 +382,49 @@ DBus.prototype.yodadebug = {
           res => cb(null, JSON.stringify({ ok: true, nlp: res[0], action: res[1] })),
           err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
         )
+    }
+  },
+  doProfile: {
+    in: ['s', 'n'],
+    out: ['s'],
+    fn: function DoProfile (storePath, duration, cb) {
+      if (!path.isAbsolute(storePath)) {
+        cb(null, `store path ${storePath} should be absolute`)
+        return
+      }
+      try {
+        var profiler = require('profiler')
+        profiler.startProfiling(storePath, duration)
+        setTimeout(function () {
+          cb(null, `finished, store path ${storePath}`)
+        }, duration * 1000)
+      } catch (err) {
+        cb(err)
+      }
+    }
+  },
+  reportMemoryUsage: {
+    in: [],
+    out: ['s'],
+    fn: function ReportMemoryUsage (cb) {
+      cb(null, JSON.stringify(process.memoryUsage()))
+    }
+  },
+  takeSnapshot: {
+    in: ['s'],
+    out: ['s'],
+    fn: function ReportSnapshot (storePath, cb) {
+      try {
+        if (!path.isAbsolute(storePath)) {
+          cb(null, `store path ${storePath} should be absolute`)
+          return
+        }
+        var profiler = require('profiler')
+        profiler.takeSnapshot(storePath)
+        cb(null, `finished, store path ${storePath}`)
+      } catch (err) {
+        cb(err)
+      }
     }
   }
 }

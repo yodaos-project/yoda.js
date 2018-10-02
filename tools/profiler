@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+set -e
+
+help="
+Usage:
+  -m get vuid memory usage
+  -s [snapshot] path to store vui memory snapshot
+  -p [path duration] do profile in vui process
+       the first argument is profile store path, the second argument is profile duration
+"
+
+mount -o remount,rw /
+
+dbus_makecall() {
+  dbus_address=`head -n 1 /var/run/dbus/session`
+  eval "export $dbus_address"
+
+  result=`dbus-send --print-reply --type=method_call --dest=$1 $2 $3 $args`
+  echo $result
+}
+
+do_profile() {
+  service='com.rokid.AmsExport'
+  objectPath='/rokid/openvoice'
+  interface='rokid.openvoice.AmsExport.doProfile'
+  dbus_makecall $service $objectPath $interface $1
+}
+
+take_snapshot() {
+  service='com.rokid.AmsExport'
+  objectPath='/rokid/openvoice'
+  interface='rokid.openvoice.AmsExport.takeSnapshot'
+  dbus_makecall $service $objectPath $interface $1
+}
+
+report_memory_usage() {
+  service='com.rokid.AmsExport'
+  objectPath='/rokid/openvoice'
+  interface='rokid.openvoice.AmsExport.reportMemoryUsage'
+  dbus_makecall $service $objectPath $interface $1
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -m)
+      fn="report_memory_usage"
+      shift
+      ;;
+    -s)
+      fn="take_snapshot"
+      if [ ! $2 ]; then
+        echo "missing snapshot store path"
+        exit 1
+      fi
+      args="string:$2"
+      shift
+      ;;
+    -p)
+      fn="do_profile"
+      if [ ! $2 ]; then
+        echo "missing profile sttore path"
+        exit 1
+      fi
+      if [ ! $3 ]; then
+        echo "missing duration"
+        exit 1
+      fi
+      args="string:$2 int32:$3"
+      shift 2
+      ;;
+    -h)
+      printf "$help"
+      exit
+      ;;
+    --*)
+      echo "Illegal option $1"
+      exit
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+if [ ! $fn ]; then
+  printf "$help"
+  exit
+fi
+
+eval "$fn"
