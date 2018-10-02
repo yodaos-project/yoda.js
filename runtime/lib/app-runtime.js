@@ -886,6 +886,15 @@ AppRuntime.prototype.onForward = function (message) {
     logger.debug('parse mqtt forward message error: message -> ', message)
     return
   }
+  if (typeof data.content === 'string') {
+    /**
+     * FIXME: compatibility with message format of android Rokid app
+     * see more at: https://bug.rokid-inc.com/zentaopms/www/index.php?m=bug&f=view&bugID=15033
+     */
+    try {
+      data.content = JSON.parse(data.content)
+    } catch (err) {}
+  }
 
   var mockNlp = {
     cloud: false,
