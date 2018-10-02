@@ -58,7 +58,14 @@ module.exports = function customConfig (activity) {
       logger.info('on Url----> query is string:  ' + queryObj)
     }
     var action = queryObj.action
-    var isFirstLoad = queryObj.isFirstLoad
+    var isFirstLoad
+    if (queryObj.isFirstLoad === 'false') {
+      isFirstLoad = false
+    } else if (queryObj.isFirstLoad === 'true') {
+      isFirstLoad = true
+    } else {
+      return
+    }
     logger.info('on Url----> action: ' + action + '; urlObj.pathname: ' + urlObj.pathname + ';   isFirstLoad: ' + isFirstLoad)
     if (urlObj.pathname === '/nightMode') {
       this.startTime = queryObj.startTime
