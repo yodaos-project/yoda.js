@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 
 store_interval=600
-# ps_grep="memory-viewer|iotjs|speech-service|flora-dispatcher\
-# |bluetooth_service|pulseaudio|dbus-daemon|homebase\
-# |logread|adbd|bsa_server|net_manager|logd|wifi_monitor|wpa_supplicant\
-# |turenproc"
-ps_grep="memory-viewer|iotjs|homebase"
+ps_grep="memory-viewer|iotjs|speech-service|flora-dispatcher\
+|bluetooth_service|pulseaudio|dbus-daemon|homebase\
+|logread|adbd|bsa_server|net_manager|logd|wifi_monitor|wpa_supplicant\
+|turenproc"
 device_sn='all'
 adb_mode="false"
 flush_count=0
 
 help="
 Usage:
+  -m capture memory usage
+  -c capture cpu usage
   -a specific collected through adb shell
   -i [interval] memory snapshot interval
               default value is ${store_interval} seconds
@@ -28,8 +29,15 @@ Example:
 This tool is used for collect memory data over a time and present the data in a line chart
 Enter ^C to stop collect data and generatte line chart
 "
+
 while [ $# -gt 0 ]; do
   case "$1" in
+    -m)
+      action="memory"
+      ;;
+    -c)
+      action="cpu"
+      ;;
     -i)
       store_interval="$2"
       shift
@@ -50,8 +58,8 @@ while [ $# -gt 0 ]; do
       data_path=$2
       store_path="$data_path.html"
       mem_data=`cat $data_path`
-      echo_templatte='<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,height=device-height"><title>memory view</title><style>::-webkit-scrollbar{display:none;}html,body{overflow:hidden;height:100%;margin:0;}</style></head><body><div id="mountNode"></div><script>document.body.clientHeight;</script><script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g2-3.2.8/dist/g2.min.js"></script><script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.data-set-0.9.6/dist/data-set.min.js"></script><script>  var data = ${data};  var chart = new G2.Chart({    container: "mountNode",    forceFit: true,    height: window.innerHeight  });  chart.source(data, {    month: {      range: [0, 1]    }  });  chart.tooltip({    crosshairs: {      type: "line"    }  });  chart.axis("mem", {    label: {      formatter: function formatter(val) {        return val + "KB";      }    }  });  chart.line().position("time*mem").color("args");  chart.point().position("time*mem").color("args").size(4).shape("circle").style({    stroke: "#fff",    lineWidth: 1  });  chart.render();</script></body></html>'
-      echo ${echo_templatte/\$\{data\}/$mem_data} > $store_path
+      echo_templatte='<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,height=device-height"><title>memory view</title><style>::-webkit-scrollbar{display:none;}html,body{overflow:hidden;height:100%;margin:0;}</style></head><body><div id="mountNode"></div><script>document.body.clientHeight;</script><script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g2-3.2.8/dist/g2.min.js"></script><script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.data-set-0.9.6/dist/data-set.min.js"></script><script>  var data = ${data};  var chart = new G2.Chart({    container: "mountNode",    forceFit: true,    height: window.innerHeight  });  chart.source(data, {    month: {      range: [0, 1]    }  });  chart.tooltip({    crosshairs: {      type: "line"    }  });  chart.axis("data", {    label: {      formatter: function formatter(val) {        return val;      }    }  });  chart.line().position("time*data").color("args");  chart.point().position("time*data").color("args").size(4).shape("circle").style({    stroke: "#fff",    lineWidth: 1  });  chart.render();</script></body></html>'
+      echo ${echo_templatte/\$\{data\}/\[$mem_data\]} > $store_path
       rm $data_path
       echo "store path: $store_path"
       exit
@@ -76,6 +84,11 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
+if [ ! action ]; then
+  echo "you should specific what to view, -m or -c, -h to get more"
+  exit
+fi
+
 hostname=`uname -n`
 if [ hostname = "OpenWrt" ]; then
   echo 'mount / with rw'
@@ -84,6 +97,7 @@ fi
 
 ps_cmd="ps -eo pid,rss,args | grep -E '$ps_grep' | grep -v grep"
 free_cmd="cat /proc/meminfo | grep MemAvailable | awk '{print \$2}'"
+top_cmd="busybox top -b -n 1 | grep -E '$ps_grep|CPU:' | grep -v grep"
 
 run_memory_cmd() {
   host=$1
@@ -96,27 +110,54 @@ run_memory_cmd() {
     ps_result=($(eval $ps_cmd))
     free_result=($(eval $free))
   fi
-  ps_echo=""
   ps_len=${#ps_result[@]}
+  data_path=`pwd`/mem-$datat_file_prefix-$host.json
   for ((i=0;i<ps_len;++i))
   {
     ps=${ps_result[i]}
     ps_mem=`echo $ps | awk '{print $2}'`
     ps_args=`echo $ps | sed "s/$ps_mem//"`
-    ps_echo="$ps_echo{\"mem\":$ps_mem,\"args\":\"$ps_args\",\"time\":\"$now\"},"
+    echo "{\"data\":$ps_mem,\"args\":\"$ps_args\",\"time\":\"$now\"}," >> $data_path
   }
   if [ ! $free_result ]; then
     free_result=0
   fi
-  ps_echo="$ps_echo{\"mem\":$free_result,\"args\":\"free\",\"time\":\"$now\"},"
-  data_path=`pwd`/mem-$datat_file_prefix-$host.json
-  if [ ! -f $data_path ]; then
-    echo '[{}]' > $data_path
-  fi
-  mem_data=`cat $data_path`
-  echo ${mem_data/\{\}/${ps_echo}\{\}} > $data_path
+  echo "{\"data\":$free_result,\"args\":\"free\",\"time\":\"$now\"}," >> $data_path
 }
 
+run_cpu_cmd() {
+  host=$1
+  now=$2
+  data_file_prefix=$3
+  if [ $adb_mode = "true" ]; then
+    top_result=($(adb -s $host shell "$top_cmd"))
+  else
+    top_result=($(eval $top_cmd))
+  fi
+  top_len=${#top_result[@]}
+  data_path=`pwd`/cpu-$data_file_prefix-$host.json
+  for ((i=0;i<top_len;++i))
+  {
+    top=${top_result[i]}
+    if [ $i -eq 0 ]; then
+      user_cpu=`echo $top | awk '{print $2}' | sed "s/%//"`
+      echo "{\"data\":$user_cpu,\"args\":\"user\",\"time\":\"$now\"}," >> $data_path
+      sys_cpu=`echo $top | awk '{print $4}' | sed "s/%//"`
+      echo "{\"data\":$sys_cpu,\"args\":\"sys\",\"time\":\"$now\"}," >> $data_path
+      idle_cpu=`echo $top | awk '{print $8}' | sed "s/%//"`
+      echo "{\"data\":$idle_cpu,\"args\":\"idle\",\"time\":\"$now\"}," >> $data_path
+    else
+      top=`echo $top | grep -Eo "%.*"`
+      top_cpu=`echo $top | awk '{print $2}' | sed "s/%//"`
+      if [ $top_cpu -gt 0 ]; then
+        top_args=`echo $top | awk '{$1=$2="";print $0}'`
+        echo "{\"data\":$top_cpu,\"args\":\"$top_args\",\"time\":\"$now\"}," >> $data_path
+      fi
+    fi
+  }
+}
+
+cmd_name="run_${action}_cmd"
 main() {
   trap 'exit 0;' INT TERM
   trap 'echo "ignore SIGHUP"' HUP
@@ -132,16 +173,21 @@ main() {
     now=`date "+%Y-%m-%d-%H:%M:%S"`
     ((++times))
     dot_count=$(($times % 6))
-    echo -ne "Collecting memory data ${dots:0:$dot_count}${spaces:$dot_count}\r"
+    echo -ne "Collecting $action data ${dots:0:$dot_count}${spaces:$dot_count}\r"
     if [ $times -lt $store_interval ]; then
       sleep 1
       continue
     fi
     times=0
-    if [ $device_sn = "all" ]; then
-      adb_devices=($(adb devices | sed 1d | awk '{print $1}'))
+    if [ $adb_mode = "true" ]; then
+      if [ $device_sn = "all" ]; then
+        adb_devices=($(adb devices | sed 1d | awk '{print $1}'))
+      else
+        adb_devices=($(adb devices | grep $device_sn | awk '{print $1}'))
+      fi
     else
-      adb_devices=($(adb devices | grep $device_sn | awk '{print $1}'))
+      sn=`getprop ro.boot.serialno`
+      adb_devices=($sn)
     fi
 
     if [ $flush_count -gt 0 ] && [ $flush_times -ge $flush_count ]; then
@@ -152,7 +198,7 @@ main() {
     devices_len=${#adb_devices[@]}
     for ((i=0;i<devices_len;++i))
     {
-      run_memory_cmd ${adb_devices[i]} $now $data_file_prefix
+      eval "$cmd_name ${adb_devices[i]} $now $data_file_prefix"
     }
     sleep 1
   done
