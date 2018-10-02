@@ -53,7 +53,6 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
   } else {
     return;
   }
-
   if (!jerry_value_is_function(notifyFn)) {
     fprintf(stderr, "no function is registered\n");
     return;
