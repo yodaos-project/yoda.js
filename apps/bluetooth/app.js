@@ -161,8 +161,9 @@ module.exports = function (activity) {
   }
 
   function speakAndExit (text) {
-    return activity.tts.speak(text)
-      .then(() => !playState && activity.setBackground())
+    return activity.tts.speak(text).catch((err) => {
+      logger.error('bluetooth music tts error', err)
+    }).then(() => !playState && activity.setBackground())
   }
 
   function mediaAndExit (text) {
