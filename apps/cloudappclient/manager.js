@@ -41,7 +41,7 @@ Manager.prototype.onrequest = function (nlp, action) {
       }
     }
     skill.on('exit', this.next.bind(this, skill))
-    this.emit('updateStack', this.updateStack())
+    // this.emit('updateStack', this.updateStack())
     skill.emit('start')
   }
 }
@@ -86,9 +86,17 @@ Manager.prototype.next = function (skill) {
 Manager.prototype.pause = function () {
   this.isAppActive = false
   var cur = this.getCurrentSkill()
-  if (cur !== false) {
+  if (!cur) {
+    return
+  }
+  if (cur.form === 'scene') {
     // Skill.emit('pause', isAppPause)
     cur.emit('pause', true)
+  }
+  // clear the form is not a scene type of skill
+  if (cur.form !== 'scene') {
+    this.skills.pop()
+    cur.emit('exit')
   }
 }
 
