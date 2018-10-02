@@ -1,8 +1,23 @@
 #include "TtsNative.h"
 
-void TtsNative::SendEvent(void* self, TtsResultType event, int id, int code) {
+void TtsNative::SendEvent(void* self, TtsResultType type, int id, int code) {
   TtsNative* native = (TtsNative*)self;
-  iotjs_tts_t* ttswrap = native->ttswrap;
+  uv_async_t* async_handle = new uv_async_t;
+  iotjs_tts_event_t* event = new iotjs_tts_event_t;
+
+  event->ttswrap = native->ttswrap;
+  event->type = type;
+  event->code = code;
+  event->id = id;
+  async_handle->data = (void*)event;
+
+  uv_async_init(uv_default_loop(), async_handle, TtsNative::OnEvent);
+  uv_async_send(async_handle);
+}
+
+void TtsNative::OnEvent(uv_async_t* handle) {
+  iotjs_tts_event_t* event = (iotjs_tts_event_t*)handle->data;
+  iotjs_tts_t* ttswrap = event->ttswrap;
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, ttswrap);
 
   jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
@@ -10,20 +25,26 @@ void TtsNative::SendEvent(void* self, TtsResultType event, int id, int code) {
   if (!jerry_value_is_function(onevent)) {
     fprintf(stderr, "no onevent function is registered\n");
     JS_CREATE_ERROR(COMMON, "no onevent function is registered");
-    return;
+  } else {
+    uint32_t jargc = 3;
+    jerry_value_t jargv[jargc] = {
+      jerry_create_number((double)event->type),
+      jerry_create_number((double)event->id),
+      jerry_create_number((double)event->code),
+    };
+    jerry_call_function(onevent, jerry_create_undefined(), jargv, jargc);
+    for (int i = 0; i < jargc; i++) {
+      jerry_release_value(jargv[i]);
+    }
+    jerry_release_value(onevent);
   }
 
-  uint32_t jargc = 3;
-  jerry_value_t jargv[jargc] = {
-    jerry_create_number((double)event),
-    jerry_create_number((double)id),
-    jerry_create_number((double)code),
-  };
-  jerry_call_function(onevent, jerry_create_undefined(), jargv, jargc);
-  for (int i = 0; i < jargc; i++) {
-    jerry_release_value(jargv[i]);
-  }
-  jerry_release_value(onevent);
+  delete event;
+  uv_close((uv_handle_t*)handle, TtsNative::AfterEvent);
+}
+
+void TtsNative::AfterEvent(uv_handle_t* handle) {
+  delete handle;
 }
 
 static JNativeInfoType this_module_native_info = {

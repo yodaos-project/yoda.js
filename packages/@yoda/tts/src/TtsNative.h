@@ -24,6 +24,13 @@ typedef struct {
   uv_async_t close_handle;
 } IOTJS_VALIDATED_STRUCT(iotjs_tts_t);
 
+typedef struct {
+  iotjs_tts_t* ttswrap;
+  TtsResultType type;
+  int code;
+  int id;
+} iotjs_tts_event_t;
+
 /**
  * @class TtsNative
  * @extends TtsService
@@ -38,7 +45,9 @@ class TtsNative : public TtsService {
   ~TtsNative(){};
 
  public:
-  static void SendEvent(void* self, TtsResultType event, int id, int code);
+  static void SendEvent(void* self, TtsResultType type, int id, int code);
+  static void OnEvent(uv_async_t* handle);
+  static void AfterEvent(uv_handle_t* handle);
 
  protected:
   iotjs_tts_t* ttswrap;
