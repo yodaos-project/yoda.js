@@ -15,5 +15,9 @@
   "amsexport": {
     "objectPath": "/rokid/openvoice",
     "interface": "rokid.openvoice.AmsExport"
+  },
+  "yodadebug": {
+    "objectPath": "/rokid/yoda/debug",
+    "interface": "rokid.yoda.Debug"
   }
 }
