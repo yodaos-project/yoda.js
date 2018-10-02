@@ -55,10 +55,10 @@ module.exports = function (app) {
   // phone app need get scan results of device, show list in phone app
   wifi.scan()
 
-  app.on('destroyed', function () {
+  app.on('destroy', function () {
     intoSleep()
     bluetooth.disconnect()
-    logger.log('destroyed')
+    logger.log('network app destroy')
   })
 
   app.on('url', url => {
@@ -87,7 +87,8 @@ module.exports = function (app) {
           }
         } else if (code === '201') {
           // bind success, exit app
-          app.exit()
+          // after 1 second, because need some time for sendWifiStatus
+          setTimeout(intoSleep, 1000)
         }
         break
       case '/setup':
@@ -240,12 +241,12 @@ module.exports = function (app) {
       logger.log(`start connect to wifi with SSID: ${data.S}`)
       property.set('app.network.masterId', data.U)
       app.playSound('system://wifi/prepare_connect_wifi.ogg')
-      getWIFIState(cb)
       connectTimeout = setTimeout(() => {
         logger.log('connect to wifi timeout')
         clearTimeout(pooling)
         cb(new Error('timeout'), false)
       }, 20000)
+      getWIFIState(cb)
     } else {
       cb(new Error('invalid ssid/password: ' + data.S + '/' + data.P), false)
     }

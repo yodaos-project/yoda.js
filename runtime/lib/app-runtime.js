@@ -274,6 +274,7 @@ AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (dat
     return
   }
   if (wifi.getWifiState() !== wifi.WIFI_CONNECTED) {
+    wifi.enableScanPassively()
     return this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi/network_disconnected.ogg'])
   }
   return this.lightMethod('setDegree', ['', '' + (data.sl || 0)])
