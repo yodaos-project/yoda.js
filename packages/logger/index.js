@@ -37,9 +37,7 @@ function createLoggerFunction (level) {
     if (line.length >= 1000) {
       line = line.slice(0, 1000) + '...'
     }
-    console.log(line)
-    // FIXME(Yorkie): uncomment when the NAPI thread-safe bug is fixed.
-    // native.print(level, this.name, line)
+    native.print(level, this.name, line)
   }
 }
 
