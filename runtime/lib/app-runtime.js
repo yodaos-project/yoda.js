@@ -423,12 +423,22 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
     return this.openUrl('yoda-skill://network/setup', { preemptive: false })
   }
 
-  if (this.life.getCurrentAppId()) {
-    /** exit all app if there is apps actively running */
-    return this.destroyAll({ force: false })
-  }
+  var currentAppId = this.life.getCurrentAppId()
+  /**
+   * Stop apps and reset services whenever possible
+   */
+  var future = Promise.all([
+    this.life.deactivateAppsInStack(),
+    this.resetServices()
+  ])
 
-  return this.setPickup(true)
+  if (currentAppId) {
+    /**
+     * if there is any app actively running, do not pick up.
+     */
+    return future
+  }
+  return future.then(() => this.setPickup(true))
 }
 
 /**
