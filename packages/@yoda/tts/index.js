@@ -137,7 +137,7 @@ TtsProxy.prototype.onevent = function (name, id, errno) {
       req.onend(evt, errno)
       delete this._requests[id]
     }
-    this.emit(evt, id, errno)
+    this.emit(evt, req.id, errno)
     req.returns()
   }
 }
