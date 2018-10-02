@@ -1,0 +1,35 @@
+{
+  "name": "@yoda/timer",
+  "version": "1.0.0",
+  "description": "Timer for Rokid",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "metadata": {
+    "extapp": true,
+    "skills": [
+      "RFCBA81EECAC4E11BA0EBC1AEC397A93"
+    ],
+    "permission": [
+      "ACCESS_NETWORK_STATE",
+      "ACCESS_TTS",
+      "ACCESS_MULTIMEDIA",
+      "ACCESS_SOUND",
+      "INTERRUPT"
+    ],
+    "hosts": [
+      {
+        "name": "timer",
+        "skillId": "RFCBA81EECAC4E11BA0EBC1AEC397A93"
+      }
+    ]
+  },
+  "keywords": [
+    "RKTimer",
+    "rokid",
+    "skill"
+  ],
+  "author": "medea",
+  "license": "MIT"
+}
