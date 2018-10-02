@@ -92,14 +92,15 @@ function reConnect (CONFIG) {
     _CONFIG = CONFIG
 
     _TTS.on('start', function (id, errno) {
-      logger.log('ttsd start', id)
+      logger.log('ttsd start', id, service.lastReqId, ignoreTtsEvent)
+      AudioManager.setPlayingState(audioModuleName, true)
+      lightd.invoke('play', ['@yoda/ttsd', '/opt/light/setSpeaking.js', '{}'])
+
       if (ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts start event with id: ${id}`)
         ignoreTtsEvent = false
         return
       }
-      AudioManager.setPlayingState(audioModuleName, true)
-      lightd.invoke('play', ['@yoda/ttsd', '/opt/light/setSpeaking.js', '{}'])
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
@@ -115,12 +116,14 @@ function reConnect (CONFIG) {
         service.lastAppId = ''
         service.lastText = ''
       }
+      AudioManager.setPlayingState(audioModuleName, false)
+      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
+
       if (ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts end event with id: ${id}`)
         return
       }
-      AudioManager.setPlayingState(audioModuleName, false)
-      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
+      ignoreTtsEvent = false
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
@@ -131,12 +134,13 @@ function reConnect (CONFIG) {
     })
     _TTS.on('cancel', function (id, errno) {
       logger.log('ttsd cancel', id)
+      AudioManager.setPlayingState(audioModuleName, false)
+      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
+
       if (ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts cancel event with id: ${id}`)
         return
       }
-      AudioManager.setPlayingState(audioModuleName, false)
-      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
@@ -147,12 +151,14 @@ function reConnect (CONFIG) {
     })
     _TTS.on('error', function (id, errno) {
       logger.error('ttsd error', id, errno)
+      AudioManager.setPlayingState(audioModuleName, false)
+      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
+
       if (ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts error event with id: ${id}`)
         return
       }
-      AudioManager.setPlayingState(audioModuleName, false)
-      lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
+      ignoreTtsEvent = false
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
@@ -249,6 +255,9 @@ dbusApis.addMethod('pause', {
   out: ['b']
 }, function (appId, cb) {
   logger.log(`tts pause by OS with appId: ${appId}`)
+  if (!appId) {
+    return cb(null, true)
+  }
   ignoreTtsEvent = true
   service.pause(appId)
   cb(null, true)
@@ -258,6 +267,8 @@ dbusApis.addMethod('resume', {
   in: ['s'],
   out: ['b']
 }, function (appId, cb) {
+  logger.info('tts resume to true')
+  ignoreTtsEvent = false
   service.resume(appId)
   cb(null, true)
 })

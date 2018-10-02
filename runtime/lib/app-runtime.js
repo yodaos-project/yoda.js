@@ -207,8 +207,9 @@ AppRuntime.prototype.setAwaken = function setAwaken () {
         if (_.get(val, '0', false)) {
           this.__pausedMediaAppIdOnAwaken = currAppId
         }
-      })
-  ])).then(() => this.lightMethod('setAwake', ['']))
+      }),
+    this.lightMethod('setAwake', [''])
+  ]))
 }
 
 /**

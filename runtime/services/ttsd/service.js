@@ -53,8 +53,8 @@ Tts.prototype.stop = function (appId) {
   }
   if (appId === this.lastAppId) {
     this.lastAppId = ''
-    this.lastReqId = -1
     this.lastText = ''
+    this.lastReqId = -1
   }
 }
 
@@ -78,7 +78,6 @@ Tts.prototype.resume = function (appId) {
     logger.log(`tts resume by OS with appId: ${appId}`)
     try {
       req = this.options.tts.speak(this.lastText)
-      req.id = this.lastReqId
       this.handle[appId] = req
       this.lastText = ''
       this.lastReqId = -1
