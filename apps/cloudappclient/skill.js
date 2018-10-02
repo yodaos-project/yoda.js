@@ -47,10 +47,11 @@ Skill.prototype.handleEvent = function () {
     // should not resume when user manually pause or stop media
     var resume = true
     this.directives.forEach((value) => {
+      if (value.type === 'media' && ['stop', 'pause'].indexOf(value.action) > -1) {
+        this.isSkillActive = false
+      }
       if (value.type === 'media' && ['play', 'resume'].indexOf(value.action) > -1) {
         this.isSkillActive = true
-      } else {
-        this.isSkillActive = false
       }
       if (value.type === 'media' && ['stop', 'pause', 'resume'].indexOf(value.action) > -1) {
         resume = false
