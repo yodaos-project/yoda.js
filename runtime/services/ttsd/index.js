@@ -110,6 +110,11 @@ function reConnect (CONFIG) {
     })
     _TTS.on('end', function (id, errno) {
       logger.log('ttsd end', id)
+      if (service.lastReqId === id) {
+        service.lastReqId = -1
+        service.lastAppId = ''
+        service.lastText = ''
+      }
       if (ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts end event with id: ${id}`)
         return
