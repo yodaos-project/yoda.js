@@ -145,7 +145,7 @@ dbusApis.addMethod('resume', {
 
 dbusApis.addMethod('getPosition', {
   in: ['s'],
-  out: ['n']
+  out: ['d']
 }, function (appId, cb) {
   if (appId) {
     var pos = service.getPosition(appId)
