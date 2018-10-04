@@ -104,10 +104,10 @@ AppRuntime.prototype.init = function init (paths) {
     // initializing play tts status
     property.set('sys.firstboot.init', '1', 'persist')
     future = future.then(() => {
-      this.lightMethod('play', ['@system', '/opt/light/setSpeaking.js', '{}'])
+      this.lightMethod('play', ['@yoda', '/opt/light/setSpeaking.js', '{}'])
       return this.lightMethod('appSound', ['@system', '/opt/media/firstboot.ogg'])
     }).then(() => {
-      this.lightMethod('stop', ['@system', '/opt/light/setSpeaking.js'])
+      this.lightMethod('stop', ['@yoda', '/opt/light/setSpeaking.js'])
     })
   }
 
@@ -1028,7 +1028,7 @@ AppRuntime.prototype.onLoggedIn = function () {
 
     if (this.shouldWelcome) {
       logger.info('announcing welcome')
-      this.lightMethod('setWelcome', [])
+      this.lightMethod('setWelcome', ['@yoda'])
     }
     this.shouldWelcome = false
 
