@@ -79,8 +79,7 @@ Tts.prototype.resume = function (appId) {
     try {
       req = this.options.tts.speak(this.lastText)
       this.handle[appId] = req
-      this.lastText = ''
-      this.lastReqId = -1
+      // support multiple resume, not reset lastText and lastReqId
       this.lastAppId = appId
     } catch (error) {
       logger.error('tts respeak error', error)
