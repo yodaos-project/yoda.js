@@ -39,6 +39,11 @@ var MethodProxies = {
     var id = invocationId
     invocationId += 1
 
+    /**
+     * create error right on invocation
+     * to retain current invocation stack on callback errors.
+     */
+    var err = new Error('Pending error.')
     var args = Array.prototype.slice.call(arguments, 0)
     return new Promise((resolve, reject) => {
       eventBus.once(`promise:${id}`, function onCallback (msg) {
@@ -46,9 +51,10 @@ var MethodProxies = {
           return resolve(msg.result)
         }
         if (msg.action === 'reject') {
-          return reject(new Error(msg.error))
+          err.message = msg.error
+          return reject(err)
         }
-        var err = new Error('Unknown response message type from VuiDaemon.')
+        err.message = 'Unknown response message type from VuiDaemon.'
         err.msg = msg
         reject(err)
       })
