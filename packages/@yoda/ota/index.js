@@ -290,20 +290,17 @@ function checkDiskAvailability (imageSize, destPath, callback) {
  */
 function downloadImage (info, callback) {
   var dest = getImagePath(info)
-  var totalSize
   compose([
-    cb => otaNetwork.fetchImageSize(info.imageUrl, cb),
-    (cb, imageSize) => {
-      totalSize = imageSize
-      checkDiskAvailability(imageSize, dest, cb)
+    cb => {
+      checkDiskAvailability(info.totalSize, dest, cb)
     },
     cb => {
       info.status = 'downloading'
-      info.totalSize = totalSize
       writeInfo(info, cb)
     },
     cb => otaNetwork.doDownloadImage(info.imageUrl, dest, { noCheckCertificate: true }, cb),
     cb => {
+      logger.info('ota image successfully downloaded, calculating hash')
       info.status = 'downloaded'
       writeInfo(info, cb)
     },
@@ -394,6 +391,14 @@ function runInCurrentContext (callback) {
         }
         writeInfo(info, cb)
       },
+      /**
+       * fetch image size
+       */
+      cb => otaNetwork.fetchImageSize(info.imageUrl, cb),
+      (cb, size) => {
+        info.totalSize = size
+        writeInfo(info, cb)
+      },
       cb => {
         destPath = getImagePath(info)
         info.imagePath = destPath
@@ -402,20 +407,28 @@ function runInCurrentContext (callback) {
           logger.info('check if target path exists', stat != null)
           if (err) {
             if (err.code === 'ENOENT') {
-              return cb(null, false)
+              return cb(null, null)
             }
             return cb(err)
           }
-          return cb(null, stat.isFile())
+          return cb(null, stat)
         }) /** fs.stat */
       },
-      (cb, exists) => {
-        logger.info('if target download path exists', exists === true)
+      (cb, stat) => {
         /** if target download path does not exist, forward to download directly */
-        if (!exists) {
+        if (stat == null || !stat.isFile()) {
+          logger.info('target download path doesn\'t exist, start new download')
           return downloadImage(info, cb)
         }
-        /** else calculate hash of the file */
+        /** downloaded file size less than expected size, try to continue downloads */
+        if (stat.size < info.totalSize) {
+          logger.info('target download path exists, continue downloads')
+          return downloadImage(info, cb)
+        }
+        /**
+         * downloaded file size equals expected size,
+         * calculate hash of the file.
+         */
         compose([
           ncb => calculateFileHash(destPath, ncb),
           (ncb, hash) => {
