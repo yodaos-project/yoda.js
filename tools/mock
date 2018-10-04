@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -e
+
+help="
+  --asr <text>
+  --key <event-json>
+
+Example:
+  $ ./tools/mock '你吼啊'
+  $ ./tools/mock --asr '你吼啊'
+  $ ./tools/mock --key '{ \"event\": \"keydown\", \"keyCode\": 113 }'
+"
+
+type='asr'
+arg=''
+verbose='NO'
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --asr)
+      type='asr'
+      ;;
+    --key)
+      type='key'
+      ;;
+    --verbose)
+      verbose='YES'
+      ;;
+    --help)
+      printf "$help"
+      exit
+      ;;
+    -h)
+      printf "$help"
+      exit
+      ;;
+    -*)
+      echo "Illegal option $1"
+      ;;
+    *)
+      arg="$1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+adb shell "mount -o remount,rw /"
+adb shell mkdir -p /data/workspace/helper/ >/dev/null
+adb push ./tools/helper/mock.js /data/workspace/helper/ >/dev/null
+adb shell "iotjs /data/workspace/helper/mock.js '$type' '$verbose' '$arg'"
