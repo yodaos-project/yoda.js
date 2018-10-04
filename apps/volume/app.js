@@ -5,7 +5,7 @@ var _ = require('@yoda/util')._
 
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
-  var STRING_OUT_OF_RANGE_MAX = '已经是最⼤的⾳量了'
+  var STRING_OUT_OF_RANGE_MAX = '已经是最大的音量了'
   var STRING_SHOW_VOLUME = '当前音量为百分之'
   var STRING_SHOW_MUTED = '设备已静音，已帮你调回到百分之'
 
