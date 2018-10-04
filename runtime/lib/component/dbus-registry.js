@@ -408,9 +408,23 @@ DBus.prototype.yodadebug = {
     fn: function mockAsr (text, cb) {
       this.runtime.mockAsr(text)
         .then(
-          res => cb(null, JSON.stringify({ ok: true, nlp: res[0], action: res[1] })),
+          res => cb(null, JSON.stringify({ ok: true, result: { nlp: res[0], action: res[1] } })),
           err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
         )
+    }
+  },
+  mockKeyboard: {
+    in: ['s'],
+    out: ['s'],
+    fn: function fn (cmdStr, cb) {
+      var cmd
+      try {
+        cmd = JSON.parse(cmdStr)
+      } catch (err) {
+        return cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
+      }
+      this.runtime.keyboard.input.emit(cmd.event, { keyCode: cmd.keyCode, keyTime: cmd.keyTime })
+      return cb(null, JSON.stringify({ ok: true, result: null }))
     }
   },
   doProfile: {
