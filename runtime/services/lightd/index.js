@@ -135,14 +135,6 @@ dbusApis.addMethod('appSound', {
   })
 })
 
-dbusApis.addMethod('setWelcome', {
-  in: [],
-  out: []
-}, function (cb) {
-  service.setWelcome()
-  cb(null)
-})
-
 dbusApis.addMethod('setSpeaking', {
   in: [],
   out: []

@@ -432,14 +432,6 @@ Light.prototype.setVolume = function (volume) {
   this.prev.name = 'setVolume'
 }
 
-Light.prototype.setWelcome = function () {
-  logger.log('call stopPrev setwelcome')
-  this.stopPrev()
-  var hook = require(`${LIGHT_SOURCE}setWelcome.js`)
-  var context = this.getContext()
-  this.prev = hook(context, {}, function noop () {})
-}
-
 Light.prototype.appSound = function (appId, name, cb) {
   if (this.playerHandle[appId]) {
     try {
