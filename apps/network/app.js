@@ -146,7 +146,7 @@ module.exports = function (app) {
     stream.on('handshaked', () => {
       logger.log('ble device connected')
       bleStatus = BLE_STATUS_CONNECTED
-      app.playSound('system://wifi/ble_connected.ogg')
+      app.playSound('system://ble_connected.ogg')
       timerAndSleep()
     })
 
@@ -240,7 +240,7 @@ module.exports = function (app) {
       })
       logger.log(`start connect to wifi with SSID: ${data.S}`)
       property.set('app.network.masterId', data.U)
-      app.playSound('system://wifi/prepare_connect_wifi.ogg')
+      app.playSound('system://prepare_connect_wifi.ogg')
       connectTimeout = setTimeout(() => {
         logger.log('connect to wifi timeout')
         clearTimeout(pooling)
