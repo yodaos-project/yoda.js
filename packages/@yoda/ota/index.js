@@ -347,13 +347,13 @@ function runInCurrentContext (callback) {
   compose([
     /** make work dir */
     cb => yodaUtil.fs.mkdirp(upgradeDir, cb),
-    cb => lockfile.lock(procLock, { stale: /** 30m */ 30 * 60 * 1000 }, cb)
-  ], err => {
-    if (err) {
-      return callback(err)
-    }
+    cb => lockfile.lock(procLock, { stale: /** 30m */ 30 * 60 * 1000 }, cb),
     /** actual procedure, shall skip if prepare failed */
-    doRun(callback)
+    cb => doRun(cb)
+  ], (err, info) => {
+    lockfile.unlock(procLock, () => {
+      return callback(err, info)
+    })
   })
 
   function doRun (callback) {
