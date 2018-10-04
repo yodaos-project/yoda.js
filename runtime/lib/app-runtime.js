@@ -372,7 +372,8 @@ AppRuntime.prototype.handleAsrEnd = function handleAsrEnd () {
        */
       return
     }
-    return this.lightMethod('setLoading', [''])
+    return this.lightMethod('play',
+      ['@yoda', '/opt/light/loading.js', '{}'])
   })
 }
 
@@ -571,6 +572,7 @@ AppRuntime.prototype.stopMonologue = function (appId) {
 AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   var preemptive = _.get(options, 'preemptive', true)
   var carrierId = _.get(options, 'carrierId')
+  this.lightMethod('stop', ['@yoda', '/opt/light/loading.js'])
 
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
