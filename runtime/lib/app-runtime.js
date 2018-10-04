@@ -592,6 +592,12 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   }
 
   return this.life.createApp(appId)
+    .catch(err => {
+      logger.error(`create app ${appId} failed`, err.stack)
+      /** force quit app on create error */
+      return this.life.destroyAppById(appId, { force: true })
+        .then(() => { /** rethrow error to break following procedures */throw err })
+    })
     .then(() => {
       if (!preemptive) {
         logger.info(`app is not preemptive, skip activating app ${appId}`)
@@ -603,9 +609,8 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
       return this.life.activateAppById(appId, form, carrierId)
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
-    .catch((error) => {
-      logger.error(`create app error with appId: ${appId}`, error)
-      return this.life.destroyAppById(appId, { force: true })
+    .catch(err => {
+      logger.error(`Unexpected error on app ${appId} handling voice command`, err.stack)
     })
 }
 
@@ -638,6 +643,12 @@ AppRuntime.prototype.openUrl = function (url, options) {
   var appId = this.loader.getAppIdBySkillId(skillId)
 
   return this.life.createApp(appId)
+    /** force quit app on create error */
+    .catch(err => {
+      logger.error(`create app ${appId} failed`, err.stack)
+      return this.life.destroyAppById(appId, { force: true })
+        .then(() => { /** rethrow error to break following procedures */throw err })
+    })
     .then(() => {
       if (!preemptive) {
         logger.info(`app is not preemptive, skip activating app ${appId}`)
@@ -650,9 +661,9 @@ AppRuntime.prototype.openUrl = function (url, options) {
     })
     .then(() => this.life.onLifeCycle(appId, 'url', [ urlObj ]))
     .then(() => true)
-    .catch((error) => {
-      logger.error(`open url(${url}) error with appId: ${appId}`, error)
-      return this.life.destroyAppById(appId, { force: true })
+    .catch(err => {
+      logger.error(`open url(${url}) error with appId: ${appId}`, err.stack)
+      return false
     })
 }
 
