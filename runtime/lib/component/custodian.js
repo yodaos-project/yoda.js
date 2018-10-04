@@ -12,6 +12,12 @@ function Custodian (runtime) {
    */
   this._networkConnected = undefined
   /**
+   * this._checkingNetwork sets the current network is checking,
+   * it should be checked at onNetworkConnect, when it doesn't get
+   * down.
+   */
+  this._checkingNetwork = false
+  /**
    * this._loggedIn could be used to determine if current session
    * is once connected to internet.
    */
@@ -23,13 +29,24 @@ function Custodian (runtime) {
  * @private
  */
 Custodian.prototype.onNetworkConnect = function onNetworkConnect () {
-  if (this._networkConnected) {
+  if (this._networkConnected || this._checkingNetwork) {
     return
   }
   this._networkConnected = true
-  logger.info('on network connect')
+  logger.info('on network connect and checking internet connection.')
 
-  this.runtime.reconnect()
+  // start checking the internet connection
+  this._checkingNetwork = true
+  wifi.checkNetwork(10 * 1000, (err, connected) => {
+    this._checkingNetwork = false
+    if (err || !connected) {
+      logger.error('check: failed to get connected on the current wifi.')
+      this.onNetworkDisconnect()
+      return
+    }
+    logger.info('check: dns is working and start login / bind.')
+    this.runtime.reconnect()
+  })
 }
 
 /**

@@ -6,6 +6,7 @@
  */
 
 var dns = require('dns')
+var os = require('os')
 var native = require('./wifi.node')
 var keyMethods = {
   'WPA2PSK': 0,
@@ -90,33 +91,44 @@ module.exports = {
     if (typeof callback !== 'function') {
       throw new TypeError('callback must be a function')
     }
+    var interval = 1000
     var hasHistory = native.getNumOfHistory() > 0
     if (!hasHistory) {
       return callback(null, false)
     }
+
+    var self = this
+    var state = 'wifi'
+    var internetChecker = null
     var checkTimer = setTimeout(() => {
+      clearTimeout(internetChecker)
       callback(null, false)
     }, timeout || 30 * 1000)
 
-    var state = 'wifi'
-    var checkWifiStatus = setInterval(() => {
+    ;(function checkInternet () {
       if (state === 'wifi') {
         var s = native.getWifiState()
-        if (s === this.WIFI_CONNECTED) {
+        if (s === self.WIFI_CONNECTED) {
           state = 'netserver'
         }
+        internetChecker = setTimeout(checkInternet, interval)
       } else if (state === 'netserver') {
-        var ip = native.getLocalAddress()
-        if (ip) {
-          dns.lookup('www.rokid.com', (err) => {
-            state = null
-            clearTimeout(checkTimer)
-            clearInterval(checkWifiStatus)
-            callback(null, !err)
-          })
+        var ip = os.networkInterfaces()['wlan0']
+        if (!ip || (ip[0] && ip[0].address === '127.0.0.1')) {
+          internetChecker = setTimeout(checkInternet, interval)
+          return
         }
+        dns.lookup('www.rokid.com', (err, addr) => {
+          state = null
+          clearTimeout(checkTimer)
+          if (err || !addr) {
+            callback(null, false)
+          } else {
+            callback(null, true)
+          }
+        })
       }
-    }, 200)
+    })()
   },
   /**
    * Get current wifi state.
