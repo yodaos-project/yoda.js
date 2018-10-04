@@ -27,6 +27,7 @@ var DBusRegistry = require('./component/dbus-registry')
 var Custodian = require('./component/custodian')
 var AppLoader = require('./component/app-loader')
 var Flora = require('./component/flora')
+var Turen = require('./component/turen')
 var Keyboard = require('./component/keyboard')
 var Lifetime = require('./component/lifetime')
 var Wormhole = require('./component/wormhole')
@@ -56,7 +57,6 @@ function AppRuntime () {
     active: ''
   }
   this.prevVolume = -1
-  this.micMuted = false // microphone was reset on runtime start up
   this.cloudApi = CloudApi // support cloud api. etc.. login
   this.shouldWelcome = true
   this.forceUpdateAvailable = false
@@ -64,6 +64,7 @@ function AppRuntime () {
   this.dbusRegistry = new DBusRegistry(this)
   this.custodian = new Custodian(this)
   this.flora = new Flora(this)
+  this.turen = new Turen(this)
   // manager app's permission
   this.permission = new Permission(this)
   // handle keyboard/button events
@@ -87,7 +88,9 @@ AppRuntime.prototype.init = function init (paths) {
     return Promise.resolve()
   }
   this.flora.init()
-  this.flora.turenMute(false)
+  /** set turen to not muted */
+  this.turen.toggleMute(false)
+
   this.dbusRegistry.init()
   this.keyboard.init()
   this.life.on('stack-reset', () => {
@@ -172,259 +175,6 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
 }
 
 /**
- * Set device awaken state and appearance.
- */
-AppRuntime.prototype.setAwaken = function setAwaken () {
-  var promises = []
-  if (this.__awaken) {
-    promises.push(
-      this.resetAwaken({ recover: false })
-    )
-  }
-  this.__awaken = true
-
-  var currAppId = this.life.getCurrentAppId()
-
-  /**
-   * pause lifetime to prevent incoming app preemption;
-   * doesn't care when pauseLifetime ends.
-   */
-  this.life.pauseLifetime()
-
-  logger.info('awaking, pausing tts/media of app', currAppId)
-
-  /**
-   * no need to determine if tts is previously been paused.
-   */
-  this.__pausedTtsAppIdOnAwaken = currAppId
-  /**
-   * if media has been paused already, shall not be resumed on end of awaken
-   */
-  this.__pausedMediaAppIdOnAwaken = null
-  return Promise.all(promises.concat([
-    this.ttsMethod('pause', [ currAppId ]),
-    this.multimediaMethod('pause', [ currAppId ])
-      .then(val => {
-        if (_.get(val, '0', false)) {
-          this.__pausedMediaAppIdOnAwaken = currAppId
-        }
-      }),
-    this.lightMethod('setAwake', [''])
-  ]))
-}
-
-/**
- * Set device end of awaken and remove awaken effects.
- *
- * @private
- * @param {object} [options] -
- * @param {boolean} [options.recover] - if recover previous paused app
- */
-AppRuntime.prototype.resetAwaken = function resetAwaken (options) {
-  var recover = _.get(options, 'recover', true)
-  if (!this.__awaken) {
-    logger.warn('runtime was not awaken, skipping reset awaken')
-    return Promise.resolve()
-  }
-  this.__awaken = false
-  logger.info('reset awaken, recovering?', recover)
-
-  var promises = [
-    this.lightMethod('stop', ['', '/opt/light/awake.js']),
-    this.life.resumeLifetime({ recover: recover })
-  ]
-
-  var pausedTtsAppIdOnAwaken = this.__pausedTtsAppIdOnAwaken
-  this.__pausedTtsAppIdOnAwaken = null
-
-  if (!recover) {
-    if (pausedTtsAppIdOnAwaken) {
-      /**
-       * tts no need to be kept if recovering is discarded, stop it.
-       */
-      logger.info('stop previously awaken paused tts of app', pausedTtsAppIdOnAwaken)
-      promises.push(
-        this.ttsMethod('stop', [ pausedTtsAppIdOnAwaken ])
-      )
-    }
-    return Promise.all(promises)
-  }
-
-  var currentAppId = this.life.getCurrentAppId()
-  if (pausedTtsAppIdOnAwaken && pausedTtsAppIdOnAwaken === currentAppId) {
-    logger.info('resume previously awaken paused tts of app', pausedTtsAppIdOnAwaken)
-    promises.push(
-      this.ttsMethod('resume', [ pausedTtsAppIdOnAwaken ])
-    )
-  } else {
-    logger.info('skip resuming paused awaken tts of app', pausedTtsAppIdOnAwaken, 'current app', currentAppId)
-  }
-
-  var pausedMediaAppIdOnAwaken = this.__pausedMediaAppIdOnAwaken
-  this.__pausedMediaAppIdOnAwaken = null
-  if (pausedMediaAppIdOnAwaken && pausedMediaAppIdOnAwaken === currentAppId) {
-    logger.info('resume previously awaken paused media of app', pausedMediaAppIdOnAwaken)
-    promises.push(
-      this.multimediaMethod('resume', [ pausedMediaAppIdOnAwaken ])
-    )
-  } else {
-    logger.info('skip resuming paused awaken media of app', pausedTtsAppIdOnAwaken, 'current app', currentAppId)
-  }
-
-  return Promise.all(promises)
-}
-
-/**
- * Handle the "voice coming" event.
- * @private
- */
-AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
-  if (!this.custodian.isPrepared()) {
-    // Do noting when network is not ready
-    logger.warn('Network not connected, skip incoming voice')
-    return
-  }
-
-  var future = this.setAwaken()
-  this.fakeVoiceComingTimer = setTimeout(() => {
-    logger.warn('detected a fake voice coming, resetting awaken')
-    this.resetAwaken()
-  }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
-
-  if (this.forceUpdateAvailable) {
-    var deferred = () => {
-      /**
-       * Skip upcoming voice, announce available force update and start ota.
-       */
-      logger.info('pending force update, delegates activity to @ota.')
-      this.forceUpdateAvailable = false
-      return ota.getInfoOfPendingUpgrade((err, info) => {
-        if (err || info == null) {
-          logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
-          return
-        }
-        logger.info('got pending update info', info)
-        Promise.all([
-          this.setMicMute(true, { silent: true }),
-          this.setPickup(false)
-        ]).then(() =>
-          this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
-        ).then(() => this.startMonologue('@yoda/ota'))
-      })
-    }
-    future.then(deferred, err => {
-      logger.error('unexpected error on set awaken', err.stack)
-      deferred()
-    })
-  }
-
-  /**
-   * reset picking up discarding state to enable next nlp process
-   */
-  this.__pickingUpDiscardNext = false
-
-  return future
-}
-
-/**
- * Handle the "voice local awake" event.
- * @private
- */
-AppRuntime.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
-  if (this.life.getCurrentAppId() === '@yoda/network') {
-    this.openUrl('yoda-skill://network/renew')
-    return
-  }
-  if (wifi.getNumOfHistory() === 0) {
-    this.openUrl('yoda-skill://network/setup', {
-      preemptive: true
-    })
-    return
-  }
-  if (wifi.getWifiState() !== wifi.WIFI_CONNECTED) {
-    wifi.enableScanPassively()
-    return this.lightMethod('appSound', ['@Yoda', '/opt/media/wifi_is_connecting.ogg'])
-  }
-  return this.lightMethod('setDegree', ['', '' + (data.sl || 0)])
-}
-
-/**
- * Handle the "asr pending" event.
- * @private
- */
-AppRuntime.prototype.handleAsrPending = function handleAsrPending () {
-  this.__asrState = 'pending'
-  clearTimeout(this.fakeVoiceComingTimer)
-}
-
-/**
- * Handle the "asr end" event.
- * @private
- */
-AppRuntime.prototype.handleAsrEnd = function handleAsrEnd () {
-  this.__asrState = 'end'
-  this.resetAwaken({
-    recover: /** no recovery shall be made on nlp coming */ false
-  }).then(() => {
-    if (this.__pickingUpDiscardNext) {
-      /**
-       * current session of picking up has been manually discarded,
-       * no loading state shall be presented.
-       */
-      return
-    }
-    return this.lightMethod('play',
-      ['@yoda', '/opt/light/loading.js', '{}'])
-  })
-}
-
-/**
- * Handle the "asr fake" event.
- * @private
- */
-AppRuntime.prototype.handleAsrFake = function handleAsrFake () {
-  this.__asrState = 'fake'
-  this.resetAwaken()
-}
-
-/**
- * Handle the "start voice" event.
- * @private
- */
-AppRuntime.prototype.handleStartVoice = function handleStartVoice () {
-  this.__pickingUp = true
-}
-
-/**
- * Handle the "end voice" event.
- * @private
- */
-AppRuntime.prototype.handleEndVoice = function handleEndVoice () {
-  this.__pickingUp = false
-  logger.info('on end of voice, asr:', this.__asrState)
-  if (this.__asrState === 'end') {
-    return
-  }
-  this.resetAwaken()
-}
-
-/**
- * Handle the "nlp" event.
- * @private
- */
-AppRuntime.prototype.handleNlpResult = function handleNlpResult (data) {
-  if (this.__pickingUpDiscardNext) {
-    /**
-     * current session of picking up has been manually discarded.
-     */
-    this.__pickingUpDiscardNext = false
-    logger.warn(`discarding nlp for pick up discarded, ASR(${_.get(data, 'nlp.asr')}).`)
-    return
-  }
-  this.onVoiceCommand(data.asr, data.nlp, data.action)
-}
-
-/**
  * Handle cloud events.
  * @private
  */
@@ -466,13 +216,39 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
     return future
   }
   return future.then(() => {
-    if (this.__pickingUp) {
+    if (this.turen.pickingUp) {
       /**
        * already picking up, discard current pick session.
        */
       return this.setPickup(false)
     }
     return this.setPickup(true, 6000, true)
+  })
+}
+
+/**
+ * Starts a force update on voice coming etc.
+ */
+AppRuntime.prototype.startForceUpdate = function startForceUpdate () {
+  /**
+   * Skip upcoming voice, announce available force update and start ota.
+   */
+  logger.info('pending force update, delegates activity to @ota.')
+  ota.getInfoOfPendingUpgrade((err, info) => {
+    if (err || info == null) {
+      logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
+      return
+    }
+    logger.info('got pending update info', info)
+    Promise.all([
+      /**
+       * prevent force update from being interrupted.
+       */
+      this.setMicMute(true, { silent: true }),
+      this.setPickup(false)
+    ]).then(() =>
+      this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
+    ).then(() => this.startMonologue('@yoda/ota'))
   })
 }
 
@@ -485,52 +261,6 @@ AppRuntime.prototype.resetNetwork = function resetNetwork () {
    */
   this.shouldWelcome = true
   return this.custodian.resetNetwork()
-}
-
-/**
- * 接收turen的speech事件
- * @param {string} name
- * @param {object} data
- * @private
- */
-AppRuntime.prototype.onTurenEvent = function (name, data) {
-  if (this.micMuted) {
-    logger.error('Mic muted, unexpected event from Turen:', name)
-    return
-  }
-  var handler = null
-  switch (name) {
-    case 'voice coming':
-      handler = this.handleVoiceComing
-      break
-    case 'voice local awake':
-      handler = this.handleVoiceLocalAwake
-      break
-    case 'asr pending':
-      handler = this.handleAsrPending
-      break
-    case 'asr end':
-      handler = this.handleAsrEnd
-      break
-    case 'asr fake':
-      handler = this.handleAsrFake
-      break
-    case 'start voice':
-      handler = this.handleStartVoice
-      break
-    case 'end voice':
-      handler = this.handleEndVoice
-      break
-    case 'nlp':
-      handler = this.handleNlpResult
-      break
-  }
-  if (typeof handler !== 'function') {
-    logger.info(`skip turen event "${name}" for no handler existing`)
-  } else {
-    logger.debug(`handling turen event "${name}"`)
-    handler.call(this, data)
-  }
 }
 
 /**
@@ -693,13 +423,11 @@ AppRuntime.prototype.setForegroundById = function setForegroundById (appId, opti
  */
 AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
   var silent = _.get(options, 'silent', false)
-  if (mute === this.micMuted) {
+  if (mute === this.turen.muted) {
     return Promise.resolve()
   }
   /** mute */
-  var muted = !this.micMuted
-  this.micMuted = muted
-  this.flora.turenMute(muted)
+  var muted = this.turen.toggleMute()
 
   if (silent) {
     return Promise.resolve()
@@ -712,12 +440,7 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
     future = this.openUrl('yoda-skill://volume/mic_unmute_effect', { preemptive: false })
   }
 
-  if (this.__asrState === 'pending' && muted) {
-    future = future.then(() => this.resetAwaken())
-  }
-
-  return future
-    .then(() => muted)
+  return future.then(() => muted)
 }
 
 /**
@@ -857,25 +580,18 @@ AppRuntime.prototype.appGC = function appGC (appId) {
  * @private
  */
 AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
-  if (this.__pickingUp === isPickup) {
+  if (this.turen.pickingUp === isPickup) {
     /** already at expected state */
-    logger.info('turen already at picking up?', this.__pickingUp)
+    logger.info('turen already at picking up?', this.turen.pickingUp)
     return Promise.resolve()
   }
 
   logger.info('set turen picking up', isPickup)
-  this.flora.turenPickup(isPickup)
+  this.turen.pickup(isPickup)
 
   if (isPickup) {
-    /**
-     * reset picking up discarding state to enable next nlp process
-     */
-    this.__pickingUpDiscardNext = false
     return this.lightMethod('setPickup', ['@yoda', '' + (duration || 6000), withAwaken])
   }
-
-  /** discard next coming nlp */
-  this.__pickingUpDiscardNext = true
   return this.lightMethod('stop', ['@yoda', ''])
 }
 

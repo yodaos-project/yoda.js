@@ -324,7 +324,7 @@ DBus.prototype.amsexport = {
     out: ['b'],
     fn: function SendIntentRequest (asr, nlp, action, cb) {
       console.log('sendintent', asr, nlp, action)
-      this.runtime.onTurenEvent('nlp', {
+      this.runtime.turen.handleEvent('nlp', {
         asr: asr,
         nlp: nlp,
         action: action
@@ -378,6 +378,28 @@ DBus.prototype.yodadebug = {
           })
         }
       }))
+    }
+  },
+  GetTurenState: {
+    in: [],
+    out: ['s'],
+    fn: function (cb) {
+      var ret = { ok: true, result: {} }
+      var keys = [
+        'awaken',
+        'asrState',
+        'pickingUp',
+        'pickingUpDiscardNext',
+        'pausedTtsAppIdOnAwaken',
+        'pausedMediaAppIdOnAwaken'
+      ]
+      keys.forEach(key => {
+        ret.result[key] = this.runtime.turen[key]
+        if (ret.result[key] === undefined) {
+          ret.result[key] = null
+        }
+      })
+      cb(null, JSON.stringify(ret))
     }
   },
   mockAsr: {
