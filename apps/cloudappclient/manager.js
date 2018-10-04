@@ -37,9 +37,9 @@ Manager.prototype.onrequest = function (nlp, action) {
         cur.emit('pause')
         this.skills.push(skill)
       } else {
-        cur.emit('destroy')
         this.skills.pop()
         this.skills.push(skill)
+        cur.emit('destroy')
       }
     }
     skill.on('exit', this.next.bind(this, skill))

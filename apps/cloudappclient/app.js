@@ -20,13 +20,21 @@ module.exports = activity => {
   var ttsClient = new TtsEventHandle(activity.tts)
   var mediaClient = new MediaEventHandle(activity.media)
 
+  // report app status for OS in nextTick
+  var taskTimerHandle = null
+
   sos.on('updateStack', (stack) => {
     logger.log('updateStack', stack)
     activity.syncCloudAppIdStack(stack)
   })
   sos.on('empty', () => {
     needResume = false
-    activity.setBackground()
+
+    clearTimeout(taskTimerHandle)
+    taskTimerHandle = setTimeout(() => {
+      logger.log('cloudAppClient was setBackground, because there is no skill to execute')
+      activity.setBackground()
+    }, 0)
   })
 
   directive.do('frontend', 'tts', function (dt, next) {
@@ -203,6 +211,7 @@ module.exports = activity => {
   activity.on('resume', function () {
     logger.log(this.appId + ' resumed')
     if (needResume) {
+      clearTimeout(taskTimerHandle)
       needResume = false
       sos.resume()
     }
@@ -215,6 +224,7 @@ module.exports = activity => {
       return
     }
     logger.log(`${this.appId} app request`)
+    clearTimeout(taskTimerHandle)
     sos.onrequest(nlp, action)
   })
 
