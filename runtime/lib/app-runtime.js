@@ -317,6 +317,11 @@ AppRuntime.prototype.handleVoiceComing = function handleVoiceComing (data) {
     })
   }
 
+  /**
+   * reset picking up discarding state to enable next nlp process
+   */
+  this.__pickingUpDiscardNext = false
+
   return future
 }
 
@@ -359,7 +364,16 @@ AppRuntime.prototype.handleAsrEnd = function handleAsrEnd () {
   this.__asrState = 'end'
   this.resetAwaken({
     recover: /** no recovery shall be made on nlp coming */ false
-  }).then(() => this.lightMethod('setLoading', ['']))
+  }).then(() => {
+    if (this.__pickingUpDiscardNext) {
+      /**
+       * current session of picking up has been manually discarded,
+       * no loading state shall be presented.
+       */
+      return
+    }
+    return this.lightMethod('setLoading', [''])
+  })
 }
 
 /**
@@ -397,6 +411,14 @@ AppRuntime.prototype.handleEndVoice = function handleEndVoice () {
  * @private
  */
 AppRuntime.prototype.handleNlpResult = function handleNlpResult (data) {
+  if (this.__pickingUpDiscardNext) {
+    /**
+     * current session of picking up has been manually discarded.
+     */
+    this.__pickingUpDiscardNext = false
+    logger.warn(`discarding nlp for pick up discarded, ASR(${_.get(data, 'nlp.asr')}).`)
+    return
+  }
   this.onVoiceCommand(data.asr, data.nlp, data.action)
 }
 
@@ -441,7 +463,15 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
      */
     return future
   }
-  return future.then(() => this.setPickup(true, 6000, true))
+  return future.then(() => {
+    if (this.__pickingUp) {
+      /**
+       * already picking up, discard current pick session.
+       */
+      return this.setPickup(false)
+    }
+    return this.setPickup(true, 6000, true)
+  })
 }
 
 /**
@@ -813,15 +843,26 @@ AppRuntime.prototype.appGC = function appGC (appId) {
  * @private
  */
 AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
-  this.flora.turenPickup(isPickup)
-  if (isPickup !== true) {
+  if (this.__pickingUp === isPickup) {
+    /** already at expected state */
+    logger.info('turen already at picking up?', this.__pickingUp)
     return Promise.resolve()
   }
+
+  logger.info('set turen picking up', isPickup)
+  this.flora.turenPickup(isPickup)
+
   if (isPickup) {
+    /**
+     * reset picking up discarding state to enable next nlp process
+     */
+    this.__pickingUpDiscardNext = false
     return this.lightMethod('setPickup', ['@yoda', '' + (duration || 6000), withAwaken])
-  } else {
-    return this.lightMethod('stop', ['@yoda', ''])
   }
+
+  /** discard next coming nlp */
+  this.__pickingUpDiscardNext = true
+  return this.lightMethod('stop', ['@yoda', ''])
 }
 
 AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {
