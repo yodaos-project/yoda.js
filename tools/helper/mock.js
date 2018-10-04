@@ -41,7 +41,7 @@ function main () {
       }
       var callback = _.once(cb)
       iface[method](arg, callback)
-      // TODO: timer shall be added once timer is ready on ShadowNode
+      setTimeout(() => callback(new Error('Timed out on invoke YodaRT control method.')), 10 * 1000)
     }
   ], function onDone (err, result) {
     if (err) {
