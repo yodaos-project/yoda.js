@@ -7,11 +7,18 @@
     "daemon": true,
     "skills": [
       "ROKID.SYSTEM",
+      "ROKID.EXCEPTION",
       "1B54DBC9F7D74C619282CCE8FE28EB7E",
       "280887DAFB9047418C18BAAC73AE4F24"
     ],
     "permission": [
       "ACCESS_TTS"
+    ],
+    "hosts": [
+      {
+        "name": "rokid-exception",
+        "skillId": "ROKID.EXCEPTION"
+      }
     ]
   },
   "scripts": {
