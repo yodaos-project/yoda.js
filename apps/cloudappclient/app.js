@@ -221,6 +221,7 @@ module.exports = activity => {
     if (action.response.action.type === 'EXIT') {
       logger.log(`${this.appId} intent EXIT`)
       sos.destroy()
+      activity.setBackground()
       return
     }
     logger.log(`${this.appId} app request`)

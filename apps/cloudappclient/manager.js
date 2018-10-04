@@ -144,7 +144,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
   }
   if ((type === 'tts' || type === 'media') && name === 'cancel' && this.isAppActive) {
     if (this.getCurrentSkill().appId === data.appId) {
-      logger.info(`ignored ${type} cancel eventRequest, because currently cloudappclient is inactive`)
+      logger.info(`ignored ${type} cancel eventRequest, because currently skill cancel it self`)
       cb && cb()
       return
     }
