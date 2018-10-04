@@ -7,6 +7,7 @@
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var Url = require('url')
+var querystring = require('querystring')
 
 var logger = require('logger')('yoda')
 
@@ -318,7 +319,10 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   }
   if (appId == null) {
     logger.log(`Local app '${nlp.appId}' not found.`)
-    return Promise.resolve()
+    return this.openUrl(`yoda-skill://rokid-exception/no-local-app?${querystring.stringify({
+      appId: nlp.appId,
+      appName: nlp.appName
+    })}`)
   }
 
   return this.life.createApp(appId)
