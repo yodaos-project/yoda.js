@@ -38,7 +38,7 @@ module.exports = function (activity) {
   })
 
   activity.on('url', url => {
-    var command = JSON.parse(decodeURI(url.query.slice(8)))
+    var command = JSON.parse(url.query.command || '[]')
     doTask(command)
   })
 
