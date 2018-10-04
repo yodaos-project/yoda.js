@@ -88,9 +88,7 @@ AppRuntime.prototype.init = function init (paths) {
   }
   this.flora.init()
   this.flora.turenMute(false)
-
   this.dbusRegistry.init()
-
   this.keyboard.init()
   this.life.on('stack-reset', () => {
     this.resetCloudStack()
@@ -99,16 +97,19 @@ AppRuntime.prototype.init = function init (paths) {
   this.resetServices()
 
   var future = Promise.resolve()
-
   if (property.get('sys.firstboot.init', 'persist') !== '1') {
     // initializing play tts status
     property.set('sys.firstboot.init', '1', 'persist')
     future = future.then(() => {
-      return this.lightMethod('appSound', ['@Yoda', '/opt/media/firstboot.ogg'])
+      this.lightMethod('play', ['@system', '/opt/light/setSpeaking.js', '{}'])
+      return this.lightMethod('appSound', ['@system', '/opt/media/firstboot.ogg'])
+    }).then(() => {
+      this.lightMethod('stop', ['@system', '/opt/light/setSpeaking.js'])
     })
   }
 
   return future.then(() => {
+    this.lightMethod('play', ['@system', '/opt/light/loading.js', '{"fps": 200}'])
     return this.loadApps(paths)
   }).then(() => {
     this.custodian.prepareNetwork()
@@ -1258,7 +1259,6 @@ AppRuntime.prototype.onGetPropAll = function () {
  */
 AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
-  this.lightMethod('setConfigFree', ['system'])
   logger.log('yoda reconnecting')
 
   // login -> mqtt
@@ -1287,9 +1287,9 @@ AppRuntime.prototype.reconnect = function () {
     this.onGetPropAll = function onGetPropAll () {
       return Object.assign({}, config)
     }
-    this.onLoggedIn()
     this.wormhole.init(mqtt)
     this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
+    this.onLoggedIn()
   }).catch((err) => {
     if (err && err.code === 'BIND_MASTER_REQUIRED') {
       logger.error('bind master is required, just clear the local and enter network')
@@ -1305,11 +1305,12 @@ AppRuntime.prototype.reconnect = function () {
  */
 AppRuntime.prototype.onLoggedIn = function () {
   this.custodian.onLoggedIn()
-  var upgradeInfo
 
+  var upgradeInfo
   var deferred = () => {
     perf.stub('started')
     // not need to play startup music after relogin
+    // this.lightMethod('stop', ['@system', '/opt/light/loading.js'])
 
     if (this.shouldWelcome) {
       logger.info('announcing welcome')
