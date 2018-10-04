@@ -298,7 +298,7 @@ function downloadImage (info, callback) {
       info.status = 'downloading'
       writeInfo(info, cb)
     },
-    cb => otaNetwork.doDownloadImage(info.imageUrl, dest, { noCheckCertificate: true }, cb),
+    cb => otaNetwork.doDownloadImage(info.imageUrl, dest, { noCheckCertificate: true, continue: true }, cb),
     cb => {
       logger.info('ota image successfully downloaded, calculating hash')
       info.status = 'downloaded'
@@ -348,8 +348,11 @@ function runInCurrentContext (callback) {
     /** actual procedure, shall skip if prepare failed */
     cb => doRun(cb)
   ], (err, info) => {
+    if (err) {
+      return callback(err)
+    }
     lockfile.unlock(procLock, () => {
-      return callback(err, info)
+      return callback(null, info)
     })
   })
 
