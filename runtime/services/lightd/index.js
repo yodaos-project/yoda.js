@@ -49,10 +49,10 @@ dbusApis.addMethod('play', {
   } catch (error) {
     logger.log(`parse args error: ${args}, appId: ${appId}`)
   }
-  service.loadfile(appId, name, data, (error) => {
-    if (error) {
-      logger.error(error)
-      cb(null, false, error.message || 'unknown error')
+  service.loadfile(appId, name, data, (err) => {
+    if (err) {
+      logger.error(`execute ${name}(${appId}) with the following error:`, err)
+      cb(null, false, err.message || 'unknown error')
     } else {
       cb(null, true, '')
     }
