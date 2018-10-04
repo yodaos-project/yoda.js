@@ -112,7 +112,6 @@ AppRuntime.prototype.init = function init (paths) {
   }
 
   return future.then(() => {
-    this.lightMethod('play', ['@system', '/opt/light/loading.js', '{"fps": 200}'])
     return this.loadApps(paths)
   }).then(() => {
     this.custodian.prepareNetwork()
@@ -1026,7 +1025,6 @@ AppRuntime.prototype.onLoggedIn = function () {
   var deferred = () => {
     perf.stub('started')
     // not need to play startup music after relogin
-    // this.lightMethod('stop', ['@system', '/opt/light/loading.js'])
 
     if (this.shouldWelcome) {
       logger.info('announcing welcome')

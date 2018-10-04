@@ -131,7 +131,7 @@ Turen.prototype.setAwaken = function setAwaken () {
           this.pausedMediaAppIdOnAwaken = currAppId
         }
       }),
-    this.runtime.lightMethod('setAwake', [''])
+    this.runtime.lightMethod('setAwake', ['@yoda'])
   ]))
 }
 
@@ -152,7 +152,7 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
   logger.info('reset awaken, recovering?', recover)
 
   var promises = [
-    this.runtime.lightMethod('stop', ['', '/opt/light/awake.js']),
+    this.runtime.lightMethod('stop', ['@yoda', '/opt/light/awake.js']),
     this.runtime.life.resumeLifetime({ recover: recover })
   ]
 
