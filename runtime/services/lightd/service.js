@@ -322,7 +322,7 @@ Light.prototype.stopFile = function (appId, uri) {
     }
     // clear z-index
     this.systemspaceZIndex[j] = null
-    logger.log('clear systemspace layer', j)
+    logger.log(`${appId} clears systemspace layer`)
     isFind = true
     if (uri) {
       break
