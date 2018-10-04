@@ -100,14 +100,10 @@ function isUpgradeSuitableNow () {
  * @param {URL} url
  */
 function onFirstBootAfterUpgrade (activity, url) {
-  var changelog = '系统升级完成'
-  if (_.get(url, 'query.changelog')) {
-    changelog += '<silence=1></silence>' + decodeURIComponent(url.query.changelog)
-  }
-
-  ota.resetOta(function onReset () {
-    activity.tts.speak(changelog)
-      .then(() => activity.exit())
+  ota.resetOta(function onReset (err) {
+    if (err) {
+      logger.error('Unexpected error on reset ota', err.stack)
+    }
   })
 }
 

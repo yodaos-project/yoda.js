@@ -1251,6 +1251,7 @@ AppRuntime.prototype.reconnect = function () {
  */
 AppRuntime.prototype.onLoggedIn = function () {
   this.custodian.onLoggedIn()
+  var upgradeInfo
 
   var deferred = () => {
     perf.stub('started')
@@ -1261,6 +1262,10 @@ AppRuntime.prototype.onLoggedIn = function () {
       this.lightMethod('setWelcome', [])
     }
     this.shouldWelcome = false
+
+    if (upgradeInfo) {
+      this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(upgradeInfo.changelog)}`)
+    }
 
     var config = JSON.stringify(this.onGetPropAll())
     return this.ttsMethod('connect', [config])
@@ -1289,6 +1294,13 @@ AppRuntime.prototype.onLoggedIn = function () {
         return sendReady()
       }).catch(err => logger.error('Unexpected error on destroying all apps', err.stack)),
     this.initiate()
+      .then(() => new Promise(resolve => ota.getInfoIfFirstUpgradedBoot((err, info) => {
+        if (err) {
+          logger.error('get upgrade info on first upgrade boot failed', err.stack)
+        }
+        upgradeInfo = info
+        resolve()
+      })))
       .then(deferred, err => {
         logger.error('Unexpected error on runtime.initiate', err.stack)
         return deferred()
