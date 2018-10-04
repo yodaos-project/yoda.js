@@ -248,9 +248,9 @@ Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
   }
   if (wifi.getWifiState() !== wifi.WIFI_CONNECTED) {
     wifi.enableScanPassively()
-    return this.runtime.lightMethod('appSound', ['@Yoda', '/opt/media/wifi_is_connecting.ogg'])
+    return this.runtime.lightMethod('appSound', ['@yoda', '/opt/media/wifi_is_connecting.ogg'])
   }
-  return this.runtime.lightMethod('setDegree', ['', '' + (data.sl || 0)])
+  return this.runtime.lightMethod('setDegree', ['@yoda', '' + (data.sl || 0)])
 }
 
 /**
