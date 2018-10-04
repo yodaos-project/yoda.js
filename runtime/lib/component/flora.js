@@ -7,8 +7,6 @@ var globalEnv = require('../env')()
 
 var asr2nlpId = 'js-AppRuntime'
 var asr2nlpSeq = 0
-var VT_WORDS_ADD_WORD_TAG = 'rokid.turen.addVtWord'
-var VT_WORDS_DEL_WORD_TAG = 'rokid.turen.removeVtWord'
 
 module.exports = Flora
 /**
@@ -28,36 +26,36 @@ Flora.prototype.handlers = {
   'rokid.turen.voice_coming': function (msg) {
     logger.log('voice coming')
     this.voiceCtx.lastFaked = false
-    this.runtime.onTurenEvent('voice coming', {})
+    this.runtime.turen.handleEvent('voice coming', {})
   },
   'rokid.turen.local_awake': function (msg) {
     logger.log('voice local awake')
     var data = {}
     data.sl = msg.get(0)
-    this.runtime.onTurenEvent('voice local awake', data)
+    this.runtime.turen.handleEvent('voice local awake', data)
   },
   'rokid.speech.inter_asr': function (msg) {
     var asr = msg.get(0)
     logger.log('asr pending', asr)
-    this.runtime.onTurenEvent('asr pending', asr)
+    this.runtime.turen.handleEvent('asr pending', asr)
   },
   'rokid.speech.final_asr': function (msg) {
     var asr = msg.get(0)
     logger.log('asr end', asr)
-    this.runtime.onTurenEvent('asr end', { asr: asr })
+    this.runtime.turen.handleEvent('asr end', { asr: asr })
   },
   'rokid.speech.extra': function (msg) {
     var data = JSON.parse(msg.get(0))
     if (data.activation === 'fake') {
       this.voiceCtx.lastFaked = true
-      this.runtime.onTurenEvent('asr fake')
+      this.runtime.turen.handleEvent('asr fake')
     }
   },
   'rokid.turen.start_voice': function (msg) {
-    this.runtime.onTurenEvent('start voice')
+    this.runtime.turen.handleEvent('start voice')
   },
   'rokid.speech.completed': function (msg) {
-    this.runtime.onTurenEvent('end voice')
+    this.runtime.turen.handleEvent('end voice')
   },
   'rokid.speech.nlp': function (msg) {
     if (this.voiceCtx.lastFaked) {
@@ -76,7 +74,7 @@ Flora.prototype.handlers = {
       logger.log('nlp/action parse failed, discarded.')
       return
     }
-    this.runtime.onTurenEvent('nlp', data)
+    this.runtime.turen.handleEvent('nlp', data)
   },
   'rokid.speech.error': function (msg) {
   }
@@ -198,6 +196,22 @@ Flora.prototype.onDisconnect = function onDisconnect () {
 }
 
 /**
+ * Post a message through flora.
+ * @param {string} channel -
+ * @param {FloraCaps} msg -
+ * @param {FloraType} type -
+ */
+Flora.prototype.post = function post (channel, msg, type) {
+  if (this.floraCli == null) {
+    return
+  }
+  if (type == null) {
+    type = floraFactory.MSGTYPE_INSTANT
+  }
+  this.floraCli.post(channel, msg, type)
+}
+
+/**
  * Update speech service configuration.
  *
  * @param {object} speechAuthInfo
@@ -244,33 +258,6 @@ Flora.prototype.updateStack = function updateStack (stack) {
 }
 
 /**
- * Set whether or not turenproc is picked up.
- * @param {boolean} isPickup
- */
-Flora.prototype.turenPickup = function turenPickup (isPickup) {
-  if (this.floraCli == null) {
-    return
-  }
-  var msg = new floraFactory.Caps()
-  msg.writeInt32(isPickup ? 1 : 0)
-  this.floraCli.post('rokid.turen.pickup', msg, floraFactory.MSGTYPE_INSTANT)
-}
-
-/**
- * Set whether or not turenproc is muted.
- * @param {boolean} mute
- */
-Flora.prototype.turenMute = function turenMute (mute) {
-  if (this.floraCli == null) {
-    return
-  }
-  var msg = new floraFactory.Caps()
-  /** if mute is true, set rokid.turen.mute to 1 to disable turen */
-  msg.writeInt32(mute ? 1 : 0)
-  this.floraCli.post('rokid.turen.mute', msg, floraFactory.MSGTYPE_INSTANT)
-}
-
-/**
  * Get NLP result of given asr text.
  * @param {string} asr
  * @param {Function} cb
@@ -288,29 +275,6 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, cb) {
   caps.writeInt32(asr2nlpSeq)
   this.asr2nlpCallbacks[asr2nlpSeq++] = cb
   this.floraCli.post('rokid.speech.put_text', caps, floraFactory.MSGTYPE_INSTANT)
-}
-
-/**
- * Add the activation
- * @param {string} activationTxt
- * @param {string} activationPy
- */
-Flora.prototype.addVtWord = function addVtWord (activationTxt, activationPy) {
-  var caps = new floraFactory.Caps()
-  caps.write(activationTxt)
-  caps.write(activationPy)
-  caps.writeInt32(0)
-  this.floraCli.post(VT_WORDS_ADD_WORD_TAG, caps, floraFactory.MSGTYPE_INSTANT)
-}
-
-/**
- * Delete the activation
- * @param {string} activationTxt
- */
-Flora.prototype.deleteVtWord = function deleteVtWord (activationTxt) {
-  var caps = new floraFactory.Caps()
-  caps.write(activationTxt)
-  this.floraCli.post(VT_WORDS_DEL_WORD_TAG, caps, floraFactory.MSGTYPE_INSTANT)
 }
 
 /**

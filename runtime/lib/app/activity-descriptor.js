@@ -1125,7 +1125,7 @@ Object.assign(TurenDescriptor.prototype,
   },
   {
     /**
-     * add the actiovation word
+     * add an activation word.
      * @memberof yodaRT.activity.Activity.TurenClient
      * @instance
      * @function addVtWord
@@ -1137,12 +1137,12 @@ Object.assign(TurenDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function addVtWord (activationTxt, activationPy) {
-        return this._runtime.flora.addVtWord(activationTxt, activationPy)
+        return this._runtime.turen.addVtWord(activationTxt, activationPy)
       }
     },
 
     /**
-     * delete the activation word
+     * delete an activation word.
      * @memberof yodaRT.activity.Activity.TurenClient
      * @instance
      * @function deleteVtWord
@@ -1153,7 +1153,7 @@ Object.assign(TurenDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function deleteVtWord (activationTxt) {
-        return this._runtime.flora.deleteVtWord(activationTxt)
+        return this._runtime.turen.deleteVtWord(activationTxt)
       }
     }
   }
