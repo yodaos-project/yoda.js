@@ -63,8 +63,13 @@ dbusApis.addMethod('stop', {
   in: ['s', 's'],
   out: ['b']
 }, function (appId, name, cb) {
-  service.stopFile(appId, name)
-  cb(null, true)
+  logger.log(`stop ${appId} ${name}`)
+  if (appId) {
+    service.stopFile(appId, name)
+    cb(null, true)
+  } else {
+    cb(null, false)
+  }
 })
 
 dbusApis.addMethod('setAwake', {

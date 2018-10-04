@@ -86,6 +86,15 @@ Light.prototype.stopPrev = function (keep) {
   this.prevAppId = null
 }
 
+Light.prototype.clearPrev = function () {
+  this.prev = null
+  this.prevZIndex = null
+  this.prevUri = null
+  this.prevContext = null
+  this.prevAppId = null
+  this.prevCallback = null
+}
+
 Light.prototype.loadfile = function (appId, uri, data, callback) {
   var handle
   var zIndex
@@ -108,12 +117,14 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
       return callback(new Error('permission denied'))
     }
     handle = require(uri)
+    logger.log('call stopPrev loadfile')
     this.stopPrev(data && data.keep)
     var context = this.getContext()
     // this function can only be called once
     clearTimeout(self.nextResumeTimerHandle)
     this.prevCallback = dedup(function () {
       self.nextResumeTimerHandle = setTimeout(() => {
+        self.clearPrev()
         self.resume()
       }, 0)
       callback()
@@ -164,6 +175,7 @@ Light.prototype.removeLayerByUri = function (uri) {
     if (this.systemspaceZIndex[i] && this.systemspaceZIndex[i].uri === uri) {
       removed = true
       this.systemspaceZIndex[i] = null
+      logger.log(`clear systemspace ${uri} because it was update`)
       break
     }
   }
@@ -175,6 +187,7 @@ Light.prototype.removeLayerByUri = function (uri) {
     if (this.userspaceZIndex[i] && this.userspaceZIndex[i].uri === uri) {
       removed = true
       this.userspaceZIndex[i] = null
+      logger.log(`clear userspace ${uri} because it was update`)
       break
     }
   }
@@ -182,7 +195,6 @@ Light.prototype.removeLayerByUri = function (uri) {
 }
 
 Light.prototype.resume = function () {
-  this.stopPrev()
   var resume = null
   var isSystemUri = false
   var zIndex = 0
@@ -214,6 +226,9 @@ Light.prototype.resume = function () {
   }
   if (resume) {
     try {
+      logger.log('call stopPrev resume')
+      this.stopPrev()
+
       var handle = resume.handle
       var context = resume.context
       this.prevContext = context
@@ -393,6 +408,7 @@ Light.prototype.setLoading = function (appId) {
 }
 
 Light.prototype.setStandby = function () {
+  logger.log('call stopPrev setstandby')
   this.stopPrev()
   var hook = require(`${LIGHT_SOURCE}setStandby.js`)
   var context = this.getContext()
@@ -401,6 +417,7 @@ Light.prototype.setStandby = function () {
 
 Light.prototype.setVolume = function (volume) {
   if (this.prev) {
+    logger.log('call stopPrev setvolume')
     if (typeof this.prev === 'object' && this.prev.name === 'setVolume') {
       this.stopPrev(true)
     } else {
@@ -416,6 +433,7 @@ Light.prototype.setVolume = function (volume) {
 }
 
 Light.prototype.setWelcome = function () {
+  logger.log('call stopPrev setwelcome')
   this.stopPrev()
   var hook = require(`${LIGHT_SOURCE}setWelcome.js`)
   var context = this.getContext()
@@ -473,6 +491,7 @@ Light.prototype.setPickup = function (appId, duration, withAwaken) {
 }
 
 Light.prototype.setSpeaking = function () {
+  logger.log('call stopPrev setspeaking')
   this.stopPrev(true)
   var context = this.getContext()
   this.prev = setSpeaking(context, {}, function noop () {})
