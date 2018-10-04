@@ -463,11 +463,12 @@ Light.prototype.appSound = function (appId, name, cb) {
   return true
 }
 
-Light.prototype.setPickup = function (appId, duration) {
+Light.prototype.setPickup = function (appId, duration, withAwaken) {
   var uri = `${LIGHT_SOURCE}setPickup.js`
   this.loadfile(appId, uri, {
     degree: this.degree,
-    duration: +duration
+    duration: +duration,
+    withAwaken: withAwaken
   }, function noop () {})
 }
 

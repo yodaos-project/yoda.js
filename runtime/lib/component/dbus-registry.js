@@ -48,7 +48,13 @@ DBus.prototype.callMethod = function callMethod (
   serviceName, objectPath, interfaceName,
   member, args) {
   return new Promise((resolve, reject) => {
-    var sig = args.map(() => 's').join('')
+    var sig = args.map((arg) => {
+      if (typeof arg === 'boolean') {
+        return 'b'
+      } else {
+        return 's'
+      }
+    }).join('')
     this.service._dbus.callMethod(
       serviceName,
       objectPath,
