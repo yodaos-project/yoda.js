@@ -22,6 +22,9 @@ compose([
     )
   },
   (cb, iface) => {
+    if (iface == null || typeof iface.all !== 'function') {
+      cb(new Error('VuiDaemon not ready, try again later.'))
+    }
     iface.all('@ota', cb)
   },
   (cb, propStr) => {
@@ -50,7 +53,7 @@ compose([
   }
 ], function onDone (err) {
   if (err) {
-    logger.error('unexpected error', err.message, err.stack)
+    logger.error('unexpected error', err.stack)
     return process.exit(1)
   }
   process.exit()
