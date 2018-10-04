@@ -441,7 +441,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
      */
     return future
   }
-  return future.then(() => this.setPickup(true))
+  return future.then(() => this.setPickup(true, 6000, true))
 }
 
 /**
@@ -812,15 +812,16 @@ AppRuntime.prototype.appGC = function appGC (appId) {
  * @param {boolean} isPickup
  * @private
  */
-AppRuntime.prototype.setPickup = function (isPickup, duration) {
+AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
   this.flora.turenPickup(isPickup)
   if (isPickup !== true) {
     return Promise.resolve()
   }
   if (isPickup) {
-    return this.lightMethod('setPickup', ['@yoda', '' + (duration || 6000)])
+    return this.lightMethod('setPickup', ['@yoda', '' + (duration || 6000), withAwaken])
+  } else {
+    return this.lightMethod('stop', ['@yoda', ''])
   }
-  return this.lightMethod('stop', ['@yoda', ''])
 }
 
 AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {

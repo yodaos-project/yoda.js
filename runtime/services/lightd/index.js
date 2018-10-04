@@ -164,10 +164,10 @@ dbusApis.addMethod('reset', {
 })
 
 dbusApis.addMethod('setPickup', {
-  in: ['s', 's'],
+  in: ['s', 's', 'b'],
   out: ['b']
-}, function (appId, duration, cb) {
-  service.setPickup(appId, +duration)
+}, function (appId, duration, withAwaken, cb) {
+  service.setPickup(appId, +duration, withAwaken)
   cb(null, true)
 })
 
