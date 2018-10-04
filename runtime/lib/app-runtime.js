@@ -1028,7 +1028,7 @@ AppRuntime.prototype.onLoggedIn = function () {
 
     if (this.shouldWelcome) {
       logger.info('announcing welcome')
-      this.lightMethod('setWelcome', ['@yoda'])
+      this.lightMethod('play', ['@yoda', '/opt/light/setWelcome.js', '{}'])
     }
     this.shouldWelcome = false
 
