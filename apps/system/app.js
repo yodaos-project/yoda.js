@@ -25,7 +25,7 @@ module.exports = function (activity) {
         activity.destroyAll()
         break
       default:
-        activity.tts.speak(fallbacks[Math.floor(Date.now() % fallbacks.length)])
+        activity.tts.speak(_.sample(fallbacks))
           .then(() => activity.exit())
     }
   })

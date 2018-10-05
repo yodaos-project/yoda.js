@@ -43,6 +43,12 @@ function startsWith (str, search, pos) {
   return str.substring(!pos || pos < 0 ? 0 : +pos, search.length) === search
 }
 
+module.exports.sample = sample
+function sample (arr) {
+  var length = get(arr, 'length', 0)
+  return get(arr, Math.floor(Math.random() * length))
+}
+
 module.exports.times = times
 function times (number) {
   var ret = []
