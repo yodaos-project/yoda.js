@@ -75,6 +75,7 @@ function AppRuntime () {
   this.loader = new AppLoader(this)
   this.life = new Lifetime(this.loader)
   this.wormhole = new Wormhole(this)
+  this.shouldStopLongPressMicLight = false
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -250,6 +251,29 @@ AppRuntime.prototype.startForceUpdate = function startForceUpdate () {
       this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
     ).then(() => this.startMonologue('@yoda/ota'))
   })
+}
+
+/**
+ * play longPressMic.js if long press mic is bigger than 2 second.
+ */
+
+AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
+  this.shouldStopLongPressMicLight = true
+  this.lightMethod('appSound', ['@yoda', '/opt/media/key_config_notify.ogg'])
+  this.lightMethod('play', ['@yoda', '/opt/light/longPressMic.js', '{}'])
+  setTimeout(() => {
+    this.shouldStopLongPressMicLight = false
+  }, 5000)
+}
+
+/**
+ * Stop light if long press between 2 and 7 second.
+ */
+AppRuntime.prototype.stopLongPressMicLight = function stopLongPressMicLight () {
+  if (this.shouldStopLongPressMicLight === true) {
+    this.lightMethod('stop', ['@yoda', '/opt/light/longPressMic.js'])
+    this.shouldStopLongPressMicLight = false
+  }
 }
 
 /**

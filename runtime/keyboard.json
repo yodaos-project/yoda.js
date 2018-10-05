@@ -18,11 +18,12 @@
       "repeat": false,
       "timeDelta": 2000,
       "preventSubsequent": false,
-      "runtimeMethod": "lightMethod",
-      "params": [
-        "appSound",
-        [ "@yoda", "/opt/media/key_config_notify.ogg" ]
-      ]
+      "runtimeMethod": "playLongPressMic",
+      "params": []
+    },
+    "keyup": {
+      "runtimeMethod": "stopLongPressMicLight",
+      "params": []
     },
     "longpress-7000": {
       "repeat": false,
