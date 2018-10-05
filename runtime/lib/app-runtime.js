@@ -206,7 +206,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
    */
   var future = Promise.all([
     this.life.deactivateAppsInStack(),
-    this.resetServices()
+    this.resetServices({ lightd: false })
   ])
 
   if (currentAppId) {
@@ -481,44 +481,67 @@ AppRuntime.prototype.destroyAll = function (options) {
   return Promise.all(promises)
 }
 
-AppRuntime.prototype.resetServices = function resetServices () {
+/**
+ *
+ * @param {object} [options] -
+ * @param {boolean} [options.lightd=true] -
+ * @param {boolean} [options.ttsd=true] -
+ * @param {boolean} [options.multimediad=true] -
+ */
+AppRuntime.prototype.resetServices = function resetServices (options) {
+  var lightd = _.get(options, 'lightd', true)
+  var ttsd = _.get(options, 'ttsd', true)
+  var multimediad = _.get(options, 'multimediad', true)
   logger.info('resetting services')
 
-  return Promise.all([
-    this.lightMethod('reset', [])
-      .then((res) => {
-        if (res && res[0] === true) {
-          logger.log('reset lightd success')
-        } else {
-          logger.log('reset lightd failed')
-        }
-      })
-      .catch((error) => {
-        logger.log('reset lightd error', error)
-      }),
-    this.multimediaMethod('reset', [])
-      .then((res) => {
-        if (res && res[0] === true) {
-          logger.log('reset multimediad success')
-        } else {
-          logger.log('reset multimediad failed')
-        }
-      })
-      .catch((error) => {
-        logger.log('reset multimediad error', error)
-      }),
-    this.ttsMethod('reset', [])
-      .then((res) => {
-        if (res && res[0] === true) {
-          logger.log('reset ttsd success')
-        } else {
-          logger.log('reset ttsd failed')
-        }
-      })
-      .catch((error) => {
-        logger.log('reset ttsd error', error)
-      })
-  ])
+  var promises = []
+  if (lightd) {
+    promises.push(
+      this.lightMethod('reset', [])
+        .then((res) => {
+          if (res && res[0] === true) {
+            logger.log('reset lightd success')
+          } else {
+            logger.log('reset lightd failed')
+          }
+        })
+        .catch((error) => {
+          logger.log('reset lightd error', error)
+        })
+    )
+  }
+  if (ttsd) {
+    promises.push(
+      this.ttsMethod('reset', [])
+        .then((res) => {
+          if (res && res[0] === true) {
+            logger.log('reset ttsd success')
+          } else {
+            logger.log('reset ttsd failed')
+          }
+        })
+        .catch((error) => {
+          logger.log('reset ttsd error', error)
+        })
+    )
+  }
+  if (multimediad) {
+    promises.push(
+      this.multimediaMethod('reset', [])
+        .then((res) => {
+          if (res && res[0] === true) {
+            logger.log('reset multimediad success')
+          } else {
+            logger.log('reset multimediad failed')
+          }
+        })
+        .catch((error) => {
+          logger.log('reset multimediad error', error)
+        })
+    )
+  }
+
+  return Promise.all(promises)
 }
 
 /**
@@ -586,6 +609,11 @@ AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
   if (this.turen.pickingUp === isPickup) {
     /** already at expected state */
     logger.info('turen already at picking up?', this.turen.pickingUp)
+    return Promise.resolve()
+  }
+
+  if (this.turen.muted && isPickup) {
+    logger.info('Turen has been muted, skip picking up.')
     return Promise.resolve()
   }
 
