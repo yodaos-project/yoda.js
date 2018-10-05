@@ -342,11 +342,17 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     appId = this.loader.getAppIdBySkillId(nlp.appId)
   }
   if (appId == null) {
-    logger.log(`Local app '${nlp.appId}' not found.`)
-    return this.openUrl(`yoda-skill://rokid-exception/no-local-app?${querystring.stringify({
-      appId: nlp.appId,
-      appName: nlp.appName
-    })}`)
+    logger.warn(`Local app '${nlp.appId}' not found.`)
+    if (nlp.appName) {
+      return this.openUrl(`yoda-skill://rokid-exception/no-local-app?${querystring.stringify({
+        appId: nlp.appId,
+        appName: nlp.appName
+      })}`)
+    }
+    /**
+     * do nothing if no `appName` specified in malicious NLP to prevent frequent harassments.
+     */
+    return
   }
 
   return this.life.createApp(appId)

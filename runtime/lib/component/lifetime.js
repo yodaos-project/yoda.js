@@ -225,10 +225,6 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
 LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, carrierId, options) {
   var resumeParams = _.get(options, 'resumeParams', [])
 
-  if (this.appIdOnPause != null) {
-    return Promise.reject(new Error('LaVieEnPile is paused'))
-  }
-
   if (!this.isAppRunning(appId)) {
     return Promise.reject(new Error(`App ${appId} is not running, launch it first.`))
   }
