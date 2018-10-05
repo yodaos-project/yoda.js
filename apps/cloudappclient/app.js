@@ -47,8 +47,10 @@ module.exports = activity => {
           sos.sendEventRequest('tts', 'start', dt.data, _.get(dt, 'data.item.itemId'))
         } else if (name === 'end') {
           sos.sendEventRequest('tts', 'end', dt.data, _.get(dt, 'data.item.itemId'), next)
-        } else if (name === 'cancel') {
-          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), function stop () {
+        } else if (name === 'cancel' || name === 'error') {
+          sos.sendEventRequest('tts', name, dt.data, _.get(dt, 'data.item.itemId'), function cancel () {
+            logger.info(`end task early because tts.${name} event emit`)
+            // end task early, no longer perform the following tasks
             next(true)
           })
         }
@@ -85,7 +87,8 @@ module.exports = activity => {
             itemId: _.get(dt, 'data.item.itemId'),
             token: _.get(dt, 'data.item.token')
           }, function cancel () {
-            logger.info('canceled media event')
+            logger.info(`end task early because meida.${name} event emit`)
+            // end task early, no longer perform the following tasks
             next(true)
           })
         }

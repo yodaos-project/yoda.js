@@ -22,7 +22,7 @@ TtsEventHandle.prototype.handleEvent = function () {
     this.handle(ttsId, 'cancel')
   })
   this.ttsClient.on('error', (ttsId) => {
-    logger.info(`id:${ttsId} cancel`)
+    logger.info(`id:${ttsId} error`)
     this.handle(ttsId, 'error')
   })
 }

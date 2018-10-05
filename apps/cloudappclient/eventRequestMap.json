@@ -2,7 +2,8 @@
   "tts": {
     "start": "Voice.STARTED",
     "end": "Voice.FINISHED",
-    "cancel": "Voice.FINISHED"
+    "cancel": "Voice.FINISHED",
+    "error": "Voice.FAILED"
   },
   "media": {
     "prepared": "Media.STARTED",
@@ -10,6 +11,7 @@
     "pause": "Media.PAUSED",
     "resume": "Media.STARTED",
     "cancel": "Media.PAUSED",
-    "stop": "Media.PAUSED"
+    "stop": "Media.PAUSED",
+    "error": "Media.FAILED"
   }
 }
