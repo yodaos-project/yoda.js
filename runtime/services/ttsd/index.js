@@ -124,13 +124,16 @@ function reConnect (CONFIG) {
         return
       }
       ignoreTtsEvent = false
-      dbusService._dbus.emitSignal(
-        '/tts/service',
-        'tts.service',
-        'ttsdevent',
-        'ss',
-        ['' + id, 'end']
-      )
+      /** delay 500ms to prevent event `end` been received before event `start` */
+      setTimeout(() => {
+        dbusService._dbus.emitSignal(
+          '/tts/service',
+          'tts.service',
+          'ttsdevent',
+          'ss',
+          ['' + id, 'end']
+        )
+      }, 500)
     })
     _TTS.on('cancel', function (id, errno) {
       logger.log('ttsd cancel', id)

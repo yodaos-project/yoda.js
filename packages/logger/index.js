@@ -8,7 +8,19 @@
  */
 
 var util = require('util')
-var native = require('./logger.node')
+
+var native
+if (process.platform !== 'darwin') {
+  native = require('./logger.node')
+} else {
+  native = {
+    enableCloud: function () {},
+    print: function native (lvl, tag, line) {
+      var level = Object.keys(logLevels)[lvl - 1]
+      console[level](`${new Date().toISOString()} [${level.toUpperCase()}] <${tag}>`, line)
+    }
+  }
+}
 
 var logLevels = {
   'verbose': 1,
