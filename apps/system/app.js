@@ -50,6 +50,9 @@ module.exports = function (activity) {
           .then(() => activity.exit())
         break
       }
+      case '/malicious-nlp':
+      default:
+        activity.exit()
     }
   })
 }

@@ -84,6 +84,9 @@ Turen.prototype.handleEvent = function (name, data) {
     case 'nlp':
       handler = this.handleNlpResult
       break
+    case 'malicious nlp':
+      handler = this.handleMaliciousNlpResult
+      break
   }
   if (typeof handler !== 'function') {
     logger.info(`skip turen event "${name}" for no handler existing`)
@@ -327,6 +330,13 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
     return
   }
   this.runtime.onVoiceCommand(data.asr, data.nlp, data.action)
+}
+
+/**
+ * Handle the "nlp" event, which are emitted on incoming unexpected malicious nlp.
+ */
+Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () {
+  this.runtime.openUrl('yoda-skill://rokid-exception/malicious-nlp')
 }
 
 /**

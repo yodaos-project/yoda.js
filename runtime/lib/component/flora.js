@@ -72,7 +72,7 @@ Flora.prototype.handlers = {
       data.action = JSON.parse(msg.get(1))
     } catch (err) {
       logger.log('nlp/action parse failed, discarded.')
-      return
+      return this.runtime.turen.handleEvent('malicious nlp', data)
     }
     this.runtime.turen.handleEvent('nlp', data)
   },
