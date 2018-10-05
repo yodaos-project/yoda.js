@@ -54,6 +54,7 @@ function LaVieEnPile (loader) {
    * might be sufficient.
    */
   this.carrierId = null
+  this.lastSubordinate = null
   /**
    * Some app may have permissions to monopolize top of stack,
    * in which case, no other apps could interrupts it's monologue.
@@ -247,19 +248,22 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   // temporary carrier id store
   var cid = this.carrierId
+  var lastSubordinate = this.lastSubordinate
   this.carrierId = carrierId
-  if (cid) {
+  if (carrierId != null) {
+    logger.info(`subordinate ${appId} brought to active by carrier`, carrierId)
+    this.lastSubordinate = appId
+  }
+  if (cid != null) {
     /**
      * if previous app is started by a carrier,
      * exit the carrier before next steps.
      */
-    logger.info('previous app started by a carrier', cid)
-    future = future.then(() => {
-      /** prevent to destroy app that going to be activated. */
-      var ids = [ cid ].concat(this.activeAppStack).filter(it => it !== appId)
-      /** all apps in stack are going to be destroyed, no need to recover */
-      return Promise.all(ids.map(id => this.destroyAppById(id)))
-    })
+    logger.info(`previous app ${lastSubordinate} started by a carrier`, cid)
+    if (cid !== appId && this.isAppRunning(cid)) {
+      logger.info(`carrier ${cid} is alive and not the app to be activated, destroying`)
+      future = future.then(() => this.destroyAppById(cid))
+    }
   }
 
   if (appId === this.getCurrentAppId()) {
@@ -289,15 +293,6 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     this.activeAppStack.push(appId)
     this.onStackUpdate()
     return this.onLifeCycle(appId, 'resume', resumeParams)
-  }
-
-  if (cid === appId) {
-    /**
-     * If activating previously carrier app,
-     * directly promote it to top of stack and skip preemption
-     * since all other apps has been destroyed
-     */
-    return future.then(() => deferred())
   }
 
   if (form === 'scene') {
@@ -373,9 +368,13 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
 
   var deactivating = this.destroyAppById(appId)
 
-  var carrierId = this.carrierId
-  /** if app is started by a carrier, unset the flag on exit */
-  this.carrierId = null
+  var carrierId
+  if (appId === this.lastSubordinate) {
+    this.lastSubordinate = null
+    /** if app is started by a carrier, unset the flag on exit */
+    carrierId = this.carrierId
+    this.carrierId = null
+  }
 
   if (!recover) {
     return deactivating
@@ -385,10 +384,13 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
     /**
      * If app is brought up by a carrier, re-activate the carrier on exit of app.
      */
-    logger.info(`app is brought up by a carrier '${carrierId}', recovering.`)
-    return deactivating.then(() => {
-      return this.activateAppById(carrierId)
-    })
+    if (this.isAppRunning(carrierId)) {
+      logger.info(`app ${appId} is brought up by a carrier '${carrierId}', recovering.`)
+      return deactivating.then(() => {
+        return this.activateAppById(carrierId)
+      })
+    }
+    logger.info(`app ${appId} is brought up by a carrier '${carrierId}', yet carrier is already died, skip recovering carrier.`)
   }
 
   logger.info('recovering previous app on deactivating.')

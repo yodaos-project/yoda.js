@@ -7,7 +7,7 @@ var mock = require('./mock')
 
 test('non-daemon inactive carrier shall be destroyed on preemption', t => {
   mock.restore()
-  t.plan(1)
+  t.plan(2)
 
   mock.mockAppExecutors(3)
   var life = new Lifetime(mock.appLoader)
@@ -20,10 +20,16 @@ test('non-daemon inactive carrier shall be destroyed on preemption', t => {
 
   Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
     .then(() => {
+      return life.activateAppById('0', 'cut')
+    })
+    .then(() => {
       return life.activateAppById('1', 'cut', '0')
     })
     .then(() => {
       return life.activateAppById('2')
+    })
+    .then(() => {
+      t.pass('shall end with no error')
     })
     .catch(err => {
       t.error(err)
@@ -33,7 +39,7 @@ test('non-daemon inactive carrier shall be destroyed on preemption', t => {
 
 test('non-daemon background carrier shall be destroyed on preemption', t => {
   mock.restore()
-  t.plan(1)
+  t.plan(2)
 
   mock.mockAppExecutors(3)
   var life = new Lifetime(mock.appLoader)
@@ -46,6 +52,9 @@ test('non-daemon background carrier shall be destroyed on preemption', t => {
 
   Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
     .then(() => {
+      return life.activateAppById('0', 'cut')
+    })
+    .then(() => {
       return life.setBackgroundById('0')
     })
     .then(() => {
@@ -53,6 +62,9 @@ test('non-daemon background carrier shall be destroyed on preemption', t => {
     })
     .then(() => {
       return life.activateAppById('2')
+    })
+    .then(() => {
+      t.pass('shall end with no error')
     })
     .catch(err => {
       t.error(err)
@@ -85,7 +97,7 @@ test('carrier shall be re-activated on app deactivated proactively', t => {
     })
 })
 
-test('previous app shall be destroyed on activating carrier proactively', t => {
+test('previous cut app shall be destroyed on activating cut carrier proactively', t => {
   mock.restore()
   t.plan(2)
 
@@ -100,13 +112,84 @@ test('previous app shall be destroyed on activating carrier proactively', t => {
 
   Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
     .then(() => {
-      return life.activateAppById('1', 'scene', '0')
+      return life.activateAppById('1', 'cut', '0')
     })
     .then(() => {
       return life.activateAppById('0')
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '0')
+
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('previous scene app shall not be destroyed on carrier starting a cut app', t => {
+  mock.restore()
+  t.plan(1)
+
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.appLoader)
+
+  mock.eventBus.on('destruct', appId => {
+    if (appId === '0') {
+      t.fail('app "1" shall not be deactivated')
+    }
+  })
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      return life.activateAppById('2', 'cut')
+    })
+    .then(() => {
+      return life.activateAppById('1', 'cut', '2')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1')
+
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('previous scene app shall not be destroyed on carrier starting it with cut form', t => {
+  mock.restore()
+  t.plan(1)
+
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.appLoader)
+
+  mock.eventBus.on('destruct', appId => {
+    if (appId === '0') {
+      t.fail('app "0" shall not be deactivated')
+    }
+  })
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      return life.activateAppById('2', 'cut')
+    })
+    .then(() => {
+      return life.activateAppById('0', 'cut', '2')
+    })
+    .then(() => {
+      return life.activateAppById('1')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1')
 
       t.end()
     })
