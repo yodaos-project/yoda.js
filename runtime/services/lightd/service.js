@@ -114,7 +114,8 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
     }
     var canRender = this.canRender(uri, zIndex)
     if (!canRender) {
-      return callback(new Error('permission denied'))
+      logger.warn(`${appId} request light ${uri} can not render, because currently ZIndex is: ${this.prevZIndex || 'null'}`)
+      return callback()
     }
     handle = require(uri)
     logger.log('call stopPrev loadfile')
