@@ -50,7 +50,10 @@ var refs = {}
  * @param {Function} callback
  */
 function TtsRequest (handle, text, callback) {
-  this.id = handle.speak(text)
+  // this handleId for manager handle
+  this._handleId = handle.speak(text)
+  // this id for userspace
+  this.id = this._handleId
   this.handle = handle
   this.text = text
   this.callback = callback
@@ -66,7 +69,7 @@ TtsRequest.prototype.stop = function () {
   process.nextTick(() => {
     this.state = 'cancel'
   })
-  return this.handle.cancel(this.id)
+  return this.handle.cancel(this._handleId)
 }
 
 /**
@@ -122,9 +125,9 @@ function TtsProxy (handle) {
 }
 inherits(TtsProxy, EventEmitter)
 
-TtsProxy.prototype.onevent = function (name, id, errno) {
+TtsProxy.prototype.onevent = function (name, handleId, errno) {
   var evt = TTSEvents[name]
-  var req = this._requests[id]
+  var req = this._requests[handleId]
   if (!req) {
     this.state = 'error'
     this.emit('error', new Error('TTS task not found'))
@@ -135,7 +138,7 @@ TtsProxy.prototype.onevent = function (name, id, errno) {
       evt === 'error' ||
       evt === 'cancel') {
       req.onend(evt, errno)
-      delete this._requests[id]
+      delete this._requests[handleId]
     }
     this.emit(evt, req.id, errno)
     req.returns()
@@ -149,7 +152,7 @@ TtsProxy.prototype.onevent = function (name, id, errno) {
  */
 TtsProxy.prototype.speak = function (text, cb) {
   var req = new TtsRequest(this._handle, text, cb)
-  this._requests[req.id] = req
+  this._requests[req._handleId] = req
   return req
 }
 
