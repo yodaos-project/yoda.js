@@ -1095,7 +1095,7 @@ AppRuntime.prototype.onLoggedIn = function () {
     this.shouldWelcome = false
 
     if (upgradeInfo) {
-      this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(upgradeInfo.changelog)}`)
+      this.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(upgradeInfo.changelog)}`)
     }
 
     var config = JSON.stringify(this.onGetPropAll())
