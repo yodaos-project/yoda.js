@@ -75,8 +75,11 @@ function checkUpdateAvailability (activity) {
       return activity.tts.speak('准备升级失败')
         .then(() => activity.exit())
     }
-    return activity.tts.speak('开始系统升级，这会需要⼀些时间，请耐⼼等待。请不要拔插电源，现在为你重启安装，成功升级后会及时告诉你')
-      .then(() => system.reboot())
+    return activity.media.start('system://ota_start_update.ogg', { impatient: false })
+      .then(() => system.reboot(), err => {
+        logger.error('Unexpected error on announcing start update', err.stack)
+        system.reboot()
+      })
   }) /** ota.getAvailableInfo */
 }
 
@@ -113,8 +116,11 @@ function onFirstBootAfterUpgrade (activity, url) {
  * @param {URL} url
  */
 function forceUpgrade (activity, url) {
-  activity.tts.speak('嗨，收到重要升级，你可以在⼿机APP上了解升级内容，现在， 请保持电源连接，即将开始系统升级')
-    .then(() => system.reboot())
+  return activity.media.start('system://ota_force_update.ogg', { impatient: false })
+    .then(() => system.reboot(), err => {
+      logger.error('Unexpected error on announcing force update', err.stack)
+      system.reboot()
+    })
 }
 
 function mqttCheckUpdate (activity) {
