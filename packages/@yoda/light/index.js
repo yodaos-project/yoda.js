@@ -20,6 +20,7 @@
  */
 
 var native = require('./light.node')
+var logger = require('logger')('light')
 
 /**
  * Describe the hardware features for the current light.
