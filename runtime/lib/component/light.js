@@ -34,7 +34,7 @@ Light.prototype.play = function (appId, uri, data, option) {
   } else {
     dataStr = JSON.stringify(data)
   }
-  if (!optionStr) {
+  if (!option) {
     optionStr = '{}'
   } else {
     optionStr = JSON.stringify(option)
