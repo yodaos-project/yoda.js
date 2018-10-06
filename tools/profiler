@@ -23,21 +23,21 @@ dbus_makecall() {
 do_profile() {
   service='com.rokid.AmsExport'
   objectPath='/rokid/openvoice'
-  interface='rokid.openvoice.AmsExport.doProfile'
+  interface='rokid.openvoice.yodadebug.doProfile'
   dbus_makecall $service $objectPath $interface $1
 }
 
 take_snapshot() {
   service='com.rokid.AmsExport'
   objectPath='/rokid/openvoice'
-  interface='rokid.openvoice.AmsExport.takeSnapshot'
+  interface='rokid.openvoice.yodadebug.takeSnapshot'
   dbus_makecall $service $objectPath $interface $1
 }
 
 report_memory_usage() {
   service='com.rokid.AmsExport'
   objectPath='/rokid/openvoice'
-  interface='rokid.openvoice.AmsExport.reportMemoryUsage'
+  interface='rokid.openvoice.yodadebug.reportMemoryUsage'
   dbus_makecall $service $objectPath $interface $1
 }
 

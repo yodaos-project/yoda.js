@@ -7,7 +7,7 @@ ps_grep="memory-viewer|iotjs|speech-service|flora-dispatcher\
 |turenproc"
 device_sn='all'
 adb_mode="false"
-flush_count=0
+flush_count=100
 
 help="
 Usage:
@@ -117,6 +117,7 @@ run_memory_cmd() {
     ps=${ps_result[i]}
     ps_mem=`echo $ps | awk '{print $2}'`
     ps_args=`echo $ps | sed "s/$ps_mem//"`
+    ps_args=${ps_args%% -*}
     echo "{\"data\":$ps_mem,\"args\":\"$ps_args\",\"time\":\"$now\"}," >> $data_path
   }
   if [ ! $free_result ]; then
@@ -151,6 +152,7 @@ run_cpu_cmd() {
       top_cpu=`echo $top | awk '{print $2}' | sed "s/%//"`
       if [ $top_cpu -gt 0 ]; then
         top_args=`echo $top | awk '{$1=$2="";print $0}'`
+        top_args=${top_args%% -*}
         echo "{\"data\":$top_cpu,\"args\":\"$top_args\",\"time\":\"$now\"}," >> $data_path
       fi
     fi

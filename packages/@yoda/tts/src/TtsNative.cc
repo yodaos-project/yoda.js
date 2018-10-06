@@ -22,22 +22,15 @@ void TtsNative::OnEvent(uv_async_t* handle) {
 
   jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
   jerry_value_t onevent = iotjs_jval_get_property(jthis, "onevent");
-  if (!jerry_value_is_function(onevent)) {
-    fprintf(stderr, "no onevent function is registered\n");
-    JS_CREATE_ERROR(COMMON, "no onevent function is registered");
-  } else {
-    uint32_t jargc = 3;
-    jerry_value_t jargv[jargc] = {
-      jerry_create_number((double)event->type),
-      jerry_create_number((double)event->id),
-      jerry_create_number((double)event->code),
-    };
-    jerry_call_function(onevent, jerry_create_undefined(), jargv, jargc);
-    for (int i = 0; i < jargc; i++) {
-      jerry_release_value(jargv[i]);
-    }
-    jerry_release_value(onevent);
+  if (jerry_value_is_function(onevent)) {
+    iotjs_jargs_t jargs = iotjs_jargs_create(3);
+    iotjs_jargs_append_number(&jargs, (double)event->type);
+    iotjs_jargs_append_number(&jargs, (double)event->id);
+    iotjs_jargs_append_number(&jargs, (double)event->code);
+    iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
+    iotjs_jargs_destroy(&jargs);
   }
+  jerry_release_value(onevent);
 
   delete event;
   uv_close((uv_handle_t*)handle, TtsNative::AfterEvent);
