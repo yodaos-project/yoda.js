@@ -20,8 +20,8 @@ JS_FUNCTION(Write) {
   unsigned char* bytes = (unsigned char*)iotjs_bufferwrap_buffer(buffer);
   int r = light.lumen_draw(bytes, srclen + 1);
   if (r != 0) {
-    fprintf(stderr, "lumen_draw failed, it returns %d, (%d)%s\n",
-                    r, errno, strerror(errno));
+    fprintf(stderr, "lumen_draw failed, it returns %d, (%d)%s\n", r, errno,
+            strerror(errno));
   }
   return jerry_create_number(r);
 }
