@@ -258,22 +258,25 @@ class NativeCallback : public flora::ClientCallback {
     jerry_value_t this_obj = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
     jerry_value_t cb_func =
         iotjs_jval_get_property(this_obj, "native_callback");
-    jerry_value_t jargs[2];
+    iotjs_jargs_t jargs = iotjs_jargs_create(2);
+    jerry_value_t type = jerry_create_number(0);
+    jerry_value_t args = jerry_create_array(3);
+    iotjs_jargs_append_jval(&jargs, type);
+    iotjs_jargs_append_jval(&jargs, args);
     jerry_value_t ele;
-    jargs[0] = jerry_create_number(0);
-    jargs[1] = jerry_create_array(3);
     ele = jerry_create_string((const jerry_char_t*)name.c_str());
-    jerry_set_property_by_index(jargs[1], 0, ele);
+    jerry_set_property_by_index(args, 0, ele);
     jerry_release_value(ele);
     ele = jerry_create_number(msgtype);
-    jerry_set_property_by_index(jargs[1], 1, ele);
+    jerry_set_property_by_index(args, 1, ele);
     jerry_release_value(ele);
     ele = caps_to_jobject(thisptr, msg);
-    jerry_set_property_by_index(jargs[1], 2, ele);
+    jerry_set_property_by_index(args, 2, ele);
     jerry_release_value(ele);
-    jerry_call_function(cb_func, this_obj, jargs, 2);
-    jerry_release_value(jargs[0]);
-    jerry_release_value(jargs[1]);
+    iotjs_make_callback(cb_func, this_obj, &jargs);
+    jerry_release_value(type);
+    jerry_release_value(args);
+    iotjs_jargs_destroy(&jargs);
     jerry_release_value(cb_func);
     // jerry_release_value(this_obj);
   }
@@ -283,10 +286,10 @@ class NativeCallback : public flora::ClientCallback {
     jerry_value_t this_obj = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
     jerry_value_t cb_func =
         iotjs_jval_get_property(this_obj, "native_callback");
-    jerry_value_t jargs[1];
-    jargs[0] = jerry_create_number(1);
-    jerry_call_function(cb_func, this_obj, jargs, 1);
-    jerry_release_value(jargs[0]);
+    iotjs_jargs_t jargs = iotjs_jargs_create(1);
+    iotjs_jargs_append_number(&jargs, 1);
+    iotjs_make_callback(cb_func, this_obj, &jargs);
+    iotjs_jargs_destroy(&jargs);
     jerry_release_value(cb_func);
     // jerry_release_value(this_obj);
   }

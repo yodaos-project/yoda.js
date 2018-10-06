@@ -169,17 +169,13 @@ void InputEventHandler::OnKeyEvent(uv_async_t* async) {
     fprintf(stderr, "no onevent function is registered\n");
     return;
   }
-  uint32_t jargc = 4;
-  jerry_value_t jargv[jargc] = {
-    jerry_create_number((double)event->data.value),
-    jerry_create_number((double)event->data.action),
-    jerry_create_number((double)event->data.key_code),
-    jerry_create_number((double)event->data.key_time),
-  };
-  jerry_call_function(onevent, jerry_create_undefined(), jargv, jargc);
-  for (int i = 0; i < jargc; i++) {
-    jerry_release_value(jargv[i]);
-  }
+  iotjs_jargs_t jargs = iotjs_jargs_create(4);
+  iotjs_jargs_append_number(&jargs, (double)event->data.value);
+  iotjs_jargs_append_number(&jargs, (double)event->data.action);
+  iotjs_jargs_append_number(&jargs, (double)event->data.key_code);
+  iotjs_jargs_append_number(&jargs, (double)event->data.key_time);
+  iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
+  iotjs_jargs_destroy(&jargs);
   jerry_release_value(onevent);
   uv_close((uv_handle_t*)async, InputEventHandler::AfterCallback);
 }
@@ -195,15 +191,11 @@ void InputEventHandler::OnGestureEvent(uv_async_t* async) {
     fprintf(stderr, "no onevent function is registered\n");
     return;
   }
-  uint32_t jargc = 2;
-  jerry_value_t jargv[jargc] = {
-    jerry_create_number((double)event->data.action),
-    jerry_create_number((double)event->data.key_code),
-  };
-  jerry_call_function(onevent, jerry_create_undefined(), jargv, jargc);
-  for (int i = 0; i < jargc; i++) {
-    jerry_release_value(jargv[i]);
-  }
+  iotjs_jargs_t jargs = iotjs_jargs_create(2);
+  iotjs_jargs_append_number(&jargs, (double)event->data.action);
+  iotjs_jargs_append_number(&jargs, (double)event->data.key_code);
+  iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
+  iotjs_jargs_destroy(&jargs);
   jerry_release_value(onevent);
   uv_close((uv_handle_t*)async, InputEventHandler::AfterCallback);
 }

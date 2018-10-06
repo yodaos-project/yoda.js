@@ -105,23 +105,17 @@ Client.prototype.on = function (name, cb) {
 // Client.prototype.prototype.close
 
 Client.prototype.native_callback = function (type, args) {
-  /**
-   * This function is called from native add-on, and ignoring any returns.
-   * Put anything in next tick to handle possible js exceptions.
-   */
-  process.nextTick(() => {
-    switch (type) {
-      // recv post
-      // params: name msgtype msgcontent
-      case 0:
-        this.callbacks[0](args[0], args[1], args[2])
-        break
-        // disconnected
-      case 1:
-        this.callbacks[1]()
-        break
-    }
-  })
+  switch (type) {
+    // recv post
+    // params: name msgtype msgcontent
+    case 0:
+      this.callbacks[0](args[0], args[1], args[2])
+      break
+    // disconnected
+    case 1:
+      this.callbacks[1]()
+      break
+  }
 }
 
 /**
