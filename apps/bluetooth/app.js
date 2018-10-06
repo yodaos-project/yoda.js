@@ -31,7 +31,7 @@ module.exports = function (activity) {
     setTimeout(() => {
       if ((bluetoothState === null) || (bluetoothState === 'closed')) {
         player.start(name)
-        activity.light.play('system://bluetoothOpen.js').catch((err) => {
+        activity.light.play('system://bluetoothOpen.js', {}, { shouldResume: true }).catch((err) => {
           logger.error('bluetooth music light play', err)
         })
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
@@ -89,7 +89,15 @@ module.exports = function (activity) {
         (message.play_state === 'invailed')) {
         connectBlutoothName = message.connect_name
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          if (message.connect_name === 'undefined') { activity.setForeground().then(() => { speakAndExit(STRING_CONNECEDFAILED + DEVICE_NAME) }) } else { activity.setForeground().then(() => { speakAndExit(STRING_CONNECEDFAILED + message.connect_name) }) }
+          if (message.connect_name === 'undefined') {
+            activity.setForeground().then(() => {
+              speakAndExit(STRING_CONNECEDFAILED + DEVICE_NAME)
+            })
+          } else {
+            activity.setForeground().then(() => {
+              speakAndExit(STRING_CONNECEDFAILED + message.connect_name)
+            })
+          }
         } else {
           activity.setForeground().then(() => {
             mediaAndExit('system://connectfailedbluetooth.ogg')
