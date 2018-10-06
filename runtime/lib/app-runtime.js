@@ -32,6 +32,7 @@ var Turen = require('./component/turen')
 var Keyboard = require('./component/keyboard')
 var Lifetime = require('./component/lifetime')
 var Wormhole = require('./component/wormhole')
+var Light = require('./component/light')
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -75,6 +76,7 @@ function AppRuntime () {
   this.loader = new AppLoader(this)
   this.life = new Lifetime(this.loader)
   this.wormhole = new Wormhole(this)
+  this.light = new Light(this.dbusRegistry)
   this.shouldStopLongPressMicLight = false
 }
 inherits(AppRuntime, EventEmitter)
@@ -107,10 +109,10 @@ AppRuntime.prototype.init = function init (paths) {
     // initializing play tts status
     property.set('sys.firstboot.init', '1', 'persist')
     future = future.then(() => {
-      this.lightMethod('play', ['@yoda', '/opt/light/setSpeaking.js', '{}'])
-      return this.lightMethod('appSound', ['@system', '/opt/media/firstboot.ogg'])
+      this.light.play('@yoda', 'system://setSpeaking.js', {}, { shouldResume: true })
+      return this.light.appSound('@system', 'system://firstboot.ogg')
     }).then(() => {
-      this.lightMethod('stop', ['@yoda', '/opt/light/setSpeaking.js'])
+      this.light.stop('@yoda', 'system://setSpeaking.js')
     })
   }
 
@@ -261,8 +263,8 @@ AppRuntime.prototype.startForceUpdate = function startForceUpdate () {
 
 AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
   this.shouldStopLongPressMicLight = true
-  this.lightMethod('appSound', ['@yoda', '/opt/media/key_config_notify.ogg'])
-  this.lightMethod('play', ['@yoda', '/opt/light/longPressMic.js', '{}'])
+  this.light.appSound('@yoda', 'system://key_config_notify.ogg')
+  this.light.play('@yoda', 'system://longPressMic.js')
   setTimeout(() => {
     this.shouldStopLongPressMicLight = false
   }, 5000)
@@ -273,7 +275,7 @@ AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
  */
 AppRuntime.prototype.stopLongPressMicLight = function stopLongPressMicLight () {
   if (this.shouldStopLongPressMicLight === true) {
-    this.lightMethod('stop', ['@yoda', '/opt/light/longPressMic.js'])
+    this.light.stop('@yoda', '/opt/light/longPressMic.js')
     this.shouldStopLongPressMicLight = false
   }
 }
@@ -329,7 +331,7 @@ AppRuntime.prototype.stopMonologue = function (appId) {
 AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   var preemptive = _.get(options, 'preemptive', true)
   var carrierId = _.get(options, 'carrierId')
-  this.lightMethod('stop', ['@yoda', '/opt/light/loading.js'])
+  this.light.stop('@yoda', 'system://loading.js')
 
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
@@ -529,7 +531,7 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
   var promises = []
   if (lightd) {
     promises.push(
-      this.lightMethod('reset', [])
+      this.light.reset()
         .then((res) => {
           if (res && res[0] === true) {
             logger.log('reset lightd success')
@@ -626,7 +628,7 @@ AppRuntime.prototype.resetCloudStack = function () {
 AppRuntime.prototype.appGC = function appGC (appId) {
   logger.info('Collecting resources of app', appId)
   return Promise.all([
-    this.lightMethod('stop', [ appId, '' ]),
+    this.light.stopByAppId(appId),
     this.multimediaMethod('stop', [ appId ]),
     this.ttsMethod('stop', [ appId ])
   ]).catch(err => logger.error('Unexpected error on collecting resources of app', appId, err.stack))
@@ -653,9 +655,9 @@ AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
   this.turen.pickup(isPickup)
 
   if (isPickup) {
-    return this.lightMethod('setPickup', ['@yoda', '' + (duration || 6000), withAwaken])
+    return this.light.setPickup('@yoda', duration, withAwaken)
   }
-  return this.lightMethod('stop', ['@yoda', ''])
+  return this.light.stopByAppId('@yoda')
 }
 
 AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {
@@ -999,17 +1001,6 @@ AppRuntime.prototype.onLoadCustomConfig = function (config) {
 /**
  * @private
  */
-AppRuntime.prototype.lightMethod = function (name, args) {
-  return this.dbusRegistry.callMethod(
-    'com.service.light',
-    '/rokid/light',
-    'com.rokid.light.key',
-    name, args)
-}
-
-/**
- * @private
- */
 AppRuntime.prototype.ttsMethod = function (name, args) {
   return this.dbusRegistry.callMethod(
     'com.service.tts',
@@ -1092,7 +1083,7 @@ AppRuntime.prototype.onLoggedIn = function () {
 
     if (this.shouldWelcome) {
       logger.info('announcing welcome')
-      this.lightMethod('play', ['@yoda', '/opt/light/setWelcome.js', '{}'])
+      this.light.play('@yoda', 'system://setWelcome.js')
     }
     this.shouldWelcome = false
 
