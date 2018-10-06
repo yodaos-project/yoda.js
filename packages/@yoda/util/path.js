@@ -1,4 +1,5 @@
 var _ = require('./_')
+var join = require('path').join
 
 module.exports.transformPathScheme = transformPathScheme
 /**
@@ -12,21 +13,25 @@ function transformPathScheme (url, systemPrefix, appHome, options) {
   var allowedScheme = _.get(options, 'allowedScheme', [])
 
   var idx = url.indexOf('://')
-  var scheme = url.substr(0, idx)
-  var path = url.substr(idx + 3)
+  var scheme = ''
+  var path = url
+  if (idx >= 0) {
+    scheme = url.substr(0, idx)
+    path = url.substr(idx + 3)
+  }
   var ret
   switch (true) {
     case scheme === 'system': {
       // etc.. system://path/to/sound.ogg
-      ret = `${systemPrefix}/${path}`
+      ret = join(systemPrefix, path)
       break
     }
-    case '':
+    case scheme === '':
     case scheme === 'self':
     case allowedScheme.indexOf(scheme) < 0: {
       // etc.. path/to/sound.ogg
       // etc.. self://path/to/sound.ogg
-      ret = `${appHome}/${path}`
+      ret = join(appHome, path)
       break
     }
     default: {
