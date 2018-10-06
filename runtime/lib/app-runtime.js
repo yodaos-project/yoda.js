@@ -99,6 +99,7 @@ AppRuntime.prototype.init = function init (paths) {
     this.resetCloudStack()
   })
   // initializing the whole process...
+  this.resetCloudStack()
   this.resetServices()
 
   var future = Promise.resolve()
@@ -209,6 +210,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
     this.life.deactivateAppsInStack(),
     this.resetServices({ lightd: false })
   ])
+  this.resetCloudStack()
 
   if (currentAppId) {
     /**
