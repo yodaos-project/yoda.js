@@ -214,7 +214,7 @@ module.exports = function (app) {
         }
         // FIXME(Yorkie): needs tell bind is unavailable?
       })
-      app.light.play('system://setStandby.js')
+      app.light.play('system://setStandby.js', {}, { shouldResume: true })
     }
     timerAndSleep()
   }

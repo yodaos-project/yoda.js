@@ -176,7 +176,7 @@ module.exports = function (activity) {
 
   function micMute (muted) {
     /** Only light effects, actual mic mute operation has been handled by runtime */
-    return activity.light.play('system://setMuted.js', { muted: muted })
+    return activity.light.play('system://setMuted.js', { muted: muted }, { shouldResume: muted })
       .then(() => activity.exit())
   }
 
