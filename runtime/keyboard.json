@@ -5,7 +5,7 @@
   },
   "113": {
     "click": {
-      "debounce": 2000,
+      "debounce": 1000,
       "runtimeMethod": "setMicMute",
       "params": []
     },
