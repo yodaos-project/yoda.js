@@ -72,7 +72,15 @@ module.exports = {
    * @param {Buffer} [explict] - if present, use the given buffer to write.
    */
   write: function writeBuffer (explict) {
-    native.write(explict || buffer)
+    var r = native.write(explict || buffer)
+    if (r !== 0) {
+      if (r === -16) {
+        // FIXME(Yorkie): this should moved to native libs.
+        logger.info('the current rendering is busy, lost this frame')
+      } else {
+        throw new Error('light value write error.')
+      }
+    }
     return this
   },
 
