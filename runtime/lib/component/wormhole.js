@@ -101,5 +101,5 @@ Wormhole.prototype.setOffline = function setOffline () {
     return
   }
   logger.info('disconnecting mqtt proactively')
-  this.mqtt.disconnect()
+  this.mqtt.offline()
 }

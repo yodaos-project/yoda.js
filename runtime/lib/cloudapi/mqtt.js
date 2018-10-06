@@ -10,6 +10,7 @@ var env = require('../env')()
 var reconnectTimeout = 2000
 var endpoint = env.mqtt.uri
 var handle = null
+var shouldOffline = false
 
 /**
  * @class
@@ -41,9 +42,10 @@ inherits(MqttAgent, EventEmitter)
  */
 MqttAgent.prototype.initialize = function initialize () {
   logger.info('start initializing the mqtt')
+  shouldOffline = false
   this.disconnect() // this clears the `reconnectTimer` and `reconnecting`.
   this.register((err) => {
-    if (handle === null) {
+    if (shouldOffline) {
       logger.warn('skip connect because the handle has been flagged as null')
       return
     }
@@ -142,6 +144,14 @@ MqttAgent.prototype.disconnect = function disconnect () {
   } else {
     logger.info('just skip disconnect, because the handle has already been disconnected')
   }
+}
+
+/**
+ * Set the MQTT to be offline.
+ */
+MqttAgent.prototype.offline = function offline () {
+  shouldOffline = true
+  this.disconnect()
 }
 
 /**
