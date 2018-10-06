@@ -193,7 +193,8 @@ dbusApis.addMethod('speak', {
       .then((res) => {
         logger.log('ttsd check:', res, appId)
         if (res['0'] === 'true') {
-          if (service.lastAppId === appId) {
+          if (service.lastAppId === appId && service.lastReqId > -1) {
+            service.emit('simulateCancel', service.lastReqId)
             ignoreTtsEvent = false
           }
           var id = service.speak(appId, text)
@@ -257,10 +258,11 @@ dbusApis.addMethod('pause', {
   in: ['s'],
   out: ['b']
 }, function (appId, cb) {
-  logger.log(`tts pause by OS with appId: ${appId}`)
   if (!appId) {
+    logger.warn('ignore tts pause by OS because not given appId')
     return cb(null, true)
   }
+  logger.log(`tts pause by OS with appId: ${appId}`)
   ignoreTtsEvent = true
   service.pause(appId)
   cb(null, true)
@@ -271,7 +273,6 @@ dbusApis.addMethod('resume', {
   out: ['b']
 }, function (appId, cb) {
   logger.info('tts resume to true')
-  ignoreTtsEvent = false
   service.resume(appId)
   cb(null, true)
 })
