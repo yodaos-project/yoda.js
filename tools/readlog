@@ -34,9 +34,9 @@ done
 
 if test -z "$expression"; then
   adb shell logread -f -e iotjs \
-    | egrep --line-buffered --color=always '.*(UnhandledPromiseRejection|UncaughtException|\[E\]).*|$'
+    | egrep --line-buffered --color=always '.*(UnhandledPromiseRejection|UncaughtException|\[ERROR\]).*|$'
 else
   adb shell logread -f -e iotjs \
     | grep --line-buffered -e "$expression" \
-    | egrep --line-buffered --color=always '.*(UnhandledPromiseRejection|UncaughtException|\[E\]).*|$'
+    | egrep --line-buffered --color=always '.*(UnhandledPromiseRejection|UncaughtException|\[ERROR\]).*|$'
 fi
