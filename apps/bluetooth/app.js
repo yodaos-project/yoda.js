@@ -35,13 +35,13 @@ module.exports = function (activity) {
           logger.error('bluetooth music light play', err)
         })
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => { speakAndExit(STRING_BROADCAST) })
+          activity.setForeground().then(() => { speak(STRING_BROADCAST) })
         } else {
           activity.setForeground().then(() => { mediaAndExit('system://openbluetooth.ogg') })
         }
       } else if (bluetoothState === 'connected') {
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => { speakAndExit(STRING_CONNECED + connectBlutoothName) })
+          activity.setForeground().then(() => { speak(STRING_CONNECED + connectBlutoothName) })
         } else {
           activity.setForeground().then(() => { mediaAndExit('system://connectbluetooth.ogg') })
         }
@@ -55,7 +55,10 @@ module.exports = function (activity) {
       }
       if (message.a2dpstate === 'closed') {
         bluetoothState = 'closed'
-        if (!playState) { disconnect() }
+        activity.light.stop('system://bluetoothOpen.js')
+        activity.setForeground().then(() => {
+          mediaAndExit('system://closebluetooth.ogg')
+        })
       }
       if (message.connect_state === 'disconnected') {
         bluetoothState = 'disconnected'
@@ -78,7 +81,7 @@ module.exports = function (activity) {
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'invailed') &&
       (message.play_state === 'invailed')) {
         if (message.linknum === 0) {
-          setTimeout(() => { activity.setForeground().then(() => { speakAndExit(STRING_OPEN_BEGIN + nameToSpeak + STRING_OPEN_END) }) }
+          setTimeout(() => { activity.setForeground().then(() => { speak(STRING_OPEN_BEGIN + nameToSpeak + STRING_OPEN_END) }) }
             , 3000)// Temporary delay 3s, in order to Preventing TTS broadcast loss.
         }
       }
@@ -96,11 +99,12 @@ module.exports = function (activity) {
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'connected') &&
         (message.play_state === 'invailed')) {
         bluetoothState = 'connected'
+        activity.light.stop('system://bluetoothOpen.js')
         connectBlutoothName = message.connect_name
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
           setTimeout(() => {
             activity.setForeground().then(() => {
-              speakAndExit(STRING_CONNECED + message.connect_name)
+              speak(STRING_CONNECED + message.connect_name)
             })
           }, 1000)// Temporary delay 1s, in order to prevent TTS synchronization play will burst.
         } else {
@@ -152,7 +156,6 @@ module.exports = function (activity) {
 
   function nextMusic () {
     player = bluetooth.getPlayer()
-    logger.log('bluetooth music is nextMusic')
     if (player) {
       player.next()
     }
@@ -169,6 +172,12 @@ module.exports = function (activity) {
     return activity.tts.speak(text).catch((err) => {
       logger.error('bluetooth music tts error', err)
     }).then(() => !playState && activity.setBackground())
+  }
+
+  function speak (text) {
+    return activity.tts.speak(text).catch((err) => {
+      logger.error('bluetooth music tts error', err)
+    })
   }
 
   function mediaAndExit (text) {
