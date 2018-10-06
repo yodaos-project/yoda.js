@@ -367,10 +367,10 @@ Light.prototype.stopFile = function (appId, uri) {
     if (!uri || this.prevUri === uri) {
       logger.log(`stop resume light: ${uri}`)
       this.stopPrev()
+      // try to resume next layer
+      this.resume()
     }
   }
-  // try to resume next layer
-  this.resume()
 }
 
 Light.prototype.setAwake = function (appId) {
