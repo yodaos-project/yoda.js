@@ -715,9 +715,16 @@ Object.assign(MultimediaDescriptor.prototype,
               }
 
               var channel = `callback:multimedia:${multimediaId}`
+              var events = ['playbackcomplete', 'cancel']
+              if (impatient) {
+                /**
+                 * impatient client cannot receive `error` event through Promise
+                 */
+                events.push('error')
+              }
               self._activityDescriptor._registeredDbusSignals.push(channel)
               self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
-                if (['playbackcomplete', 'error', 'cancel'].indexOf(event) >= 0) {
+                if (events.indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
                   self._runtime.dbusRegistry.removeListener(channel, onDbusSignal)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
@@ -956,11 +963,19 @@ Object.assign(TtsDescriptor.prototype,
             }
             return new Promise((resolve, reject) => {
               var channel = `callback:tts:${ttsId}`
+              var events = ['cancel', 'end']
+              if (impatient) {
+                /**
+                 * impatient client cannot receive `error` event through Promise
+                 */
+                events.push('error')
+              }
               self._activityDescriptor._registeredDbusSignals.push(channel)
+
               self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
                 logger.info('tts signals', channel, event)
 
-                if (['cancel', 'end', 'error'].indexOf(event) >= 0) {
+                if (events.indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
                   self._runtime.dbusRegistry.removeListener(channel, onDbusSignal)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
