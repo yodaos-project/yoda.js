@@ -364,6 +364,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   logger.info('deactivating app', appId, ', recover?', recover)
 
   this.activeAppStack.splice(idx, 1)
+  delete this.appDataMap[appId]
   this.onStackUpdate()
 
   var deactivating = this.destroyAppById(appId)
@@ -462,6 +463,7 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   var activeIdx = this.activeAppStack.indexOf(appId)
   if (activeIdx >= 0) {
     this.activeAppStack.splice(activeIdx, 1)
+    delete this.appDataMap[appId]
     this.onStackUpdate()
   }
 

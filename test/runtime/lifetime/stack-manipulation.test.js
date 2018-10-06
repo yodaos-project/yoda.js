@@ -23,18 +23,22 @@ test('app preemption', t => {
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '1', 'scene app preempts top of stack')
+      t.looseEqual(life.getAppDataById('0'), null, 'app data of apps that get out of stack app shall be removed')
       t.looseEqual(mock.appLoader.getAppById('0'), null, 'cut app shall be destroyed on preemption')
 
       return life.activateAppById('2', 'scene')
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '2', 'scene app preempts top of stack from scene app')
+      t.looseEqual(life.getAppDataById('1'), null, 'app data of apps that get out of stack app shall be removed')
       t.looseEqual(mock.appLoader.getAppById('1'), null, 'scene app shall be destroyed on preemption by a scene app')
 
       return life.activateAppById('3', 'cut')
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '3', 'cut app preempts top of stack from scene app')
+      t.notLooseEqual(life.getAppDataById('2'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('2').form, 'scene')
       t.notLooseEqual(mock.appLoader.getAppById('2'), null, 'scene app shall not be destroyed on preemption by a cut app')
       t.strictEqual(life.isAppActive('2'), true, 'scene app shall remain in stack on preemption by a cut app')
 
@@ -42,6 +46,8 @@ test('app preemption', t => {
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '2', 'scene app shall return to top of stack on deactivation of cut app')
+      t.notLooseEqual(life.getAppDataById('2'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('2').form, 'scene')
       t.looseEqual(mock.appLoader.getAppById('3'), null, 'cut app shall be destroyed on deactivation')
 
       t.end()
@@ -66,26 +72,40 @@ test('shall not deactivate app if app to be activated is in stack', t => {
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '0', 'cut app preempts top of stack')
+      t.notLooseEqual(life.getAppDataById('0'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('0').form, 'cut')
       return life.activateAppById('0', 'cut')
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '0', 'cut app preempts top of stack')
+      t.notLooseEqual(life.getAppDataById('0'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('0').form, 'cut')
       return life.activateAppById('0', 'scene')
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '0', 'scene app preempts top of stack')
+      t.notLooseEqual(life.getAppDataById('0'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('0').form, 'scene')
       return life.activateAppById('0', 'scene')
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '0', 'scene app preempts top of stack')
+      t.notLooseEqual(life.getAppDataById('0'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('0').form, 'scene')
       return life.activateAppById('1', 'cut')
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '1', 'cut app preempts top of stack')
+      t.notLooseEqual(life.getAppDataById('0'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('0').form, 'scene')
+      t.notLooseEqual(life.getAppDataById('1'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('1').form, 'cut')
       return life.activateAppById('0', 'scene')
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '0', 'scene app preempts top of stack')
+      t.notLooseEqual(life.getAppDataById('0'), null, 'app data of apps still in stack shall not be removed')
+      t.strictEqual(life.getAppDataById('0').form, 'scene')
       t.end()
     })
     .catch(err => {
