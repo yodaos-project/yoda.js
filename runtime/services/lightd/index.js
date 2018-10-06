@@ -40,21 +40,24 @@ var service = new Service({
 })
 
 dbusApis.addMethod('play', {
-  in: ['s', 's', 's'],
-  out: ['b', 's']
-}, function (appId, name, args, cb) {
+  in: ['s', 's', 's', 's'],
+  out: ['b']
+}, function (appId, name, args, optionStr, cb) {
   var data = {}
+  var option = {}
   try {
     data = JSON.parse(args)
+    option = JSON.parse(optionStr)
   } catch (error) {
-    logger.log(`parse args error: ${args}, appId: ${appId}`)
+    logger.log(`parse args or option error: ${args}, appId: ${appId}`)
   }
-  service.loadfile(appId, name, data, (err) => {
+  service.loadfile(appId, name, data, option, (err) => {
+    logger.log(typeof cb, typeof optionStr)
     if (err) {
       logger.error(`execute ${name}(${appId}) with the following error:`, err)
-      cb(null, false, err.message || 'unknown error')
+      cb(null, false)
     } else {
-      cb(null, true, '')
+      cb(null, true)
     }
   })
 })

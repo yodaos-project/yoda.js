@@ -134,7 +134,7 @@ Turen.prototype.setAwaken = function setAwaken () {
           this.pausedMediaAppIdOnAwaken = currAppId
         }
       }),
-    this.runtime.lightMethod('setAwake', ['@yoda'])
+    this.runtime.light.setAwake('@yoda')
   ]))
 }
 
@@ -155,7 +155,7 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
   logger.info('reset awaken, recovering?', recover)
 
   var promises = [
-    this.runtime.lightMethod('stop', ['@yoda', '/opt/light/awake.js']),
+    this.runtime.light.stop('@yoda', 'system://awake.js'),
     this.runtime.life.resumeLifetime({ recover: recover })
   ]
 
@@ -251,9 +251,9 @@ Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
   }
   if (wifi.getWifiState() !== wifi.WIFI_CONNECTED) {
     wifi.enableScanPassively()
-    return this.runtime.lightMethod('appSound', ['@yoda', '/opt/media/wifi_is_connecting.ogg'])
+    return this.runtime.light.appSound('@yoda', 'system://wifi_is_connecting.ogg')
   }
-  return this.runtime.lightMethod('setDegree', ['@yoda', '' + (data.sl || 0)])
+  return this.runtime.light.setDegree('@yoda', data.sl)
 }
 
 /**
@@ -281,8 +281,7 @@ Turen.prototype.handleAsrEnd = function handleAsrEnd () {
        */
       return
     }
-    return this.runtime.lightMethod('play',
-      ['@yoda', '/opt/light/loading.js', '{}'])
+    return this.runtime.light.play('@yoda', 'system://loading.js')
   })
 }
 
