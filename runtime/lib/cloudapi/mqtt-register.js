@@ -48,7 +48,11 @@ function registry (config, cb) {
       'Content-Length': msg.length
     }
   }, (response) => {
-    logger.info(`${response.statusCode} /api/registryByKey`)
+    var code = response.statusCode
+    logger.info(`${code} /api/registryByKey`)
+    if (code >= 400) {
+      return cb(new Error(`registry failed with status code ${code}`))
+    }
 
     var list = []
     response.on('data', (chunk) => list.push(chunk))
