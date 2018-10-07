@@ -412,7 +412,7 @@ DBus.prototype.yodadebug = {
       }
       var floraEmit = (channel, args, ms) => {
         setTimeout(() => {
-          this.runtime.flora.floraCli.callbacks[0](channel, '', {
+          this.runtime.flora.__cli.callbacks[0](channel, '', {
             get: (idx) => _.get(args, idx)
           })
         }, ms)

@@ -1,4 +1,5 @@
 var logger = require('logger')('custodian')
+var property = require('@yoda/property')
 var wifi = require('@yoda/wifi')
 
 module.exports = Custodian
@@ -32,6 +33,7 @@ Custodian.prototype.onNetworkConnect = function onNetworkConnect () {
   if (this._networkConnected || this._checkingNetwork) {
     return
   }
+  property.set('state.network.connected', 'true')
   this._networkConnected = true
   logger.info('on network connect and checking internet connection.')
 
@@ -57,6 +59,7 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
   if (this._networkConnected === false) {
     return
   }
+  property.set('state.network.connected', 'false')
   this._networkConnected = false
   logger.info('on network disconnect, once logged in?', this._loggedIn)
   this.runtime.wormhole.setOffline()
@@ -82,6 +85,7 @@ Custodian.prototype.resetNetwork = function resetNetwork () {
   logger.log('reset network')
   wifi.resetWifi()
   wifi.disableAll()
+  property.set('state.network.connected', 'false')
   this.runtime.wormhole.setOffline()
   // reset the onGetPropAll...
   this.runtime.onGetPropAll = function () {

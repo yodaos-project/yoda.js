@@ -1,6 +1,9 @@
 
 var logger = require('logger')('flora')
+var inherits = require('util').inherits
+
 var floraFactory = require('@yoda/flora')
+var FloraComp = require('@yoda/flora/comp')
 
 var floraConfig = require('../../flora-config.json')
 var globalEnv = require('../env')()
@@ -14,13 +17,14 @@ module.exports = Flora
  * @param {AppRuntime} runtime
  */
 function Flora (runtime) {
+  FloraComp.call(this, logger)
   this.runtime = runtime
-  this.floraCli = null
   this.speechAuthInfo = null
   this.voiceCtx = { lastFaked: false }
 
   this.asr2nlpCallbacks = {}
 }
+inherits(Flora, FloraComp)
 
 Flora.prototype.handlers = {
   'rokid.turen.voice_coming': function (msg) {
@@ -122,21 +126,7 @@ function onAsr2NlpError (msg) {
  * Initialize flora client.
  */
 Flora.prototype.init = function init () {
-  logger.info('start initializing flora client')
-  var cli = floraFactory.connect(floraConfig.uri + '#vui', floraConfig.bufsize)
-  if (!cli) {
-    logger.warn('flora connect failed, try again after', floraConfig.reconnInterval, 'milliseconds')
-    setTimeout(() => this.init(), floraConfig.reconnInterval)
-    return
-  }
-  cli.on('recv_post', this.onRecvPost.bind(this))
-  cli.on('disconnected', this.onDisconnect.bind(this))
-
-  Object.keys(this.handlers).forEach(it => {
-    cli.subscribe(it, floraFactory.MSGTYPE_INSTANT)
-  })
-
-  this.updateSpeechPrepareOptions()
+  FloraComp.prototype.init.call(this, 'vui', floraConfig)
 
   var msg = new floraFactory.Caps()
   // lang
@@ -154,40 +144,14 @@ Flora.prototype.init = function init () {
   msg.writeInt32(globalEnv.speechVadBegin)
   // max voice fragment size
   msg.writeInt32(globalEnv.speechVoiceFragment)
-  cli.post('rokid.speech.options', msg, floraFactory.MSGTYPE_PERSIST)
-  this.floraCli = cli
-}
-
-Flora.prototype.destruct = function destruct () {
-  if (this.floraCli == null) {
-    return
-  }
-  this.floraCli.close()
-}
-
-/**
- * Flora recv_post channel message handler.
- *
- * @param {string} name
- * @param {string} type
- * @param {string} msg
- */
-Flora.prototype.onRecvPost = function onRecvPost (name, type, msg) {
-  var handler = this.handlers[name]
-  if (handler == null) {
-    logger.error(`No handler found for ${name}`)
-    return
-  }
-  handler.call(this, msg)
+  this.post('rokid.speech.options', msg, floraFactory.MSGTYPE_PERSIST)
 }
 
 /**
  * Flora disconnection event handler.
  */
 Flora.prototype.onDisconnect = function onDisconnect () {
-  logger.warn('flora disconnected, try reconnect')
-  this.floraCli.close()
-  this.init()
+  FloraComp.prototype.onDisconnect.call(this)
 
   // clear pending callback functions
   var cbs = this.asr2nlpCallbacks
@@ -196,30 +160,11 @@ Flora.prototype.onDisconnect = function onDisconnect () {
 }
 
 /**
- * Post a message through flora.
- * @param {string} channel -
- * @param {FloraCaps} msg -
- * @param {FloraType} type -
- */
-Flora.prototype.post = function post (channel, msg, type) {
-  if (this.floraCli == null) {
-    return
-  }
-  if (type == null) {
-    type = floraFactory.MSGTYPE_INSTANT
-  }
-  this.floraCli.post(channel, msg, type)
-}
-
-/**
  * Update speech service configuration.
  *
  * @param {object} speechAuthInfo
  */
 Flora.prototype.updateSpeechPrepareOptions = function updateSpeechPrepareOptions (speechAuthInfo) {
-  if (this.floraCli == null) {
-    return
-  }
   if (speechAuthInfo == null) {
     return
   }
@@ -239,7 +184,7 @@ Flora.prototype.updateSpeechPrepareOptions = function updateSpeechPrepareOptions
   msg.writeInt32(10000)
   // noresp timeout
   msg.writeInt32(20000)
-  this.floraCli.post('rokid.speech.prepare_options', msg, floraFactory.MSGTYPE_PERSIST)
+  this.post('rokid.speech.prepare_options', msg, floraFactory.MSGTYPE_PERSIST)
 }
 
 /**
@@ -248,13 +193,10 @@ Flora.prototype.updateSpeechPrepareOptions = function updateSpeechPrepareOptions
  * @param {string} stack
  */
 Flora.prototype.updateStack = function updateStack (stack) {
-  if (this.floraCli == null) {
-    return
-  }
   logger.info('setStack', stack)
   var msg = new floraFactory.Caps()
   msg.write(stack)
-  this.floraCli.post('rokid.speech.stack', msg, floraFactory.MSGTYPE_PERSIST)
+  this.post('rokid.speech.stack', msg, floraFactory.MSGTYPE_PERSIST)
 }
 
 /**
@@ -266,7 +208,7 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, cb) {
   if (typeof asr !== 'string' || typeof cb !== 'function') {
     throw TypeError()
   }
-  if (this.floraCli == null) {
+  if (this.__cli == null) {
     return process.nextTick(() => cb(new Error('flora service connect failed')))
   }
   var caps = new floraFactory.Caps()
@@ -274,7 +216,7 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, cb) {
   caps.write(asr2nlpId)
   caps.writeInt32(asr2nlpSeq)
   this.asr2nlpCallbacks[asr2nlpSeq++] = cb
-  this.floraCli.post('rokid.speech.put_text', caps, floraFactory.MSGTYPE_INSTANT)
+  this.post('rokid.speech.put_text', caps, floraFactory.MSGTYPE_INSTANT)
 }
 
 /**
