@@ -9,8 +9,6 @@ var LIGHT_SOURCE = '/opt/light/'
 var maxUserspaceLayers = 3
 var maxSystemspaceLayers = 100
 
-var setSpeaking = require(`${LIGHT_SOURCE}setSpeaking.js`)
-
 var manager = new LightRenderingContextManager()
 
 function Light (options) {
@@ -31,7 +29,7 @@ function Light (options) {
   this.prevZIndex = null
   this.prevUri = null
   this.prevAppId = null
-  this.nextResumeTimerHandle = null
+  this.nextResumeTimer = null
   this.degree = 0
   this.userspaceZIndex = new Array(maxUserspaceLayers)
   this.init()
@@ -68,8 +66,8 @@ Light.prototype.getContext = function () {
 }
 
 Light.prototype.stopPrev = function (keep) {
-  if (this.prevCallback) {
-    this.prevCallback(false, true)
+  if (typeof this.prevCallback === 'function') {
+    this.prevCallback()
     this.prevCallback = null
   }
   if (this.prev) {
@@ -95,12 +93,12 @@ Light.prototype.clearPrev = function () {
   this.prevCallback = null
 }
 
-Light.prototype.loadfile = function (appId, uri, data, callback) {
+Light.prototype.loadfile = function (appId, uri, data, option, callback) {
   var handle
   var zIndex
   var self = this
   try {
-    logger.info('request light uri:', appId, uri, data)
+    logger.info('request light uri:', appId, uri, data, option)
     var isSystemUri = this.isSystemURI(uri)
     // format z-index.
     if (isSystemUri) {
@@ -112,24 +110,45 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
       zIndex = zIndex >= maxUserspaceLayers ? maxUserspaceLayers - 1 : zIndex
       zIndex = zIndex < 0 ? 0 : zIndex
     }
+    // update layers by uri
+    if (!option.shouldResume) {
+      this.removeLayerByUri(uri)
+    }
     var canRender = this.canRender(uri, zIndex)
     if (!canRender) {
-      logger.warn(`${appId} request light ${uri} can not render, because currently ZIndex is: ${this.prevZIndex || 'null'}`)
+      logger.warn(`${appId} request light ${uri} can not render, because currently ZIndex is: ${this.prevZIndex || 'null'} ${this.prevUri}`)
+      // push into resume layers
+      if (option.shouldResume === true) {
+        this.setResume(appId, isSystemUri, zIndex, uri, data)
+      }
       return callback()
     }
+
     handle = require(uri)
     logger.log('call stopPrev loadfile')
     this.stopPrev(data && data.keep)
     var context = this.getContext()
+
     // this function can only be called once
-    clearTimeout(self.nextResumeTimerHandle)
-    this.prevCallback = dedup(function () {
-      self.nextResumeTimerHandle = setTimeout(() => {
-        self.clearPrev()
-        self.resume()
-      }, 0)
+    clearTimeout(self.nextResumeTimer)
+    if (option.shouldResume === true) {
+      // do not resume light if currently light need resume too
+      this.prevCallback = function noop () {
+        logger.warn(`light ${uri} should not call callback bacause it will resume`)
+      }
       callback()
-    })
+    } else {
+      this.prevCallback = dedup(() => {
+        this.nextResumeTimer = setTimeout(() => {
+          this.clearPrev()
+          this.resume()
+        }, 0)
+        callback()
+      })
+    }
+    if (option.shouldResume === true) {
+      this.setResume(appId, isSystemUri, zIndex, uri, data, context)
+    }
     this.prev = handle(context, data || {}, () => {
       setTimeout(() => {
         this.prevCallback && this.prevCallback()
@@ -138,35 +157,39 @@ Light.prototype.loadfile = function (appId, uri, data, callback) {
     this.prevUri = uri
     this.prevZIndex = zIndex
     this.prevAppId = appId
-    if (this.prev && this.prev.shouldResume === true) {
-      if (isSystemUri) {
-        this.systemspaceZIndex[zIndex] = {
-          appId: appId,
-          uri: uri,
-          data: data || {},
-          context: context,
-          handle: handle
-        }
-        logger.log(`set systemspace resume: z-index: ${zIndex} ${uri} ${appId}`)
-      } else {
-        this.userspaceZIndex[zIndex] = {
-          appId: appId,
-          uri: uri,
-          data: data || {},
-          context: context,
-          handle: handle
-        }
-        logger.log(`set userspace resume: z-index: ${zIndex} ${uri} ${appId}`)
-      }
-      // do not resume light if currently light need resume too
-      this.prevCallback = function noop () {}
-      callback()
-    } else {
-      this.removeLayerByUri(uri)
-    }
   } catch (error) {
     logger.error(`load effect file error from path: ${uri}`, error)
     callback(error)
+  }
+}
+
+Light.prototype.setResume = function (appId, isSystemUri, zIndex, uri, data, context) {
+  var handle = null
+  try {
+    handle = require(uri)
+  } catch (error) {
+    logger.error(`appId: ${appId} set resume error when load file from: ${uri}`)
+    handle = null
+    return
+  }
+  if (isSystemUri) {
+    this.systemspaceZIndex[zIndex] = {
+      appId: appId,
+      uri: uri,
+      data: data || {},
+      context: context,
+      handle: handle
+    }
+    logger.log(`set systemspace resume: appId: ${appId} z-index: ${zIndex} uri: ${uri}`)
+  } else {
+    this.userspaceZIndex[zIndex] = {
+      appId: appId,
+      uri: uri,
+      data: data || {},
+      context: context,
+      handle: handle
+    }
+    logger.log(`set userspace resume: appId: ${appId} z-index: ${zIndex} uri: ${uri}`)
   }
 }
 
@@ -231,7 +254,14 @@ Light.prototype.resume = function () {
       this.stopPrev()
 
       var handle = resume.handle
-      var context = resume.context
+      var context
+      // create a new context for light, because it is no old context
+      if (!resume.context) {
+        context = this.getContext()
+        resume.context = context
+      } else {
+        context = resume.context
+      }
       this.prevContext = context
       this.mockPlayer(context)
 
@@ -241,7 +271,7 @@ Light.prototype.resume = function () {
       var data = Object.assign({}, resume.data, {
         isResumed: true
       })
-      logger.log(`try to resume light: z-index: ${zIndex} ${resume.uri}`)
+      logger.log(`try to resume light: appId: ${resume.appId} z-index: ${zIndex} uri: ${resume.uri}`)
       this.prev = handle(context, data, this.prevCallback)
       if (this.prev && this.prev.shouldResume) {
         this.prevUri = resume.uri
@@ -365,9 +395,10 @@ Light.prototype.stopFile = function (appId, uri) {
   // stop light if currently is rendering
   if (this.prev && this.prevAppId === appId) {
     if (!uri || this.prevUri === uri) {
-      logger.log(`stop resume light: ${uri}`)
+      logger.log(`stop resume light: ${appId} ${uri}`)
       this.stopPrev()
       // try to resume next layer
+      logger.log('try to find resume light')
       this.resume()
     }
   }
@@ -376,7 +407,13 @@ Light.prototype.stopFile = function (appId, uri) {
 Light.prototype.setAwake = function (appId) {
   var uri = '/opt/light/awake.js'
   var canRender = this.canRender(uri, 2)
-  this.loadfile(appId, uri, {}, function noop () {})
+  this.loadfile(appId, uri, {}, {}, function noop (error) {
+    if (error) {
+      logger.error('setAwake error', error)
+    } else {
+      logger.log('setAwake complete')
+    }
+  })
   if (canRender && this.prev) {
     this.prev.name = 'setAwake'
   }
@@ -388,7 +425,13 @@ Light.prototype.setDegree = function (appId, degree) {
     this.degree = +degree
     this.loadfile(appId, uri, {
       degree: this.degree
-    }, function noop () {})
+    }, {}, function noop (error) {
+      if (error) {
+        logger.error('setDegree error', error)
+      } else {
+        logger.log('setDegree complete')
+      }
+    })
   }
 }
 
@@ -405,32 +448,13 @@ Light.prototype.setHide = function () {
 Light.prototype.setLoading = function (appId) {
   logger.log('set loading')
   var uri = `${LIGHT_SOURCE}loading.js`
-  this.loadfile(appId, uri, {}, function noop () {})
-}
-
-Light.prototype.setStandby = function () {
-  logger.log('call stopPrev setstandby')
-  this.stopPrev()
-  var hook = require(`${LIGHT_SOURCE}setStandby.js`)
-  var context = this.getContext()
-  this.prev = hook(context, {}, function noop () {})
-}
-
-Light.prototype.setVolume = function (volume) {
-  if (this.prev) {
-    logger.log('call stopPrev setvolume')
-    if (typeof this.prev === 'object' && this.prev.name === 'setVolume') {
-      this.stopPrev(true)
+  this.loadfile(appId, uri, {}, {}, function noop (error) {
+    if (error) {
+      logger.error('setLoading error', error)
     } else {
-      this.stopPrev()
+      logger.log('setLoading complete')
     }
-  }
-  var hook = require(`${LIGHT_SOURCE}setVolume.js`)
-  var context = this.getContext()
-  this.prev = hook(context, {
-    volume: +volume
-  }, function noop () {})
-  this.prev.name = 'setVolume'
+  })
 }
 
 Light.prototype.appSound = function (appId, name, cb) {
@@ -480,14 +504,13 @@ Light.prototype.setPickup = function (appId, duration, withAwaken) {
     degree: this.degree,
     duration: +duration,
     withAwaken: withAwaken
-  }, function noop () {})
-}
-
-Light.prototype.setSpeaking = function () {
-  logger.log('call stopPrev setspeaking')
-  this.stopPrev(true)
-  var context = this.getContext()
-  this.prev = setSpeaking(context, {}, function noop () {})
+  }, {}, function noop (error) {
+    if (error) {
+      logger.error('setPickup error', error)
+    } else {
+      logger.log('setPickup complete')
+    }
+  })
 }
 
 module.exports = Light

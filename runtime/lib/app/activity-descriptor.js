@@ -395,7 +395,7 @@ Object.assign(ActivityDescriptor.prototype,
       returns: 'promise',
       fn: function playSound (uri) {
         var absPath = yodaPath.transformPathScheme(uri, MEDIA_SOURCE, this._appHome + '/media')
-        return this._runtime.lightMethod('appSound', [this._appId, absPath])
+        return this._runtime.light.appSound(this._appId, absPath)
       }
     },
     /**
@@ -551,16 +551,17 @@ Object.assign(LightDescriptor.prototype,
      * @param {string} uri - the light resource uri.
      * @param {object} args - the args.
      * @param {number} [args.zIndex] number of layers to play. default minimum layer
+     * @param {object} [options]
+     * @param {boolean} [options.shouldResume]
      * @returns {Promise<void>}
      */
     play: {
       type: 'method',
       returns: 'promise',
-      fn: function play (uri, args) {
-        var argString = JSON.stringify(args || {})
+      fn: function play (uri, args, options) {
         var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, this._appHome + '/light')
         logger.log('playing light effect', absPath)
-        return this._runtime.lightMethod('play', [this._appId, absPath, argString])
+        return this._runtime.light.play(this._appId, absPath, args || {}, options || {})
           .then((res) => {
             if (res && res[0] === true) {
               return
@@ -583,7 +584,7 @@ Object.assign(LightDescriptor.prototype,
       fn: function stop (uri) {
         if (uri && typeof uri === 'string') {
           var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, this._appHome + '/light')
-          return this._runtime.lightMethod('stop', [this._appId, absPath])
+          return this._runtime.light.stop(this._appId, absPath)
             .then((res) => {
               if (res && res[0] === true) {
                 return
