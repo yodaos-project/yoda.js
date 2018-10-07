@@ -1029,7 +1029,14 @@ AppRuntime.prototype.onGetPropAll = function () {
  */
 AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
-  logger.log('yoda reconnecting')
+  logger.log('received the wifi is online, reset DNS config.')
+
+  // check if logged in and not for reconfiguring network,
+  // just reconnect in background.
+  if (!property.get('app.network.masterId') && this.custodian.isLoggedIn()) {
+    logger.info('no login process is required, just skip and wait for awaking')
+    return
+  }
 
   // login -> mqtt
   var onNotify = (code, msg) => {

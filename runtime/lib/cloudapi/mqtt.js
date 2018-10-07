@@ -134,6 +134,7 @@ MqttAgent.prototype.disconnect = function disconnect () {
   this.mqttOptions = null
   this.reconnecting = false
   clearTimeout(this.reconnectTimer)
+  this.removeAllListeners()
 
   // clear handle
   if (handle) {

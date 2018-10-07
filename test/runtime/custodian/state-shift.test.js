@@ -41,12 +41,14 @@ test('custodian state shall shifts', t => {
   t.false(custodian.isConfiguringNetwork())
   t.false(custodian.isRegistering())
   t.true(custodian.isPrepared(), 'custodian shall be logged in')
+  t.true(custodian.isLoggedIn(), 'custodian shall be logged in')
   t.false(custodian.isNetworkUnavailable())
 
   custodian.onNetworkDisconnect()
   t.false(custodian.isConfiguringNetwork())
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
+  t.true(custodian.isLoggedIn(), 'custodian shall be still logged in')
   t.true(custodian.isNetworkUnavailable(), 'custodian shall be network unavailable on network disconnected')
 })
 
