@@ -35,12 +35,6 @@ function Turen (runtime) {
   this.pickingUpDiscardNext = false
 
   /**
-   * stores previously paused app on awaken.
-   */
-  this.pausedTtsAppIdOnAwaken = null
-  this.pausedMediaAppIdOnAwaken = null
-
-  /**
    * handle of timer to determines if current 'voice coming' session is alone,
    * no upcoming asr pending/end is sent in company with it.
    */
@@ -121,22 +115,7 @@ Turen.prototype.setAwaken = function setAwaken () {
   /**
    * no need to determine if tts is previously been paused.
    */
-  this.pausedTtsAppIdOnAwaken = currAppId
-  this.pausedMediaAppIdOnAwaken = currAppId
-  return Promise.all(promises.concat([
-    this.runtime.ttsMethod('pause', [ currAppId ]),
-    this.runtime.multimediaMethod('pause', [ currAppId ])
-      .then(val => {
-        var paused = _.get(val, '0', false)
-        logger.info(`multimedia ${currAppId} paused?`, paused)
-        if (!paused) {
-          /**
-           * if media has been paused already, shall not be resumed on end of awaken
-           */
-          this.pausedMediaAppIdOnAwaken = null
-        }
-      })
-  ]))
+  return Promise.all(promises)
 }
 
 /**
@@ -160,42 +139,21 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
     this.runtime.life.resumeLifetime({ recover: recover })
   ]
 
-  var pausedTtsAppIdOnAwaken = this.pausedTtsAppIdOnAwaken
-  this.pausedTtsAppIdOnAwaken = null
-
   if (!recover) {
-    if (pausedTtsAppIdOnAwaken) {
-      /**
-       * tts no need to be kept if recovering is discarded, stop it.
-       */
-      logger.info('stop previously awaken paused tts of app', pausedTtsAppIdOnAwaken)
-      promises.push(
-        this.runtime.ttsMethod('stop', [ pausedTtsAppIdOnAwaken ])
-      )
-    }
+    /**
+     * tts no need to be kept if recovering is discarded, stop it.
+     */
+    logger.info('stop previously awaken paused tts')
+    promises.push(this.runtime.ttsMethod('resetAwaken', [ '' ]))
     return Promise.all(promises)
   }
 
   var currentAppId = this.runtime.life.getCurrentAppId()
-  if (pausedTtsAppIdOnAwaken && pausedTtsAppIdOnAwaken === currentAppId) {
-    logger.info('resume previously awaken paused tts of app', pausedTtsAppIdOnAwaken)
-    promises.push(
-      this.runtime.ttsMethod('resume', [ pausedTtsAppIdOnAwaken ])
-    )
-  } else {
-    logger.info('skip resuming paused awaken tts of app', pausedTtsAppIdOnAwaken, 'current app', currentAppId)
-  }
+  logger.info('trying to resume previously awaken paused tts of app', currentAppId)
+  promises.push(this.runtime.ttsMethod('resetAwaken', [ currentAppId ]))
 
-  var pausedMediaAppIdOnAwaken = this.pausedMediaAppIdOnAwaken
-  this.pausedMediaAppIdOnAwaken = null
-  if (pausedMediaAppIdOnAwaken && pausedMediaAppIdOnAwaken === currentAppId) {
-    logger.info('resume previously awaken paused media of app', pausedMediaAppIdOnAwaken)
-    promises.push(
-      this.runtime.multimediaMethod('resume', [ pausedMediaAppIdOnAwaken ])
-    )
-  } else {
-    logger.info('skip resuming paused awaken media of app', pausedMediaAppIdOnAwaken, 'current app', currentAppId)
-  }
+  logger.info('trying to resume previously awaken paused media')
+  promises.push(this.runtime.multimediaMethod('resetAwaken', [ currentAppId ]))
 
   return Promise.all(promises)
 }

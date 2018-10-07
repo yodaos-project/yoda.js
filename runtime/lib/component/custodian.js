@@ -62,7 +62,6 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
   property.set('state.network.connected', 'false')
   this._networkConnected = false
   logger.info('on network disconnect, once logged in?', this._loggedIn)
-  this.runtime.wormhole.setOffline()
 
   if (wifi.getNumOfHistory() > 0) {
     // waiting for user awake or button event in order to switch to network config
@@ -107,6 +106,10 @@ Custodian.prototype.isNetworkUnavailable = function isNetworkUnavailable () {
 
 Custodian.prototype.isRegistering = function isRegistering () {
   return this._networkConnected && !this._loggedIn
+}
+
+Custodian.prototype.isLoggedIn = function isLoggedIn () {
+  return this._loggedIn
 }
 
 Custodian.prototype.isConfiguringNetwork = function isConfiguringNetwork () {

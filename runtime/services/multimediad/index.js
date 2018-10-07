@@ -5,6 +5,7 @@ require('@yoda/oh-my-little-pony')
 
 var _ = require('@yoda/util')._
 var Service = require('./service')
+var Flora = require('./flora')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
 var logger = require('logger')('multimediad')
@@ -20,6 +21,8 @@ var permit = new Remote(dbusService._dbus, {
 })
 
 var service = new Service()
+var flora = new Flora(service)
+flora.init()
 
 service.on('prepared', function (id, dur, pos) {
   logger.log('multimediad prepared', Array.prototype.slice.call(arguments, 0))
@@ -206,6 +209,19 @@ dbusApis.addMethod('reset', {
 }, function (cb) {
   logger.log('reset multimedia requested by vui')
   service.reset()
+  cb(null, true)
+})
+
+dbusApis.addMethod('resetAwaken', {
+  in: ['s'],
+  out: ['b']
+}, function (appId, cb) {
+  var pausedAppIdOnAwaken = service.pausedAppIdOnAwaken
+  service.pausedAppIdOnAwaken = null
+  logger.log('reset awaken requested by vui', appId, '; paused app', pausedAppIdOnAwaken)
+  if (pausedAppIdOnAwaken && appId === pausedAppIdOnAwaken) {
+    service.resume(pausedAppIdOnAwaken)
+  }
   cb(null, true)
 })
 
