@@ -67,9 +67,11 @@ function _playSound (filename, stream, holdconnection, callback) {
     if (err) {
       return callback(err)
     }
-    // FIXME(Yorkie): is this exactly needs?
-    var vol = AudioManager.getVolume(streamType)
-    AudioManager.setVolume(streamType, vol)
+    if (!holdconnection) {
+      // FIXME(Yorkie): is this exactly needs?
+      var vol = AudioManager.getVolume(streamType)
+      AudioManager.setVolume(streamType, vol)
+    }
 
     // start playing the actual playback
     native.start()
