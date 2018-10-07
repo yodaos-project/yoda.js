@@ -11,8 +11,21 @@ AudioManager.setPlayingState(audioModuleName, false)
 function MultiMedia () {
   EventEmitter.call(this)
   this.handle = {}
+  this.pausedAppIdOnAwaken = null
 }
 inherits(MultiMedia, EventEmitter)
+
+MultiMedia.prototype.getCurrentlyPlayingAppId = function getCurrentlyPlayingAppId () {
+  var keys = Object.keys(this.handle)
+  for (var idx = 0; idx < keys.length; ++idx) {
+    var appId = keys[idx]
+    var handle = this.handle[appId]
+    if (handle.playing) {
+      return appId
+    }
+  }
+  return null
+}
 
 MultiMedia.prototype.start = function (appId, url, streamType) {
   if (this.handle[appId]) {

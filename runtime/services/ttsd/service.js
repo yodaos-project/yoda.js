@@ -15,6 +15,12 @@ function Tts (options) {
   this.lastText = ''
   this.lastAppId = ''
   this.lastReqId = -1
+  /**
+   * the purpose of this variable is to declare whether to ignore the tts event.
+   */
+  this.ignoreTtsEvent = false
+
+  this.pausedAppIdOnAwaken = null
 }
 inherits(Tts, EventEmitter)
 
@@ -59,6 +65,7 @@ Tts.prototype.stop = function (appId) {
 }
 
 Tts.prototype.pause = function (appId) {
+  this.ignoreTtsEvent = true
   if (this.handle[appId]) {
     try {
       this.handle[appId].stop()
@@ -89,6 +96,7 @@ Tts.prototype.resume = function (appId) {
 }
 
 Tts.prototype.reset = function () {
+  this.ignoreTtsEvent = false
   try {
     for (var index in this.handle) {
       this.handle[index].stop()

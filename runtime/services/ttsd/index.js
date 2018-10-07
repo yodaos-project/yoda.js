@@ -4,6 +4,7 @@ require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/ttsd-err.log')
 
 var Service = require('./service')
+var Flora = require('./flora')
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
 var TtsWrap = require('@yoda/tts')
@@ -45,12 +46,8 @@ var service = new Service({
     return _TTS
   }
 })
-
-/**
- * author: sudo<xiaofei.lan@rokid.com>
- * the purpose of this variable is to declare whether to ignore the tts event.
- */
-var ignoreTtsEvent = false
+var flora = new Flora(service)
+flora.init()
 
 service.on('simulateCancel', (id) => {
   dbusService._dbus.emitSignal(
@@ -92,13 +89,13 @@ function reConnect (CONFIG) {
     _CONFIG = CONFIG
 
     _TTS.on('start', function (id, errno) {
-      logger.log('ttsd start', id, service.lastReqId, ignoreTtsEvent)
+      logger.log('ttsd start', id, service.lastReqId, service.ignoreTtsEvent)
       AudioManager.setPlayingState(audioModuleName, true)
       lightd.invoke('play', ['@yoda/ttsd', '/opt/light/setSpeaking.js', '{}', '{shouldResume:true}'])
 
-      if (ignoreTtsEvent && service.lastReqId === id) {
+      if (service.ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts start event with id: ${id}`)
-        ignoreTtsEvent = false
+        service.ignoreTtsEvent = false
         return
       }
       dbusService._dbus.emitSignal(
@@ -119,11 +116,11 @@ function reConnect (CONFIG) {
       AudioManager.setPlayingState(audioModuleName, false)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
 
-      if (ignoreTtsEvent && service.lastReqId === id) {
+      if (service.ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts end event with id: ${id}`)
         return
       }
-      ignoreTtsEvent = false
+      service.ignoreTtsEvent = false
       /** delay 500ms to prevent event `end` been received before event `start` */
       setTimeout(() => {
         dbusService._dbus.emitSignal(
@@ -140,7 +137,7 @@ function reConnect (CONFIG) {
       AudioManager.setPlayingState(audioModuleName, false)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
 
-      if (ignoreTtsEvent && service.lastReqId === id) {
+      if (service.ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts cancel event with id: ${id}`)
         return
       }
@@ -157,11 +154,11 @@ function reConnect (CONFIG) {
       AudioManager.setPlayingState(audioModuleName, false)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
 
-      if (ignoreTtsEvent && service.lastReqId === id) {
+      if (service.ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts error event with id: ${id}`)
         return
       }
-      ignoreTtsEvent = false
+      service.ignoreTtsEvent = false
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
@@ -195,7 +192,7 @@ dbusApis.addMethod('speak', {
         if (res['0'] === 'true') {
           if (service.lastAppId === appId && service.lastReqId > -1) {
             service.emit('simulateCancel', service.lastReqId)
-            ignoreTtsEvent = false
+            service.ignoreTtsEvent = false
           }
           var id = service.speak(appId, text)
           cb(null, '' + id)
@@ -218,23 +215,20 @@ dbusApis.addMethod('speak', {
   }
 })
 
-dbusApis.addMethod('stop', {
-  in: ['s'],
-  out: []
-}, function (appId, cb) {
+function stop (appId, cb) {
   logger.log('tts cancel', appId)
-  if (ignoreTtsEvent && service.lastAppId === appId && service.lastReqId > -1) {
+  if (service.ignoreTtsEvent && service.lastAppId === appId && service.lastReqId > -1) {
     service.emit('simulateCancel', service.lastReqId)
     service.lastAppId = ''
     service.lastText = ''
     service.lastReqId = -1
-    ignoreTtsEvent = false
+    service.ignoreTtsEvent = false
     cb(null)
     return
   }
   if (appId) {
     if (service.lastAppId === appId) {
-      ignoreTtsEvent = false
+      service.ignoreTtsEvent = false
     }
     service.stop(appId)
     cb(null)
@@ -242,14 +236,17 @@ dbusApis.addMethod('stop', {
     // TODO: error handler?
     cb(null)
   }
-})
+}
+dbusApis.addMethod('stop', {
+  in: ['s'],
+  out: []
+}, stop)
 
 dbusApis.addMethod('reset', {
   in: [],
   out: ['b']
 }, function (cb) {
   logger.log('reset ttsd requested by vui')
-  ignoreTtsEvent = false
   service.reset()
   cb(null, true)
 })
@@ -263,7 +260,6 @@ dbusApis.addMethod('pause', {
     return cb(null, true)
   }
   logger.log(`tts pause by OS with appId: ${appId}`)
-  ignoreTtsEvent = true
   service.pause(appId)
   cb(null, true)
 })
@@ -274,6 +270,23 @@ dbusApis.addMethod('resume', {
 }, function (appId, cb) {
   logger.info('tts resume to true')
   service.resume(appId)
+  cb(null, true)
+})
+
+dbusApis.addMethod('resetAwaken', {
+  in: ['s'],
+  out: ['b']
+}, function (appId, cb) {
+  var pausedAppIdOnAwaken = service.pausedAppIdOnAwaken
+  service.pausedAppIdOnAwaken = null
+  if (!appId) {
+    logger.log('reset awaken requested by vui, stopping paused app', pausedAppIdOnAwaken)
+    return stop(pausedAppIdOnAwaken, () => cb(null, true))
+  }
+  logger.log('reset awaken requested by vui', appId, '; paused app', pausedAppIdOnAwaken)
+  if (pausedAppIdOnAwaken && appId === pausedAppIdOnAwaken) {
+    service.resume(pausedAppIdOnAwaken)
+  }
   cb(null, true)
 })
 
