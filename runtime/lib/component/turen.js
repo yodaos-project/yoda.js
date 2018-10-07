@@ -135,8 +135,7 @@ Turen.prototype.setAwaken = function setAwaken () {
            */
           this.pausedMediaAppIdOnAwaken = null
         }
-      }),
-    this.runtime.light.setAwake('@yoda')
+      })
   ]))
 }
 
@@ -255,7 +254,6 @@ Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
     wifi.enableScanPassively()
     return this.runtime.light.appSound('@yoda', 'system://wifi_is_connecting.ogg')
   }
-  return this.runtime.light.setDegree('@yoda', data.sl)
 }
 
 /**

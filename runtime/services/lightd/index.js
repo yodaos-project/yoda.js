@@ -3,11 +3,13 @@
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/lightd-err.log')
 
-var Service = require('./service')
 var Dbus = require('dbus')
-var Sounder = require('@yoda/multimedia').Sounder
-var Remote = require('../../lib/dbus-remote-call.js')
 var logger = require('logger')('lightd')
+var Sounder = require('@yoda/multimedia').Sounder
+
+var Service = require('./service')
+var Flora = require('./flora')
+var Remote = require('../../lib/dbus-remote-call.js')
 
 var dbusService = Dbus.registerService('session', 'com.service.light')
 var dbusObject = dbusService.createObject('/rokid/light')
@@ -38,6 +40,8 @@ Sounder.init([
 var service = new Service({
   permit: permit
 })
+var flora = new Flora(service)
+flora.init()
 
 dbusApis.addMethod('play', {
   in: ['s', 's', 's', 's'],
