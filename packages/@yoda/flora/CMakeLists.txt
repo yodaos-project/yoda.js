@@ -21,5 +21,4 @@ set_target_properties(shadow-flora-cli PROPERTIES
   LINK_FLAGS "-rdynamic")
 
 install(TARGETS shadow-flora-cli DESTINATION ${CMAKE_INSTALL_DIR})
-install(FILES index.js DESTINATION ${CMAKE_INSTALL_DIR})
-
+install(FILES index.js comp.js DESTINATION ${CMAKE_INSTALL_DIR})
