@@ -13,11 +13,14 @@ module.exports = function (activity) {
   var nameToSpeak = [ productName, `<num=tel>${uuid}</num>` ].join('')
 
   var bluetoothState = null
+  var bluetoothPlayState = null
   var connectBlutoothName = null
   var playState = null
   var STRING_BROADCAST = '蓝牙已打开'
+  var STRING_CONNECT_MOBILE = '当前没有可连接的设备'
   var STRING_OPEN_BEGIN = '你可以在手机上找到'
   var STRING_OPEN_END = '来连接我的蓝牙'
+  var STRING_CONNECT_MOBILE_END = '并进行连接'
   var STRING_CONNECED = '已连接上你的'
   var STRING_CONNECEDFAILED = '未能连接上你的'
   var DEVICE_NAME = '蓝牙设备'
@@ -26,7 +29,7 @@ module.exports = function (activity) {
   var STRING_ASK = '你可以对我说，若琪，打开蓝牙'
   var BLUETOOTH_MUSIC_ID = 'RDDE53259D334860BA9E98CB3AB6C001'
 
-  function broadcast () {
+  function broadcast (broadcastState) {
     player = bluetooth.getPlayer()
     setTimeout(() => {
       if ((bluetoothState === null) || (bluetoothState === 'closed')) {
@@ -51,7 +54,6 @@ module.exports = function (activity) {
       logger.debug('stateupdate', message)
       if (message.play_state === 'played') {
         playState = true
-        return activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
       }
       if (message.a2dpstate === 'closed') {
         bluetoothState = 'closed'
@@ -79,11 +81,13 @@ module.exports = function (activity) {
         }
       }
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'invailed') &&
-      (message.play_state === 'invailed')) {
-        if (message.linknum === 0) {
+      (message.play_state === 'invailed') && (message.linknum === 0)) {
+        if (broadcastState === 'connectMoblie') {
+          activity.setForeground().then(() => { speak(STRING_CONNECT_MOBILE + STRING_OPEN_BEGIN + nameToSpeak + STRING_CONNECT_MOBILE_END) })
+        } else {
           setTimeout(() => { activity.setForeground().then(() => { speak(STRING_OPEN_BEGIN + nameToSpeak + STRING_OPEN_END) }) }
-            , 3000)// Temporary delay 3s, in order to Preventing TTS broadcast loss.
-        }
+            , 1000)
+        }// Temporary delay 3s, in order to Preventing TTS broadcast loss.
       }
       if ((message.a2dpstate === 'opened') && (message.connect_state === 'connected failed') &&
         (message.play_state === 'invailed')) {
@@ -120,11 +124,17 @@ module.exports = function (activity) {
             mediaAndExit('system://connectbluetooth.ogg')
           })
         }
+        return activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
       }
     })
   }
 
   function disconnect () {
+    if (bluetoothState === 'closed') {
+      return activity.setForeground().then(() => {
+        mediaAndExit('system://closebluetooth.ogg')
+      })
+    }
     if (player) {
       player.end()
       player.disconnect()
@@ -194,17 +204,17 @@ module.exports = function (activity) {
   }
 
   activity.on('pause', () => {
+    bluetoothPlayState = 'play'
     pauseMusic()
   })
 
   activity.on('resume', () => {
-    if (playState) {
-      resumeMusic()
-    }
+    if (playState && (bluetoothPlayState === 'play')) { resumeMusic() }
   })
 
   activity.on('destroy', () => {
     playState = false
+    bluetoothPlayState = 'pause'
     pauseMusic()
     player.end()
   })
@@ -215,7 +225,7 @@ module.exports = function (activity) {
         speakAndExit(STRING_ASK)
         break
       case 'bluetooth_broadcast':
-        broadcast()
+        broadcast('bluetooth_broadcast')
         break
       case 'bluetooth_disconnect':
         disconnect()
@@ -229,14 +239,15 @@ module.exports = function (activity) {
       case 'pre':
         previousMusic()
         break
-      case 'stop':
+      case 'stop' :
+        bluetoothPlayState = 'pause'
         pauseMusic()
         break
       case 'resume':
         resumeMusic()
         break
       case 'connect_phone':
-        broadcast()
+        broadcast('connectMoblie')
         break
       default:
         activity.exit()
@@ -247,10 +258,13 @@ module.exports = function (activity) {
   activity.on('url', url => {
     switch (url.pathname) {
       case '/bluetooth_broadcast':
-        broadcast()
+        broadcast('bluetooth_broadcast')
         break
       case '/bluetooth_start_bluetooth_music':
-        startMusic()
+        if (bluetoothState !== 'connected') {
+          broadcast('connectMoblie')
+          setTimeout(() => { startMusic() }, 2000)
+        } else { startMusic() }
         break
     }
   })
