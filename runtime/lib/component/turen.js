@@ -122,16 +122,18 @@ Turen.prototype.setAwaken = function setAwaken () {
    * no need to determine if tts is previously been paused.
    */
   this.pausedTtsAppIdOnAwaken = currAppId
-  /**
-   * if media has been paused already, shall not be resumed on end of awaken
-   */
-  this.pausedMediaAppIdOnAwaken = null
+  this.pausedMediaAppIdOnAwaken = currAppId
   return Promise.all(promises.concat([
     this.runtime.ttsMethod('pause', [ currAppId ]),
     this.runtime.multimediaMethod('pause', [ currAppId ])
       .then(val => {
-        if (_.get(val, '0', false)) {
-          this.pausedMediaAppIdOnAwaken = currAppId
+        var paused = _.get(val, '0', false)
+        logger.info(`multimedia ${currAppId} paused?`, paused)
+        if (!paused) {
+          /**
+           * if media has been paused already, shall not be resumed on end of awaken
+           */
+          this.pausedMediaAppIdOnAwaken = null
         }
       }),
     this.runtime.light.setAwake('@yoda')
@@ -193,7 +195,7 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
       this.runtime.multimediaMethod('resume', [ pausedMediaAppIdOnAwaken ])
     )
   } else {
-    logger.info('skip resuming paused awaken media of app', pausedTtsAppIdOnAwaken, 'current app', currentAppId)
+    logger.info('skip resuming paused awaken media of app', pausedMediaAppIdOnAwaken, 'current app', currentAppId)
   }
 
   return Promise.all(promises)

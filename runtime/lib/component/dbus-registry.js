@@ -405,12 +405,38 @@ DBus.prototype.yodadebug = {
   mockAsr: {
     in: ['s'],
     out: ['s'],
-    fn: function mockAsr (text, cb) {
-      this.runtime.mockAsr(text)
-        .then(
-          res => cb(null, JSON.stringify({ ok: true, result: { nlp: res[0], action: res[1] } })),
-          err => cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
-        )
+    fn: function mockAsr (asr, cb) {
+      if (typeof asr === 'function') {
+        cb = asr
+        asr = ''
+      }
+      var floraEmit = (channel, args, ms) => {
+        setTimeout(() => {
+          this.runtime.flora.floraCli.callbacks[0](channel, '', {
+            get: (idx) => _.get(args, idx)
+          })
+        }, ms)
+      }
+      floraEmit('rokid.turen.voice_coming', [], 0)
+      floraEmit('rokid.turen.local_awake', [0], 100)
+      floraEmit('rokid.turen.start_voice', [], 150)
+      floraEmit('rokid.speech.inter_asr', ['若琪'], 200)
+      if (asr) {
+        floraEmit('rokid.speech.final_asr', [asr], 250)
+        this.runtime.flora.getNlpResult(asr, (err, nlp, action) => {
+          if (err) {
+            return logger.error('Unexpected error on get nlp for asr', asr, err.stack)
+          }
+          cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } }))
+          floraEmit('rokid.speech.nlp', [JSON.stringify(nlp), JSON.stringify(action)], 300)
+        })
+      } else {
+        floraEmit('rokid.speech.extra', ['{"activation": "fake"}'], 250)
+      }
+      floraEmit('rokid.speech.completed', [], 300)
+      if (!asr) {
+        cb(null, JSON.stringify({ ok: true, result: null }))
+      }
     }
   },
   mockKeyboard: {

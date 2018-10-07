@@ -1132,27 +1132,6 @@ AppRuntime.prototype.onLoggedIn = function () {
   ])
 }
 
-/**
- *
- * @param {string} text -
- * @returns {Promise<object[]>}
- */
-AppRuntime.prototype.mockAsr = function mockAsr (text) {
-  logger.info('Mocking asr', text)
-  return new Promise((resolve, reject) => {
-    this.flora.getNlpResult(text, (err, nlp, action) => {
-      if (err) {
-        return reject(err)
-      }
-      resolve([nlp, action])
-    })
-  }).then(res => {
-    logger.info('mocking asr got nlp result for', text, res[0], res[1])
-    return this.onVoiceCommand(text, res[0], res[1])
-      .then(() => res)
-  })
-}
-
 AppRuntime.prototype.destruct = function destruct () {
   this.keyboard.destruct()
   this.flora.destruct()
