@@ -31,11 +31,15 @@ function Light (options) {
   this.prevAppId = null
   this.nextResumeTimer = null
   this.degree = 0
+  this.uriHandlers = {}
   this.userspaceZIndex = new Array(maxUserspaceLayers)
   this.init()
 }
 
 Light.prototype.init = function () {
+  // load awake uri by default
+  var awakeURI = '/opt/light/awake.js'
+  this.uriHandlers[awakeURI] = require(awakeURI)
   var layers = 0
   Object.keys(this.systemspace).forEach((key) => {
     // find max layer
@@ -94,7 +98,6 @@ Light.prototype.clearPrev = function () {
 }
 
 Light.prototype.loadfile = function (appId, uri, data, option, callback) {
-  var handle
   var zIndex
   var self = this
   try {
@@ -124,7 +127,12 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       return callback()
     }
 
-    handle = require(uri)
+    // FIXME: delete handlers that are not used for a long time
+    logger.info(`start require uri ${uri}`)
+    var handle = this.uriHandlers[uri]
+    if (handle === undefined) {
+      handle = this.uriHandlers[uri] = require(uri)
+    }
     logger.log('call stopPrev loadfile')
     this.stopPrev(data && data.keep)
     var context = this.getContext()
