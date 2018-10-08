@@ -1,4 +1,5 @@
 var _ = require('@yoda/util')._
+var safeParse = require('@yoda/util').json.safeParse
 var logger = require('logger')('custom-config')
 var Url = require('url')
 var property = require('@yoda/property')
@@ -59,13 +60,13 @@ module.exports = function customConfig (activity) {
     }
     var action = queryObj.action
     var isFirstLoad
-    if (queryObj.isFirstLoad === 'false') {
+    logger.info('on Url----> query typeof queryObj.isFirstLoad:  ', typeof queryObj.isFirstLoad)
+    if (queryObj.isFirstLoad === 'false' || queryObj.isFirstLoad === false) {
       isFirstLoad = false
-    } else if (queryObj.isFirstLoad === 'true') {
+    } else if (queryObj.isFirstLoad === 'true' || queryObj.isFirstLoad === true) {
       isFirstLoad = true
-    } else {
-      return
     }
+
     logger.info('on Url----> action: ' + action + '; urlObj.pathname: ' + urlObj.pathname + ';   isFirstLoad: ' + isFirstLoad)
     if (urlObj.pathname === '/nightMode') {
       this.startTime = queryObj.startTime
@@ -82,6 +83,9 @@ module.exports = function customConfig (activity) {
       onWakeupSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/standbyLight') {
       onLightSwitchStatusChanged(action, isFirstLoad)
+    } else if (urlObj.pathname === '/firstLoad') {
+      var config = queryObj.config
+      onLoadCustomConfig(config)
     }
   })
 
@@ -256,5 +260,50 @@ module.exports = function customConfig (activity) {
     this.waitForNextTimer = setTimeout(() => {
       refreshNightMode(true)
     }, this.nextDeltaTime)
+  }
+
+  function onLoadCustomConfig (config) {
+    if (config === undefined) {
+      return
+    }
+    logger.info(' onLoadCustomConfig----> config:  ', config)
+    var customConfig = safeParse(config)
+    if (_.get(customConfig, 'vt_words')) {
+      // TODO(suchenglong) should inset vt word for first load from server
+    }
+    if (_.get(customConfig, 'continuousDialog')) {
+      var continuousDialogObj = customConfig.continuousDialog
+      var continueObj = safeParse(continuousDialogObj)
+      if (continueObj) {
+        logger.info('continuousDialogObj.action:  ', continueObj.action)
+        onPickupSwitchStatusChanged(continueObj.action, true)
+      }
+    }
+    if (_.get(customConfig, 'standbyLight')) {
+      var standbyLightText = customConfig.standbyLight
+      var standbyLightObj = safeParse(standbyLightText)
+      if (standbyLightObj) {
+        logger.info('standbyLight.action:  ', standbyLightObj.action)
+        onLightSwitchStatusChanged(standbyLightObj.action, true)
+      }
+    }
+    if (_.get(customConfig, 'wakeupSoundEffects')) {
+      var wakeupSoundEffectsText = customConfig.wakeupSoundEffects
+      var wakeupSoundEffectsObj = safeParse(wakeupSoundEffectsText)
+      if (wakeupSoundEffectsObj) {
+        logger.info('wakeupSoundEffects.action:  ', wakeupSoundEffectsObj.action)
+        onWakeupSwitchStatusChanged(wakeupSoundEffectsObj.action, true)
+      }
+    }
+    if (_.get(customConfig, 'nightMode')) {
+      var nightModeText = customConfig.nightMode
+      var nightModeObj = safeParse(nightModeText)
+      if (nightModeObj) {
+        logger.info(' nightMode:  ', nightModeObj)
+        this.startTime = nightModeObj.startTime
+        this.endTime = nightModeObj.endTime
+        nightMode(nightModeObj.action)
+      }
+    }
   }
 }
