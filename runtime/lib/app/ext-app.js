@@ -83,6 +83,12 @@ function EventBus (descriptor, socket, appId) {
   this.descriptor = descriptor
   this.socket = socket
   this.appId = appId
+
+  /**
+   * keep records of subscribed events to deduplicate subscription requests.
+   */
+  this.subscriptionTable = {}
+
   this.eventSynTable = {}
   this.eventSyn = 0
 }
@@ -135,6 +141,11 @@ EventBus.prototype.subscribe = function onSubscribe (message) {
 
   var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}`
   logger.debug(`Received child ${this.appId} subscription: ${eventStr}`)
+  if (this.subscriptionTable[eventStr]) {
+    logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
+    return
+  }
+  this.subscriptionTable[eventStr] = true
 
   var nsObj = this.descriptor
   if (namespace != null) {
@@ -204,6 +215,12 @@ EventBus.prototype['subscribe-ack'] = function onSubscribeAck (message) {
 
   var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}`
   logger.debug(`Received child ${this.appId} ack-subscription: ${eventStr}`)
+
+  if (this.subscriptionTable[eventStr]) {
+    logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
+    return
+  }
+  this.subscriptionTable[eventStr] = true
 
   var nsObj = this.descriptor
   if (namespace != null) {
