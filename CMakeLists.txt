@@ -78,6 +78,17 @@ ExternalProject_Add(rklogger
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
+# Activation Service
+ExternalProject_Add(activation
+  SOURCE_DIR runtime/services/activation
+  CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_DIR}/usr
+    -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+    -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+
 install(DIRECTORY ./apps            DESTINATION /opt)
 install(DIRECTORY ./res/media       DESTINATION /opt)
 install(DIRECTORY ./res/light       DESTINATION /opt)
