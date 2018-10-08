@@ -5,6 +5,63 @@ var inherits = require('util').inherits
 var logger = require('logger')('la-vie')
 var _ = require('@yoda/util')._
 
+/**
+ * Active app slots. Only two slots are currently supported: cut and scene.
+ * And only two app could be able to be on slots simultaneously.
+ */
+function AppSlots () {
+  this.cut = null
+  this.scene = null
+}
+
+AppSlots.prototype.addApp = function addApp (appId, isScene) {
+  if (isScene && this.cut === appId) {
+    this.cut = null
+  }
+  if (isScene) {
+    this.scene = appId
+    return
+  }
+  this.cut = appId
+}
+
+/**
+ * Remove app from app slots.
+ * @param {string} appId
+ * @returns {boolean} returns true if app is removed from slots, false otherwise.
+ */
+AppSlots.prototype.removeApp = function removeApp (appId) {
+  if (appId == null) {
+    return false
+  }
+  if (this.cut === appId) {
+    this.cut = null
+    return true
+  }
+  if (this.scene === appId) {
+    this.scene = null
+    return true
+  }
+  return false
+}
+
+/**
+ * Get a copy of current slots in array form.
+ *
+ * @returns {string[]}
+ */
+AppSlots.prototype.copy = function copy () {
+  return [ this.cut, this.scene ].filter(it => it != null)
+}
+
+/**
+ * Reset app slots.
+ */
+AppSlots.prototype.reset = function reset () {
+  this.cut = null
+  this.scene = null
+}
+
 module.exports = LaVieEnPile
 /**
  * App life time management
@@ -38,9 +95,9 @@ function LaVieEnPile (loader) {
   this.appDataMap = {}
   /**
    * Apps' id running actively.
-   * @type {string[]}
+   * @type {AppSlots}
    */
-  this.activeAppStack = []
+  this.activeSlots = new AppSlots()
   /**
    * Apps' id running inactively and not background.
    * @type {string[]}
@@ -82,13 +139,15 @@ inherits(LaVieEnPile, EventEmitter)
 
 /**
  * Get app id of top app in stack.
- * @returns {string | undefined} appId, or undefined if no app was in stack.
+ * @returns {string | null} appId, or undefined if no app was in stack.
  */
 LaVieEnPile.prototype.getCurrentAppId = function getCurrentAppId () {
-  if (this.activeAppStack.length === 0) {
-    return undefined
+  var appId = this.activeSlots.cut
+  if (appId != null) {
+    return appId
   }
-  return this.activeAppStack[this.activeAppStack.length - 1]
+  appId = this.activeSlots.scene
+  return appId
 }
 
 /**
@@ -115,7 +174,7 @@ LaVieEnPile.prototype.isBackgroundApp = function isBackgroundApp (appId) {
  * @returns {boolean} true if active, false otherwise.
  */
 LaVieEnPile.prototype.isAppActive = function isAppActive (appId) {
-  return this.activeAppStack.indexOf(appId) >= 0
+  return this.activeSlots.cut === appId || this.activeSlots.scene === appId
 }
 
 /**
@@ -267,6 +326,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
      * App is the currently running one
      */
     logger.info('app is top of stack, skipping resuming', appId)
+    this.activeSlots.addApp(appId, wasScene || form === 'scene')
     return future
   }
 
@@ -285,16 +345,19 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
+  var stack = this.activeSlots.copy()
+  this.activeSlots.addApp(appId, wasScene || form === 'scene')
+  this.onStackUpdate()
   var deferred = () => {
-    this.activeAppStack.push(appId)
-    this.onStackUpdate()
     return this.onLifeCycle(appId, 'resume', resumeParams)
   }
 
   if (form === 'scene') {
     // Exit all apps in stack on incoming scene nlp
     logger.info(`on scene app '${appId}' preempting, deactivating all apps in stack.`)
-    return future.then(() => this.deactivateAppsInStack({ excepts: [ appId ] }))
+    return future.then(() =>
+      Promise.all(stack.filter(it => it !== appId)
+        .map(it => this.deactivateAppById(it, { recover: false, force: true }))))
       .then(deferred)
   }
 
@@ -302,7 +365,8 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   if (!last) {
     /** no previously running app */
     logger.info('no previously running app, skip preempting')
-    return future.then(deferred)
+    /** deferred shall be ran in current context to prevent possible simultaneous preemption */
+    return Promise.all([ deferred(), future ])
   }
 
   if (last.form === 'scene') {
@@ -320,7 +384,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
    */
   logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
   /** no need to recover previously paused scene app if exists */
-  return future.then(() => this.deactivateAppById(lastAppId, { recover: false }))
+  return future.then(() => this.deactivateAppById(lastAppId, { recover: false, force: true }))
     .then(deferred)
 }
 
@@ -342,26 +406,29 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
  * @param {string} appId -
  * @param {object} [options] -
  * @param {boolean} [options.recover] - if recover previous app
+ * @param {boolean} [options.force] - deactivate the app whether it is in stack or not
  * @returns {Promise<void>}
  */
 LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, options) {
   var recover = _.get(options, 'recover', true)
+  var force = _.get(options, 'force', false)
 
   if (this.monopolist === appId) {
     this.monopolist = null
   }
 
-  var idx = this.activeAppStack.indexOf(appId)
-  if (idx < 0) {
+  var removed = this.activeSlots.removeApp(appId)
+  if (!removed && !force) {
     /** app is in stack, no need to be deactivated */
     logger.info('app is not in stack, skip deactivating', appId)
     return Promise.resolve()
   }
   logger.info('deactivating app', appId, ', recover?', recover)
 
-  this.activeAppStack.splice(idx, 1)
   delete this.appDataMap[appId]
-  this.onStackUpdate()
+  if (removed) {
+    this.onStackUpdate()
+  }
 
   var deactivating = this.destroyAppById(appId)
 
@@ -420,7 +487,7 @@ LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack (op
   var excepts = _.get(options, 'excepts')
 
   var self = this
-  var stack = self.activeAppStack
+  var stack = [ this.activeSlots.cut, this.activeSlots.scene ]
   if (Array.isArray(excepts) && excepts.length > 0) {
     logger.info('deactivating apps in stack, excepts', excepts)
     stack = stack.filter(it => excepts.indexOf(it) < 0)
@@ -456,21 +523,20 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
     this.inactiveAppIds.splice(inactiveIdx, 1)
   }
 
-  var activeIdx = this.activeAppStack.indexOf(appId)
-  if (activeIdx >= 0) {
-    this.activeAppStack.splice(activeIdx, 1)
+  var removed = this.activeSlots.removeApp(appId)
+  if (removed) {
     delete this.appDataMap[appId]
     this.onStackUpdate()
   }
 
-  if (inactiveIdx < 0 && activeIdx < 0) {
+  if (inactiveIdx < 0 && !removed) {
     logger.info('app already in background', appId)
     return Promise.resolve()
   }
 
   var future = this.onLifeCycle(appId, 'background')
 
-  if (!recover || activeIdx < 0) {
+  if (!recover || !removed) {
     /**
      * No recover shall be taken if app is not active.
      */
@@ -508,7 +574,7 @@ LaVieEnPile.prototype.setForegroundById = function (appId, form) {
   if (!this.isBackgroundApp(appId)) {
     logger.warn('app is not in background, yet trying to set foreground', appId)
   }
-  logger.info('set foreground', appId)
+  logger.info('set foreground', appId, form)
   return this.activateAppById(appId, form)
 }
 
@@ -549,7 +615,7 @@ LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) 
  * Emit event `stack-update` with current app id stack to listeners.
  */
 LaVieEnPile.prototype.onStackUpdate = function onStackUpdate () {
-  var stack = this.activeAppStack
+  var stack = [ this.activeSlots.cut, this.activeSlots.scene ]
   process.nextTick(() => {
     this.emit('stack-update', stack)
   })
@@ -584,7 +650,7 @@ LaVieEnPile.prototype.destroyAll = function (options) {
   var self = this
   var ids = this.loader.getAppIds()
     .filter(id => this.loader.getAppById(id) != null)
-  self.activeAppStack = []
+  self.activeSlots.reset()
   this.onStackReset()
   /** destroy apps in stack in a reversed order */
   return Promise.all(ids.map(step))
@@ -611,10 +677,7 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
   /**
    * Try remove app id from stacks.
    */
-  var idx = this.activeAppStack.indexOf(appId)
-  if (idx >= 0) {
-    this.activeAppStack.splice(idx, 1)
-  }
+  this.activeSlots.removeApp(appId)
   var inactiveIdx = this.inactiveAppIds.indexOf(appId)
 
   if (!force && this.isDaemonApp(appId)) {

@@ -366,7 +366,7 @@ DBus.prototype.yodadebug = {
       cb(null, JSON.stringify({
         ok: true,
         result: {
-          activeAppStack: this.runtime.life.activeAppStack,
+          activeSlots: this.runtime.life.activeSlots,
           appDataMap: this.runtime.life.appDataMap,
           inactiveAppIds: this.runtime.life.inactiveAppIds,
           carrierId: this.runtime.life.carrierId,
