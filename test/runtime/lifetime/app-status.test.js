@@ -25,6 +25,7 @@ test('daemon app status', t => {
     })
     .then(() => {
       t.looseEqual(life.getCurrentAppId(), '1', 'should be current app')
+      t.strictEqual(life.activeSlots.cut, '1', 'app shall occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), true)
       t.strictEqual(life.isAppActive('1'), true, 'app shall be top of stack on activated')
       t.strictEqual(life.isAppInactive('1'), false)
@@ -33,6 +34,7 @@ test('daemon app status', t => {
     })
     .then(() => {
       t.looseEqual(life.getCurrentAppId(), undefined, 'should have no current app')
+      t.looseEqual(life.activeSlots.cut, null, 'app shall not occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), true)
       t.strictEqual(life.isAppActive('1'), false)
       t.strictEqual(life.isAppInactive('1'), true, 'daemon app shall be inactive on deactivated')
@@ -41,6 +43,7 @@ test('daemon app status', t => {
     })
     .then(() => {
       t.looseEqual(life.getCurrentAppId(), undefined, 'should have no current app')
+      t.looseEqual(life.activeSlots.cut, null, 'app shall not occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), true)
       t.strictEqual(life.isAppActive('1'), false)
       t.strictEqual(life.isAppInactive('1'), false)
@@ -49,6 +52,7 @@ test('daemon app status', t => {
     })
     .then(() => {
       t.looseEqual(life.getCurrentAppId(), undefined, 'should have no current app')
+      t.looseEqual(life.activeSlots.cut, null, 'app shall not occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), true, 'daemon app shall be running on soft destroyed')
       t.strictEqual(life.isAppActive('1'), false)
       t.strictEqual(life.isAppInactive('1'), true, 'daemon app shall be inactive on soft destroyed')
@@ -57,6 +61,7 @@ test('daemon app status', t => {
     })
     .then(() => {
       t.looseEqual(life.getCurrentAppId(), undefined, 'should have no current app')
+      t.looseEqual(life.activeSlots.cut, null, 'app shall not occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), false, 'daemon app shall be running on force destroyed')
       t.strictEqual(life.isAppActive('1'), false)
       t.strictEqual(life.isAppInactive('1'), false)
@@ -89,6 +94,7 @@ test('non-daemon app status', t => {
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '1', 'should be top of stack on activated')
+      t.strictEqual(life.activeSlots.cut, '1', 'app shall occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), true, 'should be running after activated')
       t.strictEqual(life.isAppActive('1'), true, 'should be in stack on activated')
       t.strictEqual(life.isAppInactive('1'), false, 'should not be inactive on activated')
@@ -98,6 +104,7 @@ test('non-daemon app status', t => {
     })
     .then(() => {
       t.looseEqual(life.getCurrentAppId(), undefined, 'should have no current app')
+      t.looseEqual(life.activeSlots.cut, null, 'app shall not occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), false, 'app is not daemon, deactivating shall destroy it')
       t.strictEqual(life.isAppActive('1'), false)
       t.strictEqual(life.isAppInactive('1'), false, 'app is not daemon, deactivating shall destroy it')
@@ -108,6 +115,7 @@ test('non-daemon app status', t => {
         .then(() => life.setBackgroundById('1'))
     })
     .then(() => {
+      t.looseEqual(life.activeSlots.cut, null, 'app shall not occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), true, 'shall be running on set background')
       t.strictEqual(life.isAppActive('1'), false)
       t.strictEqual(life.isAppInactive('1'), false)
@@ -115,6 +123,7 @@ test('non-daemon app status', t => {
       return life.destroyAppById('1')
     })
     .then(() => {
+      t.looseEqual(life.activeSlots.cut, null, 'app shall not occupy cut slot')
       t.strictEqual(life.isAppRunning('1'), false, 'app shall be not be running on soft destroyed')
       t.strictEqual(life.isAppActive('1'), false)
       t.strictEqual(life.isAppInactive('1'), false)
