@@ -30,12 +30,8 @@ Sounder.once('error', (err) => {
 Sounder.init([
   '/opt/media/volume.wav',
   '/opt/media/mic_close_tts.wav',
-  '/opt/media/mic_open.wav',
-  '/opt/media/awake_01.wav',
-  '/opt/media/awake_02.wav',
-  '/opt/media/awake_03.wav',
-  '/opt/media/awake_04.wav',
-  '/opt/media/awake_05.wav'])
+  '/opt/media/mic_open.wav'
+])
 
 var service = new Service({
   permit: permit
