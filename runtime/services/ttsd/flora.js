@@ -24,8 +24,14 @@ Flora.prototype.handlers = {
       return
     }
     var appId = this.tts.lastAppId
+    if (this.tts.pausedAppIdOnAwaken != null && appId == null) {
+      logger.info('previously paused tts not been resumed yet, ' +
+        'skip voice coming for no currently playing.')
+      return
+    }
     this.tts.pausedAppIdOnAwaken = appId
     if (!appId) {
+      logger.info('no currently tts playing app, skipping.')
       return
     }
     logger.info('pausing tts of app', appId)

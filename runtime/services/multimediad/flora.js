@@ -24,8 +24,14 @@ Flora.prototype.handlers = {
       return
     }
     var appId = this.multimedia.getCurrentlyPlayingAppId()
+    if (this.multimedia.pausedAppIdOnAwaken != null && appId == null) {
+      logger.info('previously paused media not been resumed yet, ' +
+        'skip voice coming for no currently playing.')
+      return
+    }
     this.multimedia.pausedAppIdOnAwaken = appId
     if (!appId) {
+      logger.info('no currently media playing app, skipping.')
       return
     }
     logger.info('pausing media of app', appId)
