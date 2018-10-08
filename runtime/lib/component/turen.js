@@ -96,21 +96,18 @@ Turen.prototype.handleEvent = function (name, data) {
 Turen.prototype.setAwaken = function setAwaken () {
   var promises = []
   if (this.awaken) {
-    promises.push(
-      this.resetAwaken({ recover: false })
-    )
+    logger.warn('already awaken')
   }
   this.awaken = true
 
   var currAppId = this.runtime.life.getCurrentAppId()
+  logger.info('awaking, current app', currAppId)
 
   /**
    * pause lifetime to prevent incoming app preemption;
    * doesn't care when pauseLifetime ends.
    */
   this.runtime.life.pauseLifetime()
-
-  logger.info('awaking, pausing tts/media of app', currAppId)
 
   /**
    * no need to determine if tts is previously been paused.
@@ -127,6 +124,7 @@ Turen.prototype.setAwaken = function setAwaken () {
  */
 Turen.prototype.resetAwaken = function resetAwaken (options) {
   var recover = _.get(options, 'recover', true)
+
   if (!this.awaken) {
     logger.warn('runtime was not awaken, skipping reset awaken')
     return Promise.resolve()
