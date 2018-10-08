@@ -433,7 +433,7 @@ DBus.prototype.yodadebug = {
       } else {
         floraEmit('rokid.speech.extra', ['{"activation": "fake"}'], 250)
       }
-      floraEmit('rokid.speech.completed', [], 300)
+      floraEmit('rokid.turen.end_voice', [], 300)
       if (!asr) {
         cb(null, JSON.stringify({ ok: true, result: null }))
       }
