@@ -12,7 +12,6 @@ var querystring = require('querystring')
 var logger = require('logger')('yoda')
 
 var _ = require('@yoda/util')._
-var safeParse = require('@yoda/util').json.safeParse
 var ota = require('@yoda/ota')
 var CloudGW = require('@yoda/cloudgw')
 var wifi = require('@yoda/wifi')
@@ -923,7 +922,7 @@ AppRuntime.prototype.onCustomConfig = function (message) {
     return
   }
   var option = {
-    preemptive: false,
+    preemptive: true,
     form: 'cut'
   }
   if (msg.nightMode) {
@@ -946,56 +945,7 @@ AppRuntime.prototype.onLoadCustomConfig = function (config) {
   if (config === undefined) {
     return
   }
-  var customConfig = safeParse(config)
-  if (_.get(customConfig, 'vt_words')) {
-    // TODO(suchenglong) should inset vt word for first load from server
-  }
-  if (_.get(customConfig, 'continuousDialog')) {
-    var continuousDialogObj = customConfig.continuousDialog
-    var continueObj = safeParse(continuousDialogObj)
-    if (continueObj) {
-      continueObj.isFirstLoad = true
-      var continuousDialog = {
-        continuousDialog: continueObj
-      }
-      this.onCustomConfig(continuousDialog)
-    }
-  }
-  if (_.get(customConfig, 'standbyLight')) {
-    var standbyLightText = customConfig.standbyLight
-    var standbyLightObj = safeParse(standbyLightText)
-    if (standbyLightObj) {
-      standbyLightObj.isFirstLoad = true
-      var standbyLight = {
-        standbyLight: standbyLightObj
-      }
-      this.onCustomConfig(standbyLight)
-    }
-  }
-
-  if (_.get(customConfig, 'wakeupSoundEffects')) {
-    var wakeupSoundEffectsText = customConfig.wakeupSoundEffects
-    var wakeupSoundEffectsObj = safeParse(wakeupSoundEffectsText)
-    if (wakeupSoundEffectsObj) {
-      wakeupSoundEffectsObj.isFirstLoad = true
-      var wakeupSoundEffects = {
-        wakeupSoundEffects: wakeupSoundEffectsObj
-      }
-      this.onCustomConfig(wakeupSoundEffects)
-    }
-  }
-
-  if (_.get(customConfig, 'nightMode')) {
-    var nightModeText = customConfig.nightMode
-    var nightModeObj = safeParse(nightModeText)
-    if (nightModeObj) {
-      nightModeObj.isFirstLoad = true
-      var nightMode = {
-        nightMode: nightModeObj
-      }
-      this.onCustomConfig(nightMode)
-    }
-  }
+  this.openUrl(`yoda-skill://custom-config/firstLoad?config=${config}`)
 }
 
 /**
