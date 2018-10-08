@@ -26,7 +26,7 @@ function createExtApp (appId, target, runtime) {
     stdio: 'inherit'
   })
   descriptor._childProcess = cp
-  logger.info(`Forked child app ${target}.`)
+  logger.info(`Forked child app ${target}(${cp.pid}).`)
   var send = cp.send
   cp.send = function sendProxy () {
     if (cp.killed) {

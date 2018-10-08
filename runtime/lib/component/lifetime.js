@@ -744,8 +744,8 @@ LaVieEnPile.prototype.pauseLifetime = function pauseLifetime () {
 LaVieEnPile.prototype.resumeLifetime = function resumeLifetime (options) {
   var recover = _.get(options, 'recover', false)
 
-  if (this.appIdOnPause === null) {
-    logger.warn('LaVieEnPile is not paused, yet trying to resume.')
+  if (this.appIdOnPause == null) {
+    logger.info('no paused app found, skip resuming LaVieEnPile.')
     return Promise.resolve()
   }
   var appIdOnPause = this.appIdOnPause

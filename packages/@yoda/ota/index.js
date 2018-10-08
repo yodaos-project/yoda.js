@@ -573,7 +573,7 @@ function getMqttOtaReport (callback) {
           checkCode: 0,
           currentVersion: property.get(systemVersionProp),
           version: property.get(systemVersionProp),
-          changelog: info.changelog
+          changelog: info.changelog || '已是最新版本'
         })
       }
       readInfo(cb)
