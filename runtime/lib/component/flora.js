@@ -58,7 +58,7 @@ Flora.prototype.handlers = {
   'rokid.turen.start_voice': function (msg) {
     this.runtime.turen.handleEvent('start voice')
   },
-  'rokid.speech.completed': function (msg) {
+  'rokid.turen.end_voice': function (msg) {
     this.runtime.turen.handleEvent('end voice')
   },
   'rokid.speech.nlp': function (msg) {
