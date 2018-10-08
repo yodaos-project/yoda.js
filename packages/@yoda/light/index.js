@@ -32,8 +32,7 @@ var logger = require('logger')('light')
  */
 
 var config = native.getProfile()
-var length = config.leds * (config.format || 3)
-var buffer = Buffer.alloc(length, 0)
+
 var enabled = false;
 
 (function bootstrap () {
@@ -73,7 +72,12 @@ module.exports = {
    * @param {Buffer} [explict] - if present, use the given buffer to write.
    */
   write: function writeBuffer (explict) {
-    var r = native.write(explict || buffer)
+    var r
+    if (explict) {
+      r = native.write(explict)
+    } else {
+      r = native.render()
+    }
     if (r !== 0) {
       if (r === -16) {
         // FIXME(Yorkie): this should moved to native libs.
@@ -103,13 +107,12 @@ module.exports = {
    * light.fill(255, 255, 233, 0.3); // this will render rgba(255,255,233,0.3)
    */
   fill: function fillColor (red, green, blue, alpha) {
-    if (red === green && green === blue) {
-      buffer.fill(red, length)
-    } else {
-      for (var i = 0; i < config.leds; i++) {
-        this._pixel(i, red, green, blue, alpha)
-      }
+    if (typeof alpha === 'number' && alpha >= 0 && alpha < 1) {
+      red = Math.floor(alpha * red)
+      green = Math.floor(alpha * green)
+      blue = Math.floor(alpha * blue)
     }
+    native.fill(red, green, blue)
     return this
   },
 
@@ -147,9 +150,7 @@ module.exports = {
       green = Math.floor(alpha * green)
       blue = Math.floor(alpha * blue)
     }
-    buffer.writeUInt8(red, 0 + index * 3)
-    buffer.writeUInt8(green, 1 + index * 3)
-    buffer.writeUInt8(blue, 2 + index * 3)
+    native.pixel(index, red, green, blue)
   },
 
   /**
@@ -157,7 +158,7 @@ module.exports = {
    * @function clear
    */
   clear: function clearColor () {
-    this.fill(0, 0, 0)
+    native.fill(0, 0, 0)
     return this
   }
 
