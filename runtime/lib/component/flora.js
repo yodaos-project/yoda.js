@@ -204,8 +204,12 @@ Flora.prototype.updateStack = function updateStack (stack) {
  * @param {string} asr
  * @param {Function} cb
  */
-Flora.prototype.getNlpResult = function getNlpResult (asr, cb) {
-  if (typeof asr !== 'string' || typeof cb !== 'function') {
+Flora.prototype.getNlpResult = function getNlpResult (asr, skillOptions, cb) {
+  if (typeof skillOptions === 'function') {
+    cb = skillOptions
+    skillOptions = ''
+  }
+  if (typeof asr !== 'string' || typeof skillOptions !== 'string' || typeof cb !== 'function') {
     throw TypeError()
   }
   if (this.__cli == null) {
@@ -213,6 +217,7 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, cb) {
   }
   var caps = new floraFactory.Caps()
   caps.write(asr)
+  caps.write(skillOptions)
   caps.write(asr2nlpId)
   caps.writeInt32(asr2nlpSeq)
   this.asr2nlpCallbacks[asr2nlpSeq++] = cb
