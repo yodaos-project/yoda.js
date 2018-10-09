@@ -92,7 +92,7 @@ LightRenderingContext.prototype._getCurrentId = function () {
  */
 LightRenderingContext.prototype.playAwake = function () {
   var absPath = `/opt/media/awake_0${Math.floor(Math.random() * 5) + 1}.wav`
-  Sounder.play(absPath, AudioManager.STREAM_SYSTEM, true, (err) => {
+  Sounder.play(absPath, AudioManager.STREAM_ALARM, true, (err) => {
     if (err) {
       logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
     }
