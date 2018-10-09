@@ -3,6 +3,8 @@ var safeParse = require('@yoda/util').json.safeParse
 var logger = require('logger')('custom-config')
 var Url = require('url')
 var property = require('@yoda/property')
+var CloudGW = require('@yoda/cloudgw')
+var cloudgw = null
 
 module.exports = function customConfig (activity) {
   var CONFIG_FAILED = '设置失败'
@@ -24,6 +26,7 @@ module.exports = function customConfig (activity) {
   var SWITCH_CLOSE = 'close'
   var SWITCH_VT_UPDATE = 'update'
   var SWITCH_VT_ADD = 'add'
+  var SWITCH_VT_DELETE = 'delete'
   var VT_WORDS_TOPIC = 'custom_config'
   this.startTime = null
   this.endTime = null
@@ -49,6 +52,12 @@ module.exports = function customConfig (activity) {
     }
   })
 
+  activity.on('ready', () => {
+    activity.get().then(config => {
+      cloudgw = new CloudGW(config)
+    })
+  })
+
   activity.on('url', (url) => {
     logger.info('on Url---->is called: ')
     var urlObj = Url.parse(url)
@@ -59,6 +68,7 @@ module.exports = function customConfig (activity) {
       logger.info('on Url----> query is string:  ' + queryObj)
     }
     var action = queryObj.action
+    logger.info('the isFirstLoad is' + queryObj.isFirstLoad)
     var isFirstLoad
     logger.info('on Url----> query typeof queryObj.isFirstLoad:  ', typeof queryObj.isFirstLoad)
     if (queryObj.isFirstLoad === 'false' || queryObj.isFirstLoad === false) {
@@ -94,15 +104,47 @@ module.exports = function customConfig (activity) {
       if (action === SWITCH_VT_UPDATE) {
         activity.turen.deleteVtWord(this.oldTxt)
         activity.turen.addVtWord(this.txt, this.py)
+        sendAddUpdateStatusToServer(action)
         sendSuccessStatusToApp(action, true)
       } else if (action === SWITCH_VT_ADD) {
         activity.turen.addVtWord(this.txt, this.py)
+        sendAddUpdateStatusToServer(action)
         sendSuccessStatusToApp(action, true)
-      } else {
+      } else if (action === SWITCH_VT_DELETE) {
         activity.turen.deleteVtWord(this.txt)
+        sendDeleteStatusToServer(action)
         sendSuccessStatusToApp(action, true)
       }
     }
+  }
+  function sendAddUpdateStatusToServer (action) {
+    var vtwordArray = [{
+      py: this.py,
+      txt: this.txt,
+      oldTxt: this.oldTxt,
+      action: action,
+      phoneme: ''
+    }]
+    var sendVtObj = {
+      vt_words: JSON.stringify(vtwordArray)
+    }
+    cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
+      { namespace: 'custom_config', values: sendVtObj })
+  }
+
+  function sendDeleteStatusToServer (action) {
+    var vtwordArray = [{
+      py: this.py,
+      txt: '',
+      oldTxt: this.oldTxt,
+      action: '',
+      phoneme: ''
+    }]
+    var sendVtObj = {
+      vt_words: JSON.stringify(vtwordArray)
+    }
+    cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
+      { namespace: 'custom_config', values: sendVtObj })
   }
 
   function sendSuccessStatusToApp (action, setStatus) {
@@ -269,7 +311,14 @@ module.exports = function customConfig (activity) {
     logger.info(' onLoadCustomConfig----> config:  ', config)
     var customConfig = safeParse(config)
     if (_.get(customConfig, 'vt_words')) {
-      // TODO(suchenglong) should inset vt word for first load from server
+      var vtwordsText = customConfig.vt_words
+      var vrwordsObj = safeParse(vtwordsText)
+      if (vrwordsObj) {
+        this.oldTxt = vrwordsObj[0].oldTxt
+        this.txt = vrwordsObj[0].txt
+        this.py = vrwordsObj[0].py
+        onVtWordSwitchStatusChanged(vrwordsObj[0].action, true)
+      }
     }
     if (_.get(customConfig, 'continuousDialog')) {
       var continuousDialogObj = customConfig.continuousDialog
