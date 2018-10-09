@@ -26,7 +26,11 @@ module.exports = function (activity) {
           for (var i = 0; i < alarmList.length; i++) {
             command[alarmList[i].id] = alarmList[i]
           }
-          initAlarm(command, true)
+          // clear config data
+          fs.writeFile(configFilePath, '{}', (err) => {
+            logger.log(err && err.stack)
+            initAlarm(command, true)
+          })
         }
       })
       logger.log('alarm should get config from cloud')
@@ -171,15 +175,26 @@ module.exports = function (activity) {
   function setConfig (options, mode) {
     fs.readFile(configFilePath, 'utf8', function readFileCallback (err, data) {
       if (err) throw err
-      var parseJson = JSON.parse(data || '{}')
+      var parseJson = {}
+      try {
+        parseJson = JSON.parse(data || '{}')
+      } catch (err) {
+        logger.log(err && err.stack)
+      }
       if (mode === 'add') {
         parseJson[options.id] = options
       }
       if (mode === 'remove') {
         delete parseJson[options.id]
       }
-      fs.writeFile(configFilePath, JSON.stringify(parseJson), function (err) {
-        if (err) throw err
+      fs.unlink(configFilePath, (err) => {
+        if (err) {
+          logger.log(err && err.stack)
+          return
+        }
+        fs.writeFile(configFilePath, JSON.stringify(parseJson), function (err) {
+          if (err) throw err
+        })
       })
     })
   }
