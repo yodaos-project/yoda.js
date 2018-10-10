@@ -56,7 +56,7 @@ module.exports = function (activity) {
       })
     } else if (bluetoothState === 'connected' || bluetoothState === 'stoped' || bluetoothState ===
       'played') {
-      if (broadcastStateBy === 'connectPhone') {
+      if (broadcastStateBy === 'playmusic') {
         process.nextTick(() => stateCallback(bluetoothState))
       }
       mediaAndSpeak(STRING_CONNECED + connectBlutoothName, 'system://connectbluetooth.ogg')
@@ -81,6 +81,7 @@ module.exports = function (activity) {
         }
         if (message.a2dpstate === 'closed') {
           bluetoothState = 'closed'
+          activity.light.stop('system://bluetoothOpen.js')
         }
         if (message.connect_state === 'disconnected') {
           bluetoothState = 'disconnected'
@@ -103,7 +104,7 @@ module.exports = function (activity) {
                   speakAndBackground(STRING_BROADCAST + STRING_CONNECT_MOBILE + STRING_OPEN_BEGIN +
                   nameToSpeak + STRING_CONNECT_MOBILE_END)
                 })
-              } else {
+              } else if (broadcastStateBy === null) {
                 activity.setForeground().then(() => {
                   speakAndBackground(STRING_BROADCAST + STRING_OPEN_BEGIN + nameToSpeak +
                   STRING_OPEN_END)
@@ -323,7 +324,7 @@ module.exports = function (activity) {
         logger.log('bluetooth_start_bluetooth_music', bluetoothState)
         if (bluetoothState !== 'connected' && bluetoothState !== 'stoped' &&
          bluetoothState !== 'played' && bluetoothState !== 'null') {
-          broadcast('connectPhone', startMusic())
+          broadcast('playmusic', startMusic)
         } else {
           startMusic()
         }
