@@ -186,8 +186,8 @@ RKDownTimer.prototype.setup = function (nlpTime) {
   return ret
 }
 
-RKDownTimer.prototype.resetup = function (nlpTime) {
-  if (this.timer.isRunning()) {
+RKDownTimer.prototype.resetup = function () {
+  if (this.timer.isRunning) {
     this.timer.stop()
   }
 
