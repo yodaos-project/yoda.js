@@ -40,14 +40,14 @@ module.exports = function (activity) {
   }
 
   /**
+   * By default setVolume doesn't announce nor play effects.
    *
    * @param {number} vol
    * @param {object} [options]
-   * @param {boolean} [options.silent]
-   * @param {boolean} [options.init]
+   * @param {'announce' | 'effect'} [options.type]
    */
   function setVolume (vol, options) {
-    var silent = _.get(options, 'silent', false)
+    var type = _.get(options, 'type')
     var action = _.get(options, 'action')
 
     logger.info(`trying to set volume to ${vol}`)
@@ -80,26 +80,28 @@ module.exports = function (activity) {
     AudioManager.setVolume(localVol)
     volume = localVol
 
-    if (silent) {
+    if (type === 'effect') {
       return activity.light.play('system://setVolume.js', {
         volume: localVol,
         action: action || (localVol <= prevVolume ? 'decrease' : 'increase')
       })
     }
-
-    return activity.tts.speak(STRING_VOLUME_ALTERED + localVol)
+    if (type === 'announce') {
+      return activity.tts.speak(STRING_VOLUME_ALTERED + localVol)
+    }
+    return Promise.resolve()
   }
 
   /**
    *
    * @param {number} value
    * @param {object} [options]
-   * @param {boolean} [options.silent]
+   * @param {'announce' | 'effect'} [options.type]
    */
   function incVolume (value, options) {
-    var silent = _.get(options, 'silent', false)
+    var type = _.get(options, 'type')
     var vol = getVolume()
-    if (vol >= 100 && !silent) {
+    if (vol >= 100 && type === 'announce') {
       return activity.tts.speak(STRING_OUT_OF_RANGE_MAX)
     }
     vol += value
@@ -107,10 +109,16 @@ module.exports = function (activity) {
     return setVolume(vol, options)
   }
 
+  /**
+   *
+   * @param {number} value
+   * @param {object} [options]
+   * @param {'announce' | 'effect'} [options.type]
+   */
   function decVolume (value, options) {
-    var silent = _.get(options, 'silent', false)
+    var type = _.get(options, 'type')
     var vol = getVolume()
-    if (vol <= 0 && !silent) {
+    if (vol <= 0 && type === 'announce') {
       return activity.tts.speak(STRING_OUT_OF_RANGE)
     }
     vol -= value
@@ -138,6 +146,12 @@ module.exports = function (activity) {
     return Promise.resolve()
   }
 
+  /**
+   *
+   * @param {object} [options]
+   * @param {boolean} [options.recover]
+   * @param {'announce' | 'effect'} [options.type]
+   */
   function setUnmute (options) {
     var recover = _.get(options, 'recover', true)
     logger.info('unmute')
@@ -177,7 +191,7 @@ module.exports = function (activity) {
     switch (nlp.intent) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
-          setUnmute({ init: true })
+          setUnmute({ type: /** do not announce nor effect */null })
             .then(() => speakAndExit(STRING_SHOW_MUTED + Math.ceil(getVolume())))
         } else {
           speakAndExit(STRING_SHOW_VOLUME + Math.ceil(getVolume()))
@@ -188,7 +202,7 @@ module.exports = function (activity) {
         if (vol < 0 || vol > 100) {
           return speakAndExit(STRING_OUT_OF_RANGE)
         }
-        setVolume()
+        setVolume(vol, { type: 'announce' })
           .then(() => activity.exit())
         break
       }
@@ -200,42 +214,42 @@ module.exports = function (activity) {
         if (vol < 0 || vol > 100) {
           return speakAndExit(STRING_OUT_OF_RANGE)
         }
-        setVolume(vol)
+        setVolume(vol, { type: 'announce' })
           .then(() => activity.exit())
         break
       }
       case 'add_volume_num':
-        incVolume(format(nlp.slots) * partition)
+        incVolume(format(nlp.slots) * partition, { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'dec_volume_num':
-        decVolume(format(nlp.slots) * partition)
+        decVolume(format(nlp.slots) * partition, { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'add_volume_percent':
-        incVolume(format(nlp.slots))
+        incVolume(format(nlp.slots), { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'dec_volume_percent':
-        decVolume(format(nlp.slots))
+        decVolume(format(nlp.slots), { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'volumeup':
       case 'volume_too_low':
-        incVolume(100 / partition)
+        incVolume(100 / partition, { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'volumedown':
       case 'volume_too_high':
-        decVolume(100 / partition)
+        decVolume(100 / partition, { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'volumemin':
-        setVolume(10)
+        setVolume(10, { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'volumemax':
-        setVolume(100)
+        setVolume(100, { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'volumemute':
@@ -243,7 +257,7 @@ module.exports = function (activity) {
           .then(() => activity.exit())
         break
       case 'cancelmute':
-        setUnmute()
+        setUnmute({ type: 'announce' })
           .then(() => activity.exit())
         break
       default:
@@ -254,16 +268,12 @@ module.exports = function (activity) {
 
   activity.on('url', url => {
     var partition = parseInt(_.get(url.query, 'partition', 10))
-    var silent = _.get(url.query, 'silent') == null
     switch (url.pathname) {
       case '/volume_up':
-        incVolume(100 / partition, { silent: silent })
+        incVolume(100 / partition, { type: 'effect' })
         break
       case '/volume_down':
-        decVolume(100 / partition, { silent: silent })
-        break
-      case '/unmute':
-        setUnmute({ init: /** prevent any possible audio */true })
+        decVolume(100 / partition, { type: 'effect' })
         break
     }
   })
