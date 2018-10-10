@@ -56,7 +56,7 @@ module.exports = function (activity) {
         rkDownTimer.setup(nlp)
         break
       case 'timer_restart':
-        rkDownTimer.resetup(nlp)
+        rkDownTimer.resetup()
         break
       case 'timer_pause':
         rkDownTimer.pause()
