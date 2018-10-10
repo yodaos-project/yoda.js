@@ -6,8 +6,10 @@ var _ = require('@yoda/util')._
 module.exports = function (activity) {
   var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
   var STRING_OUT_OF_RANGE_MAX = '已经是最大的音量了'
+  var STRING_OUT_OF_RANGE = '音量调节超出范围'
   var STRING_SHOW_VOLUME = '当前音量为百分之'
   var STRING_SHOW_MUTED = '设备已静音，已帮你调回到百分之'
+  var STRING_VOLUME_ALTERED = '音量已调到百分之'
 
   var mutedBy
   var volume = 60
@@ -46,64 +48,46 @@ module.exports = function (activity) {
    */
   function setVolume (vol, options) {
     var silent = _.get(options, 'silent', false)
-    var init = _.get(options, 'init', false)
     var action = _.get(options, 'action')
 
     logger.info(`trying to set volume to ${vol}`)
-    return Promise.all([
-      (() => {
-        /**
-         * Try reconfigure and set volume
-         */
-        var localVol = vol
-        if (localVol < 0) {
-          localVol = 0
-        } else if (localVol > 100) {
-          localVol = 100
-        }
-        if (localVol % 1 >= 0.5) {
-          localVol = Math.ceil(localVol)
-        } else {
-          localVol = Math.floor(localVol)
-        }
+    /**
+     * Try reconfigure and set volume
+     */
+    var localVol = vol
+    if (localVol < 0) {
+      localVol = 0
+    } else if (localVol > 100) {
+      localVol = 100
+    }
+    if (localVol % 1 >= 0.5) {
+      localVol = Math.ceil(localVol)
+    } else {
+      localVol = Math.floor(localVol)
+    }
 
-        if (AudioManager.isMuted() && localVol > 0) {
-          /** if device is already muted, unmute it. */
-          setUnmute({ recover: false })
-        }
+    if (AudioManager.isMuted() && localVol > 0) {
+      /** if device is already muted, unmute it. */
+      setUnmute({ recover: false })
+    }
 
-        var prevVolume = getVolume()
-        AudioManager.setVolume(localVol)
-        volume = localVol
-        if (init) {
-          return Promise.resolve()
-        }
-        return activity.light.play('system://setVolume.js', {
-          volume: localVol,
-          action: action || (localVol <= prevVolume ? 'decrease' : 'increase')
-        })
-      })(),
-      (() => {
-        if (vol > 0 && vol <= 100) {
-          /** if volume to be set is in normal range, skip following */
-          return Promise.resolve()
-        }
-        /** handles out of range conditions */
-        if (vol <= 0) {
-          setMute({ source: 'indirect' })
-        }
+    if (vol === 0) {
+      /** handles out of range conditions */
+      setMute({ source: 'indirect' })
+    }
 
-        if (silent || init) {
-          /** do not announce anything if silence is demanded. */
-          return Promise.resolve()
-        }
-        if (vol < 100) {
-          /** no need to announce volume range error if expected volume is lower than 100 */
-          return Promise.resolve()
-        }
-        return speakAndExit(STRING_OUT_OF_RANGE_MAX)
-      })()
-    ])
+    var prevVolume = getVolume()
+    AudioManager.setVolume(localVol)
+    volume = localVol
+
+    if (silent) {
+      return activity.light.play('system://setVolume.js', {
+        volume: localVol,
+        action: action || (localVol <= prevVolume ? 'decrease' : 'increase')
+      })
+    }
+
+    return activity.tts.speak(STRING_VOLUME_ALTERED + localVol)
   }
 
   /**
@@ -113,26 +97,25 @@ module.exports = function (activity) {
    * @param {boolean} [options.silent]
    */
   function incVolume (value, options) {
-    var vol = getVolume() + value
+    var silent = _.get(options, 'silent', false)
+    var vol = getVolume()
+    if (vol >= 100 && !silent) {
+      return activity.tts.speak(STRING_OUT_OF_RANGE_MAX)
+    }
+    vol += value
     options = Object.assign({}, options, { action: 'increase' })
     return setVolume(vol, options)
   }
 
   function decVolume (value, options) {
-    var vol = getVolume() - value
-    if (vol < 0) {
-      vol = 0
+    var silent = _.get(options, 'silent', false)
+    var vol = getVolume()
+    if (vol <= 0 && !silent) {
+      return activity.tts.speak(STRING_OUT_OF_RANGE)
     }
+    vol -= value
     options = Object.assign({}, options, { action: 'decrease' })
     return setVolume(vol, options)
-  }
-
-  function initVolume () {
-    var vol = getVolume()
-    logger.info(`init volume to ${vol}`)
-    vol = vol || defaultVolume
-    return setVolume(vol, { init: true })
-      .then(() => setUnmute({ recover: false }))
   }
 
   /**
@@ -174,12 +157,6 @@ module.exports = function (activity) {
     return setVolume(def, options)
   }
 
-  function micMute (muted) {
-    /** Only light effects, actual mic mute operation has been handled by runtime */
-    return activity.light.play('system://setMuted.js', { muted: muted }, { shouldResume: muted })
-      .then(() => activity.exit())
-  }
-
   function handleWrap (fn) {
     return function () {
       try {
@@ -196,6 +173,7 @@ module.exports = function (activity) {
 
   activity.on('request', handleWrap(function (nlp, action) {
     var partition = 10
+    var vol
     switch (nlp.intent) {
       case 'showvolume':
         if (AudioManager.isMuted()) {
@@ -205,14 +183,22 @@ module.exports = function (activity) {
           speakAndExit(STRING_SHOW_VOLUME + Math.ceil(getVolume()))
         }
         break
-      case 'set_volume_percent':
-        setVolume(format(nlp.slots))
+      case 'set_volume_percent': {
+        vol = format(nlp.slots)
+        if (vol < 0 || vol > 100) {
+          return speakAndExit(STRING_OUT_OF_RANGE)
+        }
+        setVolume()
           .then(() => activity.exit())
         break
+      }
       case 'set_volume': {
-        var vol = format(nlp.slots)
+        vol = format(nlp.slots)
         if (vol < 10) {
           vol = vol * partition
+        }
+        if (vol < 0 || vol > 100) {
+          return speakAndExit(STRING_OUT_OF_RANGE)
         }
         setVolume(vol)
           .then(() => activity.exit())
@@ -270,9 +256,6 @@ module.exports = function (activity) {
     var partition = parseInt(_.get(url.query, 'partition', 10))
     var silent = _.get(url.query, 'silent') == null
     switch (url.pathname) {
-      case '/init':
-        initVolume()
-        break
       case '/volume_up':
         incVolume(100 / partition, { silent: silent })
         break
@@ -281,12 +264,6 @@ module.exports = function (activity) {
         break
       case '/unmute':
         setUnmute({ init: /** prevent any possible audio */true })
-        break
-      case '/mic_mute_effect':
-        micMute(true)
-        break
-      case '/mic_unmute_effect':
-        micMute(false)
         break
     }
   })
