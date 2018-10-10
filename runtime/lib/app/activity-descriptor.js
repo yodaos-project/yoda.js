@@ -727,7 +727,8 @@ Object.assign(MultimediaDescriptor.prototype,
               self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
                 if (events.indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
-                  self._runtime.dbusRegistry.removeListener(channel, onDbusSignal)
+                  // FIXME(Yorkie): `removeListener()` fails on check function causes a memory leak
+                  self._runtime.dbusRegistry.removeAllListeners(channel)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                   self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
                 }
@@ -978,7 +979,8 @@ Object.assign(TtsDescriptor.prototype,
 
                 if (events.indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
-                  self._runtime.dbusRegistry.removeListener(channel, onDbusSignal)
+                  // FIXME(Yorkie): `removeListener()` fails on check function causes a memory leak
+                  self._runtime.dbusRegistry.removeAllListeners(channel)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                   self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
                 }
