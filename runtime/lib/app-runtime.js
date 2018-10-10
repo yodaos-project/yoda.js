@@ -32,6 +32,7 @@ var Keyboard = require('./component/keyboard')
 var Lifetime = require('./component/lifetime')
 var Wormhole = require('./component/wormhole')
 var Light = require('./component/light')
+var Sound = require('./component/sound')
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -57,7 +58,6 @@ function AppRuntime () {
     scene: '',
     active: ''
   }
-  this.prevVolume = -1
   this.cloudApi = CloudApi // support cloud api. etc.. login
   this.shouldWelcome = true
   this.forceUpdateAvailable = false
@@ -76,6 +76,7 @@ function AppRuntime () {
   this.life = new Lifetime(this.loader)
   this.wormhole = new Wormhole(this)
   this.light = new Light(this.dbusRegistry)
+  this.sound = new Sound(this)
   this.shouldStopLongPressMicLight = false
 }
 inherits(AppRuntime, EventEmitter)
@@ -144,7 +145,8 @@ AppRuntime.prototype.initiate = function initiate () {
   if (!this.loadAppComplete) {
     return Promise.reject(new Error('Apps not loaded yet, try again later.'))
   }
-  return this.openUrl('yoda-skill://volume/init', { preemptive: false })
+  this.sound.initVolume()
+  return Promise.resolve()
 }
 
 /**
@@ -262,6 +264,10 @@ AppRuntime.prototype.startForceUpdate = function startForceUpdate () {
 
 AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
   this.shouldStopLongPressMicLight = true
+  if (this.sound.isMuted()) {
+    this.sound.unmute()
+  }
+
   this.light.appSound('@yoda', 'system://key_config_notify.ogg')
   this.light.play('@yoda', 'system://longPressMic.js')
   setTimeout(() => {
@@ -469,14 +475,11 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
     return Promise.resolve()
   }
 
-  var future
-  if (muted) {
-    future = this.openUrl('yoda-skill://volume/mic_mute_effect', { preemptive: false })
-  } else {
-    future = this.openUrl('yoda-skill://volume/mic_unmute_effect', { preemptive: false })
-  }
-
-  return future.then(() => muted)
+  return this.light.play(
+    '@yoda',
+    'system://setMuted.js',
+    { muted: muted },
+    { shouldResume: muted })
 }
 
 /**

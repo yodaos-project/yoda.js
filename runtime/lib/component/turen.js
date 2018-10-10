@@ -285,6 +285,13 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
     logger.warn(`discarding nlp for pick up discarded, ASR(${_.get(data, 'nlp.asr')}).`)
     return
   }
+  if (this.runtime.sound.isMuted() && !this.runtime.sound.isVolumeNlp(data.nlp)) {
+    /**
+     * Unmute speaker volume if it's muted and ongoing nlp is not
+     * volume app (which depends on state of speaker).
+     */
+    this.runtime.sound.unmute()
+  }
   this.runtime.onVoiceCommand(data.asr, data.nlp, data.action)
 }
 

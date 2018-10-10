@@ -37,7 +37,7 @@ class Activation : public ClientCallback {
       return;
     } else {
       int id = rand() % 4;
-      prepareWavPlayer(filenames[id], "alarm", true);
+      prepareWavPlayer(filenames[id], "system", true);
       startWavPlayer();
     }
   }

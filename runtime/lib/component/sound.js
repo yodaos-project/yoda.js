@@ -1,0 +1,74 @@
+var logger = require('logger')('sound')
+var _ = require('@yoda/util')._
+var AudioManager = require('@yoda/audio').AudioManager
+
+module.exports = Sound
+/**
+ * Convenience methods to configures speaker easily in runtime.
+ * @param {AppRuntime} runtime
+ */
+function Sound (runtime) {
+  this.runtime = runtime
+  this.manager = AudioManager
+
+  this.defaultVolume = 30
+}
+
+/**
+ * Initialize system volume.
+ */
+Sound.prototype.initVolume = function initVolume () {
+  var vol = this.getUserLandVolume()
+  logger.info(`init speaker volume to ${vol}`)
+  this.manager.setVolume(vol)
+  if (this.isMuted()) {
+    this.unmute()
+  }
+}
+
+/**
+ * Get user land speaker channel volume.
+ */
+Sound.prototype.getUserLandVolume = function getUserLandVolume () {
+  /** FIXME: only volume on channel STREAM_TTS could be fetched right now */
+  return Math.floor(this.manager.getVolume(AudioManager.STREAM_TTS))
+}
+
+/**
+ * Set volume. If speaker is muted, unmute on natural number volume.
+ *
+ * @param {number} volume
+ */
+Sound.prototype.setVolume = function setVolume (volume) {
+  if (volume <= 0) {
+    this.manager.setMute(true)
+  }
+
+  if (this.isMuted() && volume > 0) {
+    this.manager.setMute(false)
+  }
+  this.manager.setVolume(volume)
+}
+
+/**
+ * Unmute speaker.
+ */
+Sound.prototype.unmute = function unmute () {
+  logger.info('unmute speaker')
+  this.manager.setVolume(this.defaultVolume)
+  this.manager.setMute(false)
+}
+
+/**
+ * Determines if speaker is muted.
+ */
+Sound.prototype.isMuted = function isMuted () {
+  return this.manager.isMuted() || this.getUserLandVolume() <= 0
+}
+
+/**
+ * Determines if nlp is related to system volume app.
+ */
+Sound.prototype.isVolumeNlp = function isVolumeNlp (nlp) {
+  return _.get(nlp, 'appId') === '7D0F5E5D57CD496B940654D7C8963AE0'
+}
