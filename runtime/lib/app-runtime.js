@@ -293,7 +293,8 @@ AppRuntime.prototype.resetNetwork = function resetNetwork () {
    * reset should welcome so that welcome effect could be played on re-login
    */
   this.shouldWelcome = true
-  return this.custodian.resetNetwork()
+  return this.life.deactivateAppsInStack()
+    .then(() => this.custodian.resetNetwork())
 }
 
 /**
