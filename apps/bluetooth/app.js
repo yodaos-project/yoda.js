@@ -16,6 +16,7 @@ module.exports = function (activity) {
   var bluetoothPlayState = null
   var connectBlutoothName = null
   var playState = null
+  var isActivityPause = false
   var STRING_BROADCAST = '蓝牙已打开'
   var STRING_CONNECT_MOBILE = '当前没有可连接的设备'
   var STRING_OPEN_BEGIN = '你可以在手机上找到'
@@ -23,54 +24,100 @@ module.exports = function (activity) {
   var STRING_CONNECT_MOBILE_END = '并进行连接'
   var STRING_CONNECED = '已连接上你的'
   var STRING_CONNECEDFAILED = '未能连接上你的'
-  var DEVICE_NAME = '蓝牙设备'
   var STRING_OPENFAILED = '打开蓝牙失败'
   var STRING_OPENDISCONNECT = '蓝牙断开连接'
   var STRING_ASK = '你可以对我说，若琪，打开蓝牙'
+  var STRING_DISCONNECT = '当前并没有连接你的蓝牙设备'
+  var STRING_DISCONNECT_LINK = '已断开你的蓝牙设备'
   var BLUETOOTH_MUSIC_ID = 'RDDE53259D334860BA9E98CB3AB6C001'
 
-  function broadcast (broadcastState) {
+  function broadcast (broadcastStateBy, stateCallback) {
+    if (typeof stateCallback !== 'function') {
+      stateCallback = function noop () {}
+    }
     player = bluetooth.getPlayer()
-    setTimeout(() => {
-      if (bluetoothState === null || bluetoothState === 'closed') {
-        player.start(name)
-        activity.light.play('system://bluetoothOpen.js', {}, { shouldResume: true }).catch((err) => {
-          logger.error('bluetooth music light play', err)
-        })
-        if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => { speak(STRING_BROADCAST) })
+    if (bluetoothState === null || bluetoothState === 'closed') {
+      player.start(name, true, (err) => {
+        if (err) {
+          if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
+            speakAndBackground(STRING_OPENFAILED)
+          } else {
+            mediaAndBackground('system://openbluetootherror.ogg')
+          }
+          bluetoothState = 'closed'
+          logger.log('open sink failed, name', name)
         } else {
-          activity.setForeground().then(() => { mediaAndExit('system://openbluetooth.ogg') })
+          bluetoothState = 'opening'
+          logger.log('open sink success, name', name)
         }
-      } else if (bluetoothState === 'connected') {
-        if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-          activity.setForeground().then(() => { speak(STRING_CONNECED + connectBlutoothName) })
-        } else {
-          activity.setForeground().then(() => { mediaAndExit('system://connectbluetooth.ogg') })
-        }
+      })
+      activity.light.play('system://bluetoothOpen.js', {}, { shouldResume: true }).catch((err) => {
+        logger.error('bluetooth music light play', err)
+      })
+    } else if (bluetoothState === 'connected' || bluetoothState === 'stoped' || bluetoothState ===
+      'played') {
+      if (broadcastStateBy === 'connectPhone') {
+        process.nextTick(() => stateCallback(bluetoothState))
       }
-    }, 1000)
+      mediaAndSpeak(STRING_CONNECED + connectBlutoothName, 'system://connectbluetooth.ogg')
+    } else if (bluetoothState === 'disconnected') {
+      mediaAndSpeak(STRING_BROADCAST + STRING_OPEN_BEGIN + nameToSpeak +
+         STRING_OPEN_END, 'system://openbluetooth.ogg')
+    }
     if (bluetoothState === null || bluetoothState === 'closed') {
       player.on('stateupdate', function (message) {
         logger.debug('stateupdate', message)
         if (message.play_state === 'played') {
           playState = true
           bluetoothState = 'played'
+          activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
+        }
+        if (message.play_state === 'stoped') {
+          bluetoothState = 'stoped'
+          if (!isActivityPause) {
+            playState = false
+            activity.setBackground()
+          }
         }
         if (message.a2dpstate === 'closed') {
           bluetoothState = 'closed'
-          activity.light.stop('system://bluetoothOpen.js')
-          activity.media.start('system://closebluetooth.ogg', { streamType: 'playback' })
-            .then(() => activity.exit())
         }
         if (message.connect_state === 'disconnected') {
           bluetoothState = 'disconnected'
           activity.setForeground().then(() => {
-            speakAndExit(STRING_OPENDISCONNECT)
+            speakAndBackground(STRING_OPENDISCONNECT)
           })
         }
-        if (message.a2dpstate === 'openfailed' && message.connect_state === 'invailed' &&
-            message.play_state === 'invailed') {
+        if (message.a2dpstate === 'opened' && message.connect_state === 'invalid' &&
+            message.play_state === 'invalid') {
+          bluetoothState = 'opened'
+          if (message.linknum === 0) {
+            process.nextTick(() => stateCallback(bluetoothState))
+            if (wifi.getWifiState() !== wifi.WIFI_CONNECTED) {
+              activity.setForeground().then(() => {
+                mediaAndBackground('system://openbluetooth.ogg')
+              })
+            } else {
+              if (broadcastStateBy === 'connectPhone') {
+                activity.setForeground().then(() => {
+                  speakAndBackground(STRING_BROADCAST + STRING_CONNECT_MOBILE + STRING_OPEN_BEGIN +
+                  nameToSpeak + STRING_CONNECT_MOBILE_END)
+                })
+              } else {
+                activity.setForeground().then(() => {
+                  speakAndBackground(STRING_BROADCAST + STRING_OPEN_BEGIN + nameToSpeak +
+                  STRING_OPEN_END)
+                })
+              }
+            }
+          } else {
+            activity.setForeground().then(() => {
+              mediaAndBackground('system://openbluetooth.ogg')
+            })
+          }
+        }
+        if (message.a2dpstate === 'openfailed' && message.connect_state === 'invalid' &&
+            message.play_state === 'invalid') {
           if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
             activity.setForeground().then(() => {
               speakAndExit(STRING_OPENFAILED)
@@ -81,81 +128,64 @@ module.exports = function (activity) {
             })
           }
         }
-        if (message.a2dpstate === 'opened' && message.connect_state === 'invailed' &&
-            message.play_state === 'invailed' && message.linknum === 0) {
-          if (broadcastState === 'connectPhone') {
-            activity.setForeground().then(() => {
-              speak(STRING_CONNECT_MOBILE + STRING_OPEN_BEGIN + nameToSpeak + STRING_CONNECT_MOBILE_END)
-            })
-          } else {
-            setTimeout(() => {
-              activity.setForeground().then(() => {
-                speak(STRING_OPEN_BEGIN + nameToSpeak + STRING_OPEN_END)
-              })
-            }, 1000)
-          }// Temporary delay 1s, in order to Preventing TTS broadcast loss.
-        }
         if (message.a2dpstate === 'opened' && message.connect_state === 'connected failed' &&
-            message.play_state === 'invailed') {
+            message.play_state === 'invalid') {
           connectBlutoothName = message.connect_name
-          if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-            if (message.connect_name === 'undefined') {
-              activity.setForeground().then(() => {
-                speakAndExit(STRING_CONNECEDFAILED + DEVICE_NAME)
-              })
-            } else {
-              activity.setForeground().then(() => {
-                speakAndExit(STRING_CONNECEDFAILED + message.connect_name)
-              })
-            }
-          } else {
-            activity.setForeground().then(() => {
-              mediaAndExit('system://connectfailedbluetooth.ogg')
-            })
-          }
+          mediaAndSpeak(STRING_CONNECEDFAILED, 'system://connectfailedbluetooth.ogg')
         }
         if (message.a2dpstate === 'opened' && message.connect_state === 'connected' &&
-           message.play_state === 'invailed') {
+           message.play_state === 'invalid') {
           bluetoothState = 'connected'
           activity.light.stop('system://bluetoothOpen.js')
           connectBlutoothName = message.connect_name
-          activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID }).then(() => {
-            if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
-              setTimeout(() => {
-                speak(STRING_CONNECED + message.connect_name)
-              }, 1000)// Temporary delay 1s, in order to prevent TTS synchronization play will burst.
-            } else {
-              media('system://connectbluetooth.ogg')
-            }
+          process.nextTick(() => stateCallback(bluetoothState))
+          activity.setForeground().then(() => {
+            mediaAndSpeak(STRING_CONNECED + message.connect_name, 'system://connectbluetooth.ogg')
           })
         }
       })
     }
   }
 
-  function disconnect () {
+  function closebluetooth () {
     if (bluetoothState === 'closed') {
       return activity.setForeground().then(() => {
-        mediaAndExit('system://closebluetooth.ogg')
+        activity.media.start('system://closebluetooth.ogg', { streamType: 'playback' })
+          .then(() => activity.exit({ clearContext: true }))
       })
     }
     if (player) {
       player.end()
-      player.disconnect()
       bluetoothState = null
+      playState = false
     }
     activity.light.stop('system://bluetoothOpen.js')
     activity.setForeground().then(() => {
-      mediaAndExit('system://closebluetooth.ogg')
+      activity.media.start('system://closebluetooth.ogg', { streamType: 'playback' })
+        .then(() => activity.exit({ clearContext: true }))
     })
+  }
+
+  function disconnect () {
+    if (bluetoothState === 'closed' || bluetoothState === 'disconnect') {
+      return activity.setForeground().then(() => { speakAndBackground(STRING_DISCONNECT) })
+    }
+    if (player) {
+      player.disconnect()
+      bluetoothState = 'disconnect'
+      playState = false
+    }
+    activity.setForeground().then(() => { speakAndBackground(STRING_DISCONNECT_LINK) })
   }
 
   function startMusic () {
     activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID }).then(() => {
       player = bluetooth.getPlayer()
-      if (player && bluetoothState === 'connected') {
+      if (player && (bluetoothState === 'connected' || bluetoothState === 'stoped' ||
+       bluetoothState === 'played')) {
         playState = true
         player.play()
+        logger.log('bluetoothmusic start play !!!')
       } else {
         activity.media.start('system://playbluetootherror.ogg', { streamType: 'playback' })
           .then(() => !playState)
@@ -167,6 +197,7 @@ module.exports = function (activity) {
     player = bluetooth.getPlayer()
     if (player) {
       player.pause()
+      logger.log('bluetoothmusic start stop !!!')
     }
   }
 
@@ -174,6 +205,7 @@ module.exports = function (activity) {
     player = bluetooth.getPlayer()
     if (player) {
       player.play()
+      logger.log('bluetoothmusic start play !!!')
     }
   }
 
@@ -191,54 +223,68 @@ module.exports = function (activity) {
     }
   }
 
+  function speakAndBackground (text) {
+    return activity.tts.speak(text).catch((err) => {
+      logger.error('bluetooth music tts error', err)
+    }).then(() => { if (bluetoothState === 'played')activity.setBackground() })
+  }
+
   function speakAndExit (text) {
     return activity.tts.speak(text).catch((err) => {
       logger.error('bluetooth music tts error', err)
-    }).then(() => !playState && activity.setBackground())
+    }).then(() => !playState && activity.exit())
   }
 
-  function speak (text) {
-    return activity.tts.speak(text).catch((err) => {
-      logger.error('bluetooth music tts error', err)
-    })
+  function mediaAndBackground (text) {
+    return activity.media.start(text, { streamType: 'playback' })
+      .then(() => { if (bluetoothState === 'played')activity.setBackground() })
+  }
+
+  function mediaAndSpeak (speakString, mediaString) {
+    if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
+      activity.setForeground().then(() => {
+        speakAndBackground(speakString)
+      })
+    } else {
+      activity.setForeground().then(() => { mediaAndBackground(mediaString) })
+    }
   }
 
   function mediaAndExit (text) {
     return activity.media.start(text, { streamType: 'playback' })
-      .then(() => !playState && activity.setBackground())
-  }
-  function media (text) {
-    return activity.media.start(text, { streamType: 'playback' })
-      .then(() => !playState)
+      .then(() => !playState && activity.exit())
   }
 
   activity.on('pause', () => {
-    bluetoothPlayState = 'play'
+    if (bluetoothState === 'played') { bluetoothPlayState = 'play' }
     pauseMusic()
+    isActivityPause = true
   })
 
   activity.on('resume', () => {
+    isActivityPause = false
     if (playState && (bluetoothPlayState === 'play')) { resumeMusic() }
   })
 
   activity.on('destroy', () => {
     playState = false
     bluetoothState = 'closed'
-    bluetoothPlayState = 'pause'
+    bluetoothPlayState = 'stop'
     pauseMusic()
     player.end()
+    activity.light.stop('system://bluetoothOpen.js')
   })
 
   activity.on('request', function (nlp, action) {
     switch (nlp.intent) {
       case 'ask_bluetooth':
-        speakAndExit(STRING_ASK)
+        speakAndBackground(STRING_ASK)
         break
       case 'bluetooth_broadcast':
         broadcast('bluetooth_broadcast')
         break
       case 'bluetooth_disconnect':
-        disconnect()
+        closebluetooth()
         break
       case 'play_bluetoothmusic':
         activity.openUrl(`yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music`, 'scene')
@@ -246,11 +292,14 @@ module.exports = function (activity) {
       case 'next':
         nextMusic()
         break
+      case 'disconnect_phone':
+        disconnect()
+        break
       case 'pre':
         previousMusic()
         break
-      case 'stop' :
-        bluetoothPlayState = 'pause'
+      case 'stop':
+        bluetoothPlayState = 'stop'
         pauseMusic()
         break
       case 'resume':
@@ -268,13 +317,16 @@ module.exports = function (activity) {
   activity.on('url', url => {
     switch (url.pathname) {
       case '/bluetooth_broadcast':
-        broadcast('bluetooth_broadcast')
+        broadcast()
         break
       case '/bluetooth_start_bluetooth_music':
-        if (bluetoothState !== 'connected') {
-          broadcast('connectPhone')
-          setTimeout(() => { startMusic() }, 2000)
-        } else { startMusic() }
+        logger.log('bluetooth_start_bluetooth_music', bluetoothState)
+        if (bluetoothState !== 'connected' && bluetoothState !== 'stoped' &&
+         bluetoothState !== 'played' && bluetoothState !== 'null') {
+          broadcast('connectPhone', startMusic())
+        } else {
+          startMusic()
+        }
         break
     }
   })
