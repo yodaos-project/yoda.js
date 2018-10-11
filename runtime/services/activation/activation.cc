@@ -32,7 +32,7 @@ class Activation : public ClientCallback {
   void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg) {
     char is_awakeswitch_open[PROP_VALUE_MAX];
     property_get("persist.sys.awakeswitch", (char*)is_awakeswitch_open, "");
-    if (strcmp(is_awakeswitch_open, "close") != 0) {
+    if (strcmp(is_awakeswitch_open, "close") == 0) {
       fprintf(stdout, "awakeswitch is closed, just skip\n");
       return;
     }
