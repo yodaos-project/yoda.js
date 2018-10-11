@@ -95,7 +95,7 @@ BluetoothPlayer.prototype._onevent = function (data) {
 BluetoothPlayer.prototype._send = function (cmdstr, props) {
   var data = Object.assign({
     proto: 'A2DP',
-    command: cmdstr,
+    command: cmdstr
   }, props || {})
   var msg = new floraFactory.Caps()
   msg.write(JSON.stringify(data))
