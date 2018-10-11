@@ -19,6 +19,8 @@ function Executor (profile, appHome, appId, runtime) {
   this.daemon = _.get(profile, 'metadata.daemon', false)
   this.app = null
 
+  this.creating = false
+
   if (profile.metadata.extapp === true) {
     this.type = 'extapp'
     this.appHome = appHome
@@ -53,7 +55,11 @@ Executor.prototype.create = function () {
         this.creating = false
         app.once('exit', () => {
           logger.info(`${this.appId} exited.`)
-          this.app = null
+          if (this.app === app) {
+            this.app = null
+          } else {
+            logger.info('Not matched app on exiting, skip unset executor.app')
+          }
           this.runtime.appGC(this.appId)
         })
         app.emit('ready')

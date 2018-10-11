@@ -39,20 +39,21 @@ function createExtApp (appId, target, runtime) {
   var eventBus = new EventBus(descriptor, cp, appId)
   var onMessage = eventBus.onMessage.bind(eventBus)
   cp.on('message', onMessage)
-  cp.on('disconnect', function onDisconnected () {
+  cp.once('disconnect', function onDisconnected () {
     logger.info(`${appId}(${cp.pid}) Child process disconnected from VuiDaemon.`)
     cp.kill()
   })
-  cp.on('error', function onError (err) {
+  cp.once('error', function onError (err) {
     logger.error(`${appId}(${cp.pid}) Unexpected error on child process '${target}'`, err.message, err.stack)
+    cp.kill(/** SIGKILL */9)
   })
-  cp.on('exit', (code, signal) => {
+  cp.once('exit', (code, signal) => {
     logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
     descriptor.emit('exit', code, signal)
   })
   descriptor.once('destruct', () => {
-    logger.info(`${appId}(${cp.pid}) Activity end of life, killing process in 10s.`)
-    setTimeout(() => cp.kill(), 10 * 1000)
+    logger.info(`${appId}(${cp.pid}) Activity end of life, killing process.`)
+    cp.kill()
   })
 
   return new Promise((resolve, reject) => {
