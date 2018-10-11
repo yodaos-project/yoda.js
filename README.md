@@ -13,10 +13,6 @@ you could visit [API Documentation](https://github.com/Rokid/ShadowNode/tree/mas
 
 <!-- {project.manifest.apilevel} -->
 
-## Getting Started
-
-The Jenkins Project: [kamino-universal-node](http://ci-s.rokid-inc.com/job/kamino_universal_node_gx8010_openai_corp)
-
 ## Test
 
 To run the unit tests on device, just try:
