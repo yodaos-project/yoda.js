@@ -87,7 +87,8 @@ function reConnect (CONFIG) {
     _TTS.on('start', function (id, errno) {
       logger.log('ttsd start', id, service.lastReqId, service.ignoreTtsEvent)
       AudioManager.setPlayingState(audioModuleName, true)
-      lightd.invoke('play', ['@yoda/ttsd', '/opt/light/setSpeaking.js', '{}', '{shouldResume:true}'])
+      lightd.invoke('play',
+        ['@yoda/ttsd', '/opt/light/setSpeaking.js', '{}', '{"shouldResume":true}'])
 
       if (service.ignoreTtsEvent && service.lastReqId === id) {
         logger.log(`ignore tts start event with id: ${id}`)
