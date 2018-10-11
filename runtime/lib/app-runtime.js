@@ -293,8 +293,10 @@ AppRuntime.prototype.resetNetwork = function resetNetwork () {
    * reset should welcome so that welcome effect could be played on re-login
    */
   this.shouldWelcome = true
-  return this.life.deactivateAppsInStack()
-    .then(() => this.custodian.resetNetwork())
+  return Promise.all([
+    this.life.deactivateAppsInStack(),
+    this.setMicMute(false, { silent: true })
+  ]).then(() => this.custodian.resetNetwork())
 }
 
 /**
@@ -473,7 +475,7 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
   var muted = this.turen.toggleMute()
 
   if (silent) {
-    return Promise.resolve()
+    return this.light.stop('@yoda', 'system://setMuted.js')
   }
 
   return this.light.play(
