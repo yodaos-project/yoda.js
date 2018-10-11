@@ -74,12 +74,21 @@ Light.prototype.stopPrev = function (keep) {
     this.prevCallback = null
   }
   if (this.prev) {
-    if (typeof this.prev === 'function') {
-      this.prev(keep)
-    } else if (this.prev && typeof this.prev.stop === 'function') {
-      this.prev.stop(keep)
+    try {
+      if (typeof this.prev === 'function') {
+        this.prev(keep)
+      } else if (this.prev && typeof this.prev.stop === 'function') {
+        this.prev.stop(keep)
+      }
+    } catch (error) {
+      logger.error(`try to stop '${this.prevUri}' error. belong to '${this.prevAppId}'`)
     }
     this.prev = null
+  }
+  // auto free timer and clear light. users should not call this method manually.
+  // this is also to achieve smooth transition
+  if (this.prevContext) {
+    this.prevContext.stop(keep)
   }
   this.prevZIndex = null
   this.prevUri = null
@@ -133,7 +142,8 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       handle = this.uriHandlers[uri] = require(uri)
     }
     logger.log('call stopPrev loadfile')
-    this.stopPrev(data && data.keep)
+    // smooth transition to next light
+    this.stopPrev(true)
     var context = this.getContext()
 
     // this function can only be called once
@@ -258,7 +268,7 @@ Light.prototype.resume = function () {
   if (resume) {
     try {
       logger.log('call stopPrev resume')
-      this.stopPrev()
+      this.stopPrev(true)
 
       var handle = resume.handle
       var context
@@ -295,6 +305,9 @@ Light.prototype.resume = function () {
     } catch (error) {
       logger.error(`try to resume effect file error from path: ${resume.uri}`, error)
     }
+  } else {
+    // clear leds effect without no next light
+    this.stopPrev(false)
   }
 }
 
@@ -403,7 +416,6 @@ Light.prototype.stopFile = function (appId, uri) {
   if (this.prev && this.prevAppId === appId) {
     if (!uri || this.prevUri === uri) {
       logger.log(`stop resume light: ${appId} ${uri}`)
-      this.stopPrev()
       // try to resume next layer
       logger.log('try to find resume light')
       this.resume()

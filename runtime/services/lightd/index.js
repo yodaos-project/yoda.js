@@ -36,14 +36,18 @@ dbusApis.addMethod('play', {
 }, function (appId, name, args, optionStr, cb) {
   var data = {}
   var option = {}
+  // anyone maybe parse error
   try {
     data = JSON.parse(args)
+  } catch (error) {
+    logger.log(`json.parse data error: ${error.message}, data: '${args}', appId: ${appId}`)
+  }
+  try {
     option = JSON.parse(optionStr)
   } catch (error) {
-    logger.log(`parse args or option error: ${args}, appId: ${appId}`)
+    logger.error(`json.parse option error: ${error.message}, option: '${optionStr}', appId: ${appId}`)
   }
   service.loadfile(appId, name, data, option, (err) => {
-    logger.log(typeof cb, typeof optionStr)
     if (err) {
       logger.error(`execute ${name}(${appId}) with the following error:`, err)
       cb(null, false)
