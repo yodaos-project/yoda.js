@@ -20,7 +20,7 @@ DBus.prototype.init = function init () {
   var service = dbus.registerService('session', dbusConfig.service)
   this.service = service
 
-  ;['extapp', 'prop', 'permission', 'amsexport', 'yodadebug'].forEach(namespace => {
+  ;['extapp', 'prop', 'amsexport', 'yodadebug'].forEach(namespace => {
     if (typeof this[namespace] !== 'object') {
       throw new TypeError(`Expect object on component.dbus.prototype.${namespace}.`)
     }
@@ -258,21 +258,6 @@ DBus.prototype.prop = {
     fn: function all (appId, cb) {
       var config = this.runtime.onGetPropAll()
       cb(null, JSON.stringify(config))
-    }
-  }
-}
-
-DBus.prototype.permission = {
-  check: {
-    in: ['s', 's'],
-    out: ['s'],
-    fn: function check (appId, name, cb) {
-      var permit = this.runtime.permission.check(appId, name)
-      logger.log('vui.permit', permit, appId, name)
-      if (!permit) {
-        return cb(null, 'false')
-      }
-      cb(null, 'true')
     }
   }
 }
