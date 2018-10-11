@@ -93,10 +93,7 @@ BluetoothPlayer.prototype._onevent = function (data) {
  * @private
  */
 BluetoothPlayer.prototype._send = function (cmdstr, props) {
-  var data = Object.assign({
-    proto: 'A2DP',
-    command: cmdstr
-  }, props || {})
+  var data = Object.assign({ command: cmdstr }, props || {})
   var msg = new floraFactory.Caps()
   msg.write(JSON.stringify(data))
   return this._flora.post('bluetooth.a2dpsink.command', msg)
