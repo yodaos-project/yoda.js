@@ -231,19 +231,6 @@ JS_FUNCTION(Seek) {
   return jerry_create_undefined();
 }
 
-JS_FUNCTION(SetVolume) {
-  JS_DECLARE_THIS_PTR(player, player);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
-
-  float vol = JS_GET_ARG(0, number);
-  if (_this->handle) {
-    _this->handle->setVolume(vol /* left */, vol /* right */);
-    return jerry_create_boolean(true);
-  } else {
-    return JS_CREATE_ERROR(COMMON, "player is not ready");
-  }
-}
-
 JS_FUNCTION(Reset) {
   JS_DECLARE_THIS_PTR(player, player);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
@@ -317,30 +304,6 @@ JS_FUNCTION(LoopModeSetter) {
   }
 }
 
-JS_FUNCTION(VolumeGetter) {
-  JS_DECLARE_THIS_PTR(player, player);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
-
-  if (_this->handle) {
-    return jerry_create_number(_this->handle->getVolume());
-  } else {
-    return JS_CREATE_ERROR(COMMON, "player is not ready");
-  }
-}
-
-JS_FUNCTION(VolumeSetter) {
-  JS_DECLARE_THIS_PTR(player, player);
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
-
-  float vol = JS_GET_ARG(0, number);
-  if (_this->handle) {
-    _this->handle->setVolume(vol /* left */, vol /* right */);
-    return jerry_create_boolean(true);
-  } else {
-    return JS_CREATE_ERROR(COMMON, "player is not ready");
-  }
-}
-
 JS_FUNCTION(SessionIdGetter) {
   JS_DECLARE_THIS_PTR(player, player);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
@@ -382,7 +345,6 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "pause", Pause);
   iotjs_jval_set_method(proto, "resume", Resume);
   iotjs_jval_set_method(proto, "seek", Seek);
-  iotjs_jval_set_method(proto, "setVolume", SetVolume);
   iotjs_jval_set_method(proto, "reset", Reset);
 
   // the following methods are for getters and setters internally
@@ -392,8 +354,6 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "positionGetter", PositionGetter);
   iotjs_jval_set_method(proto, "loopModeGetter", LoopModeGetter);
   iotjs_jval_set_method(proto, "loopModeSetter", LoopModeSetter);
-  iotjs_jval_set_method(proto, "volumeGetter", VolumeGetter);
-  iotjs_jval_set_method(proto, "volumeSetter", VolumeSetter);
   iotjs_jval_set_method(proto, "sessionIdGetter", SessionIdGetter);
   iotjs_jval_set_method(proto, "sessionIdSetter", SessionIdSetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);

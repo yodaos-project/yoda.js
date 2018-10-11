@@ -88,7 +88,7 @@ MediaPlayer.prototype._initialize = function () {
  */
 MediaPlayer.prototype.onprepared = function () {
   var vol = AudioManager.getVolume(this._stream)
-  this.setVolume(vol)
+  AudioManager.setVolume(this._stream, vol)
   /**
    * Prepared event, media resource is loaded
    * @event module:@yoda/multimedia~MediaPlayer#prepared
@@ -191,18 +191,6 @@ MediaPlayer.prototype.getVolume = function () {
 }
 
 /**
- * set volume of this media player
- */
-MediaPlayer.prototype.setVolume = function (vol) {
-  if (vol < 0) {
-    vol = 0
-  } else if (vol > 100) {
-    vol = 100
-  }
-  return this._handle.setVolume(vol)
-}
-
-/**
  * reset the player.
  * @private
  */
@@ -280,20 +268,6 @@ Object.defineProperty(MediaPlayer.prototype, 'loopMode', {
   },
   set: function (mode) {
     return this._handle.loopModeSetter(mode)
-  }
-})
-
-/**
- * @member {number} volume
- * @memberof @yoda/multimedia~MediaPlayer
- * @private
- */
-Object.defineProperty(MediaPlayer.prototype, 'volume', {
-  get: function () {
-    return this._handle.volumeGetter()
-  },
-  set: function (vol) {
-    return this._handle.volumeSetter(vol)
   }
 })
 
