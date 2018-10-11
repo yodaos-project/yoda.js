@@ -284,7 +284,7 @@ LightRenderingContext.prototype.requestAnimationFrame = function (cb, interval) 
  */
 LightRenderingContext.prototype.transition = function (from, to, duration, fps, cb) {
   if (this._getCurrentId() !== this._id) {
-    return
+    return Promise.resolve()
   }
   var self = this
   // transform fps to the number of frame
@@ -298,44 +298,46 @@ LightRenderingContext.prototype.transition = function (from, to, duration, fps, 
   var colorG = from.g
   var colorB = from.b
   var left = fps
-  var render = function (r, g, b) {
-    left--
-    if (left <= 0) {
-      cb && cb(r, g, b, true)
-      return
-    } else {
-      cb && cb(r, g, b, false)
-    }
-    colorR += stepR
-    colorG += stepG
-    colorB += stepB
-    if (stepR > 0) {
-      colorR = colorR > to.r ? to.r : colorR
-    } else {
-      colorR = colorR < to.r ? to.r : colorR
-    }
-    if (stepG > 0) {
-      colorG = colorG > to.g ? to.g : colorG
-    } else {
-      colorG = colorG < to.g ? to.g : colorG
-    }
-    if (stepB > 0) {
-      colorB = colorB > to.b ? to.b : colorB
-    } else {
-      colorB = colorB < to.b ? to.b : colorB
-    }
+  return new Promise((resolve, reject) => {
+    var render = function (r, g, b) {
+      left--
+      if (left <= 0) {
+        cb && cb(r, g, b, true)
+        return resolve()
+      } else {
+        cb && cb(r, g, b, false)
+      }
+      colorR += stepR
+      colorG += stepG
+      colorB += stepB
+      if (stepR > 0) {
+        colorR = colorR > to.r ? to.r : colorR
+      } else {
+        colorR = colorR < to.r ? to.r : colorR
+      }
+      if (stepG > 0) {
+        colorG = colorG > to.g ? to.g : colorG
+      } else {
+        colorG = colorG < to.g ? to.g : colorG
+      }
+      if (stepB > 0) {
+        colorB = colorB > to.b ? to.b : colorB
+      } else {
+        colorB = colorB < to.b ? to.b : colorB
+      }
 
-    if (left <= 1) {
-      colorR = to.r
-      colorG = to.g
-      colorB = to.b
-    }
+      if (left <= 1) {
+        colorR = to.r
+        colorG = to.g
+        colorB = to.b
+      }
 
-    self.requestAnimationFrame(() => {
-      render(colorR, colorG, colorB)
-    }, times)
-  }
-  render(colorR, colorG, colorB)
+      self.requestAnimationFrame(() => {
+        render(colorR, colorG, colorB)
+      }, times)
+    }
+    render(colorR, colorG, colorB)
+  })
 }
 
 /**
@@ -351,7 +353,7 @@ LightRenderingContext.prototype.transition = function (from, to, duration, fps, 
  */
 LightRenderingContext.prototype.breathing = function (r, g, b, duration, fps, cb) {
   if (this._getCurrentId() !== this._id) {
-    return
+    return Promise.resolve()
   }
   var self = this
   // transform fps to the number of frame
@@ -368,47 +370,49 @@ LightRenderingContext.prototype.breathing = function (r, g, b, duration, fps, cb
   var colorG = 0
   var colorB = 0
   var left = fps * 2
-  var render = function (red, green, blue) {
-    left--
-    if (left <= 0) {
-      cb && cb(red, green, blue, true)
-      return
-    } else {
-      cb && cb(red, green, blue, false)
-    }
-    colorR += stepR
-    colorG += stepG
-    colorB += stepB
-    if (stepR > 0) {
-      colorR = colorR > r ? r : colorR
-    } else {
-      colorR = colorR < 0 ? 0 : colorR
-    }
-    if (stepG > 0) {
-      colorG = colorG > g ? g : colorG
-    } else {
-      colorG = colorG < 0 ? 0 : colorG
-    }
-    if (stepB > 0) {
-      colorB = colorB > b ? b : colorB
-    } else {
-      colorB = colorB < 0 ? 0 : colorB
-    }
-    if (left <= fps && !transformed) {
-      stepR = -stepR
-      stepG = -stepG
-      stepB = -stepB
-      transformed = true
-    }
-    if (left <= 1) {
-      colorR = 0
-      colorG = 0
-      colorB = 0
-    }
+  return new Promise((resolve, reject) => {
+    var render = function (red, green, blue) {
+      left--
+      if (left <= 0) {
+        cb && cb(red, green, blue, true)
+        return resolve()
+      } else {
+        cb && cb(red, green, blue, false)
+      }
+      colorR += stepR
+      colorG += stepG
+      colorB += stepB
+      if (stepR > 0) {
+        colorR = colorR > r ? r : colorR
+      } else {
+        colorR = colorR < 0 ? 0 : colorR
+      }
+      if (stepG > 0) {
+        colorG = colorG > g ? g : colorG
+      } else {
+        colorG = colorG < 0 ? 0 : colorG
+      }
+      if (stepB > 0) {
+        colorB = colorB > b ? b : colorB
+      } else {
+        colorB = colorB < 0 ? 0 : colorB
+      }
+      if (left <= fps && !transformed) {
+        stepR = -stepR
+        stepG = -stepG
+        stepB = -stepB
+        transformed = true
+      }
+      if (left <= 1) {
+        colorR = 0
+        colorG = 0
+        colorB = 0
+      }
 
-    self.requestAnimationFrame(() => {
-      render(colorR, colorG, colorB)
-    }, times)
-  }
-  render(colorR, colorG, colorB)
+      self.requestAnimationFrame(() => {
+        render(colorR, colorG, colorB)
+      }, times)
+    }
+    render(colorR, colorG, colorB)
+  })
 }
