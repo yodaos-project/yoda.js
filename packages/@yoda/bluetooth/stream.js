@@ -1,9 +1,11 @@
 'use strict'
 
 var inherits = require('util').inherits
+var logger = require('logger')('bluetooth-stream')
 var EventEmitter = require('events').EventEmitter
+var floraFactory = require('@yoda/flora')
+var FloraComp = require('@yoda/flora/comp')
 var helper = require('./helper')
-var blePath = `ipc://${helper.CHANNEL_PREFIX}/rokid_ble_event`
 
 /**
  * Use `bluetooth.getMessageStream()` instead of this constructor.
@@ -25,87 +27,99 @@ var blePath = `ipc://${helper.CHANNEL_PREFIX}/rokid_ble_event`
  */
 function BluetoothMessageStream () {
   EventEmitter.call(this)
-  this._end = false
-  this._cmdSocket = helper.getCmdSocket()
-  this._eventSocket = helper.getSocket(blePath)
-  this._eventSocket.on('message', (buffer) => {
-    try {
-      if (this._end) {
-        return
-      }
-      var msg = JSON.parse(buffer + '')
-      if (msg.state) {
-        /**
-         * when channel is opened
-         * @event module:@yoda/bluetooth.BluetoothMessageStream#opened
-         * @type {Object}
-         */
-        /**
-         * when channel is closed
-         * @event module:@yoda/bluetooth.BluetoothMessageStream#closed
-         * @type {Object}
-         */
-        /**
-         * when device is connected
-         * @event module:@yoda/bluetooth.BluetoothMessageStream#connected
-         * @type {Object}
-         */
-        /**
-         * when device is disconnected
-         * @event module:@yoda/bluetooth.BluetoothMessageStream#disconnected
-         * @type {Object}
-         */
-        /**
-         * data is handshaking
-         * @event module:@yoda/bluetooth.BluetoothMessageStream#handshake
-         * @type {Object}
-         */
-        this.emit(msg.state)
-      } else {
-        /**
-         * when some data is sent.
-         * @event module:@yoda/bluetooth.BluetoothMessageStream#data
-         * @type {Object}
-         */
-        this.emit('data', msg && msg.data)
-      }
-    } catch (err) {
-      /**
-       * when something is wrong.
-       * @event module:@yoda/bluetooth.BluetoothMessageStream#error
-       * @type {Error}
-       */
-      this.emit('error', err)
-    }
+  this._flora = new FloraComp(logger)
+  this._flora.handlers = {
+    'bluetooth.ble.event': this._onevent.bind(this)
+  }
+  this._flora.init('bluetooth-message-stream', {
+    'uri': 'unix:/var/run/flora.sock',
+    'bufsize': 40960,
+    'reconnInterval': 10000
   })
+  this._end = false
 }
 inherits(BluetoothMessageStream, EventEmitter)
 
 /**
  * @private
  */
-BluetoothMessageStream.prototype._send = function (cmdstr, name) {
-  return this._cmdSocket.send(JSON.stringify({
+BluetoothMessageStream.prototype._onevent = function (data) {
+  try {
+    if (this._end) {
+      return
+    }
+    var msg = JSON.parse(data.get(0) + '')
+    if (msg.state) {
+      /**
+       * when channel is opened
+       * @event module:@yoda/bluetooth.BluetoothMessageStream#opened
+       * @type {Object}
+       */
+      /**
+       * when channel is closed
+       * @event module:@yoda/bluetooth.BluetoothMessageStream#closed
+       * @type {Object}
+       */
+      /**
+       * when device is connected
+       * @event module:@yoda/bluetooth.BluetoothMessageStream#connected
+       * @type {Object}
+       */
+      /*
+       * when device is disconnected
+       * @event module:@yoda/bluetooth.BluetoothMessageStream#disconnected
+       * @type {Object}
+       */
+      /**
+       * data is handshaking
+       * @event module:@yoda/bluetooth.BluetoothMessageStream#handshake
+       * @type {Object}
+       */
+      this.emit(msg.state)
+    } else {
+      /**
+       * when some data is sent.
+       * @event module:@yoda/bluetooth.BluetoothMessageStream#data
+       * @type {Object}
+       */
+      this.emit('data', msg && msg.data)
+    }
+  } catch (err) {
+    /**
+     * when something is wrong.
+     * @event module:@yoda/bluetooth.BluetoothMessageStream#error
+     * @type {Error}
+     */
+    this.emit('error', err)
+  }
+}
+
+/**
+ * @private
+ */
+BluetoothMessageStream.prototype._send = function (cmdstr, props) {
+  var data = Object.assign({
     proto: 'ROKID_BLE',
     command: cmdstr,
-    name: name
-  }))
+  }, props || {})
+  var msg = new floraFactory.Caps()
+  msg.write(JSON.stringify(data))
+  return this._flora.post('bluetooth.ble.command', msg)
 }
 
 /**
  * start the message stream.
  * @param {string} name - the bluetooth name.
- * @param {boolean} always - if true, always start until success.
+ * @param {boolean} subsequent - if true, always start until success.
  * @param {function} onerror
  * @returns {Null}
  */
-BluetoothMessageStream.prototype.start = function start (name, always, cb) {
-  if (always) {
-    helper.startWithRetry(name, this, cb, 20)
-  } else {
-    this._end = false
-    this._send('ON', name)
+BluetoothMessageStream.prototype.start = function start (name, cb) {
+  this._end = false
+  if (typeof cb === 'function') {
+    this.once('opened', cb)
   }
+  return this._send('ON', { name: name })
 }
 
 /**
@@ -113,7 +127,7 @@ BluetoothMessageStream.prototype.start = function start (name, always, cb) {
  */
 BluetoothMessageStream.prototype.end = function end () {
   this._end = true
-  process.nextTick(() => this._send('OFF'))
+  return process.nextTick(() => this._send('OFF'))
 }
 
 /**
@@ -128,10 +142,7 @@ BluetoothMessageStream.prototype.disconnect = function disconnect () {
  * @param {Any} data - the data to write to peer device.
  */
 BluetoothMessageStream.prototype.write = function write (data) {
-  return this._cmdSocket.send(JSON.stringify({
-    proto: 'ROKID_BLE',
-    data: data
-  }))
+  return this._send(undefined, { data: data })
 }
 
 exports.BluetoothMessageStream = BluetoothMessageStream

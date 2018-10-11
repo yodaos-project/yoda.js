@@ -21,8 +21,7 @@ module.exports = {
    * @returns {module:@yoda/bluetooth.BluetoothMessageStream}
    */
   getMessageStream: function () {
-    if (!messageStreamInstance ||
-      messageStreamInstance._eventSocket._closed === true) {
+    if (!messageStreamInstance) {
       var BluetoothMessageStream =
         require('./stream').BluetoothMessageStream
       messageStreamInstance = new BluetoothMessageStream()
@@ -34,10 +33,8 @@ module.exports = {
    * @returns {module:@yoda/bluetooth.BluetoothPlayer}
    */
   getPlayer: function () {
-    if (!playerInstance ||
-      playerInstance._eventSocket._closed === true) {
-      var BluetoothPlayer =
-        require('./player').BluetoothPlayer
+    if (!playerInstance) {
+      var BluetoothPlayer = require('./player').BluetoothPlayer
       playerInstance = new BluetoothPlayer()
     }
     return playerInstance
@@ -55,8 +52,5 @@ module.exports = {
       playerInstance.disconnect()
       playerInstance = null
     }
-    process.nextTick(() => {
-      helper.closeCmdSocket()
-    })
   }
 }
