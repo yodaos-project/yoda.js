@@ -7,6 +7,7 @@
 var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var Sounder = require('@yoda/multimedia').Sounder
+var property = require('@yoda/property')
 var light = require('@yoda/light')
 var LRU = require('lru-cache')
 var logger = require('logger')('effects')
@@ -91,6 +92,9 @@ LightRenderingContext.prototype._getCurrentId = function () {
  * @returns
  */
 LightRenderingContext.prototype.playAwake = function () {
+  if (property.get('sys.awakeswitch', 'persist') === 'close') {
+    return
+  }
   var absPath = `/opt/media/awake_0${Math.floor(Math.random() * 5) + 1}.wav`
   Sounder.play(absPath, AudioManager.STREAM_ALARM, true, (err) => {
     if (err) {
