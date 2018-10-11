@@ -80,16 +80,18 @@ module.exports = function (activity) {
     AudioManager.setVolume(localVol)
     volume = localVol
 
-    if (type === 'effect') {
-      return activity.light.play('system://setVolume.js', {
+    var promises = []
+
+    if (type === 'effect' || type === 'announce') {
+      promises.push(activity.light.play('system://setVolume.js', {
         volume: localVol,
         action: action || (localVol <= prevVolume ? 'decrease' : 'increase')
-      })
+      }))
     }
     if (type === 'announce') {
-      return activity.tts.speak(STRING_VOLUME_ALTERED + localVol)
+      promises.push(activity.tts.speak(STRING_VOLUME_ALTERED + localVol))
     }
-    return Promise.resolve()
+    return Promise.all(promises)
   }
 
   /**
