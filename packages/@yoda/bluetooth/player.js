@@ -122,7 +122,9 @@ BluetoothPlayer.prototype.start = function start (name, subsequent, cb) {
  * @returns {Null}
  */
 BluetoothPlayer.prototype.end = function () {
-  this.once('closed', () => this._end = true)
+  this.once('closed', () => {
+    this._end = true
+  })
   process.nextTick(() => this._send('OFF'))
 }
 
