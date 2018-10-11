@@ -100,7 +100,7 @@ BluetoothMessageStream.prototype._onevent = function (data) {
 BluetoothMessageStream.prototype._send = function (cmdstr, props) {
   var data = Object.assign({
     proto: 'ROKID_BLE',
-    command: cmdstr,
+    command: cmdstr
   }, props || {})
   var msg = new floraFactory.Caps()
   msg.write(JSON.stringify(data))
