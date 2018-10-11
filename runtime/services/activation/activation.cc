@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <wavPlayer.h>
 #include <cutils/properties.h>
+#include <vol_ctrl/volumecontrol.h>
 #include "flora-cli.h"
 
 using namespace std;
@@ -38,6 +39,14 @@ class Activation : public ClientCallback {
     } else {
       int id = rand() % 4;
       prepareWavPlayer(filenames[id], "system", true);
+      if (volume_set != true) {
+        char val[PROP_VALUE_MAX];
+        property_get("persist.audio.volume.system", (char*)&val, "");
+        int vol = atoi(val);
+        fprintf(stdout, "init activation volume to %d\n", vol);
+        rk_set_stream_volume(STREAM_SYSTEM, vol);
+        volume_set = true;
+      }
       startWavPlayer();
     }
   }
@@ -70,6 +79,7 @@ class Activation : public ClientCallback {
   }
 
  private:
+  bool volume_set = false;
   shared_ptr<Client> flora_cli;
   mutex reconn_mutex;
   condition_variable reconn_cond;
