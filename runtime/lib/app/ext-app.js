@@ -30,7 +30,7 @@ function createExtApp (appId, target, runtime) {
   var send = cp.send
   cp.send = function sendProxy () {
     if (cp.killed) {
-      logger.info(`Child process ${appId} has benn killed, skip sending`)
+      logger.info(`${appId}(${cp.pid}) Child process has been killed, skip sending`)
       return
     }
     send.apply(cp, arguments)
@@ -40,17 +40,18 @@ function createExtApp (appId, target, runtime) {
   var onMessage = eventBus.onMessage.bind(eventBus)
   cp.on('message', onMessage)
   cp.on('disconnect', function onDisconnected () {
-    logger.info('Child process disconnected from VuiDaemon.')
+    logger.info(`${appId}(${cp.pid}) Child process disconnected from VuiDaemon.`)
+    cp.kill()
   })
   cp.on('error', function onError (err) {
-    logger.error(`Unexpected error on child process '${target}'`, err.message, err.stack)
+    logger.error(`${appId}(${cp.pid}) Unexpected error on child process '${target}'`, err.message, err.stack)
   })
   cp.on('exit', (code, signal) => {
-    logger.info(`${appId} exited with code ${code}, signal ${signal}`)
+    logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
     descriptor.emit('exit', code, signal)
   })
   descriptor.once('destruct', () => {
-    logger.info(`Activity end of life, killing process in 10s.`)
+    logger.info(`${appId}(${cp.pid}) Activity end of life, killing process in 10s.`)
     setTimeout(() => cp.kill(), 10 * 1000)
   })
 
@@ -58,7 +59,7 @@ function createExtApp (appId, target, runtime) {
     var timer = setTimeout(() => {
       cp.removeListener('message', onMessage)
       cp.kill()
-      reject(new Error(`ExtApp '${target}' failed to be ready in 5s.`))
+      reject(new Error(` ExtApp '${target}'(${cp.pid}) failed to be ready in 5s.`))
     }, 5000)
 
     eventBus.once('status-report:ready', () => {
@@ -78,11 +79,13 @@ function createExtApp (appId, target, runtime) {
  * @param {childProcess.ChildProcess} socket
  * @param {string} appId
  */
-function EventBus (descriptor, socket, appId) {
+function EventBus (descriptor, socket, appId, pid) {
   EventEmitter.call(this)
   this.descriptor = descriptor
   this.socket = socket
   this.appId = appId
+  this.pid = socket.pid
+  this.logger = require('logger')(`bus-${this.pid}`)
 
   /**
    * keep records of subscribed events to deduplicate subscription requests.
@@ -100,10 +103,10 @@ EventBus.prototype.eventTable = [ 'test', 'ping', 'status-report', 'subscribe', 
 EventBus.prototype.onMessage = function onMessage (message) {
   var type = message.type
   if (this.eventTable.indexOf(type) < 0) {
-    logger.warn(`VuiDaemon received unknown ipc message type '${type}' from app.`)
+    this.logger.warn(`VuiDaemon received unknown ipc message type '${type}' from app.`)
     return
   }
-  logger.debug(`Received child message from ${this.appId}, type: ${type}`)
+  this.logger.debug(`Received child message from ${this.appId}, type: ${type}`)
   this[type](message)
 }
 
@@ -111,7 +114,7 @@ EventBus.prototype.test = function onTest () { /** nothing to do with test */ }
 EventBus.prototype.ping = function onPing () { /** nothing to do with ping */ }
 
 EventBus.prototype['status-report'] = function onStatusReport (message) {
-  logger.debug(`Received child ${this.appId} status report: ${message.status}`)
+  this.logger.debug(`Received child ${this.appId} status report: ${message.status}`)
   switch (message.status) {
     case 'initiating': {
       this.socket.send({
@@ -129,7 +132,7 @@ EventBus.prototype['status-report'] = function onStatusReport (message) {
       break
     }
     default: {
-      logger.info(`Unknown status report type '${message.status}'.`)
+      this.logger.info(`Unknown status report type '${message.status}'.`)
     }
   }
 }
@@ -140,9 +143,9 @@ EventBus.prototype.subscribe = function onSubscribe (message) {
   var namespace = message.namespace
 
   var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}`
-  logger.debug(`Received child ${this.appId} subscription: ${eventStr}`)
+  this.logger.debug(`Received child ${this.appId} subscription: ${eventStr}`)
   if (this.subscriptionTable[eventStr]) {
-    logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
+    this.logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
     return
   }
   this.subscriptionTable[eventStr] = true
@@ -173,7 +176,7 @@ EventBus.prototype.invoke = function onInvoke (message) {
   var params = message.params
 
   var methodStr = `Activity.${namespace ? namespace + '.' : ''}${method}`
-  logger.debug(`Received child ${this.appId} invocation(${invocationId}): ${methodStr}`)
+  this.logger.debug(`Received child ${this.appId} invocation(${invocationId}): ${methodStr}`)
 
   var nsObj = this.descriptor
   if (namespace != null) {
@@ -214,10 +217,10 @@ EventBus.prototype['subscribe-ack'] = function onSubscribeAck (message) {
   var namespace = message.namespace
 
   var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}`
-  logger.debug(`Received child ${this.appId} ack-subscription: ${eventStr}`)
+  this.logger.debug(`Received child ${this.appId} ack-subscription: ${eventStr}`)
 
   if (this.subscriptionTable[eventStr]) {
-    logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
+    this.logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
     return
   }
   this.subscriptionTable[eventStr] = true
@@ -257,13 +260,13 @@ EventBus.prototype['subscribe-ack'] = function onSubscribeAck (message) {
     return new Promise((resolve, reject) => {
       var timer = setTimeout(
         () => {
-          logger.info('onEventTrigger timedout', eventId)
+          this.logger.info('onEventTrigger timedout', eventId)
           delete self.eventSynTable[eventId]
           reject(new Error(`EventAck '${event}' timed out for ${timeout}`))
         },
         timeout)
       self.eventSynTable[eventId] = function onAck () {
-        logger.info('onEventTrigger resolved', eventId)
+        this.logger.info('onEventTrigger resolved', eventId)
         clearTimeout(timer)
         resolve()
       }
@@ -280,9 +283,9 @@ EventBus.prototype['event-ack'] = function onEventAck (message) {
 
   var callback = this.eventSynTable[eventId]
   if (callback == null) {
-    logger.info(`Unregistered or timed out event-ack for event '${eventStr}'`)
+    this.logger.info(`Unregistered or timed out event-ack for event '${eventStr}'`)
     return
   }
-  logger.info(`Callback event-ack for event '${eventStr}'`)
+  this.logger.info(`Callback event-ack for event '${eventStr}'`)
   callback(message)
 }
