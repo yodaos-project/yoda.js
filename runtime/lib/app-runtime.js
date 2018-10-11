@@ -117,6 +117,7 @@ AppRuntime.prototype.init = function init (paths) {
   }
 
   return future.then(() => {
+    this.light.play('@yoda', 'system://boot.js', {fps: 200})
     return this.loadApps(paths)
   }).then(() => {
     this.custodian.prepareNetwork()
@@ -1046,10 +1047,11 @@ AppRuntime.prototype.onLoggedIn = function () {
   var deferred = () => {
     perf.stub('started')
     // not need to play startup music after relogin
-
+    this.light.stop('@yoda', 'system://boot.js')
     if (this.shouldWelcome) {
       logger.info('announcing welcome')
-      this.light.play('@yoda', 'system://setWelcome.js')
+      this.setMicMute(false, { silent: true })
+        .then(() => this.light.play('@yoda', 'system://setWelcome.js'))
     }
     this.shouldWelcome = false
 
