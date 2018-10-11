@@ -214,6 +214,7 @@ module.exports = function (app) {
         }
         // FIXME(Yorkie): needs tell bind is unavailable?
       })
+      app.playSound('system://wifi/setup_network.ogg')
       app.light.play('system://setStandby.js', {}, { shouldResume: true })
     }
     timerAndSleep()
