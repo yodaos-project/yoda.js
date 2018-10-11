@@ -201,8 +201,6 @@ module.exports = function (activity) {
 
   activity.on('destroy', () => {
     pauseMusic()
-    player.end()
-    activity.light.stop('system://bluetoothOpen.js')
   })
 
   activity.on('request', function (nlp, action) {
