@@ -104,12 +104,17 @@ MqttAgent.prototype.connect = function connect () {
   })
   handle.on('offline', () => {
     logger.error(`mqtt is offline`)
-    this.reconnect()
+    if (!shouldOffline) {
+      this.reconnect()
+    }
   })
   handle.on('message', this.onMessage.bind(this))
   handle.on('error', (err) => {
-    logger.error(`mqtt occurs an error`, err && err.stack)
-    this.reconnect()
+    if (!shouldOffline && err.message === 'Not Authorized') {
+      logger.info('checked not authorized error, just try to reconnect')
+      return this.reconnect()
+    }
+    logger.error(`mqtt occurs an error`, err)
   })
 }
 
@@ -117,13 +122,13 @@ MqttAgent.prototype.connect = function connect () {
  * Reconnect MQTT connects with `reconnectTimeout`.
  */
 MqttAgent.prototype.reconnect = function reconnect () {
-  if (this.reconnecting === true) {
+  if (this.reconnecting === true || handle === null) {
     logger.warn('mqtt is reconnecting, just skip')
     return
   }
   this.reconnecting = true
   logger.info(`starts to reconnect after ${reconnectTimeout}ms`)
-  this.reconnectTimer = setTimeout(() => this.initialize(), reconnectTimeout)
+  this.reconnectTimer = setTimeout(this.initialize.bind(this), reconnectTimeout)
 }
 
 /**
@@ -134,7 +139,6 @@ MqttAgent.prototype.disconnect = function disconnect () {
   this.mqttOptions = null
   this.reconnecting = false
   clearTimeout(this.reconnectTimer)
-  this.removeAllListeners()
 
   // clear handle
   if (handle) {
