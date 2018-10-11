@@ -83,6 +83,7 @@ Wormhole.prototype.handlers = {
 Wormhole.prototype.onMessage = function onMessage (topic, text) {
   var handler = this.handlers[topic]
   if (typeof handler !== 'function') {
+    logger.info('no handler for ' + topic)
     return
   }
   handler.call(this, text)
@@ -102,4 +103,5 @@ Wormhole.prototype.setOffline = function setOffline () {
   }
   logger.info('disconnecting mqtt proactively')
   this.mqtt.offline()
+  this.mqtt = null
 }
