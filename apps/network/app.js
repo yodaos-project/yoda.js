@@ -203,7 +203,7 @@ module.exports = function (app) {
     initBleMessageStream(messageStream)
     if (bleStatus !== BLE_STATUS_OPENING) {
       bleStatus = BLE_STATUS_OPENING
-      messageStream.start(BLE_NAME, true, (err) => {
+      messageStream.start(BLE_NAME, (err) => {
         if (err) {
           logger.error(err && err.stack)
           logger.log('open ble failed, name', BLE_NAME)

@@ -65,7 +65,7 @@ YodaLocalPackage(logger)
 YodaLocalPackage(lru-cache)
 YodaLocalPackage(pseudomap)
 YodaLocalPackage(yallist)
-YodaLocalPackage(zeromq)
+# YodaLocalPackage(zeromq)
 
 # Tools
 ExternalProject_Add(rklogger
