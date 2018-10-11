@@ -43,6 +43,8 @@ var service = new Service({
 var flora = new Flora(service)
 flora.init()
 
+var ttsRegistry = {}
+
 service.on('simulateCancel', (id) => {
   dbusService._dbus.emitSignal(
     '/tts/service',
@@ -92,6 +94,7 @@ function reConnect (CONFIG) {
         service.ignoreTtsEvent = false
         return
       }
+      ttsRegistry[id] = Date.now()
       dbusService._dbus.emitSignal(
         '/tts/service',
         'tts.service',
@@ -115,7 +118,10 @@ function reConnect (CONFIG) {
         return
       }
       service.ignoreTtsEvent = false
-      /** delay 500ms to prevent event `end` been received before event `start` */
+      var start = ttsRegistry[id] || 0
+      delete ttsRegistry[id]
+      var delta = Date.now() - start
+      /** delay to 2s to prevent event `end` been received before event `start` */
       setTimeout(() => {
         dbusService._dbus.emitSignal(
           '/tts/service',
@@ -124,7 +130,7 @@ function reConnect (CONFIG) {
           'ss',
           ['' + id, 'end']
         )
-      }, 500)
+      }, 2000 - delta/** it's ok to set a negative timeout */)
     })
     _TTS.on('cancel', function (id, errno) {
       logger.log('ttsd cancel', id)
@@ -135,13 +141,20 @@ function reConnect (CONFIG) {
         logger.log(`ignore tts cancel event with id: ${id}`)
         return
       }
-      dbusService._dbus.emitSignal(
-        '/tts/service',
-        'tts.service',
-        'ttsdevent',
-        'ss',
-        ['' + id, 'cancel']
-      )
+
+      var start = ttsRegistry[id]
+      delete ttsRegistry[id]
+      var delta = Date.now() - start
+      /** delay to 2s to prevent event `cancel` been received before event `start` */
+      setTimeout(() => {
+        dbusService._dbus.emitSignal(
+          '/tts/service',
+          'tts.service',
+          'ttsdevent',
+          'ss',
+          ['' + id, 'cancel']
+        )
+      }, 2000 - delta/** it's ok to set a negative timeout */)
     })
     _TTS.on('error', function (id, errno) {
       logger.error('ttsd error', id, errno)
@@ -153,13 +166,20 @@ function reConnect (CONFIG) {
         return
       }
       service.ignoreTtsEvent = false
-      dbusService._dbus.emitSignal(
-        '/tts/service',
-        'tts.service',
-        'ttsdevent',
-        'ss',
-        ['' + id, 'error']
-      )
+
+      var start = ttsRegistry[id]
+      delete ttsRegistry[id]
+      var delta = Date.now() - start
+      /** delay to 2s to prevent event `error` been received before event `start` */
+      setTimeout(() => {
+        dbusService._dbus.emitSignal(
+          '/tts/service',
+          'tts.service',
+          'ttsdevent',
+          'ss',
+          ['' + id, 'error']
+        )
+      }, 2000 - delta/** it's ok to set a negative timeout */)
     })
   })
 }
