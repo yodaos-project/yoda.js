@@ -7,18 +7,11 @@ var _ = require('@yoda/util')._
 var Service = require('./service')
 var Flora = require('./flora')
 var Dbus = require('dbus')
-var Remote = require('../../lib/dbus-remote-call.js')
 var logger = require('logger')('multimediad')
 
 var dbusService = Dbus.registerService('session', 'com.service.multimedia')
 var dbusObject = dbusService.createObject('/multimedia/service')
 var dbusApis = dbusObject.createInterface('multimedia.service')
-
-var permit = new Remote(dbusService._dbus, {
-  dbusService: 'com.rokid.AmsExport',
-  dbusObjectPath: '/com/permission',
-  dbusInterface: 'com.rokid.permission'
-})
 
 var service = new Service()
 var flora = new Flora(service)
@@ -91,21 +84,14 @@ dbusApis.addMethod('start', {
 }, function (appId, url, streamType, cb) {
   logger.log('multimedia play', appId, url, streamType)
   if (appId && url) {
-    permit.invoke('check', [appId, 'ACCESS_MULTIMEDIA'])
-      .then((res) => {
-        if (res && res['0'] === 'true') {
-          var id = service.start(appId, url, streamType)
-          cb(null, '' + id)
-        } else {
-          logger.log('permission deny')
-          cb(null, '-1')
-        }
-      })
-      .catch((err) => {
-        logger.log('multimedia play error', appId, url, err)
-        logger.log('can not connect to vui')
-        cb(null, '-1')
-      })
+    var id
+    try {
+      id = service.start(appId, url, streamType)
+    } catch (err) {
+      logger.error(`Unexpected error on start multimedia for app ${appId}`, err.stack)
+      return cb(null, '-1')
+    }
+    cb(null, '' + id)
   } else {
     logger.log('start: url and appId are required')
     cb(null, '-1')

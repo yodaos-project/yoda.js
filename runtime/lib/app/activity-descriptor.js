@@ -693,6 +693,11 @@ Object.assign(MultimediaDescriptor.prototype,
         var self = this
         var impatient = _.get(options, 'impatient', true)
         var streamType = _.get(options, 'streamType', 'playback')
+
+        if (!self._runtime.permission.check(self._appId, 'ACCESS_MULTIMEDIA')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
+
         if (typeof streamType !== 'string') {
           return Promise.reject(new Error('Expect string on options.streamType.'))
         }
@@ -955,6 +960,11 @@ Object.assign(TtsDescriptor.prototype,
       fn: function speak (text, options) {
         var self = this
         var impatient = _.get(options, 'impatient', false)
+
+        if (!self._runtime.permission.check(self._appId, 'ACCESS_TTS')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
+
         return self._runtime.ttsMethod('speak', [self._appId, text])
           .then((args) => {
             var ttsId = _.get(args, '0', '-1')

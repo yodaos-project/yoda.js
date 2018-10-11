@@ -29,12 +29,6 @@ var LIGHTD_INTERFACE = 'com.rokid.light.key'
 var _TTS = null
 var _CONFIG = null
 
-var permit = new Remote(dbusService._dbus, {
-  dbusService: VUI_SERVICE,
-  dbusObjectPath: '/com/permission',
-  dbusInterface: 'com.rokid.permission'
-})
-
 var lightd = new Remote(dbusService._dbus, {
   dbusService: LIGHTD_SERVICE,
   dbusObjectPath: LIGHTD_PATH,
@@ -185,29 +179,18 @@ dbusApis.addMethod('speak', {
 }, function (appId, text, cb) {
   if (appId && text) {
     logger.log(`speak request: ${text} ${appId}`)
-
-    permit.invoke('check', [appId, 'ACCESS_TTS'])
-      .then((res) => {
-        logger.log('ttsd check:', res, appId)
-        if (res['0'] === 'true') {
-          if (service.lastAppId === appId && service.lastReqId > -1) {
-            service.emit('simulateCancel', service.lastReqId)
-            service.ignoreTtsEvent = false
-          }
-          var id = service.speak(appId, text)
-          cb(null, '' + id)
-        } else {
-          cb(null, '-1')
-        }
-      }, (err) => {
-        logger.error('ttsd check error', appId, err)
-        logger.log('can not connect to vui')
-        cb(null, '-1')
-      })
-      .catch(err => {
-        logger.error('unexpected error on speak', appId, err.stack)
-        cb(null, '-1')
-      })
+    if (service.lastAppId === appId && service.lastReqId > -1) {
+      service.emit('simulateCancel', service.lastReqId)
+      service.ignoreTtsEvent = false
+    }
+    var id
+    try {
+      id = service.speak(appId, text)
+    } catch (err) {
+      logger.error(`Unexpected error on requesting tts.speak for app ${appId}`, err.stack)
+      return cb(null, '-1')
+    }
+    cb(null, '' + id)
   } else {
     // TODO: error handler?
     logger.error(`unexpected arguments: appId and text expected`, appId, text)

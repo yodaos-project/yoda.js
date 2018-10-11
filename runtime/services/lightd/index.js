@@ -9,17 +9,10 @@ var Sounder = require('@yoda/multimedia').Sounder
 
 var Service = require('./service')
 var Flora = require('./flora')
-var Remote = require('../../lib/dbus-remote-call.js')
 
 var dbusService = Dbus.registerService('session', 'com.service.light')
 var dbusObject = dbusService.createObject('/rokid/light')
 var dbusApis = dbusObject.createInterface('com.rokid.light.key')
-
-var permit = new Remote(dbusService._dbus, {
-  dbusService: 'com.rokid.AmsExport',
-  dbusObjectPath: '/com/permission',
-  dbusInterface: 'com.rokid.permission'
-})
 
 Sounder.once('ready', () => {
   logger.info('wav audio loaded')
@@ -33,9 +26,7 @@ Sounder.init([
   '/opt/media/mic_open.wav'
 ])
 
-var service = new Service({
-  permit: permit
-})
+var service = new Service()
 var flora = new Flora(service)
 flora.init()
 

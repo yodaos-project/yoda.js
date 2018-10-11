@@ -11,7 +11,7 @@ var maxSystemspaceLayers = 100
 
 var manager = new LightRenderingContextManager()
 
-function Light (options) {
+function Light () {
   // load system light config
   this.systemspace = {}
   try {
@@ -22,7 +22,6 @@ function Light (options) {
     this.systemspace = {}
   }
   this.playerHandle = {}
-  this.options = options
   this.prevCallback = null
   this.prev = null
   this.prevContext = null
