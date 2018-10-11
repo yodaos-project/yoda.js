@@ -19,36 +19,42 @@
 using namespace std;
 using namespace flora;
 
-const char* key = "state.network.connected";
 const char* filenames[] = {
   "/opt/media/awake_01.wav",
   "/opt/media/awake_02.wav",
   "/opt/media/awake_03.wav",
-  "/opt/media/awake_04.wav"
+  "/opt/media/awake_04.wav",
+  "/opt/media/awake_05.wav"
 };
 
 class Activation : public ClientCallback {
  public:
   void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg) {
-    char network_is_available[PROP_VALUE_MAX];
-    property_get(key, (char*)network_is_available, "");
-
-    if (strcmp(network_is_available, "true") != 0) {
-      fprintf(stdout, "current network is not available, just skip voice coming\n");
+    char is_awakeswitch_open[PROP_VALUE_MAX];
+    property_get("persist.sys.awakeswitch", (char*)is_awakeswitch_open, "");
+    if (strcmp(is_awakeswitch_open, "close") != 0) {
+      fprintf(stdout, "awakeswitch is closed, just skip\n");
       return;
-    } else {
-      int id = rand() % 4;
-      prepareWavPlayer(filenames[id], "system", true);
-      if (volume_set != true) {
-        char val[PROP_VALUE_MAX];
-        property_get("persist.audio.volume.system", (char*)&val, "");
-        int vol = atoi(val);
-        fprintf(stdout, "init activation volume to %d\n", vol);
-        rk_set_stream_volume(STREAM_SYSTEM, vol);
-        volume_set = true;
-      }
-      startWavPlayer();
     }
+
+    char network_is_available[PROP_VALUE_MAX];
+    property_get("state.network.connected", (char*)network_is_available, "");
+    if (strcmp(network_is_available, "true") != 0) {
+      fprintf(stdout, "current network is not available, just skip\n");
+      return;
+    }
+
+    int id = rand() % 4;
+    prepareWavPlayer(filenames[id], "system", true);
+    if (volume_set != true) {
+      char val[PROP_VALUE_MAX];
+      property_get("persist.audio.volume.system", (char*)&val, "");
+      int vol = atoi(val);
+      fprintf(stdout, "init activation volume to %d\n", vol);
+      rk_set_stream_volume(STREAM_SYSTEM, vol);
+      volume_set = true;
+    }
+    startWavPlayer();
   }
   void disconnected() {
     thread tmp([this]() { this->flora_disconnected(); });
