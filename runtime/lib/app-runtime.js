@@ -200,12 +200,9 @@ AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
  * - otherwise set device actively pickup.
  */
 AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
-  if (this.custodian.isConfiguringNetwork()) {
-    // start @network app if network is not connected
-    return this.openUrl('yoda-skill://network/setup', { preemptive: false })
-  }
-
   var currentAppId = this.life.getCurrentAppId()
+  logger.info('current appid is', currentAppId)
+
   /**
    * Stop apps and reset services whenever possible
    */
@@ -220,7 +217,13 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
      * if there is any app actively running, do not pick up.
      */
     return future
+  } else if (this.custodian.isConfiguringNetwork()) {
+    // start @network app if network is not connected
+    return future.then(() => {
+      return this.openUrl('yoda-skill://network/setup')
+    })
   }
+
   return future.then(() => {
     if (this.turen.pickingUp) {
       /**
