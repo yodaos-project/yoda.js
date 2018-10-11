@@ -89,7 +89,6 @@ LightRenderingContext.prototype._getCurrentId = function () {
 /**
  * directly play the awake effect
  * @memberof yodaRT.light.LightRenderingContext
- * @returns
  */
 LightRenderingContext.prototype.playAwake = function () {
   if (property.get('sys.awakeswitch', 'persist') === 'close') {
