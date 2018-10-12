@@ -99,10 +99,10 @@ function LaVieEnPile (loader) {
    */
   this.activeSlots = new AppSlots()
   /**
-   * Apps' id running inactively and not background.
+   * Apps' id running in background.
    * @type {string[]}
    */
-  this.inactiveAppIds = []
+  this.backgroundAppIds = []
   /**
    * Some app may have permissions to call up on other app,
    * in which case, the app which has the permission will be stored
@@ -165,7 +165,7 @@ LaVieEnPile.prototype.getAppDataById = function getAppDataById (appId) {
  * @returns {boolean} true if in background, false otherwise.
  */
 LaVieEnPile.prototype.isBackgroundApp = function isBackgroundApp (appId) {
-  return this.isAppRunning(appId) && !(this.isAppActive(appId) || this.isAppInactive(appId))
+  return this.backgroundAppIds.indexOf(appId) >= 0
 }
 
 /**
@@ -183,7 +183,7 @@ LaVieEnPile.prototype.isAppActive = function isAppActive (appId) {
  * @returns {boolean} true if inactive, false otherwise.
  */
 LaVieEnPile.prototype.isAppInactive = function isAppInactive (appId) {
-  return this.inactiveAppIds.indexOf(appId) >= 0
+  return this.isAppRunning(appId) && !(this.isAppActive(appId) || this.isBackgroundApp(appId))
 }
 
 /**
@@ -253,7 +253,6 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
 
   return executor.create()
     .then(() => {
-      this.inactiveAppIds.push(appId)
       return this.onLifeCycle(appId, 'create')
     })
 }
@@ -330,17 +329,15 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     return future
   }
 
-  if (this.isBackgroundApp(appId)) {
+  var backgroundIdx = this.backgroundAppIds.indexOf(appId)
+  if (backgroundIdx >= 0) {
     /**
      * Pull the app to foreground if running in background
      */
     logger.info('app is running in background, resuming', appId)
+    this.backgroundAppIds.splice(backgroundIdx, 1)
   } else {
     logger.info('app is running inactively, resuming', appId)
-    var idx = this.inactiveAppIds.indexOf(appId)
-    if (idx >= 0) {
-      this.inactiveAppIds.splice(idx, 1)
-    }
   }
 
   /** push app to top of stack */
@@ -518,20 +515,19 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   var recover = _.get(options, 'recover', true)
 
   logger.info('set background', appId)
-  var inactiveIdx = this.inactiveAppIds.indexOf(appId)
-  if (inactiveIdx >= 0) {
-    this.inactiveAppIds.splice(inactiveIdx, 1)
-  }
-
   var removed = this.activeSlots.removeApp(appId)
   if (removed) {
     delete this.appDataMap[appId]
     this.onStackUpdate()
   }
 
-  if (inactiveIdx < 0 && !removed) {
+  var idx = this.backgroundAppIds.indexOf(appId)
+  if (idx >= 0 && !removed) {
     logger.info('app already in background', appId)
     return Promise.resolve()
+  }
+  if (idx < 0) {
+    this.backgroundAppIds.push(appId)
   }
 
   var future = this.onLifeCycle(appId, 'background')
@@ -675,28 +671,21 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
   var force = _.get(options, 'force', false)
 
   /**
-   * Try remove app id from stacks.
+   * Remove apps from records of LaVieEnPile.
    */
   this.activeSlots.removeApp(appId)
-  var inactiveIdx = this.inactiveAppIds.indexOf(appId)
+  var backgroundIdx = this.backgroundAppIds.indexOf(appId)
+  if (this.backgroundAppIds >= 0) {
+    this.backgroundAppIds.splice(backgroundIdx, 1)
+  }
+  delete this.appDataMap[appId]
 
   if (!force && this.isDaemonApp(appId)) {
-    if (inactiveIdx < 0) {
-      this.inactiveAppIds.push(appId)
-    }
     return this.onLifeCycle(appId, 'destroy')
       .catch(err => logger.warn('Unexpected error on life cycle destroy previous app', err.stack))
   }
 
-  if (inactiveIdx >= 0) {
-    this.inactiveAppIds.splice(inactiveIdx, 1)
-  }
-
   var deferred = () => {
-    /**
-     * Remove apps from records of LaVieEnPile.
-     */
-    delete this.appDataMap[appId]
     return this.loader.getExecutorByAppId(appId).destruct()
   }
 

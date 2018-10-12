@@ -353,7 +353,7 @@ DBus.prototype.yodadebug = {
         result: {
           activeSlots: this.runtime.life.activeSlots,
           appDataMap: this.runtime.life.appDataMap,
-          inactiveAppIds: this.runtime.life.inactiveAppIds,
+          backgroundAppIds: this.runtime.life.backgroundAppIds,
           carrierId: this.runtime.life.carrierId,
           monopolist: this.runtime.life.monopolist,
           appIdOnPause: this.runtime.life.appIdOnPause,
