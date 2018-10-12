@@ -86,7 +86,7 @@ module.exports = function customConfig (activity) {
       this.oldTxt = queryObj.oldTxt
       this.txt = queryObj.txt
       this.py = queryObj.py
-      onVtWordSwitchStatusChanged(action, isFirstLoad)
+      onVtWordSwitchStatusChanged(action, false)
     } else if (urlObj.pathname === '/continuousDialog') {
       onPickupSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/wakeupSoundEffects') {
@@ -117,6 +117,20 @@ module.exports = function customConfig (activity) {
       }
     }
   }
+
+  function onVtWordSwitchFirstChanged (action, isFirstLoad) {
+    if (action && !isFirstLoad) {
+      if (action === SWITCH_VT_UPDATE) {
+        activity.turen.deleteVtWord(this.oldTxt)
+        activity.turen.addVtWord(this.txt, this.py)
+      } else if (action === SWITCH_VT_ADD) {
+        activity.turen.addVtWord(this.txt, this.py)
+      } else if (action === SWITCH_VT_DELETE) {
+        activity.turen.deleteVtWord(this.txt)
+      }
+    }
+  }
+
   function sendAddUpdateStatusToServer (action) {
     var sendVtObj = {
       vt_words: JSON.stringify([{
@@ -315,7 +329,7 @@ module.exports = function customConfig (activity) {
         this.oldTxt = vrwordsObj[0].oldTxt
         this.txt = vrwordsObj[0].txt
         this.py = vrwordsObj[0].py
-        onVtWordSwitchStatusChanged(vrwordsObj[0].action, false)
+        onVtWordSwitchFirstChanged(vrwordsObj[0].action, false)
       }
     }
     if (_.get(customConfig, 'continuousDialog')) {
