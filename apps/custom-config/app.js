@@ -118,30 +118,28 @@ module.exports = function customConfig (activity) {
     }
   }
   function sendAddUpdateStatusToServer (action) {
-    var vtwordArray = [{
-      py: this.py,
-      txt: this.txt,
-      oldTxt: this.oldTxt,
-      action: action,
-      phoneme: ''
-    }]
     var sendVtObj = {
-      vt_words: JSON.stringify(vtwordArray)
+      vt_words: JSON.stringify([{
+        py: this.py,
+        txt: this.txt,
+        oldTxt: this.oldTxt,
+        action: action,
+        phoneme: ''
+      }])
     }
     cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
       { namespace: 'custom_config', values: sendVtObj })
   }
 
   function sendDeleteStatusToServer (action) {
-    var vtwordArray = [{
-      py: this.py,
-      txt: '',
-      oldTxt: this.oldTxt,
-      action: '',
-      phoneme: ''
-    }]
     var sendVtObj = {
-      vt_words: JSON.stringify(vtwordArray)
+      vt_words: JSON.stringify([{
+        py: this.py,
+        txt: '',
+        oldTxt: this.oldTxt,
+        action: '',
+        phoneme: ''
+      }])
     }
     cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
       { namespace: 'custom_config', values: sendVtObj })
@@ -149,13 +147,13 @@ module.exports = function customConfig (activity) {
 
   function sendSuccessStatusToApp (action, setStatus) {
     var sendObj = {
-      vt_words: [{
+      vt_words: JSON.stringify([{
         py: this.py,
         oldTxt: this.oldTxt,
         txt: this.txt,
         action: action,
         success: setStatus
-      }]
+      }])
     }
     activity.wormhole.sendToApp(VT_WORDS_TOPIC, sendObj)
   }
@@ -317,7 +315,7 @@ module.exports = function customConfig (activity) {
         this.oldTxt = vrwordsObj[0].oldTxt
         this.txt = vrwordsObj[0].txt
         this.py = vrwordsObj[0].py
-        onVtWordSwitchStatusChanged(vrwordsObj[0].action, true)
+        onVtWordSwitchStatusChanged(vrwordsObj[0].action, false)
       }
     }
     if (_.get(customConfig, 'continuousDialog')) {
