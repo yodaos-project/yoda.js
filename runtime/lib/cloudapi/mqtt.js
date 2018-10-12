@@ -84,9 +84,6 @@ MqttAgent.prototype.connect = function connect () {
   if (this.mqttOptions === null) {
     throw new Error('call `register()` is required.')
   }
-  if (handle != null) {
-    this.disconnect()
-  }
   handle = mqtt.connect(endpoint, {
     clientId: this.mqttOptions.username,
     username: this.mqttOptions.username,
