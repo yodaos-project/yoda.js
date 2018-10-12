@@ -94,6 +94,13 @@ module.exports = function (app) {
       case '/setup':
         setupNetworkByBle()
         break
+      case '/connected':
+        sendWifiStatus({
+          topic: 'bind',
+          sCode: '11',
+          sMsg: 'wifi连接成功'
+        })
+        break
       case '/wifi_status':
         if (netStatus === NET_STATUS_CONNECTING) {
           var status = _.get(url.query, 'status')
@@ -184,13 +191,8 @@ module.exports = function (app) {
             stopConnectWIFI()
             app.playSound('system://wifi/connect_timeout.ogg')
           } else {
-            logger.log('connect wifi success')
-            sendWifiStatus({
-              topic: 'bind',
-              sCode: '11',
-              sMsg: 'wifi连接成功'
-            })
             wifi.save()
+            logger.info('connected and wait for internet connection.')
           }
         })
       }
@@ -276,9 +278,7 @@ module.exports = function (app) {
     } else if (state === wifi.WIFI_UNCONNECTED) {
 
     }
-    pooling = setTimeout(() => {
-      getWIFIState(cb)
-    }, 300)
+    pooling = setTimeout(() => getWIFIState(cb), 300)
   }
 
   // update wifi list, wifi list will upate in services now
