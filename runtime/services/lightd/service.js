@@ -158,7 +158,7 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       this.prevCallback = dedup(() => {
         // resume the light after no light request
         this.nextResumeTimer = setTimeout(() => {
-          this.clearPrev()
+          // this.clearPrev()
           this.resume()
         }, 0)
         callback()
