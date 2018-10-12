@@ -4,6 +4,8 @@ var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 var logger = require('logger')('permission')
 
+var _ = require('@yoda/util')._
+
 function Permission (runtime) {
   EventEmitter.call(this)
   this.app_runtime = runtime
@@ -30,14 +32,18 @@ Permission.prototype.load = function (appId, permission) {
  * 检查是否具有某个权限
  * @param {string} appId
  * @param {string} name
+ * @param {object} [options] -
+ * @param {boolean} [options.acquiresActive=true] -
  */
-Permission.prototype.check = function (appId, name) {
+Permission.prototype.check = function (appId, name, options) {
+  var acquiresActive = _.get(options, 'acquiresActive', true)
+
   if (appId === undefined || name === undefined) {
     return false
   }
   // 判断App是否声明了权限
   if (this.permission[appId] && this.permission[appId][name] === true) {
-    if (name === 'INTERRUPT') {
+    if (acquiresActive !== false) {
       return true
     }
     /** no permission other than `INTERRUPT` shall be allow if app is not top of stack */

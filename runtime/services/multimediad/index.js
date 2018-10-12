@@ -78,6 +78,26 @@ service.on('error', function (id) {
   )
 })
 
+dbusApis.addMethod('prepare', {
+  in: ['s', 's', 's'],
+  out: ['s']
+}, function (appId, url, streamType, cb) {
+  logger.log('multimedia prepare', appId, url, streamType)
+  if (appId && url) {
+    var player
+    try {
+      player = service.prepare(appId, url, streamType)
+    } catch (err) {
+      logger.error(`Unexpected error on start multimedia for app ${appId}`, err.stack)
+      return cb(null, '-1')
+    }
+    cb(null, '' + player.id)
+  } else {
+    logger.log('prepare: url and appId are required')
+    cb(null, '-1')
+  }
+})
+
 dbusApis.addMethod('start', {
   in: ['s', 's', 's'],
   out: ['s']
