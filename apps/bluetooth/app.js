@@ -145,7 +145,9 @@ module.exports = function (activity) {
 
   function speakAndBackground (text) {
     return activity.setForeground().then(() => {
-      activity.tts.speak(text).catch((err) => {
+      activity.tts.speak(text, { impatient: true }).catch((err) => {
+        /* Bluetooth music connect and open cut mode, it may be implement activity.destry,
+        so After playing TTS, go back to the background. set up TTS impatient: true. */
         logger.error('bluetooth music tts error', err)
       }).then(() => {
         if (bluetoothMessage.play_state !== 'played') {
@@ -156,12 +158,11 @@ module.exports = function (activity) {
   }
   function mediaAndBackground (text) {
     return activity.setForeground().then(() => {
-      activity.media.start(text, { streamType: 'playback' })
-        .then(() => {
-          if (bluetoothMessage.play_state !== 'played') {
-            activity.setBackground()
-          }
-        })
+      activity.playSound(text).then(() => {
+        if (bluetoothMessage.play_state !== 'played') {
+          activity.setBackground()
+        }
+      })
       // when (bluetoothState = played),You can't bring it Background.
     })
   }
@@ -200,7 +201,7 @@ module.exports = function (activity) {
   })
 
   activity.on('destroy', () => {
-    pauseMusic()
+    player.end()
   })
 
   activity.on('request', function (nlp, action) {
@@ -248,13 +249,10 @@ module.exports = function (activity) {
         broadcast()
         break
       case '/bluetooth_start_bluetooth_music':
-        if (bluetoothMessage.connect_state !== 'connected' &&
-           bluetoothMessage.play_state !== 'stoped' &&
-           bluetoothMessage.play_state !== 'played' &&
-           bluetoothMessage.play_state !== 'null') {
-          broadcast('PLAY')
-        } else {
+        if (bluetoothMessage.connect_state === 'connected') {
           startMusic()
+        } else {
+          broadcast('PLAY')
         }
         break
     }
