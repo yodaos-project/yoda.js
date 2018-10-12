@@ -515,6 +515,21 @@ Object.assign(ActivityDescriptor.prototype,
       fn: function setMicMute (mute) {
         return this._runtime.setMicMute(mute)
       }
+    },
+    /**
+     * Get microphone is muted.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function getMicMute
+     * @returns {Promise<boolean>} Promise of mic muted
+     */
+    getMicMute: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getMicMute () {
+        return this._runtime.turen.muted
+      }
     }
   }
 )
