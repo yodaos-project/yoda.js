@@ -326,7 +326,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setBackground () {
-        if (!this._runtime.permission.check(this._appId, 'INTERRUPT')) {
+        if (!this._runtime.permission.check(this._appId, 'INTERRUPT', { acquiresActive: false })) {
           return Promise.reject(new Error('Permission denied.'))
         }
         return this._runtime.life.setBackgroundById(this._appId).then(() => {})
@@ -349,7 +349,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setForeground (options) {
-        if (!this._runtime.permission.check(this._appId, 'INTERRUPT')) {
+        if (!this._runtime.permission.check(this._appId, 'INTERRUPT', { acquiresActive: false })) {
           return Promise.reject(new Error('Permission denied.'))
         }
         var form
@@ -631,6 +631,23 @@ inherits(MultimediaDescriptor, EventEmitter)
 MultimediaDescriptor.prototype.toJSON = function toJSON () {
   return MultimediaDescriptor.prototype
 }
+MultimediaDescriptor.prototype._listenMediaEvent = function _listenMediaEvent (multimediaId, onEvent) {
+  var self = this
+  var channel = `callback:multimedia:${multimediaId}`
+  var terminationEvents = ['playbackcomplete', 'cancel', 'error']
+  self._activityDescriptor._registeredDbusSignals.push(channel)
+  self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
+    if (terminationEvents.indexOf(event) >= 0) {
+      /** stop listening upcoming events for channel */
+      // FIXME(Yorkie): `removeListener()` fails on check function causes a memory leak
+      self._runtime.dbusRegistry.removeAllListeners(channel)
+      var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
+      self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
+    }
+
+    onEvent.apply(self, arguments)
+  })
+}
 
 Object.assign(MultimediaDescriptor.prototype,
   {
@@ -691,7 +708,60 @@ Object.assign(MultimediaDescriptor.prototype,
   },
   {
     /**
+     * Prepare a multimedia player for url, yet doesn't play it.
+     * Doesn't requires app to be the active app.
+     *
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function start
+     * @param {string} uri
+     * @param {object} [options]
+     * @param {'alarm' | 'playback'} [options.streamType='playback']
+     * @returns {Promise<string>} multimedia player id
+     */
+    prepare: {
+      type: 'method',
+      returns: 'promise',
+      fn: function prepare (url, options) {
+        var self = this
+        var streamType = _.get(options, 'streamType', 'playback')
+
+        if (!self._runtime.permission.check(self._appId, 'ACCESS_MULTIMEDIA', {
+          acquiresActive: false
+        })) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
+
+        if (typeof streamType !== 'string') {
+          return Promise.reject(new Error('Expect string on options.streamType.'))
+        }
+
+        url = yodaPath.transformPathScheme(url, MEDIA_SOURCE, self._appHome + '/media', {
+          allowedScheme: [ 'http', 'https', 'file', 'icecast', 'rtp', 'tcp', 'udp' ]
+        })
+        logger.log('preparing multimedia', url)
+        return self._runtime.multimediaMethod('prepare', [self._appId, url, streamType])
+          .then((result) => {
+            var multimediaId = _.get(result, '0', '-1')
+            logger.log('create media player', result)
+
+            if (multimediaId === '-1') {
+              throw new Error('Unexpected multimediad error.')
+            }
+
+            self._listenMediaEvent(multimediaId, function (event) {
+              EventEmitter.prototype.emit.apply(self,
+                [event, multimediaId].concat(Array.prototype.slice.call(arguments, 1)))
+            })
+
+            return multimediaId
+          })
+      }
+    },
+    /**
      * Start playing your url.
+     * Requires app to be the active app.
+     *
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function start
@@ -717,8 +787,8 @@ Object.assign(MultimediaDescriptor.prototype,
           return Promise.reject(new Error('Expect string on options.streamType.'))
         }
 
-        url = yodaPath.transformPathScheme(url, MEDIA_SOURCE, this._appHome + '/media', {
-          allowedScheme: [ 'http', 'https' ]
+        url = yodaPath.transformPathScheme(url, MEDIA_SOURCE, self._appHome + '/media', {
+          allowedScheme: [ 'http', 'https', 'file', 'icecast', 'rtp', 'tcp', 'udp' ]
         })
         logger.log('playing multimedia', url)
         return self._runtime.multimediaMethod('start', [self._appId, url, streamType])
@@ -734,27 +804,11 @@ Object.assign(MultimediaDescriptor.prototype,
               if (impatient) {
                 resolve(multimediaId)
               }
-
-              var channel = `callback:multimedia:${multimediaId}`
-              var events = ['playbackcomplete', 'cancel']
-              if (impatient) {
-                /**
-                 * impatient client cannot receive `error` event through Promise
-                 */
-                events.push('error')
-              }
-              self._activityDescriptor._registeredDbusSignals.push(channel)
-              self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
-                if (events.indexOf(event) >= 0) {
-                  /** stop listening upcoming events for channel */
-                  // FIXME(Yorkie): `removeListener()` fails on check function causes a memory leak
-                  self._runtime.dbusRegistry.removeAllListeners(channel)
-                  var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
-                  self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
+              self._listenMediaEvent(multimediaId, function (event) {
+                if (impatient || event !== 'error') {
+                  EventEmitter.prototype.emit.apply(self,
+                    [event, multimediaId].concat(Array.prototype.slice.call(arguments, 1)))
                 }
-
-                EventEmitter.prototype.emit.apply(self,
-                  [event, multimediaId].concat(Array.prototype.slice.call(arguments, 1)))
 
                 if (impatient) {
                   return
@@ -790,6 +844,8 @@ Object.assign(MultimediaDescriptor.prototype,
     },
     /**
      * Resume the playing.
+     * Requires app to be the active app.
+     *
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function resume
@@ -799,6 +855,9 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function resume () {
+        if (!this._runtime.permission.check(this._appId, 'ACCESS_MULTIMEDIA')) {
+          return Promise.reject(new Error('Permission denied.'))
+        }
         return this._runtime.multimediaMethod('resume', [this._appId])
       }
     },
@@ -990,27 +1049,26 @@ Object.assign(TtsDescriptor.prototype,
             }
             return new Promise((resolve, reject) => {
               var channel = `callback:tts:${ttsId}`
-              var events = ['cancel', 'end']
-              if (impatient) {
-                /**
-                 * impatient client cannot receive `error` event through Promise
-                 */
-                events.push('error')
-              }
+              var terminationEvents = ['cancel', 'end', 'error']
               self._activityDescriptor._registeredDbusSignals.push(channel)
 
               self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
                 logger.info('tts signals', channel, event)
 
-                if (events.indexOf(event) >= 0) {
+                if (terminationEvents.indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
                   // FIXME(Yorkie): `removeListener()` fails on check function causes a memory leak
                   self._runtime.dbusRegistry.removeAllListeners(channel)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                   self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
                 }
-                EventEmitter.prototype.emit.apply(self,
-                  [event, ttsId].concat(Array.prototype.slice.call(arguments, 1)))
+                if (impatient || event !== 'error') {
+                  /**
+                   * impatient client cannot receive `error` event through Promise
+                   */
+                  EventEmitter.prototype.emit.apply(self,
+                    [event, ttsId].concat(Array.prototype.slice.call(arguments, 1)))
+                }
 
                 if (impatient) {
                   /** promise has been resolved early, shall not be resolve/reject again */

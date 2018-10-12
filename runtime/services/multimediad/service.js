@@ -27,7 +27,13 @@ MultiMedia.prototype.getCurrentlyPlayingAppId = function getCurrentlyPlayingAppI
   return null
 }
 
-MultiMedia.prototype.start = function (appId, url, streamType) {
+/**
+ * @param {string} appId
+ * @param {string} url
+ * @param {string} streamType
+ * @returns {Multimedia.Player}
+ */
+MultiMedia.prototype.prepare = function prepare (appId, url, streamType) {
   if (this.handle[appId]) {
     try {
       var id = this.handle[appId].id
@@ -46,8 +52,13 @@ MultiMedia.prototype.start = function (appId, url, streamType) {
     player = new MediaPlayer(AudioManager.STREAM_PLAYBACK)
   }
   this.listenEvent(player, appId)
-  player.start(url)
   this.handle[appId] = player
+  return player
+}
+
+MultiMedia.prototype.start = function (appId, url, streamType) {
+  var player = this.prepare(appId, url, streamType)
+  player.start(url)
   return player.id
 }
 
