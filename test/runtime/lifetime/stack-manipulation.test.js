@@ -159,3 +159,75 @@ test('shall not throw on activating if previous app is not alive', t => {
       t.end()
     })
 })
+
+test('app form switch to scene by background/foreground', t => {
+  mock.restore()
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
+
+  Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'app 0 shall be top of stack')
+      t.strictEqual(life.activeSlots.cut, '0', 'app 0 shall be a cut app')
+      return life.setBackgroundById('0')
+    })
+    .then(() => {
+      t.looseEqual(life.getCurrentAppId(), null)
+      t.looseEqual(life.activeSlots.cut, null)
+      t.looseEqual(life.getAppDataById('0'), null, 'app data of apps shall be removed')
+      return life.activateAppById('1', 'scene')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1', 'app 1 shall be top of stack')
+      t.strictEqual(life.activeSlots.scene, '1', 'app 1 shall be a cut app')
+      return life.setForegroundById('0', 'scene')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'app 0 shall be top of stack')
+      t.strictEqual(life.activeSlots.scene, '0', 'app 0 shall be a scene app')
+
+      t.looseEqual(life.getAppDataById('1'), null, 'app data of apps shall be removed')
+
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('in stack app form switch to scene', t => {
+  mock.restore()
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.appLoader)
+
+  Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('1', 'scene')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1', 'app 1 shall be top of stack')
+      t.strictEqual(life.activeSlots.scene, '1', 'app 1 shall be a cut app')
+      return life.activateAppById('0')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'app 0 shall be top of stack')
+      t.strictEqual(life.activeSlots.cut, '0', 'app 0 shall be a cut app')
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0', 'app 0 shall be top of stack')
+      t.strictEqual(life.activeSlots.scene, '0', 'app 0 shall be a scene app')
+
+      t.looseEqual(life.getAppDataById('1'), null, 'app data of apps shall be removed')
+
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
