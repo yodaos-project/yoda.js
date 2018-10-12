@@ -116,7 +116,7 @@ BluetoothMessageStream.prototype.start = function start (name, cb) {
   if (typeof cb === 'function') {
     this.once('opened', cb)
   }
-  return this._send('ON', { name: name })
+  return this._send('ON', { name: name, unique: true })
 }
 
 /**

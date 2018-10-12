@@ -113,6 +113,7 @@ BluetoothPlayer.prototype.start = function start (name, subsequent, cb) {
   }
   return this._send('ON', {
     name: name,
+    unique: true,
     subsequent: subsequent
   })
 }
