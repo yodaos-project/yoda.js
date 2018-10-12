@@ -145,8 +145,7 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
     // smooth transition to next light
     this.stopPrev(true)
     var context = this.getContext()
-
-    // this function can only be called once
+    // handle this light request first, then restore the light
     clearTimeout(self.nextResumeTimer)
     if (option.shouldResume === true) {
       // do not resume light if currently light need resume too
@@ -155,7 +154,9 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       }
       callback()
     } else {
+      // this function can only be called once
       this.prevCallback = dedup(() => {
+        // resume the light after no light request
         this.nextResumeTimer = setTimeout(() => {
           this.clearPrev()
           this.resume()
@@ -268,6 +269,7 @@ Light.prototype.resume = function () {
   if (resume) {
     try {
       logger.log('call stopPrev resume')
+      // for smooth transition
       this.stopPrev(true)
 
       var handle = resume.handle
@@ -290,10 +292,11 @@ Light.prototype.resume = function () {
       })
       logger.log(`try to resume light: appId: ${resume.appId} z-index: ${zIndex} uri: ${resume.uri}`)
       this.prev = handle(context, data, this.prevCallback)
+      this.prevUri = resume.uri
+      this.prevZIndex = zIndex
+      this.prevAppId = resume.appId
+      // set resume light
       if (this.prev && this.prev.shouldResume) {
-        this.prevUri = resume.uri
-        this.prevZIndex = zIndex
-        this.prevAppId = resume.appId
         if (isSystemUri) {
           this.systemspaceZIndex[zIndex] = resume
           logger.log(`set systemspace resume: z-index: ${zIndex} ${resume.uri} ${resume.appId}`)
@@ -306,7 +309,7 @@ Light.prototype.resume = function () {
       logger.error(`try to resume effect file error from path: ${resume.uri}`, error)
     }
   } else {
-    // clear leds effect without no next light
+    // clear leds effect without next light to render
     this.stopPrev(false)
   }
 }
@@ -319,7 +322,7 @@ Light.prototype.resume = function () {
  */
 Light.prototype.canRender = function (uri, zIndex) {
   // is there any light rendering at present
-  if (this.prev && this.prevUri) {
+  if (this.prevUri) {
     var isPrevSystemUri = this.isSystemURI(this.prevUri)
     var isSystemUri = this.isSystemURI(uri)
     // systemspace is always higher than userspace
@@ -413,7 +416,7 @@ Light.prototype.stopFile = function (appId, uri) {
     }
   }
   // stop light if currently is rendering
-  if (this.prev && this.prevAppId === appId) {
+  if (this.prevUri && this.prevAppId === appId) {
     if (!uri || this.prevUri === uri) {
       logger.log(`stop resume light: ${appId} ${uri}`)
       // try to resume next layer
@@ -425,7 +428,6 @@ Light.prototype.stopFile = function (appId, uri) {
 
 Light.prototype.setAwake = function (appId) {
   var uri = '/opt/light/awake.js'
-  var canRender = this.canRender(uri, 2)
   this.loadfile(appId, uri, {}, {}, function noop (error) {
     if (error) {
       logger.error('setAwake error', error)
@@ -433,14 +435,11 @@ Light.prototype.setAwake = function (appId) {
       logger.log('setAwake complete')
     }
   })
-  if (canRender && this.prev) {
-    this.prev.name = 'setAwake'
-  }
 }
 
 Light.prototype.setDegree = function (appId, degree) {
   var uri = '/opt/light/awake.js'
-  if (this.prev && this.prev.name === 'setAwake') {
+  if (this.prevUri && this.prevUri === uri) {
     this.degree = +degree
     this.loadfile(appId, uri, {
       degree: this.degree

@@ -74,6 +74,7 @@ function LightRenderingContext () {
   this._id = -1
   this._handleId = 0
   this._handle = {}
+  this._soundPlayer = null
   this.ledsConfig = light.getProfile()
 }
 
@@ -160,6 +161,11 @@ LightRenderingContext.prototype.sound = function (uri, self, options) {
     cache = SYSTEMCACHE
   }
 
+  if (this._soundPlayer) {
+    this._soundPlayer.stop()
+    this._soundPlayer = null
+  }
+
   var sounder = cache.get(absPath)
   if (sounder != null) {
     sounder.seek(0)
@@ -177,6 +183,7 @@ LightRenderingContext.prototype.sound = function (uri, self, options) {
       logger.log(`try to pause ${absPath} error`)
     }
   }
+  this._soundPlayer = mockPlayer
   return mockPlayer
 }
 
@@ -192,6 +199,9 @@ LightRenderingContext.prototype.stop = function (keep) {
   }
   if (this._getCurrentId() !== this._id) {
     return
+  }
+  if (this._soundPlayer) {
+    this._soundPlayer.stop()
   }
   if (keep !== true) {
     this.clear()
