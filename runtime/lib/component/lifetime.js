@@ -720,17 +720,7 @@ LaVieEnPile.prototype.pauseLifetime = function pauseLifetime () {
   }
   var currentAppId = this.appIdOnPause = this.getCurrentAppId()
 
-  logger.info('paused LaVieEnPile')
-
-  if (currentAppId == null) {
-    logger.info('no apps available to be paused.')
-    return Promise.resolve()
-  }
-  var form = _.get(this.getAppDataById(currentAppId), 'form', 'cut')
-  if (form !== 'scene') {
-    return this.deactivateAppById(currentAppId, { recover: false })
-      .catch(err => logger.warn('Unexpected error on pausing lifetime', currentAppId, err.stack))
-  }
+  logger.info('paused LaVieEnPile, current app', currentAppId)
 
   return Promise.resolve()
 }
