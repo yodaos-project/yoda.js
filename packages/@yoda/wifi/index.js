@@ -7,6 +7,7 @@
 
 var dns = require('dns')
 var os = require('os')
+var logger = require('logger')('wifi')
 var native = require('./wifi.node')
 var keyMethods = {
   'WPA2PSK': 0,
@@ -91,7 +92,7 @@ module.exports = {
     if (typeof callback !== 'function') {
       throw new TypeError('callback must be a function')
     }
-    var interval = 1000
+    var interval = 300
     var hasHistory = native.getNumOfHistory() > 0
     if (!hasHistory) {
       return callback(null, false)
@@ -106,6 +107,7 @@ module.exports = {
     }, timeout || 30 * 1000)
 
     ;(function checkInternet () {
+      logger.info('checking internet on state:', state)
       if (state === 'wifi') {
         var s = native.getWifiState()
         if (s === self.WIFI_CONNECTED) {
@@ -119,6 +121,7 @@ module.exports = {
           return
         }
         dns.lookup('www.rokid.com', (err, addr) => {
+          logger.info('dns looked up with addr', addr)
           state = null
           clearTimeout(checkTimer)
           if (err || !addr) {

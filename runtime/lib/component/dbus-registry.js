@@ -273,23 +273,30 @@ DBus.prototype.amsexport = {
       }
       try {
         var data = JSON.parse(status)
+        var currentAppId = this.runtime.life.getCurrentAppId()
+        cb(null, true)
+
         if (data.upgrade === true) {
           this.runtime.startApp('@upgrade', {}, {})
-        } else if (this.runtime.life.getCurrentAppId() === '@yoda/network') {
-          if (data.msg) {
+        } else if (currentAppId === '@yoda/network') {
+          var filter = [
+            'CTRL-EVENT-SCAN-STARTED',
+            'CTRL-EVENT-SCAN-RESULTS',
+            'CTRL-EVENT-SUBNET-STATUS-UPDATE'
+          ]
+          if (data.msg && filter.indexOf(data.msg) === -1) {
             this.runtime.openUrl(
               `yoda-skill://network/wifi_status?status=${data.msg}&value=${data.data}`, {
                 preemptive: false
               })
           }
         }
-
-        if (data['Wifi'] === false || data['Network'] === false) {
-          this.runtime.custodian.onNetworkDisconnect()
-        } else if (data['Wifi'] === true || data['Network']) {
+        if (data['Wifi'] === true || data['Network'] === true) {
           this.runtime.custodian.onNetworkConnect()
+        } else if (currentAppId !== '@yoda/network' &&
+          (data['Network'] === false || data['Wifi'] === false)) {
+          this.runtime.custodian.onNetworkDisconnect()
         }
-        cb(null, true)
       } catch (err) {
         logger.error(err && err.stack)
         cb(null, false)

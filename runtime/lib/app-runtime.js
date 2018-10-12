@@ -991,6 +991,10 @@ AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
   logger.log('received the wifi is online, reset DNS config.')
 
+  if (this.life.getCurrentAppId() === '@yoda/network') {
+    this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
+  }
+
   // check if logged in and not for reconfiguring network,
   // just reconnect in background.
   if (!property.get('app.network.masterId') && this.custodian.isLoggedIn()) {
