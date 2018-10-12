@@ -43,7 +43,7 @@ Permission.prototype.check = function (appId, name, options) {
   }
   // 判断App是否声明了权限
   if (this.permission[appId] && this.permission[appId][name] === true) {
-    if (acquiresActive !== false) {
+    if (acquiresActive === false) {
       return true
     }
     /** no permission other than `INTERRUPT` shall be allow if app is not top of stack */
