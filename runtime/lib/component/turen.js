@@ -3,6 +3,8 @@ var logger = require('logger')('turen')
 var _ = require('@yoda/util')._
 var wifi = require('@yoda/wifi')
 var Caps = require('@yoda/flora').Caps
+var bluetooth = require('@yoda/bluetooth')
+var AudioManager = require('@yoda/audio').AudioManager
 
 var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
 var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
@@ -10,6 +12,7 @@ var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
 module.exports = Turen
 function Turen (runtime) {
   this.runtime = runtime
+  this.bluetoothPlayer = bluetooth.getPlayer()
 
   /**
    * indicates microphone muted or not.
@@ -39,6 +42,7 @@ function Turen (runtime) {
    * no upcoming asr pending/end is sent in company with it.
    */
   this.solitaryVoiceComingTimer = null
+  this.pausedBluetoothOnAwaken = false
 }
 
 /**
@@ -109,6 +113,11 @@ Turen.prototype.setAwaken = function setAwaken () {
    */
   this.runtime.life.pauseLifetime()
 
+  if (AudioManager.getPlayingState('bluetooth')) {
+    this.pausedBluetoothOnAwaken = true
+    this.bluetoothPlayer.pause()
+  }
+
   /**
    * no need to determine if tts is previously been paused.
    */
@@ -152,6 +161,13 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
 
   logger.info('trying to resume previously awaken paused media')
   promises.push(this.runtime.multimediaMethod('resetAwaken', [ currentAppId ]))
+
+  var pausedBluetoothOnAwaken = this.pausedBluetoothOnAwaken
+  this.pausedBluetoothOnAwaken = false
+  if (pausedBluetoothOnAwaken) {
+    logger.info('resuming previously awaken paused bluetooth player')
+    this.bluetoothPlayer.play()
+  }
 
   return Promise.all(promises)
 }
