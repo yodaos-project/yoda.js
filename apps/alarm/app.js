@@ -36,7 +36,7 @@ module.exports = function (activity) {
       logger.log('alarm should get config from cloud')
     } else {
       getTasksFromConfig(function (command) {
-        this.initAlarm(command)
+        initAlarm(command)
       })
     }
   })

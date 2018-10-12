@@ -65,26 +65,6 @@ module.exports = (function () {
         this.emit('failed', error)
       })
     }
-    // if(mustRun(this, date)){
-    //   try {
-    //     var self = this;
-    //     var execution = new Promise(function(resolve, reject){
-    //       self.emit('started', self);
-    //       var ex = self.execution();
-    //       if( execution instanceof Promise){
-    //         ex.then(resolve).catch(reject);
-    //       }
-    //     }).then(function(){
-    //       self.emit('done', self);
-    //     }).catch(function(error){
-    //       console.error(error);
-    //       self.emit('failed', error);
-    //     });
-    //   } catch (error) {
-    //     console.error(error);
-    //     self.emit('failed', error);
-    //   }
-    // }
   }
 
   return Task
