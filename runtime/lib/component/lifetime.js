@@ -320,12 +320,14 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     }
   }
 
-  if (appId === this.getCurrentAppId()) {
+  var isScene = wasScene || form === 'scene'
+  if (appId === this.getCurrentAppId() &&
+    this.activeSlots[isScene ? 'scene' : 'cut'] === appId) {
     /**
      * App is the currently running one
      */
     logger.info('app is top of stack, skipping resuming', appId)
-    this.activeSlots.addApp(appId, wasScene || form === 'scene')
+    this.activeSlots.addApp(appId, isScene)
     return future
   }
 
