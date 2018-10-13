@@ -90,6 +90,12 @@ RKDownTimer.prototype.speak = function (text) {
   return this.activity.tts.speak(text)
     .then(() => this.activity.setBackground())
 }
+RKDownTimer.prototype.setForegroundSpeak = function (text) {
+  this.interrupted()
+  return this.activity.setForeground().then(() => {
+    this.activity.tts.speak(text)
+  })
+}
 
 // Maybe no use, later will check to delete.
 RKDownTimer.prototype.speakAndExit = function (text) {
@@ -198,7 +204,7 @@ RKDownTimer.prototype.resetup = function () {
       this.mIsPause = false
     }
 
-    this.timer.start(this.timercallback, this)
+    this.timer.start(this.timerCallback, this)
   }
 }
 
@@ -250,7 +256,7 @@ RKDownTimer.prototype.close = function () {
     // this.moveToTop()
     this.activity.setForeground()
     this.clear()
-    var ret = this.speak('你的倒计时时间到了')
+    var ret = this.setForegroundSpeak('你的倒计时时间到了')
       .then(() => {
         // TODO: the resource address
         var uri = 'system://alarm_default_ringtone.mp3'
