@@ -124,6 +124,7 @@ module.exports = function (activity) {
   function resumeMusic () {
     player = bluetooth.getPlayer()
     if (player) {
+      player.resume()
       player.play()
       logger.log('bluetoothmusic start play')
     }
@@ -194,6 +195,7 @@ module.exports = function (activity) {
   })
 
   activity.on('resume', () => {
+    player.resume()
     if (activityPlayState) {
       activityPlayState = false
       resumeMusic()
