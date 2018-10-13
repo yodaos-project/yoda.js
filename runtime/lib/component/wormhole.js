@@ -31,39 +31,14 @@ Wormhole.prototype.handlers = {
   forward: function (data) {
     this.runtime.onForward(data)
   },
-  get_volume: function (data) {
-    var res = {
-      type: 'Volume',
-      event: 'ON_VOLUME_CHANGE',
-      template: JSON.stringify({
-        mediaCurrent: '' + AudioManager.getVolume(),
-        mediaTotal: '100',
-        alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
-        alarmTotal: '100'
-      }),
-      appid: ''
-    }
-    logger.log('response topic get_volume ->', res)
-    this.sendToApp('event', res)
+  get_volume: function () {
+    this.updateVolume()
   },
   set_volume: function (data) {
     var msg = JSON.parse(data)
     if (msg.music !== undefined) {
-      AudioManager.setVolume(msg.music)
+      this.runtime.openUrl(`yoda-skill://volume/set_volume?value=${msg.music}`, { preemptive: false })
     }
-    var res = {
-      type: 'Volume',
-      event: 'ON_VOLUME_CHANGE',
-      template: JSON.stringify({
-        mediaCurrent: '' + AudioManager.getVolume(),
-        mediaTotal: '100',
-        alarmCurrent: '' + AudioManager.getVolume(AudioManager.STREAM_ALARM),
-        alarmTotal: '100'
-      }),
-      appid: ''
-    }
-    logger.log('response topic set_volume ->', res)
-    this.sendToApp('event', res)
   },
   sys_update_available: function () {
     logger.info('received upgrade command from mqtt, running ota in background.')
@@ -104,4 +79,20 @@ Wormhole.prototype.setOffline = function setOffline () {
   logger.info('disconnecting mqtt proactively')
   this.mqtt.offline()
   this.mqtt = null
+}
+
+Wormhole.prototype.updateVolume = function updateVolume () {
+  var res = {
+    type: 'Volume',
+    event: 'ON_VOLUME_CHANGE',
+    template: JSON.stringify({
+      mediaCurrent: AudioManager.getVolume(),
+      mediaTotal: 100,
+      alarmCurrent: AudioManager.getVolume(AudioManager.STREAM_ALARM),
+      alarmTotal: 100
+    }),
+    appid: ''
+  }
+  logger.log('on request volume ->', res)
+  this.sendToApp('event', res)
 }

@@ -3,7 +3,6 @@ var logger = require('logger')('turen')
 var _ = require('@yoda/util')._
 var wifi = require('@yoda/wifi')
 var Caps = require('@yoda/flora').Caps
-var AudioManager = require('@yoda/audio').AudioManager
 
 var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
 var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
