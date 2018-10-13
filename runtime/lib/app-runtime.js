@@ -92,6 +92,7 @@ AppRuntime.prototype.init = function init (paths) {
     return Promise.resolve()
   }
   this.flora.init()
+  this.turen.init()
   /** set turen to not muted */
   this.turen.toggleMute(false)
 
@@ -1108,4 +1109,5 @@ AppRuntime.prototype.destruct = function destruct () {
   this.keyboard.destruct()
   this.flora.destruct()
   this.dbusRegistry.destruct()
+  this.turen.destruct()
 }
