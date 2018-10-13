@@ -208,7 +208,7 @@ Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
     })
     return
   }
-  if (wifi.getWifiState() !== wifi.WIFI_CONNECTED) {
+  if (this.runtime.custodian.isNetworkUnavailable()) {
     wifi.enableScanPassively()
     return this.runtime.light.appSound('@yoda', 'system://wifi_is_connecting.ogg')
   }
