@@ -298,7 +298,7 @@ AppRuntime.prototype.resetNetwork = function resetNetwork () {
    */
   this.shouldWelcome = true
   return Promise.all([
-    this.life.deactivateAppsInStack(),
+    this.life.destroyAll(),
     this.setMicMute(false, { silent: true })
   ]).then(() => this.custodian.resetNetwork())
 }
