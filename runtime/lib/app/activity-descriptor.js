@@ -528,7 +528,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function getMicMute () {
-        return this._runtime.turen.muted
+        return Promise.resolve(this._runtime.turen.muted)
       }
     }
   }
