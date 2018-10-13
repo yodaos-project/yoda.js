@@ -88,10 +88,10 @@ Turen.prototype.handleEvent = function (name, data) {
   }
   if (typeof handler !== 'function') {
     logger.info(`skip turen event "${name}" for no handler existing`)
-  } else {
-    logger.debug(`handling turen event "${name}"`)
-    handler.call(this, data)
+    return
   }
+  logger.debug(`handling turen event "${name}"`)
+  return handler.call(this, data)
 }
 
 /**
