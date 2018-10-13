@@ -643,12 +643,13 @@ LaVieEnPile.prototype.destroyAll = function (options) {
   var force = _.get(options, 'force', false)
 
   logger.log(`destroying all apps${force ? ' by force' : ''}`)
-  this.appDataMap = {}
 
   var self = this
   var ids = this.loader.getAppIds()
     .filter(id => this.loader.getAppById(id) != null)
   self.activeSlots.reset()
+  this.appDataMap = {}
+  this.backgroundAppIds = []
   this.onStackReset()
   /** destroy apps in stack in a reversed order */
   return Promise.all(ids.map(step))
