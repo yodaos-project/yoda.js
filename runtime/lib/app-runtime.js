@@ -666,7 +666,7 @@ AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
   if (isPickup) {
     return this.light.setPickup('@yoda', duration, withAwaken)
   }
-  return this.light.stopByAppId('@yoda')
+  return this.light.stop('@yoda', 'system://setPickup.js')
 }
 
 AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {
