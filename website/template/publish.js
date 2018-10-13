@@ -369,7 +369,7 @@ function buildYodaOS(linktoFn) {
   nav.push(buildNavHeading('YodaOS'))
   nav.push(buildNavLink('readme', `<a href="index.html">Quick Start</a>`))
   nav.push(buildNavItem(linktoFn('yodaRT.activity.Activity', 'Activity')))
-  nav.push(buildNavItem(linktoFn('yodaRT.light.LightRenderingContext', 'LightRenderingContext')))
+  nav.push(buildNavItem(linktoFn('yodaRT.light', 'LightScript')))
 
   return nav
 }
