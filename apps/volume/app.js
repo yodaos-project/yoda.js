@@ -91,6 +91,7 @@ module.exports = function (activity) {
     if (type === 'announce') {
       promises.push(activity.tts.speak(STRING_VOLUME_ALTERED + localVol))
     }
+    promises.push(activity.wormhole.updateVolume())
     return Promise.all(promises)
   }
 
@@ -277,6 +278,16 @@ module.exports = function (activity) {
       case '/volume_down':
         decVolume(100 / partition, { type: 'effect' })
         break
+      case '/set_volume': {
+        var vol = parseInt(_.get(url.query, 'value'))
+        logger.info('set volume by url', typeof vol, vol)
+        if (isNaN(vol) || vol < 0 || vol > 100) {
+          return
+        }
+        setVolume(vol, { type: null })
+          .then(() => activity.exit())
+        break
+      }
     }
   })
 }

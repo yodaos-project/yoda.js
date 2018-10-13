@@ -1298,6 +1298,14 @@ Object.assign(WormholeDescriptor.prototype,
       fn: function sendToApp (topic, data) {
         return this._runtime.wormhole.sendToApp(topic, data)
       }
+    },
+    updateVolume: {
+      type: 'method',
+      returns: 'promise',
+      fn: function updateVolume () {
+        this._runtime.wormhole.updateVolume()
+        return Promise.resolve()
+      }
     }
   }
 )
