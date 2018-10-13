@@ -81,7 +81,11 @@ Light.prototype.appSound = function (appId, uri) {
  * @return {Promise}
  */
 Light.prototype.setPickup = function (appId, duration, withAwaken) {
-  return this.lightMethod('setPickup', [appId, '' + (duration || 6000), withAwaken])
+  var uri = this.transformPathScheme('system://setPickup.js', LIGHT_SOURCE)
+  return this.play(appId, uri, {
+    duration: duration || 6000,
+    withAwaken: withAwaken
+  })
 }
 
 /**
