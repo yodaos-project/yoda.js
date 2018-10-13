@@ -194,7 +194,7 @@ module.exports = function (activity) {
   })
 
   activity.on('resume', () => {
-    if (bluetoothMessage.play_state === 'stoped' && activityPlayState) {
+    if (activityPlayState) {
       activityPlayState = false
       resumeMusic()
     }
