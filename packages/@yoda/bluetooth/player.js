@@ -100,11 +100,30 @@ BluetoothPlayer.prototype._send = function (cmdstr, props) {
 }
 
 /**
- * Start the bluetooth player.
+ * Starts the bluetooth player, it starts the `a2dp-sink`, and waits for the connection
+ * from a peer.
+ *
+ * You should listens the following events:
+ * - `opened` when the `a2dp-sink` is opened.
+ * - `closed` when the `a2dp-sink` is closed.
+ * - `stateupdate` when any of states updates.
+ * - `error` when something went wrong from bluetooth service.
+ *
  * @param {string} name - the bluetooth name.
  * @param {string} subsequent - the subsequent command.
  * @param {function} cb
- * @returns {Null}
+ * @returns {null}
+ * @fires module:@yoda/bluetooth.BluetoothPlayer#opened
+ * @fires module:@yoda/bluetooth.BluetoothPlayer#closed
+ * @fires module:@yoda/bluetooth.BluetoothPlayer#stateupdate
+ * @fires module:@yoda/bluetooth.BluetoothPlayer#error
+ * @example
+ * var player = require('@yoda/bluetooth').getPlayer()
+ * player.on('opened', () => {
+ *   console.log('bluetooth has been opened')
+ * })
+ * player.start('YodaOS Bluetooth')
+ *
  */
 BluetoothPlayer.prototype.start = function start (name, subsequent, cb) {
   this._end = false
@@ -120,9 +139,9 @@ BluetoothPlayer.prototype.start = function start (name, subsequent, cb) {
 
 /**
  * End the bluetooth player.
- * @returns {Null}
+ * @returns {null}
  */
-BluetoothPlayer.prototype.end = function () {
+BluetoothPlayer.prototype.end = function end () {
   this.once('closed', () => {
     this._end = true
   })
@@ -130,42 +149,59 @@ BluetoothPlayer.prototype.end = function () {
 }
 
 /**
- * Play the music.
- * @returns {Null}
+ * Suspend the Bluetooth player, this pauses the current audio stream on
+ * bluetooth service util `resume()` gets called. This commonly is used
+ * when the device is awaken, system needs the bluetooth player suspends,
+ * and listenning the user.
  */
-BluetoothPlayer.prototype.play = function () {
+BluetoothPlayer.prototype.suspend = function suspend () {
+  return this._send('MUTE')
+}
+
+/**
+ * Resume from the `suspend` state.
+ */
+BluetoothPlayer.prototype.resume = function resume () {
+  return this._send('UNMUTE')
+}
+
+/**
+ * Play the music.
+ * @returns {null}
+ */
+BluetoothPlayer.prototype.play = function play () {
   return this._send('PLAY')
 }
 
 /**
  * Stop the music.
- * @returns {Null}
+ * @returns {null}
  */
-BluetoothPlayer.prototype.stop = function () {
+BluetoothPlayer.prototype.stop = function stop () {
   return this._send('STOP')
 }
 
 /**
  * Pause the music.
- * @returns {Null}
+ * @returns {null}
  */
-BluetoothPlayer.prototype.pause = function () {
+BluetoothPlayer.prototype.pause = function pause () {
   return this._send('PAUSE')
 }
 
 /**
  * Play next music.
- * @returns {Null}
+ * @returns {null}
  */
-BluetoothPlayer.prototype.next = function () {
+BluetoothPlayer.prototype.next = function next () {
   return this._send('NEXT')
 }
 
 /**
  * Play previous music.
- * @returns {Null}
+ * @returns {null}
  */
-BluetoothPlayer.prototype.prev = function () {
+BluetoothPlayer.prototype.prev = function prev () {
   return this._send('PREV')
 }
 
