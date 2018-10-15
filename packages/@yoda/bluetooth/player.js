@@ -45,7 +45,7 @@ BluetoothPlayer.prototype._onevent = function (data) {
       if (vol === undefined) {
         vol = AudioManager.getVolume(AudioManager.STREAM_PLAYBACK)
       }
-      AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
+      AudioManager.setVolume(vol)
       logger.info(`set volume ${vol} for bluetooth player`)
       /**
        * When the volume needs to be changed from bluetooth service.
