@@ -203,27 +203,31 @@ AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
  */
 AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
   var currentAppId = this.life.getCurrentAppId()
-  logger.info('current appid is', currentAppId)
+  logger.info('handling power activation, current app is', currentAppId)
 
   /**
-   * Stop apps and reset services whenever possible
+   * reset services whenever possible
    */
-  var future = Promise.all([
-    this.life.deactivateAppsInStack(),
-    this.resetServices({ lightd: false })
-  ])
+  var future = this.resetServices({ lightd: false })
+
+  if (this.custodian.isConfiguringNetwork()) {
+    // start @network app if network is not connected
+    return future.then(() => {
+      return this.openUrl('yoda-skill://network/setup')
+    })
+  }
+
+  /**
+   * Clear apps and its contexts
+   */
   this.resetCloudStack()
+  future = Promise.all([ future, this.life.deactivateAppsInStack() ])
 
   if (currentAppId) {
     /**
      * if there is any app actively running, do not pick up.
      */
     return future
-  } else if (this.custodian.isConfiguringNetwork()) {
-    // start @network app if network is not connected
-    return future.then(() => {
-      return this.openUrl('yoda-skill://network/setup')
-    })
   }
 
   return future.then(() => {
