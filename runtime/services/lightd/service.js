@@ -394,8 +394,8 @@ Light.prototype.stopFile = function (appId, uri) {
       continue
     }
     // clear z-index
-    this.systemspaceZIndex[j] = null
     logger.log(`${appId} [${j}]['${this.systemspaceZIndex[j].uri}'] clears systemspace layer`)
+    this.systemspaceZIndex[j] = null
     isFind = true
     // no more layer need to clear if when give a specific uri
     if (uri) {
@@ -413,8 +413,8 @@ Light.prototype.stopFile = function (appId, uri) {
         continue
       }
       // clear z-index
-      this.userspaceZIndex[i] = null
       logger.log(`${appId} [${i}]['${this.userspaceZIndex[i].uri}'] clear userspace layer`)
+      this.userspaceZIndex[i] = null
       // no more layer need to clear if when give a specific uri
       if (uri) {
         break
