@@ -21,11 +21,11 @@ var system = require('@yoda/system')
 var CloudApi = require('./cloudapi')
 var env = require('./env')()
 var perf = require('./performance')
-var DbusAppExecutor = require('./app/dbus-app-executor')
 var Permission = require('./component/permission')
 var DBusRegistry = require('./component/dbus-registry')
 var Custodian = require('./component/custodian')
 var AppLoader = require('./component/app-loader')
+var AppScheduler = require('./component/app-scheduler')
 var Flora = require('./component/flora')
 var Turen = require('./component/turen')
 var Keyboard = require('./component/keyboard')
@@ -73,7 +73,8 @@ function AppRuntime () {
   // identify load app complete
   this.loadAppComplete = false
   this.loader = new AppLoader(this)
-  this.life = new Lifetime(this.loader)
+  this.scheduler = new AppScheduler(this.loader, this)
+  this.life = new Lifetime(this.scheduler)
   this.wormhole = new Wormhole(this)
   this.light = new Light(this.dbusRegistry)
   this.sound = new Sound(this)
@@ -156,9 +157,9 @@ AppRuntime.prototype.initiate = function initiate () {
  */
 AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
   var self = this
-  var daemons = Object.keys(self.loader.executors).map(appId => {
-    var executor = self.loader.executors[appId]
-    if (!executor.daemon) {
+  var daemons = Object.keys(self.loader.appManifests).map(appId => {
+    var manifest = self.loader.appManifests[appId]
+    if (!manifest.daemon) {
       return
     }
     return appId
@@ -716,11 +717,12 @@ AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
  */
 AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
   logger.log('register dbus app with id: ', appId)
-  var executor = new DbusAppExecutor(objectPath, ifaceName, appId, this)
   try {
-    this.loader.setExecutorForAppId(appId, executor, {
+    this.loader.setManifest(appId, {
       skills: [ appId ],
       permission: ['ACCESS_TTS', 'ACCESS_MULTIMEDIA']
+    }, {
+      dbusApp: true
     })
   } catch (err) {
     if (_.startsWith(err.message, 'AppId exists')) {
@@ -1083,8 +1085,7 @@ AppRuntime.prototype.onLoggedIn = function () {
   }
 
   var sendReady = () => {
-    var ids = this.loader.getAppIds()
-      .filter(id => this.loader.getAppById(id) != null)
+    var ids = Object.keys(this.scheduler.appMap)
     return Promise.all(ids.map(it => this.life.onLifeCycle(it, 'ready')))
   }
 

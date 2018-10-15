@@ -12,7 +12,7 @@ test('shall prevent default', t => {
   var keyboard = new Keyboard(runtime)
   var app = new EventEmitter()
   app.keyboard = new EventEmitter()
-  runtime.loader.getAppById = function () {
+  runtime.scheduler.getAppById = function () {
     return app
   }
   runtime.life.getCurrentAppId = function () {
@@ -44,7 +44,7 @@ test('shall listen all type events of one key code', t => {
   var keyboard = new Keyboard(runtime)
   var app = new EventEmitter()
   app.keyboard = new EventEmitter()
-  runtime.loader.getAppById = function () {
+  runtime.scheduler.getAppById = function () {
     return app
   }
   runtime.life.getCurrentAppId = function () {

@@ -1,0 +1,12 @@
+{
+  "lightAppIds": [
+    "@yoda/battery",
+    "@yoda/composition-de-voix",
+    "@yoda/custom-config",
+    "@yoda/guidance",
+    "@yoda/ota",
+    "@yoda/system",
+    "@yoda/volume"
+  ],
+  "dbusAppIds": []
+}

@@ -1,6 +1,8 @@
 'use strict'
 
 var logger = require('logger')('lapp')
+
+var _ = require('@yoda/util')._
 var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
 var translate = require('../../client/translator-in-process').translate
 /**
@@ -10,7 +12,8 @@ var translate = require('../../client/translator-in-process').translate
  * @param {string} target - app home directory
  * @param {AppRuntime} runtime
  */
-module.exports = function createLightApp (appId, target, runtime) {
+module.exports = function createLightApp (appId, metadata, runtime) {
+  var target = _.get(metadata, 'appHome')
   logger.log(`load target: ${target}/package.json`)
   var pkg = require(`${target}/package.json`)
   var main = `${target}/${pkg.main || 'app.js'}`
