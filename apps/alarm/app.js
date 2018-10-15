@@ -245,7 +245,7 @@ module.exports = function (activity) {
     } else {
       controlAudio(0.5, 0.1, 1000, 5)
       activity.setForeground().then(() => {
-        return activity.media.setLoopMode(true)
+        logger.log('media play')
       }).then(() => {
         // send card to app
         request({
@@ -261,9 +261,11 @@ module.exports = function (activity) {
         }
       }).then(() => {
         if (state === wifi.NETSERVER_CONNECTED) {
-          return activity.media.start(option.url, { streamType: 'alarm' })
+          activity.media.start(option.url, { streamType: 'alarm' })
+          return activity.media.setLoopMode(true)
         } else {
-          return activity.media.start('system://alarm_default_ringtone.mp3', { streamType: 'alarm' })
+          activity.media.start('system://alarm_default_ringtone.mp3', { streamType: 'alarm' })
+          return activity.media.setLoopMode(true)
         }
       }).then(() => {
         clearTask(mode, option)
