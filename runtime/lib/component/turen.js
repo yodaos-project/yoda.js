@@ -246,7 +246,7 @@ Turen.prototype.handleAsrPending = function handleAsrPending () {
  */
 Turen.prototype.handleAsrEnd = function handleAsrEnd () {
   this.asrState = 'end'
-  this.resetAwaken({
+  return this.resetAwaken({
     recover: /** no recovery shall be made on nlp coming */ false
   }).then(() => {
     if (this.pickingUpDiscardNext) {
@@ -266,7 +266,7 @@ Turen.prototype.handleAsrEnd = function handleAsrEnd () {
  */
 Turen.prototype.handleAsrFake = function handleAsrFake () {
   this.asrState = 'fake'
-  this.resetAwaken()
+  return this.resetAwaken()
 }
 
 /**
@@ -287,7 +287,7 @@ Turen.prototype.handleEndVoice = function handleEndVoice () {
   if (this.asrState === 'end') {
     return
   }
-  this.resetAwaken()
+  return this.resetAwaken()
 }
 
 /**
@@ -310,7 +310,9 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
      */
     this.runtime.sound.unmute()
   }
-  this.runtime.onVoiceCommand(data.asr, data.nlp, data.action)
+  return this.resetAwaken({
+    recover: /** no recovery shall be made on nlp coming */ false
+  }).then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action))
 }
 
 /**
