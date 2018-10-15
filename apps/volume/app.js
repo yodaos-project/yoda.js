@@ -12,7 +12,6 @@ module.exports = function (activity) {
   var STRING_VOLUME_ALTERED = '音量已调到百分之'
 
   var mutedBy
-  var volume = 60
   var defaultVolume = 30
 
   function speakAndExit (text) {
@@ -78,7 +77,6 @@ module.exports = function (activity) {
 
     var prevVolume = getVolume()
     AudioManager.setVolume(localVol)
-    volume = localVol
 
     var promises = []
 
@@ -140,12 +138,6 @@ module.exports = function (activity) {
 
     logger.info('mute')
     AudioManager.setMute(true)
-    if (volume == null) {
-      volume = getVolume()
-    }
-    if (volume < 0) {
-      volume = defaultVolume
-    }
     return Promise.resolve()
   }
 
@@ -166,7 +158,7 @@ module.exports = function (activity) {
     }
     var def
     if (mutedBy === 'direct') {
-      def = volume
+      def = getVolume()
     }
     if (!def) {
       def = defaultVolume
