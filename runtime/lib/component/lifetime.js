@@ -277,11 +277,11 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
  * @param {'cut' | 'scene'} [form] -
  * @param {string} [carrierId] - if app start activated by another app, that app shall be a carrier and be attached to the newly activated app.
  * @param {object} [options] -
- * @param {any[]} [options.resumeParams] -
+ * @param {any[]} [options.activateParams] -
  * @returns {Promise<void>}
  */
 LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, carrierId, options) {
-  var resumeParams = _.get(options, 'resumeParams', [])
+  var activateParams = _.get(options, 'activateParams', [])
 
   if (!this.isAppRunning(appId)) {
     return Promise.reject(new Error(`App ${appId} is not running, launch it first.`))
@@ -348,7 +348,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   this.activeSlots.addApp(appId, wasScene || form === 'scene')
   this.onStackUpdate()
   var deferred = () => {
-    return this.onLifeCycle(appId, 'resume', resumeParams)
+    return this.onLifeCycle(appId, 'active', activateParams)
   }
 
   if (form === 'scene') {

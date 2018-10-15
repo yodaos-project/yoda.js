@@ -55,8 +55,8 @@ test('daemon app life events', t => {
       app.on('background', () => {
         t.pass('background event shall be emitted')
       })
-      app.on('resume', () => {
-        t.pass('resume event shall be emitted')
+      app.on('active', () => {
+        t.pass('active event shall be emitted')
       })
       app.on('destroy', () => {
         /** destroy shall be emitted twice */
