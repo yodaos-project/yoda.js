@@ -4,7 +4,8 @@ var promisify = require('util').promisify
 
 var logger = require('logger')('app-loader')
 var _ = require('@yoda/util')._
-var AppExecutor = require('../app/executor')
+
+var defaultConfig = require('../../app-loader-config.json')
 
 var readdirAsync = promisify(fs.readdir)
 var readFileAsync = promisify(fs.readFile)
@@ -12,21 +13,21 @@ var statAsync = promisify(fs.stat)
 
 module.exports = AppChargeur
 /**
- * Loads apps metadata and populates executors for apps.
+ * Loads and stores apps manifest for apps.
  *
  * @param {AppRuntime} runtime
  */
 function AppChargeur (runtime) {
   this.runtime = runtime
-  this.AppExecutor = AppExecutor
+  this.config = defaultConfig
 
   this.skillIdAppIdMap = {}
   this.hostSkillIdMap = {}
-  this.executors = {}
+  this.appManifests = {}
 }
 
 AppChargeur.prototype.getAppIds = function getAppIds () {
-  return Object.keys(this.executors)
+  return Object.keys(this.appManifests)
 }
 
 /**
@@ -40,47 +41,66 @@ AppChargeur.prototype.getExecutorByAppId = function getExecutorByAppId (appId) {
 }
 
 /**
- * Get running app instance by app id.
- * @param {string} appId -
- * @returns {App | AppDescriptor | undefined} app instance, or undefined if app is not running.
+ *
+ * @param {string} appId
+ * @returns {Metadata}
  */
-AppChargeur.prototype.getAppById = function getAppById (appId) {
-  return _.get(this.executors, `${appId}.app`)
+AppChargeur.prototype.getAppManifest = function getAppManifest (appId) {
+  return _.get(this.appManifests, appId)
 }
 
 /**
- * Directly set an executor for appId and populate its skills and permissions.
  *
  * @param {string} appId
- * @param {AppExecutor} executor
- * @param {object} metadata
- * @param {string[]} [metadata.skills]
- * @param {string[]} [metadata.permission]
- * @param {string[]} [metadata.hosts]
+ * @returns {'ext' | 'light' | 'dbus'}
+ */
+AppChargeur.prototype.getTypeOfApp = function getTypeOfApp (appId) {
+  if (this.config.lightAppIds.indexOf(appId) >= 0) {
+    return 'light'
+  }
+  if (this.config.dbusAppIds.indexOf(appId) >= 0) {
+    return 'dbus'
+  }
+  return 'ext'
+}
+
+/**
+ * Directly set manifest for appId and populate its skills and permissions.
+ *
+ * @param {string} appId
+ * @param {object} manifest
+ * @param {string[]} [manifest.skills]
+ * @param {string[]} [manifest.permission]
+ * @param {string[]} [manifest.hosts]
  * @returns {void}
  */
-AppChargeur.prototype.setExecutorForAppId = function setExecutorForAppId (appId, executor, metadata) {
-  var skillIds = _.get(metadata, 'skills', [])
-  var permissions = _.get(metadata, 'permission', [])
-  var hosts = _.get(metadata, 'hosts', [])
+AppChargeur.prototype.setManifest = function setManifest (appId, manifest, options) {
+  var dbusApp = _.get(options, 'dbusApp', false)
+
+  var skillIds = _.get(manifest, 'skills', [])
+  var permissions = _.get(manifest, 'permission', [])
+  var hosts = _.get(manifest, 'hosts', [])
 
   if (typeof appId !== 'string' || !appId) {
     throw new Error(`AppId is not valid at ${appId}.`)
   }
-  if (this.executors[appId] != null) {
+  if (this.appManifests[appId] != null) {
     throw new Error(`AppId exists at ${appId}.`)
   }
   if (!Array.isArray(skillIds)) {
-    throw new Error(`metadata.skills is not valid at ${appId}.`)
+    throw new Error(`manifest.skills is not valid at ${appId}.`)
   }
   if (!Array.isArray(hosts)) {
-    throw new Error(`metadata.hosts is not valid at ${appId}.`)
+    throw new Error(`manifest.hosts is not valid at ${appId}.`)
   }
   if (!Array.isArray(permissions)) {
-    throw new Error(`metadata.permission is not valid at ${appId}.`)
+    throw new Error(`manifest.permission is not valid at ${appId}.`)
   }
 
-  this.__loadApp(appId, executor, skillIds, hosts, permissions)
+  this.__loadApp(appId, null, manifest, skillIds, hosts, permissions)
+  if (dbusApp) {
+    this.config.dbusAppIds.push(appId)
+  }
 }
 
 /**
@@ -153,48 +173,55 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
         throw new Error(`Malformed package.json at ${root}`)
       }
       var appId = _.get(pkgInfo, 'name')
-      var skillIds = _.get(pkgInfo, 'metadata.skills', [])
-      var hosts = _.get(pkgInfo, 'metadata.hosts', [])
-      var permissions = _.get(pkgInfo, 'metadata.permission', [])
+      var manifest = _.get(pkgInfo, 'manifest')
+      if (manifest == null) {
+        logger.warn(`app(${root}) doesn't defines 'package.manifest' yet has 'package.metadata'.`)
+        manifest = _.get(pkgInfo, 'metadata', {})
+      }
+
+      var skillIds = _.get(manifest, 'skills', [])
+      var hosts = _.get(manifest, 'hosts', [])
+      var permissions = _.get(manifest, 'permission', [])
       if (typeof appId !== 'string' || !appId) {
         throw new Error(`AppId is not valid at ${root}.`)
       }
-      if (this.executors[appId] != null) {
+      if (this.appManifests[appId] != null) {
         throw new Error(`AppId exists at ${root}.`)
       }
       if (!Array.isArray(skillIds)) {
-        throw new Error(`metadata.skills is not valid at ${root}.`)
+        throw new Error(`manifest.skills is not valid at ${root}.`)
       }
       if (!Array.isArray(hosts)) {
-        throw new Error(`metadata.hosts is not valid at ${root}.`)
+        throw new Error(`manifest.hosts is not valid at ${root}.`)
       }
       if (!Array.isArray(permissions)) {
-        throw new Error(`metadata.permission is not valid at ${root}.`)
+        throw new Error(`manifest.permission is not valid at ${root}.`)
       }
 
-      var executor = new this.AppExecutor(pkgInfo, root, appId, this.runtime)
-      this.__loadApp(appId, executor, skillIds, hosts, permissions)
+      this.__loadApp(appId, root, manifest, skillIds, hosts, permissions)
     })
 }
 
 /**
- * Populates app and its related metadata.
+ * Populates app and its related manifest.
  *
  * @private
  * @param {string} appId -
- * @param {AppExecutor} executor -
+ * @param {Manifest} menifest -
+ * @param {string} appHome -
  * @param {string[]} skillIds -
  * @param {object[]} hosts -
  * @param {string[]} permissions -
  * @returns {void}
  */
-AppChargeur.prototype.__loadApp = function __loadApp (appId, executor, skillIds, hosts, permissions) {
-  this.executors[appId] = executor
+AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest, skillIds, hosts, permissions) {
+  manifest = Object.assign({}, manifest, { appHome: appHome })
+  this.appManifests[appId] = manifest
 
   skillIds.forEach(skillId => {
     var currAppId = this.skillIdAppIdMap[skillId]
     if (currAppId != null) {
-      throw new Error(`metadata.skills '${skillId}' by '${currAppId}' exists, declaring by ${appId}.`)
+      throw new Error(`manifest.skills '${skillId}' by '${currAppId}' exists, declaring by ${appId}.`)
     }
     this.skillIdAppIdMap[skillId] = appId
   })
@@ -202,11 +229,11 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, executor, skillIds,
     var name = _.get(host, 'name')
     var skillId = _.get(host, 'skillId')
     if (skillIds.indexOf(skillId) < 0) {
-      throw new Error(`metadata.hosts '${skillId}' mapped from '${name}' doesn't owned by ${appId}.`)
+      throw new Error(`manifest.hosts '${skillId}' mapped from '${name}' doesn't owned by ${appId}.`)
     }
     var currSkillId = this.hostSkillIdMap[name]
     if (currSkillId != null) {
-      throw new Error(`metadata.hosts '${name}' by '${currSkillId}' exists, declaring by ${appId}.`)
+      throw new Error(`manifest.hosts '${name}' by '${currSkillId}' exists, declaring by ${appId}.`)
     }
     this.hostSkillIdMap[name] = skillId
   })

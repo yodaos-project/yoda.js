@@ -75,13 +75,12 @@ module.exports = LaVieEnPile
  * - OnLifeCycle -> send events to app
  *
  * @author Chengzhong Wu <chengzhong.wu@rokid.com>
- * @param {AppLoader} loader - AppLoader that loaded or loading apps.
+ * @param {AppScheduler} scheduler - AppScheduler that manages app processes.
  *
  */
-function LaVieEnPile (loader) {
+function LaVieEnPile (scheduler) {
   EventEmitter.call(this)
-  // App Executor
-  this.loader = loader
+  this.scheduler = scheduler
   /**
    * @typedef AppPreemptionData
    * @property {'cut' | 'scene'} form
@@ -183,7 +182,8 @@ LaVieEnPile.prototype.isAppActive = function isAppActive (appId) {
  * @returns {boolean} true if inactive, false otherwise.
  */
 LaVieEnPile.prototype.isAppInactive = function isAppInactive (appId) {
-  return this.isAppRunning(appId) && !(this.isAppActive(appId) || this.isBackgroundApp(appId))
+  return this.scheduler.isAppRunning(appId) &&
+    !(this.isAppActive(appId) || this.isBackgroundApp(appId))
 }
 
 /**
@@ -192,16 +192,7 @@ LaVieEnPile.prototype.isAppInactive = function isAppInactive (appId) {
  * @returns {boolean} true if running, false otherwise.
  */
 LaVieEnPile.prototype.isAppRunning = function isAppRunning (appId) {
-  return this.loader.getAppById(appId) != null
-}
-
-/**
- * Get if app is a daemon app (shall be switched to background on deactivating).
- * @param {string} appId -
- * @returns {boolean} true if is a daemon app, false otherwise.
- */
-LaVieEnPile.prototype.isDaemonApp = function isDaemonApp (appId) {
-  return _.get(this.loader.getExecutorByAppId(appId), `daemon`) === true
+  return this.scheduler.getAppById(appId) != null
 }
 
 /**
@@ -214,7 +205,7 @@ LaVieEnPile.prototype.isDaemonApp = function isDaemonApp (appId) {
 LaVieEnPile.prototype.isMonopolized = function isMonopolized () {
   if (typeof this.monopolist === 'string') {
     if (this.getCurrentAppId() === this.monopolist &&
-      this.loader.getAppById(this.monopolist) != null) {
+      this.scheduler.isAppRunning(this.monopolist)) {
       return true
     }
     this.monopolist = null
@@ -237,24 +228,16 @@ LaVieEnPile.prototype.isMonopolized = function isMonopolized () {
  * @returns {Promise<AppDescriptor>}
  */
 LaVieEnPile.prototype.createApp = function createApp (appId) {
-  var appCreated = this.isAppRunning(appId)
+  var appCreated = this.scheduler.isAppRunning(appId)
   if (appCreated) {
     /** No need to recreate app */
     logger.info('app is already running, skip creating', appId)
-    return Promise.resolve(this.loader.getAppById(appId))
+    return Promise.resolve(this.scheduler.getAppById(appId))
   }
 
   // Launch app
   logger.info('app is not running, creating', appId)
-  var executor = this.loader.getExecutorByAppId(appId)
-  if (executor == null) {
-    return Promise.reject(new Error(`App ${appId} not registered`))
-  }
-
-  return executor.create()
-    .then(() => {
-      return this.onLifeCycle(appId, 'create')
-    })
+  return this.scheduler.createApp(appId)
 }
 
 /**
@@ -591,7 +574,7 @@ LaVieEnPile.prototype.setForegroundById = function (appId, form) {
  * @returns {Promise<ActivityDescriptor | undefined>} LifeCycle events are asynchronous.
  */
 LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) {
-  var app = this.loader.getAppById(appId)
+  var app = this.scheduler.getAppById(appId)
   if (app == null) {
     return Promise.reject(new Error(`Trying to send life cycle '${event}' to app '${appId}', yet it's not created.`))
   }
@@ -643,21 +626,18 @@ LaVieEnPile.prototype.destroyAll = function (options) {
   var force = _.get(options, 'force', false)
 
   logger.log(`destroying all apps${force ? ' by force' : ''}`)
-
-  var self = this
-  var ids = this.loader.getAppIds()
-    .filter(id => this.loader.getAppById(id) != null)
-  self.activeSlots.reset()
+  this.activeSlots.reset()
   this.appDataMap = {}
   this.backgroundAppIds = []
+
   this.onStackReset()
   /** destroy apps in stack in a reversed order */
-  return Promise.all(ids.map(step))
-
-  function step (appId) {
-    return self.destroyAppById(appId, { force: force })
-      .catch(err => logger.warn('Unexpected error on destroying app', appId, err))
-  }
+  // TODO: use event `suspend` instead of `destroy` in LaVieEnPile
+  return Promise.all(Object.keys(this.scheduler.appMap)
+    .map(it =>
+      this.onLifeCycle(it, 'destroy')
+        .catch(err => logger.error('Unexpected error on send destroy event to app', it, err.stack))))
+    .then(() => this.scheduler.suspendAllApps({ force: force }))
 }
 
 /**
@@ -683,20 +663,15 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
   }
   delete this.appDataMap[appId]
 
-  if (!force && this.isDaemonApp(appId)) {
-    return this.onLifeCycle(appId, 'destroy')
-      .catch(err => logger.warn('Unexpected error on life cycle destroy previous app', err.stack))
-  }
-
-  var deferred = () => {
-    return this.loader.getExecutorByAppId(appId).destruct()
-  }
-
+  // TODO: use event `suspend` instead of `destroy` in LaVieEnPile
   return this.onLifeCycle(appId, 'destroy')
-    .then(deferred, err => {
-      logger.warn('Unexpected error on send destroy event to app.', err.stack)
-      return deferred()
-    })
+    .then(
+      () => this.scheduler.suspendApp(appId, { force: force }),
+      err => {
+        logger.error('Unexpected error on send destroy event to app', appId, err.stack)
+        this.scheduler.suspendApp(appId, { force: force })
+      }
+    )
 }
 
 // MARK: - END App Termination

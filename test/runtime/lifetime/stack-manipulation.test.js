@@ -8,7 +8,7 @@ var mock = require('./mock')
 test('app preemption', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.appLoader)
+  var life = new Lifetime(mock.scheduler)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -27,7 +27,7 @@ test('app preemption', t => {
       t.looseEqual(life.activeSlots.cut, null, 'no app shall be on cut slot')
       t.strictEqual(life.activeSlots.scene, '1', 'app shall occupy scene slot')
       t.looseEqual(life.getAppDataById('0'), null, 'app data of apps that get out of stack app shall be removed')
-      t.looseEqual(mock.appLoader.getAppById('0'), null, 'cut app shall be destroyed on preemption')
+      t.looseEqual(mock.scheduler.getAppById('0'), null, 'cut app shall be destroyed on preemption')
 
       return life.activateAppById('2', 'scene')
     })
@@ -36,7 +36,7 @@ test('app preemption', t => {
       t.looseEqual(life.activeSlots.cut, null, 'no app shall be on cut slot')
       t.strictEqual(life.activeSlots.scene, '2', 'app shall occupy scene slot')
       t.looseEqual(life.getAppDataById('1'), null, 'app data of apps that get out of stack app shall be removed')
-      t.looseEqual(mock.appLoader.getAppById('1'), null, 'scene app shall be destroyed on preemption by a scene app')
+      t.looseEqual(mock.scheduler.getAppById('1'), null, 'scene app shall be destroyed on preemption by a scene app')
 
       return life.activateAppById('3', 'cut')
     })
@@ -46,7 +46,7 @@ test('app preemption', t => {
       t.strictEqual(life.activeSlots.scene, '2', 'app shall occupy scene slot')
       t.notLooseEqual(life.getAppDataById('2'), null, 'app data of apps still in stack shall not be removed')
       t.strictEqual(life.getAppDataById('2').form, 'scene')
-      t.notLooseEqual(mock.appLoader.getAppById('2'), null, 'scene app shall not be destroyed on preemption by a cut app')
+      t.notLooseEqual(mock.scheduler.getAppById('2'), null, 'scene app shall not be destroyed on preemption by a cut app')
       t.strictEqual(life.isAppActive('2'), true, 'scene app shall remain in stack on preemption by a cut app')
 
       return life.deactivateAppById('3')
@@ -57,7 +57,7 @@ test('app preemption', t => {
       t.strictEqual(life.activeSlots.scene, '2', 'app shall occupy scene slot')
       t.notLooseEqual(life.getAppDataById('2'), null, 'app data of apps still in stack shall not be removed')
       t.strictEqual(life.getAppDataById('2').form, 'scene')
-      t.looseEqual(mock.appLoader.getAppById('3'), null, 'cut app shall be destroyed on deactivation')
+      t.looseEqual(mock.scheduler.getAppById('3'), null, 'cut app shall be destroyed on deactivation')
 
       t.end()
     })
@@ -70,11 +70,11 @@ test('app preemption', t => {
 test('shall not deactivate app if app to be activated is in stack', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.appLoader)
+  var life = new Lifetime(mock.scheduler)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
-      mock.appLoader.getAppById('0').on('destroy', () => {
+      mock.scheduler.getAppById('0').on('destroy', () => {
         t.fail('app 0 shall not be destroyed')
       })
       return life.activateAppById('0', 'cut')
@@ -138,7 +138,7 @@ test('shall not deactivate app if app to be activated is in stack', t => {
 test('shall not throw on activating if previous app is not alive', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.appLoader)
+  var life = new Lifetime(mock.scheduler)
 
   Promise.all(_.times(1).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -163,7 +163,7 @@ test('shall not throw on activating if previous app is not alive', t => {
 test('app form switch to scene by background/foreground', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.appLoader)
+  var life = new Lifetime(mock.scheduler)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -202,7 +202,7 @@ test('app form switch to scene by background/foreground', t => {
 test('in stack app form switch to scene', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.appLoader)
+  var life = new Lifetime(mock.scheduler)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {

@@ -12,7 +12,7 @@ test('should load path', t => {
 
   loader.loadPath(helper.paths.apps)
     .then(() => {
-      t.assert(Object.keys(loader.executors).length > 0)
+      t.assert(Object.keys(loader.appManifests).length > 0)
       t.end()
     })
     .catch(err => {
@@ -27,7 +27,7 @@ test('should load paths', t => {
 
   loader.loadPaths([ helper.paths.apps ])
     .then(() => {
-      t.assert(Object.keys(loader.executors).length > 0)
+      t.assert(Object.keys(loader.appManifests).length > 0)
       t.end()
     })
     .catch(err => {

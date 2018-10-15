@@ -69,7 +69,7 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
   var listener = _.get(this.listeners, `${type}.${event.keyCode}`)
   if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-    var app = this.runtime.loader.getAppById(listener)
+    var app = this.runtime.scheduler.getAppById(listener)
     if (app) {
       logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
       app.keyboard.emit(type, event)

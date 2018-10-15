@@ -5,6 +5,7 @@ var inherits = require('util').inherits
 var childProcess = require('child_process')
 var path = require('path')
 var logger = require('logger')('ext-app')
+var _ = require('@yoda/util')._
 var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
 
 var entry = path.join(__dirname, '..', '..', 'client', 'ext-app-entry.js')
@@ -17,7 +18,8 @@ module.exports = createExtApp
  * @param {string} target - app home directory
  * @param {AppRuntime} runtime -
  */
-function createExtApp (appId, target, runtime) {
+function createExtApp (appId, metadata, runtime) {
+  var target = _.get(metadata, 'appHome')
   var descriptor = new ActivityDescriptor(appId, target, runtime)
 
   var cp = childProcess.fork(entry, [ target ], {

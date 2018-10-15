@@ -177,7 +177,7 @@ DBus.prototype.extapp = {
     in: ['s', 's'],
     out: ['s'],
     fn: function tts (appId, text, cb) {
-      if (this.runtime.loader.getExecutorByAppId(appId) == null) {
+      if (this.runtime.loader.getAppManifest(appId) == null) {
         return cb(null, '-1')
       }
       var permit = this.runtime.permission.check(appId, 'ACCESS_TTS')
@@ -193,7 +193,7 @@ DBus.prototype.extapp = {
           }
 
           var channel = `callback:tts:${ttsId}`
-          var app = this.runtime.loader.getAppById(appId)
+          var app = this.runtime.scheduler.getAppById(appId)
           this.on(channel, event => {
             if (['end', 'cancel', 'error'].indexOf(event) < 0) {
               return
@@ -214,7 +214,7 @@ DBus.prototype.extapp = {
     in: ['s'],
     out: ['s'],
     fn: function media (appId, url, cb) {
-      if (this.runtime.loader.getExecutorByAppId(appId) == null) {
+      if (this.runtime.loader.getAppManifest(appId) == null) {
         return cb(null, '-1')
       }
       var permit = this.runtime.permission.check(appId, 'ACCESS_MULTIMEDIA')
@@ -232,7 +232,7 @@ DBus.prototype.extapp = {
           }
 
           var channel = `callback:multimedia:${multimediaId}`
-          var app = this.runtime.loader.getAppById(appId)
+          var app = this.runtime.scheduler.getAppById(appId)
           this.on(channel, event => {
             if (['playbackcomplete', 'cancel', 'error'].indexOf(event) < 0) {
               return
@@ -365,9 +365,7 @@ DBus.prototype.yodadebug = {
           monopolist: this.runtime.life.monopolist,
           appIdOnPause: this.runtime.life.appIdOnPause,
           cloudAppStack: this.runtime.domain,
-          aliveApps: Object.keys(this.runtime.loader.executors).filter(appId => {
-            return this.runtime.loader.getAppById(appId) != null
-          })
+          appStatus: this.runtime.scheduler.appStatus
         }
       }))
     }

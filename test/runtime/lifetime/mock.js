@@ -1,11 +1,37 @@
 var EventEmitter = require('events')
+var _ = require('@yoda/util')._
 var helper = require('../../helper')
-var AppLoader = require(`${helper.paths.runtime}/lib/component/app-loader`)
+var Scheduler = require(`${helper.paths.runtime}/lib/component/app-scheduler`)
 
 module.exports.eventBus = new EventEmitter()
 
-module.exports.appLoader = new AppLoader({})
+var runtime = new EventEmitter()
+var scheduler = module.exports.scheduler = new Scheduler({}, runtime)
 
+var appMap = {}
+scheduler.createApp = function createApp (appId) {
+  var bus = module.exports.eventBus
+
+  var app = new EventEmitter()
+  this.appMap[appId] = app
+  this.appStatus[appId] = 'running'
+  bus.emit('create', appId, app, appMap[appId].daemon)
+  app.emit('create')
+  return Promise.resolve(app)
+}
+scheduler.suspendApp = function suspendApp (appId, options) {
+  console.log('destruct app', appId, appMap[appId])
+  var force = _.get(options, 'force', false)
+  var bus = module.exports.eventBus
+  if (appMap[appId].daemon && !force) {
+    return Promise.resolve()
+  }
+
+  this.appMap[appId] = null
+  this.appStatus[appId] = 'exited'
+  bus.emit('destruct', appId, appMap[appId].daemon)
+  return Promise.resolve()
+}
 module.exports.mockAppExecutors = mockAppExecutors
 /**
  *
@@ -14,35 +40,21 @@ module.exports.mockAppExecutors = mockAppExecutors
  * @param {number} [startIdx]
  */
 function mockAppExecutors (number, daemon, startIdx) {
-  var map = {}
-  var bus = module.exports.eventBus
   if (startIdx == null) {
     startIdx = 0
   }
   for (var idx = startIdx; idx < number + startIdx; ++idx) {
-    var executor = {
-      appId: `${idx}`,
-      daemon: daemon,
-      create: function create () {
-        var app = new EventEmitter()
-        this.app = app
-        bus.emit('create', this.appId, app, daemon)
-        return Promise.resolve(app)
-      },
-      destruct: function destruct () {
-        this.app = null
-        bus.emit('destruct', this.appId, daemon)
-        return Promise.resolve()
-      }
+    appMap[`${idx}`] = {
+      daemon: daemon
     }
-    map[executor.appId] = executor
   }
-  Object.assign(module.exports.appLoader.executors, map)
-  return map
+  return appMap
 }
 
 module.exports.restore = function restore () {
   module.exports.eventBus.removeAllListeners()
   module.exports.eventBus = new EventEmitter()
-  module.exports.appLoader.executors = {}
+  appMap = {}
+  scheduler.appMap = {}
+  scheduler.appStatus = {}
 }

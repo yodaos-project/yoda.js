@@ -9,7 +9,7 @@ test('shall throw on life cycle if app is not alive', t => {
   t.plan(2)
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.appLoader)
+  var life = new Lifetime(mock.scheduler)
 
   t.doesNotThrow(() => {
     life.onLifeCycle('1', 'ready')
