@@ -68,7 +68,11 @@ Light.prototype.getContext = function () {
   return context
 }
 
-Light.prototype.stopPrev = function (keep) {
+/**
+ * stop currently light
+ * @param {boolean} keepLastFrame whether to keep the last frame of currently light
+ */
+Light.prototype.stopPrev = function (keepLastFrame) {
   if (typeof this.prevCallback === 'function') {
     this.prevCallback()
     this.prevCallback = null
@@ -76,9 +80,9 @@ Light.prototype.stopPrev = function (keep) {
   if (this.prev) {
     try {
       if (typeof this.prev === 'function') {
-        this.prev(keep)
+        this.prev(keepLastFrame)
       } else if (this.prev && typeof this.prev.stop === 'function') {
-        this.prev.stop(keep)
+        this.prev.stop(keepLastFrame)
       }
     } catch (error) {
       logger.error(`try to stop '${this.prevUri}' error. belong to '${this.prevAppId}'`)
@@ -88,7 +92,7 @@ Light.prototype.stopPrev = function (keep) {
   // auto free timer and clear light. users should not call this method manually.
   // this is also to achieve smooth transition
   if (this.prevContext) {
-    this.prevContext.stop(keep)
+    this.prevContext.stop(keepLastFrame)
   }
   this.prevZIndex = null
   this.prevUri = null
@@ -117,7 +121,7 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       zIndex = zIndex >= maxSystemspaceLayers ? maxSystemspaceLayers - 1 : zIndex
       zIndex = zIndex < 0 ? 0 : zIndex
     } else {
-      zIndex = data.zIndex || 0
+      zIndex = option.zIndex || 0
       zIndex = zIndex >= maxUserspaceLayers ? maxUserspaceLayers - 1 : zIndex
       zIndex = zIndex < 0 ? 0 : zIndex
     }
@@ -150,7 +154,7 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
     if (option.shouldResume === true) {
       // do not resume light if currently light need resume too
       this.prevCallback = function noop () {
-        logger.warn(`light ${uri} should not call callback bacause it will resume`)
+        logger.warn(`light ${uri} should not call callback because it will resume`)
       }
       callback()
     } else {
