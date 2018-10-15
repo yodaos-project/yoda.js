@@ -81,6 +81,10 @@ Flora.prototype.handlers = {
     this.runtime.turen.handleEvent('nlp', data)
   },
   'rokid.speech.error': function (msg) {
+    var errCode = msg.get(0)
+    var speechId = msg.get(1)
+    logger.error(`Unexpected speech error(${errCode}) for speech(${speechId}).`)
+    return this.runtime.turen.handleEvent('malicious nlp')
   }
 }
 Flora.prototype.handlers[`rokid.speech.nlp.${asr2nlpId}`] = onAsr2Nlp
