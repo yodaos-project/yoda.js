@@ -130,6 +130,7 @@ BluetoothPlayer.prototype.start = function start (name, subsequent, cb) {
   if (typeof cb === 'function') {
     this.once('opened', cb)
   }
+  this.resume()
   return this._send('ON', {
     name: name,
     unique: true,
