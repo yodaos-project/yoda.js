@@ -34,7 +34,6 @@ module.exports = function setStandby (light, data, callback) {
       }
     })
   }
-  var player = light.sound('system://wifi/setup_network.ogg')
   circle()
 
   if (typeof callback === 'function') {
