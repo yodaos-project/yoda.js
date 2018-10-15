@@ -209,9 +209,9 @@ RKDownTimer.prototype.resetup = function () {
 }
 
 RKDownTimer.prototype.stop = function () {
-  logger.log('timer isRunning: ' + this.timer.isRunning())
+  logger.log('timer isRunning: ' + this.timer.isRunning)
   logger.log('timer isPause: ' + this.isPause())
-  if (!this.timer.isRunning() && !this.isPause()) {
+  if (!this.timer.isRunning && !this.isPause()) {
     this.speak('计时器未打开')
     return
   }
@@ -234,7 +234,7 @@ RKDownTimer.prototype.reset = function () {
     this.ring.stop()
   }
 
-  if (this.timer.isRunning()) {
+  if (this.timer.isRunning) {
     this.timer.stop()
   }
 
@@ -273,7 +273,7 @@ RKDownTimer.prototype.pause = function (nlpTime) {
     return
   }
 
-  if (this.timer.isRunning()) {
+  if (this.timer.isRunning) {
     this.mIsPause = true
     logger.log('call pause: mIsPause->' + this.mIsPause)
     this.timer.stop()

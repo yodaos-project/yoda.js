@@ -69,10 +69,6 @@ RKTimer.prototype.getSecond = function () {
   return this.day * 86400 + this.hour * 3600 + this.minute * 60 + this.second
 }
 
-RKTimer.prototype.isRunningning = function () {
-  return this.isRunning
-}
-
 RKTimer.prototype.stop = function () {
   clearInterval(this.handle)
   this.isRunning = false
