@@ -295,8 +295,8 @@ JS_FUNCTION(LoopModeSetter) {
   JS_DECLARE_THIS_PTR(player, player);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
 
-  int mode = JS_GET_ARG(0, number);
-  if (_this->handle && _this->listener->isPrepared()) {
+  bool mode = JS_GET_ARG(0, boolean);
+  if (_this->handle) {
     _this->handle->setLooping(mode);
     return jerry_create_boolean(true);
   } else {
