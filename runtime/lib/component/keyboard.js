@@ -213,7 +213,7 @@ KeyboardHandler.prototype.listen = function listen () {
       return
     }
     var timeDelta = event.keyTime - this.firstLongPressTime
-    timeDelta = Math.ceil(timeDelta / this.longpressWindow) * this.longpressWindow
+    timeDelta = Math.round(timeDelta / this.longpressWindow) * this.longpressWindow
     logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
 
     if (this.preventSubsequent) {

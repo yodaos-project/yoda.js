@@ -164,6 +164,35 @@ test('longpress: repetitive longpress', t => {
   runtime.destruct()
 })
 
+test('longpress: round longpress timeDelta', t => {
+  t.plan(3)
+  var runtime = new AppRuntime()
+  var keyboard = new Keyboard(runtime)
+
+  keyboard.input = new EventEmitter()
+  keyboard.listen()
+
+  keyboard.config = {
+    '233': {
+      longpress: {
+        repeat: true,
+        runtimeMethod: 'foobar'
+      }
+    }
+  }
+
+  runtime.foobar = function () {
+    t.pass('invoked')
+  }
+
+  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 0 })
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 499 })
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1001 })
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1256 })
+
+  runtime.destruct()
+})
+
 test('longpress: non-repetitive longpress', t => {
   t.plan(1)
   var runtime = new AppRuntime()

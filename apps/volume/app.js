@@ -59,11 +59,7 @@ module.exports = function (activity) {
     } else if (localVol > 100) {
       localVol = 100
     }
-    if (localVol % 1 >= 0.5) {
-      localVol = Math.ceil(localVol)
-    } else {
-      localVol = Math.floor(localVol)
-    }
+    localVol = Math.round(localVol)
 
     if (AudioManager.isMuted() && localVol > 0) {
       /** if device is already muted, unmute it. */
