@@ -565,8 +565,8 @@ Object.assign(LightDescriptor.prototype,
      * @function play
      * @param {string} uri - the light resource uri.
      * @param {object} args - the args.
-     * @param {number} [args.zIndex] number of layers to play. default minimum layer
      * @param {object} [options]
+     * @param {number} [options.zIndex] number of layers to play. default minimum layer
      * @param {boolean} [options.shouldResume]
      * @returns {Promise<void>}
      */
