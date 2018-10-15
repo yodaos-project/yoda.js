@@ -390,13 +390,14 @@ Light.prototype.stopFile = function (appId, uri) {
     if (this.systemspaceZIndex[j] == null) {
       continue
     }
-    if (uri && this.systemspaceZIndex[j].uri !== uri) {
+    if (appId !== this.systemspaceZIndex[j].appId) {
       continue
     }
     // clear z-index
     this.systemspaceZIndex[j] = null
-    logger.log(`${appId} clears systemspace layer`)
+    logger.log(`${appId} [${j}]['${this.systemspaceZIndex[j].uri}'] clears systemspace layer`)
     isFind = true
+    // no more layer need to clear if when give a specific uri
     if (uri) {
       break
     }
@@ -408,12 +409,13 @@ Light.prototype.stopFile = function (appId, uri) {
       if (this.userspaceZIndex[i] == null) {
         continue
       }
-      if (uri && this.userspaceZIndex[i].uri !== uri) {
+      if (appId !== this.userspaceZIndex[i].appId) {
         continue
       }
       // clear z-index
       this.userspaceZIndex[i] = null
-      logger.log('clear userspace layer', i)
+      logger.log(`${appId} [${i}]['${this.userspaceZIndex[i].uri}'] clear userspace layer`)
+      // no more layer need to clear if when give a specific uri
       if (uri) {
         break
       }
@@ -422,9 +424,9 @@ Light.prototype.stopFile = function (appId, uri) {
   // stop light if currently is rendering
   if (this.prevUri && this.prevAppId === appId) {
     if (!uri || this.prevUri === uri) {
-      logger.log(`stop resume light: ${appId} ${uri}`)
+      logger.log(`stop currently light: ${appId} ${uri}`)
       // try to resume next layer
-      logger.log('try to find resume light')
+      logger.log('try to find need resume light')
       this.resume()
     }
   }
