@@ -170,6 +170,7 @@ BluetoothPlayer.prototype.resume = function resume () {
  * @returns {null}
  */
 BluetoothPlayer.prototype.play = function play () {
+  this.resume()
   return this._send('PLAY')
 }
 
@@ -194,6 +195,7 @@ BluetoothPlayer.prototype.pause = function pause () {
  * @returns {null}
  */
 BluetoothPlayer.prototype.next = function next () {
+  this.resume()
   return this._send('NEXT')
 }
 
@@ -202,6 +204,7 @@ BluetoothPlayer.prototype.next = function next () {
  * @returns {null}
  */
 BluetoothPlayer.prototype.prev = function prev () {
+  this.resume()
   return this._send('PREV')
 }
 
