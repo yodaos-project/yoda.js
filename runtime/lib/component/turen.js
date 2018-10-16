@@ -153,11 +153,7 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
   ]
 
   if (!recover) {
-    /**
-     * tts no need to be kept if recovering is discarded, stop it.
-     */
-    logger.info('stop previously awaken paused tts')
-    promises.push(this.runtime.ttsMethod('resetAwaken', [ '' ]))
+    // do not stop previously paused tts. let the app handle it theirself
     return Promise.all(promises)
   }
 
