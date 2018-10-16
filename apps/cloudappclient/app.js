@@ -2,7 +2,7 @@
 
 var Directive = require('./directive').Directive
 var TtsEventHandle = require('./ttsEventHandle')
-var MediaEventHandle = require('./mediaEventHandle')
+var MediaEventHandle = require('@yodaos/mediakit').Convergence
 var logger = require('logger')('cloudAppClient')
 var Skill = require('./skill')
 var _ = require('@yoda/util')._
