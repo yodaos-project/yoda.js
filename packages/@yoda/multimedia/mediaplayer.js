@@ -134,15 +134,29 @@ MediaPlayer.prototype.onerror = function () {
 }
 
 /**
- * prepare with the given resource(URI) and start asynchronously.
+ * prepare with the given resource(URI).
  * @param {string} uri - The resource uri to play.
  * @throws {Error} uri must be a valid string.
  */
-MediaPlayer.prototype.start = function (uri) {
+MediaPlayer.prototype.prepare = function (uri) {
   if (!uri) {
     throw new Error('url must be a valid string')
   }
   return this._handle.prepare(uri)
+}
+
+/**
+ * start asynchronously.
+ * @param {string} uri - The resource uri to play.
+ * @throws {Error} uri must be a valid string.
+ */
+MediaPlayer.prototype.start = function (uri) {
+  if (uri) {
+    this._handle.prepare(uri)
+    this.once('prepared', () => this._handle.start())
+    return
+  }
+  return this._handle.start()
 }
 
 /**
