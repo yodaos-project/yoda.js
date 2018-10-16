@@ -21,5 +21,5 @@ module.exports = function (light, data, callback) {
   light.requestAnimationFrame(() => {
     light.transition(from, to, 130, 26, render)
       .then(callback)
-  })
+  }, 1000)
 }
