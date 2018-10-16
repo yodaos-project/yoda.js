@@ -1,42 +1,24 @@
 'use strict'
 
 module.exports = function awake (light, data, callback) {
-  var end = false
-  function delayAndShutdown () {
-    light.requestAnimationFrame(() => {
-      light.transition({ r: 0, g: 0, b: 150 }, { r: 0, g: 0, b: 0 }, 130, 26, (r, g, b, lastFrame) => {
-        light.fill(r, g, b)
-        light.render()
-        if (lastFrame) {
-          end = true
-          callback()
-        }
-      })
-    }, 6000)
-  }
+  var from = { r: 0, g: 0, b: 0 }
+  var to = { r: 0, g: 0, b: 150 }
 
-  light.transition({ r: 0, g: 0, b: 0 }, { r: 0, g: 0, b: 150 }, 130, 26, (r, g, b, lastFrame) => {
-    light.fill(r, g, b)
+  if (data.degree !== undefined) {
+    var pos = Math.floor((data.degree / 360) * light.ledsConfig.leds)
+    light.fill(to.r, to.g, to.b)
+    light.pixel(pos, 255, 255, 255)
     light.render()
-    if (lastFrame) {
-      delayAndShutdown()
+    return {
+      stop: () => light.stop(false)
     }
-  })
-
-  return {
-    setDegree: function (degree) {
-      if (!end) {
-        callback()
-        light.stop(true)
-        light.fill(0, 0, 150)
-        var pos = Math.floor((degree / 360) * light.ledsConfig.leds)
-        light.pixel(pos, 255, 255, 255)
-        light.render()
-        delayAndShutdown()
-      }
-    },
-    stop: function (keep) {
-      light.stop(keep)
+  } else {
+    light.transition(from, to, 100, 15, (r, g, b, last) => {
+      light.fill(r, g, b)
+      light.render()
+    })
+    return {
+      stop: () => light.stop(true)
     }
   }
 }
