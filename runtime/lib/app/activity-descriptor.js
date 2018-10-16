@@ -637,6 +637,7 @@ MultimediaDescriptor.prototype._listenMediaEvent = function _listenMediaEvent (m
   var terminationEvents = ['playbackcomplete', 'cancel', 'error']
   self._activityDescriptor._registeredDbusSignals.push(channel)
   self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
+    logger.info('received multimedia event', channel, event)
     if (terminationEvents.indexOf(event) >= 0) {
       /** stop listening upcoming events for channel */
       // FIXME(Yorkie): `removeListener()` fails on check function causes a memory leak
