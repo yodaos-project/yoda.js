@@ -40,7 +40,6 @@ module.exports = function setStandby (light, data, callback) {
     callback()
   }
   return function stop (keep) {
-    player.stop()
     light.stop(keep)
   }
 }
