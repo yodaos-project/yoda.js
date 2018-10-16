@@ -1,7 +1,13 @@
 'use strict'
 
-function Convergence (mediaClient) {
+function Convergence (mediaClient, logger) {
   this.mediaClient = mediaClient
+  if (logger == null) {
+    logger = {
+      info: function () {}
+    }
+  }
+  this.logger = logger
   this.registry = {}
   this.listen()
 }
@@ -14,6 +20,7 @@ Convergence.prototype.listen = function () {
   var self = this
   Convergence.events.forEach(ev => {
     this.mediaClient.on(ev, function (playerId) {
+      this.logger.info(`[convergence] ${ev}(${playerId})`)
       self.converge(ev, playerId, Array.prototype.slice.call(arguments, 1))
     })
   })
@@ -24,9 +31,10 @@ Convergence.prototype.converge = function (name, playerId, args) {
   if (Convergence.terminationEvents.indexOf(name) >= 0) {
     delete this.registry[playerId]
   }
-  if (typeof handler === 'function') {
-    handler(name, args || [])
+  if (typeof handler !== 'function') {
+    throw new Error('Unexpected non-function handler on converge')
   }
+  handler(name, args || [])
 }
 
 Convergence.prototype.start = function (url, handler) {
