@@ -20,7 +20,7 @@ Convergence.prototype.listen = function () {
   var self = this
   Convergence.events.forEach(ev => {
     this.mediaClient.on(ev, function (playerId) {
-      this.logger.info(`[convergence] ${ev}(${playerId})`)
+      self.logger.info(`[convergence] ${ev}(${playerId})`)
       self.converge(ev, playerId, Array.prototype.slice.call(arguments, 1))
     })
   })
