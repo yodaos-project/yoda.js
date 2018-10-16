@@ -169,7 +169,7 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
   promises.push(this.runtime.multimediaMethod('resetAwaken', [ currentAppId ]))
 
   logger.info('unmute possibly paused bluetooth player')
-  this.bluetoothPlayer.resume()
+  this.bluetoothPlayer && this.bluetoothPlayer.resume()
 
   return Promise.all(promises)
 }
