@@ -32,7 +32,7 @@ Convergence.prototype.converge = function (name, playerId, args) {
     delete this.registry[playerId]
   }
   if (typeof handler !== 'function') {
-    throw new Error('Unexpected non-function handler on converge')
+    throw new Error(`Unexpected non-function handler on converge ${name}(${playerId})`)
   }
   handler(name, args || [])
 }
