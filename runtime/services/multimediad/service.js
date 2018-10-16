@@ -53,12 +53,13 @@ MultiMedia.prototype.prepare = function prepare (appId, url, streamType) {
   }
   this.listenEvent(player, appId)
   this.handle[appId] = player
+  player.prepare(url)
   return player
 }
 
 MultiMedia.prototype.start = function (appId, url, streamType) {
   var player = this.prepare(appId, url, streamType)
-  player.start(url)
+  player.once('prepared', () => player.start())
   return player.id
 }
 

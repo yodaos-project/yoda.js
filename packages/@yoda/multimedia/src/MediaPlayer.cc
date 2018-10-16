@@ -62,9 +62,6 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
   iotjs_make_callback(notifyFn, jerry_create_undefined(), &jargs);
   iotjs_jargs_destroy(&jargs);
   jerry_release_value(notifyFn);
-  if (event->type == MEDIA_PREPARED) {
-    _this->handle->start();
-  }
 
   delete event;
   uv_close((uv_handle_t*)handle, MultimediaListener::AfterNotify);

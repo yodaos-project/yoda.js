@@ -59,6 +59,8 @@ YodaLocalPackage(yoda-util @yoda/util)
 YodaLocalPackage(yoda-wifi @yoda/wifi)
 YodaLocalPackage(yoda-flora @yoda/flora)
 
+YodaLocalPackage(yodaos-mediakit @yodaos/mediakit)
+
 # system packages
 YodaLocalPackage(lockfile)
 YodaLocalPackage(logger)
