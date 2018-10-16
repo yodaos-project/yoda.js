@@ -4,7 +4,7 @@ var logger = require('logger')('ext-app-client')
 
 require('@yoda/oh-my-little-pony')
 
-var translate = require('./translator-ipc').translate
+var translator = require('./translator-ipc')
 var target = process.argv[2]
 
 function getActivityDescriptor (appId) {
@@ -76,7 +76,8 @@ function main () {
 
   getActivityDescriptor(appId)
     .then(descriptor => {
-      var activity = translate(descriptor)
+      translator.setLogger(require('logger')(`@ipc-${process.pid}`))
+      var activity = translator.translate(descriptor)
       activity.appHome = target
       launchApp(handle, activity)
 

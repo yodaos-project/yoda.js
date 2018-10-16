@@ -156,6 +156,10 @@ var PropertyDescriptions = {
 }
 var descriptorTypes = Object.keys(PropertyDescriptions)
 
+module.exports.setLogger = function setLogger (_logger) {
+  logger = _logger
+}
+
 module.exports.translate = translate
 function translate (descriptor) {
   if (typeof process.send !== 'function') {
