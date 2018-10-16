@@ -41,49 +41,50 @@ module.exports = function (activity) {
   /**
    * By default setVolume doesn't announce nor play effects.
    *
-   * @param {number} vol
+   * @param {number} targetValue
    * @param {object} [options]
    * @param {'announce' | 'effect'} [options.type]
    */
-  function setVolume (vol, options) {
+  function setVolume (targetValue, options) {
     var type = _.get(options, 'type')
     var action = _.get(options, 'action')
 
-    logger.info(`trying to set volume to ${vol}`)
+    logger.info(`trying to set volume to ${targetValue}`)
     /**
      * Try reconfigure and set volume
      */
-    var localVol = vol
-    if (localVol < 0) {
-      localVol = 0
-    } else if (localVol > 100) {
-      localVol = 100
+    var normalizedValue = targetValue
+    if (normalizedValue < 0) {
+      normalizedValue = 0
+    } else if (normalizedValue > 100) {
+      normalizedValue = 100
     }
-    localVol = Math.round(localVol)
+    normalizedValue = Math.round(normalizedValue)
+    logger.info(`set volume to normalized ${normalizedValue}`)
 
-    if (AudioManager.isMuted() && localVol > 0) {
+    if (AudioManager.isMuted() && normalizedValue > 0) {
       /** if device is already muted, unmute it. */
       setUnmute({ recover: false })
     }
 
-    if (vol === 0) {
+    if (normalizedValue <= 0) {
       /** handles out of range conditions */
       setMute({ source: 'indirect' })
     }
 
     var prevVolume = getVolume()
-    AudioManager.setVolume(localVol)
+    AudioManager.setVolume(normalizedValue)
 
     var promises = []
 
     if (type === 'effect' || type === 'announce') {
       promises.push(activity.light.play('system://setVolume.js', {
-        volume: localVol,
-        action: action || (localVol <= prevVolume ? 'decrease' : 'increase')
+        volume: normalizedValue,
+        action: action || (normalizedValue <= prevVolume ? 'decrease' : 'increase')
       }))
     }
     if (type === 'announce') {
-      promises.push(activity.tts.speak(STRING_VOLUME_ALTERED + localVol))
+      promises.push(activity.tts.speak(STRING_VOLUME_ALTERED + normalizedValue))
     }
     promises.push(activity.wormhole.updateVolume())
     return Promise.all(promises)
