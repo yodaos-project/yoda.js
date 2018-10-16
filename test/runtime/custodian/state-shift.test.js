@@ -9,6 +9,7 @@ var Custodian = require(`${helper.paths.runtime}/lib/component/custodian`)
 mock.mockReturns(ota, 'getInfoIfFirstUpgradedBoot', undefined)
 mock.mockReturns(wifi, 'resetWifi', undefined)
 mock.mockReturns(wifi, 'disableAll', undefined)
+mock.mockReturns(wifi, 'checkNetwork', undefined)
 
 test('custodian state shall shifts', t => {
   t.plan(18)
@@ -53,14 +54,16 @@ test('custodian state shall shifts', t => {
 })
 
 test('custodian shall start network app on network disconnect if not logged in', t => {
-  t.plan(6)
+  t.plan(5)
+  mock.mockReturns(wifi, 'getNumOfHistory', 0)
+
   var runtime = {
-    startApp: function () {
-      t.pass('onNetworkDisconnect shall trigger runtime#startApp')
+    openUrl: function () {
+      t.pass('onNetworkDisconnect shall trigger runtime#openUrl')
     },
     wormhole: {
       setOffline: function () {
-        t.pass('onNetworkDisconnect shall trigger runtime.wormhole#setOffline')
+        t.fail('onNetworkDisconnect shall not trigger runtime.wormhole#setOffline')
       }
     }
   }
@@ -78,8 +81,13 @@ test('custodian shall reset network', t => {
     reconnect: function () {
       t.pass('onNetworkConnect shall trigger runtime#reconnect')
     },
-    startApp: function () {
+    openUrl: function () {
       t.pass('resetNetwork shall trigger runtime#startApp')
+    },
+    wormhole: {
+      setOffline: function () {
+        t.pass('resetNetwork shall trigger runtime.wormhole#setOffline')
+      }
     }
   }
   var custodian = new Custodian(runtime)
