@@ -15,6 +15,7 @@ module.exports = (function () {
   }
 
   function mustRun (task, date) {
+    var runInMilliseconds = date.getMilliseconds() >= 500
     var runInSecond = matchPattern(task.expressions[0], date.getSeconds())
     var runOnMinute = matchPattern(task.expressions[1], date.getMinutes())
     var runOnHour = matchPattern(task.expressions[2], date.getHours())
@@ -33,7 +34,7 @@ module.exports = (function () {
       runOnDay = runOnDayOfMonth || runOnDayOfWeek
     }
 
-    return runInSecond && runOnMinute && runOnHour && runOnDay && runOnMonth
+    return runInMilliseconds && runInSecond && runOnMinute && runOnHour && runOnDay && runOnMonth
   }
 
   function Task (pattern, execution) {
