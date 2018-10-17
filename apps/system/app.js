@@ -3,12 +3,7 @@
 var logger = require('logger')('sys-app')
 var wifi = require('@yoda/wifi')
 var _ = require('@yoda/util')._
-
-var fallbacks = [
-  '今天的风儿好喧嚣啊',
-  '这风儿似有略略欲泣',
-  '快走吧，在风停止之前'
-]
+var fallbacks = require('./fallback.json')
 
 module.exports = function (activity) {
   activity.on('request', function (nlp, action) {
