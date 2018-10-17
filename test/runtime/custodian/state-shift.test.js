@@ -1,12 +1,11 @@
 var test = require('tape')
-var ota = require('@yoda/ota')
 var wifi = require('@yoda/wifi')
 
 var helper = require('../../helper')
 var mock = require('../../helper/mock')
 var Custodian = require(`${helper.paths.runtime}/lib/component/custodian`)
 
-mock.mockReturns(ota, 'getInfoIfFirstUpgradedBoot', undefined)
+mock.mockReturns(wifi, 'enableScanPassively', undefined)
 mock.mockReturns(wifi, 'resetWifi', undefined)
 mock.mockReturns(wifi, 'disableAll', undefined)
 mock.mockReturns(wifi, 'checkNetwork', undefined)
@@ -79,7 +78,7 @@ test('custodian shall reset network', t => {
   t.plan(10)
   var runtime = {
     reconnect: function () {
-      t.pass('onNetworkConnect shall trigger runtime#reconnect')
+      t.fail('onNetworkConnect shall not trigger runtime#reconnect')
     },
     openUrl: function () {
       t.pass('resetNetwork shall trigger runtime#startApp')
