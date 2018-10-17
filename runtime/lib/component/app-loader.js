@@ -21,8 +21,13 @@ function AppChargeur (runtime) {
   this.runtime = runtime
   this.config = defaultConfig
 
+  /** skillId -> appId */
   this.skillIdAppIdMap = {}
+  /** skillId -> skillAttrs */
+  this.skillAttrsMap = {}
+  /** hostName -> skillId */
   this.hostSkillIdMap = {}
+  /** appId -> manifest */
   this.appManifests = {}
 }
 
@@ -219,11 +224,26 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest, 
   this.appManifests[appId] = manifest
 
   skillIds.forEach(skillId => {
+    var skillAttrs
+    if (Array.isArray(skillId)) {
+      var arr = skillId
+      skillId = arr[0]
+      skillAttrs = arr[1]
+    }
+    if (typeof skillId !== 'string') {
+      throw new Error(`manifest.skills '${skillId}' by '${appId}' type mismatch, expecting a string.`)
+    }
     var currAppId = this.skillIdAppIdMap[skillId]
     if (currAppId != null) {
-      throw new Error(`manifest.skills '${skillId}' by '${currAppId}' exists, declaring by ${appId}.`)
+      throw new Error(`manifest.skills '${skillId}' by '${appId}' exists, declaring by ${currAppId}.`)
+    }
+    if (skillAttrs && typeof skillAttrs !== 'object') {
+      throw new Error(`manifest.skills '${skillId}' by '${appId}' attributes type mismatch, expecting a object.`)
     }
     this.skillIdAppIdMap[skillId] = appId
+    if (skillAttrs) {
+      this.skillAttrsMap[skillId] = skillAttrs
+    }
   })
   hosts.forEach(host => {
     var name = _.get(host, 'name')
