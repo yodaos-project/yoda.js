@@ -3,7 +3,6 @@
 var logger = require('logger')('ttsdService')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
-var AudioManager = require('@yoda/audio').AudioManager
 
 function Tts (options) {
   EventEmitter.call(this)
@@ -25,10 +24,6 @@ function Tts (options) {
 inherits(Tts, EventEmitter)
 
 Tts.prototype.speak = function (appId, text) {
-  // unmute if current is muted.
-  if (AudioManager.isMuted()) {
-    AudioManager.setMute(false)
-  }
   var req
   if (this.handle[appId]) {
     try {
