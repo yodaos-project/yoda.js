@@ -75,7 +75,7 @@ test('custodian shall start network app on network disconnect if not logged in',
 })
 
 test('custodian shall reset network', t => {
-  t.plan(10)
+  t.plan(14)
   var runtime = {
     reconnect: function () {
       t.fail('onNetworkConnect shall not trigger runtime#reconnect')
@@ -87,6 +87,9 @@ test('custodian shall reset network', t => {
       setOffline: function () {
         t.pass('resetNetwork shall trigger runtime.wormhole#setOffline')
       }
+    },
+    onGetPropAll: function () {
+      return { foobar: 10 }
     }
   }
   var custodian = new Custodian(runtime)
@@ -98,8 +101,14 @@ test('custodian shall reset network', t => {
   t.false(custodian.isNetworkUnavailable())
 
   custodian.resetNetwork()
+  t.true(custodian.isNetworkUnavailable(), 'custodian shall be treated as network unavailable if reset network')
+  t.true(custodian.isLoggedIn(), 'custodian shall be logged in only if reset network')
+  t.equal(runtime.onGetPropAll().foobar, 10, 'custodian shall be able to get prop')
+
+  custodian.onLogout()
   t.true(custodian.isConfiguringNetwork(), 'custodian shall be configuring network at reset network')
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
   t.false(custodian.isNetworkUnavailable())
+  t.deepEqual(runtime.onGetPropAll(), {}, 'custodian shall be getting the empty prop')
 })
