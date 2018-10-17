@@ -1,5 +1,3 @@
-
-
 ### Applications
 
 The application has system and user types.

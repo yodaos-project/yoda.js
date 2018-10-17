@@ -17,7 +17,7 @@
     "unsafe-perm": true
   },
   "engine": {
-    "shadow": "0.10.3"
+    "shadow": "0.10.9"
   },
   "manifest": {
     "apilevel": 0.6
