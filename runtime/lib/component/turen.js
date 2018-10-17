@@ -315,6 +315,11 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
  * Handle the "nlp" event, which are emitted on incoming unexpected malicious nlp.
  */
 Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () {
+  if (!this.runtime.custodian.isPrepared()) {
+    // Do noting when network is not ready
+    logger.warn('Network not connected, skip malicious nlp result')
+    return
+  }
   this.runtime.openUrl('yoda-skill://rokid-exception/malicious-nlp')
 }
 
