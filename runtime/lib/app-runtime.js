@@ -1026,6 +1026,7 @@ AppRuntime.prototype.reconnect = function () {
   var onNotify = (code, msg) => {
     this.handleCloudEvent({ code: code, msg: msg })
   }
+  this.custodian.onLogout()
   this.cloudApi.connect(onNotify).then((mqtt) => {
     // load the system configuration
     var config = mqtt.config
