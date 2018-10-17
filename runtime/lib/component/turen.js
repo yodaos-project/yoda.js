@@ -96,6 +96,9 @@ Turen.prototype.handleEvent = function (name, data) {
     case 'malicious nlp':
       handler = this.handleMaliciousNlpResult
       break
+    case 'speech error':
+      handler = this.handleSpeechError
+      break
   }
   if (typeof handler !== 'function') {
     logger.info(`skip turen event "${name}" for no handler existing`)
@@ -321,6 +324,26 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
     return
   }
   this.runtime.openUrl('yoda-skill://rokid-exception/malicious-nlp')
+}
+
+/**
+ * Handle 'speech error' events, which are emitted on unexpected speech faults.
+ */
+Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
+  if (this.awaken) {
+    /**
+     * if speech error happened before 'asr end'/'end voice',
+     * recover multimedia playing state directly,
+     * no system exception procedure needed to be processed.
+     */
+    return this.resetAwaken()
+  }
+  if (!this.runtime.custodian.isPrepared()) {
+    // Do noting when network is not ready
+    logger.warn('Network not connected, skip malicious nlp result')
+    return
+  }
+  this.runtime.openUrl(`yoda-skill://rokid-exception/speech-error?errCode=${errCode}`)
 }
 
 /**

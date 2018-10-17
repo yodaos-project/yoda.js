@@ -7,7 +7,6 @@ var _ = require('@yoda/util')._
 var fallbacks = [
   '今天的风儿好喧嚣啊',
   '这风儿似有略略欲泣',
-  '风儿把不祥的东西吹到镇子里去了',
   '快走吧，在风停止之前'
 ]
 
@@ -26,7 +25,10 @@ module.exports = function (activity) {
         break
       default:
         activity.tts.speak(_.sample(fallbacks))
-          .then(() => activity.exit())
+          .then(
+            () => activity.exit(),
+            () => /** ignoring any possible tts error */activity.exit()
+          )
     }
   })
 
