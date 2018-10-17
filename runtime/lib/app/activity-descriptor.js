@@ -590,25 +590,28 @@ Object.assign(LightDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.LightClient
      * @instance
      * @function stop
-     * @param {string} uri - the light resource uri.
+     * @param {string} [uri] - the light resource uri.
      * @returns {Promise<void>}
      */
     stop: {
       type: 'method',
       returns: 'promise',
       fn: function stop (uri) {
+        var future
         if (uri && typeof uri === 'string') {
           var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, this._appHome + '/light')
-          return this._runtime.light.stop(this._appId, absPath)
-            .then((res) => {
-              if (res && res[0] === true) {
-                return
-              }
-              throw new Error('stop light failed')
-            })
+          future = this._runtime.light.stop(this._appId, absPath)
         } else {
-          return Promise.reject(new Error('the args of uri must be a string'))
+          /** stop all light effects belonging to the app */
+          future = this._runtime.light.stopByAppId(this._appId)
         }
+        return future
+          .then((res) => {
+            if (res && res[0] === true) {
+              return
+            }
+            throw new Error('stop light failed')
+          })
       }
     }
   }
