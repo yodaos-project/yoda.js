@@ -182,7 +182,7 @@ module.exports = function (activity) {
     var vol
     switch (nlp.intent) {
       case 'showvolume':
-        if (AudioManager.isMuted()) {
+        if (AudioManager.isMuted() || getVolume() <= 0) {
           setUnmute({ type: /** do not announce nor effect */null })
             .then(() => speakAndExit(STRING_SHOW_MUTED + Math.ceil(getVolume())))
         } else {
