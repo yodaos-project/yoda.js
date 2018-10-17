@@ -34,7 +34,7 @@ Flora.prototype.init = function init (clientName, config) {
   cli.on('disconnected', this.onDisconnect.bind(this))
 
   Object.keys(this.handlers).forEach(it => {
-    cli.subscribe(it, floraFactory.MSGTYPE_INSTANT)
+    cli.subscribe(it)
   })
 
   this.__cli = cli

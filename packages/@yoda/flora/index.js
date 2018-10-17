@@ -17,7 +17,7 @@
  * client.on("recv_post", function (name, msgtype, msg) {
  *   console.log("recv post msg " + name);
  * }
- * client.subscribe("test msg2", flora_factory.MSGTYPE_INSTANT);
+ * client.subscribe("test msg2");
  *
  * // post msg
  * var caps = new flora_factory.Caps();
@@ -74,7 +74,6 @@ Client.prototype.on = function (name, cb) {
  * @memberof module:@yoda/flora~Client
  * @method subscribe
  * @param {String} name - msg name to subscribe
- * @param {Number} type - msg type to subscribe (exports.MSGTYPE_INSTANT | exports.MSGTYPE_PERSIST)
  */
 // Client.prototype.prototype.subscribe
 
@@ -83,7 +82,6 @@ Client.prototype.on = function (name, cb) {
  * @memberof module:@yoda/flora~Client
  * @method unsubscribe
  * @param {String} name - msg name to unsubscribe
- * @param {Number} type - msg type to unsubscribe (exports.MSGTYPE_INSTANT | exports.MSGTYPE_PERSIST)
  */
 // Client.prototype.prototype.unsubscribe
 
