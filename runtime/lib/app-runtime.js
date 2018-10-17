@@ -852,21 +852,34 @@ AppRuntime.prototype.onForward = function (message) {
     } catch (err) {}
   }
 
+  var skillId = data.appId || data.domain
+  if (typeof skillId !== 'string') {
+    logger.error('Expecting data.appId or data.domain exists in mqtt forward message.')
+    return
+  }
+  var form = _.get(data, 'form')
+  if (typeof form !== 'string') {
+    form = _.get(this.loader.skillAttrsMap[skillId], 'defaultForm')
+  }
+  if (!form) {
+    form = 'cut'
+  }
+
   var mockNlp = {
     cloud: false,
     intent: 'RokidAppChannelForward',
     forwardContent: data.content,
     getInfos: data.getInfos,
-    appId: data.appId || data.domain
+    appId: skillId
   }
   var mockAction = {
-    appId: data.appId || data.domain,
+    appId: skillId,
     version: '2.0.0',
     startWithActiveWord: false,
     response: {
       action: {
-        appId: data.appId || data.domain,
-        form: 'cut'
+        appId: skillId,
+        form: form
       }
     }
   }
