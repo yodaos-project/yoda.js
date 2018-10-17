@@ -468,22 +468,5 @@ DBus.prototype.yodadebug = {
     fn: function ReportMemoryUsage (cb) {
       cb(null, JSON.stringify(process.memoryUsage()))
     }
-  },
-  takeSnapshot: {
-    in: ['s'],
-    out: ['s'],
-    fn: function ReportSnapshot (storePath, cb) {
-      try {
-        if (!path.isAbsolute(storePath)) {
-          cb(null, `store path ${storePath} should be absolute`)
-          return
-        }
-        var profiler = require('profiler')
-        profiler.takeSnapshot(storePath)
-        cb(null, `finished, store path ${storePath}`)
-      } catch (err) {
-        cb(err)
-      }
-    }
   }
 }

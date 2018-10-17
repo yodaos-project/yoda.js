@@ -1,5 +1,6 @@
 var fs = require('fs')
 var path = require('path')
+var property = require('property')
 var logger = require('logger')('pony')
 
 var yodaUtil = require('@yoda/util')
@@ -13,6 +14,18 @@ process.nextTick = function fakeNextTick (fn) {
   setTimeout(function nextTick () {
     fn.apply(global, params)
   }, 0)
+}
+
+var heapdumpFlag = property.get('sys.vm.heapdump', 'persist')
+if (heapdumpFlag === 'true') {
+  process.on('SIGUSR2', function () {
+    var timestamp = Math.floor(Date.now())
+    var profiler = require('profiler')
+    var filename = `/data/heapdump-${process.pid}-${timestamp}.json`
+    profiler.takeSnapshot(filename)
+    logger.debug(`dump the heap profile at ${filename}`)
+    logger.debug('memory usage is at', process.memoryUsage())
+  })
 }
 
 module.exports.catchUncaughtError = function catchUncaughtError (logfile) {
