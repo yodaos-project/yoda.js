@@ -361,8 +361,8 @@ JS_FUNCTION(Connect) {
 }
 
 JS_FUNCTION(Subscribe) {
-  if (jargc < 2) {
-    return JS_CREATE_ERROR(COMMON, "arguments: string name, int type");
+  if (jargc < 1) {
+    return JS_CREATE_ERROR(COMMON, "arguments: string name");
   }
   JS_DECLARE_THIS_PTR(flora_cli, thisptr);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
@@ -379,8 +379,8 @@ JS_FUNCTION(Subscribe) {
 }
 
 JS_FUNCTION(Unsubscribe) {
-  if (jargc < 2) {
-    return JS_CREATE_ERROR(COMMON, "arguments: string name, int type");
+  if (jargc < 1) {
+    return JS_CREATE_ERROR(COMMON, "arguments: string name");
   }
   JS_DECLARE_THIS_PTR(flora_cli, thisptr);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
