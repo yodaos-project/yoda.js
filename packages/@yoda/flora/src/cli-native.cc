@@ -374,8 +374,7 @@ JS_FUNCTION(Subscribe) {
   jerry_char_t strbuf[size + 1];
   jerry_string_to_utf8_char_buffer(jargv[0], strbuf, size);
   strbuf[size] = '\0';
-  int32_t msgtype = (int32_t)JS_GET_ARG(1, number);
-  int32_t r = _this->stl_st->cli->subscribe((char*)strbuf, msgtype);
+  int32_t r = _this->stl_st->cli->subscribe((char*)strbuf);
   return jerry_create_number(r);
 }
 
@@ -393,8 +392,7 @@ JS_FUNCTION(Unsubscribe) {
   jerry_char_t strbuf[size + 1];
   jerry_string_to_utf8_char_buffer(jargv[0], strbuf, size);
   strbuf[size] = '\0';
-  int32_t msgtype = (int32_t)JS_GET_ARG(1, number);
-  int32_t r = _this->stl_st->cli->unsubscribe((char*)strbuf, msgtype);
+  int32_t r = _this->stl_st->cli->unsubscribe((char*)strbuf);
   return jerry_create_number(r);
 }
 
