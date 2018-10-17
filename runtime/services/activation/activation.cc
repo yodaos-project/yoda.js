@@ -77,7 +77,7 @@ class Activation : public ClientCallback {
         fprintf(stderr, "init flora client failed, please retry\n");
         reconn_cond.wait_for(locker, chrono::seconds(5));
       } else {
-        cli->subscribe("rokid.turen.voice_coming", FLORA_MSGTYPE_INSTANT);
+        cli->subscribe("rokid.turen.voice_coming");
         flora_cli = cli;
         reconn_cond.wait(locker);
       }
