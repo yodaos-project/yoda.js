@@ -1,6 +1,6 @@
 var fs = require('fs')
 var path = require('path')
-var property = require('property')
+var property = require('@yoda/property')
 var logger = require('logger')('pony')
 
 var yodaUtil = require('@yoda/util')
