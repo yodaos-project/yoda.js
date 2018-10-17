@@ -9,9 +9,13 @@ var request = require('./request')
 var yodaUtil = require('@yoda/util')
 
 var configFilePath = '/data/AppData/alarm/config.json'
+var keyCodes = [113, 114, 115, 116]
+
 module.exports = function (activity) {
   var scheduleHandler = new Cron.Schedule()
   var jobQueue = []
+  var taskTimeout = null
+  var volumeInterval = null
   activity.on('create', function () {
     addConfigFile()
     var state = wifi.getNetworkState()
@@ -39,11 +43,19 @@ module.exports = function (activity) {
         initAlarm(command)
       })
     }
+    activity.keyboard.on('click', (e) => {
+      activity.media.stop()
+      activity.tts.stop()
+      taskTimeout && clearTimeout(taskTimeout)
+      volumeInterval && clearInterval(volumeInterval)
+      restoreEventsDefaults()
+    })
   })
 
   activity.on('url', url => {
     var command = JSON.parse(url.query.command || '[]')
     doTask(command)
+    activity.setBackground()
   })
 
   activity.on('request', function (nlp, action) {
@@ -51,12 +63,26 @@ module.exports = function (activity) {
     if (nlp.intent === 'RokidAppChannelForward') {
       command = JSON.parse(nlp.forwardContent.command)
       doTask(command)
+      activity.setBackground()
     }
   })
 
-  activity.on('destory', function () {
-    logger.log(this.appId + ' destoryed')
+  // todo: weakup event
+  activity.on('destroy', function () {
+    restoreEventsDefaults()
+    logger.log(this.appId + ' destroyed')
   })
+
+  function preventEventsDefaults () {
+    for (var i = 0; i < keyCodes.length; i++) {
+      activity.keyboard.preventDefaults(keyCodes[i])
+    }
+  }
+  function restoreEventsDefaults () {
+    for (var i = 0; i < keyCodes.length; i++) {
+      activity.keyboard.restoreDefaults(keyCodes[i])
+    }
+  }
 
   function addConfigFile () {
     fs.stat(configFilePath, function (err, stat) {
@@ -87,11 +113,19 @@ module.exports = function (activity) {
     }
   }
   function initAlarm (command, isUpdateNative) {
+    var flag = false
     for (var i in command) {
+      flag = true
       var commandOpt = formatCommandData(command[i])
       var pattern = transferPattern(command[i].date, command[i].time, command[i].repeatType)
       startTask(commandOpt, pattern)
       isUpdateNative && setConfig(command[i], 'add')
+    }
+    // clear local data
+    if (!flag) {
+      fs.writeFile(configFilePath, '{}', function (err) {
+        if (err) throw err
+      })
     }
     logger.log('alarm init')
   }
@@ -118,7 +152,7 @@ module.exports = function (activity) {
   function startTask (commandOpt, pattern) {
     logger.log(' alarm start')
     scheduleHandler.create(pattern, function () {
-      taskCallback(commandOpt, commandOpt.mode)
+      onTaskActive(commandOpt, commandOpt.mode)
     }, commandOpt)
   }
   function getTasksFromConfig (callback) {
@@ -131,18 +165,24 @@ module.exports = function (activity) {
     })
   }
 
-  function controlAudio (partial, piece, tick, duration) {
-    var defaultAudio = AudioManager.getVolume(AudioManager.STREAM_ALARM)
-    AudioManager.setVolume(AudioManager.STREAM_ALARM, Math.floor(defaultAudio * partial))
-    var count = 0
-    var timer = setInterval(function () {
-      AudioManager.setVolume(AudioManager.STREAM_ALARM, Math.floor(defaultAudio * (partial + (count + 1) * piece)))
-      if (count > duration) {
-        AudioManager.setVolume(AudioManager.STREAM_ALARM, defaultAudio)
-        clearInterval(timer)
-      }
-      count++
-    }, tick)
+  function controlAudio (minVolume, tick, duration) {
+    var defaultAudio = AudioManager.getVolume(AudioManager.STREAM_SYSTEM)
+    if (defaultAudio <= minVolume) {
+      AudioManager.setVolume(AudioManager.STREAM_ALARM, minVolume)
+    } else {
+      var range = Math.ceil((defaultAudio - minVolume) / duration)
+      AudioManager.setVolume(AudioManager.STREAM_ALARM, minVolume)
+      var count = 0
+      volumeInterval = setInterval(function () {
+        if (minVolume + (count + 1) * range >= defaultAudio) {
+          AudioManager.setVolume(AudioManager.STREAM_ALARM, defaultAudio) // todo: change player vol
+          clearInterval(volumeInterval)
+        } else {
+          AudioManager.setVolume(AudioManager.STREAM_ALARM, minVolume + (count + 1) * range)
+        }
+        count++
+      }, tick)
+    }
   }
 
   function transferPattern (date, time, repeatType) {
@@ -199,6 +239,33 @@ module.exports = function (activity) {
     })
   }
 
+  function onTaskActive (option, mode) {
+    activity.setForeground().then(() => {
+      preventEventsDefaults()
+      controlAudio(10, 1000, 7)
+      var state = wifi.getNetworkState()
+      var ringUrl = ''
+      if (option.type === 'Remind') {
+        ringUrl = 'system://reminder_default.mp3'
+      } else {
+        ringUrl = state === wifi.NETSERVER_CONNECTED ? option.url : 'system://alarm_default_ringtone.mp3'
+      }
+      // send card to app
+      request({
+        activity: activity,
+        intent: 'send_card',
+        businessParams: {
+          alarmId: option.id
+        }
+      })
+      activity.media.start(ringUrl, { streamType: 'alarm' }).then(() => {
+        taskTimeout = setTimeout(() => {
+          activity.media.stop()
+          taskCallback(option, mode)
+        }, 7000)
+      })
+    })
+  }
   function taskCallback (option, mode) {
     logger.log(option.id, ' start~!', jobQueue)
     if (jobQueue.indexOf(option.id) > -1) {
@@ -219,21 +286,13 @@ module.exports = function (activity) {
       var sameReminder = scheduleHandler.combineReminderTts()
       tts = sameReminder.combinedTTS
       activity.setForeground().then(() => {
-        // send card to app
-        request({
-          activity: activity,
-          intent: 'send_card',
-          businessParams: {
-            alarmId: option.id
-          }
-        })
-      }).then(() => {
         if (state === wifi.NETSERVER_CONNECTED) {
           return activity.tts.speak(tts || option.tts)
         }
       }).then(() => {
         return activity.media.start('system://reminder_default.mp3', { streamType: 'alarm' })
       }).then(() => {
+        restoreEventsDefaults()
         scheduleHandler.clearReminderQueue()
         var reminderList = sameReminder.reminderList
         var reminderLen = reminderList.length
@@ -243,18 +302,8 @@ module.exports = function (activity) {
         activity.setBackground()
       })
     } else {
-      controlAudio(0.5, 0.1, 1000, 5)
       activity.setForeground().then(() => {
         logger.log('media play')
-      }).then(() => {
-        // send card to app
-        request({
-          activity: activity,
-          intent: 'send_card',
-          businessParams: {
-            alarmId: option.id
-          }
-        })
       }).then(() => {
         if (state === wifi.NETSERVER_CONNECTED) {
           return activity.tts.speak(option.tts)
@@ -268,6 +317,7 @@ module.exports = function (activity) {
           return activity.media.setLoopMode(true)
         }
       }).then(() => {
+        restoreEventsDefaults()
         clearTask(mode, option)
         activity.setBackground()
       })

@@ -17,7 +17,8 @@ function ScheduledTask (task, options) {
   this.start = () => {
     this.status = 'scheduled'
     if (this.task && !this.tick) {
-      this.tick = setTimeout(this.task.bind(this), 500)
+      var date = new Date()
+      this.tick = setTimeout(this.task.bind(this), 500 - date.getMilliseconds())
     }
     return this
   }
@@ -77,7 +78,7 @@ function ScheduledTask (task, options) {
   this.task = () => {
     var date = new Date()
     this.tick = setTimeout(this.task.bind(this),
-      500 - date.getMilliseconds())
+      500)
     task.update(date)
   }
 
