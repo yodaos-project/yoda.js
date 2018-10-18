@@ -6,7 +6,7 @@ var property = require('@yoda/property')
 var wifi = require('@yoda/wifi')
 
 module.exports = function (activity) {
-  var player = bluetooth.getPlayer()
+  var player = null
   var uuid = (property.get('ro.boot.serialno') || '').substr(-6)
   var productName = property.get('ro.rokid.build.productname') || 'Rokid-Me'
   var name = [ productName, uuid ].join('-')
@@ -22,16 +22,7 @@ module.exports = function (activity) {
   var activityPlayState = false
   var activityNlpIntent = null
   var BLUETOOTH_MUSIC_ID = 'RDDE53259D334860BA9E98CB3AB6C001'
-  player.on('stateupdate', function (message) {
-    logger.debug('stateupdate', message)
-    bluetoothMessage = Object.assign(bluetoothMessage, message)
-    if (message.play_state === 'played') {
-      activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
-    // for users from operating Bluetooth music from the phone.
-    }
-    bluetoothMessageSpeak(message, activityNlpIntent)// speak action
-    bluetoothMessagelight(message)// light action
-  })
+
   function broadcast (subsequent) {
     player.start(name, subsequent)
   }
@@ -186,6 +177,19 @@ module.exports = function (activity) {
     return activity.playSound(text)
       .then(() => activity.exit())
   }
+  activity.on('create', () => {
+    player = bluetooth.getPlayer()
+    player.on('stateupdate', function (message) {
+      logger.debug('stateupdate', message)
+      bluetoothMessage = Object.assign(bluetoothMessage, message)
+      if (message.play_state === 'played') {
+        activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
+        // for users from operating Bluetooth music from the phone.
+      }
+      bluetoothMessageSpeak(message, activityNlpIntent)// speak action
+      bluetoothMessagelight(message)// light action
+    })
+  })
   activity.on('pause', () => {
     if (bluetoothMessage.play_state === 'played') {
       pauseMusic()
