@@ -401,6 +401,9 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function playSound (uri) {
+        if (!this._runtime.life.isAppActive(this._appId)) {
+          return Promise.reject(new Error('currently app is not active'))
+        }
         var absPath = yodaPath.transformPathScheme(uri, MEDIA_SOURCE, this._appHome + '/media')
         return this._runtime.light.appSound(this._appId, absPath)
       }

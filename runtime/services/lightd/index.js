@@ -86,31 +86,7 @@ dbusApis.addMethod('setDegree', {
   cb(null)
 })
 
-dbusApis.addMethod('setLoading', {
-  in: ['s'],
-  out: []
-}, function (appId, cb) {
-  service.setLoading(appId)
-  cb(null)
-})
-
 dbusApis.addMethod('setHide', {
-  in: ['s'],
-  out: []
-}, function (appId, cb) {
-  service.setHide()
-  cb(null)
-})
-
-dbusApis.addMethod('setStandby', {
-  in: ['s'],
-  out: []
-}, function (appId, cb) {
-  service.setStandby()
-  cb(null)
-})
-
-dbusApis.addMethod('setConfigFree', {
   in: ['s'],
   out: []
 }, function (appId, cb) {
@@ -122,31 +98,34 @@ dbusApis.addMethod('appSound', {
   in: ['s', 's'],
   out: ['b']
 }, function (appId, name, cb) {
-  logger.log(`appSound: ${appId} ${name}`)
-  service.appSound(appId, name, (error) => {
-    if (error) {
-      logger.log(`appSound error: ${appId}, ${name}, ${error}`)
-      cb(null, false)
-    } else {
-      cb(null, true)
-    }
-  })
+  logger.log(`request appSound: appId: '${appId}' uri: '${name}'`)
+  if (appId && name) {
+    service.appSound(appId, name, (err) => {
+      if (err) {
+        logger.error(`appSound error: ${appId}, ${name}, ${err.message}`)
+        cb(null, false)
+      } else {
+        cb(null, true)
+      }
+    })
+  } else {
+    logger.error('appSound: ignore this request because no appId or uri given')
+    cb(null, false)
+  }
 })
 
-dbusApis.addMethod('setSpeaking', {
-  in: [],
-  out: []
-}, function (cb) {
-  service.setSpeaking()
-  cb(null)
-})
-
-dbusApis.addMethod('unsetSpeaking', {
-  in: [],
-  out: []
-}, function (cb) {
-  service.stopPrev()
-  cb(null)
+dbusApis.addMethod('stopSound', {
+  in: ['s'],
+  out: ['b']
+}, function (appId, cb) {
+  if (appId) {
+    logger.log(`stopSound: request with appId: '${appId}'`)
+    service.stopSoundByAppId(appId)
+    cb(null, true)
+  } else {
+    logger.error('stopSound: ignore this request because no appId given')
+    cb(null, false)
+  }
 })
 
 dbusApis.addMethod('reset', {
@@ -155,14 +134,6 @@ dbusApis.addMethod('reset', {
 }, function (cb) {
   logger.log('reset lightd requested by vui')
   service.setHide()
-  cb(null, true)
-})
-
-dbusApis.addMethod('setPickup', {
-  in: ['s', 's', 'b'],
-  out: ['b']
-}, function (appId, duration, withAwaken, cb) {
-  service.setPickup(appId, +duration, withAwaken)
   cb(null, true)
 })
 

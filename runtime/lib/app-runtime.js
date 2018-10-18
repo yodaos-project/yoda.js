@@ -277,9 +277,13 @@ AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
   if (this.sound.isMuted()) {
     this.sound.unmute()
   }
-
-  this.light.appSound('@yoda', 'system://key_config_notify.ogg')
-  this.light.play('@yoda', 'system://longPressMic.js')
+  // In order to play sound when currently is muted
+  Promise.all([
+    this.light.appSound('@yoda', 'system://key_config_notify.ogg'),
+    this.light.play('@yoda', 'system://longPressMic.js')
+  ]).catch((err) => {
+    logger.error(`play longPress light or sound error: ${err.message}`)
+  })
   setTimeout(() => {
     this.shouldStopLongPressMicLight = false
   }, 5000)
@@ -290,7 +294,15 @@ AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
  */
 AppRuntime.prototype.stopLongPressMicLight = function stopLongPressMicLight () {
   if (this.shouldStopLongPressMicLight === true) {
-    this.light.stop('@yoda', '/opt/light/longPressMic.js')
+    // stop longPress light and sound ahead of time
+    Promise.all([
+      this.light.stopSoundByAppId('@yoda'),
+      this.light.stop('@yoda', '/opt/light/longPressMic.js')
+    ]).then(() => {
+      logger.log('stop longPress light or sound ahead of time')
+    }).catch((err) => {
+      logger.error(`An error occurend while stopping longPress the lighting or sound in advance: ${err.message}`)
+    })
     this.shouldStopLongPressMicLight = false
   }
 }
@@ -644,6 +656,7 @@ AppRuntime.prototype.appGC = function appGC (appId) {
   logger.info('Collecting resources of app', appId)
   return Promise.all([
     this.light.stopByAppId(appId),
+    this.light.stopSoundByAppId(appId),
     this.multimediaMethod('stop', [ appId ]),
     this.ttsMethod('stop', [ appId ])
   ]).catch(err => logger.error('Unexpected error on collecting resources of app', appId, err.stack))

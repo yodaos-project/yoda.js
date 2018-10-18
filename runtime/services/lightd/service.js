@@ -21,7 +21,9 @@ function Light () {
     logger.error(error)
     this.systemspace = {}
   }
-  this.playerHandle = {}
+  this.playerHandle = null
+  this.playerAppId = null
+
   this.prevCallback = null
   this.prev = null
   this.prevContext = null
@@ -461,63 +463,75 @@ Light.prototype.setDegree = function (appId, degree) {
 
 Light.prototype.setHide = function () {
   logger.log('set hide')
-  this.stopPrev()
-  if (this.prevContext) {
-    this.prevContext.stop()
-    this.prevContext.clear()
-    this.prevContext.render()
-  }
-}
-
-Light.prototype.setLoading = function (appId) {
-  logger.log('set loading')
-  var uri = `${LIGHT_SOURCE}loading.js`
-  this.loadfile(appId, uri, {}, {}, function noop (error) {
-    if (error) {
-      logger.error('setLoading error', error)
-    } else {
-      logger.log('setLoading complete')
-    }
-  })
+  this.stopPrev(false)
 }
 
 Light.prototype.appSound = function (appId, name, cb) {
-  if (this.playerHandle[appId]) {
-    try {
-      // if the frequency is too fast, an error will occur.
-      this.playerHandle[appId].stop()
-      delete this.playerHandle[appId]
-    } catch (error) {
-      // if the previous one did not stop, ignore this time
-      logger.log(`ignore request: appId [${appId}] sound: [${name}]`)
-      cb(new Error('ignore request because can not stop previous player'))
-      return false
-    }
+  var isSuccess = this.stopPrevSound()
+  if (!isSuccess) {
+    logger.error(`ignore request: appId [${appId}] sound: [${name}] because can not stop previous player.`)
+    cb(new Error('ignore request because can not stop previous player'))
+    return false
   }
+
   var player
   try {
     player = new MediaPlayer(AudioManager.STREAM_SYSTEM)
     player.start(name)
     // free the player handle after playbackcomplete or error event
     player.on('playbackcomplete', () => {
-      logger.log(`playbackcomplete ${name}`)
-      this.playerHandle[appId].stop()
-      delete this.playerHandle[appId]
+      logger.log(`playbackcomplete: [${appId}] [${name}]`)
+      this.stopPrevSound()
       cb()
     })
     player.on('error', () => {
-      logger.log(`error ${name}`)
-      this.playerHandle[appId].stop()
-      delete this.playerHandle[appId]
+      logger.error(`player error: [${appId}] [${name}]`)
+      this.stopPrevSound()
       cb(new Error('player throw an error'))
     })
 
-    this.playerHandle[appId] = player
-  } catch (error) {
-    cb(error)
-    logger.error(error)
-    logger.log(`appSound play error: ${appId} [${name}]`)
+    this.playerHandle = player
+    this.playerAppId = appId
+  } catch (err) {
+    cb(err)
+    logger.error(`appSound play error: [${appId}] [${name}] err: ${err.message}`)
     return false
+  }
+  return true
+}
+
+Light.prototype.stopSoundByAppId = function (appId) {
+  if (!this.playerHandle) {
+    logger.log(`[${appId}] no sound currently playing`)
+    return
+  }
+  if (this.playerAppId !== appId) {
+    logger.warn(`[${appId}] currently sound belong to appId: [${this.playerAppId}], not yours!`)
+    return
+  }
+  var isSuccess = this.stopPrevSound()
+  if (isSuccess) {
+    logger.log(`[${appId}] stop previous sound success`)
+  } else {
+    logger.error(`[${appId}] stop previous sound error`)
+  }
+}
+
+/**
+ * stop currently sound
+ */
+Light.prototype.stopPrevSound = function () {
+  if (this.playerHandle) {
+    try {
+      // if the frequency is too fast, an error will occur.
+      this.playerHandle.stop()
+      this.playerHandle = null
+      this.playerAppId = null
+    } catch (err) {
+      // if the previous one did not stop, ignore this time
+      logger.error(`try to stop currently sound error: [${this.playerAppId}] err: ${err.message}`)
+      return false
+    }
   }
   return true
 }
@@ -528,9 +542,9 @@ Light.prototype.setPickup = function (appId, duration, withAwaken) {
     degree: this.degree,
     duration: +duration,
     withAwaken: withAwaken
-  }, {}, function noop (error) {
-    if (error) {
-      logger.error('setPickup error', error)
+  }, {}, function complete (err) {
+    if (err) {
+      logger.error(`setPickup error: ${err.message}`)
     } else {
       logger.log('setPickup complete')
     }
