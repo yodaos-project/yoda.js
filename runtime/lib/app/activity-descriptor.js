@@ -410,14 +410,22 @@ Object.assign(ActivityDescriptor.prototype,
     voiceCommand: {
       type: 'method',
       returns: 'promise',
-      fn: function voiceCommand (text) {
+      fn: function voiceCommand (text, options) {
+        var isTriggered = _.get(options, 'isTriggered', false)
         var self = this
         if (!self._runtime.permission.check(self._appId, 'ACCESS_VOICE_COMMAND')) {
           return Promise.reject(new Error('Permission denied.'))
         }
         return Promise.resolve()
           .then(() => {
-            self._runtime.flora.getNlpResult(text, function (err, nlp, action) {
+            var skillOption = JSON.stringify({
+              deviceMode: {
+                linkage: {
+                  trigger: isTriggered
+                }
+              }
+            })
+            self._runtime.flora.getNlpResult(text, skillOption, function (err, nlp, action) {
               if (err) { throw err }
               logger.info('get nlp result for asr', text, nlp, action)
               /**

@@ -53,7 +53,7 @@ module.exports = function compositionDeVoix (activity) {
     },
     'voice-command': text => {
       logger.info('executing voice command:', text)
-      return activity.voiceCommand(text)
+      return activity.voiceCommand(text, { isTriggered: true })
     }
   }
   function execute (id, executions, idx) {
