@@ -83,7 +83,7 @@ module.exports = function (activity) {
         action: action || (normalizedValue <= prevVolume ? 'decrease' : 'increase')
       }))
     }
-    if (type === 'announce') {
+    if (type === 'announce' && !AudioManager.isMuted()) {
       promises.push(activity.tts.speak(STRING_VOLUME_ALTERED + normalizedValue))
     }
     promises.push(activity.wormhole.updateVolume())
