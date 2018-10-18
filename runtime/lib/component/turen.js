@@ -39,7 +39,14 @@ function Turen (runtime) {
    * handle of timer to determines if current 'voice coming' session is alone,
    * no upcoming asr pending/end is sent in company with it.
    */
+  this.solitaryVoiceComingTimeout = process.env.YODA_SOLITARY_VOICE_COMING_TIMEOUT || 3000
   this.solitaryVoiceComingTimer = null
+  /**
+   * handle of timer to determines if current awaken session is no voice input available so far,
+   * no upcoming asr pending would be sent any way.
+   */
+  this.noVoiceInputTimeout = process.env.YODA_NO_VOICE_INPUT_TIMEOUT || 6000
+  this.noVoiceInputTimer = null
 }
 
 Turen.prototype.init = function init () {
@@ -189,7 +196,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
   this.solitaryVoiceComingTimer = setTimeout(() => {
     logger.warn('detected a solitary voice coming, resetting awaken')
     this.resetAwaken()
-  }, process.env.APP_KEEPALIVE_TIMEOUT || 6000)
+  }, this.solitaryVoiceComingTimeout)
 
   if (this.runtime.forceUpdateAvailable) {
     future.then(
@@ -237,6 +244,12 @@ Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
 Turen.prototype.handleAsrPending = function handleAsrPending () {
   this.asrState = 'pending'
   clearTimeout(this.solitaryVoiceComingTimer)
+
+  clearTimeout(this.noVoiceInputTimer)
+  this.noVoiceInputTimer = setTimeout(() => {
+    logger.warn('no more voice input detected, closing pickup')
+    this.pickup(false)
+  }, this.noVoiceInputTimeout)
 }
 
 /**
@@ -245,6 +258,8 @@ Turen.prototype.handleAsrPending = function handleAsrPending () {
  */
 Turen.prototype.handleAsrEnd = function handleAsrEnd () {
   this.asrState = 'end'
+  clearTimeout(this.noVoiceInputTimer)
+
   return this.resetAwaken({
     recover: /** no recovery shall be made on nlp coming */ false
   }).then(() => {
@@ -265,6 +280,8 @@ Turen.prototype.handleAsrEnd = function handleAsrEnd () {
  */
 Turen.prototype.handleAsrFake = function handleAsrFake () {
   this.asrState = 'fake'
+  clearTimeout(this.noVoiceInputTimer)
+
   return this.resetAwaken()
 }
 
