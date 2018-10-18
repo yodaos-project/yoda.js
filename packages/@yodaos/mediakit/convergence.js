@@ -38,7 +38,7 @@ Convergence.prototype.converge = function (name, playerId, args) {
     if (this.eventQueue[playerId] == null) {
       this.eventQueue[playerId] = []
     }
-    this.eventQueue[playerId].push({ event: name, args: args })
+    this.eventQueue[playerId].push({ name: name, args: args })
     return
   }
   if (typeof handler !== 'function') {
@@ -50,8 +50,9 @@ Convergence.prototype.converge = function (name, playerId, args) {
 
 Convergence.prototype.processQueuedEvents = function processQueuedEvents (handler, playerId) {
   if (this.eventQueue[playerId] != null) {
-    this.logger.info(`[convergence] processing queued events for player ${playerId}.`)
     var queue = this.eventQueue[playerId]
+    this.logger.info(`[convergence] processing queued events for player ${playerId}.`,
+      queue.map(it => it.name))
     /**
      * prevent leaking of terminated player events
      * since a client could only have one opening player at a time.

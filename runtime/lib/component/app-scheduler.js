@@ -35,7 +35,7 @@ AppScheduler.prototype.createApp = function createApp (appId) {
     return Promise.resolve(this.getAppById(appId))
   }
   if (this.appStatus[appId] === AppScheduler.status.creating) {
-    return Promise.reject(new Error(`Scheduler is creating app ${this.appId}.`))
+    return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
   }
   this.appStatus[appId] = AppScheduler.status.creating
 
