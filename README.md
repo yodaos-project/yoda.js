@@ -1,4 +1,4 @@
-# YodaOS
+# YodaRT
 
 YodaRT is the JavaScript layer in YodaOS. It provides the main functionalities includes:
 

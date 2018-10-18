@@ -4,8 +4,7 @@ var promisify = require('util').promisify
 
 var logger = require('logger')('app-loader')
 var _ = require('@yoda/util')._
-
-var defaultConfig = require('../../app-loader-config.json')
+var defaultConfig = require('/etc/yoda/app-loader-config.json')
 
 var readdirAsync = promisify(fs.readdir)
 var readFileAsync = promisify(fs.readFile)
