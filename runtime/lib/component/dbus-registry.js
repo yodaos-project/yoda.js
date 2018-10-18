@@ -7,7 +7,7 @@ var logger = require('logger')('dbus')
 var _ = require('@yoda/util')._
 
 var DbusRemoteCall = require('../dbus-remote-call')
-var dbusConfig = require('../../dbus-config.json')
+var dbusConfig = require('/etc/yoda/dbus-config.json')
 
 module.exports = DBus
 function DBus (runtime) {

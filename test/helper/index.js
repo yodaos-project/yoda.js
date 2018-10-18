@@ -1,7 +1,7 @@
 var path = require('path')
 
 module.exports.paths = {
-  runtime: '/usr/lib/yoda/runtime',
+  runtime: '/usr/yoda',
   apps: '/opt/apps',
   fixture: path.join(__dirname, '..', 'fixture')
 }

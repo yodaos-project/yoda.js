@@ -2,7 +2,7 @@ var logger = require('logger')('keyboard')
 var Input = require('@yoda/input')
 var _ = require('@yoda/util')._
 
-var config = require('../../keyboard.json')
+var config = require('/etc/yoda/keyboard.json')
 
 module.exports = KeyboardHandler
 function KeyboardHandler (runtime) {

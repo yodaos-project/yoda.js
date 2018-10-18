@@ -73,8 +73,13 @@ function push() {
 }
 
 function install_os() {
-  shell "rm -rf /usr/lib/yoda/runtime"
-  push "./runtime" "/usr/lib/yoda/"
+  # etc config
+  shell "rm -rf /etc/yoda/*"
+  push "./etc/*" "/etc/yoda/"
+
+  # yoda runtime
+  shell "rm -rf /usr/yoda/*"
+  push "./runtime/*" "/usr/yoda/"
 
   # node_modules
   shell "mkdir -p /usr/lib/node_modules/@yoda"

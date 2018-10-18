@@ -5,7 +5,7 @@ var inherits = require('util').inherits
 var floraFactory = require('@yoda/flora')
 var FloraComp = require('@yoda/flora/comp')
 
-var floraConfig = require('../../flora-config.json')
+var floraConfig = require('/etc/yoda/flora-config.json')
 var globalEnv = require('../env')()
 
 var asr2nlpId = 'js-AppRuntime'

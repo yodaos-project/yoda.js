@@ -74,11 +74,13 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
 
 Custodian.prototype.onLoggedIn = function onLoggedIn () {
   this._loggedIn = true
+  property.set('state.rokid.logged', 'true')
   logger.info('on logged in')
 }
 
 Custodian.prototype.onLogout = function onLogout () {
   this._loggedIn = false
+  property.set('state.rokid.logged', 'false')
   // reset the onGetPropAll...
   this.runtime.onGetPropAll = function () {
     return {}

@@ -67,7 +67,6 @@ YodaLocalPackage(logger)
 YodaLocalPackage(lru-cache)
 YodaLocalPackage(pseudomap)
 YodaLocalPackage(yallist)
-# YodaLocalPackage(zeromq)
 
 # Tools
 ExternalProject_Add(rklogger
@@ -91,8 +90,14 @@ ExternalProject_Add(activation
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
-install(DIRECTORY ./apps            DESTINATION /opt)
-install(DIRECTORY ./res/media       DESTINATION /opt)
-install(DIRECTORY ./res/light       DESTINATION /opt)
-install(DIRECTORY ./runtime         DESTINATION /usr/lib/yoda)
-install(DIRECTORY ./include         DESTINATION /usr/)
+file(GLOB YODA_CONFIG_FILES ./etc/*.json)
+install(FILES ${YODA_CONFIG_FILES} DESTINATION /etc/yoda)
+install(DIRECTORY ./runtime/ DESTINATION /usr/yoda
+        PATTERN "**/OWNERS" EXCLUDE
+        PATTERN "**/*.md" EXCLUDE
+        PATTERN "**/*.txt" EXCLUDE
+        PATTERN "**/*.cc" EXCLUDE)
+install(DIRECTORY ./apps DESTINATION /opt)
+install(DIRECTORY ./res/media DESTINATION /opt)
+install(DIRECTORY ./res/light DESTINATION /opt)
+install(DIRECTORY ./include DESTINATION /usr/)
