@@ -49,6 +49,8 @@ exports.updateBasicInfo = function updateBasicInfo (cloudgw, info) {
   var networkInterface = _.get(os.networkInterfaces(), 'wlan0', [])
     .filter(it => _.get(it, 'family') === 'IPv4')[0]
   info = Object.assign({}, info, {
+    device_id: property.get('ro.boot.serialno'),
+    device_type_id: property.get('ro.boot.devicetypeid'),
     ota: property.get('ro.build.version.release'),
     mac: _.get(networkInterface, 'mac'),
     lan_ip: _.get(networkInterface, 'address')
