@@ -864,6 +864,7 @@ AppRuntime.prototype.onForward = function (message) {
   if (!form) {
     form = 'cut'
   }
+  var preemptive = !_.get(data, 'getInfos', false)
 
   var mockNlp = {
     cloud: false,
@@ -883,7 +884,7 @@ AppRuntime.prototype.onForward = function (message) {
       }
     }
   }
-  this.onVoiceCommand('', mockNlp, mockAction)
+  this.onVoiceCommand('', mockNlp, mockAction, { preemptive: preemptive })
 }
 
 /**
