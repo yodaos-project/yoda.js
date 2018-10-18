@@ -45,31 +45,10 @@ var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var Sounder = require('@yoda/multimedia').Sounder
 var property = require('@yoda/property')
 var light = require('@yoda/light')
-var LRU = require('lru-cache')
 var logger = require('logger')('effects')
 var path = require('path')
 
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
-var SYSTEMCACHE = new LRU({
-  max: 1,
-  dispose: function (key, val) {
-    try {
-      val.stop()
-    } catch (error) {
-      logger.log(`SystemPlayerCache: try to stop ${key} error`)
-    }
-  }
-})
-var PLAYERCACHE = new LRU({
-  max: 1,
-  dispose: function (key, val) {
-    try {
-      val.stop()
-    } catch (error) {
-      logger.log(`PlayerCache: try to stop ${key} error`)
-    }
-  }
-})
 
 module.exports = LightRenderingContextManager
 
@@ -182,13 +161,11 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
   if (this._getCurrentId() !== this._id) {
     return mockPlayer
   }
-  var isSystem = false
   var len = uri.length
   var absPath = ''
   if (len > 9 && uri.substr(0, 9) === 'system://') {
     // etc.. system://path/to/sound.ogg
     absPath = SYSTEM_MEDIA_SOURCE + uri.substr(9)
-    isSystem = true
   } else if (len > 7 && uri.substr(0, 7) === 'self://') {
     // etc.. self://path/to/sound.ogg
     absPath = self + '/' + uri.substr(7)
@@ -206,31 +183,19 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
     return mockPlayer
   }
 
-  var cache = PLAYERCACHE
-  if (isSystem) {
-    cache = SYSTEMCACHE
-  }
-
   if (this._soundPlayer) {
     this._soundPlayer.stop()
     this._soundPlayer = null
   }
 
-  var sounder = cache.get(absPath)
-  if (sounder != null) {
-    sounder.seek(0)
-    sounder.resume()
-  } else {
-    sounder = new MediaPlayer(AudioManager.STREAM_SYSTEM)
-    sounder.start(absPath)
-    cache.set(absPath, sounder)
-  }
+  var sounder = new MediaPlayer(AudioManager.STREAM_SYSTEM)
+  sounder.start(absPath)
 
   mockPlayer.stop = function () {
     try {
-      sounder.pause()
+      sounder.stop()
     } catch (error) {
-      logger.log(`try to pause ${absPath} error`)
+      logger.error(`unexpected error on stopping sounder(${absPath})`, error.stack)
     }
   }
   this._soundPlayer = mockPlayer
@@ -254,6 +219,7 @@ LightRenderingContext.prototype.stop = function (keep) {
   }
   if (this._soundPlayer) {
     this._soundPlayer.stop()
+    this._soundPlayer = null
   }
   if (keep !== true) {
     this.clear()
