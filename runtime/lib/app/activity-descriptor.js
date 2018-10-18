@@ -145,6 +145,13 @@ ActivityDescriptor.prototype.destruct = function destruct () {
 Object.assign(ActivityDescriptor.prototype,
   {
     /**
+     * When the app is active.
+     * @event yodaRT.activity.Activity#active
+     */
+    active: {
+      type: 'event'
+    },
+    /**
      * When the app is ready.
      * @event yodaRT.activity.Activity#ready
      */
