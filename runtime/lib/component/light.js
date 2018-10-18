@@ -74,6 +74,18 @@ Light.prototype.appSound = function (appId, uri) {
 }
 
 /**
+ * stop sound by specified appId
+ * @param {string} appId your appId
+ * @return {Promise}
+ */
+Light.prototype.stopSoundByAppId = function (appId) {
+  if (!appId) {
+    throw new Error('appId is required')
+  }
+  return this.lightMethod('stopSound', [appId])
+}
+
+/**
  * open pickup
  * @param {string} appId your appId
  * @param {number|string} duration auto close pickup after duration millisecond
