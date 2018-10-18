@@ -16,6 +16,7 @@ function AppScheduler (loader, runtime) {
 }
 
 AppScheduler.status = {
+  notRunning: 'not running',
   creating: 'creating',
   running: 'running',
   destructing: 'destructing',
@@ -28,6 +29,10 @@ AppScheduler.prototype.isAppRunning = function isAppRunning (appId) {
 
 AppScheduler.prototype.getAppById = function getAppById (appId) {
   return this.appMap[appId]
+}
+
+AppScheduler.prototype.getAppStatusById = function getAppStatusById (appId) {
+  return this.appStatus[appId] || AppScheduler.status.notRunning
 }
 
 AppScheduler.prototype.createApp = function createApp (appId) {
@@ -55,10 +60,10 @@ AppScheduler.prototype.createApp = function createApp (appId) {
 
   return extApp(appId, metadata, this.runtime)
     .then(app => {
-      logger.info('Ext-app successfully started')
+      logger.info(`App(${appId}) successfully started`)
       app.once('exit', () => {
         if (this.appMap[appId] !== app) {
-          logger.info('Not matched app on exiting, skip unset executor.app')
+          logger.info(`Not matched app on exiting, skip unset executor.app(${appId})`)
           return
         }
         this.handleAppExit(appId)
@@ -66,7 +71,7 @@ AppScheduler.prototype.createApp = function createApp (appId) {
 
       return this.handleAppCreate(appId, app)
     }, err => {
-      logger.error('Unexpected error on starting ext-app', err.message, err.stack)
+      logger.error(`Unexpected error on starting ext-app(${appId})`, err.stack)
       this.handleAppExit(appId)
       throw err
     })
@@ -96,6 +101,7 @@ AppScheduler.prototype.suspendAllApps = function suspendAllApps (options) {
 AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   var force = _.get(options, 'force', false)
   var appType = this.loader.getTypeOfApp(appId)
+  logger.info(`suspending ${appType}-app(${appId}), force?`, force)
 
   if (appType === 'light') {
     return Promise.resolve()

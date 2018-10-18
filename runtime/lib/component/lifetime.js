@@ -267,7 +267,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   var activateParams = _.get(options, 'activateParams', [])
 
   if (!this.isAppRunning(appId)) {
-    return Promise.reject(new Error(`App ${appId} is not running, launch it first.`))
+    return Promise.reject(new Error(`App ${appId} is ${this.scheduler.getAppStatusById(appId)}, launch it first.`))
   }
 
   if (form == null) {
