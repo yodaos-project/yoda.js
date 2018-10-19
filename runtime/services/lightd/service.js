@@ -395,6 +395,9 @@ Light.prototype.stopFile = function (appId, uri) {
     if (appId !== this.systemspaceZIndex[j].appId) {
       continue
     }
+    if (uri && uri !== this.systemspaceZIndex[j].uri) {
+      continue
+    }
     // clear z-index
     logger.log(`${appId} [${j}]['${this.systemspaceZIndex[j].uri}'] clears systemspace layer`)
     this.systemspaceZIndex[j] = null
@@ -412,6 +415,9 @@ Light.prototype.stopFile = function (appId, uri) {
         continue
       }
       if (appId !== this.userspaceZIndex[i].appId) {
+        continue
+      }
+      if (uri && uri !== this.userspaceZIndex[i].uri) {
         continue
       }
       // clear z-index
