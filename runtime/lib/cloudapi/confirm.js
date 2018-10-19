@@ -3,7 +3,7 @@
 var https = require('https')
 var logger = require('logger')('sendConfirm')
 var getAuth = require('./getAuth')
-var env = require('../env')()
+var env = require('@yoda/env')()
 
 var DEFAULT_HOST = env.cloudgw.restful
 var DEFAULT_URI = '/v1/skill/dispatch/setConfirm'

@@ -6,7 +6,7 @@ var floraFactory = require('@yoda/flora')
 var FloraComp = require('@yoda/flora/comp')
 
 var floraConfig = require('/etc/yoda/flora-config.json')
-var globalEnv = require('../env')()
+var globalEnv = require('@yoda/env')()
 
 var asr2nlpId = 'js-AppRuntime'
 var asr2nlpSeq = 0

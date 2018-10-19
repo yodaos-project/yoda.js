@@ -3,7 +3,7 @@
 var crypto = require('crypto')
 var https = require('https')
 var logger = require('logger')('alarm')
-var DEFAULT_HOST = require('/usr/lib/yoda/runtime/lib/env')().skills.alarmUri
+var DEFAULT_HOST = require('@yoda/env')().skills.alarmUri
 var DEFAULT_URI = '/skill-alarm/alarm/operate'
 var id = 0
 
