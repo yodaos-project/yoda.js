@@ -65,8 +65,22 @@ function MediaPlayer (stream) {
   this._handle = null
   this._seekcompleteCb = null
   this._initialize()
+  /**
+   * @property {string} indicates current state of the player
+   */
+  this.status = MediaPlayer.status.idle
 }
 inherits(MediaPlayer, EventEmitter)
+
+/**
+ * @memberof module:@yoda/multimedia~MediaPlayer
+ * @member {object} status
+ */
+MediaPlayer.status = {
+  idle: 'idle',
+  preparing: 'preparing',
+  prepared: 'prepared'
+}
 
 /**
  * Initialize the media player, set callbacks
@@ -89,6 +103,7 @@ MediaPlayer.prototype._initialize = function () {
 MediaPlayer.prototype.onprepared = function () {
   var vol = AudioManager.getVolume(this._stream)
   AudioManager.setVolume(this._stream, vol)
+  this.status = MediaPlayer.status.prepared
   /**
    * Prepared event, media resource is loaded
    * @event module:@yoda/multimedia~MediaPlayer#prepared
@@ -142,6 +157,7 @@ MediaPlayer.prototype.prepare = function (uri) {
   if (!uri) {
     throw new Error('url must be a valid string')
   }
+  this.status = MediaPlayer.status.preparing
   return this._handle.prepare(uri)
 }
 
@@ -153,6 +169,10 @@ MediaPlayer.prototype.prepare = function (uri) {
 MediaPlayer.prototype.start = function (uri) {
   if (uri) {
     this._handle.prepare(uri)
+    this.once('prepared', () => this._handle.start())
+    return
+  }
+  if (this.status === MediaPlayer.status.preparing) {
     this.once('prepared', () => this._handle.start())
     return
   }
@@ -180,6 +200,10 @@ MediaPlayer.prototype.pause = function () {
  * resume the paused media.
  */
 MediaPlayer.prototype.resume = function () {
+  if (this.status === MediaPlayer.status.preparing) {
+    this.once('prepared', () => this._handle.resume())
+    return
+  }
   return this._handle.resume()
 }
 
