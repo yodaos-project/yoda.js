@@ -7,6 +7,7 @@
   "STRING_CONNECED": "已连接上你的",
   "STRING_OPENFAILED": "打开蓝牙失败",
   "STRING_ASK": "你可以对我说，若琪，打开蓝牙",
-  "STRING_DISCONNECT_LINK": "已断开你的蓝牙设备"
+  "STRING_DISCONNECT_LINK": "已断开你的蓝牙设备",
+  "STRING_CLOSED": "蓝牙已关闭"
 }
 

@@ -67,10 +67,7 @@ module.exports = function (activity) {
         'system://connectbluetooth.ogg')
     }
     if (message.a2dpstate === 'closed') {
-      activity.setForeground().then(() => {
-        activity.playSound('system://closebluetooth.ogg')
-          .then(() => activity.exit({ clearContext: true }))
-      })
+      mediaAndSpeak(textTable['STRING_CLOSED'], 'system://closebluetooth.ogg')
     }
   }
   function bluetoothMessagelight (message) {
