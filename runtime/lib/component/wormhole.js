@@ -26,7 +26,13 @@ Wormhole.prototype.handlers = {
     })
   },
   cloud_forward: function (data) {
-    this.runtime.onCloudForward(data)
+    try {
+      var msg = JSON.parse(data)
+      var params = JSON.parse(msg.content.params)
+      this.runtime.onVoiceCommand('', params.nlp, params.action)
+    } catch (err) {
+      logger.error(err && err.stack)
+    }
   },
   forward: function (data) {
     this.runtime.onForward(data)
