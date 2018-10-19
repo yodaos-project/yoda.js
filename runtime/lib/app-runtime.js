@@ -1068,6 +1068,7 @@ AppRuntime.prototype.onLoggedIn = function () {
         logger.error('Unexpected error on starting daemon apps', err.stack)
         return sendReady()
       }).catch(err => logger.error('Unexpected error on destroying all apps', err.stack)),
+    this.turen.setTurenStartupFlag(),
     this.initiate()
       .then(() => new Promise(resolve => ota.getInfoIfFirstUpgradedBoot((err, info) => {
         if (err) {

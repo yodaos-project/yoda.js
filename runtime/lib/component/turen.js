@@ -1,4 +1,5 @@
 var logger = require('logger')('turen')
+var fs = require('fs')
 
 var _ = require('@yoda/util')._
 var wifi = require('@yoda/wifi')
@@ -421,4 +422,21 @@ Turen.prototype.deleteVtWord = function deleteVtWord (activationWord) {
   var caps = new Caps()
   caps.write(activationWord)
   this.runtime.flora.post(VT_WORDS_DEL_WORD_CHANNEL, caps)
+}
+
+/**
+ * Set a flag which informs startup service that it is time to boot turenproc.
+ */
+Turen.prototype.setTurenStartupFlag = function setTurenStartupFlag () {
+  return new Promise((resolve, reject) => {
+    /**
+     * intended typo: bootts
+     */
+    fs.writeFile('/tmp/.com.rokid.activation.bootts', '', err => {
+      if (err) {
+        return reject(err)
+      }
+      resolve()
+    })
+  })
 }
