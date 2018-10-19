@@ -750,22 +750,7 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
  * @param {string} appId
  * @private
  */
-AppRuntime.prototype.deleteDbusApp = function (appId) {
-
-}
-
-/**
- * mock nlp response
- * @param {object} nlp
- * @param {object} action
- * @private
- */
-AppRuntime.prototype.mockNLPResponse = function (nlp, action) {
-  var appId = nlp.cloud ? '@yoda/cloudappclient' : nlp.appId
-  if (appId === this.life.getCurrentAppId()) {
-    this.life.onLifeCycle(appId, 'request', [ nlp, action ])
-  }
-}
+AppRuntime.prototype.deleteDbusApp = function (appId) {}
 
 /**
  * sync cloudappclient appid stack
@@ -800,46 +785,6 @@ AppRuntime.prototype.startApp = function (skillId, nlp, action, options) {
   action.response.action.appId = skillId
   action.response.action.form = 'cut'
   return this.onVoiceCommand('', nlp, action, options)
-}
-
-/**
- * @private
- */
-AppRuntime.prototype.sendNLPToApp = function (skillId, nlp, action) {
-  var curAppId = this.life.getCurrentAppId()
-  var appId = this.loader.getAppIdBySkillId(skillId)
-  if (appId != null && curAppId === appId) {
-    nlp.cloud = false
-    nlp.appId = skillId
-    action = {
-      appId: skillId,
-      startWithActiveWord: false,
-      response: {
-        action: action || {}
-      }
-    }
-    action.response.action.appId = skillId
-    action.response.action.form = 'cut'
-    this.life.onLifeCycle(appId, 'request', [nlp, action])
-  } else {
-    logger.log(`send NLP to App failed, AppId ${appId} not in active, active app: ${curAppId}`, nlp)
-  }
-}
-
-/**
- * 处理App发送过来的模拟NLP
- * @param {string} message
- * @private
- */
-AppRuntime.prototype.onCloudForward = function (message) {
-  try {
-    var msg = JSON.parse(message)
-    var params = JSON.parse(msg.content.params)
-    // 模拟nlp
-    this.onVoiceCommand('', params.nlp, params.action)
-  } catch (err) {
-    logger.error(err && err.stack)
-  }
 }
 
 /**
