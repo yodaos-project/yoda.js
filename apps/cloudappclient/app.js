@@ -9,6 +9,7 @@ var _ = require('@yoda/util')._
 
 var Manager = require('./manager')
 
+// identify if the skill should be to restored
 var needResume = false
 
 module.exports = activity => {
@@ -28,12 +29,12 @@ module.exports = activity => {
     activity.syncCloudAppIdStack(stack)
   })
   sos.on('empty', () => {
-    needResume = false
-
     clearTimeout(taskTimerHandle)
     taskTimerHandle = setTimeout(() => {
       logger.log('cloudAppClient was setBackground, because there is no skill to execute')
       activity.setBackground()
+      // currently no skill to execute, so don't resume
+      needResume = false
     }, 0)
   })
 
@@ -213,6 +214,15 @@ module.exports = activity => {
 
   activity.on('resume', function () {
     logger.log(this.appId + ' resumed')
+    if (needResume) {
+      clearTimeout(taskTimerHandle)
+      needResume = false
+      sos.resume()
+    }
+  })
+  // active event will emit when resetAwaken
+  activity.on('active', function () {
+    logger.log(`${this.appId} actived`)
     if (needResume) {
       clearTimeout(taskTimerHandle)
       needResume = false
