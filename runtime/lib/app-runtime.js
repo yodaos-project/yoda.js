@@ -403,8 +403,8 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
       }
 
       logger.info(`app is preemptive, activating app ${appId}`)
-      this.updateCloudStack(nlp.appId, form)
       return this.life.activateAppById(appId, form, carrierId)
+        .then(() => this.updateCloudStack(nlp.appId, form))
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .catch(err => {
@@ -454,8 +454,8 @@ AppRuntime.prototype.openUrl = function (url, options) {
       }
 
       logger.info(`app is preemptive, activating app ${appId}`)
-      this.updateCloudStack(skillId, form)
       return this.life.activateAppById(appId, form, carrierId)
+        .then(() => this.updateCloudStack(skillId, form))
     })
     .then(() => this.life.onLifeCycle(appId, 'url', [ urlObj ]))
     .then(() => true)
