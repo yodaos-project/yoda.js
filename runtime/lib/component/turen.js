@@ -168,17 +168,24 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
     return Promise.all(promises)
   }
 
-  var currentAppId = this.runtime.life.getCurrentAppId()
-  logger.info('trying to resume previously awaken paused tts of app', currentAppId)
-  promises.push(this.runtime.ttsMethod('resetAwaken', [ currentAppId ]))
+  return Promise.all(promises.concat(this.recoverPausedOnAwaken()))
+}
 
-  logger.info('trying to resume previously awaken paused media')
-  promises.push(this.runtime.multimediaMethod('resetAwaken', [ currentAppId ]))
+/**
+ * Recovers paused tts/media on awaken.
+ * @private
+ */
+Turen.prototype.recoverPausedOnAwaken = function recoverPausedOnAwaken () {
+  var currentAppId = this.runtime.life.getCurrentAppId()
 
   logger.info('unmute possibly paused bluetooth player')
   this.bluetoothPlayer && this.bluetoothPlayer.resume()
 
-  return Promise.all(promises)
+  logger.info('trying to resume previously awaken paused tts/media', currentAppId)
+  return Promise.all([
+    this.runtime.ttsMethod('resetAwaken', [ currentAppId ]),
+    this.runtime.multimediaMethod('resetAwaken', [ currentAppId ])
+  ])
 }
 
 /**
@@ -304,7 +311,9 @@ Turen.prototype.handleEndVoice = function handleEndVoice () {
   if (this.asrState === 'end') {
     return
   }
-  return this.resetAwaken()
+  if (this.awaken) {
+    return this.resetAwaken()
+  }
 }
 
 /**
@@ -327,9 +336,25 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
      */
     this.runtime.sound.unmute()
   }
-  return this.resetAwaken({
-    recover: /** no recovery shall be made on nlp coming */ false
-  }).then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action))
+  var future
+  if (this.awaken) {
+    future = this.resetAwaken({
+      recover: /** no recovery shall be made on nlp coming */ false
+    })
+  } else {
+    future = Promise.resolve()
+  }
+  return future.then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action))
+    .then(success => {
+      if (success) {
+        return
+      }
+      /**
+       * try to recover paused tts/media on awaken in case of
+       * failed to handle incoming nlp request.
+       */
+      this.recoverPausedOnAwaken()
+    })
 }
 
 /**
