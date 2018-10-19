@@ -4,7 +4,7 @@ var https = require('https')
 var crypto = require('crypto')
 var qs = require('querystring')
 var logger = require('logger')('cloudAppClient-eventReq')
-var env = require('/usr/lib/yoda/runtime/lib/env')()
+var env = require('@yoda/env')()
 
 var CONFIG = null
 var DEFAULT_HOST = env.cloudgw.restful || 'apigwrest.open.rokid.com'

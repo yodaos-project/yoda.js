@@ -7,7 +7,7 @@ var exec = require('child_process').exec
 var sync = require('../date-sync').sync
 var property = require('@yoda/property')
 var logger = require('logger')('login')
-var env = require('../env')()
+var env = require('@yoda/env')()
 
 var uuid = property.get('ro.boot.serialno')
 var seed = property.get('ro.boot.rokidseed')

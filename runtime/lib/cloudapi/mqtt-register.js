@@ -4,7 +4,7 @@ var https = require('https')
 var qs = require('querystring')
 var crypto = require('crypto')
 var logger = require('logger')('mqtt')
-var env = require('../env')()
+var env = require('@yoda/env')()
 
 function load (config) {
   return {

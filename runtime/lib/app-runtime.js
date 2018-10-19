@@ -19,7 +19,7 @@ var property = require('@yoda/property')
 var system = require('@yoda/system')
 
 var CloudApi = require('./cloudapi')
-var env = require('./env')()
+var env = require('@yoda/env')()
 var perf = require('./performance')
 var Permission = require('./component/permission')
 var DBusRegistry = require('./component/dbus-registry')

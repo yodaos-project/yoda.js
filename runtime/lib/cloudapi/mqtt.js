@@ -5,7 +5,7 @@ var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var mqttRegister = require('./mqtt-register')
 var logger = require('logger')('mqtt')
-var env = require('../env')()
+var env = require('@yoda/env')()
 
 var reconnectTimeout = 2000
 var endpoint = env.mqtt.uri
