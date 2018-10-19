@@ -61,7 +61,7 @@ dbusApis.addMethod('stop', {
   in: ['s', 's'],
   out: ['b']
 }, function (appId, name, cb) {
-  logger.log(`stop ${appId} ${name}`)
+  logger.log(`[${appId}] request stop with uri: [${name}]`)
   if (appId) {
     service.stopFile(appId, name)
     cb(null, true)
