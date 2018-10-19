@@ -13,11 +13,11 @@ module.exports = function (activity) {
   var nameToSpeak = [ productName, `<num=tel>${uuid}</num>` ].join('')
   var textTable = require('./texts.json')
   var bluetoothMessage = {
-    'a2dpstate': null,
-    'connect_state': null,
+    'a2dpstate': 'closed',
+    'connect_state': 'invalid',
     'connect_name': null,
-    'play_state': null,
-    'broadcast_state': null
+    'play_state': 'invalid',
+    'broadcast_state': 'closed'
   }
   var activityPlayState = false
   var activityNlpIntent = null
@@ -178,6 +178,11 @@ module.exports = function (activity) {
     player = bluetooth.getPlayer()
     player.on('stateupdate', function (message) {
       logger.debug('stateupdate', message)
+      if (bluetoothMessage.a2dpstate === message.a2dpstate &&
+        bluetoothMessage.connect_state === message.connect_state &&
+        bluetoothMessage.play_state === message.play_state) {
+        return
+      }
       bluetoothMessage = Object.assign(bluetoothMessage, message)
       if (message.play_state === 'played') {
         activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
