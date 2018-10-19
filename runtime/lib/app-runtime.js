@@ -365,7 +365,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
 
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
-    return Promise.resolve()
+    return Promise.resolve(false)
   }
   var form = _.get(action, 'response.action.form')
 
@@ -386,7 +386,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     /**
      * do nothing if no `appName` specified in malicious NLP to prevent frequent harassments.
      */
-    return
+    return Promise.resolve(false)
   }
 
   return this.life.createApp(appId)
@@ -407,8 +407,10 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
         .then(() => this.updateCloudStack(nlp.appId, form))
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
+    .then(() => true)
     .catch(err => {
       logger.error(`Unexpected error on app ${appId} handling voice command`, err.stack)
+      return false
     })
 }
 
