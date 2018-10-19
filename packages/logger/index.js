@@ -7,8 +7,6 @@
  * The above command would starts a tcp server on the port 8000 for logs.
  */
 
-var util = require('util')
-
 var native
 if (process.platform !== 'darwin') {
   native = require('./logger.node')
@@ -44,9 +42,16 @@ function createLoggerFunction (level) {
     level = 3 // info
   }
   return function printlog () {
-    var line = util.format.apply(this, arguments)
-    if (line.length >= 1000) {
-      line = line.slice(0, 1000) + '...'
+    var line = ''
+    if (arguments.length === 1) {
+      line = arguments[0]
+    } else if (arguments.length === 2) {
+      line = `${arguments[0]} ${arguments[1]}`
+    } else {
+      line = Array.prototype.join.call(arguments, ' ')
+    }
+    if (line.length >= 1024) {
+      line = line.slice(0, 1024) + '...'
     }
     native.print(level, this.name, line)
   }
