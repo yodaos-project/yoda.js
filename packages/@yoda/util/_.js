@@ -3,6 +3,13 @@ function get (object, path, defaults) {
   if (object == null) {
     return defaults
   }
+
+  // optimize for directly usage
+  if (object && typeof object.hasOwnProperty === 'function' &&
+    object.hasOwnProperty(path)) {
+    return object[path]
+  }
+
   var ret
   if (typeof path !== 'string') {
     ret = object[path]
@@ -11,6 +18,7 @@ function get (object, path, defaults) {
     }
     return ret
   }
+
   var paths = path.split('.')
   ret = object[paths[0]]
   for (var idx = 1; idx < paths.length && ret != null; ++idx) {
