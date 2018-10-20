@@ -46,7 +46,7 @@ module.exports = function (activity) {
           }
         }
       } else {
-        mediaAndBackground('system://openbluetooth.ogg')
+        mediaAndSpeak(textTable['STRING_BROADCAST'], 'system://openbluetooth.ogg')
       }
     }
     if (message.a2dpstate === 'open failed' && message.connect_state === 'invalid' &&
