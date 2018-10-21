@@ -492,7 +492,7 @@ function runInCurrentContext (callback) {
  */
 function runInBackground () {
   logger.info('running ota with', process.argv[0])
-  var cp = childProcess.spawn(process.argv[0], [ '/usr/lib/yoda/runtime/services/otad/index.js' ], {
+  var cp = childProcess.spawn(process.argv[0], [ '/usr/yoda/services/otad/index.js' ], {
     env: process.env,
     detached: true,
     stdio: 'ignore'
