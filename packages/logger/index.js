@@ -43,7 +43,7 @@ function createLoggerFunction (level) {
   }
   return function printlog () {
     var line = ''
-    if (arguments.length === 1) {
+    if (arguments.length === 1 && typeof arguments[0] === 'string') {
       line = arguments[0]
     } else if (arguments.length === 2) {
       line = `${arguments[0]} ${arguments[1]}`
