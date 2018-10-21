@@ -1,4 +1,5 @@
 'use strict'
+var util = require('util')
 
 /**
  * @module logger
@@ -43,12 +44,12 @@ function createLoggerFunction (level) {
   }
   return function printlog () {
     var line = ''
-    if (arguments.length === 1 && typeof arguments[0] === 'string') {
-      line = arguments[0]
+    if (arguments.length === 1) {
+      line = util.formatValue(arguments[0])
     } else if (arguments.length === 2) {
-      line = `${arguments[0]} ${arguments[1]}`
+      line = `${util.formatValue(arguments[0])} ${util.formatValue(arguments[1])}`
     } else {
-      line = Array.prototype.join.call(arguments, ' ')
+      line = util.format.apply(util, arguments)
     }
     if (line.length >= 1024) {
       line = line.slice(0, 1024) + '...'
