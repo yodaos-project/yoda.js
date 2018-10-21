@@ -41,6 +41,7 @@ endmacro()
 
 # remote packages
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
+YodaGitPackage(node-flock https://github.com/shadow-node/flock.git master)
 
 # local packages
 YodaLocalPackage(yoda-audio @yoda/audio)
@@ -63,7 +64,6 @@ YodaLocalPackage(yoda-flora @yoda/flora)
 YodaLocalPackage(yodaos-mediakit @yodaos/mediakit)
 
 # system packages
-YodaLocalPackage(lockfile)
 YodaLocalPackage(logger)
 YodaLocalPackage(lru-cache)
 YodaLocalPackage(pseudomap)

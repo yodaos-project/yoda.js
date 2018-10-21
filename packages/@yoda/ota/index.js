@@ -28,7 +28,7 @@ var crypto = require('crypto')
 var childProcess = require('child_process')
 
 var yodaUtil = require('@yoda/util')
-var lockfile = require('lockfile')
+var flock = require('node-flock')
 var system = require('@yoda/system')
 var property = require('@yoda/property')
 var logger = require('logger')('ota')
@@ -72,25 +72,38 @@ function getImagePath (info) {
  * @param {Function} unlock
  */
 
+function lock (path, callback) {
+  yodaUtil.fs.mkdirp(upgradeDir, function onMkdirp (err) {
+    if (err) callback(err)
+    flock.lock(path, { exclusive: true }, function onLock (err, lock) {
+      if (err) {
+        return callback(err)
+      }
+      callback(null, unlock)
+
+      function unlock (unlockCallback) {
+        flock.unlock(lock, unlockCallback)
+      }
+    }) /** flock.lock */
+  }) /** mkdirp */
+}
+
+/**
+ * Acquires proc lock.
+ * @private
+ * @param {module:@yoda/ota~lockCallback} callback
+ */
+function lockProc (callback) {
+  lock(procLock, callback)
+}
+
 /**
  * Lock info file lock.
  * @private
  * @param {module:@yoda/ota~lockCallback} callback
  */
 function lockInfo (callback) {
-  yodaUtil.fs.mkdirp(upgradeDir, function onMkdirp (err) {
-    if (err) callback(err)
-    lockfile.lock(infoLock, { stale: 60 * 1000 }, function onLock (err) {
-      if (err) {
-        return callback(err)
-      }
-      callback(null, unlock)
-    })
-
-    function unlock (unlockCallback) {
-      lockfile.unlock(infoLock, unlockCallback)
-    }
-  }) /** mkdirp */
+  lock(infoLock, callback)
 }
 
 /**
@@ -339,20 +352,28 @@ function runInCurrentContext (callback) {
   if (noOta) {
     return callback(null, null)
   }
+  var unlockProc
 
   /** prepare to run */
   compose([
     /** make work dir */
     cb => yodaUtil.fs.mkdirp(upgradeDir, cb),
-    cb => lockfile.lock(procLock, { stale: /** 30m */ 30 * 60 * 1000 }, cb),
+    cb => lockProc(cb),
     /** actual procedure, shall skip if prepare failed */
-    cb => doRun(cb)
+    (cb, res) => {
+      unlockProc = res
+      doRun(cb)
+    }
   ], (err, info) => {
     if (err) {
       return callback(err)
     }
-    lockfile.unlock(procLock, () => {
-      return callback(null, info)
+    if (typeof unlockProc !== 'function') {
+      /** lockProc failed */
+      return callback(new Error('Cannot unlock proc.lock for not existing unlock handle'))
+    }
+    unlockProc(() => {
+      callback(null, info)
     })
   })
 
@@ -458,14 +479,10 @@ function runInCurrentContext (callback) {
      */
     function otaCleanup (err, ran) {
       logger.info('ota unlocking proc lock.')
-      compose([
-        cb => lockfile.unlock(procLock, cb)
-      ], () => {
-        if (ran === false) {
-          return callback(null)
-        }
-        callback(err, info)
-      })
+      if (ran === false) {
+        return callback(null)
+      }
+      callback(err, info)
     })
   }
 }
