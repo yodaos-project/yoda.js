@@ -6,7 +6,8 @@ Usage:
   -t          Only includes tests.
   -r          Only includes resources.
   -a          Include tests and resources.
-  --no-app    Exclude apps
+  --no-app    Exclude apps.
+  --no-os     Exclude runtime and packages.
 
   -s          Select which device to be installed on if multiple devices presents.
 
@@ -27,6 +28,8 @@ while [ $# -gt 0 ]; do
   case "$1" in
     -t)
       test="YES"
+      ;;
+    --no-os)
       os="NO"
       ;;
     -r)
