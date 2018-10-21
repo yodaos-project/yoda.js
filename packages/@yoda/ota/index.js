@@ -372,6 +372,7 @@ function runInCurrentContext (callback) {
       /** lockProc failed */
       return callback(new Error('Cannot unlock proc.lock for not existing unlock handle'))
     }
+    logger.info('ota unlocking proc lock.')
     unlockProc(() => {
       callback(null, info)
     })
@@ -478,7 +479,6 @@ function runInCurrentContext (callback) {
      * @param {false|undefined} ran
      */
     function otaCleanup (err, ran) {
-      logger.info('ota unlocking proc lock.')
       if (ran === false) {
         return callback(null)
       }

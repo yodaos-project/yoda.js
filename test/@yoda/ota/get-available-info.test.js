@@ -4,8 +4,8 @@ var logger = require('logger')
 var test = require('tape')
 var ota = require('@yoda/ota')
 var otaNetwork = require('@yoda/ota/network')
-var mock = require('../../helper/mock')
 var property = require('@yoda/property')
+var mock = require('../../helper/mock')
 
 function mockPropertyGet (noota) {
   var get = property.get

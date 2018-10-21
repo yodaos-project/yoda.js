@@ -21,7 +21,7 @@ test('calculateFileHash should be ok', t => {
   fs.writeFile(imageFile, JSON.stringify(info), () => {
     fs.stat(imageFile, (_, stat) => {
       ota.calculateFileHash(imageFile, (_, hash) => {
-        t.equal(hash, '401208ad792c1be1426055cd9d0b8081')
+        t.equal(hash, '620793214d689167f9adb221a1705b08')
         t.end()
       })
     })
