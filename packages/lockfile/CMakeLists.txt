@@ -1,8 +1,0 @@
-cmake_minimum_required(VERSION 3.0)
-project(node-lockfile CXX)
-set(CMAKE_CXX_STANDARD 11)
-
-file(GLOB LOCKFILE_SRC *.js)
-
-install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DIR})
-install(FILES ${LOCKFILE_SRC} DESTINATION ${CMAKE_INSTALL_DIR})
