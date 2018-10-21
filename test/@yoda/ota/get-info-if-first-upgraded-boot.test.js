@@ -2,11 +2,12 @@
 
 var logger = require('logger')('getInfoIfFirstUpgradedBoot.test')
 var test = require('tape')
-var ota = require('@yoda/ota')
 var fs = require('fs')
-var upgradeDir = '/data/upgrade'
-var infoFile = upgradeDir + '/info.json'
+var ota = require('@yoda/ota')
 var property = require('@yoda/property')
+var upgradeDir = require('./mock').upgradeDir
+
+var infoFile = upgradeDir + '/info.json'
 var systemVersionProp = 'ro.build.version.release'
 var localVersion = property.get(systemVersionProp)
 var info1 = {

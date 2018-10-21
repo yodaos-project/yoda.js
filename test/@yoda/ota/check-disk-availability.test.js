@@ -2,11 +2,13 @@
 
 var logger = require('logger')('cleanImages.test')
 var test = require('tape')
-var ota = require('@yoda/ota')
 var fs = require('fs')
-var upgradeDir = '/data/upgrade'
-var imageFile = upgradeDir + '/yctest.img'
+var ota = require('@yoda/ota')
 var system = require('@yoda/system')
+
+var upgradeDir = require('./mock').upgradeDir
+
+var imageFile = upgradeDir + '/yctest.img'
 var info = {imageUrl: '/test/test',
   authorize: '',
   changelog: 'yyyyyy',

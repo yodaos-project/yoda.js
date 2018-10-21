@@ -1,9 +1,11 @@
 'use strict'
 
 var test = require('tape')
-var ota = require('@yoda/ota')
 var fs = require('fs')
-var upgradeDir = '/data/upgrade'
+
+var ota = require('@yoda/ota')
+var upgradeDir = require('./mock').upgradeDir
+
 var infoFile = upgradeDir + '/info.json'
 var imageFile = upgradeDir + '/yctest.img'
 var info = {imageUrl: '/test/test',

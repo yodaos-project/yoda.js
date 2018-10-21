@@ -2,9 +2,11 @@
 
 var logger = require('logger')('getInfoOfPendingUpgrade.test')
 var test = require('tape')
-var ota = require('@yoda/ota')
 var fs = require('fs')
-var upgradeDir = '/data/upgrade'
+
+var ota = require('@yoda/ota')
+var upgradeDir = require('./mock').upgradeDir
+
 var infoFile = upgradeDir + '/info.json'
 var info1 = {
   imageUrl: '/test/test',
