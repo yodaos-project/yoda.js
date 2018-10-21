@@ -41,7 +41,7 @@ endmacro()
 
 # remote packages
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
-YodaGitPackage(node-flock https://github.com/shadow-node/flock.git master)
+YodaGitPackage(node-flock https://github.com/shadow-node/node-flock.git master)
 
 # local packages
 YodaLocalPackage(yoda-audio @yoda/audio)
