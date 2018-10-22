@@ -8,10 +8,11 @@ var logger = require('logger')('multimediaService')
 var audioModuleName = 'multimedia'
 AudioManager.setPlayingState(audioModuleName, false)
 
-function MultiMedia () {
+function MultiMedia (lightd) {
   EventEmitter.call(this)
   this.handle = {}
   this.pausedAppIdOnAwaken = null
+  this.lightd = lightd
 }
 inherits(MultiMedia, EventEmitter)
 
@@ -175,6 +176,34 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
     delete this.handle[appId]
     this.emit('error', '' + player.id)
     AudioManager.setPlayingState(audioModuleName, false)
+  })
+
+  player.on('blockpausemode', enabled => {
+    if (!enabled) {
+      this.lightd.invoke('stopNetworkLagSound', [])
+      clearTimeout(player.__blockpausemodeTimer)
+      return
+    }
+    logger.info('media cache blocked, waiting announcement timer.')
+
+    player.__blockpausemodeTimer = setTimeout(() => {
+      logger.info('media cache blocked, playing stage 1 announcement')
+
+      this.lightd.invoke('networkLagSound', ['/opt/media/media_network_lag_stage_1.ogg'])
+        .then(() => {
+          logger.info('media cache blocked, stage 1 result', player.blockpausemodeEnabled)
+          if (!player.blockpausemodeEnabled) return
+
+          player.__blockpausemodeTimer = setTimeout(() => {
+            logger.info('media cache blocked, playing stage 2 announcement')
+
+            this.lightd.invoke('networkLagSound', [
+              '/opt/media/media_network_lag_stage_2.ogg',
+              /** dbus bug */'true'
+            ])
+          }, 7000) /** stage 2 timer */
+        })
+    }, 5000) /** stage 1 timer */
   })
 }
 
