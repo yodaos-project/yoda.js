@@ -381,9 +381,9 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
      */
     return this.resetAwaken()
   }
-  if (!this.runtime.custodian.isPrepared()) {
+  if (!this.runtime.custodian.isPrepared() || !this.runtime.custodian.isLoggedIn()) {
     // Do noting when network is not ready
-    logger.warn('Network not connected, skip speech error')
+    logger.warn('Network not connected or not logged in, skip speech error')
     return
   }
 

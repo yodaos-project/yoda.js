@@ -13,12 +13,11 @@ var logger = require('logger')('yoda')
 
 var _ = require('@yoda/util')._
 var ota = require('@yoda/ota')
-var CloudGW = require('@yoda/cloudgw')
 var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
 var system = require('@yoda/system')
 
-var CloudApi = require('./cloudapi')
+var CloudStore = require('./cloudapi')
 var env = require('@yoda/env')()
 var perf = require('./performance')
 var Permission = require('./component/permission')
@@ -58,7 +57,9 @@ function AppRuntime () {
     scene: '',
     active: ''
   }
-  this.cloudApi = CloudApi // support cloud api. etc.. login
+  this.cloudApi = new CloudStore({
+    notify: this.handleCloudEvent.bind(this)
+  })
   this.shouldWelcome = true
   this.forceUpdateAvailable = false
 
@@ -186,13 +187,15 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
  * Handle cloud events.
  * @private
  */
-AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (data) {
-  logger.log('cloud event', data)
+AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (code, msg) {
+  logger.debug(`cloud event code=${code} msg=${msg}`)
   if (this.custodian.isRegistering() &&
     this.life.getCurrentAppId() === '@yoda/network') {
-    this.openUrl(`yoda-skill://network/cloud_status?code=${data.code}&msg=${data.msg}`, {
+    this.openUrl(`yoda-skill://network/cloud_status?code=${code}&msg=${msg}`, {
       preemptive: false
     })
+  } else {
+    logger.info('skip send to network.')
   }
 }
 
@@ -715,7 +718,7 @@ AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs)
     return Promise.reject(new Error(`App is not currently active app, active app: ${currAppId}.`))
   }
   return new Promise((resolve, reject) => {
-    this.cloudApi.sendConfirm(this.domain.active, intent, slot, options, attrs, (error) => {
+    this.cloudApi.sendNlpConform(this.domain.active, intent, slot, options, attrs, (error) => {
       if (error) {
         return reject(error)
       }
@@ -870,33 +873,19 @@ AppRuntime.prototype.onForward = function (message) {
 
 /**
  * handle mqtt unbind topic
- * @param {string} message string receive from mqtt
  */
-AppRuntime.prototype.unBindDevice = function (message) {
-  return this.cloudApi.unBindDevice()
-    .then(() => {
-      logger.info('unbind device success')
-      return this.resetNetwork({ removeAll: true })
-    })
-    .catch((err) => {
-      logger.error('unbind device error', err)
-    })
+AppRuntime.prototype.unBindDevice = function () {
+  return Promise.resolve().then(() => {
+    this.resetNetwork({ removeAll: true })
+    this.onLogout()
+  })
 }
 
 /**
- * 处理App发送的恢复出厂设置
- * @param {string} message
- * @private
+ * recover the default settings, it reboots when the request is done.
  */
-AppRuntime.prototype.onResetSettings = function (message) {
-  if (this.cloudApi == null) {
-    return Promise.reject(new Error('CloudApi not ready.'))
-  }
-
-  var CloudGw = require('@yoda/cloudgw')
-  var opts = this.onGetPropAll()
-  var cloudgw = new CloudGw(opts)
-  this.cloudApi.resetSettings(cloudgw).then(() => {
+AppRuntime.prototype.onResetSettings = function () {
+  this.cloudApi.resetSettings().then(() => {
     logger.info('system is already reset')
     system.setRecoveryMode()
     process.nextTick(system.reboot)
@@ -1005,43 +994,35 @@ AppRuntime.prototype.reconnect = function () {
   }
 
   // login -> mqtt
-  var onNotify = (code, msg) => {
-    this.handleCloudEvent({ code: code, msg: msg })
-  }
   this.custodian.onLogout()
-  this.cloudApi.connect(onNotify).then((mqtt) => {
-    // load the system configuration
-    var config = mqtt.config
-    var options = {
-      uri: env.speechUri,
-      key: config.key,
-      secret: config.secret,
-      deviceTypeId: config.deviceTypeId,
-      deviceId: config.deviceId
-    }
-    var cloudgw = new CloudGW(options)
-    require('@yoda/ota/network').cloudgw = cloudgw
-    this.cloudApi.updateBasicInfo(cloudgw)
-      .catch(err => {
+  this.cloudApi.connect()
+    .then((config) => {
+      var opts = Object.assign({ uri: env.speechUri }, config)
+
+      // TODO: move to use cloudapi?
+      require('@yoda/ota/network').cloudgw = this.cloudApi.cloudgw
+      // FIXME: schedule this update later?
+      this.cloudApi.updateBasicInfo().catch((err) => {
         logger.error('Unexpected error on updating basic info', err.stack)
       })
-    this.flora.updateSpeechPrepareOptions(options)
 
-    // overwrite `onGetPropAll`.
-    this.onGetPropAll = function onGetPropAll () {
-      return Object.assign({}, config)
-    }
-    this.wormhole.init(mqtt)
-    this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
-    this.onLoggedIn()
-  }).catch((err) => {
-    if (err && err.code === 'BIND_MASTER_REQUIRED') {
-      logger.error('bind master is required, just clear the local and enter network')
-      this.custodian.resetNetwork()
-    } else {
-      logger.error('initializing occurs error', err && err.stack)
-    }
-  })
+      this.flora.updateSpeechPrepareOptions(opts)
+
+      // overwrite `onGetPropAll`.
+      this.onGetPropAll = function onGetPropAll () {
+        return Object.assign({}, config)
+      }
+      this.wormhole.init(this.cloudApi.mqttcli)
+      this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
+      this.onLoggedIn()
+    }, (err) => {
+      if (err && err.code === 'BIND_MASTER_REQUIRED') {
+        logger.error('bind master is required, just clear the local and enter network')
+        this.custodian.resetNetwork()
+      } else {
+        logger.error('initializing occurs error', err && err.stack)
+      }
+    })
 }
 
 /**
