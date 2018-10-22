@@ -157,7 +157,15 @@ dbusApis.addMethod('networkLagSound', {
     return cb(null, false)
   }
   lastPlayed = Date.now()
-  service.appSound('@network', name, (err) => {
+  service.loadfile('@network-lag', '/opt/light/loading.js',
+    { timeout: /** shall keep playing if possible */0 },
+    {},
+    (err) => {
+      if (err) {
+        logger.error('network lag loading effect error', err.stack)
+      }
+    })
+  service.appSound('@network-lag', name, (err) => {
     if (err) {
       logger.error(`appSound error: ${name}, ${err.message}`)
       cb(null, false)
@@ -171,7 +179,8 @@ dbusApis.addMethod('stopNetworkLagSound', {
   in: [],
   out: ['b']
 }, function stopNetworkLagSound (cb) {
-  service.stopSoundByAppId('@network')
+  service.stopSoundByAppId('@network-lag')
+  service.stopFile('@network-lag')
   cb(null, true)
 })
 

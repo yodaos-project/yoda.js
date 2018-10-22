@@ -383,9 +383,22 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
   }
   if (!this.runtime.custodian.isPrepared()) {
     // Do noting when network is not ready
-    logger.warn('Network not connected, skip malicious nlp result')
+    logger.warn('Network not connected, skip speech error')
     return
   }
+
+  if (errCode >= 100) {
+    /** network error */
+    return this.runtime.light.lightMethod('networkLagSound', [ '/opt/media/network_lag_common.ogg' ])
+      .then(
+        () => this.recoverPausedOnAwaken(),
+        err => {
+          logger.error('Unexpected error on playing network lag sound', err.stack)
+          return this.recoverPausedOnAwaken()
+        }
+      )
+  }
+
   this.runtime.openUrl(`yoda-skill://rokid-exception/speech-error?errCode=${errCode}`)
 }
 
