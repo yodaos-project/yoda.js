@@ -81,6 +81,7 @@ Custodian.prototype.onLoggedIn = function onLoggedIn () {
 
 Custodian.prototype.onLogout = function onLogout () {
   this._loggedIn = false
+  this.runtime.wormhole.setOffline()
   property.set('state.rokid.logged', 'false')
   // reset the onGetPropAll...
   this.runtime.onGetPropAll = function () {
@@ -105,7 +106,6 @@ Custodian.prototype.resetNetwork = function resetNetwork (options) {
     wifi.disableAll()
   }
   property.set('state.network.connected', 'false')
-  this.runtime.wormhole.setOffline()
 
   this._networkConnected = false
   this.runtime.openUrl('yoda-skill://network/setup', { preemptive: true })

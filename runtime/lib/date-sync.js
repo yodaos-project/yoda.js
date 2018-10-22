@@ -21,7 +21,7 @@ function sync (source) {
   ].join(' ')
 
   var cmd = `date -s "${str}"`
-  logger.log(`exec ${cmd} from ${source}`)
+  logger.log(`exec ${cmd} from <${source}>`)
   exec(cmd)
 }
 exports.sync = sync
