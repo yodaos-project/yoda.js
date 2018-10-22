@@ -1,17 +1,8 @@
 #include "MediaPlayer.h"
 
-enum PlayerEventType {
-  MULTIMEDIA_PLAYER_NOOP = 0,
-  MULTIMEDIA_PLAYER_PREPARED = 1,
-  MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE = 2,
-  MULTIMEDIA_BUFFERING_UPDATE = 3,
-  MULTIMEDIA_SEEK_COMPLETE = 4,
-  MULTIMEDIA_ERROR = 100,
-};
-
 void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
   printf("got event %d thread %d\n", type, from);
-  if (type == MULTIMEDIA_PLAYER_PREPARED) {
+  if (type == MEDIA_PREPARED) {
     this->prepared = true;
   }
   if (this->prepared || type == MEDIA_ERROR) {
@@ -46,6 +37,10 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
     notifyFn = iotjs_jval_get_property(jthis, "onbufferingupdate");
   } else if (event->type == MEDIA_SEEK_COMPLETE) {
     notifyFn = iotjs_jval_get_property(jthis, "onseekcomplete");
+  } else if (event->type == MEDIA_PLAYING_STATUS) {
+    notifyFn = iotjs_jval_get_property(jthis, "onplayingstatus");
+  } else if (event->type == MEDIA_BLOCK_PAUSE_MODE) {
+    notifyFn = iotjs_jval_get_property(jthis, "onblockpausemode");
   } else if (event->type == MEDIA_ERROR) {
     fprintf(stderr, "[jsruntime] player occurrs an error %d %d %d", event->ext1,
             event->ext2, event->from);
@@ -58,7 +53,10 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
     return;
   }
 
-  iotjs_jargs_t jargs = iotjs_jargs_create(0);
+  iotjs_jargs_t jargs = iotjs_jargs_create(2);
+  iotjs_jargs_append_number(&jargs, event->ext1);
+  iotjs_jargs_append_number(&jargs, event->ext2);
+
   iotjs_make_callback(notifyFn, jerry_create_undefined(), &jargs);
   iotjs_jargs_destroy(&jargs);
   jerry_release_value(notifyFn);
@@ -126,13 +124,15 @@ JS_FUNCTION(Player) {
 
   jerry_value_t jtag = jargv[0];
   if (!jerry_value_is_string(jtag)) {
-    _this->handle = new MediaPlayer(NULL);
+    _this->handle = new MediaPlayer(NULL, 5 /** s */, true);
+    int ret = _this->handle->enableCacheMode(true);
   } else {
     jerry_size_t size = jerry_get_string_size(jtag);
     char* tag = iotjs_buffer_allocate(size + 1);
     jerry_string_to_char_buffer(jtag, (jerry_char_t*)tag, size);
     tag[size] = '\0';
-    _this->handle = new MediaPlayer(tag);
+    _this->handle = new MediaPlayer(tag, 5 /** s */, true);
+    int ret = _this->handle->enableCacheMode(true);
     iotjs_buffer_release(tag);
   }
 
@@ -355,20 +355,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "sessionIdSetter", SessionIdSetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
-  // set events
-  jerry_value_t events = jerry_create_object();
-  iotjs_set_constant(events, MULTIMEDIA_PLAYER_NOOP, "noop");
-  iotjs_set_constant(events, MULTIMEDIA_PLAYER_PREPARED, "prepared");
-  iotjs_set_constant(events, MULTIMEDIA_PLAYER_PLAYBACK_COMPLETE,
-                     "playback complete");
-  iotjs_set_constant(events, MULTIMEDIA_BUFFERING_UPDATE, "buffering update");
-  iotjs_set_constant(events, MULTIMEDIA_SEEK_COMPLETE, "seek complete");
-  iotjs_set_constant(events, MULTIMEDIA_ERROR, "error");
-  iotjs_jval_set_property_jval(exports, "Events", events);
-
   jerry_release_value(proto);
   jerry_release_value(jconstructor);
-  jerry_release_value(events);
 }
 
 NODE_MODULE(MediaPlayer, init)

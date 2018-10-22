@@ -137,6 +137,44 @@ dbusApis.addMethod('reset', {
   cb(null, true)
 })
 
+var lastPlayed = null
+dbusApis.addMethod('networkLagSound', {
+  in: ['s', 's'],
+  out: ['b']
+}, function networkLagSound (name, ignoreGap, cb) {
+  if (typeof ignoreGap === 'function') {
+    cb = ignoreGap
+    ignoreGap = false
+  }
+  // FIXME: dbus bug to pass boolean as argument
+  ignoreGap = !!ignoreGap
+  if (!name || typeof name !== 'string') {
+    logger.error(`unexpected argument type ${typeof name} of networkLagSound.`)
+    return cb(null, false)
+  }
+  if (!ignoreGap && lastPlayed && Date.now() - lastPlayed < 15 * 1000) {
+    logger.warn(`skip network lag sound ${name} for recently played lag sound.`)
+    return cb(null, false)
+  }
+  lastPlayed = Date.now()
+  service.appSound('@network', name, (err) => {
+    if (err) {
+      logger.error(`appSound error: ${name}, ${err.message}`)
+      cb(null, false)
+      return
+    }
+    cb(null, true)
+  })
+})
+
+dbusApis.addMethod('stopNetworkLagSound', {
+  in: [],
+  out: ['b']
+}, function stopNetworkLagSound (cb) {
+  service.stopSoundByAppId('@network')
+  cb(null, true)
+})
+
 dbusApis.update()
 
 logger.log('light service started')

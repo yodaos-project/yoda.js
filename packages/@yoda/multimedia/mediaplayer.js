@@ -93,6 +93,8 @@ MediaPlayer.prototype._initialize = function () {
   this._handle.onplaybackcomplete = this.onplaybackcomplete.bind(this)
   this._handle.onbufferingupdate = this.onbufferingupdate.bind(this)
   this._handle.onseekcomplete = this.onseekcomplete.bind(this)
+  this._handle.onplayingstatus = this.onplayingstatus.bind(this)
+  this._handle.onblockpausemode = this.onblockpausemode.bind(this)
   this._handle.onerror = this.onerror.bind(this)
 }
 
@@ -137,6 +139,20 @@ MediaPlayer.prototype.onseekcomplete = function () {
    * @event module:@yoda/multimedia~MediaPlayer#seekcomplete
    */
   this.emit('seekcomplete')
+}
+
+MediaPlayer.prototype.onplayingstatus = function (ext1, ext2) {
+  // TODO: nothing to to now
+}
+
+MediaPlayer.prototype.onblockpausemode = function (ext1, ext2) {
+  this.blockpausemodeEnabled = ext1 === 0
+  /**
+   * Fired when player is blocked for no cache available to play.
+   * @event module:@yoda/multimedia~MediaPlayer#blockpausemode
+   * @param {boolean} enabled
+   */
+  this.emit('blockpausemode', this.blockpausemodeEnabled)
 }
 
 MediaPlayer.prototype.onerror = function () {

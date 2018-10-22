@@ -8,12 +8,19 @@ var Service = require('./service')
 var Flora = require('./flora')
 var Dbus = require('dbus')
 var logger = require('logger')('multimediad')
+var Remote = require('../../lib/dbus-remote-call.js')
 
 var dbusService = Dbus.registerService('session', 'com.service.multimedia')
 var dbusObject = dbusService.createObject('/multimedia/service')
 var dbusApis = dbusObject.createInterface('multimedia.service')
 
-var service = new Service()
+var lightd = new Remote(dbusService._dbus, {
+  dbusService: 'com.service.light',
+  dbusObjectPath: '/rokid/light',
+  dbusInterface: 'com.rokid.light.key'
+})
+
+var service = new Service(lightd)
 var flora = new Flora(service)
 flora.init()
 
