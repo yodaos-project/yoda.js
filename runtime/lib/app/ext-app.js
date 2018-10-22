@@ -269,7 +269,7 @@ EventBus.prototype['subscribe-ack'] = function onSubscribeAck (message) {
         },
         timeout)
       self.eventSynTable[eventId] = function onAck () {
-        this.logger.info('onEventTrigger resolved', eventId)
+        self.logger.info('onEventTrigger resolved', eventId)
         clearTimeout(timer)
         resolve()
       }

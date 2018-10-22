@@ -63,7 +63,7 @@ Object.assign(LightDescriptor.prototype, {
 
 test('create ext-app: appHome is null', t => {
   var runtime = new EventEmitter()
-  extApp('@test/ipc-test', null, runtime).then(descriptor => {
+  extApp('@test/ipc-test', { appHome: null }, runtime).then(descriptor => {
     t.fail('appHome is null')
   }, err => {
     t.ok(err !== null)
@@ -73,7 +73,7 @@ test('create ext-app: appHome is null', t => {
 
 test('create ext-app: runtime is err path', t => {
   var appHome = path.join(helper.paths.fixture, 'errapp')
-  extApp('@test/ipc-test', appHome, null).then(descriptor => {
+  extApp('@test/ipc-test', { appHome: appHome }, null).then(descriptor => {
     t.fail('appHome is err path')
   }, err => {
     t.ok(err !== null)
@@ -85,7 +85,7 @@ test('should listen no events if no listener presents', t => {
   var target = path.join(helper.paths.fixture, 'noop-app')
 
   var runtime = new EventEmitter()
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       t.strictEqual(descriptor.listeners().length, 0)
       descriptor.destruct()
@@ -101,7 +101,7 @@ test('should listen events in need', t => {
   var target = path.join(helper.paths.fixture, 'simple-app')
 
   var runtime = new EventEmitter()
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       ;['create', 'pause', 'resume', 'destroy', 'request'].forEach(it => {
         t.assert(descriptor.listeners(it).length > 0, `listener of '${it}' shall presents.`)
@@ -119,7 +119,7 @@ test('should listen events in nested namespaces in need', t => {
   var target = path.join(helper.paths.fixture, 'simple-app')
 
   var runtime = new EventEmitter()
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       t.assert(descriptor.tts.listeners('end').length > 0, `listener of 'tts.end' shall presents.`)
       descriptor.destruct()
@@ -135,7 +135,7 @@ test('add test method, return resolve', t => {
   var target = path.join(helper.paths.fixture, 'ext-app')
   var runtime = new EventEmitter()
   t.plan(4)
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       t.equal(typeof descriptor.light.lighttest, 'object')
       t.equal(descriptor.light.lighttest.type, 'method')
@@ -159,7 +159,7 @@ test('add test method, return reject', t => {
   var target = path.join(helper.paths.fixture, 'ext-app')
   var runtime = new EventEmitter()
   t.plan(4)
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       t.equal(typeof descriptor.light.lighttest, 'object')
       t.equal(descriptor.light.lighttest.type, 'method')
@@ -182,10 +182,16 @@ test('add test method, return reject', t => {
 test('add descriptor type = value', t => {
   var target = path.join(helper.paths.fixture, 'ext-app')
   var runtime = new EventEmitter()
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       descriptor.emit('resume', 'testValueString', 'testValueObject', 'testValueNumber')
       descriptor._childProcess.on('message', message => {
+        if (message.type !== 'test') {
+          return
+        }
+        if (message.event !== 'resume') {
+          return
+        }
         t.equal(message.string, descriptor.testValueString.value, 'string')
         t.equal(message.number, descriptor.testValueNumber.value, 'number')
         t.equal(typeof message.number, 'number')
@@ -203,7 +209,7 @@ test('should subscribe event-ack', t => {
   var target = path.join(helper.paths.fixture, 'simple-app')
 
   var runtime = new EventEmitter()
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       var activityEvents = Object.keys(ActivityDescriptor.prototype).filter(key => {
         var desc = ActivityDescriptor.prototype[key]
@@ -235,7 +241,7 @@ test('should trigger events and pass arguments', t => {
     appId: '@test'
   }
   var runtime = new EventEmitter()
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       descriptor.emit('request', nlp, action)
       descriptor._childProcess.on('message', message => {
@@ -261,7 +267,7 @@ test('should trigger events in namespaces and pass arguments', t => {
     appId: '@test'
   }
   var runtime = new EventEmitter()
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       descriptor.tts.emit('end', arg1, arg2)
       descriptor._childProcess.on('message', message => {
@@ -288,7 +294,7 @@ test('should trigger events and acknowledge it', t => {
     appId: '@test'
   }
   var runtime = new EventEmitter()
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       var promise
       var err
@@ -330,7 +336,7 @@ test('should invoke methods and callback', t => {
       return Promise.resolve(expectedData)
     }
   }
-  extApp('@test', target, runtime)
+  extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       descriptor.emit('create')
       descriptor._childProcess.on('message', message => {
@@ -342,25 +348,4 @@ test('should invoke methods and callback', t => {
         descriptor.destruct()
       })
     })
-})
-
-/**
- * bug ?
- */
-test.skip('double subscription on event-ack', t => {
-  Object.assign(ActivityDescriptor.prototype, {
-    'test-suback': {
-      type: 'event-ack',
-      trigger: 'get'
-    }
-  })
-  var appHome = path.join(helper.paths.fixture, 'ext-app')
-  var runtime = {}
-  extApp('@test-app', appHome, runtime).then(descriptor => {
-    t.fail('should throw error')
-    t.end()
-  }, err => {
-    t.error(err)
-    t.end()
-  })
 })
