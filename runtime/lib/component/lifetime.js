@@ -172,7 +172,7 @@ LaVieEnPile.prototype.isBackgroundApp = function isBackgroundApp (appId) {
  * @param {string} appId -
  * @returns {boolean} true if active, false otherwise.
  */
-LaVieEnPile.prototype.isAppActive = function isAppActive (appId) {
+LaVieEnPile.prototype.isAppInStack = function isAppInStack (appId) {
   return this.activeSlots.cut === appId || this.activeSlots.scene === appId
 }
 
@@ -183,16 +183,7 @@ LaVieEnPile.prototype.isAppActive = function isAppActive (appId) {
  */
 LaVieEnPile.prototype.isAppInactive = function isAppInactive (appId) {
   return this.scheduler.isAppRunning(appId) &&
-    !(this.isAppActive(appId) || this.isBackgroundApp(appId))
-}
-
-/**
- * Get if app is running (app is active, inactive, or in background).
- * @param {string} appId -
- * @returns {boolean} true if running, false otherwise.
- */
-LaVieEnPile.prototype.isAppRunning = function isAppRunning (appId) {
-  return this.scheduler.getAppById(appId) != null
+    !(this.isAppInStack(appId) || this.isBackgroundApp(appId))
 }
 
 /**
@@ -266,7 +257,7 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
 LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, carrierId, options) {
   var activateParams = _.get(options, 'activateParams', [])
 
-  if (!this.isAppRunning(appId)) {
+  if (!this.scheduler.isAppRunning(appId)) {
     return Promise.reject(new Error(`App ${appId} is ${this.scheduler.getAppStatusById(appId)}, launch it first.`))
   }
 
@@ -297,7 +288,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
      * exit the carrier before next steps.
      */
     logger.info(`previous app ${lastSubordinate} started by a carrier`, cid)
-    if (cid !== appId && this.isAppRunning(cid)) {
+    if (cid !== appId && this.scheduler.isAppRunning(cid)) {
       logger.info(`carrier ${cid} is alive and not the app to be activated, destroying`)
       future = future.then(() => this.destroyAppById(cid))
     }
@@ -398,6 +389,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   if (this.monopolist === appId) {
     this.monopolist = null
   }
+  var currentAppId = this.getCurrentAppId()
 
   var removed = this.activeSlots.removeApp(appId)
   if (!removed && !force) {
@@ -405,7 +397,10 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
     logger.info('app is not in stack, skip deactivating', appId)
     return Promise.resolve()
   }
-  logger.info('deactivating app', appId, ', recover?', recover)
+  logger.info('deactivating app', appId, ', recover?', recover, `currentApp(${currentAppId})`)
+  if (recover && currentAppId !== appId) {
+    recover = false
+  }
 
   delete this.appDataMap[appId]
   if (removed) {
@@ -430,7 +425,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
     /**
      * If app is brought up by a carrier, re-activate the carrier on exit of app.
      */
-    if (this.isAppRunning(carrierId)) {
+    if (this.scheduler.isAppRunning(carrierId)) {
       logger.info(`app ${appId} is brought up by a carrier '${carrierId}', recovering.`)
       return deactivating.then(() => {
         return this.activateAppById(carrierId)
@@ -634,9 +629,16 @@ LaVieEnPile.prototype.destroyAll = function (options) {
   /** destroy apps in stack in a reversed order */
   // TODO: use event `suspend` instead of `destroy` in LaVieEnPile
   return Promise.all(Object.keys(this.scheduler.appMap)
-    .map(it =>
-      this.onLifeCycle(it, 'destroy')
-        .catch(err => logger.error('Unexpected error on send destroy event to app', it, err.stack))))
+    .map(it => {
+      if (!this.scheduler.isAppRunning(it)) {
+        /**
+         * App is already not running, skip destroying.
+         */
+        return Promise.resolve()
+      }
+      return this.onLifeCycle(it, 'destroy')
+        .catch(err => logger.error('Unexpected error on send destroy event to app', it, err.stack))
+    }))
     .then(() => this.scheduler.suspendAllApps({ force: force }))
 }
 
@@ -662,6 +664,14 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
     this.backgroundAppIds.splice(backgroundIdx, 1)
   }
   delete this.appDataMap[appId]
+
+  if (!this.scheduler.isAppRunning(appId)) {
+    /**
+     * App is already not running, skip destroying.
+     */
+    logger.info(`app(${appId}) is not running, skip destroying.`)
+    return Promise.resolve()
+  }
 
   // TODO: use event `suspend` instead of `destroy` in LaVieEnPile
   return this.onLifeCycle(appId, 'destroy')
