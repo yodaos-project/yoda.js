@@ -25,7 +25,7 @@ Object.assign(ActivityDescriptor.prototype, {
 test('should listen no events if no listener presents', t => {
   proxy.removeAllListeners()
   var runtime = new EventEmitter()
-  lightApp('@test', path.join(helper.paths.fixture, 'noop-app'), runtime)
+  lightApp('@test', { appHome: path.join(helper.paths.fixture, 'noop-app') }, runtime)
     .then(descriptor => {
       t.strictEqual(descriptor.listeners().length, 0)
       t.end()
@@ -39,7 +39,7 @@ test('should listen no events if no listener presents', t => {
 test('should listen events in need', t => {
   proxy.removeAllListeners()
   var runtime = new EventEmitter()
-  lightApp('@test', target, runtime)
+  lightApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       ;['create', 'pause', 'resume', 'destroy', 'request'].forEach(it => {
         t.assert(descriptor.listeners(it).length > 0, `listener of '${it}' shall presents.`)
@@ -55,7 +55,7 @@ test('should listen events in need', t => {
 test('should listen events in nested namespaces in need', t => {
   proxy.removeAllListeners()
   var runtime = new EventEmitter()
-  lightApp('@test', target, runtime)
+  lightApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       t.assert(descriptor.tts.listeners('end').length > 0, `listener of 'tts.end' shall presents.`)
       t.end()
@@ -76,7 +76,7 @@ test('should subscribe event-ack', t => {
     t.strictEqual(arg2, 'arg2')
   })
 
-  lightApp('@test', target, runtime)
+  lightApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       var eventDescriptor = ActivityDescriptor.prototype['test-ack']
 
@@ -102,7 +102,7 @@ test('should test-invoke', t => {
     t.strictEqual(pickup, 'arg1')
     t.strictEqual(duration, 'arg2')
   }
-  lightApp('@test', target, runtime)
+  lightApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       proxy.on('test', event => {
         if (event.event !== 'invoke') {
@@ -137,7 +137,7 @@ test('should receive life cycle events', t => {
     t.strictEqual(gotNlp, nlp, 'nlp comparison')
     t.strictEqual(gotAction, action, 'action comparison')
   })
-  lightApp('@test', target, {})
+  lightApp('@test', { appHome: target }, {})
     .then(app => {
       app.emit('create')
       app.emit('pause')
@@ -155,7 +155,7 @@ test('should receive life cycle events', t => {
 
 test('should populate methods', t => {
   proxy.removeAllListeners()
-  lightApp('@test', target, {})
+  lightApp('@test', { appHome: target }, {})
     .then(app => {
       var activity = app.activity
 
@@ -189,7 +189,7 @@ test('should populate methods', t => {
 
 test('should populate direct values', t => {
   proxy.removeAllListeners()
-  lightApp('@test', target, {})
+  lightApp('@test', { appHome: target }, {})
     .then(app => {
       var activity = app.activity
       t.strictEqual(activity.appId, '@test')

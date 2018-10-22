@@ -67,20 +67,6 @@ module.exports = function (activity) {
     })
   })
 
-  activity.on('test-suback', (key) => {
-    activity.onSubTest(key).then(data => {
-      process.send({
-        type: 'test',
-        result: data
-      })
-    }, err => {
-      process.send({
-        type: 'test',
-        result: err.message
-      })
-    })
-  })
-
   activity.on('test-invoke', (method, params) => {
     activity[method].apply(activity, params)
       .then(res => process.send({
