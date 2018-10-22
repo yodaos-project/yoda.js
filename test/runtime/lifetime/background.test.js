@@ -30,7 +30,7 @@ test('set background recovers previous active app if target app is top of stack'
     })
     .then(() => {
       t.strictEqual(life.getCurrentAppId(), '2', 'app shall be switched to foreground')
-      t.strictEqual(life.isAppActive('1'), true, 'scene app shall be alive on preemption')
+      t.strictEqual(life.isAppInStack('1'), true, 'scene app shall be alive on preemption')
 
       return life.setBackgroundById('2')
     })

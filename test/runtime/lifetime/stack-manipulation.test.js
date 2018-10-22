@@ -12,7 +12,7 @@ test('app preemption', t => {
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
-      _.times(5).forEach(idx => t.strictEqual(life.isAppRunning(`${idx}`), true, `app ${idx} should be running`))
+      _.times(5).forEach(idx => t.strictEqual(life.scheduler.isAppRunning(`${idx}`), true, `app ${idx} should be running`))
 
       return life.activateAppById('0', 'cut')
     })
@@ -47,7 +47,7 @@ test('app preemption', t => {
       t.notLooseEqual(life.getAppDataById('2'), null, 'app data of apps still in stack shall not be removed')
       t.strictEqual(life.getAppDataById('2').form, 'scene')
       t.notLooseEqual(mock.scheduler.getAppById('2'), null, 'scene app shall not be destroyed on preemption by a cut app')
-      t.strictEqual(life.isAppActive('2'), true, 'scene app shall remain in stack on preemption by a cut app')
+      t.strictEqual(life.isAppInStack('2'), true, 'scene app shall remain in stack on preemption by a cut app')
 
       return life.deactivateAppById('3')
     })
@@ -128,6 +128,34 @@ test('shall not deactivate app if app to be activated is in stack', t => {
       t.notLooseEqual(life.getAppDataById('0'), null, 'app data of apps still in stack shall not be removed')
       t.strictEqual(life.getAppDataById('0').form, 'scene')
       t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('shall not recover if app to be deactivated is paused', t => {
+  t.plan(1)
+  mock.restore()
+  mock.mockAppExecutors(5)
+  var life = new Lifetime(mock.scheduler)
+
+  Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      return life.activateAppById('1')
+    })
+    .then(() => {
+      mock.scheduler.getAppById('1').once('resume', () => {
+        t.fail('app 1 shall not be resumed')
+      })
+      return life.deactivateAppById('0')
+    })
+    .then(() => {
+      t.pass('no error shall occurs')
     })
     .catch(err => {
       t.error(err)

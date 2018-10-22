@@ -656,12 +656,28 @@ AppRuntime.prototype.resetCloudStack = function () {
 
 AppRuntime.prototype.appGC = function appGC (appId) {
   logger.info('Collecting resources of app', appId)
-  return Promise.all([
+  var promises = [
     this.light.stopByAppId(appId),
     this.light.stopSoundByAppId(appId),
     this.multimediaMethod('stop', [ appId ]),
     this.ttsMethod('stop', [ appId ])
-  ]).catch(err => logger.error('Unexpected error on collecting resources of app', appId, err.stack))
+  ]
+  if (this.life.isAppInStack(appId)) {
+    /**
+     * clear app registrations and recover paused app if possible
+     */
+    promises.push(
+      this.life.deactivateAppById(appId)
+    )
+  } else if (this.life.isBackgroundApp(appId)) {
+    /**
+     * clears background app registrations
+     */
+    promises.push(
+      this.life.destroyAppById(appId)
+    )
+  }
+  return Promise.all(promises).catch(err => logger.error('Unexpected error on collecting resources of app', appId, err.stack))
 }
 
 /**
