@@ -5,17 +5,6 @@ var logger = require('logger')('pony')
 
 var yodaUtil = require('@yoda/util')
 
-/**
- * FIXME: some native add-on callbacks do not trigger process.nextTick
- * shall be fixed in N-API make callback
- */
-process.nextTick = function fakeNextTick (fn) {
-  var params = Array.prototype.slice.call(arguments, 1)
-  setTimeout(function nextTick () {
-    fn.apply(global, params)
-  }, 0)
-}
-
 var heapdumpFlag = property.get('sys.vm.heapdump', 'persist')
 if (heapdumpFlag === 'true') {
   process.on('SIGUSR2', function () {
