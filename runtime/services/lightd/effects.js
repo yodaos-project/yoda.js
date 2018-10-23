@@ -175,7 +175,7 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
   }
 
   if (path.extname(absPath) === '.wav') {
-    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, false, (err) => {
+    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, true, (err) => {
       if (err) {
         logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
       }
