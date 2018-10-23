@@ -297,3 +297,13 @@ module.exports.getNumOfHistory = native.getNumOfHistory
  * @returns {number}
  */
 module.exports.removeNetwork = native.removeNetwork
+
+/**
+ * remove all networks
+ * @function removeAllNetworks
+ * @returns {number}
+ */
+module.exports.removeAll = function removeAll () {
+  native.removeNetwork(native.WPA_ALL_NETWORK)
+  native.save()
+}

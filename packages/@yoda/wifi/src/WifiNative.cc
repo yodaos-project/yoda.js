@@ -1,4 +1,5 @@
 #include "WifiNative.h"
+#include <iotjs_helper.h>
 #include <arpa/nameser.h>
 #include <netinet/in.h>
 #include <resolv.h>
@@ -166,6 +167,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(exports, "getLocalAddress", GetLocalAddress);
   iotjs_jval_set_method(exports, "getNumOfHistory", GetNumOfHistory);
   iotjs_jval_set_method(exports, "removeNetwork", RemoveNetwork);
+
+  IOTJS_SET_CONSTANT(exports, WPA_ALL_NETWORK);
 }
 
 NODE_MODULE(wifi, init)

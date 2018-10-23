@@ -1,6 +1,7 @@
 var logger = require('logger')('custodian')
 var property = require('@yoda/property')
 var wifi = require('@yoda/wifi')
+var _ = require('@yoda/util')._
 
 module.exports = Custodian
 function Custodian (runtime) {
@@ -90,11 +91,19 @@ Custodian.prototype.onLogout = function onLogout () {
 
 /**
  * Reset network and start procedure of configuring network.
+ *
+ * @param {object} [options] -
+ * @param {boolean} [options.removeAll] - remove local wifi config?
  */
-Custodian.prototype.resetNetwork = function resetNetwork () {
+Custodian.prototype.resetNetwork = function resetNetwork (options) {
   logger.log('reset network')
+  var removeAll = _.get(options, 'removeAll')
   wifi.resetWifi()
-  wifi.disableAll()
+  if (removeAll) {
+    wifi.removeAll()
+  } else {
+    wifi.disableAll()
+  }
   property.set('state.network.connected', 'false')
   this.runtime.wormhole.setOffline()
 
