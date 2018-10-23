@@ -429,7 +429,7 @@ Object.assign(ActivityDescriptor.prototype,
         return Promise.resolve()
           .then(() => {
             var skillOption = JSON.stringify({
-              deviceMode: {
+              device: {
                 linkage: {
                   trigger: isTriggered
                 }
