@@ -200,6 +200,7 @@ module.exports = function (activity) {
   })
 
   activity.on('resume', () => {
+    player.resume()
     if (activityPlayState) {
       activityPlayState = false
       resumeMusic()
