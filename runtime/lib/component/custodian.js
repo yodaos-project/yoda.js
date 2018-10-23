@@ -67,6 +67,7 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
   if (wifi.getNumOfHistory() > 0) {
     // waiting for user awake or button event in order to switch to network config
     logger.log('network switch, try to relogin, waiting for user awake or button event')
+    this.runtime.light.stop('@yoda', 'system://boot.js')
     return
   }
   logger.log('network disconnected, please connect to wifi first')
@@ -116,7 +117,7 @@ Custodian.prototype.isPrepared = function isPrepared () {
 }
 
 Custodian.prototype.isNetworkUnavailable = function isNetworkUnavailable () {
-  return !this._networkConnected && this._loggedIn
+  return !this._networkConnected
 }
 
 Custodian.prototype.isRegistering = function isRegistering () {

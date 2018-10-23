@@ -29,7 +29,7 @@ test('custodian state shall shifts', t => {
   t.true(custodian.isConfiguringNetwork(), 'custodian shall be configuring network at initiation')
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
-  t.false(custodian.isNetworkUnavailable())
+  t.true(custodian.isNetworkUnavailable())
 
   custodian.onNetworkConnect()
   t.false(custodian.isConfiguringNetwork())
@@ -71,11 +71,11 @@ test('custodian shall start network app on network disconnect if not logged in',
   t.true(custodian.isConfiguringNetwork(), 'custodian shall be configuring network at initiation')
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
-  t.false(custodian.isNetworkUnavailable())
+  t.true(custodian.isNetworkUnavailable())
 })
 
 test('custodian shall reset network', t => {
-  t.plan(14)
+  t.plan(13)
   var runtime = {
     reconnect: function () {
       t.fail('onNetworkConnect shall not trigger runtime#reconnect')
@@ -109,6 +109,5 @@ test('custodian shall reset network', t => {
   t.true(custodian.isConfiguringNetwork(), 'custodian shall be configuring network at reset network')
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
-  t.false(custodian.isNetworkUnavailable())
   t.deepEqual(runtime.onGetPropAll(), {}, 'custodian shall be getting the empty prop')
 })
