@@ -309,8 +309,11 @@ AppRuntime.prototype.stopLongPressMicLight = function stopLongPressMicLight () {
 
 /**
  * Reset network and start procedure of configuring network.
+ *
+ * @param {object} [options] -
+ * @param {boolean} [options.removeAll] - remove local wifi config?
  */
-AppRuntime.prototype.resetNetwork = function resetNetwork () {
+AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
   /**
    * reset should welcome so that welcome effect could be played on re-login
    */
@@ -318,7 +321,7 @@ AppRuntime.prototype.resetNetwork = function resetNetwork () {
   return Promise.all([
     this.life.destroyAll(),
     this.setMicMute(false, { silent: true })
-  ]).then(() => this.custodian.resetNetwork())
+  ]).then(() => this.custodian.resetNetwork(options))
 }
 
 /**
@@ -873,7 +876,7 @@ AppRuntime.prototype.unBindDevice = function (message) {
   return this.cloudApi.unBindDevice()
     .then(() => {
       logger.info('unbind device success')
-      return this.resetNetwork()
+      return this.resetNetwork({ removeAll: true })
     })
     .catch((err) => {
       logger.error('unbind device error', err)

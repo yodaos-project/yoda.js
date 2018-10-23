@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_library(node-wifi MODULE src/WifiNative.cc)
 target_include_directories(node-wifi PRIVATE
+  ../../../include
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
