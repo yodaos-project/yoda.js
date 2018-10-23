@@ -1040,7 +1040,10 @@ AppRuntime.prototype.onLoggedIn = function () {
     if (this.shouldWelcome) {
       logger.info('announcing welcome')
       this.setMicMute(false, { silent: true })
-        .then(() => this.light.play('@yoda', 'system://setWelcome.js'))
+        .then(() => {
+          this.light.appSound('@yoda', 'system://startup0.ogg')
+          return this.light.play('@yoda', 'system://setWelcome.js')
+        })
     }
     this.shouldWelcome = false
 
