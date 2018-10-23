@@ -1,13 +1,14 @@
 var EventEmitter = require('events')
+var _ = require('@yoda/util')._
 var inherits = require('util').inherits
 
 module.exports = DbusApp
-function DbusApp (appId, objectPath, ifaceName, dbusService) {
+function DbusApp (appId, manifest, runtime) {
   EventEmitter.call(this)
   this.appId = appId
-  this.objectPath = objectPath
-  this.ifaceName = ifaceName
-  this.dbusService = dbusService
+  this.objectPath = _.get(manifest, 'objectPath')
+  this.ifaceName = _.get(manifest, 'ifaceName')
+  this.dbusService = runtime.dbusRegistry.service
 
   this.on('resume', this._onEvent.bind(this, 'resume', appId))
   this.on('pause', this._onEvent.bind(this, 'pause', appId))
