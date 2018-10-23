@@ -69,6 +69,7 @@ DBus.prototype.listenSignals = function listenSignals () {
   var ttsEvents = {
     'ttsdevent': function onTtsEvent (msg) {
       var channel = `callback:tts:${_.get(msg, 'args.0')}`
+      logger.info(`VuiDaemon received ttsd event on channel(${channel})`)
       EventEmitter.prototype.emit.apply(
         self,
         [ channel ].concat(msg.args.slice(1))
@@ -92,6 +93,7 @@ DBus.prototype.listenSignals = function listenSignals () {
   var multimediaEvents = {
     'multimediadevent': function onMultimediaEvent (msg) {
       var channel = `callback:multimedia:${_.get(msg, 'args.0')}`
+      logger.info(`VuiDaemon received multimediad event on channel(${channel})`)
       EventEmitter.prototype.emit.apply(
         self,
         [ channel ].concat(msg.args.slice(1))
