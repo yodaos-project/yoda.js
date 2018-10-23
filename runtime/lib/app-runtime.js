@@ -750,6 +750,8 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
   logger.log('register dbus app with id: ', appId)
   try {
     this.loader.setManifest(appId, {
+      objectPath: objectPath,
+      ifaceName: ifaceName,
       skills: [ appId ],
       permission: ['ACCESS_TTS', 'ACCESS_MULTIMEDIA']
     }, {
