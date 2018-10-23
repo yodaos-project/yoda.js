@@ -120,7 +120,8 @@ AppRuntime.prototype.init = function init (paths) {
   }
 
   return future.then(() => {
-    this.light.play('@yoda', 'system://boot.js', {fps: 200})
+    this.light.appSound('@yoda', 'system://boot.ogg')
+    this.light.play('@yoda', 'system://boot.js', { fps: 200 })
     return this.loadApps(paths)
   }).then(() => {
     this.custodian.prepareNetwork()
