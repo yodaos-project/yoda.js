@@ -124,9 +124,9 @@ function LaVieEnPile (scheduler) {
   this.appIdOnPause = null
 }
 /**
- * On stack updated, might have be de-bounced
- * @event stack-update
- * @param {string[]} stack - new stack
+ * On app been evicted from stack
+ * @event evict
+ * @param {string} appId - the app id to be evicted
  */
 /**
  * On stack reset, might have be de-bounced
@@ -320,7 +320,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   var lastAppId = this.getCurrentAppId()
   var stack = this.activeSlots.copy()
   this.activeSlots.addApp(appId, wasScene || form === 'scene')
-  this.onStackUpdate()
+  this.onEvict(lastAppId)
   var deferred = () => {
     return this.onLifeCycle(appId, 'active', activateParams)
   }
@@ -404,7 +404,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
 
   delete this.appDataMap[appId]
   if (removed) {
-    this.onStackUpdate()
+    this.onEvict(appId)
   }
 
   var deactivating = this.destroyAppById(appId)
@@ -498,7 +498,7 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   var removed = this.activeSlots.removeApp(appId)
   if (removed) {
     delete this.appDataMap[appId]
-    this.onStackUpdate()
+    this.onEvict(appId)
   }
 
   var idx = this.backgroundAppIds.indexOf(appId)
@@ -588,12 +588,14 @@ LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) 
 }
 
 /**
- * Emit event `stack-update` with current app id stack to listeners.
+ * Emit event `evict` with the evicted app id as first argument to listeners.
  */
-LaVieEnPile.prototype.onStackUpdate = function onStackUpdate () {
-  var stack = [ this.activeSlots.cut, this.activeSlots.scene ]
+LaVieEnPile.prototype.onEvict = function onEvict (appId) {
+  if (!appId) {
+    return
+  }
   process.nextTick(() => {
-    this.emit('stack-update', stack)
+    this.emit('evict', appId)
   })
 }
 

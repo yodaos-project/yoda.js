@@ -103,6 +103,9 @@ AppRuntime.prototype.init = function init (paths) {
   this.life.on('stack-reset', () => {
     this.resetCloudStack()
   })
+  this.life.on('evict', appId => {
+    this.appPause(appId)
+  })
   // initializing the whole process...
   this.resetCloudStack()
   this.resetServices()
@@ -659,6 +662,15 @@ AppRuntime.prototype.resetCloudStack = function () {
   this.domain.scene = ''
   this.domain.active = ''
   this.flora.updateStack(this.domain.scene + ':' + this.domain.cut)
+}
+
+AppRuntime.prototype.appPause = function appPause (appId) {
+  logger.info('Pausing resources of app', appId)
+  var promises = [
+    this.light.multimediaMethod('pause', [ appId ])
+  ]
+  return Promise.all(promises)
+    .catch(err => logger.error('Unexpected error on pausing resources of app', appId, err.stack))
 }
 
 AppRuntime.prototype.appGC = function appGC (appId) {
