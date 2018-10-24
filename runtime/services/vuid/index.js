@@ -1,6 +1,7 @@
 'use strict'
 
 var logger = require('logger')('main')
+var exodus = require('@yoda/exodus')
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/yodart-err.log')
@@ -23,8 +24,15 @@ function activateProcess () {
 }
 
 function entry () {
-  logger.debug('vui is started')
+  logger.info('trying to migrate from lua')
+  exodus((err) => {
+    if (err) {
+      logger.error('Unexpected error on migration from lua', err.stack)
+    }
 
-  var runtime = new AppRuntime()
-  runtime.init(['/opt/apps'])
+    logger.debug('vui is started')
+
+    var runtime = new AppRuntime()
+    runtime.init(['/opt/apps'])
+  })
 }
