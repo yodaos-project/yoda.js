@@ -163,6 +163,7 @@ AudioManager.setVolume = function (type, vol) {
   if (type === null) {
     ;[
       AudioManager.STREAM_AUDIO,
+      AudioManager.STREAM_ALARM,
       AudioManager.STREAM_PLAYBACK,
       AudioManager.STREAM_TTS,
       AudioManager.STREAM_RING,
