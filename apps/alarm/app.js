@@ -8,8 +8,8 @@ var fs = require('fs')
 var request = require('./request')
 var yodaUtil = require('@yoda/util')
 
-var configFilePath = '/data/AppData/alarm/config.json'
-var keyCodes = [113, 114, 115, 116]
+var CONFIGFILEPATH = '/data/AppData/alarm/config.json'
+var KEYCODES = [113, 114, 115, 116]
 
 module.exports = function (activity) {
   var scheduleHandler = new Cron.Schedule()
@@ -17,27 +17,11 @@ module.exports = function (activity) {
   var taskTimeout = null
   var volumeInterval = null
   activity.on('create', function () {
+    logger.log('alarm create')
     addConfigFile()
     var state = wifi.getNetworkState()
     if (state === wifi.NETSERVER_CONNECTED) {
-      request({
-        activity: activity,
-        intent: 'sync_alarm',
-        callback: (res) => {
-          var resObj = JSON.parse(res)
-          var alarmList = (resObj.data || {}).alarmList || []
-          var command = {}
-          for (var i = 0; i < alarmList.length; i++) {
-            command[alarmList[i].id] = alarmList[i]
-          }
-          // clear config data
-          fs.writeFile(configFilePath, '{}', (err) => {
-            logger.log(err && err.stack)
-            initAlarm(command, true)
-          })
-        }
-      })
-      logger.log('alarm should get config from cloud')
+      requestAlarms('sync_alarm')
     } else {
       getTasksFromConfig(function (command) {
         initAlarm(command)
@@ -49,6 +33,7 @@ module.exports = function (activity) {
       taskTimeout && clearTimeout(taskTimeout)
       volumeInterval && clearInterval(volumeInterval)
       restoreEventsDefaults()
+      activity.setBackground()
     })
   })
 
@@ -73,28 +58,50 @@ module.exports = function (activity) {
     logger.log(this.appId + ' destroyed')
   })
 
+  function requestAlarms (intent, businessParams) {
+    request({
+      activity: activity,
+      intent: intent,
+      businessParams: businessParams || {},
+      callback: (res) => {
+        var resObj = JSON.parse(res)
+        var alarmList = (resObj.data || {}).alarmList || []
+        var command = {}
+        for (var i = 0; i < alarmList.length; i++) {
+          command[alarmList[i].id] = alarmList[i]
+        }
+        // clear config data
+        fs.writeFile(CONFIGFILEPATH, '{}', (err) => {
+          logger.error(err && err.stack)
+          initAlarm(command, true)
+        })
+      }
+    })
+    logger.log('alarm should get config from cloud', intent)
+  }
+
   function preventEventsDefaults () {
-    for (var i = 0; i < keyCodes.length; i++) {
-      activity.keyboard.preventDefaults(keyCodes[i])
+    for (var i = 0; i < KEYCODES.length; i++) {
+      activity.keyboard.preventDefaults(KEYCODES[i])
     }
   }
   function restoreEventsDefaults () {
-    for (var i = 0; i < keyCodes.length; i++) {
-      activity.keyboard.restoreDefaults(keyCodes[i])
+    for (var i = 0; i < KEYCODES.length; i++) {
+      activity.keyboard.restoreDefaults(KEYCODES[i])
     }
   }
 
   function addConfigFile () {
-    fs.stat(configFilePath, function (err, stat) {
-      logger.log(err && err.stack)
+    fs.stat(CONFIGFILEPATH, function (err, stat) {
+      logger.error(err && err.stack)
       if (err) {
         yodaUtil.fs.mkdirp('/data/AppData/alarm', (err) => {
           if (err) {
-            logger.error(err)
+            logger.error(err && err.stack)
             return
           }
-          fs.writeFile(configFilePath, '{}', function (err) {
-            logger.log(err && err.stack)
+          fs.writeFile(CONFIGFILEPATH, '{}', function (err) {
+            logger.error(err && err.stack)
           })
         })
       }
@@ -123,8 +130,10 @@ module.exports = function (activity) {
     }
     // clear local data
     if (!flag) {
-      fs.writeFile(configFilePath, '{}', function (err) {
-        if (err) throw err
+      fs.writeFile(CONFIGFILEPATH, '{}', function (err) {
+        if (err) {
+          logger.error(err && err.stack)
+        }
       })
     }
     logger.log('alarm init')
@@ -139,7 +148,7 @@ module.exports = function (activity) {
           startTask(commandOpt, pattern)
         }
 
-        if (command[i].flag === 'delete') {
+        if (command[i].flag === 'del') {
           scheduleHandler.clear(command[i].id)
           setConfig({
             id: command[i].id
@@ -156,11 +165,17 @@ module.exports = function (activity) {
     }, commandOpt)
   }
   function getTasksFromConfig (callback) {
-    var parseJson = {}
-    // data/AppData/alarm
-    fs.readFile(configFilePath, 'utf8', function readFileCallback (err, data) {
-      if (err) throw err
-      parseJson = JSON.parse(data || '{}')
+    fs.readFile(CONFIGFILEPATH, 'utf8', function readFileCallback (err, data) {
+      if (err) {
+        logger.error(err && err.stack)
+        return
+      }
+      var parseJson = {}
+      try {
+        parseJson = JSON.parse(data || '{}')
+      } catch (err) {
+        logger.error(err && err.stack)
+      }
       callback(parseJson)
     })
   }
@@ -168,14 +183,14 @@ module.exports = function (activity) {
   function controlAudio (minVolume, tick, duration) {
     var defaultAudio = AudioManager.getVolume(AudioManager.STREAM_SYSTEM)
     if (defaultAudio <= minVolume) {
-      AudioManager.setVolume(AudioManager.STREAM_ALARM, minVolume)
+      AudioManager.setVolume(minVolume)
     } else {
       var range = Math.ceil((defaultAudio - minVolume) / duration)
       AudioManager.setVolume(AudioManager.STREAM_ALARM, minVolume)
       var count = 0
       volumeInterval = setInterval(function () {
         if (minVolume + (count + 1) * range >= defaultAudio) {
-          AudioManager.setVolume(AudioManager.STREAM_ALARM, defaultAudio) // todo: change player vol
+          AudioManager.setVolume(AudioManager.STREAM_ALARM, defaultAudio) // todo: change player volume
           clearInterval(volumeInterval)
         } else {
           AudioManager.setVolume(AudioManager.STREAM_ALARM, minVolume + (count + 1) * range)
@@ -213,13 +228,16 @@ module.exports = function (activity) {
     return s + ' ' + m + ' ' + h + ' ' + day + ' ' + month + ' *'
   }
   function setConfig (options, mode) {
-    fs.readFile(configFilePath, 'utf8', function readFileCallback (err, data) {
-      if (err) throw err
+    fs.readFile(CONFIGFILEPATH, 'utf8', function readFileCallback (err, data) {
+      if (err) {
+        logger.error(err && err.stack)
+        return
+      }
       var parseJson = {}
       try {
         parseJson = JSON.parse(data || '{}')
       } catch (err) {
-        logger.log(err && err.stack)
+        logger.error(err && err.stack)
       }
       if (mode === 'add') {
         parseJson[options.id] = options
@@ -227,13 +245,15 @@ module.exports = function (activity) {
       if (mode === 'remove') {
         delete parseJson[options.id]
       }
-      fs.unlink(configFilePath, (err) => {
+      fs.unlink(CONFIGFILEPATH, (err) => {
         if (err) {
-          logger.log(err && err.stack)
+          logger.error(err && err.stack)
           return
         }
-        fs.writeFile(configFilePath, JSON.stringify(parseJson), function (err) {
-          if (err) throw err
+        fs.writeFile(CONFIGFILEPATH, JSON.stringify(parseJson), function (err) {
+          if (err) {
+            logger.error(err && err.stack)
+          }
         })
       })
     })
@@ -317,9 +337,7 @@ module.exports = function (activity) {
           return activity.media.setLoopMode(true)
         }
       }).then(() => {
-        restoreEventsDefaults()
         clearTask(mode, option)
-        activity.setBackground()
       })
     }
   }
