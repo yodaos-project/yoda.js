@@ -5,6 +5,7 @@ var _ = require('@yoda/util')._
 var wifi = require('@yoda/wifi')
 var Caps = require('@yoda/flora').Caps
 var bluetooth = require('@yoda/bluetooth')
+var AudioManager = require('@yoda/audio').AudioManager
 
 var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
 var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
@@ -234,6 +235,11 @@ Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
     return
   }
   if (wifi.getNumOfHistory() === 0) {
+    // FIXME(yorkie): check if the bluetooth music is playing even though the history is empty.
+    if (AudioManager.getPlayingState('bluetooth')) {
+      return this.runtime.light.appSound('@yoda', 'system://guide_config_network.ogg')
+        .then(() => this.bluetoothPlayer && this.bluetoothPlayer.resume())
+    }
     this.runtime.openUrl('yoda-skill://network/setup', {
       preemptive: true
     })
