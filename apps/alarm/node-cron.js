@@ -128,7 +128,7 @@ module.exports = (function () {
       return self.backups
     }
     this.clear = function (id) {
-      if (id) {
+      if (id && self.jobs[id]) {
         self.jobs[id].job.destroy()
         delete self.jobs[id]
       } else {
