@@ -1,7 +1,6 @@
 'use strict'
 
 var it = require('tape')
-var prop = require('@yoda/property')
 var helper = require('../helper')
 var CloudStore = require(`${helper.paths.runtime}/lib/cloudapi`)
 

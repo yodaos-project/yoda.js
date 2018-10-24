@@ -66,7 +66,6 @@ CloudStore.prototype.connect = function connect () {
         }
         handleResponse(JSON.parse(res.data))
         return resolve(true)
-
       } catch (err) {
         logger.error(err)
         return reject(err)
@@ -136,7 +135,6 @@ CloudStore.prototype.syncDate = function syncDate () {
       logger.warn('/tmp/LOGIN_HEADER invalid body, discard sync')
       return
     }
-    var dateRegExp = /Date: (.+)/i
     var lines = headers.split('\r\n')
     logger.info('current response is', lines[0])
     if (!/^HTTP\/1\.1 200/.test(lines[0])) {

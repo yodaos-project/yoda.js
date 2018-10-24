@@ -128,7 +128,7 @@ MqttClient.prototype.start = function start (opts) {
     logger.info(`start connecting mqtt to ${env.mqtt.uri}`)
 
     this._mqttHandle.once('connect', () => {
-      this._backoffTime = MINIMUM_BACKOFF_TIME  // reset backoff once connected.
+      this._backoffTime = MINIMUM_BACKOFF_TIME // reset backoff once connected.
       this._rejectReconnect = false
       this._isConnecting = false
       this._isOnline = true
@@ -151,7 +151,7 @@ MqttClient.prototype.start = function start (opts) {
       logger.warn('receives the offline event, the network maybe not stable')
       this.reconnect()
     })
-  }, (err) => {
+  }, (_) => {
     logger.info('occurs an error, set _isConnecting to false and reconnect')
     this._isConnecting = false
     this.reconnect()
@@ -180,7 +180,7 @@ MqttClient.prototype.reconnect = function reconnect () {
     this._backoffTime *= 2
   }
   this._isConnecting = true
-  logger.log(`backing off for ${reconnectDelayMs}ms before reconnecting.`);
+  logger.log(`backing off for ${reconnectDelayMs}ms before reconnecting.`)
 
   setTimeout(() => {
     this.start({ forceRefresh: true })
