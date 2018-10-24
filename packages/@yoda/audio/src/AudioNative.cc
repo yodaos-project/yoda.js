@@ -1,7 +1,9 @@
-#include "AudioNative.h"
+#include <node_api.h>
 #include <vol_ctrl/volumecontrol.h>
-
-static inline rk_stream_type_t iotjs_audiomgr_get_stream_type(int stream) {
+#include <stdio.h>
+#include <common.h>
+#include <string.h>
+static inline rk_stream_type_t get_stream_type(int stream) {
   if (stream == STREAM_TTS) {
     return STREAM_TTS;
   } else if (stream == STREAM_RING) {
@@ -19,90 +21,141 @@ static inline rk_stream_type_t iotjs_audiomgr_get_stream_type(int stream) {
   }
 }
 
-JS_FUNCTION(IsMuted) {
-  return jerry_create_boolean(rk_is_mute());
+static napi_value IsMuted(napi_env env, napi_callback_info info) {
+  napi_value index;
+  if (rk_is_mute()) {
+    napi_get_boolean(env, true, &index);
+  } else {
+    napi_get_boolean(env, false, &index);
+  }
+  return index;
 }
 
-JS_FUNCTION(SetMute) {
-  bool v = JS_GET_ARG(0, boolean);
-  return jerry_create_number(rk_set_mute(v));
+static napi_value SetMute(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  bool index;
+  int rkSetValue;
+  napi_status status;
+  size_t argc = 1;
+  napi_value argv[1];
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_bool(env, argv[0], &index);
+  rkSetValue = rk_set_mute(index);
+  napi_create_int32(env, rkSetValue, &returnVal);
+  return returnVal;
 }
 
-JS_FUNCTION(SetCurveForVolume) {
+
+static napi_value SetCurveForVolume(napi_env env, napi_callback_info info) {
   static int curve[101];
-  int level = JS_GET_ARG(0, number);
-  int vol = JS_GET_ARG(1, number);
+  napi_value returnVal;
+  int level;
+  int vol;
+  size_t argc = 2;
+  napi_value argv[2];
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_int32(env, argv[0], &level);
+  napi_get_value_int32(env, argv[1], &vol);
   if (level > 100) {
-    return jerry_create_boolean(false);
+    napi_get_boolean(env, false, &returnVal);
+    return returnVal;
   }
   curve[level] = vol;
   if (level == 100) {
     rk_setCustomVolumeCurve(sizeof(curve), curve);
   }
-  return jerry_create_boolean(true);
+  napi_get_boolean(env, true, &returnVal);
+  return returnVal;
 }
 
-JS_FUNCTION(SetMediaVolume) {
-  int vol = JS_GET_ARG(0, number);
+static napi_value SetMediaVolume(napi_env env, napi_callback_info info) {
+  size_t argc = 1;
+  napi_value argv[1];
+  int vol;
+  napi_value returnVal;
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_int32(env, 0, &vol);
   rk_set_volume(vol);
-  return jerry_create_boolean(true);
+  napi_get_boolean(env, true, &returnVal);
+  return returnVal;
 }
 
-JS_FUNCTION(GetMediaVolume) {
+
+static napi_value GetMediaVolume(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
   int vol = rk_get_volume();
-  return jerry_create_number(vol);
+  napi_create_int32(env, vol, &returnVal);
+  return returnVal;
 }
 
-JS_FUNCTION(SetStreamVolume) {
-  int stream = JS_GET_ARG(0, number);
-  int vol = JS_GET_ARG(1, number);
-  rk_stream_type_t type = iotjs_audiomgr_get_stream_type(stream);
+
+static napi_value SetStreamVolume(napi_env env, napi_callback_info info) {
+  size_t argc = 2;
+  napi_value argv[2];
+  int vol;
+  int stream;
+  napi_value returnVal;
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_int32(env, argv[0], &stream);
+  napi_get_value_int32(env, argv[1], &vol);
+  rk_stream_type_t type = get_stream_type(stream);
   rk_set_stream_volume(type, vol);
-  return jerry_create_boolean(true);
+  napi_get_boolean(env, true, &returnVal);
+  return returnVal;
 }
 
-JS_FUNCTION(GetStreamVolume) {
-  int stream = JS_GET_ARG(0, number);
-  rk_stream_type_t type = iotjs_audiomgr_get_stream_type(stream);
+
+static napi_value GetStreamVolume(napi_env env, napi_callback_info info) {
+  size_t argc = 1;
+  int stream;
+  napi_value argv[1];
+  napi_value returnVal;
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_int32(env, argv[0], &stream);
+  rk_stream_type_t type = get_stream_type(stream);
   int vol = rk_get_stream_volume(type);
-  return jerry_create_number(vol);
+  napi_create_int32(env, vol, &returnVal);
+  return returnVal;
 }
 
-JS_FUNCTION(GetStreamPlayingStatus) {
-  int stream = JS_GET_ARG(0, number);
-  rk_stream_type_t type = iotjs_audiomgr_get_stream_type(stream);
-  int result = rk_get_stream_playing_status(type);
-  return jerry_create_boolean(result);
+
+static napi_value GetStreamPlayingStatus(napi_env env,
+                                         napi_callback_info info) {
+  size_t argc = 1;
+  int stream;
+  napi_value argv[1];
+  napi_value returnVal;
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_int32(env, argv[0], &stream);
+  rk_stream_type_t type = get_stream_type(stream);
+  if (rk_get_stream_playing_status(type)) {
+    napi_get_boolean(env, true, &returnVal);
+  } else {
+    napi_get_boolean(env, false, &returnVal);
+  }
+  return returnVal;
 }
 
-void init(jerry_value_t exports) {
-  iotjs_jval_set_method(exports, "isMuted", IsMuted);
-  iotjs_jval_set_method(exports, "setMute", SetMute);
-  iotjs_jval_set_method(exports, "setCurveForVolume", SetCurveForVolume);
-  iotjs_jval_set_method(exports, "setMediaVolume", SetMediaVolume);
-  iotjs_jval_set_method(exports, "getMediaVolume", GetMediaVolume);
-  iotjs_jval_set_method(exports, "setStreamVolume", SetStreamVolume);
-  iotjs_jval_set_method(exports, "getStreamVolume", GetStreamVolume);
-  iotjs_jval_set_method(exports, "getStreamPlayingStatus",
-                        GetStreamPlayingStatus);
-
-#define IOTJS_SET_CONSTANT(jobj, name)                                    \
-  do {                                                                    \
-    jerry_value_t jkey = jerry_create_string((const jerry_char_t*)#name); \
-    jerry_value_t jval = jerry_create_number(name);                       \
-    jerry_set_property(jobj, jkey, jval);                                 \
-    jerry_release_value(jkey);                                            \
-    jerry_release_value(jval);                                            \
-  } while (0)
-
-  IOTJS_SET_CONSTANT(exports, STREAM_AUDIO);
-  IOTJS_SET_CONSTANT(exports, STREAM_TTS);
-  IOTJS_SET_CONSTANT(exports, STREAM_RING);
-  IOTJS_SET_CONSTANT(exports, STREAM_VOICE_CALL);
-  IOTJS_SET_CONSTANT(exports, STREAM_ALARM);
-  IOTJS_SET_CONSTANT(exports, STREAM_PLAYBACK);
-  IOTJS_SET_CONSTANT(exports, STREAM_SYSTEM);
-#undef IOTJS_SET_CONSTANT
+static napi_value Init(napi_env env, napi_value exports) {
+  napi_property_descriptor desc[] = {
+    DECLARE_NAPI_PROPERTY("isMuted", IsMuted),
+    DECLARE_NAPI_PROPERTY("setMute", SetMute),
+    DECLARE_NAPI_PROPERTY("setCurveForVolume", SetCurveForVolume),
+    DECLARE_NAPI_PROPERTY("setMediaVolume", SetMediaVolume),
+    DECLARE_NAPI_PROPERTY("getMediaVolume", GetMediaVolume),
+    DECLARE_NAPI_PROPERTY("setStreamVolume", SetStreamVolume),
+    DECLARE_NAPI_PROPERTY("getStreamVolume", GetStreamVolume),
+    DECLARE_NAPI_PROPERTY("getStreamPlayingStatus", GetStreamPlayingStatus)
+  };
+  napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc);
+  NAPI_SET_CONSTANT(exports, STREAM_AUDIO);
+  NAPI_SET_CONSTANT(exports, STREAM_TTS);
+  NAPI_SET_CONSTANT(exports, STREAM_RING);
+  NAPI_SET_CONSTANT(exports, STREAM_VOICE_CALL);
+  NAPI_SET_CONSTANT(exports, STREAM_ALARM);
+  NAPI_SET_CONSTANT(exports, STREAM_PLAYBACK);
+  NAPI_SET_CONSTANT(exports, STREAM_SYSTEM);
+  return exports;
 }
 
-NODE_MODULE(volume, init)
+NAPI_MODULE(AudioNative, Init)

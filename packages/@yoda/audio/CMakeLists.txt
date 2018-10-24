@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_library(shadow-audio MODULE src/AudioNative.cc)
 target_include_directories(shadow-audio PRIVATE
+  ../../../include
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node

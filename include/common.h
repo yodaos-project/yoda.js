@@ -88,4 +88,14 @@
     NAPI_CALL(env, napi_get_value_int32(env, nval, res));             \
   } while (0);
 
+#define NAPI_SET_CONSTANT(target, name)                                   \
+  do {                                                                    \
+    napi_value key;                                                       \
+    napi_value value;                                                     \
+    napi_create_string_utf8(env, #name, strlen(#name), &key);             \
+    napi_create_int32(env, name, &value);                                 \
+    napi_set_property(env, target, key, value);                           \
+  } while(0);
+
 #endif
+
