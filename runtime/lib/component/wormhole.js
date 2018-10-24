@@ -102,6 +102,10 @@ Wormhole.prototype.handlers = {
 }
 
 Wormhole.prototype.sendToApp = function sendToApp (topic, data) {
+  if (this.mqtt == null) {
+    logger.info('not logged in and not connected, just skip to send data to app')
+    return
+  }
   if (typeof data !== 'string' && Buffer.isBuffer(data) === false) {
     data = JSON.stringify(data)
   }

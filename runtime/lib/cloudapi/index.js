@@ -23,6 +23,7 @@ function CloudStore (options) {
   this.apiAvailable = false
   this.cloudgw = null
   this.config = {
+    host: env.cloudgw.restful,
     masterId: null,
     deviceId: null,
     deviceTypeId: null,
