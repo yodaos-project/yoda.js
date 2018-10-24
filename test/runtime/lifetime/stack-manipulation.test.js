@@ -29,6 +29,9 @@ test('app preemption', t => {
       t.looseEqual(life.getAppDataById('0'), null, 'app data of apps that get out of stack app shall be removed')
       t.looseEqual(mock.scheduler.getAppById('0'), null, 'cut app shall be destroyed on preemption')
 
+      life.once('evict', appId => {
+        t.strictEqual(appId, '1', 'shall emit evict event of app 1')
+      })
       return life.activateAppById('2', 'scene')
     })
     .then(() => {
@@ -38,6 +41,9 @@ test('app preemption', t => {
       t.looseEqual(life.getAppDataById('1'), null, 'app data of apps that get out of stack app shall be removed')
       t.looseEqual(mock.scheduler.getAppById('1'), null, 'scene app shall be destroyed on preemption by a scene app')
 
+      life.once('evict', appId => {
+        t.strictEqual(appId, '2', 'shall emit evict event of app 2')
+      })
       return life.activateAppById('3', 'cut')
     })
     .then(() => {
@@ -49,6 +55,9 @@ test('app preemption', t => {
       t.notLooseEqual(mock.scheduler.getAppById('2'), null, 'scene app shall not be destroyed on preemption by a cut app')
       t.strictEqual(life.isAppInStack('2'), true, 'scene app shall remain in stack on preemption by a cut app')
 
+      life.once('evict', appId => {
+        t.strictEqual(appId, '3', 'shall emit evict event of app 3')
+      })
       return life.deactivateAppById('3')
     })
     .then(() => {
