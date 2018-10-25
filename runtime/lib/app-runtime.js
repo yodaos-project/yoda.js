@@ -667,7 +667,7 @@ AppRuntime.prototype.resetCloudStack = function () {
 AppRuntime.prototype.appPause = function appPause (appId) {
   logger.info('Pausing resources of app', appId)
   var promises = [
-    this.light.multimediaMethod('pause', [ appId ])
+    this.multimediaMethod('pause', [ appId ])
   ]
   return Promise.all(promises)
     .catch(err => logger.error('Unexpected error on pausing resources of app', appId, err.stack))
