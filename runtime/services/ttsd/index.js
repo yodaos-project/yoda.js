@@ -177,8 +177,8 @@ function reConnect (CONFIG) {
           '/tts/service',
           'tts.service',
           'ttsdevent',
-          'ss',
-          ['' + id, 'error']
+          'sss',
+          ['' + id, 'error', '' + errno]
         )
       }, 2000 - delta/** it's ok to set a negative timeout */)
     })

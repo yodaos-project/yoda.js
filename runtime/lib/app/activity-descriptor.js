@@ -1101,7 +1101,10 @@ Object.assign(TtsDescriptor.prototype,
                   return resolve()
                 }
                 if (event === 'error') {
-                  return reject(new Error('Unexpected ttsd error'))
+                  var code = arguments[1]
+                  var err = new Error(`Unexpected ttsd error(${code})`)
+                  err.code = code
+                  return reject(err)
                 }
               })
 
