@@ -12,6 +12,8 @@ function Skill (exe, nlp, action) {
   this.paused = false
   this.isSkillActive = true
   this.task = 0
+  // identify if this skill has a player
+  this.hasPlayer = false
   this.exe = exe
   this.handleEvent()
   this.transform(action.response.action.directives || [])
@@ -121,22 +123,28 @@ Skill.prototype.handleEvent = function () {
         data: {}
       }], 'frontend')
       if (this.directives.length > 0) {
+        // In order to identify how many tasks are currently running
         this.task++
         this.exe.execute(this.directives, 'frontend', () => {
+          // A task is completed
           this.task--
+          // If the skill is in the pause state, then nothing is done.
           if (this.paused === true) {
             return
           }
           if (this.shouldEndSession) {
             return this.emit('exit')
           }
+          // If there are still tasks that are not completed, do nothind.
           if (this.task > 0) {
             return
           }
+          // continue perform the remaining tasks, if any.
           if (this.directives.length > 0) {
             return this.emit('start')
           }
           this.directives = []
+          // exit self. nothing to do
           this.emit('exit')
         })
       }
@@ -146,7 +154,20 @@ Skill.prototype.handleEvent = function () {
   })
   this.on('destroy', () => {
     logger.log(this.appId + ' emit destroy')
-    this.exe.stop('frontend')
+    var dts = [{
+      type: 'tts',
+      action: 'cancel',
+      data: {}
+    }]
+    // need stop player if this skill has playerq
+    if (this.hasPlayer) {
+      dts.push({
+        type: 'media',
+        action: 'cancel',
+        data: {}
+      })
+    }
+    this.exe.execute(dts, 'frontend')
   })
 }
 
@@ -186,6 +207,10 @@ Skill.prototype.transform = function (directives, append) {
       }
       tdt.data.appId = this.appId
       this.directives.push(tdt)
+      // identify if this skill has player
+      if (ele.action === 'PLAY') {
+        this.hasPlayer = true
+      }
     } else if (ele.type === 'confirm') {
       tdt = {
         type: 'confirm',
