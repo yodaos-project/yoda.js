@@ -93,19 +93,21 @@ Skill.prototype.handleEvent = function () {
   })
   this.on('pause', (isAppPause) => {
     logger.log(this.appId + ' emit pause')
-    var dts = [{
-      type: 'media',
-      action: 'pause',
-      data: {}
-    }]
+    var dts = []
     // should cancel tts if app is paused
     if (isAppPause) {
+      // stop tts first. because tts needs faster response speed.
       dts.push({
         type: 'tts',
         action: 'cancel',
         data: {}
       })
     }
+    dts.push({
+      type: 'media',
+      action: 'pause',
+      data: {}
+    })
     this.exe.execute(dts, 'frontend')
     this.paused = true
   })
