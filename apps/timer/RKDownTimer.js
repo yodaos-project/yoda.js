@@ -260,7 +260,7 @@ RKDownTimer.prototype.close = function () {
       .then(() => {
         // TODO: the resource address
         var uri = 'system://alarm_default_ringtone.mp3'
-        this.ring.ring(uri, 10)
+        this.ring.ring(uri, 3)
       })
     // TODO: the resource address
     // this.activity.playSound(uri, 10)
