@@ -76,6 +76,6 @@ module.exports = {
     if (val === undefined || val === null) {
       throw new TypeError('value must be required to be not undefined or null')
     }
-    native.set(key, val)
+    native.set(key, val + '')
   }
 }
