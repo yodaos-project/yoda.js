@@ -203,27 +203,19 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
 }
 
 /**
- * Clear all handles and clear last frame.
+ * Clear all handles.
  *
  * @method stop
  * @instance
  * @memberof yodaRT.light.LightRenderingContext
- * @param {boolean} keep - if keep is true will not clear the last frame.
  */
-LightRenderingContext.prototype.stop = function (keep) {
+LightRenderingContext.prototype.stop = function () {
   for (var i in this._handle) {
     clearTimeout(this._handle[i])
-  }
-  if (this._getCurrentId() !== this._id) {
-    return
   }
   if (this._soundPlayer) {
     this._soundPlayer.stop()
     this._soundPlayer = null
-  }
-  if (keep !== true) {
-    this.clear()
-    this.render()
   }
 }
 
