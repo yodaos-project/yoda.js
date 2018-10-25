@@ -679,6 +679,7 @@ AppRuntime.prototype.resetCloudStack = function () {
 AppRuntime.prototype.appPause = function appPause (appId) {
   logger.info('Pausing resources of app', appId)
   var promises = [
+    this.light.stopSoundByAppId(appId),
     this.multimediaMethod('pause', [ appId ])
   ]
   return Promise.all(promises)
