@@ -10,6 +10,7 @@ var started = false
 var messageStream = bluetooth.getMessageStream()
 var NET_STATUS_IDLE = 0
 var NET_STATUS_CONNECTING = 1
+var NET_DISABLE_RECONNECT = false
 var BLE_STATUS_CLOSED = 0
 var BLE_STATUS_OPENING = 1
 var BLE_STATUS_OPEN = 2
@@ -88,6 +89,7 @@ module.exports = function (app) {
         } else if (code === '201') {
           // bind success, exit app
           // after 1 second, because need some time for sendWifiStatus
+          NET_DISABLE_RECONNECT = true
           setTimeout(intoSleep, 1000)
         }
         break
@@ -316,22 +318,22 @@ module.exports = function (app) {
 
   function timerAndSleep () {
     clearTimeout(sleepTimer)
-    logger.log('setup timer for intoSleep')
-    sleepTimer = setTimeout(function sleep () {
-      logger.log('timer trigger intoSleep')
-      intoSleep()
-    }, SLEEP_TIME)
+    logger.log('setup timer for sleep')
+    sleepTimer = setTimeout(intoSleep, SLEEP_TIME)
   }
 
   function intoSleep () {
-    logger.log('start sleep ......')
+    logger.info('the network is gonna sleep')
     clearTimeout(sleepTimer)
     app.light.stop('system://setStandby.js')
     if (bleStatus !== BLE_STATUS_CLOSED) {
       messageStream.end()
       logger.log('closed ble')
     }
+    if (!NET_DISABLE_RECONNECT) {
+      wifi.enableScanPassively()
+      logger.info('start scan network passively')
+    }
     app.exit()
-    wifi.enableScanPassively()
   }
 }

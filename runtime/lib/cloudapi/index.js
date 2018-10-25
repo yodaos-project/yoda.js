@@ -23,7 +23,6 @@ function CloudStore (options) {
   this.apiAvailable = false
   this.cloudgw = null
   this.config = {
-    host: env.cloudgw.restful,
     masterId: null,
     deviceId: null,
     deviceTypeId: null,
@@ -56,7 +55,6 @@ CloudStore.prototype.connect = function connect () {
 
     exec(`nice -n -20 sh ${path.join(__dirname, './login/request.sh')}`, opts, oncomplete)
     function oncomplete (err, stdout, stderr) {
-      logger.info(stdout + '')
       if (err) {
         return reject(err)
       }
@@ -111,7 +109,9 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
       // start initialize mqtt client.
       this.apiAvailable = true
       this.config.masterId = basicInfo.master
-      this.cloudgw = new CloudGw(this.config)
+      this.cloudgw = new CloudGw(Object.assign({
+        host: env.cloudgw.restful
+      }, this.config))
       this.syncDate()
 
       if (!this.options.disableMqtt) {
