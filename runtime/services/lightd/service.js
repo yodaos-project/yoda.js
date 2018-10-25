@@ -4,6 +4,7 @@ var logger = require('logger')('lightService')
 var LightRenderingContextManager = require('./effects')
 var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
+var light = require('@yoda/light')
 
 var LIGHT_SOURCE = '/opt/light/'
 var maxUserspaceLayers = 3
@@ -76,30 +77,44 @@ Light.prototype.getContext = function () {
  */
 Light.prototype.stopPrev = function (keepLastFrame) {
   if (typeof this.prevCallback === 'function') {
+    logger.log('call function: prevCallback')
     this.prevCallback()
     this.prevCallback = null
   }
   if (this.prev) {
     try {
       if (typeof this.prev === 'function') {
+        logger.log('call hook function: stop')
         this.prev(keepLastFrame)
       } else if (this.prev && typeof this.prev.stop === 'function') {
+        logger.log('call hook function: prev.stop')
         this.prev.stop(keepLastFrame)
+      } else {
+        logger.log('ignore stop hook because currently light didn\'t subscribe it')
       }
     } catch (error) {
-      logger.error(`try to stop '${this.prevUri}' error. belong to '${this.prevAppId}'`)
+      logger.error(`try to call hook: stop '${this.prevUri}' error. belong to '${this.prevAppId}'`)
     }
     this.prev = null
   }
   // auto free timer and clear light. users should not call this method manually.
   // this is also to achieve smooth transition
   if (this.prevContext) {
+    logger.log('clear all timer and player')
     this.prevContext.stop(keepLastFrame)
+  } else {
+    logger.warn('currently not found context light, skip clear timer and player')
+  }
+  // turn off LED if keepLastFrame not specified as true
+  if (keepLastFrame !== true) {
+    light.clear()
+    light.write()
   }
   this.prevZIndex = null
   this.prevUri = null
   this.prevContext = null
   this.prevAppId = null
+  logger.log(`stop currently light complete with keepLastFrame: [${keepLastFrame}]`)
 }
 
 Light.prototype.clearPrev = function () {
@@ -315,6 +330,7 @@ Light.prototype.resume = function () {
       logger.error(`try to resume effect file error from path: ${resume.uri}`, error)
     }
   } else {
+    logger.log('no light need to resume, turn off LED')
     // clear leds effect without next light to render
     this.stopPrev(false)
   }
