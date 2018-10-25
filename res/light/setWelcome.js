@@ -22,7 +22,6 @@ module.exports = function (light, data, callback) {
   return {
     stop: function () {
       callback()
-      player.stop()
       light.stop()
     }
   }
