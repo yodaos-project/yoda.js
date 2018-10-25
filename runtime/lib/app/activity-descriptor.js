@@ -214,6 +214,18 @@ Object.assign(ActivityDescriptor.prototype,
      */
     url: {
       type: 'event'
+    },
+    /**
+     * Handle oppressing of other apps in monologue mode.
+     *
+     * > Only fires in monologue mode.
+     *
+     * @event yodaRT.activity.Activity#oppressing
+     * @param {'request' | 'url'} event - the event of oppressed app which would had
+     * activated the app if not in monologue mode.
+     */
+    oppressing: {
+      type: 'event'
     }
   },
   {
