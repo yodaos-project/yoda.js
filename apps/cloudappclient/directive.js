@@ -23,20 +23,6 @@ Directive.prototype.execute = function execute (dt, type, cb) {
   logger.info('start run dt')
 }
 
-Directive.prototype.stop = function (type, cb) {
-  this[type] = []
-  var dt = [{
-    type: 'tts',
-    action: 'cancel',
-    data: {}
-  }, {
-    type: 'media',
-    action: 'cancel',
-    data: {}
-  }]
-  this.execute(dt, type, cb)
-}
-
 Directive.prototype.resume = function (type, cb) {
   this[type] = []
   var dt = [{
