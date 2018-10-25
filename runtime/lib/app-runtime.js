@@ -399,6 +399,12 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve(false)
   }
 
+  if (preemptive && this.life.isMonopolized()) {
+    logger.warn(`LaVieEnPile has ben monopolized, skip voice command to app(${appId}).`)
+    return this.life.onLifeCycle(this.life.monopolist, 'oppressing', 'request')
+      .then(() => /** prevent tts/media from recovering */true)
+  }
+
   return this.life.createApp(appId)
     .catch(err => {
       logger.error(`create app ${appId} failed`, err.stack)
@@ -451,6 +457,12 @@ AppRuntime.prototype.openUrl = function (url, options) {
     return Promise.resolve(false)
   }
   var appId = this.loader.getAppIdBySkillId(skillId)
+
+  if (preemptive && this.life.isMonopolized()) {
+    logger.warn(`LaVieEnPile has ben monopolized, skip url request to app(${appId}).`)
+    return this.life.onLifeCycle(this.life.monopolist, 'oppressing', 'url')
+      .then(() => /** prevent tts/media from recovering */true)
+  }
 
   return this.life.createApp(appId)
     /** force quit app on create error */
