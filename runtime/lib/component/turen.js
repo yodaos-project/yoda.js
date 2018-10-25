@@ -204,6 +204,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
   clearTimeout(this.solitaryVoiceComingTimer)
   this.solitaryVoiceComingTimer = setTimeout(() => {
     logger.warn('detected a solitary voice coming, resetting awaken')
+    this.pickup(false)
     this.resetAwaken()
   }, this.solitaryVoiceComingTimeout)
 
