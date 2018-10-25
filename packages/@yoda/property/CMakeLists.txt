@@ -6,6 +6,7 @@ add_library(node-property MODULE
   src/PropertyNative.cc
 )
 target_include_directories(node-property PRIVATE
+  ../../../include
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node

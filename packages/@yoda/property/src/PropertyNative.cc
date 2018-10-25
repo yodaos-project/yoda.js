@@ -1,70 +1,74 @@
-#include "PropertyNative.h"
+#include <node_api.h>
+#include <stdio.h>
+#include <common.h>
+#include <string.h>
 #include <cutils/properties.h>
 
-JS_FUNCTION(GetProperty) {
-  if (!jerry_value_is_string(jargv[0]))
-    return JS_CREATE_ERROR(COMMON, "key must be a string");
-
-  jerry_size_t keylen = jerry_get_string_size(jargv[0]);
+static napi_value GetProperty(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  size_t keylen;
+  size_t argc = 1;
+  napi_value argv[1];
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_string_utf8(env, argv[0], NULL, 0, &keylen);
   char key[keylen + 1];
-
-  size_t check =
-      jerry_string_to_char_buffer(jargv[0], (jerry_char_t*)key, keylen);
-  IOTJS_ASSERT(check == keylen);
+  size_t res;
+  napi_status status =
+      napi_get_value_string_utf8(env, argv[0], key, keylen + 1, &res);
+  if (status != napi_ok) {
+    napi_throw_error(env, NULL, "key must be a string");
+    return NULL;
+  }
   key[keylen] = '\0';
-
   char val[PROP_VALUE_MAX];
-  property_get(key, (char*)&val, "");
-  return jerry_create_string((const jerry_char_t*)val);
+  property_get(key, val, "");
+  napi_create_string_utf8(env, val, strlen(val), &returnVal);
+  return returnVal;
 }
-
-JS_FUNCTION(SetProperty) {
-  jerry_value_t jkey = jargv[0];
-  jerry_value_t jval = jargv[1];
-  if (!jerry_value_is_string(jkey)) {
-    return JS_CREATE_ERROR(COMMON, "key must be a string");
+static napi_value SetProperty(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  size_t keylen;
+  size_t vallen;
+  size_t keyRes;
+  size_t valRes;
+  size_t argc = 2;
+  napi_value argv[2];
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_string_utf8(env, argv[0], NULL, 0, &keylen);
+  char str[keylen + 1];
+  napi_status status =
+      napi_get_value_string_utf8(env, argv[0], str, keylen + 1, &keyRes);
+  if (status != napi_ok) {
+    napi_throw_error(env, NULL, "key must be a string");
+    return NULL;
   }
-  if (!jerry_value_is_string(jval)) {
-    jval = jerry_value_to_string(jval);
+  napi_get_value_string_utf8(env, argv[1], NULL, 0, &vallen);
+  char strl[vallen + 1];
+  status = napi_get_value_string_utf8(env, argv[1], strl, vallen + 1, &valRes);
+  if (status != napi_ok) {
+    napi_throw_error(env, NULL, "key must be a string");
+    return NULL;
   }
-  jerry_size_t keylen = jerry_get_string_size(jkey);
-  jerry_size_t vallen = jerry_get_string_size(jval);
-
-  if (vallen > PROP_VALUE_MAX)
-    vallen = PROP_VALUE_MAX;
-
-  char pstr[keylen + 1 + vallen + 1];
-  char* key = pstr;
-  char* val = pstr + keylen + 1;
-
-  jerry_string_to_char_buffer(jkey, (jerry_char_t*)key, keylen);
-  pstr[keylen] = '\0';
-  jerry_string_to_char_buffer(jval, (jerry_char_t*)val, vallen);
-  pstr[keylen + vallen + 1] = '\0';
-
-  int r = property_set(key, val);
+  if (valRes > PROP_VALUE_MAX)
+    valRes = PROP_VALUE_MAX;
+  int r = property_set(str, strl);
   if (r == 0) {
-    return jerry_create_boolean(true);
+    napi_get_boolean(env, true, &returnVal);
+    return returnVal;
   } else {
-    return JS_CREATE_ERROR(COMMON, "key is too long.");
+    napi_throw_error(env, NULL, "key is too long");
+    return NULL;
   }
 }
 
-void init(jerry_value_t exports) {
-  iotjs_jval_set_method(exports, "get", GetProperty);
-  iotjs_jval_set_method(exports, "set", SetProperty);
-
-#define IOTJS_SET_CONSTANT(jobj, name)                                    \
-  do {                                                                    \
-    jerry_value_t jkey = jerry_create_string((const jerry_char_t*)#name); \
-    jerry_value_t jval = jerry_create_number(name);                       \
-    jerry_set_property(jobj, jkey, jval);                                 \
-    jerry_release_value(jkey);                                            \
-    jerry_release_value(jval);                                            \
-  } while (0)
-
-  IOTJS_SET_CONSTANT(exports, PROP_VALUE_MAX);
-#undef IOTJS_SET_CONSTANT
+static napi_value Init(napi_env env, napi_value exports) {
+  napi_property_descriptor desc[] = {
+    DECLARE_NAPI_PROPERTY("get", GetProperty),
+    DECLARE_NAPI_PROPERTY("set", SetProperty),
+  };
+  napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc);
+  NAPI_SET_CONSTANT(exports, PROP_VALUE_MAX);
+  return exports;
 }
 
-NODE_MODULE(volume, init)
+NAPI_MODULE(property, Init)
