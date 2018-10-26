@@ -284,6 +284,12 @@ AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
   if (this.sound.isMuted()) {
     this.sound.unmute()
   }
+
+  // reset network if current is at network app.
+  if (this.life.getCurrentAppId() === '@yoda/network') {
+    return this.openUrl('yoda-skill://network/renew')
+  }
+
   // In order to play sound when currently is muted
   Promise.all([
     this.light.appSound('@yoda', 'system://key_config_notify.ogg'),
@@ -321,6 +327,12 @@ AppRuntime.prototype.stopLongPressMicLight = function stopLongPressMicLight () {
  * @param {boolean} [options.removeAll] - remove local wifi config?
  */
 AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
+  // skip if current is at network app
+  if (this.life.getCurrentAppId() === '@yoda/network') {
+    logger.info('skip reset network when configuring network.')
+    return
+  }
+
   /**
    * reset should welcome so that welcome effect could be played on re-login
    */
