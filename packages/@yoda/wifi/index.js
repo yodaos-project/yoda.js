@@ -194,6 +194,8 @@ module.exports.checkNetwork = function checkNetwork (timeout, callback) {
         internetChecker = setTimeout(checkInternet, interval)
         return
       }
+      // refresh the dns before checking
+      native.resetDns()
       dns.lookup('www.rokid.com', (err, addr) => {
         logger.info('dns looked up with addr', addr)
         state = null

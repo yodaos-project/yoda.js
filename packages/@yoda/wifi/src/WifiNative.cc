@@ -106,6 +106,7 @@ JS_FUNCTION(Reconfigure) {
 
 JS_FUNCTION(ResetDns) {
   res_init();
+  fprintf(stdout, "reset dns cache\n");
   return jerry_create_boolean(true);
 }
 
