@@ -183,6 +183,9 @@ module.exports.checkNetwork = function checkNetwork (timeout, callback) {
       var s = native.getWifiState()
       if (s === self.WIFI_CONNECTED) {
         state = 'netserver'
+      } else if (s === self.WIFI_UNCONNECTED) {
+        logger.info('wifi is not connected')
+        return callback(null, false)
       }
       internetChecker = setTimeout(checkInternet, interval)
     } else if (state === 'netserver') {

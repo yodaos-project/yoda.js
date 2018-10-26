@@ -51,6 +51,7 @@ module.exports = function (app) {
   var sleepTimer
   var scanHandle = null
   var WifiList = []
+  var connectingMasterId = null
 
   // scan wifi list when app startup
   // phone app need get scan results of device, show list in phone app
@@ -67,6 +68,21 @@ module.exports = function (app) {
     logger.log('app recv url:', url.href)
 
     switch (url.pathname) {
+      case '/setup':
+        setupNetworkByBle()
+        break
+      case '/connected':
+        sendWifiStatus({
+          topic: 'bind',
+          sCode: '11',
+          sMsg: 'wifi连接成功'
+        })
+        if (connectingMasterId) {
+          logger.info('connecting master id is set, and then set app.network.masterId for login')
+          property.set('app.network.masterId', connectingMasterId)
+          connectingMasterId = null
+        }
+        break
       case '/cloud_status':
         code = _.get(url.query, 'code')
         msg = _.get(url.query, 'msg')
@@ -92,16 +108,6 @@ module.exports = function (app) {
           NET_DISABLE_RECONNECT = true
           setTimeout(intoSleep, 1000)
         }
-        break
-      case '/setup':
-        setupNetworkByBle()
-        break
-      case '/connected':
-        sendWifiStatus({
-          topic: 'bind',
-          sCode: '11',
-          sMsg: 'wifi连接成功'
-        })
         break
       case '/wifi_status':
         if (netStatus === NET_STATUS_CONNECTING) {
@@ -244,7 +250,8 @@ module.exports = function (app) {
         sMsg: 'wifi连接中'
       })
       logger.log(`start connect to wifi with SSID: ${data.S}`)
-      property.set('app.network.masterId', data.U)
+      connectingMasterId = data.U
+
       app.playSound('system://prepare_connect_wifi.ogg')
       connectTimeout = setTimeout(() => {
         logger.log('connect to wifi timeout')

@@ -281,6 +281,7 @@ DBus.prototype.amsexport = {
         if (data.upgrade === true) {
           this.runtime.startApp('@upgrade', {}, {})
         } else if (currentAppId === '@yoda/network') {
+          logger.log('receive event', data && data.msg)
           var filter = [
             'CTRL-EVENT-SCAN-STARTED',
             'CTRL-EVENT-SCAN-RESULTS',
