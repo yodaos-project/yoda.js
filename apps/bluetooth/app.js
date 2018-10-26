@@ -188,17 +188,14 @@ module.exports = function (activity) {
         activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
         // for users from operating Bluetooth music from the phone.
       }
-      if (message.play_state === 'stoped') {
-        activityPlayState = false
-      }
       bluetoothMessageSpeak(message, activityNlpIntent)// speak action
       bluetoothMessagelight(message)// light action
     })
   })
   activity.on('pause', () => {
     if (bluetoothMessage.play_state === 'played') {
-      pauseMusic()
       activityPlayState = true
+      pauseMusic()
     }
   })
 
