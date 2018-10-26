@@ -52,10 +52,6 @@ Directive.prototype.execute = function execute (dt, type, cb) {
   eventBus.emit(`execute:${this.appId}`, dt, type)
 }
 
-Directive.prototype.stop = function (type, cb) {
-  eventBus.emit(`stop:${this.appId}`, type)
-}
-
 Directive.prototype.resume = function (type, cb) {
   eventBus.emit(`resume:${this.appId}`, type)
 }
@@ -65,13 +61,9 @@ Directive.prototype.run = function run (type, cb) {
 }
 
 test('skill event: skill start', t => {
-  t.plan(5)
+  t.plan(4)
   eventBus.on('execute:appid1-cut', (dt, type) => {
     t.equal(type, 'frontend')
-    t.pass('appid1-cut emit start')
-  })
-  eventBus.on('stop:appid1-cut', (type) => {
-    console.log('type====', type)
     t.pass('appid1-cut emit start')
   })
   var exe = new Directive()

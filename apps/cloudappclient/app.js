@@ -60,12 +60,12 @@ module.exports = activity => {
       activity.tts.stop()
         .then(() => {
           logger.log(`end dt: tts.${dt.action}`)
-          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'), next)
+          sos.sendEventRequest('tts', 'cancel', dt.data, _.get(dt, 'data.item.itemId'))
         })
         .catch((err) => {
           logger.log(`end dt: tts.${dt.action} ${err}`)
-          next()
         })
+      next()
     }
   })
   directive.do('frontend', 'media', function (dt, next) {
@@ -100,12 +100,12 @@ module.exports = activity => {
           sos.sendEventRequest('media', 'pause', dt.data, {
             itemId: _.get(dt, 'data.item.itemId'),
             token: _.get(dt, 'data.item.token')
-          }, next)
+          })
         })
         .catch((err) => {
           logger.log('media pause failed', err)
-          next()
         })
+      next()
     } else if (dt.action === 'resume') {
       activity.media.resume()
         .then(() => {
@@ -123,24 +123,24 @@ module.exports = activity => {
           sos.sendEventRequest('media', 'cancel', dt.data, {
             itemId: _.get(dt, 'data.item.itemId'),
             token: _.get(dt, 'data.item.token')
-          }, next)
+          })
         })
         .catch((err) => {
           logger.log('media stop failed', err)
-          next()
         })
+      next()
     } else if (dt.action === 'stop') {
       activity.media.stop()
         .then(() => {
           sos.sendEventRequest('media', 'stop', dt.data, {
             itemId: _.get(dt, 'data.item.itemId'),
             token: _.get(dt, 'data.item.token')
-          }, next)
+          })
         })
         .catch((err) => {
           logger.log('media stop failed', err)
-          next()
         })
+      next()
     }
   })
 
