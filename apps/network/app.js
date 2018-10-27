@@ -141,6 +141,8 @@ module.exports = function (app) {
           logger.log(`renew sleep timer and check the net status ${netStatus}`)
           if (!isConnecting) {
             app.playSound('system://wifi/setup_network.ogg')
+          } else {
+            app.playSound('system://wifi_is_connecting.ogg')
           }
           timerAndSleep()
         } else {
