@@ -211,6 +211,7 @@ dbusApis.addMethod('speak', {
       logger.error(`Unexpected error on requesting tts.speak for app ${appId}`, err.stack)
       return cb(null, '-1')
     }
+    logger.log('tts speak requested:', id)
     cb(null, '' + id)
   } else {
     // TODO: error handler?
