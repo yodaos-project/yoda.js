@@ -88,14 +88,68 @@
     NAPI_CALL(env, napi_get_value_int32(env, nval, res));             \
   } while (0);
 
-#define NAPI_SET_CONSTANT(target, name)                                   \
-  do {                                                                    \
-    napi_value key;                                                       \
-    napi_value value;                                                     \
-    napi_create_string_utf8(env, #name, strlen(#name), &key);             \
-    napi_create_int32(env, name, &value);                                 \
-    napi_set_property(env, target, key, value);                           \
-  } while(0);
+#define NAPI_SET_CONSTANT(target, name)                       \
+  do {                                                        \
+    napi_value key;                                           \
+    napi_value value;                                         \
+    napi_create_string_utf8(env, #name, strlen(#name), &key); \
+    napi_create_int32(env, name, &value);                     \
+    napi_set_property(env, target, key, value);               \
+  } while (0);
+
+#define NAPI_GET_LAST_ERROR_MSG(env)                        \
+  ({                                                        \
+    const char* msg = nullptr;                              \
+    const napi_extended_error_info* error;                  \
+    if (napi_get_last_error_info(env, &error) == napi_ok) { \
+      msg = error->error_message;                           \
+    }                                                       \
+    msg;                                                    \
+  })
+
+#define NAPI_COPY_STRING(env, value, size)                                   \
+  ({                                                                         \
+    char* str = nullptr;                                                     \
+    if ((napi_get_value_string_utf8(env, (value), NULL, 0, &(size)) ==       \
+         napi_ok) &&                                                         \
+        ((str = (char*)malloc(size + 1)) != nullptr)) {                      \
+      if (napi_get_value_string_utf8(env, (value), str, (size) + 1, NULL) != \
+          napi_ok) {                                                         \
+        free(str);                                                           \
+        str = nullptr;                                                       \
+      } else {                                                               \
+        str[size] = '\0';                                                    \
+      }                                                                      \
+    }                                                                        \
+    str;                                                                     \
+  })
+
+#define NAPI_ASSIGN_STD_STRING(env, stdstr, value) \
+  ({                                               \
+    size_t len = 0;                                \
+    char* s = NAPI_COPY_STRING(env, value, len);   \
+    if (s) {                                       \
+      (stdstr).assign(s, len);                     \
+      free(s);                                     \
+    }                                              \
+    len;                                           \
+  })
+
+#define NAPI_GET_PROPERTY(env, obj, ckey, nkey, type)                      \
+  ({                                                                       \
+    napi_value key = (nkey), value = nullptr;                              \
+    bool has = false;                                                      \
+    napi_valuetype type;                                                   \
+    if (((key ||                                                           \
+          napi_create_string_utf8(env, (ckey), NAPI_AUTO_LENGTH, &key) ==  \
+              napi_ok)) &&                                                 \
+        (napi_has_property(env, (obj), key, &has) == napi_ok) && has &&    \
+        (napi_get_property(env, (obj), key, &value) == napi_ok)) {         \
+      if ((napi_typeof(env, value, &type) != napi_ok) || type != (type)) { \
+        value = nullptr;                                                   \
+      }                                                                    \
+    }                                                                      \
+    value;                                                                 \
+  })
 
 #endif
-
