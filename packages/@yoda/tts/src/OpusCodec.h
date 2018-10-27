@@ -22,6 +22,7 @@ typedef enum {
 class OpusCodec {
  public:
   OpusCodec(int sample_rate, int channels, int bitrate, int application);
+  ~OpusCodec();
   long encoder;
   long decoder;
 
