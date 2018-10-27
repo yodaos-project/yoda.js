@@ -12,6 +12,7 @@ class OpusPlayer {
 
   void play(const char* data, size_t length);
   void reset();
+  void drain();
 
  private:
   pa_simple* s;
@@ -29,6 +30,8 @@ class OpusPlayer {
   OpusSampleRate SampleRate = SR_24K;
   OpusApplication Application = AUDIO;
   OpusCodec* _opus;
+  size_t _silentDataLen;
+  uint8_t* _silentData;
 };
 
 #endif

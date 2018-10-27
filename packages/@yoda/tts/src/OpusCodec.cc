@@ -23,9 +23,14 @@ OpusCodec::OpusCodec(int sample_rate, int channels, int bitrate,
       0) {
     ALOGW("decoder create failed");
   }
-  if ((encoder = native_opus_encoder_create(sample_rate, channels, bitrate,
-                                            application)) == 0) {
-    ALOGW("endecoder create failed");
+}
+
+OpusCodec::~OpusCodec() {
+  if (decoder) {
+    if (((opus_st*)decoder)->dec) {
+      opus_decoder_destroy(((opus_st*)decoder)->dec);
+    }
+    free(((opus_st*)decoder));
   }
 }
 

@@ -59,18 +59,22 @@ void* TtsService::PollEvent(void* params) {
         break;
       }
       case TTS_RES_START: {
+        _player.reset();
         self->send_event(self, TTS_RES_START, res.id, 0);
         break;
       }
       case TTS_RES_END: {
+        _player.drain();
         self->send_event(self, TTS_RES_END, res.id, 0);
         break;
       }
       case TTS_RES_CANCELLED: {
+        _player.drain();
         self->send_event(self, TTS_RES_CANCELLED, res.id, 0);
         break;
       }
       case TTS_RES_ERROR: {
+        _player.drain();
         self->send_event(self, TTS_RES_ERROR, res.id, res.err);
         break;
       }
