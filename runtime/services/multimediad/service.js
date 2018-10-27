@@ -150,12 +150,15 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
   })
   player.on('playbackcomplete', () => {
     // free handle after playbackcomplete
-    try {
-      this.handle[appId].stop()
-    } catch (error) {
-      logger.error(`try to stop player error with appId: ${appId}`, error.stack)
+    var handle = this.handle[appId]
+    if (handle) {
+      try {
+        handle.stop()
+        delete this.handle[appId]
+      } catch (error) {
+        logger.error(`try to stop player error with appId: ${appId}`, error.stack)
+      }
     }
-    delete this.handle[appId]
     this.emit('playbackcomplete', '' + player.id)
     AudioManager.setPlayingState(audioModuleName, false)
   })
@@ -168,12 +171,15 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
   })
   player.on('error', () => {
     // free handle when something goes wrong
-    try {
-      this.handle[appId].stop()
-    } catch (error) {
-      logger.error(`try to stop player error with appId: ${appId}`, error.stack)
+    var handle = this.handle[appId]
+    if (handle) {
+      try {
+        handle.stop()
+        delete this.handle[appId]
+      } catch (error) {
+        logger.error(`try to stop player error with appId: ${appId}`, error.stack)
+      }
     }
-    delete this.handle[appId]
     this.emit('error', '' + player.id)
     AudioManager.setPlayingState(audioModuleName, false)
   })
