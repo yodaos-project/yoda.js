@@ -1,5 +1,6 @@
 #include "InputNative.h"
 #include <unistd.h>
+#include <time.h>
 
 #ifdef HAS_TOUCHPAD
 #define IOTJS_INPUT_HAS_TOUCH true
@@ -130,7 +131,7 @@ void InputEventHandler::DoStart(uv_work_t* req) {
       event->data.value = handler->keyevent_.value;
       event->data.action = handler->keyevent_.action;
       event->data.key_code = handler->keyevent_.key_code;
-      event->data.key_time = handler->keyevent_.key_time;
+      event->data.key_timeval = handler->keyevent_.key_timeval;
       async->data = (void*)event;
       uv_async_init(uv_default_loop(), async, InputEventHandler::OnKeyEvent);
       uv_async_send(async);
@@ -173,7 +174,11 @@ void InputEventHandler::OnKeyEvent(uv_async_t* async) {
   iotjs_jargs_append_number(&jargs, (double)event->data.value);
   iotjs_jargs_append_number(&jargs, (double)event->data.action);
   iotjs_jargs_append_number(&jargs, (double)event->data.key_code);
-  iotjs_jargs_append_number(&jargs, (double)event->data.key_time);
+
+  struct timeval key_time = event->data.key_timeval;
+  double jkey_time =
+      static_cast<double>(key_time.tv_sec * 1000.0 + key_time.tv_usec / 1000);
+  iotjs_jargs_append_number(&jargs, jkey_time);
   iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
   iotjs_jargs_destroy(&jargs);
   jerry_release_value(onevent);
