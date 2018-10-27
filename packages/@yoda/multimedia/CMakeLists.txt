@@ -8,7 +8,6 @@ add_library(node-mediaplayer MODULE
 target_include_directories(node-mediaplayer PRIVATE
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
-  ${CMAKE_INCLUDE_DIR}/usr/include/librplayer
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
 )
 
@@ -24,11 +23,10 @@ target_include_directories(node-wavplayer PRIVATE
   ../../../include
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
-  ${CMAKE_INCLUDE_DIR}/usr/include/librplayer
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
 )
 
-target_link_libraries(node-wavplayer iotjs rplayer avformat avutil)
+target_link_libraries(node-wavplayer iotjs wavplayer )
 set_target_properties(node-wavplayer PROPERTIES
   PREFIX ""
   SUFFIX ".node"

@@ -3,7 +3,7 @@
 #include <node_api.h>
 #include <common.h>
 #include <string.h>
-#include <wavPlayer.h>
+#include <librplayer/WavPlayer.h>
 
 typedef struct {
   char** _filenames;
