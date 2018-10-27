@@ -36,6 +36,8 @@ var CLOUD_STATUS = {
 module.exports = function (app) {
   var netStatus = NET_STATUS_IDLE
   var bleStatus = BLE_STATUS_CLOSED
+  var isConnecting = false
+
   var uuid = (property.get('ro.boot.serialno') || '').substr(-6)
   // save the current connected wifi config
   var prevWIFI = {
@@ -136,8 +138,10 @@ module.exports = function (app) {
         break
       case '/renew':
         if (bleStatus === BLE_STATUS_CONNECTED) {
-          logger.log('renew sleep timer')
-          // renew sleep timer
+          logger.log(`renew sleep timer and check the net status ${netStatus}`)
+          if (!isConnecting) {
+            app.playSound('system://wifi/setup_network.ogg')
+          }
           timerAndSleep()
         } else {
           setupNetworkByBle()
@@ -248,6 +252,7 @@ module.exports = function (app) {
       })
       logger.log(`start connect to wifi with SSID: ${data.S}`)
       connectingMasterId = data.U
+      isConnecting = true
 
       app.playSound('system://prepare_connect_wifi.ogg')
       connectTimeout = setTimeout(() => {
@@ -266,6 +271,8 @@ module.exports = function (app) {
     wifi.removeNetwork(connectId)
     clearTimeout(pooling)
     clearTimeout(connectTimeout)
+    netStatus = NET_STATUS_IDLE
+    isConnecting = false
   }
 
   function getWIFIState (cb) {
