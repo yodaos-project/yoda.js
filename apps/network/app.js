@@ -57,15 +57,14 @@ module.exports = function (app) {
   // phone app need get scan results of device, show list in phone app
   wifi.scan()
 
-  app.on('destroy', function () {
+  app.on('destroy', () => {
     intoSleep()
-    bluetooth.disconnect()
     logger.log('network app destroy')
   })
 
   app.on('url', url => {
     var code, msg
-    logger.log('app recv url:', url.href)
+    logger.info(`receive the url ${url.href}`)
 
     switch (url.pathname) {
       case '/setup':

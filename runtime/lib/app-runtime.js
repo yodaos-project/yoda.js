@@ -1021,12 +1021,22 @@ AppRuntime.prototype.reconnect = function () {
   logger.log('received the wifi is online, reset DNS config.')
 
   var future = Promise.resolve()
+  var masterKey = 'app.network.masterId'
+
   if (this.custodian.isConfiguringNetwork()) {
     future = this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
   }
 
   future.then(() => {
-    var masterId = property.get('app.network.masterId')
+    var masterId = property.get(masterKey)
+    if (masterId) {
+      return masterId
+    }
+    return new Promise((resolve) => {
+      logger.info('master id is not set, and just wait 1s to try again once')
+      setTimeout(() => resolve(property.get(masterKey)), 1000)
+    })
+  }).then((masterId) => {
     logger.info(`recconecting with -> ${masterId}`)
     // check if logged in and not for reconfiguring network,
     // just reconnect in background.
