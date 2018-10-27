@@ -11,13 +11,16 @@ mock.mockReturns(wifi, 'disableAll', undefined)
 mock.mockReturns(wifi, 'checkNetwork', undefined)
 
 test('custodian state shall shifts', t => {
-  t.plan(18)
+  t.plan(14)
   var runtime = {
     reconnect: function () {
       t.pass('onNetworkConnect shall trigger runtime#reconnect')
     },
     startApp: function () {
       t.fail('runtime#startApp shall not be called since logged in')
+    },
+    light: {
+      stop: function () {}
     },
     wormhole: {
       setOffline: function () {
@@ -26,26 +29,22 @@ test('custodian state shall shifts', t => {
     }
   }
   var custodian = new Custodian(runtime)
-  t.true(custodian.isConfiguringNetwork(), 'custodian shall be configuring network at initiation')
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
   t.true(custodian.isNetworkUnavailable())
 
   custodian.onNetworkConnect()
-  t.false(custodian.isConfiguringNetwork())
   t.true(custodian.isRegistering(), 'custodian shall be network connected')
   t.false(custodian.isPrepared())
   t.false(custodian.isNetworkUnavailable())
 
   custodian.onLoggedIn()
-  t.false(custodian.isConfiguringNetwork())
   t.false(custodian.isRegistering())
   t.true(custodian.isPrepared(), 'custodian shall be logged in')
   t.true(custodian.isLoggedIn(), 'custodian shall be logged in')
   t.false(custodian.isNetworkUnavailable())
 
   custodian.onNetworkDisconnect()
-  t.false(custodian.isConfiguringNetwork())
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
   t.true(custodian.isLoggedIn(), 'custodian shall be still logged in')
@@ -53,12 +52,15 @@ test('custodian state shall shifts', t => {
 })
 
 test('custodian shall start network app on network disconnect if not logged in', t => {
-  t.plan(5)
+  t.plan(4)
   mock.mockReturns(wifi, 'getNumOfHistory', 0)
 
   var runtime = {
     openUrl: function () {
       t.pass('onNetworkDisconnect shall trigger runtime#openUrl')
+    },
+    light: {
+      stop: function () {}
     },
     wormhole: {
       setOffline: function () {
@@ -68,20 +70,22 @@ test('custodian shall start network app on network disconnect if not logged in',
   }
   var custodian = new Custodian(runtime)
   custodian.onNetworkDisconnect()
-  t.true(custodian.isConfiguringNetwork(), 'custodian shall be configuring network at initiation')
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
   t.true(custodian.isNetworkUnavailable())
 })
 
 test('custodian shall reset network', t => {
-  t.plan(13)
+  t.plan(11)
   var runtime = {
     reconnect: function () {
       t.fail('onNetworkConnect shall not trigger runtime#reconnect')
     },
     openUrl: function () {
       t.pass('resetNetwork shall trigger runtime#startApp')
+    },
+    light: {
+      stop: function () {}
     },
     wormhole: {
       setOffline: function () {
@@ -95,7 +99,6 @@ test('custodian shall reset network', t => {
   var custodian = new Custodian(runtime)
   custodian.onNetworkConnect()
   custodian.onLoggedIn()
-  t.false(custodian.isConfiguringNetwork())
   t.false(custodian.isRegistering())
   t.true(custodian.isPrepared(), 'custodian shall be prepared')
   t.false(custodian.isNetworkUnavailable())
@@ -106,7 +109,6 @@ test('custodian shall reset network', t => {
   t.equal(runtime.onGetPropAll().foobar, 10, 'custodian shall be able to get prop')
 
   custodian.onLogout()
-  t.true(custodian.isConfiguringNetwork(), 'custodian shall be configuring network at reset network')
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
   t.deepEqual(runtime.onGetPropAll(), {}, 'custodian shall be getting the empty prop')

@@ -194,7 +194,7 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
 AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (code, msg) {
   logger.debug(`cloud event code=${code} msg=${msg}`)
   if (this.custodian.isRegistering() &&
-    this.life.getCurrentAppId() === '@yoda/network') {
+    this.custodian.isConfiguringNetwork()) {
     this.openUrl(`yoda-skill://network/cloud_status?code=${code}&msg=${msg}`, {
       preemptive: false
     })
@@ -218,7 +218,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
    */
   var future = this.resetServices({ lightd: false })
 
-  if (this.custodian.isConfiguringNetwork()) {
+  if (currentAppId == null && !this.custodian.isPrepared()) {
     // start @network app if network is not connected
     return future.then(() => {
       return this.openUrl('yoda-skill://network/setup')
@@ -286,7 +286,7 @@ AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
   }
 
   // reset network if current is at network app.
-  if (this.life.getCurrentAppId() === '@yoda/network') {
+  if (this.custodian.isConfiguringNetwork()) {
     return this.openUrl('yoda-skill://network/renew')
   }
 
@@ -328,7 +328,7 @@ AppRuntime.prototype.stopLongPressMicLight = function stopLongPressMicLight () {
  */
 AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
   // skip if current is at network app
-  if (this.life.getCurrentAppId() === '@yoda/network') {
+  if (this.custodian.isConfiguringNetwork()) {
     logger.info('skip reset network when configuring network.')
     return
   }
@@ -1020,7 +1020,7 @@ AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
   logger.log('received the wifi is online, reset DNS config.')
 
-  if (this.life.getCurrentAppId() === '@yoda/network') {
+  if (this.custodian.isConfiguringNetwork()) {
     this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
   }
 

@@ -198,7 +198,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
     this.pickup(false)
 
     var currentAppId = this.runtime.life.getCurrentAppId()
-    if (currentAppId === '@yoda/network') {
+    if (this.runtime.custodian.isConfiguringNetwork()) {
       /**
        * Configuring network, delegates event to network app.
        */

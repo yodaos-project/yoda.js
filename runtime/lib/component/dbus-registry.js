@@ -275,12 +275,11 @@ DBus.prototype.amsexport = {
       }
       try {
         var data = JSON.parse(status)
-        var currentAppId = this.runtime.life.getCurrentAppId()
         cb(null, true)
 
         if (data.upgrade === true) {
           this.runtime.startApp('@upgrade', {}, {})
-        } else if (currentAppId === '@yoda/network') {
+        } else if (this.runtime.custodian.isConfiguringNetwork()) {
           logger.log('receive event', data && data.msg)
           var filter = [
             'CTRL-EVENT-SCAN-STARTED',
@@ -296,7 +295,7 @@ DBus.prototype.amsexport = {
         }
         if (data['Wifi'] === true || data['Network'] === true) {
           this.runtime.custodian.onNetworkConnect()
-        } else if (currentAppId !== '@yoda/network' &&
+        } else if (!this.runtime.custodian.isConfiguringNetwork() &&
           (data['Network'] === false || data['Wifi'] === false)) {
           this.runtime.custodian.onNetworkDisconnect()
         }

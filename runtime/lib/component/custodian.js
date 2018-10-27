@@ -112,24 +112,39 @@ Custodian.prototype.resetNetwork = function resetNetwork (options) {
   this.runtime.openUrl('yoda-skill://network/setup', { preemptive: true })
 }
 
+/**
+ * Determines network is connected also runtime was logged in.
+ */
 Custodian.prototype.isPrepared = function isPrepared () {
   return this._networkConnected && this._loggedIn
 }
 
+/**
+ * Determines if network is unavailable.
+ */
 Custodian.prototype.isNetworkUnavailable = function isNetworkUnavailable () {
   return !this._networkConnected
 }
 
+/**
+ * Determines network is connected yet runtime is registering with Rokid services.
+ */
 Custodian.prototype.isRegistering = function isRegistering () {
   return this._networkConnected && !this._loggedIn
 }
 
+/**
+ * Determines runtime is once logged in and has not been reset.
+ */
 Custodian.prototype.isLoggedIn = function isLoggedIn () {
   return this._loggedIn
 }
 
+/**
+ * Determines if network configuring app is currently active app.
+ */
 Custodian.prototype.isConfiguringNetwork = function isConfiguringNetwork () {
-  return !(this._networkConnected || this._loggedIn)
+  return this.runtime.life.getCurrentAppId() === '@yoda/network'
 }
 
 Custodian.prototype.prepareNetwork = function prepareNetwork () {
