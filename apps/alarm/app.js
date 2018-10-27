@@ -7,6 +7,7 @@ var Cron = require('./node-cron')
 var fs = require('fs')
 var request = require('./request')
 var yodaUtil = require('@yoda/util')
+var getAlarms = require('./data-migration')
 
 var CONFIGFILEPATH = '/data/AppData/alarm/config.json'
 var KEYCODES = [113, 114, 115, 116]
@@ -21,7 +22,7 @@ module.exports = function (activity) {
     addConfigFile()
     var state = wifi.getNetworkState()
     if (state === wifi.NETSERVER_CONNECTED) {
-      requestAlarms('sync_alarm')
+      getAlarms(activity, initAlarm)
     } else {
       getTasksFromConfig(function (command) {
         initAlarm(command)
@@ -57,28 +58,6 @@ module.exports = function (activity) {
     restoreEventsDefaults()
     logger.log(this.appId + ' destroyed')
   })
-
-  function requestAlarms (intent, businessParams) {
-    request({
-      activity: activity,
-      intent: intent,
-      businessParams: businessParams || {},
-      callback: (res) => {
-        var resObj = JSON.parse(res)
-        var alarmList = (resObj.data || {}).alarmList || []
-        var command = {}
-        for (var i = 0; i < alarmList.length; i++) {
-          command[alarmList[i].id] = alarmList[i]
-        }
-        // clear config data
-        fs.writeFile(CONFIGFILEPATH, '{}', (err) => {
-          logger.error(err && err.stack)
-          initAlarm(command, true)
-        })
-      }
-    })
-    logger.log('alarm should get config from cloud', intent)
-  }
 
   function preventEventsDefaults () {
     for (var i = 0; i < KEYCODES.length; i++) {
@@ -311,7 +290,10 @@ module.exports = function (activity) {
           return activity.tts.speak(tts || option.tts)
         }
       }).then(() => {
-        return activity.media.start('system://reminder_default.mp3', { streamType: 'alarm' })
+        return activity.media.start('system://reminder_default.mp3', {
+          streamType: 'alarm',
+          impatient: false
+        })
       }).then(() => {
         restoreEventsDefaults()
         scheduleHandler.clearReminderQueue()
