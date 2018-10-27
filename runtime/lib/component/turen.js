@@ -194,12 +194,46 @@ Turen.prototype.recoverPausedOnAwaken = function recoverPausedOnAwaken () {
  */
 Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
   if (!this.runtime.custodian.isPrepared()) {
+    logger.warn('Network not connected, preparing to announce unavailability.')
+    this.pickup(false)
+
+    var currentAppId = this.runtime.life.getCurrentAppId()
+    if (currentAppId === '@yoda/network') {
+      /**
+       * Configuring network, delegates event to network app.
+       */
+      logger.info('configuring network, renewing timer.')
+      return this.runtime.openUrl('yoda-skill://network/renew')
+    }
+
+    if (wifi.getNumOfHistory() === 0) {
+      if (currentAppId) {
+        /**
+         * although there is no WiFi history, yet some app is running out there,
+         * continuing currently app.
+         */
+        logger.info('no WiFi history exists, continuing currently running app.')
+        return this.runtime.light.appSound('@yoda', 'system://guide_config_network.ogg')
+          .then(() =>
+          /** awaken is not set for no network available, recover media directly */
+            this.recoverPausedOnAwaken()
+          )
+      }
+      /**
+       * No WiFi connection history found, introduce device setup procedure.
+       */
+      logger.info('no WiFi history exists, preparing network configuration.')
+      return this.runtime.openUrl('yoda-skill://network/setup')
+    }
+
     /**
-     * Do noting when network is not ready,
-     * since tts/media/bluetooth would mute its player on their own.
+     * if runtime is logging in or network is unavailable,
+     * and there is WiFi history existing,
+     * announce WiFi is connecting.
      */
-    logger.warn('Network not connected, skip incoming voice')
-    return
+    logger.info('announcing network unavailable on awaken.')
+    wifi.enableScanPassively()
+    return this.runtime.light.appSound('@yoda', 'system://wifi_is_connecting.ogg')
   }
 
   var future = this.setAwaken()
@@ -233,40 +267,9 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
  * @private
  */
 Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
-  var currentAppId = this.runtime.life.getCurrentAppId()
-  if (currentAppId === '@yoda/network') {
-    this.pickup(false)
-    logger.info('configuring network, renewing timer.')
-    return this.runtime.openUrl('yoda-skill://network/renew')
-  }
-  if (wifi.getNumOfHistory() === 0) {
-    this.pickup(false)
-    if (currentAppId && currentAppId !== '@yoda/network') {
-      /**
-       * although there is no WiFi history, yet some app is running out there,
-       * continuing currently app.
-       */
-      logger.info('no WiFi history exists, continuing currently running app.')
-      return this.runtime.light.appSound('@yoda', 'system://guide_config_network.ogg')
-        .then(() =>
-          /** awaken is not set for no network available, recover media directly */
-          this.recoverPausedOnAwaken()
-        )
-    }
-    logger.info('no WiFi history exists, preparing network configuration.')
-    return this.runtime.openUrl('yoda-skill://network/setup')
-  }
-  if (!this.runtime.custodian.isPrepared()) {
-    /**
-     * if runtime is logging in or network is unavailable,
-     * and there is WiFi history existing,
-     * announce WiFi is connecting.
-     */
-    logger.info('announcing network unavailable on awaken.')
-    this.pickup(false)
-    wifi.enableScanPassively()
-    return this.runtime.light.appSound('@yoda', 'system://wifi_is_connecting.ogg')
-  }
+  /**
+   * Nothing to do in local_awake event.
+   */
 }
 
 /**
