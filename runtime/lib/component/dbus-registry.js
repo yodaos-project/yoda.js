@@ -280,7 +280,7 @@ DBus.prototype.amsexport = {
         if (data.upgrade === true) {
           this.runtime.startApp('@upgrade', {}, {})
         } else if (this.runtime.custodian.isConfiguringNetwork()) {
-          logger.log('receive event', data && data.msg)
+          logger.info('recevice message with data', data)
           var filter = [
             'CTRL-EVENT-SCAN-STARTED',
             'CTRL-EVENT-SCAN-RESULTS',

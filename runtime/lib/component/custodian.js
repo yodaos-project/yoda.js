@@ -35,6 +35,7 @@ Custodian.prototype.onNetworkConnect = function onNetworkConnect () {
     return
   }
   property.set('state.network.connected', 'true')
+
   this._networkConnected = true
   logger.info('on network connect and checking internet connection.')
 

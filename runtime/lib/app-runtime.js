@@ -1020,47 +1020,52 @@ AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
   logger.log('received the wifi is online, reset DNS config.')
 
+  var future = Promise.resolve()
   if (this.custodian.isConfiguringNetwork()) {
-    this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
+    future = this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
   }
 
-  // check if logged in and not for reconfiguring network,
-  // just reconnect in background.
-  if (!property.get('app.network.masterId') && this.custodian.isLoggedIn()) {
-    logger.info('no login process is required, just skip and wait for awaking')
-    return
-  }
+  future.then(() => {
+    var masterId = property.get('app.network.masterId')
+    logger.info(`recconecting with -> ${masterId}`)
+    // check if logged in and not for reconfiguring network,
+    // just reconnect in background.
+    if (!masterId && this.custodian.isLoggedIn()) {
+      logger.info('no login process is required, just skip and wait for awaking')
+      return
+    }
 
-  // login -> mqtt
-  this.custodian.onLogout()
-  this.cloudApi.connect()
-    .then((config) => {
-      var opts = Object.assign({ uri: env.speechUri }, config)
+    // login -> mqtt
+    this.custodian.onLogout()
+    this.cloudApi.connect()
+      .then((config) => {
+        var opts = Object.assign({ uri: env.speechUri }, config)
 
-      // TODO: move to use cloudapi?
-      require('@yoda/ota/network').cloudgw = this.cloudApi.cloudgw
-      // FIXME: schedule this update later?
-      this.cloudApi.updateBasicInfo().catch((err) => {
-        logger.error('Unexpected error on updating basic info', err.stack)
+        // TODO: move to use cloudapi?
+        require('@yoda/ota/network').cloudgw = this.cloudApi.cloudgw
+        // FIXME: schedule this update later?
+        this.cloudApi.updateBasicInfo().catch((err) => {
+          logger.error('Unexpected error on updating basic info', err.stack)
+        })
+
+        this.flora.updateSpeechPrepareOptions(opts)
+
+        // overwrite `onGetPropAll`.
+        this.onGetPropAll = function onGetPropAll () {
+          return Object.assign({}, config)
+        }
+        this.wormhole.init(this.cloudApi.mqttcli)
+        this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
+        this.onLoggedIn()
+      }, (err) => {
+        if (err && err.code === 'BIND_MASTER_REQUIRED') {
+          logger.error('bind master is required, just clear the local and enter network')
+          this.custodian.resetNetwork()
+        } else {
+          logger.error('initializing occurs error', err && err.stack)
+        }
       })
-
-      this.flora.updateSpeechPrepareOptions(opts)
-
-      // overwrite `onGetPropAll`.
-      this.onGetPropAll = function onGetPropAll () {
-        return Object.assign({}, config)
-      }
-      this.wormhole.init(this.cloudApi.mqttcli)
-      this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
-      this.onLoggedIn()
-    }, (err) => {
-      if (err && err.code === 'BIND_MASTER_REQUIRED') {
-        logger.error('bind master is required, just clear the local and enter network')
-        this.custodian.resetNetwork()
-      } else {
-        logger.error('initializing occurs error', err && err.stack)
-      }
-    })
+  })
 }
 
 /**
