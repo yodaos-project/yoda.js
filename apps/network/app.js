@@ -72,16 +72,13 @@ module.exports = function (app) {
         setupNetworkByBle()
         break
       case '/connected':
-        sendWifiStatus({
-          topic: 'bind',
-          sCode: '11',
-          sMsg: 'wifi连接成功'
-        })
         if (connectingMasterId) {
-          logger.info('connecting master id is set, and then set app.network.masterId for login')
+          logger.info(`connecting masterId=${connectingMasterId} is set`)
+          logger.info('set app.network.masterId for login')
           property.set('app.network.masterId', connectingMasterId)
           connectingMasterId = null
         }
+        sendWifiStatus({ topic: 'bind', sCode: '11', sMsg: 'wifi连接成功' })
         break
       case '/cloud_status':
         code = _.get(url.query, 'code')
@@ -90,11 +87,8 @@ module.exports = function (app) {
           logger.log('cloud_status: invalid params, code', code, ', msg', msg)
           break
         }
-        sendWifiStatus({
-          topic: 'bind',
-          sCode: code,
-          sMsg: msg
-        })
+        sendWifiStatus({ topic: 'bind', sCode: code, sMsg: msg })
+
         var cloudStatus = CLOUD_STATUS[code]
         if (cloudStatus) {
           app.playSound(cloudStatus)
@@ -173,10 +167,15 @@ module.exports = function (app) {
     })
 
     stream.on('data', function (message) {
-      logger.log('message:', message)
+      if (message == null) {
+        logger.warn('received an null message, just skip')
+        return
+      }
+
+      logger.log('receive the message:', message)
       timerAndSleep()
 
-      if (message && message.topic && message.topic === 'getWifiList') {
+      if (message.topic === 'getWifiList') {
         if (WifiList.length <= 0) {
           WifiList = wifi.getWifiList().map((item) => {
             return {
@@ -186,8 +185,7 @@ module.exports = function (app) {
           })
         }
         sendWifiList(WifiList)
-      }
-      if (message && message.topic && message.topic === 'bind') {
+      } else if (message.topic === 'bind') {
         connectWIFI(message.data, (err, connect) => {
           netStatus = NET_STATUS_IDLE
           if (err || !connect) {
@@ -326,7 +324,14 @@ module.exports = function (app) {
   function timerAndSleep () {
     clearTimeout(sleepTimer)
     logger.log('setup timer for sleep')
-    sleepTimer = setTimeout(intoSleep, SLEEP_TIME)
+
+    var timeout = SLEEP_TIME
+    if (wifi.getNumOfHistory() === 0) {
+      // set 5x timeout if no histroy found
+      timeout = 5 * SLEEP_TIME
+    }
+    logger.info(`setup sleep timer with timeout -> ${timeout}ms`)
+    sleepTimer = setTimeout(intoSleep, timeout)
   }
 
   function intoSleep () {
