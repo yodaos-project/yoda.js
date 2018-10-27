@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <wavPlayer.h>
+#include <librplayer/WavPlayer.h>
 #include <cutils/properties.h>
 #include <vol_ctrl/volumecontrol.h>
 #include "flora-cli.h"
