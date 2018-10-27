@@ -317,14 +317,12 @@ Light.prototype.resume = function () {
       this.prevZIndex = zIndex
       this.prevAppId = resume.appId
       // set resume light
-      if (this.prev && this.prev.shouldResume) {
-        if (isSystemUri) {
-          this.systemspaceZIndex[zIndex] = resume
-          logger.log(`set systemspace resume: z-index: ${zIndex} ${resume.uri} ${resume.appId}`)
-        } else {
-          this.userspaceZIndex[zIndex] = resume
-          logger.log(`set userspace resume: z-index: ${zIndex} ${resume.uri} ${resume.appId}`)
-        }
+      if (isSystemUri) {
+        this.systemspaceZIndex[zIndex] = resume
+        logger.log(`set systemspace resume: z-index: ${zIndex} ${resume.uri} ${resume.appId}`)
+      } else {
+        this.userspaceZIndex[zIndex] = resume
+        logger.log(`set userspace resume: z-index: ${zIndex} ${resume.uri} ${resume.appId}`)
       }
     } catch (error) {
       logger.error(`try to resume effect file error from path: ${resume.uri}`, error)
