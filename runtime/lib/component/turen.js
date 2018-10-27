@@ -231,9 +231,13 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
      * and there is WiFi history existing,
      * announce WiFi is connecting.
      */
-    logger.info('announcing network unavailable on awaken.')
+    logger.info('announcing network connecting on voice coming.')
     wifi.enableScanPassively()
     return this.runtime.light.appSound('@yoda', 'system://wifi_is_connecting.ogg')
+      .then(() =>
+        /** awaken is not set for no network available, recover media directly */
+        this.recoverPausedOnAwaken()
+      )
   }
 
   var future = this.setAwaken()
