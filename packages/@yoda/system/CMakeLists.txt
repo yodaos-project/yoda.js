@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_library(node-system MODULE src/SystemNative.cc)
 target_include_directories(node-system PRIVATE
+  ../../../include
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
