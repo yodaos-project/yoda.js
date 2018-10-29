@@ -44,7 +44,6 @@ YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
 YodaGitPackage(node-flock https://github.com/shadow-node/node-flock.git master)
 
 # local packages
-YodaLocalPackage(yoda-httpsession @yoda/httpsession)
 YodaLocalPackage(yoda-audio @yoda/audio)
 YodaLocalPackage(yoda-battery @yoda/battery)
 YodaLocalPackage(yoda-bluetooth @yoda/bluetooth)
