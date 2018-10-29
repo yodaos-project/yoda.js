@@ -213,7 +213,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
          * continuing currently app.
          */
         logger.info('no WiFi history exists, continuing currently running app.')
-        return this.runtime.light.appSound('@yoda', 'system://guide_config_network.ogg')
+        return this.runtime.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
           .then(() =>
           /** awaken is not set for no network available, recover media directly */
             this.recoverPausedOnAwaken()
@@ -233,7 +233,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
      */
     logger.info('announcing network connecting on voice coming.')
     wifi.enableScanPassively()
-    return this.runtime.light.appSound('@yoda', 'system://wifi_is_connecting.ogg')
+    return this.runtime.light.ttsSound('@yoda', 'system://wifi_is_connecting.ogg')
       .then(() =>
         /** awaken is not set for no network available, recover media directly */
         this.recoverPausedOnAwaken()
@@ -392,6 +392,14 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
  * Handle the "nlp" event, which are emitted on incoming unexpected malicious nlp.
  */
 Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () {
+  if (this.awaken) {
+    /**
+     * if malicious nlp happened before 'asr end'/'end voice',
+     * recover multimedia playing state directly,
+     * no system exception procedure needed to be processed.
+     */
+    return this.resetAwaken()
+  }
   if (!this.runtime.custodian.isPrepared()) {
     // Do noting when network is not ready
     logger.warn('Network not connected, skip malicious nlp result')
