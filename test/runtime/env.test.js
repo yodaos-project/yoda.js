@@ -1,8 +1,7 @@
 'use strict'
 
 var test = require('tape')
-var helper = require('../helper')
-var env = require(`${helper.paths.runtime}/lib/env`)
+var env = require('@yoda/env')
 
 test('should test the default config', t => {
   var env1 = env()
