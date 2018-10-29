@@ -28,6 +28,7 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
 
   jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
   jerry_value_t notifyFn;
+  fprintf(stdout, "try to notify the event type %d\n", event->type);
 
   if (event->type == MEDIA_PREPARED) {
     notifyFn = iotjs_jval_get_property(jthis, "onprepared");
@@ -46,11 +47,12 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
             event->ext2, event->from);
     notifyFn = iotjs_jval_get_property(jthis, "onerror");
   } else {
-    return;
+    fprintf(stdout, "unhandled media event type: %d\n", event->type);
+    goto clean;
   }
   if (!jerry_value_is_function(notifyFn)) {
     fprintf(stderr, "no function is registered\n");
-    return;
+    goto clean;
   }
 
   iotjs_jargs_t jargs = iotjs_jargs_create(2);
@@ -61,6 +63,7 @@ void MultimediaListener::DoNotify(uv_async_t* handle) {
   iotjs_jargs_destroy(&jargs);
   jerry_release_value(notifyFn);
 
+clean:
   delete event;
   uv_close((uv_handle_t*)handle, MultimediaListener::AfterNotify);
 }
