@@ -299,18 +299,20 @@ Turen.prototype.handleAsrEnd = function handleAsrEnd () {
   this.asrState = 'end'
   clearTimeout(this.noVoiceInputTimer)
 
-  return this.resetAwaken({
-    recover: /** no recovery shall be made on nlp coming */ false
-  }).then(() => {
-    if (this.pickingUpDiscardNext) {
-      /**
-       * current session of picking up has been manually discarded,
-       * no loading state shall be presented.
-       */
-      return
-    }
-    return this.runtime.light.play('@yoda', 'system://loading.js')
-  })
+  var promises = [
+    this.resetAwaken({
+      recover: /** no recovery shall be made on nlp coming */ false
+    })
+  ]
+
+  if (this.pickingUpDiscardNext) {
+    /**
+     * current session of picking up has been manually discarded,
+     * no loading state shall be presented.
+     */
+    return Promise.all(promises)
+  }
+  return Promise.all(promises.concat(this.runtime.light.play('@yoda', 'system://loading.js')))
 }
 
 /**
