@@ -105,12 +105,18 @@ Skill.prototype.handleEvent = function () {
         data: {}
       })
     }
-    dts.push({
-      type: 'media',
-      action: 'pause',
-      data: {}
-    })
-    this.exe.execute(dts, 'frontend')
+    // need pause player if this skill has player
+    if (this.hasPlayer) {
+      dts.push({
+        type: 'media',
+        action: 'pause',
+        data: {}
+      })
+    }
+    // nothing to do if dts is empty
+    if (dts.length > 0) {
+      this.exe.execute(dts, 'frontend')
+    }
     this.paused = true
   })
   this.on('resume', () => {
@@ -159,7 +165,7 @@ Skill.prototype.handleEvent = function () {
       action: 'cancel',
       data: {}
     }]
-    // need stop player if this skill has playerq
+    // need stop player if this skill has player
     if (this.hasPlayer) {
       dts.push({
         type: 'media',
