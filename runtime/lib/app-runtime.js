@@ -115,10 +115,7 @@ AppRuntime.prototype.init = function init (paths) {
     // initializing play tts status
     property.set('sys.firstboot.init', '1', 'persist')
     future = future.then(() => {
-      this.light.play('@yoda', 'system://setSpeaking.js', {}, { shouldResume: true })
-      return this.light.appSound('@system', 'system://firstboot.ogg')
-    }).then(() => {
-      this.light.stop('@yoda', 'system://setSpeaking.js')
+      return this.light.ttsSound('@system', 'system://firstboot.ogg')
     })
   }
 
@@ -219,10 +216,8 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
   var future = this.resetServices({ lightd: false })
 
   if (currentAppId == null && !this.custodian.isPrepared()) {
-    // start @network app if network is not connected
-    return future.then(() => {
-      return this.openUrl('yoda-skill://network/setup')
-    })
+    // guide user to configure network but not start network app directly
+    return future.then(() => this.light.ttsSound('@yoda', 'system://guide_config_network.ogg'))
   }
 
   /**
@@ -383,7 +378,6 @@ AppRuntime.prototype.stopMonologue = function (appId) {
 AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
   var preemptive = _.get(options, 'preemptive', true)
   var carrierId = _.get(options, 'carrierId')
-  this.light.stop('@yoda', 'system://loading.js')
 
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
@@ -435,8 +429,14 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
         .then(() => this.updateCloudStack(nlp.appId, form))
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
-    .then(() => true)
+    .then(() => {
+      /** no need to wait for lightd's response */
+      this.light.stop('@yoda', 'system://loading.js')
+      return true
+    })
     .catch(err => {
+      /** reset loading effects */
+      this.light.stop('@yoda', 'system://loading.js')
       logger.error(`Unexpected error on app ${appId} handling voice command`, err.stack)
       return false
     })

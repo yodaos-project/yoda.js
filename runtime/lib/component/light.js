@@ -74,6 +74,24 @@ Light.prototype.appSound = function (appId, uri) {
 }
 
 /**
+ * play sound with tts speaking effect.
+ * @param {string} appId
+ * @param {string} uri
+ * @return {Promise}
+ */
+Light.prototype.ttsSound = function (appId, uri) {
+  this.play(appId, 'system://setSpeaking.js', {}, { shouldResume: true })
+  return this.appSound(appId, uri)
+    .then(
+      () => this.stop(appId, 'system://setSpeaking.js'),
+      err => {
+        this.stop(appId, 'system://setSpeaking.js')
+        throw err
+      }
+    )
+}
+
+/**
  * stop sound by specified appId
  * @param {string} appId your appId
  * @return {Promise}
