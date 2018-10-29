@@ -137,11 +137,11 @@ module.exports = function (activity) {
         /* Bluetooth music connect and open cut mode, it may be implement activity.destry,
         so After playing TTS, go back to the background. set up TTS impatient: true. */
         logger.error('bluetooth music tts error', err)
-      }).then(() => {
-        if (bluetoothMessage.play_state !== 'played') {
-          activity.setBackground()
-        }
       })
+    }).then(() => {
+      if (bluetoothMessage.play_state !== 'played') {
+        activity.setBackground()
+      }
     })
   }
   function mediaAndBackground (text) {
@@ -178,9 +178,7 @@ module.exports = function (activity) {
     player = bluetooth.getPlayer()
     player.on('stateupdate', function (message) {
       logger.debug('stateupdate', message)
-      if (bluetoothMessage.a2dpstate === message.a2dpstate &&
-        bluetoothMessage.connect_state === message.connect_state &&
-        bluetoothMessage.play_state === message.play_state) {
+      if (bluetoothMessage.a2dpstate === 'closed' && message.a2dpstate === 'closed') {
         return
       }
       bluetoothMessage = Object.assign(bluetoothMessage, message)
@@ -230,6 +228,7 @@ module.exports = function (activity) {
         nextMusic()
         break
       case 'disconnect_phone':
+      case 'disconnect_devices':
         disconnect()
         break
       case 'pre':
