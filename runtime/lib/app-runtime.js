@@ -411,7 +411,7 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve(false)
   }
 
-  if (preemptive && this.life.isMonopolized()) {
+  if (this.life.isMonopolized() && preemptive && appId !== this.life.monopolist) {
     logger.warn(`LaVieEnPile has ben monopolized, skip voice command to app(${appId}).`)
     return this.life.onLifeCycle(this.life.monopolist, 'oppressing', 'request')
       .then(() => /** prevent tts/media from recovering */true)
@@ -470,7 +470,7 @@ AppRuntime.prototype.openUrl = function (url, options) {
   }
   var appId = this.loader.getAppIdBySkillId(skillId)
 
-  if (preemptive && this.life.isMonopolized()) {
+  if (this.life.isMonopolized() && preemptive && appId !== this.life.monopolist) {
     logger.warn(`LaVieEnPile has ben monopolized, skip url request to app(${appId}).`)
     return this.life.onLifeCycle(this.life.monopolist, 'oppressing', 'url')
       .then(() => /** prevent tts/media from recovering */true)
