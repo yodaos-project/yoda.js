@@ -23,7 +23,7 @@ module.exports = function getAlarms (activity, callback) {
         }
         unlinkFiles()
       } catch (err) {
-        throw err;
+        throw err
       }
     })
     .catch(err => {
