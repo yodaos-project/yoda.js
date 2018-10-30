@@ -5,7 +5,7 @@ var logger = require('logger')('tts-test')
 var config = require('../../helper/config')
 var ttsModule = require('@yoda/tts')
 
-test.skip('module->tts->call method speak', t => {
+test('module->tts->call method speak', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()
@@ -51,7 +51,7 @@ test.skip('module->tts->call method speak', t => {
   })
 })
 
-test.skip('module->tts->stopall after speak ', t => {
+test('module->tts->stopall after speak ', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()

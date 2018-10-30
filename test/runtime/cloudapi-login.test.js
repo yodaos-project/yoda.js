@@ -4,6 +4,9 @@ var it = require('tape')
 var helper = require('../helper')
 var CloudStore = require(`${helper.paths.runtime}/lib/cloudapi`)
 
+/**
+ * these case depend on the network
+ */
 it('should login with notify', function (t) {
   var cloudapi = new CloudStore({
     disableMqtt: true,

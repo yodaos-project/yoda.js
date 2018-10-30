@@ -5,7 +5,10 @@ var ttsModule = require('@yoda/tts')
 var logger = require('logger')('tts-test')
 var config = require('../../helper/config')
 
-test.skip('module->tts->TtsProxy: check event', t => {
+/**
+ * run test case depend on the network
+ */
+test('module->tts->TtsProxy: check event', t => {
   t.plan(3)
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
@@ -31,7 +34,7 @@ test.skip('module->tts->TtsProxy: check event', t => {
   })
 })
 
-test.skip('module->tts->TtsRequest: check state ', t => {
+test('module->tts->TtsRequest: check state ', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()
@@ -66,7 +69,7 @@ test.skip('module->tts->TtsRequest: check state ', t => {
   })
 })
 
-test.skip('module->tts->disconnect', t => {
+test('module->tts->disconnect', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()
@@ -91,7 +94,7 @@ test.skip('module->tts->disconnect', t => {
 /**
   bug id = 1290
 */
-test.skip('module->tts->TtsProxy: cancel event', t => {
+test('module->tts->TtsProxy: cancel event', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()
@@ -122,7 +125,7 @@ test.skip('module->tts->TtsProxy: cancel event', t => {
 /**
   bug id = 1317
 */
-test.skip('module->tts->createTts method test case: normal options params', t => {
+test('module->tts->createTts method test case: normal options params', t => {
   if (!config || !config.cloudgw) {
     logger.log('skip this case when config not provided')
     t.end()

@@ -14,7 +14,7 @@ test('module->flora->connect: err uri', t => {
   t.end()
 })
 
-test.skip('module->flora->persist msg', t => {
+test('module->flora->persist msg', t => {
   var recvClient = floraFactory.connect(okUri, 0)
   t.equal(typeof recvClient, 'object')
   var int32 = 32
@@ -41,7 +41,7 @@ test.skip('module->flora->persist msg', t => {
   postClient.close()
 })
 
-test.skip('module->flora->persist msg: subscribe first and then send, get twice msg', t => {
+test('module->flora->persist msg: subscribe first and then send, get twice msg', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -88,7 +88,7 @@ test.skip('module->flora->persist msg: subscribe first and then send, get twice 
   postClient.close()
 })
 
-test.skip('module->flora->persist msg: send first and then subscribe, get the last msg', t => {
+test('module->flora->persist msg: send first and then subscribe, get the last msg', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -125,7 +125,7 @@ test.skip('module->flora->persist msg: send first and then subscribe, get the la
   recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
 })
 
-test.skip('module->flora->instant msg: send first and then subscribe, get nothing', t => {
+test('module->flora->instant msg: send first and then subscribe, get nothing', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -153,7 +153,7 @@ test.skip('module->flora->instant msg: send first and then subscribe, get nothin
   }, 2000)
 })
 
-test.skip('module->flora->instant msg: subscribe first and then send, get msg', t => {
+test('module->flora->instant msg: subscribe first and then send, get msg', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -184,7 +184,7 @@ test.skip('module->flora->instant msg: subscribe first and then send, get msg', 
   postClient.close()
 })
 
-test.skip('module->flora->instant msg: subscribe first and then send twice, get twice msg', t => {
+test('module->flora->instant msg: subscribe first and then send twice, get twice msg', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -229,7 +229,7 @@ test.skip('module->flora->instant msg: subscribe first and then send twice, get 
   postClient.close()
 })
 
-test.skip('module->flora->send instant msg，subscribe persist msg', t => {
+test('module->flora->send instant msg，subscribe persist msg', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -257,7 +257,7 @@ test.skip('module->flora->send instant msg，subscribe persist msg', t => {
   }, 2000)
 })
 
-test.skip('module->flora->send persist msg，subscribe instant msg', t => {
+test('module->flora->send persist msg，subscribe instant msg', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -285,7 +285,7 @@ test.skip('module->flora->send persist msg，subscribe instant msg', t => {
   }, 2000)
 })
 
-test.skip('module->flora->Caps: write method', t => {
+test('module->flora->Caps: write method', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
   var postClient = floraFactory.connect(okUri, 0)
@@ -334,7 +334,7 @@ test.skip('module->flora->Caps: write method', t => {
   recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
 })
 
-test.skip('module->flora->Caps: get method', t => {
+test('module->flora->Caps: get method', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
   var postClient = floraFactory.connect(okUri, 0)
@@ -366,7 +366,7 @@ test.skip('module->flora->Caps: get method', t => {
   recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
 })
 
-test.skip('module->flora->Caps: writeInt32 method', t => {
+test('module->flora->Caps: writeInt32 method', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
   var postClient = floraFactory.connect(okUri, 0)
@@ -413,7 +413,7 @@ test.skip('module->flora->Caps: writeInt32 method', t => {
   recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
 })
 
-test.skip('module->flora->Caps: writeInt64 method', t => {
+test('module->flora->Caps: writeInt64 method', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
   var postClient = floraFactory.connect(okUri, 0)
@@ -455,7 +455,7 @@ test.skip('module->flora->Caps: writeInt64 method', t => {
 /**
  * need confirmation
  */
-test.skip('module->flora->Caps: writeFloat method', t => {
+test('module->flora->Caps: writeFloat method', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
   var postClient = floraFactory.connect(okUri, 0)
@@ -493,7 +493,7 @@ test.skip('module->flora->Caps: writeFloat method', t => {
   recvClient.subscribe(msgName, floraFactory.MSGTYPE_PERSIST)
 })
 
-test.skip('module->flora->Caps: writeDouble method', t => {
+test('module->flora->Caps: writeDouble method', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
   var postClient = floraFactory.connect(okUri, 0)
@@ -534,7 +534,7 @@ test.skip('module->flora->Caps: writeDouble method', t => {
 /**
  * bug id = 1363
  */
-test.skip('module->flora->connect buffer, default 0', t => {
+test('module->flora->connect buffer, default 0', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `msg buffer test[${msgId}]`
 
@@ -565,7 +565,7 @@ test.skip('module->flora->connect buffer, default 0', t => {
 /**
  * bug id = 1363
  */
-test.skip('module->flora->connect buffer, set value', t => {
+test('module->flora->connect buffer, set value', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `msg buffer test[${msgId}]`
 
@@ -593,7 +593,7 @@ test.skip('module->flora->connect buffer, set value', t => {
   postClient.close()
 })
 
-test.skip('module->flora->client: instant msg, unsubscribe msg', t => {
+test('module->flora->client: instant msg, unsubscribe msg', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -637,7 +637,7 @@ test.skip('module->flora->client: instant msg, unsubscribe msg', t => {
   }, 2000)
 })
 
-test.skip('module->flora->client: instant msg, unsubscribe err type', t => {
+test('module->flora->client: instant msg, unsubscribe err type', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -684,7 +684,7 @@ test.skip('module->flora->client: instant msg, unsubscribe err type', t => {
   postClient.close()
 })
 
-test.skip('module->flora->client: persist msg, subscribe->send->unsubscribe->send', t => {
+test('module->flora->client: persist msg, subscribe->send->unsubscribe->send', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -728,7 +728,7 @@ test.skip('module->flora->client: persist msg, subscribe->send->unsubscribe->sen
   }, 2000)
 })
 
-test.skip('module->flora->client: persist msg, send->subscribe->unsubscribe->send', t => {
+test('module->flora->client: persist msg, send->subscribe->unsubscribe->send', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -772,7 +772,7 @@ test.skip('module->flora->client: persist msg, send->subscribe->unsubscribe->sen
   }, 1000)
 })
 
-test.skip('module->flora->client: persist msg, unsubscribe err type', t => {
+test('module->flora->client: persist msg, unsubscribe err type', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -820,7 +820,7 @@ test.skip('module->flora->client: persist msg, unsubscribe err type', t => {
   }, 1000)
 })
 
-test.skip('module->flora->client: close recv', t => {
+test('module->flora->client: close recv', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -859,7 +859,7 @@ test.skip('module->flora->client: close recv', t => {
   postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
 })
 
-test.skip('module->flora->client: close post', t => {
+test('module->flora->client: close post', t => {
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
@@ -889,7 +889,7 @@ test.skip('module->flora->client: close post', t => {
 /**
  * bug id = 1364
  */
-test.skip('module->flora->client: loop create connection', t => {
+test('module->flora->client: loop create connection', t => {
   for (var count = 0; count < 20; count++) {
     var client = floraFactory.connect(okUri, 0)
     t.equal(typeof client, 'object')
@@ -902,7 +902,7 @@ test.skip('module->flora->client: loop create connection', t => {
   }, 2000)
 })
 
-test.skip('module->flora->client: loop post msg', t => {
+test('module->flora->client: loop post msg', t => {
   var recvClient = floraFactory.connect(okUri, 0)
   var count = 0
   recvClient.on('recv_post', (name, type, msg) => {
