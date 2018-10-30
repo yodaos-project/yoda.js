@@ -3,18 +3,32 @@
 // process.env.LOG_PORT = 8081
 
 var test = require('tape')
-var net = require('net')
 var logger = require('logger')('log')
 
-test.skip('simple ', function (t) {
-  t.plan(1)
-  var socket = net.connect(process.env.LOG_PORT)
+var levels = [
+  'verbose',
+  'debug',
+  'info',
+  'warn',
+  'error'
+]
+
+test('simple ', (t) => {
+  t.plan(levels.length)
   var text = 'foobar'
-  socket.on('data', (buf) => {
-    socket.end()
-    t.assert(buf + '', text)
-    logger.closeServer()
-    t.end()
-  })
-  logger.log(text)
+  levels.forEach(it =>
+    t.doesNotThrow(() =>
+      logger[it](text)
+    )
+  )
+})
+
+test('multiple arguments ', (t) => {
+  t.plan(levels.length)
+  var args = [ 'foobar', 123, { obj: 'foobar' } ]
+  levels.forEach(it =>
+    t.doesNotThrow(() =>
+      logger[it].apply(logger, args)
+    )
+  )
 })
