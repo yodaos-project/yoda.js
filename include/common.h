@@ -135,21 +135,22 @@
     len;                                           \
   })
 
-#define NAPI_GET_PROPERTY(env, obj, ckey, nkey, type)                      \
-  ({                                                                       \
-    napi_value key = (nkey), value = nullptr;                              \
-    bool has = false;                                                      \
-    napi_valuetype type;                                                   \
-    if (((key ||                                                           \
-          napi_create_string_utf8(env, (ckey), NAPI_AUTO_LENGTH, &key) ==  \
-              napi_ok)) &&                                                 \
-        (napi_has_property(env, (obj), key, &has) == napi_ok) && has &&    \
-        (napi_get_property(env, (obj), key, &value) == napi_ok)) {         \
-      if ((napi_typeof(env, value, &type) != napi_ok) || type != (type)) { \
-        value = nullptr;                                                   \
-      }                                                                    \
-    }                                                                      \
-    value;                                                                 \
+#define NAPI_GET_PROPERTY(env, obj, ckey, nkey, expectedType)             \
+  ({                                                                      \
+    napi_value key = (nkey), value = nullptr;                             \
+    bool has = false;                                                     \
+    napi_valuetype type;                                                  \
+    if (((key ||                                                          \
+          napi_create_string_utf8(env, (ckey), NAPI_AUTO_LENGTH, &key) == \
+              napi_ok)) &&                                                \
+        (napi_has_property(env, (obj), key, &has) == napi_ok) && has &&   \
+        (napi_get_property(env, (obj), key, &value) == napi_ok)) {        \
+      if ((napi_typeof(env, value, &type) != napi_ok) ||                  \
+          type != (expectedType)) {                                       \
+        value = nullptr;                                                  \
+      }                                                                   \
+    }                                                                     \
+    value;                                                                \
   })
 
 #endif
