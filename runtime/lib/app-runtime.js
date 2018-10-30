@@ -745,6 +745,9 @@ AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
   this.turen.pickup(isPickup)
 
   if (isPickup) {
+    /** stop all other announcements on picking up */
+    this.light.stopSoundByAppId('@yoda')
+    this.light.stopByAppId('@yoda')
     return this.light.setPickup('@yoda', duration, withAwaken)
   }
   return this.light.stop('@yoda', 'system://setPickup.js')
