@@ -23,7 +23,7 @@
     "apilevel": 0.6
   },
   "devDependencies": {
-    "@yoda/mock": "Rokid/yoda-mock",
+    "@yoda/mock": "Rokid/yoda-mock#8fa3713d6b55b5d0222c90eb96470001a6baefb8",
     "husky": "^1.0.0-rc.14",
     "ink-docstrap": "^1.3.2",
     "jsdoc": "^3.5.5",
@@ -32,7 +32,7 @@
     "tap-nyan": "^1.1.0",
     "tap-parser": "^7.0.0",
     "tap-spec": "^5.0.0",
-    "tape": "shadow-node/tape#master"
+    "tape": "shadow-node/tape#d5dd12a0ddf2a34feb3ce6c1cc0aee48f9886c95"
   },
   "standard": {
     "ignore": [
