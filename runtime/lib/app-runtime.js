@@ -429,14 +429,8 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
         .then(() => this.updateCloudStack(nlp.appId, form))
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
-    .then(() => {
-      /** no need to wait for lightd's response */
-      this.light.stop('@yoda', 'system://loading.js')
-      return true
-    })
+    .then(() => true)
     .catch(err => {
-      /** reset loading effects */
-      this.light.stop('@yoda', 'system://loading.js')
       logger.error(`Unexpected error on app ${appId} handling voice command`, err.stack)
       return false
     })
