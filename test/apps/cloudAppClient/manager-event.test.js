@@ -384,41 +384,20 @@ test('manager test-4: scene1->cut->scene1[resume]->scene2', t => {
  * weather->story->music
  */
 test('manager test-5: cut->scene1[start]->scene2', t => {
-  t.plan(20)
+  t.plan(6)
   var count = 0
   var manager = new Manager(null, Skill)
-  manager.on('updateStack', stack => {
-    if (count === 0) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test5-cut1')
-      t.equal(stack[0].form, 'cut')
-    }
-    if (count === 2) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test5-scene1')
-      t.equal(stack[0].form, 'scene')
-    }
-    if (count === 4) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test5-scene2')
-      t.equal(stack[0].form, 'scene')
-    }
-    console.info('stack', stack)
-  })
   eventBus.on('start:appid-test5-cut1', () => {
     count++
-    t.equal(count, 1, 'count == 1')
-    t.pass('appid-test5-cut1 emit start')
+    t.equal(count, 1, 'count == 1,appid-test5-cut1 emit start')
   })
   eventBus.on('destroy:appid-test5-cut1', () => {
     count++
-    t.equal(count, 2, 'count == 2')
-    t.pass('appid-test5-cut1 emit destroy')
+    t.equal(count, 2, 'count == 2,appid-test5-cut1 emit destroy')
   })
   eventBus.on('start:appid-test5-scene1', () => {
     count++
-    t.equal(count, 3, 'count == 3')
-    t.pass('appid-test5-scene1 emit start')
+    t.equal(count, 3, 'count == 3,appid-test5-scene1 emit start')
     manager.onrequest({
       appId: 'appid-test5-scene2'
     }, {
@@ -439,13 +418,11 @@ test('manager test-5: cut->scene1[start]->scene2', t => {
   })
   eventBus.on('destroy:appid-test5-scene1', () => {
     count++
-    t.equal(count, 4, 'count == 4')
-    t.pass('appid-test5-scene1 emit destroy')
+    t.equal(count, 4, 'count == 4,appid-test5-scene1 emit destroy')
   })
   eventBus.on('start:appid-test5-scene2', () => {
     count++
-    t.equal(count, 5, 'count == 5')
-    t.pass('appid-test5-scene2 emit start')
+    t.equal(count, 5, 'count == 5,appid-test5-scene2 emit start')
     manager.skills[0].emit('exit')
   })
   manager.on('empty', () => {
@@ -481,26 +458,20 @@ test('manager test-5: cut->scene1[start]->scene2', t => {
  * weather->chat->music
  */
 test('manager test-6: cut1->cut2->scene', t => {
-  t.plan(11)
+  t.plan(6)
   var count = 0
   var manager = new Manager(null, Skill)
-  manager.on('updateStack', stack => {
-    console.info('stack', stack)
-  })
   eventBus.on('start:appid-test6-cut1', () => {
     count++
-    t.equal(count, 1, 'count == 1')
-    t.pass('appid-test6-cut1 emit start')
+    t.equal(count, 1, 'count == 1,appid-test6-cut1 emit start')
   })
   eventBus.on('destroy:appid-test6-cut1', () => {
     count++
-    t.equal(count, 2, 'count == 2')
-    t.pass('appid-test6-cut1 emit destroy')
+    t.equal(count, 2, 'count == 2,appid-test6-cut1 emit destroy')
   })
   eventBus.on('start:appid-test6-cut2', () => {
     count++
-    t.equal(count, 3, 'count == 3')
-    t.pass('appid-test6-cut2 emit start')
+    t.equal(count, 3, 'count == 3,appid-test6-cut2 emit start')
     manager.onrequest({
       appId: 'appid-test6-scene'
     }, {
@@ -515,13 +486,11 @@ test('manager test-6: cut1->cut2->scene', t => {
   })
   eventBus.on('destroy:appid-test6-cut2', () => {
     count++
-    t.equal(count, 4, 'count == 4')
-    t.pass('appid-test6-cut2 emit destroy')
+    t.equal(count, 4, 'count == 4,appid-test6-cut2 emit destroy')
   })
   eventBus.on('start:appid-test6-scene', () => {
     count++
-    t.equal(count, 5, 'count == 5')
-    t.pass('appid-test6-scene emit start')
+    t.equal(count, 5, 'count == 5,appid-test6-scene emit start')
     manager.skills[0].emit('exit')
   })
   manager.on('empty', () => {
@@ -548,232 +517,6 @@ test('manager test-6: cut1->cut2->scene', t => {
     response: {
       action: {
         form: 'cut',
-        shouldEndSession: false
-      }
-    }
-  })
-})
-
-test('manager test-7: start updateStack, cut1->cut2', t => {
-  t.plan(10)
-  var count = 0
-  var manager = new Manager(null, Skill)
-  manager.on('updateStack', stack => {
-    if (count === 0) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test7-cut1', 'cut1 updatestack')
-      t.equal(stack[0].form, 'cut')
-    }
-    if (count === 1) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test7-cut2', 'cut2 updatestack')
-      t.equal(stack[0].form, 'cut')
-    }
-    console.info(`stack ${count}`, stack)
-  })
-  eventBus.on('start:appid-test7-cut1', () => {
-    t.pass('appid-test7-cut1 emit start')
-  })
-  eventBus.on('destroy:appid-test7-cut1', () => {
-    count++
-    t.pass('appid-test7-cut1 emit destroy')
-  })
-  eventBus.on('start:appid-test7-cut2', () => {
-    t.pass('appid-test7-cut2 emit start')
-    manager.skills[0].emit('exit')
-  })
-  eventBus.on('destroy:appid-test7-cut2', () => {
-    t.fail('appid-test7-cut2 emit destroy')
-  })
-  manager.on('empty', () => {
-    t.pass('manager test7 emit empty')
-  })
-
-  // cut app create
-  manager.onrequest({
-    appId: 'appid-test7-cut1'
-  }, {
-    appId: 'appid-test7-cut1',
-    response: {
-      action: {
-        form: 'cut',
-        shouldEndSession: false
-      }
-    }
-  })
-  // cut app create
-  manager.onrequest({
-    appId: 'appid-test7-cut2'
-  }, {
-    appId: 'appid-test7-cut2',
-    response: {
-      action: {
-        form: 'cut',
-        shouldEndSession: false
-      }
-    }
-  })
-})
-
-/**
- * bug id = 14813
- */
-test.skip('manager test-8: resume updateStack, scene->cut->scene', t => {
-  t.plan(16)
-  var count = 0
-  var manager = new Manager(null, Skill)
-  manager.on('updateStack', stack => {
-    console.info(`stack ${count}`, stack)
-    if (count === 0) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test8-scene', 'scene updatestack')
-      t.equal(stack[0].form, 'scene')
-    }
-    if (count === 1) {
-      t.equal(stack.length, 2)
-      t.equal(stack[1].appId, 'appid-test8-cut', 'cut updatestack')
-      t.equal(stack[1].form, 'cut')
-      t.equal(stack[0].appId, 'appid-test8-scene', 'scene updatestack')
-      t.equal(stack[0].form, 'scene')
-    }
-    if (count === 2) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test8-scene', 'scene updatestack')
-      t.equal(stack[0].form, 'scene')
-    }
-  })
-  eventBus.on('start:appid-test8-cut', () => {
-    t.pass('appid-test8-cut emit start')
-    manager.skills[1].emit('exit')
-  })
-  eventBus.on('destroy:appid-test8-cut', () => {
-    t.fail('appid-test8-cut emit destroy')
-  })
-  eventBus.on('start:appid-test8-scene', () => {
-    t.pass('appid-test8-scene emit start')
-  })
-  eventBus.on('pause:appid-test8-scene', () => {
-    t.pass('appid-test8-scene emit pause')
-    count++
-  })
-  eventBus.on('resume:appid-test8-scene', () => {
-    t.pass('appid-test8-scene emit resume')
-    count++
-    manager.skills[0].emit('exit')
-  })
-  manager.on('empty', () => {
-    t.pass('manager test8 emit empty')
-  })
-  // scene app create
-  manager.onrequest({
-    appId: 'appid-test8-scene'
-  }, {
-    appId: 'appid-test8-scene',
-    response: {
-      action: {
-        form: 'scene',
-        shouldEndSession: false
-      }
-    }
-  })
-  // cut app create
-  manager.onrequest({
-    appId: 'appid-test8-cut'
-  }, {
-    appId: 'appid-test8-cut',
-    response: {
-      action: {
-        form: 'cut',
-        shouldEndSession: false
-      }
-    }
-  })
-})
-
-test('manager test-9: destroy updateStack, cut->scene->cut', t => {
-  t.plan(19)
-  var count = 0
-  var manager = new Manager(null, Skill)
-  var cut2 = false
-  manager.on('updateStack', stack => {
-    console.info(`stack ${count}`, stack)
-    if (count === 0) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test9-cut', 'cut updatestack')
-      t.equal(stack[0].form, 'cut')
-    }
-    if (count === 1) {
-      t.equal(stack.length, 1)
-      t.equal(stack[0].appId, 'appid-test9-scene', 'scene updatestack')
-      t.equal(stack[0].form, 'scene')
-    }
-    if (count === 2) {
-      t.equal(stack.length, 2)
-      t.equal(stack[0].appId, 'appid-test9-scene', 'scene updatestack')
-      t.equal(stack[0].form, 'scene')
-      t.equal(stack[1].appId, 'appid-test9-cut', 'cut updatestack')
-      t.equal(stack[1].form, 'cut')
-    }
-    if (count === 3) {
-      t.equal(stack.length, 0)
-    }
-  })
-  eventBus.on('start:appid-test9-cut', () => {
-    // call twice
-    t.pass('appid-test9-cut emit start')
-    if (cut2) {
-      manager.destroy()
-    }
-  })
-  eventBus.on('destroy:appid-test9-cut', () => {
-    // call twice
-    t.pass('appid-test9-cut emit destroy')
-    count++
-  })
-  eventBus.on('start:appid-test9-scene', () => {
-    t.pass('appid-test9-scene emit start')
-    cut2 = true
-    manager.onrequest({
-      appId: 'appid-test9-cut'
-    }, {
-      appId: 'appid-test9-cut',
-      response: {
-        action: {
-          form: 'cut',
-          shouldEndSession: false
-        }
-      }
-    })
-  })
-  eventBus.on('pause:appid-test9-scene', () => {
-    t.pass('appid-test9-scene emit pause')
-    count++
-  })
-  eventBus.on('destroy:appid-test9-scene', () => {
-    t.pass('appid-test9-scene emit destroy')
-  })
-
-  // cut app create
-  manager.onrequest({
-    appId: 'appid-test9-cut'
-  }, {
-    appId: 'appid-test9-cut',
-    response: {
-      action: {
-        form: 'cut',
-        shouldEndSession: false
-      }
-    }
-  })
-
-  // scene app create
-  manager.onrequest({
-    appId: 'appid-test9-scene'
-  }, {
-    appId: 'appid-test9-scene',
-    response: {
-      action: {
-        form: 'scene',
         shouldEndSession: false
       }
     }
