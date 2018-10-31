@@ -293,7 +293,7 @@ DBus.prototype.amsexport = {
               })
           }
         }
-        if (data['Wifi'] === true || data['Network'] === true) {
+        if (data['Network'] === true) {
           this.runtime.custodian.onNetworkConnect()
         } else if (!this.runtime.custodian.isConfiguringNetwork() &&
           (data['Network'] === false || data['Wifi'] === false)) {
