@@ -20,11 +20,7 @@ module.exports = function (activity) {
         activity.destroyAll()
         break
       default:
-        activity.tts.speak(_.sample(fallbacks))
-          .then(
-            () => activity.exit(),
-            () => /** ignoring any possible tts error */activity.exit()
-          )
+        fallback()
     }
   })
 
@@ -49,8 +45,18 @@ module.exports = function (activity) {
         break
       }
       case '/malicious-nlp':
+        fallback()
+        break
       default:
         activity.exit()
     }
   })
+
+  function fallback () {
+    activity.tts.speak(_.sample(fallbacks))
+      .then(
+        () => activity.exit(),
+        () => /** ignoring any possible tts error */activity.exit()
+      )
+  }
 }
