@@ -15,6 +15,7 @@ module.exports = function (activity) {
       case 'sleep':
       case 'dormancy':
       case 'usersleep':
+      case 'byebyesleep':
       case 'ROKID.SYSTEM.EXIT':
         activity.destroyAll()
         break
