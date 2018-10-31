@@ -130,9 +130,18 @@ BluetoothMessageStream.prototype.end = function end () {
 }
 
 /**
- * disconnect the event socket
+ * Disconnect the event socket, this is deprecated please use `.destroyConnection()`
+ * instead.
  */
 BluetoothMessageStream.prototype.disconnect = function disconnect () {
+  return helper.disconnectAfterClose(this, 2000)
+}
+
+/**
+ * Destroy the connection to bluetooth service, this firstly sends the OFF command
+ * and destroy the connection.
+ */
+BluetoothMessageStream.prototype.destroyConnection = function destroyConnection () {
   return helper.disconnectAfterClose(this, 2000)
 }
 

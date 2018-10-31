@@ -210,9 +210,25 @@ BluetoothPlayer.prototype.prev = function prev () {
 }
 
 /**
- * disconnect the event socket
+ * Disconnect from device
+ */
+BluetoothPlayer.prototype.disconnectPeer = function disconnectDevice () {
+  return this._send('DISCONNECT_PEER')
+}
+
+/**
+ * Disconnect the event socket, this is deprecated please use `.destroyConnection()`
+ * instead.
  */
 BluetoothPlayer.prototype.disconnect = function disconnect () {
+  return helper.disconnectAfterClose(this, 2000)
+}
+
+/**
+ * Destroy the connection to bluetooth service, this firstly sends the OFF command
+ * and destroy the connection.
+ */
+BluetoothPlayer.prototype.destroyConnection = function destroyConnection () {
   return helper.disconnectAfterClose(this, 2000)
 }
 
