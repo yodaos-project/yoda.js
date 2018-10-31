@@ -161,8 +161,8 @@ module.exports = function (activity) {
 
   function controlAudio (minVolume, tick, duration) {
     var defaultAudio = AudioManager.getVolume(AudioManager.STREAM_SYSTEM)
-    AudioManager.setMute(false)
-    if (defaultAudio <= minVolume) {
+    if (defaultAudio <= minVolume || AudioManager.isMuted()) {
+      AudioManager.setMute(false)
       AudioManager.setVolume(minVolume)
     } else {
       var range = Math.ceil((defaultAudio - minVolume) / duration)
