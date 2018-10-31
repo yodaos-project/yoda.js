@@ -141,7 +141,7 @@ JS_FUNCTION(GetNumOfHistory) {
   int num = 0;
   int r = 0;
 
-  r = wifi_get_listnetwork(&num);
+  r = wifi_get_config_network(&num);
   if (r != 0)
     return JS_CREATE_ERROR(COMMON, "get wifi configure list error");
   return jerry_create_number(num);
