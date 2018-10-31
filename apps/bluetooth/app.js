@@ -83,8 +83,8 @@ module.exports = function (activity) {
       player.end()
     }
   }
-  function disconnect () {
-    if (player !== null) { player.disconnect() }
+  function disconnectPeer () {
+    if (player !== null) { player.disconnectPeer() }
   }
 
   function startMusic () {
@@ -229,7 +229,7 @@ module.exports = function (activity) {
         break
       case 'disconnect_phone':
       case 'disconnect_devices':
-        disconnect()
+        disconnectPeer()
         break
       case 'pre':
         previousMusic()
