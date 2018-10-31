@@ -23,14 +23,14 @@ int TtsService::cancel(int id) {
     return TTS_NOT_PREPARED;
   }
   tts_handle->cancel(id);
-  _player.reset();
+  _player.resetOpusPlayer();
 }
 
 int TtsService::disconnect() {
   if (!prepared) {
     return 0;
   }
-  _player.reset();
+  _player.resetOpusPlayer();
   prepared = false;
   need_destroy_ = true;
   return 0;
@@ -52,14 +52,14 @@ void* TtsService::PollEvent(void* params) {
       case TTS_RES_VOICE: {
         size_t size = res.voice.get()->size();
         if (size > 0) {
-          _player.play(res.voice.get()->data(), size);
+          _player.startOpusPlayer(res.voice.get()->data(), size);
         } else {
           fprintf(stderr, "voice size=0\n");
         }
         break;
       }
       case TTS_RES_START: {
-        _player.reset();
+        _player.resetOpusPlayer();
         self->send_event(self, TTS_RES_START, res.id, 0);
         break;
       }

@@ -4,7 +4,7 @@
 #include <speech/tts.h>
 #include <stdlib.h>
 #include <string>
-#include "OpusPlayer.h"
+#include <librplayer/OpusPlayer.h>
 
 using namespace std;
 using namespace rokid;
