@@ -101,7 +101,12 @@ BluetoothMessageStream.prototype._send = function (cmdstr, props) {
   var data = Object.assign({ command: cmdstr }, props || {})
   var msg = new floraFactory.Caps()
   msg.write(JSON.stringify(data))
-  return this._flora.post('bluetooth.ble.command', msg)
+
+  if (cmdstr === 'ON') { /** support offline cache for ON command */
+    return this._flora.post('bluetooth.ble.command', msg, floraFactory.MSGTYPE_PERSIST)
+  } else {
+    return this._flora.post('bluetooth.ble.command', msg, floraFactory.MSGTYPE_INSTANT)
+  }
 }
 
 /**
