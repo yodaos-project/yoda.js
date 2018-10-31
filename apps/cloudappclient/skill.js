@@ -183,7 +183,7 @@ Skill.prototype.handleEvent = function () {
 }
 
 Skill.prototype.transform = function (directives, append) {
-  logger.log(`transform start: ${this.this.appId} append: ${append} ${directives}`)
+  logger.log(`transform start: ${this.appId} append: ${append} ${directives}`)
   if (append !== true) {
     logger.log('cover directives')
     this.directives.splice(0, this.directives.length)
