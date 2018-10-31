@@ -379,6 +379,7 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
   }
   return future.then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action))
     .then(success => {
+      this.runtime.light.stop('@yoda', 'system://loading.js')
       if (success) {
         return
       }
@@ -387,6 +388,9 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
        * failed to handle incoming nlp request.
        */
       this.recoverPausedOnAwaken()
+    }, err => {
+      this.runtime.light.stop('@yoda', 'system://loading.js')
+      logger.error('Unexpected error on open handling nlp', err.stack)
     })
 }
 
@@ -408,6 +412,12 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
     return
   }
   this.runtime.openUrl('yoda-skill://rokid-exception/malicious-nlp')
+    .then(
+      () => this.runtime.light.stop('@yoda', 'system://loading.js'),
+      err => {
+        this.runtime.light.stop('@yoda', 'system://loading.js')
+        logger.error('Unexpected error on open handling malicious nlp', err.stack)
+      })
 }
 
 /**
@@ -441,6 +451,12 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
   }
 
   this.runtime.openUrl(`yoda-skill://rokid-exception/speech-error?errCode=${errCode}`)
+    .then(
+      () => this.runtime.light.stop('@yoda', 'system://loading.js'),
+      err => {
+        this.runtime.light.stop('@yoda', 'system://loading.js')
+        logger.error('Unexpected error on open handling speech error', err.stack)
+      })
 }
 
 /**
