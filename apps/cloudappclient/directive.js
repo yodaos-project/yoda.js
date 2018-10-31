@@ -41,11 +41,18 @@ Directive.prototype.run = function run (type, cb) {
   var dt = this[type].shift()
 
   function handle (next) {
+    // NOTICE: INTERNAL_EXIT is only used myself.
+    // stop if current directive is INTERNAL_EXIT
+    if (next.type === 'INTERNAL_EXIT') {
+      logger.info('all directive complete because current dt is: INTERNAL_EXIT')
+      return cb && cb()
+    }
     if (self[type].length > 0) {
       dt = self[type].shift()
     } else {
+      // notice: the type of _EXIT directive is used by itself
       dt = {
-        type: ''
+        type: 'INTERNAL_EXIT'
       }
     }
     logger.info(`run dt: ${type} ${next.type} ${next.action || ''}`)

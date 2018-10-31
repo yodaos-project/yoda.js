@@ -11,6 +11,7 @@ function Skill (exe, nlp, action) {
   this.directives = []
   this.paused = false
   this.isSkillActive = true
+  // identify if there are still tasks currently executing. such as media playing
   this.task = 0
   // identify if this skill has a player
   this.hasPlayer = false
@@ -34,9 +35,17 @@ Skill.prototype.onrequest = function (action, append) {
   logger.log(`--> update shouldEndSession: ${this.shouldEndSession}`)
   logger.log(`skill ${this.appId} onrequest`)
   this.transform(directives || [], append)
-  logger.log(`${this.appId} pause: ${this.paused}`, this.directives)
   if (this.paused === false) {
-    this.emit('start')
+    logger.log('onrequest nextTick', this.directives)
+    /**
+     * fixed: tts.say -> eventReq(media.play) -> media.stop
+     *                                         /----nextTick----\
+     * now the order of execution is : tts.say -> media.stop -> eventReq(media.play)
+     */
+    process.nextTick(() => {
+      logger.log('onrequest nextTick start', this.directives)
+      this.emit('start')
+    })
   }
 }
 
@@ -49,12 +58,6 @@ Skill.prototype.handleEvent = function () {
     // should not resume when user manually pause or stop media
     var resume = true
     this.directives.forEach((value) => {
-      if (value.type === 'media' && ['stop', 'pause'].indexOf(value.action) > -1) {
-        this.isSkillActive = false
-      }
-      if (value.type === 'media' && ['play', 'resume'].indexOf(value.action) > -1) {
-        this.isSkillActive = true
-      }
       // when dt have media, should not exe media resume
       if (value.type === 'media' && ['stop', 'pause', 'resume', 'play'].indexOf(value.action) > -1) {
         resume = false
@@ -75,6 +78,7 @@ Skill.prototype.handleEvent = function () {
       if (this.task > 0) {
         // The media should resume after playing tts
         if (this.shouldEndSession === false && resume && this.isSkillActive) {
+          logger.log('media need resume, exe media.resume')
           this.exe.execute([{
             type: 'media',
             action: 'resume',
@@ -85,6 +89,7 @@ Skill.prototype.handleEvent = function () {
       }
       // continue perform the remaining tasks, if any.
       if (this.directives.length > 0) {
+        logger.log('continue run directives')
         return this.emit('start')
       }
       this.directives = []
@@ -178,11 +183,13 @@ Skill.prototype.handleEvent = function () {
 }
 
 Skill.prototype.transform = function (directives, append) {
-  logger.log(this.appId, directives, append)
+  logger.log(`transform start: ${this.this.appId} append: ${append} ${directives}`)
   if (append !== true) {
-    this.directives = []
+    logger.log('cover directives')
+    this.directives.splice(0, this.directives.length)
   }
   if (directives === undefined || directives.length <= 0) {
+    logger.log('empty directives, nothong to do')
     return
   }
   var ttsActMap = {
@@ -216,6 +223,15 @@ Skill.prototype.transform = function (directives, append) {
       // identify if this skill has player
       if (ele.action === 'PLAY') {
         this.hasPlayer = true
+      }
+      // identify if this skill is active
+      if (['STOP', 'PAUSE'].indexOf(ele.action) > -1) {
+        logger.log('skill active set false')
+        this.isSkillActive = false
+      }
+      if (['PLAY', 'RESUME'].indexOf(ele.action) > -1) {
+        logger.log('skill active set true')
+        this.isSkillActive = true
       }
     } else if (ele.type === 'confirm') {
       tdt = {
