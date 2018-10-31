@@ -25,20 +25,14 @@ module.exports.TurenDescriptor = TurenDescriptor
  * @memberof yodaRT.activity
  * @classdesc The `Activity` is the APIs for apps developer.
  * ```js
- * module.exports = function(activity) {
- *   activity.on('ready', () => {
- *     console.log('activity is ready')
- *   })
+ * module.exports = activity => {
  *   activity.on('create', () => {
  *     console.log('app is created')
  *   })
  *   activity.on('destroy', () => {
  *     console.log('app is destroyed')
  *   })
- *   activity.on('resume', () => {
- *     console.log('app is resumed')
- *   })
- *   activity.on('request', (nlp) => {
+ *   activity.on('request', nlp => {
  *     // handle nlp
  *   })
  * }
@@ -152,7 +146,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'event'
     },
     /**
-     * When the app is ready.
+     * When the Activity API is ready.
      * @event yodaRT.activity.Activity#ready
      */
     ready: {
@@ -187,19 +181,19 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'event'
     },
     /**
-     * Handle your nlp request in this lifecycle.
+     * Fires on nlp requests.
      * @event yodaRT.activity.Activity#request
      * @param {object} data
      * @param {string} data.intent - your nlp intent.
      * @param {object} data.slots  - your nlp slots.
      * @param {string} data.asr    - the asr text.
-     * @param {object} action      - the cloud postprocessed data.
+     * @param {object} action      - the cloud post-processed data.
      */
     request: {
       type: 'event'
     },
     /**
-     * Handle url requests.
+     * Fires on url requests.
      *
      * > URL offer a potential attack vector into your app, so make
      * > sure to validate all URL parameters and discard any malformed
@@ -216,9 +210,9 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'event'
     },
     /**
-     * Handle oppressing of other apps in monologue mode.
+     * Fires on oppressing of other apps in monologue mode.
      *
-     * > Only fires in monologue mode.
+     * > Only fires to apps in monologue mode.
      *
      * @event yodaRT.activity.Activity#oppressing
      * @param {'request' | 'url'} event - the event of oppressed app which would had
