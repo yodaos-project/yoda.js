@@ -131,7 +131,7 @@ BluetoothMessageStream.prototype.end = function end () {
   this.once('closed', () => {
     this._end = true
   })
-  return process.nextTick(() => this._send('OFF'))
+  return this._send('OFF')
 }
 
 /**
