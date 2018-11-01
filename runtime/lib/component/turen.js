@@ -222,8 +222,12 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
       /**
        * No WiFi connection history found, introduce device setup procedure.
        */
-      logger.info('no WiFi history exists, preparing network configuration.')
-      return this.runtime.openUrl('yoda-skill://network/setup')
+      logger.info('no WiFi history exists, announcing guide to network configuration.')
+      return this.runtime.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
+        .then(() =>
+          /** awaken is not set for no network available, recover media directly */
+          this.recoverPausedOnAwaken()
+        )
     }
 
     /**
