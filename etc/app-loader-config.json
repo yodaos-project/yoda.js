@@ -8,5 +8,17 @@
     "@yoda/system",
     "@yoda/volume"
   ],
-  "dbusAppIds": []
+  "dbusAppIds": [],
+  "cloudStackExcludedSkillIds": [
+    "RB0BF7E9D7F84B2BB4A1C2990A1EF8F5",
+    "ROKID.INTENT.WELCOME",
+    "ROKID.INTENT.EXIT",
+    "ROKID.EXCEPTION.CLOUD",
+    "ROKID.EXCEPTION.NLP",
+    "ROKID.EXCEPTION",
+    "ROKID.CONFIRM",
+    "ROKID.INTENT.CONFIRM_RETRY",
+    "REQUEST_ERROR",
+    "NO_NLP"
+  ]
 }
