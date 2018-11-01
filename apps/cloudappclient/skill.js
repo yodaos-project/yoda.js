@@ -9,7 +9,9 @@ function Skill (exe, nlp, action) {
   this.form = action.response.action.form
   this.shouldEndSession = action.response.action.shouldEndSession
   this.directives = []
+  // skill life cycle is paused
   this.paused = false
+  // indicates the user has paused
   this.isSkillActive = true
   // identify if there are still tasks currently executing. such as media playing
   this.task = 0
@@ -77,7 +79,11 @@ Skill.prototype.handleEvent = function () {
       // If there are still tasks that are not completed, do nothind.
       if (this.task > 0) {
         // The media should resume after playing tts
-        if (this.shouldEndSession === false && resume && this.isSkillActive) {
+        // if hasPlayer is true then resume media
+        logger.info('resume = ', resume)
+        logger.info('hasPlayer = ', this.hasPlayer)
+        logger.info('isSkillActive = ', this.isSkillActive)
+        if (this.shouldEndSession === false && resume && this.hasPlayer && this.isSkillActive) {
           logger.log('media need resume, exe media.resume')
           this.exe.execute([{
             type: 'media',

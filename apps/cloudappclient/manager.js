@@ -21,6 +21,12 @@ Manager.prototype.onrequest = function (nlp, action) {
   this.isAppActive = true
   var pos = this.findByAppId(action.appId)
   if (pos > -1) {
+    if (this.getCurrentSkill().appId !== action.appId) {
+      // destroy current skill
+      var prev = this.skills.pop()
+      prev.emit('destroy')
+      this.skills[pos].emit('resume')
+    }
     this.skills[pos].onrequest(action)
   } else {
     var skill = new this.Skill(this.exe, nlp, action)
@@ -43,7 +49,6 @@ Manager.prototype.onrequest = function (nlp, action) {
       }
     }
     skill.on('exit', this.next.bind(this, skill))
-    // this.emit('updateStack', this.updateStack())
     skill.emit('start')
   }
 }
@@ -82,7 +87,6 @@ Manager.prototype.next = function (skill) {
   if (cur !== false) {
     cur.emit('resume')
   }
-  // this.emit('updateStack', this.updateStack())
 }
 
 Manager.prototype.pause = function () {
@@ -116,7 +120,6 @@ Manager.prototype.destroy = function () {
     this.skills[i].emit('destroy')
   }
   this.skills = []
-  // this.emit('updateStack', [])
 }
 
 Manager.prototype.getCurrentSkill = function () {
@@ -124,17 +127,6 @@ Manager.prototype.getCurrentSkill = function () {
     return false
   }
   return this.skills[this.skills.length - 1]
-}
-
-Manager.prototype.updateStack = function () {
-  var stack = []
-  for (var i = 0; i < this.skills.length; i++) {
-    stack.push({
-      appId: this.skills[i].appId,
-      form: this.skills[i].form
-    })
-  }
-  return stack
 }
 
 Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
