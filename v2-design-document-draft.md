@@ -226,7 +226,7 @@ The following events are needed to be sent to Rokid Tracing Cloud:
 | `system.nlp.result`       | Receives an NLP command.              |
 | `system.media.start`      | When multimedia starts.               |
 | `system.media.pause`      | When multimedia is paused.            |
-| `system.media.stop`       | When multimedia is stoped.            |
+| `system.media.stop`       | When multimedia is stopped.           |
 | `system.media.change`     | When multimedia changes.              |
 | `system.volumeup.click`   | When key is clicked for volume up.    |
 | `system.volumedown.click` | When key is clicked for volume down.  |

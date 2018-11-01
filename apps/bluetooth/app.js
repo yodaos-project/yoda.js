@@ -91,7 +91,7 @@ module.exports = function (activity) {
     activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID }).then(() => {
       player = bluetooth.getPlayer()
       if (player && (bluetoothMessage.connect_state === 'connected' ||
-       bluetoothMessage.play_state === 'stoped' ||
+       bluetoothMessage.play_state === 'stopped' ||
        bluetoothMessage.play_state === 'played')) {
         player.play()
         logger.log('bluetoothmusic start play')
