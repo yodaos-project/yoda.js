@@ -645,6 +645,10 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
  * @param {boolean} [options.isActive] - if update currently active skillId
  */
 AppRuntime.prototype.updateCloudStack = function (skillId, form, options) {
+  if (this.loader.isSkillIdExcludedFromStack(skillId)) {
+    return
+  }
+
   var isActive = _.get(options, 'isActive', true)
   if (isActive) {
     this.domain.active = skillId
@@ -655,22 +659,7 @@ AppRuntime.prototype.updateCloudStack = function (skillId, form, options) {
   } else if (form === 'scene') {
     this.domain.scene = skillId
   }
-  var ids = [this.domain.scene, this.domain.cut].map(it => {
-    /**
-     * Exclude local convenience app from cloud skill stack
-     */
-    if (_.startsWith(it, '@')) {
-      return ''
-    }
-    /**
-     * Exclude apps from cloud skill stack
-     * - composition-de-voix
-     */
-    if (['RB0BF7E9D7F84B2BB4A1C2990A1EF8F5'].indexOf(it) >= 0) {
-      return ''
-    }
-    return it
-  })
+  var ids = [this.domain.scene, this.domain.cut]
   var stack = ids.join(':')
   this.flora.updateStack(stack)
 }

@@ -69,6 +69,27 @@ AppChargeur.prototype.getTypeOfApp = function getTypeOfApp (appId) {
 }
 
 /**
+ * Determines if the skill shall be excluded from cloud stack.
+ */
+AppChargeur.prototype.isSkillIdExcludedFromStack = function isSkillIdExcludedFromStack (skillId) {
+  /**
+   * Exclude local convenience app from cloud skill stack
+   */
+  if (_.startsWith(skillId, '@')) {
+    return true
+  }
+  /**
+   * Exclude apps from cloud skill stack
+   * - composition-de-voix
+   * - ROKID.EXCEPTION
+   */
+  if (this.config.cloudStackExcludedSkillIds.indexOf(skillId) >= 0) {
+    return true
+  }
+  return false
+}
+
+/**
  * Directly set manifest for appId and populate its skills and permissions.
  *
  * @param {string} appId
