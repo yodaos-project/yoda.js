@@ -24,10 +24,6 @@ module.exports = activity => {
   // report app status for OS in nextTick
   var taskTimerHandle = null
 
-  sos.on('updateStack', (stack) => {
-    logger.log('updateStack', stack)
-    activity.syncCloudAppIdStack(stack)
-  })
   sos.on('empty', () => {
     clearTimeout(taskTimerHandle)
     taskTimerHandle = setTimeout(() => {
