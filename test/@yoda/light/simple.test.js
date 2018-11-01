@@ -14,8 +14,6 @@ test('light get profile', function (t) {
 
 test('light simple render', function (t) {
   var profile = light.getProfile()
-  light.enable()
-
   var buf = Buffer.alloc(profile.leds * profile.format)
   buf.fill(233)
   light.write(buf)
