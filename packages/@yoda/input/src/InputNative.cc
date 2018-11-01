@@ -156,7 +156,7 @@ void InputEventHandler::DoStart(uv_work_t* req) {
 }
 
 void InputEventHandler::AfterStart(uv_work_t* req, int status) {
-  fprintf(stdout, "input event handler stoped\n");
+  fprintf(stdout, "input event handler stopped\n");
 }
 
 void InputEventHandler::OnKeyEvent(uv_async_t* async) {
