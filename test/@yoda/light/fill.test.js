@@ -2,10 +2,7 @@
 
 var test = require('tape')
 var light = require('@yoda/light')
-
 test('fill default buffer should be ok', t => {
-  t.plan(2)
-  light.enable()
   light.fill(255, 255, 255, 1)
   t.ok(light.write())
   setTimeout(() => {
@@ -16,8 +13,6 @@ test('fill default buffer should be ok', t => {
 })
 
 test('fill outside buffer should be ok', t => {
-  t.plan(2)
-  light.enable()
   var buf = Buffer.alloc(36)
   buf.fill(255)
   t.ok(light.write(buf))
@@ -31,8 +26,6 @@ test('fill outside buffer should be ok', t => {
 })
 
 test('the number of  outside buffer is bigger than 255,hould be ok', t => {
-  t.plan(2)
-  light.enable()
   var buf = Buffer.alloc(36)
   buf.fill(500)
   t.ok(light.write(buf))
@@ -46,8 +39,6 @@ test('the number of  outside buffer is bigger than 255,hould be ok', t => {
 })
 
 test(' outside buffer is not  number like "a",hould be ignore', t => {
-  t.plan(2)
-  light.enable()
   var buf = Buffer.alloc(36)
   buf.fill('a')
   t.ok(light.write(buf))
@@ -60,24 +51,7 @@ test(' outside buffer is not  number like "a",hould be ignore', t => {
   }, 1500)
 })
 
-test('fill outside buffer length is 10 ,should be ok', t => {
-  t.plan(2)
-  light.enable()
-  var buf = Buffer.alloc(10)
-  buf.fill(111)
-  t.ok(light.write(buf))
-  setTimeout(() => {
-    buf.writeUInt8(0, 0)
-    buf.writeUInt8(0, 1)
-    buf.writeUInt8(255, 2)
-    t.ok(light.write(buf))
-    t.end()
-  }, 1500)
-})
-
 test('fill outside buffer length is 10000 ,should be ok', t => {
-  t.plan(2)
-  light.enable()
   var buf = Buffer.alloc(10000)
   buf.fill(111)
   t.ok(light.write(buf))

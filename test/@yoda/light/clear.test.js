@@ -2,13 +2,13 @@
 
 var test = require('tape')
 var light = require('@yoda/light')
-
+var profile = light.getProfile()
+var leds = profile.leds
 test('if have shadow it works', t => {
-  t.plan(1)
   t.ok(light.clear())
-  for (var i = 0; i <= 100; i++) {
+  for (var i = 0; i <= 10; i++) {
     light.clear()
-    light.pixel(i % 12, 0, 255, 0, 1, true)
+    light.pixel(i % leds, 0, 255, 0, 1, true)
     light.write()
     sleep(50)
   }
