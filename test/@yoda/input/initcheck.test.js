@@ -14,7 +14,7 @@ test('getHandler: illegal parameter', (t) => {
   }, new RegExp('selectTimeout must be a number'), 'The parameter is null, An exception needs to be thrown')
 
   var inputEvent = createInput({dbclickTimeout: 400, slideTimeout: 400})
-  t.equal(inputEvent._options['selectTimeout'], 300)
+  t.equal(inputEvent._options['selectTimeout'], 250)
   t.equal(inputEvent._options['dbclickTimeout'], 400)
   t.equal(inputEvent._options['slideTimeout'], 400)
   inputEvent.disconnect()

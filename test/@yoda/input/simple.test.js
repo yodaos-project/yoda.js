@@ -11,7 +11,7 @@ test('type check', function (t) {
 })
 
 // id:1302
-test.skip('input should listen and stop', (t) => {
+test('input should listen and stop', (t) => {
   inputEvent.on('keyup', (event) => {
     console.log('keyup', event.keyCode)
   })

@@ -3,6 +3,7 @@
 var test = require('tape')
 var wifi = require('@yoda/wifi')
 var logger = require('logger')('wifi')
+var config = require('../../config.json').wifi
 
 test('type check', function (t) {
   // Members
@@ -48,7 +49,7 @@ test.skip('wifi unconnected and netserver unconnected', (t) => {
 test.skip('wifi connected and netserver connected', (t) => {
   wifi.disableAll()
   wifi.resetDns()
-  wifi.joinNetwork('ROKID.TC', 'rokidguys')
+  wifi.joinNetwork(config.ssid, config.psk)
   logger.log('start connect, sleep 10s...')
   setTimeout(() => {
     t.equal(wifi.getWifiState(), wifi.WIFI_CONNECTED)
@@ -59,16 +60,16 @@ test.skip('wifi connected and netserver connected', (t) => {
 
 // Return Check id:1308
 test('Check the return value of the function joinNetwork/useful data', (t) => {
-  t.equal(wifi.joinNetwork('ROKID.TC', 'rokidguys'), 0)
+  t.equal(typeof wifi.joinNetwork(config.ssid, config.psk), 'number')
   t.end()
 })
 
 test('joinNetwork: illegal parameter', (t) => {
   t.plan(4)
-  t.throws(() => { wifi.joinNetwork(null, 'rokidguys') }, new RegExp('ssid must be a string'), 'The ssid is null')
-  t.doesNotThrow(() => { wifi.joinNetwork('ROKID.TC', null) }, new RegExp('join network failed'), 'the passwords is null')
+  t.throws(() => { wifi.joinNetwork(null, '88888888') }, new RegExp('ssid must be a string'), 'The ssid is null')
+  t.doesNotThrow(() => { wifi.joinNetwork(config.ssid, null) }, new RegExp('join network failed'), 'the passwords is null')
 
-  t.throws(() => { wifi.joinNetwork(123456, 'rokidguys') }, new RegExp('ssid must be a string'), 'The ssid is not a string but not null')
+  t.throws(() => { wifi.joinNetwork(123456, '88888888') }, new RegExp('ssid must be a string'), 'The ssid is not a string and not null')
   t.throws(() => { wifi.joinNetwork('ROKID.TC', '1234567') }, new RegExp('join network failed'), 'The number of passwords is less than 7')
   t.end()
 })
@@ -81,8 +82,8 @@ test('Check the return value of the function getWifiList', (t) => {
 })
 
 // id:1309
-test.skip('Check the return value of the function disableAll', (t) => {
-  t.assert(wifi.disableAll(), true)
+test('Check the return type of the function disableAll', (t) => {
+  t.assert(typeof wifi.disableAll(), 'number')
   t.end()
 })
 
