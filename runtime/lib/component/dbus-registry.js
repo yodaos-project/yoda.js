@@ -378,12 +378,13 @@ DBus.prototype.yodadebug = {
     fn: function (cb) {
       var ret = { ok: true, result: {} }
       var keys = [
+        'muted',
         'awaken',
         'asrState',
         'pickingUp',
         'pickingUpDiscardNext',
-        'pausedTtsAppIdOnAwaken',
-        'pausedMediaAppIdOnAwaken'
+        'solitaryVoiceComingTimeout',
+        'noVoiceInputTimeout'
       ]
       keys.forEach(key => {
         ret.result[key] = this.runtime.turen[key]

@@ -50,9 +50,22 @@ Flora.prototype.handlers = {
   },
   'rokid.speech.extra': function (msg) {
     var data = JSON.parse(msg.get(0))
-    if (data.activation === 'fake') {
-      this.voiceCtx.lastFaked = true
-      this.runtime.turen.handleEvent('asr fake')
+    switch (data.activation) {
+      case 'accept': {
+        this.runtime.turen.handleEvent('asr accept')
+        break
+      }
+      case 'fake': {
+        this.voiceCtx.lastFaked = true
+        this.runtime.turen.handleEvent('asr fake')
+        break
+      }
+      case 'reject': {
+        this.runtime.turen.handleEvent('asr reject')
+        break
+      }
+      default:
+        logger.info('Unhandled speech extra', data)
     }
   },
   'rokid.turen.start_voice': function (msg) {

@@ -40,7 +40,7 @@ function Turen (runtime) {
    * handle of timer to determines if current 'voice coming' session is alone,
    * no upcoming asr pending/end is sent in company with it.
    */
-  this.solitaryVoiceComingTimeout = process.env.YODA_SOLITARY_VOICE_COMING_TIMEOUT || 3000
+  this.solitaryVoiceComingTimeout = process.env.YODA_SOLITARY_VOICE_COMING_TIMEOUT || 9000
   this.solitaryVoiceComingTimer = null
   /**
    * handle of timer to determines if current awaken session is no voice input available so far,
@@ -83,14 +83,20 @@ Turen.prototype.handleEvent = function (name, data) {
     case 'voice local awake':
       handler = this.handleVoiceLocalAwake
       break
+    case 'asr accept':
+      handler = this.handleAsrProgress.bind(this, 'accept')
+      break
     case 'asr pending':
-      handler = this.handleAsrPending
+      handler = this.handleAsrProgress.bind(this, 'pending')
       break
     case 'asr end':
       handler = this.handleAsrEnd
       break
     case 'asr fake':
       handler = this.handleAsrFake
+      break
+    case 'asr reject':
+      handler = this.handleAsrReject
       break
     case 'start voice':
       handler = this.handleStartVoice
@@ -157,6 +163,8 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
   }
   this.awaken = false
   logger.info('reset awaken, recovering?', recover)
+  clearTimeout(this.solitaryVoiceComingTimer)
+  clearTimeout(this.noVoiceInputTimer)
 
   var promises = [
     this.runtime.light.stop('@yoda', 'system://awake.js'),
@@ -249,7 +257,10 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
   this.solitaryVoiceComingTimer = setTimeout(() => {
     logger.warn('detected a solitary voice coming, resetting awaken')
     this.pickup(false)
-    this.resetAwaken()
+
+    if (this.awaken) {
+      return this.announceNetworkLag()
+    }
   }, this.solitaryVoiceComingTimeout)
 
   if (this.runtime.forceUpdateAvailable) {
@@ -281,17 +292,20 @@ Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
 }
 
 /**
- * Handle the "asr pending" event.
+ * Handle the "asr accept"/"asr pending" event.
  * @private
  */
-Turen.prototype.handleAsrPending = function handleAsrPending () {
-  this.asrState = 'pending'
+Turen.prototype.handleAsrProgress = function handleAsrProgress (state) {
+  this.asrState = state
   clearTimeout(this.solitaryVoiceComingTimer)
 
   clearTimeout(this.noVoiceInputTimer)
   this.noVoiceInputTimer = setTimeout(() => {
     logger.warn('no more voice input detected, closing pickup')
     this.pickup(false)
+    if (this.awaken) {
+      return this.announceNetworkLag()
+    }
   }, this.noVoiceInputTimeout)
 }
 
@@ -317,6 +331,14 @@ Turen.prototype.handleAsrEnd = function handleAsrEnd () {
     return Promise.all(promises)
   }
   return Promise.all(promises.concat(this.runtime.light.play('@yoda', 'system://loading.js')))
+}
+
+/**
+ * Handle the "asr reject" event.
+ */
+Turen.prototype.handleAsrReject = function handleAsrReject () {
+  this.asrState = 'reject'
+  this.resetAwaken()
 }
 
 /**
@@ -435,14 +457,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
 
   if (errCode >= 100) {
     /** network error */
-    return this.runtime.light.lightMethod('networkLagSound', [ '/opt/media/network_lag_common.ogg' ])
-      .then(
-        () => this.recoverPausedOnAwaken(),
-        err => {
-          logger.error('Unexpected error on playing network lag sound', err.stack)
-          return this.recoverPausedOnAwaken()
-        }
-      )
+    return this.announceNetworkLag()
   }
 
   return this.runtime.openUrl(`yoda-skill://rokid-exception/speech-error?errCode=${errCode}`)
@@ -529,4 +544,30 @@ Turen.prototype.setTurenStartupFlag = function setTurenStartupFlag () {
       resolve()
     })
   })
+}
+
+/**
+ * Announce possible network lag. Reset awaken/recover paused media on end of announcements.
+ */
+Turen.prototype.announceNetworkLag = function announceNetworkLag () {
+  return this.runtime.light.lightMethod('networkLagSound', [ '/opt/media/network_lag_common.ogg' ])
+    .then(
+      () => {
+        /** stop network lag light effects */
+        this.runtime.light.lightMethod('stopNetworkLagSound', [])
+        if (this.awaken) {
+          return this.resetAwaken()
+        }
+        return this.recoverPausedOnAwaken()
+      },
+      err => {
+        logger.error('Unexpected error on playing network lag sound', err.stack)
+        /** stop network lag light effects */
+        this.runtime.light.lightMethod('stopNetworkLagSound', [])
+        if (this.awaken) {
+          return this.resetAwaken()
+        }
+        return this.recoverPausedOnAwaken()
+      }
+    )
 }
