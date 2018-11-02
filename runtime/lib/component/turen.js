@@ -403,19 +403,15 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
  */
 Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () {
   if (this.awaken) {
-    /**
-     * if malicious nlp happened before 'asr end'/'end voice',
-     * recover multimedia playing state directly,
-     * no system exception procedure needed to be processed.
-     */
-    return this.resetAwaken()
+    this.pickup(false)
+    this.resetAwaken({ recover: false })
   }
   if (!this.runtime.custodian.isPrepared()) {
-    // Do noting when network is not ready
-    logger.warn('Network not connected, skip malicious nlp result')
-    return
+    logger.warn('Network not connected, recovering players.')
+    return this.recoverPausedOnAwaken()
   }
-  this.runtime.openUrl('yoda-skill://rokid-exception/malicious-nlp')
+
+  return this.runtime.openUrl('yoda-skill://rokid-exception/malicious-nlp')
     .then(
       () => this.runtime.light.stop('@yoda', 'system://loading.js'),
       err => {
@@ -429,17 +425,12 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
  */
 Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
   if (this.awaken) {
-    /**
-     * if speech error happened before 'asr end'/'end voice',
-     * recover multimedia playing state directly,
-     * no system exception procedure needed to be processed.
-     */
-    return this.resetAwaken()
+    this.pickup(false)
+    this.resetAwaken({ recover: false })
   }
   if (!this.runtime.custodian.isPrepared()) {
-    // Do noting when network is not ready
-    logger.warn('Network not connected or not logged in, skip speech error')
-    return
+    logger.warn('Network not connected or not logged in, recovering players.')
+    return this.recoverPausedOnAwaken()
   }
 
   if (errCode >= 100) {
@@ -454,7 +445,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
       )
   }
 
-  this.runtime.openUrl(`yoda-skill://rokid-exception/speech-error?errCode=${errCode}`)
+  return this.runtime.openUrl(`yoda-skill://rokid-exception/speech-error?errCode=${errCode}`)
     .then(
       () => this.runtime.light.stop('@yoda', 'system://loading.js'),
       err => {
