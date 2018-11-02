@@ -7,5 +7,7 @@ adb push ./tools/helper/flora-emitter.js /data/workspace/helper/ >/dev/null
 adb shell "iotjs /data/workspace/helper/flora-emitter.js 'rokid.turen.voice_coming'"
 adb shell "iotjs /data/workspace/helper/flora-emitter.js 'rokid.turen.local_awake' '[1]'"
 adb shell "iotjs /data/workspace/helper/flora-emitter.js 'rokid.turen.start_voice'"
+adb shell "iotjs /data/workspace/helper/flora-emitter.js 'rokid.speech.extra' '[\"{\\\"activation\\\":\\\"accept\\\"}\"]'"
+adb shell "iotjs /data/workspace/helper/flora-emitter.js 'rokid.speech.inter_asr' '[\"若琪\"]'"
 adb shell "iotjs /data/workspace/helper/flora-emitter.js 'rokid.speech.error' '[101, 233]'"
 adb shell "iotjs /data/workspace/helper/flora-emitter.js 'rokid.turen.end_voice'"

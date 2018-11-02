@@ -32,7 +32,7 @@ function main () {
     })
   }
 
-  cli.post(channel, msg, floraFactory.MSGTYPE_PERSIST)
+  cli.post(channel, msg, floraFactory.MSGTYPE_INSTANT)
 
   cli.close()
 }
