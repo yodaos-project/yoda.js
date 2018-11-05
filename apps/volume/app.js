@@ -277,6 +277,14 @@ module.exports = function (activity) {
           .then(() => activity.exit())
         break
       }
+      case '/mute':
+        setMute()
+          .then(() => activity.exit())
+        break
+      case '/unmute':
+        setUnmute({ type: 'effect' })
+          .then(() => activity.exit())
+        break
     }
   })
 }
