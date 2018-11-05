@@ -5,6 +5,7 @@ var path = require('path')
 
 var logger = require('logger')('dbus')
 var _ = require('@yoda/util')._
+var AudioManager = require('@yoda/audio').AudioManager
 
 var DbusRemoteCall = require('../dbus-remote-call')
 var dbusConfig = require('/etc/yoda/dbus-config.json')
@@ -348,6 +349,118 @@ DBus.prototype.amsexport = {
       logger.info('force update available, waiting for incoming voice')
       this.runtime.forceUpdateAvailable = true
       cb(null)
+    }
+  },
+  Hibernate: {
+    in: [],
+    out: ['s'],
+    fn: function Hibernate (cb) {
+      this.runtime.hibernate()
+        .then(
+          () => cb(null, '{"ok": true}'),
+          err => {
+            logger.error('unexpected error on deactivating apps in stack', err.stack)
+            cb(null, JSON.stringify({ ok: false, error: err.message }))
+          }
+        )
+    }
+  },
+  GetVolume: {
+    in: [],
+    out: ['s'],
+    fn: function GetVolume (cb) {
+      cb(null, JSON.stringify({ ok: true, result: AudioManager.getVolume() }))
+    }
+  },
+  SetVolume: {
+    in: ['d'],
+    out: ['s'],
+    fn: function SetVolume (val, cb) {
+      this.runtime.openUrl(`yoda-skill://volume/set_volume?value=${val}`, { preemptive: false })
+        .then(
+          () => cb(null, JSON.stringify({ ok: true, result: AudioManager.getVolume() })),
+          err => {
+            logger.error('unexpected error on set volume', err.stack)
+            cb(null, JSON.stringify({ ok: false, error: err.message }))
+          }
+        )
+    }
+  },
+  IncreaseVolume: {
+    in: [],
+    out: ['s'],
+    fn: function IncreaseVolume (cb) {
+      this.runtime.openUrl('yoda-skill://volume/volume_up', { preemptive: false })
+        .then(
+          () => cb(null, JSON.stringify({ ok: true, result: AudioManager.getVolume() })),
+          err => {
+            logger.error('unexpected error on increase volume', err.stack)
+            cb(null, JSON.stringify({ ok: false, error: err.message }))
+          }
+        )
+    }
+  },
+  DecreaseVolume: {
+    in: [],
+    out: ['s'],
+    fn: function DecreaseVolume (cb) {
+      this.runtime.openUrl('yoda-skill://volume/volume_down', { preemptive: false })
+        .then(
+          () => cb(null, JSON.stringify({ ok: true, result: AudioManager.getVolume() })),
+          err => {
+            logger.error('unexpected error on decrease volume', err.stack)
+            cb(null, JSON.stringify({ ok: false, error: err.message }))
+          }
+        )
+    }
+  },
+  SetSpeakerMute: {
+    in: ['b'],
+    out: ['s'],
+    fn: function MuteSpeaker (mute, cb) {
+      var url = mute ? 'yoda-skill://volume/mute' : 'yoda-skill://volume/unmute'
+      this.runtime.openUrl(url, { preemptive: false })
+        .then(
+          () => cb(null, '{"ok": true}'),
+          err => {
+            logger.error('unexpected error on decrease volume', err.stack)
+            cb(null, JSON.stringify({ ok: false, error: err.message }))
+          }
+        )
+    }
+  },
+  SetMicrophoneMute: {
+    in: ['b'],
+    out: ['s'],
+    fn: function MuteMicrophone (mute, cb) {
+      this.runtime.setMicMute(mute)
+        .then(
+          () => cb(null, '{"ok": true}'),
+          err => {
+            logger.error('unexpected error on set speaker mute', err.stack)
+            cb(null, JSON.stringify({ ok: false, error: err.message }))
+          }
+        )
+    }
+  },
+  TextNLP: {
+    in: ['s'],
+    out: ['s'],
+    fn: function TextNLP (text, cb) {
+      this.runtime.flora.getNlpResult(text, (err, nlp, action) => {
+        if (err) {
+          logger.error('Unexpected error on get nlp for asr', text, err.stack)
+          return cb(null, JSON.stringify({ ok: false, error: err.message }))
+        }
+        this.runtime.onVoiceCommand(text, nlp, action)
+          .then(
+            () => cb(null, '{"ok":true}'),
+            err => {
+              logger.error('unexpected error on voice command', err.stack)
+              cb(null, JSON.stringify({ ok: false, error: err.message }))
+            }
+          )
+      })
     }
   }
 }

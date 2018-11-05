@@ -220,11 +220,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
     return future.then(() => this.light.ttsSound('@yoda', 'system://guide_config_network.ogg'))
   }
 
-  /**
-   * Clear apps and its contexts
-   */
-  this.resetCloudStack()
-  future = Promise.all([ future, this.life.deactivateAppsInStack() ])
+  future = Promise.all([ future, this.hibernate() ])
 
   if (currentAppId) {
     /**
@@ -242,6 +238,19 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
     }
     return this.setPickup(true, 6000, true)
   })
+}
+
+/**
+ * Put device into hibernation. Terminates apps in stack (i.e. apps in active and paused).
+ *
+ * Also clears apps' contexts.
+ */
+AppRuntime.prototype.hibernate = function hibernate () {
+  /**
+   * Clear apps and its contexts
+   */
+  this.resetCloudStack()
+  return this.life.deactivateAppsInStack()
 }
 
 /**
