@@ -9,6 +9,7 @@ function mockDaemonProxies (runtime) {
   mock.mockReturns(runtime.light, 'play', Promise.resolve())
   mock.mockReturns(runtime.light, 'stop', Promise.resolve())
   mock.mockReturns(runtime.light, 'appSound', Promise.resolve())
+  mock.mockReturns(runtime.light, 'lightMethod', Promise.resolve())
   mock.mockReturns(runtime, 'ttsMethod', Promise.resolve())
   mock.mockReturns(runtime, 'multimediaMethod', Promise.resolve())
 }

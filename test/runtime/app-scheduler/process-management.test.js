@@ -24,6 +24,8 @@ test('shall create child process', t => {
   t.looseEqual(scheduler.appStatus[appId], null)
   var promise = scheduler.createApp(appId)
   t.strictEqual(scheduler.appStatus[appId], 'creating')
+
+  setTimeout(() => { /** FIXME: child_process.fork doesn't trigger next tick */ }, 1000)
   promise
     .then(app => {
       t.notLooseEqual(scheduler.appMap[appId], null)
