@@ -5,6 +5,7 @@ var inherits = require('util').inherits
 var logger = require('logger')('cloudAppClient-manager')
 var eventRequest = require('./eventRequestApi')
 var eventRequestMap = require('./eventRequestMap.json')
+var _ = require('@yoda/util')._
 
 function Manager (exe, Skill) {
   EventEmitter.call(this)
@@ -16,6 +17,16 @@ function Manager (exe, Skill) {
 inherits(Manager, EventEmitter)
 
 Manager.prototype.onrequest = function (nlp, action) {
+  if (!action || !action.appId) {
+    logger.error(`Missing the appId! The action value is: [${action}]`)
+    if (this.skills.length === 0) {
+      logger.log('there is no skill to run, emit [empty] event because missing appId!')
+      this.emit('empty')
+    } else {
+      this.resume()
+    }
+    return
+  }
   logger.log('sos onrequest')
   // call onrequest method, app is alive
   this.isAppActive = true
@@ -30,7 +41,8 @@ Manager.prototype.onrequest = function (nlp, action) {
     this.skills[pos].onrequest(action)
   } else {
     var skill = new this.Skill(this.exe, nlp, action)
-    if (action.response.action.form === 'scene') {
+    var form = _.get(action, 'response.action.form')
+    if (form === 'scene') {
       this.skills.forEach((elm) => {
         elm.emit('destroy')
       })
