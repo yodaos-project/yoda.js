@@ -504,6 +504,10 @@ Light.prototype.appSound = function (appId, name, cb) {
       this.stopPrevSound()
       cb()
     })
+    player.on('cancel', () => {
+      logger.log(`player cancel: [${appId}] [${name}]`)
+      cb()
+    })
     player.on('error', () => {
       logger.error(`player error: [${appId}] [${name}]`)
       this.stopPrevSound()

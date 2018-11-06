@@ -197,12 +197,17 @@ MediaPlayer.prototype.start = function (uri) {
 
 /**
  * This stops the `MediaPlayer` instance, `.stop()` will destroy
- * the handle.
+ * the handle and emit 'cancel' event.
  *
  * > Don't use the instance anymore when you stopped it.
  */
 MediaPlayer.prototype.stop = function () {
-  return this._handle.stop()
+  this._handle.stop()
+  /**
+   * this event is fired when the player is cancel.
+   * @event module:@yoda/multimedia~MediaPlayer#cancel
+   */
+  this.emit('cancel')
 }
 
 /**
