@@ -1,5 +1,4 @@
 var logger = require('logger')('sound')
-var _ = require('@yoda/util')._
 var AudioManager = require('@yoda/audio').AudioManager
 
 module.exports = Sound
@@ -60,6 +59,16 @@ Sound.prototype.unmute = function unmute () {
 }
 
 /**
+ * Unmute speaker volume if it's muted and given skillId is not
+ * volume app (which depends on state of speaker).
+ */
+Sound.prototype.unmuteIfNecessary = function unmuteIfNecessary (skillId) {
+  if (this.isMuted() && !this.isVolumeApp(skillId)) {
+    this.unmute()
+  }
+}
+
+/**
  * Determines if speaker is muted.
  */
 Sound.prototype.isMuted = function isMuted () {
@@ -67,8 +76,8 @@ Sound.prototype.isMuted = function isMuted () {
 }
 
 /**
- * Determines if nlp is related to system volume app.
+ * Determines if given skillId is related to system volume app.
  */
-Sound.prototype.isVolumeNlp = function isVolumeNlp (nlp) {
-  return _.get(nlp, 'appId') === '7D0F5E5D57CD496B940654D7C8963AE0'
+Sound.prototype.isVolumeApp = function isVolumeApp (skillId) {
+  return skillId === '7D0F5E5D57CD496B940654D7C8963AE0'
 }
