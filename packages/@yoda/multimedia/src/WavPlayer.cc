@@ -24,8 +24,12 @@ typedef struct {
 
 static void DoInitPlayer(napi_env env, void* data) {
   init_carrier* c = static_cast<init_carrier*>(data);
-
-  c->_result = prePrepareWavPlayer((const char**)(c->_filenames), c->_filenum);
+  if (c) {
+    c->_result =
+        prePrepareWavPlayer((const char**)(c->_filenames), c->_filenum);
+  } else {
+    return;
+  }
 
   for (size_t i = 0; i < c->_filenum; i++) {
     if (c->_filenames[i] != NULL) {
@@ -42,7 +46,7 @@ static void DoInitPlayer(napi_env env, void* data) {
 static void AfterInitPlayer(napi_env env, napi_status status, void* data) {
   init_carrier* c = static_cast<init_carrier*>(data);
 
-  if (status != napi_ok) {
+  if (!c || status != napi_ok) {
     napi_throw_type_error(env, nullptr, "Execute callback failed.");
     return;
   }
@@ -71,8 +75,7 @@ static void AfterInitPlayer(napi_env env, napi_status status, void* data) {
   NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, c->_callback));
   NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, c->_request));
 
-  if (c)
-    free(c);
+  free(c);
 }
 
 static napi_value InitPlayer(napi_env env, napi_callback_info info) {
@@ -126,7 +129,11 @@ static napi_value InitPlayer(napi_env env, napi_callback_info info) {
 
 static void DoPreparePlayer(napi_env env, void* data) {
   prepare_carrier* c = static_cast<prepare_carrier*>(data);
-  c->_result = prepareWavPlayer(c->_filename, c->_tag, c->_holdconnect);
+  if (c) {
+    c->_result = prepareWavPlayer(c->_filename, c->_tag, c->_holdconnect);
+  } else {
+    return;
+  }
 
   if (c->_filename != NULL) {
     free(c->_filename);
@@ -141,7 +148,7 @@ static void DoPreparePlayer(napi_env env, void* data) {
 static void AfterPreparePlayer(napi_env env, napi_status status, void* data) {
   prepare_carrier* c = static_cast<prepare_carrier*>(data);
 
-  if (status != napi_ok) {
+  if (!c || status != napi_ok) {
     napi_throw_type_error(env, nullptr, "Execute callback failed.");
     return;
   }
@@ -171,8 +178,7 @@ static void AfterPreparePlayer(napi_env env, napi_status status, void* data) {
   NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, c->_callback));
   NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, c->_request));
 
-  if (c)
-    free(c);
+  free(c);
 }
 
 static napi_value Prepare(napi_env env, napi_callback_info info) {
