@@ -52,10 +52,15 @@ function createExtApp (appId, metadata, runtime) {
   cp.once('exit', (code, signal) => {
     logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
     descriptor.emit('exit', code, signal)
+    eventBus.removeAllListeners()
   })
   descriptor.once('destruct', () => {
     logger.info(`${appId}(${cp.pid}) Activity end of life, killing process.`)
     cp.kill()
+  })
+  eventBus.once('application-not-responding', () => {
+    logger.error(`${appId}(${cp.pid}) application not responding`)
+    cp.kill(/** SIGKILL */9)
   })
 
   return new Promise((resolve, reject) => {
@@ -63,14 +68,23 @@ function createExtApp (appId, metadata, runtime) {
       cp.removeListener('message', onMessage)
       cp.kill()
       reject(new Error(` ExtApp '${target}'(${cp.pid}) failed to be ready in 5s.`))
+      /** promise shall not be resolved/rejected multiple times */
+      eventBus.removeAllListeners('status-report:error')
+      eventBus.removeAllListeners('status-report:ready')
     }, 5000)
 
     eventBus.once('status-report:ready', () => {
       clearTimeout(timer)
+      /** promise shall not be resolved/rejected multiple times */
+      eventBus.removeAllListeners('status-report:error')
+      /** initiate ping-pong */
+      eventBus.ping()
       resolve(descriptor)
     })
     eventBus.once('status-report:error', error => {
       clearTimeout(timer)
+      /** promise shall not be resolved/rejected multiple times */
+      eventBus.removeAllListeners('status-report:ready')
       reject(error)
     })
   })
@@ -89,6 +103,7 @@ function EventBus (descriptor, socket, appId, pid) {
   this.appId = appId
   this.pid = socket.pid
   this.logger = require('logger')(`bus-${this.pid}`)
+  this.pingTimer = null
 
   /**
    * keep records of subscribed events to deduplicate subscription requests.
@@ -114,7 +129,12 @@ EventBus.prototype.onMessage = function onMessage (message) {
 }
 
 EventBus.prototype.test = function onTest () { /** nothing to do with test */ }
-EventBus.prototype.ping = function onPing () { /** nothing to do with ping */ }
+EventBus.prototype.ping = function onPing () {
+  clearTimeout(this.pingTimer)
+  this.pingTimer = setTimeout(() => {
+    this.emit('application-not-responding')
+  }, /** 3 times not received */15 * 1000)
+}
 
 EventBus.prototype['status-report'] = function onStatusReport (message) {
   this.logger.debug(`Received child ${this.appId} status report: ${message.status}`)
