@@ -435,7 +435,10 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
 
       logger.info(`app is preemptive, activating app ${appId}`)
       return this.life.activateAppById(appId, form, carrierId)
-        .then(() => this.updateCloudStack(nlp.appId, form))
+        .then(() => {
+          this.updateCloudStack(nlp.appId, form)
+          this.sound.unmuteIfNecessary(nlp.appId)
+        })
     })
     .then(() => this.life.onLifeCycle(appId, 'request', [ nlp, action ]))
     .then(() => true)
