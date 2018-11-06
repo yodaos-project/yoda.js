@@ -42,16 +42,12 @@ function keepAlive (appId) {
    * Yet this process should be kept alive and waiting for life
    * cycle events.
    */
-  var timer = setInterval(() => {
-    process.send({
-      type: 'ping',
-      appId: appId
-    })
-  }, 10 * 60 * 1000)
+  setInterval(() => {
+    process.send({ type: 'ping' })
+  }, 5 * 1000)
   process.on('message', message => {
     if (message.type === 'pong') {
-      logger.info('Received pong from VuiDaemon, stop pinging.')
-      clearInterval(timer)
+      logger.info('Received pong from VuiDaemon.')
     }
   })
 }
