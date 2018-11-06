@@ -89,6 +89,9 @@ Turen.prototype.handleEvent = function (name, data) {
     case 'asr pending':
       handler = this.handleAsrProgress.bind(this, 'pending')
       break
+    case 'asr extra':
+      handler = this.handleAsrProgress.bind(this, 'extra')
+      break
     case 'asr end':
       handler = this.handleAsrEnd
       break
@@ -303,9 +306,6 @@ Turen.prototype.handleAsrProgress = function handleAsrProgress (state) {
   this.noVoiceInputTimer = setTimeout(() => {
     logger.warn('no more voice input detected, closing pickup')
     this.pickup(false)
-    if (this.awaken) {
-      return this.announceNetworkLag()
-    }
   }, this.noVoiceInputTimeout)
 }
 

@@ -66,6 +66,7 @@ Flora.prototype.handlers = {
       }
       default:
         logger.info('Unhandled speech extra', data)
+        this.runtime.turen.handleEvent('asr extra', data)
     }
   },
   'rokid.turen.start_voice': function (msg) {
