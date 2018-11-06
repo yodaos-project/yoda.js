@@ -544,13 +544,15 @@ Turen.prototype.setTurenStartupFlag = function setTurenStartupFlag () {
  * Announce possible network lag. Reset awaken/recover paused media on end of announcements.
  */
 Turen.prototype.announceNetworkLag = function announceNetworkLag () {
+  if (this.awaken) {
+    this.resetAwaken({ recover: false })
+  }
   return this.runtime.light.lightMethod('networkLagSound', [ '/opt/media/network_lag_common.ogg' ])
     .then(
       () => {
         /** stop network lag light effects */
         this.runtime.light.lightMethod('stopNetworkLagSound', [])
         if (this.awaken) {
-          /** awaken shall be reset before announceNetworkLag by pickup(false) etc. */
           return
         }
         return this.recoverPausedOnAwaken()
@@ -560,7 +562,6 @@ Turen.prototype.announceNetworkLag = function announceNetworkLag () {
         /** stop network lag light effects */
         this.runtime.light.lightMethod('stopNetworkLagSound', [])
         if (this.awaken) {
-          /** awaken shall be reset before announceNetworkLag by pickup(false) etc. */
           return
         }
         return this.recoverPausedOnAwaken()
