@@ -925,9 +925,16 @@ namespace Napi {
     Value Call(napi_value recv, const std::vector<napi_value>& args) const;
     Value Call(napi_value recv, size_t argc, const napi_value* args) const;
 
-    Value MakeCallback(napi_value recv, const std::initializer_list<napi_value>& args) const;
-    Value MakeCallback(napi_value recv, const std::vector<napi_value>& args) const;
-    Value MakeCallback(napi_value recv, size_t argc, const napi_value* args) const;
+    Value MakeCallback(napi_value recv,
+                       const std::initializer_list<napi_value>& args,
+                       napi_async_context context = nullptr) const;
+    Value MakeCallback(napi_value recv,
+                       const std::vector<napi_value>& args,
+                       napi_async_context context = nullptr) const;
+    Value MakeCallback(napi_value recv,
+                       size_t argc,
+                       const napi_value* args,
+                       napi_async_context context = nullptr) const;
 
     Object New(const std::initializer_list<napi_value>& args) const;
     Object New(const std::vector<napi_value>& args) const;
@@ -1099,9 +1106,16 @@ namespace Napi {
     Napi::Value Call(napi_value recv, const std::vector<napi_value>& args) const;
     Napi::Value Call(napi_value recv, size_t argc, const napi_value* args) const;
 
-    Napi::Value MakeCallback(napi_value recv, const std::initializer_list<napi_value>& args) const;
-    Napi::Value MakeCallback(napi_value recv, const std::vector<napi_value>& args) const;
-    Napi::Value MakeCallback(napi_value recv, size_t argc, const napi_value* args) const;
+    Napi::Value MakeCallback(napi_value recv,
+                             const std::initializer_list<napi_value>& args,
+                             napi_async_context context = nullptr) const;
+    Napi::Value MakeCallback(napi_value recv,
+                             const std::vector<napi_value>& args,
+                             napi_async_context context = nullptr) const;
+    Napi::Value MakeCallback(napi_value recv,
+                             size_t argc,
+                             const napi_value* args,
+                             napi_async_context context = nullptr) const;
 
     Object New(const std::initializer_list<napi_value>& args) const;
     Object New(const std::vector<napi_value>& args) const;
@@ -1298,6 +1312,7 @@ namespace Napi {
 
   class PropertyDescriptor {
   public:
+#ifndef NODE_ADDON_API_DISABLE_DEPRECATED
     template <typename Getter>
     static PropertyDescriptor Accessor(const char* utf8name,
                                        Getter getter,
@@ -1359,6 +1374,74 @@ namespace Napi {
                                        void* data = nullptr);
     template <typename Callable>
     static PropertyDescriptor Function(Name name,
+                                       Callable cb,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+#endif // !NODE_ADDON_API_DISABLE_DEPRECATED
+
+    template <typename Getter>
+    static PropertyDescriptor Accessor(Napi::Env env,
+                                       Napi::Object object,
+                                       const char* utf8name,
+                                       Getter getter,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+    template <typename Getter>
+    static PropertyDescriptor Accessor(Napi::Env env,
+                                       Napi::Object object,
+                                       const std::string& utf8name,
+                                       Getter getter,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+    template <typename Getter>
+    static PropertyDescriptor Accessor(Napi::Env env,
+                                       Napi::Object object,
+                                       Name name,
+                                       Getter getter,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+    template <typename Getter, typename Setter>
+    static PropertyDescriptor Accessor(Napi::Env env,
+                                       Napi::Object object,
+                                       const char* utf8name,
+                                       Getter getter,
+                                       Setter setter,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+    template <typename Getter, typename Setter>
+    static PropertyDescriptor Accessor(Napi::Env env,
+                                       Napi::Object object,
+                                       const std::string& utf8name,
+                                       Getter getter,
+                                       Setter setter,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+    template <typename Getter, typename Setter>
+    static PropertyDescriptor Accessor(Napi::Env env,
+                                       Napi::Object object,
+                                       Name name,
+                                       Getter getter,
+                                       Setter setter,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+    template <typename Callable>
+    static PropertyDescriptor Function(Napi::Env env,
+                                       Napi::Object object,
+                                       const char* utf8name,
+                                       Callable cb,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+    template <typename Callable>
+    static PropertyDescriptor Function(Napi::Env env,
+                                       Napi::Object object,
+                                       const std::string& utf8name,
+                                       Callable cb,
+                                       napi_property_attributes attributes = napi_default,
+                                       void* data = nullptr);
+    template <typename Callable>
+    static PropertyDescriptor Function(Napi::Env env,
+                                       Napi::Object object,
+                                       Name name,
                                        Callable cb,
                                        napi_property_attributes attributes = napi_default,
                                        void* data = nullptr);
@@ -1529,6 +1612,11 @@ namespace Napi {
     static napi_value InstanceGetterCallbackWrapper(napi_env env, napi_callback_info info);
     static napi_value InstanceSetterCallbackWrapper(napi_env env, napi_callback_info info);
     static void FinalizeCallback(napi_env env, void* data, void* hint);
+    static Function DefineClass(Napi::Env env,
+                                const char* utf8name,
+                                const size_t props_count,
+                                const napi_property_descriptor* props,
+                                void* data = nullptr);
 
     template <typename TCallback>
     struct MethodCallbackData {
@@ -1581,6 +1669,40 @@ namespace Napi {
   private:
     napi_env _env;
     napi_escapable_handle_scope _scope;
+  };
+
+  class CallbackScope {
+  public:
+    CallbackScope(napi_env env, napi_callback_scope scope);
+    CallbackScope(napi_env env, napi_async_context context);
+    virtual ~CallbackScope();
+
+    operator napi_callback_scope() const;
+
+    Napi::Env Env() const;
+
+  private:
+    napi_env _env;
+    napi_async_context _async_context;
+    napi_callback_scope _scope;
+  };
+
+  class AsyncContext {
+  public:
+    explicit AsyncContext(napi_env env, const char* resource_name);
+    explicit AsyncContext(napi_env env, const char* resource_name, const Object& resource);
+    virtual ~AsyncContext();
+
+    AsyncContext(AsyncContext&& other);
+    AsyncContext& operator =(AsyncContext&& other);
+    AsyncContext(const AsyncContext&) = delete;
+    AsyncContext& operator =(AsyncContext&) = delete;
+
+    operator napi_async_context() const;
+
+  private:
+    napi_env _env;
+    napi_async_context _context;
   };
 
   class AsyncWorker {

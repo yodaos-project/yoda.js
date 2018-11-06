@@ -14,6 +14,9 @@ target_include_directories(shadow-flora-cli PRIVATE
 )
 
 target_link_libraries(shadow-flora-cli iotjs flora-cli caps)
+target_compile_options(shadow-flora-cli PRIVATE
+  -DNODE_ADDON_API_DISABLE_DEPRECATED
+)
 set_target_properties(shadow-flora-cli PROPERTIES
   PREFIX ""
   SUFFIX ".node"
