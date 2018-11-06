@@ -37,8 +37,6 @@ MultiMedia.prototype.getCurrentlyPlayingAppId = function getCurrentlyPlayingAppI
 MultiMedia.prototype.prepare = function prepare (appId, url, streamType) {
   if (this.handle[appId]) {
     try {
-      var id = this.handle[appId].id
-      this.emit('cancel', '' + id)
       this.handle[appId].stop()
       delete this.handle[appId]
     } catch (error) {
@@ -67,10 +65,7 @@ MultiMedia.prototype.start = function (appId, url, streamType) {
 MultiMedia.prototype.stop = function (appId) {
   if (this.handle[appId]) {
     try {
-      var id = this.handle[appId].id
-      this.emit('cancel', '' + id)
       this.handle[appId].stop()
-      AudioManager.setPlayingState(audioModuleName, false)
       delete this.handle[appId]
     } catch (error) {
       logger.error('try to stop player errer with appId: ', appId, error.stack)
@@ -168,6 +163,10 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
   player.on('seekcomplete', () => {
     this.emit('seekcomplete', '' + player.id)
     AudioManager.setPlayingState(audioModuleName, true)
+  })
+  player.on('cancel', () => {
+    this.emit('cancel', '' + player.id)
+    AudioManager.setPlayingState(audioModuleName, false)
   })
   player.on('error', () => {
     // free handle when something goes wrong
