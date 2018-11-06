@@ -227,7 +227,18 @@ module.exports = activity => {
   })
 
   activity.on('request', function (nlp, action) {
-    if (action.response.action.type === 'EXIT') {
+    var intentType = _.get(action, 'response.action.type')
+    if (!intentType) {
+      logger.error(`The content of the action is wrong! The actual value is: [${action}]`)
+      if (sos.skills.length === 0) {
+        logger.log('there is no skill to run, setBackground because action error!')
+        activity.setBackground()
+      } else {
+        sos.resume()
+      }
+      return
+    }
+    if (intentType === 'EXIT') {
       logger.log(`${this.appId} intent EXIT`)
       sos.destroy()
       activity.setBackground()
