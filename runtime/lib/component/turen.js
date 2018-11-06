@@ -556,7 +556,8 @@ Turen.prototype.announceNetworkLag = function announceNetworkLag () {
         /** stop network lag light effects */
         this.runtime.light.lightMethod('stopNetworkLagSound', [])
         if (this.awaken) {
-          return this.resetAwaken()
+          /** awaken shall be reset before announceNetworkLag by pickup(false) etc. */
+          return
         }
         return this.recoverPausedOnAwaken()
       },
@@ -565,7 +566,8 @@ Turen.prototype.announceNetworkLag = function announceNetworkLag () {
         /** stop network lag light effects */
         this.runtime.light.lightMethod('stopNetworkLagSound', [])
         if (this.awaken) {
-          return this.resetAwaken()
+          /** awaken shall be reset before announceNetworkLag by pickup(false) etc. */
+          return
         }
         return this.recoverPausedOnAwaken()
       }
