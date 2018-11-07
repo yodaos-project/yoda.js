@@ -15,7 +15,7 @@ test('type check', function (t) {
   t.equal(typeof wifi.WIFI_UNCONNECTED, 'number')
 
   // Methods
-  t.equal(typeof wifi.joinNetwork('ROKID.TC', 'rokidguys'), 'number')
+  t.equal(typeof wifi.joinNetwork(config.ssid, config.psk), 'number')
   t.equal(typeof wifi.getWifiState(), 'number')
   t.equal(typeof wifi.getNetworkState(), 'number')
   t.equal(typeof wifi.getWifiList(), 'object')
