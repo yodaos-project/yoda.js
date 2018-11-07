@@ -14,6 +14,7 @@ Example:
 patternPrefix='/data/workspace/test/'
 pattern="**/*.test.js"
 reporter="cat"
+coverage=""
 local="NO"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -36,6 +37,10 @@ while [ $# -gt 0 ]; do
       printf "$help"
       exit
       ;;
+    --coverage)
+      coverage="--coverage $2"
+      shift
+      ;;
     --*)
       echo "Illegal option $1"
       ;;
@@ -49,11 +54,11 @@ if test "$local" = "YES"; then
   patternPrefix="$(pwd)/test/"
   scripts="$patternPrefix$pattern"
 
-  cmd='iotjs ./node_modules/tape/bin/tape.js'
+  cmd='iotjs ./node_modules/tape/bin/tape.js '$coverage
 else
   scripts="
 export BLUETOOTH_CHANNEL_PREFIX=/tmp > /dev/null;
-iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
+iotjs /usr/lib/node_modules/tape/bin/tape.js $coverage '$patternPrefix$pattern'
 "
 
   cmd="adb shell"
