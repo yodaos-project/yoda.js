@@ -14,6 +14,12 @@ typedef struct {
 } init_carrier;
 
 typedef struct {
+  int _result;
+  napi_ref _callback;
+  napi_async_work _request;
+} start_carrier;
+
+typedef struct {
   char* _filename;
   char* _tag;
   bool _holdconnect;
@@ -134,7 +140,6 @@ static void DoPreparePlayer(napi_env env, void* data) {
   } else {
     return;
   }
-
   if (c->_filename != NULL) {
     free(c->_filename);
     c->_filename = NULL;
@@ -225,8 +230,71 @@ static napi_value Prepare(napi_env env, napi_callback_info info) {
   return NULL;
 }
 
+static void DoStartPlayer(napi_env env, void* data) {
+  start_carrier* c = static_cast<start_carrier*>(data);
+  if (!c) {
+    return;
+  }
+  c->_result = startWavPlayer();
+  return;
+}
+
+static void AfterStartPlayer(napi_env env, napi_status status, void* data) {
+  start_carrier* c = static_cast<start_carrier*>(data);
+  if (!c || status != napi_ok) {
+    napi_throw_type_error(env, nullptr, "Execute callback failed.");
+    return;
+  }
+  napi_value argv[1];
+  if (c->_result == -1) {
+    napi_value message;
+    NAPI_CALL_RETURN_VOID(env,
+                          napi_create_string_utf8(env, "Start WavPlayer Error",
+                                                  NAPI_AUTO_LENGTH, &message));
+    NAPI_CALL_RETURN_VOID(env,
+                          napi_create_error(env, message, message, &argv[0]));
+    printf("on AfterStartPlayer created error\n");
+  } else {
+    NAPI_CALL_RETURN_VOID(env, napi_get_null(env, &argv[0]));
+  }
+
+  napi_value callback;
+  NAPI_CALL_RETURN_VOID(env,
+                        napi_get_reference_value(env, c->_callback, &callback));
+  napi_value global;
+  NAPI_CALL_RETURN_VOID(env, napi_get_global(env, &global));
+
+  napi_value result;
+  NAPI_CALL_RETURN_VOID(env, napi_call_function(env, global, callback, 1, argv,
+                                                &result));
+
+  NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, c->_callback));
+  NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, c->_request));
+
+  free(c);
+}
+
 static napi_value Start(napi_env env, napi_callback_info info) {
-  startWavPlayer();
+  size_t argc = 1;
+  napi_value argv[1];
+  NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
+  if (argc != 1) {
+    napi_throw_error(env, nullptr, "The argument number is wrong.");
+    return NULL;
+  }
+
+  start_carrier* the_carrier = new start_carrier;
+
+  napi_value resource_name;
+  NAPI_CALL(env, napi_create_string_utf8(env, "startPlayer", NAPI_AUTO_LENGTH,
+                                         &resource_name));
+  NAPI_CALL(env,
+            napi_create_reference(env, argv[0], 1, &(the_carrier->_callback)));
+  NAPI_CALL(env, napi_create_async_work(env, argv[0], resource_name,
+                                        DoStartPlayer, AfterStartPlayer,
+                                        the_carrier, &(the_carrier->_request)));
+  NAPI_CALL(env, napi_queue_async_work(env, the_carrier->_request));
+
   return NULL;
 }
 
@@ -235,6 +303,7 @@ static napi_value Stop(napi_env env, napi_callback_info info) {
   return NULL;
 }
 
+/** cppcheck-suppress unusedFunction */
 static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
     DECLARE_NAPI_PROPERTY("initPlayer", InitPlayer),
