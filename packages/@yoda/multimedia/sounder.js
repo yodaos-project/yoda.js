@@ -74,8 +74,12 @@ function _playSound (filename, stream, holdconnection, callback) {
     }
 
     // start playing the actual playback
-    native.start()
-    callback()
+    native.start((err) => {
+      if (err) {
+        return callback(err)
+      }
+      return callback()
+    })
   })
 }
 
