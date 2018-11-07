@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+set -e
+
+help="
+Usage:
+  -t          Only includes tests.
+  -r          Only includes resources.
+  -a          Include tests and resources.
+  --no-app    Exclude apps.
+  --no-os     Exclude runtime and packages.
+
+  -s          Select which device to be installed on if multiple devices presents.
+
+Runtime installation by default, includes all packages, runtime, **no tests and resources**.
+
+Example:
+  $ ./tools/coverage-install
+  $ ./tools/coverage-install -s 0502031835000257
+"
+
+os="YES"
+test="NO"
+resources="NO"
+exclude_app='NO'
+sn=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -t)
+      test="YES"
+      ;;
+    --no-os)
+      os="NO"
+      ;;
+    -r)
+      resources="YES"
+      os="NO"
+      ;;
+    -a)
+      test="YES"
+      resources="YES"
+      ;;
+    --no-app)
+      exclude_app="YES"
+      ;;
+    -s)
+      sn="$2"
+      shift
+      ;;
+    -h|--help)
+      printf "$help"
+      exit
+      ;;
+    --*)
+      echo "Illegal option $1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+function shell() {
+  if test "$sn" != ""; then
+    adb -s "$sn" shell $1
+  else
+    adb shell $1
+  fi
+}
+
+function push() {
+  echo "installing from $1 to $2"
+  if test "$sn" != ""; then
+    adb -s "$sn" push $1 $2 >/dev/null
+  else
+    adb push $1 $2 >/dev/null
+  fi
+}
+
+function install_os() {
+  # etc config
+  shell "rm -rf /etc/yoda/*"
+  push "./etc/*" "/etc/yoda/"
+
+  # yoda runtime
+  shell "rm -rf /usr/yoda/*"
+  push "./source-for-coverage/runtime/*" "/usr/yoda/"
+
+  # node_modules
+  shell "mkdir -p /usr/lib/node_modules/@yoda"
+  push "./source-for-coverage/packages/*" "/usr/lib/node_modules"
+}
+
+function install_test() {
+  shell "rm -rf /usr/lib/node_modules/tape"
+  shell "mkdir -p /usr/lib/node_modules/tape"
+  push "node_modules/tape/*" "/usr/lib/node_modules/tape"
+  push "node_modules/@yoda/*" "/usr/lib/node_modules/@yoda"
+
+  shell "rm -rf /data/workspace/test"
+  shell "mkdir -p /data/workspace/test"
+  push "test/*" "/data/workspace/test"
+}
+
+function install_resources() {
+  shell "rm -rf /opt/media"
+  shell "rm -rf /opt/light"
+  push "./source-for-coverage/res/light" "/opt/"
+  push "./source-for-coverage/res/media" "/opt/"
+}
+
+function install_apps {
+  # apps
+  shell "rm -rf /opt/apps/*"
+  push "./source-for-coverage/apps/*" "/opt/apps/"
+}
+
+shell "mount -o remount,rw /"
+
+if test "$os" = "YES"; then
+  install_os
+fi
+
+if test "$resources" = "YES"; then
+  install_resources
+fi
+
+if test "$test" = 'YES'; then
+  install_test
+fi
+
+if test "$exclude_app" = 'NO'; then
+  install_apps
+fi
