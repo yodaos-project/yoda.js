@@ -77,11 +77,9 @@ function push() {
 
 function install_os() {
   # etc config
-  shell "rm -rf /etc/yoda/*"
   push "./etc/*" "/etc/yoda/"
 
   # yoda runtime
-  shell "rm -rf /usr/yoda/*"
   push "./source-for-coverage/runtime/*" "/usr/yoda/"
 
   # node_modules
@@ -101,15 +99,12 @@ function install_test() {
 }
 
 function install_resources() {
-  shell "rm -rf /opt/media"
-  shell "rm -rf /opt/light"
   push "./source-for-coverage/res/light" "/opt/"
   push "./source-for-coverage/res/media" "/opt/"
 }
 
 function install_apps {
   # apps
-  shell "rm -rf /opt/apps/*"
   push "./source-for-coverage/apps/*" "/opt/apps/"
 }
 
