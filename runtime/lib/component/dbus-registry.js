@@ -414,10 +414,20 @@ DBus.prototype.amsexport = {
         )
     }
   },
+  GetSpeakerMuted: {
+    in: [],
+    out: ['s'],
+    fn: function GetSpeakerMuted (cb) {
+      cb(null, JSON.stringify({
+        ok: true,
+        result: AudioManager.isMuted() || AudioManager.getVolume() === 0
+      }))
+    }
+  },
   SetSpeakerMute: {
     in: ['b'],
     out: ['s'],
-    fn: function MuteSpeaker (mute, cb) {
+    fn: function SetSpeakerMute (mute, cb) {
       var url = mute ? 'yoda-skill://volume/mute' : 'yoda-skill://volume/unmute'
       this.runtime.openUrl(url, { preemptive: false })
         .then(
@@ -429,10 +439,20 @@ DBus.prototype.amsexport = {
         )
     }
   },
+  GetMicrophoneMuted: {
+    in: [],
+    out: ['s'],
+    fn: function GetMicrophoneMuted (cb) {
+      cb(null, JSON.stringify({
+        ok: true,
+        result: this.runtime.turen.muted
+      }))
+    }
+  },
   SetMicrophoneMute: {
     in: ['b'],
     out: ['s'],
-    fn: function MuteMicrophone (mute, cb) {
+    fn: function SetMicrophoneMute (mute, cb) {
       this.runtime.setMicMute(mute)
         .then(
           () => cb(null, '{"ok": true}'),
