@@ -69,6 +69,7 @@ function MediaPlayer (stream) {
    * @property {string} indicates current state of the player
    */
   this.status = MediaPlayer.status.idle
+  this._ignoreCancelEvent = false
 }
 inherits(MediaPlayer, EventEmitter)
 
@@ -114,6 +115,7 @@ MediaPlayer.prototype.onprepared = function () {
 }
 
 MediaPlayer.prototype.onplaybackcomplete = function () {
+  this._ignoreCancelEvent = true
   /**
    * Fired when media playback is complete.
    * @event module:@yoda/multimedia~MediaPlayer#playbackcomplete
@@ -156,6 +158,7 @@ MediaPlayer.prototype.onblockpausemode = function (ext1, ext2) {
 }
 
 MediaPlayer.prototype.onerror = function () {
+  this._ignoreCancelEvent = true
   /**
    * Fired when something went wrong.
    * @event module:@yoda/multimedia~MediaPlayer#error
@@ -203,6 +206,11 @@ MediaPlayer.prototype.start = function (uri) {
  */
 MediaPlayer.prototype.stop = function () {
   this._handle.stop()
+  // after error or complete event emit, the cancel event should not emit.
+  // because only one event can be emit.
+  if (this._ignoreCancelEvent) {
+    return
+  }
   /**
    * this event is fired when the player is cancel.
    * @event module:@yoda/multimedia~MediaPlayer#cancel
