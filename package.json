@@ -33,7 +33,7 @@
     "tap-nyan": "^1.1.0",
     "tap-parser": "^7.0.0",
     "tap-spec": "^5.0.0",
-    "tape": "shadow-node/tape#8c31b3e80aa200864f4926c4858f7602b423ebad"
+    "tape": "shadow-node/tape#696e0298bb61d99e012732be63f34d6980294b6d"
   },
   "standard": {
     "ignore": [

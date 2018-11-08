@@ -15,6 +15,7 @@ patternPrefix='/data/workspace/test/'
 pattern="**/*.test.js"
 reporter="cat"
 coverage=""
+timeout=""
 local="NO"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -41,6 +42,10 @@ while [ $# -gt 0 ]; do
       coverage="--coverage $2"
       shift
       ;;
+    --timeout)
+      timeout="--timeout $2"
+      shift
+      ;;
     --*)
       echo "Illegal option $1"
       ;;
@@ -54,14 +59,14 @@ if test "$local" = "YES"; then
   patternPrefix="$(pwd)/test/"
   scripts="$patternPrefix$pattern"
 
-  cmd='iotjs ./node_modules/tape/bin/tape.js '$coverage
+  cmd='iotjs ./node_modules/tape/bin/tape.js '
 else
   scripts="
 export BLUETOOTH_CHANNEL_PREFIX=/tmp > /dev/null;
-iotjs /usr/lib/node_modules/tape/bin/tape.js $coverage '$patternPrefix$pattern'
+iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
 "
 
   cmd="adb shell"
 fi
 
-$cmd $scripts | $reporter
+$cmd $scripts $coverage $timeout | $reporter
