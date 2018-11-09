@@ -31,13 +31,6 @@ test('set/get tts volume 1', (t) => {
   setAndGetVolum(t, 1, 1)
 })
 
-test('cannot set system volume', (t) => {
-  t.throws(() => {
-    AudioManager.setVolume(AudioManager.STREAM_SYSTEM, 1)
-  }, Error)
-  t.end()
-})
-
 test('set/get tts volume undefined', (t) => {
   t.throws(() => {
     AudioManager.setVolume(undefined, 1)
