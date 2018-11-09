@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(node-wifi CXX)
 set(CMAKE_CXX_STANDARD 11)
 
-add_library(node-wifi MODULE src/WifiNative.cc)
+add_library(node-wifi MODULE src/binding.cc)
 target_include_directories(node-wifi PRIVATE
   ../../../include
   ${CMAKE_INCLUDE_DIR}/include
