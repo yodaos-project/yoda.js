@@ -8,6 +8,9 @@ var _ = require('@yoda/util')._
 
 var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
 
+// TODO: can't get the vtname from turen. later fix it.
+var vtname = '若琪'
+
 function Ring (rkDownTimer) {
   this.mIsRing = false
   this.mCount = 0
@@ -176,8 +179,6 @@ RKDownTimer.prototype.timerCallback = function (owner, obj) {
 }
 
 RKDownTimer.prototype.setup = function (nlpTime) {
-  // TODO: can't get the vtname from turen. later fix it.
-  var vtname = '若琪'
   var second = this.timeParseToSecond(nlpTime)
   this.mIsPause = false
   this.nlpTime = second
@@ -187,6 +188,10 @@ RKDownTimer.prototype.setup = function (nlpTime) {
     return this.speak('你还没告诉我计时多久，比如：' + vtname + '计时15秒')
   }
   var ret = this.speak('将开始计时')
+  if (this.timer.isRunning) {
+    this.timer.stop()
+  }
+
   this.timer.start(this.timerCallback, this)
 
   return ret
@@ -283,6 +288,9 @@ RKDownTimer.prototype.pause = function (nlpTime) {
     logger.log('pause..., left time: ' + this.nlpTime)
     var text = '已暂停计时'
     this.speak(text)
+  } else {
+    logger.log('not start, can\'t  pause')
+    this.speak('计时器未打开，你可以说：' + vtname + '计时15秒')
   }
 }
 
@@ -296,7 +304,7 @@ RKDownTimer.prototype.continue = function (nlpTime) {
     this.speak('继续计时')
     this.timer.start(this.timerCallback, this)
   } else {
-    logger.log('not pause, can\'t  continue ')
+    logger.log('not pause, can\'t  continue')
     this.speak('不是暂停状态，不能继续，你可以说：' + vtname + '计时15秒')
   }
 }
