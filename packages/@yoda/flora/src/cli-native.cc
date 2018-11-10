@@ -56,7 +56,6 @@ static jerry_value_t caps_to_jobject(iotjs_flora_cli_t* handle,
   jerry_value_t caps_ctor;
   jerry_value_t jcaps;
   uint32_t idx = 0;
-  int32_t type;
   int32_t iv;
   int64_t lv;
   float fv;
@@ -76,7 +75,7 @@ static jerry_value_t caps_to_jobject(iotjs_flora_cli_t* handle,
   arr = iotjs_jval_get_property(jcaps, "pairs");
 
   while (true) {
-    type = caps->next_type();
+    int32_t type = caps->next_type();
     if (type == CAPS_ERR_EOO)
       break;
     ele = jerry_create_object();
@@ -110,7 +109,7 @@ static jerry_value_t caps_to_jobject(iotjs_flora_cli_t* handle,
         break;
       case 'S':
         caps->read_string(sv);
-        prop = jerry_create_string((const jerry_char_t*)sv.c_str());
+        prop = jerry_create_string_from_utf8(reinterpret_cast<const jerry_char_t*>(sv.c_str()));
         iotjs_jval_set_property_jval(ele, "value", prop);
         jerry_release_value(prop);
         break;
@@ -148,12 +147,11 @@ static shared_ptr<Caps> jobject_to_caps(jerry_value_t jcaps) {
   shared_ptr<Caps> caps = Caps::new_instance();
   jerry_value_t ele;
   jerry_value_t prop;
-  int32_t type;
 
   for (i = 0; i < len; ++i) {
     ele = jerry_get_property_by_index(arr, i);
     prop = iotjs_jval_get_property(ele, "type");
-    type = (int32_t)jerry_get_number_value(prop);
+    int32_t type = (int32_t)jerry_get_number_value(prop);
     jerry_release_value(prop);
     prop = iotjs_jval_get_property(ele, "value");
     switch (type) {
@@ -195,11 +193,11 @@ static shared_ptr<Caps> jobject_to_caps(jerry_value_t jcaps) {
 
 class NativeCallback : public flora::ClientCallback {
  public:
+  // cppcheck-suppress unusedFunction
   void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg) {
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
     list<AsyncCallbackInfo>::iterator it;
 
-    AsyncCallbackInfo info;
     _this->stl_st->cb_mutex.lock();
     it = _this->stl_st->pending_callbacks.emplace(
         _this->stl_st->pending_callbacks.end());
@@ -211,6 +209,7 @@ class NativeCallback : public flora::ClientCallback {
     uv_async_send(&_this->async);
   }
 
+  // cppcheck-suppress unusedFunction
   void disconnected() {
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_flora_cli_t, thisptr);
     list<AsyncCallbackInfo>::iterator it;
@@ -224,7 +223,7 @@ class NativeCallback : public flora::ClientCallback {
   }
 
   static void async_callback(uv_async_t* handle) {
-    NativeCallback* _this = (NativeCallback*)handle->data;
+    NativeCallback* _this = static_cast<NativeCallback*>(handle->data);
     _this->handle_callback();
   }
 
@@ -264,7 +263,7 @@ class NativeCallback : public flora::ClientCallback {
     iotjs_jargs_append_jval(&jargs, type);
     iotjs_jargs_append_jval(&jargs, args);
     jerry_value_t ele;
-    ele = jerry_create_string((const jerry_char_t*)name.c_str());
+    ele = jerry_create_string_from_utf8((const jerry_char_t*)name.c_str());
     jerry_set_property_by_index(args, 0, ele);
     jerry_release_value(ele);
     ele = jerry_create_number(msgtype);
