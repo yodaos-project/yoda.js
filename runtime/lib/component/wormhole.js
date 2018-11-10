@@ -2,23 +2,82 @@
 
 var logger = require('logger')('wormhole')
 var AudioManager = require('@yoda/audio').AudioManager
+var _ = require('@yoda/util')._
+var ChildProcess = require('child_process')
+
+var config = require('/etc/yoda/wormhole.json')
 
 module.exports = Wormhole
 function Wormhole (runtime) {
   this.runtime = runtime
+  this.config = config
+  if (this.config.handlers == null) {
+    this.config.handlers = {}
+  }
 }
 
-Wormhole.prototype.init = function init (mqttcli) {
+Wormhole.prototype.init = function init (mqttClient) {
   logger.info('initialize the wormhole with a new mqtt connection.')
-  this.mqtt = mqttcli
-  this.mqtt.setMessageHandler((topic, text) => {
-    var handler = this.handlers[topic]
-    if (typeof handler !== 'function') {
-      logger.warn('no handler for ' + topic)
+  this.mqtt = mqttClient
+  this.mqtt.setMessageHandler(this.messageHandler.bind(this))
+}
+
+Wormhole.prototype.messageHandler = function messageHandler (topic, text) {
+  var descriptor = this.config.handlers[topic]
+  if (descriptor != null) {
+    if (descriptor.url) {
+      if (typeof descriptor.url !== 'string') {
+        logger.error('Malformed descriptor, url is not a string.', descriptor)
+        return
+      }
+      var options = _.get(descriptor, 'options', {})
+      if (typeof options !== 'object') {
+        logger.error('Malformed descriptor, options is not an object.', descriptor)
+        return
+      }
+      return this.runtime.openUrl(descriptor.url, options)
+        .catch(err => {
+          logger.error(`Unexpected error on opening url '${descriptor.url}'`, err && err.message, err && err.stack)
+        })
+    }
+    if (descriptor.runtimeMethod) {
+      var method = this.runtime[descriptor.runtimeMethod]
+      var params = _.get(descriptor, 'params', [])
+      if (typeof method !== 'function') {
+        logger.error('Malformed descriptor, runtime method not found.', descriptor)
+        return
+      }
+      if (!Array.isArray(params)) {
+        logger.error('Malformed descriptor, params is not an array.', descriptor)
+        return
+      }
+
+      return method.apply(this.runtime, params.concat(text))
+    }
+    if (descriptor.bin) {
+      var cp = ChildProcess.spawn(descriptor.bin, descriptor.args || [], {
+        stdio: 'inherit'
+      })
+      var timeout = descriptor.timeout || 10 * 1000
+      var timer = setTimeout(() => {
+        logger.info(`[${topic}] Spawned bin timed out for ${timeout}ms`)
+        cp.kill(9)
+      }, timeout)
+      cp.once('exit', (code, signal) => {
+        logger.info(`[${topic}] Spawned bin exited with code(${code}) signal(${signal})`)
+        clearTimeout(timer)
+      })
       return
     }
-    handler.call(this, text)
-  })
+    logger.error('Unknown descriptor', descriptor)
+  }
+
+  var handler = this.handlers[topic]
+  if (typeof handler !== 'function') {
+    logger.warn('no handler for ' + topic)
+    return
+  }
+  handler.call(this, text)
 }
 
 Wormhole.prototype.handlers = {
