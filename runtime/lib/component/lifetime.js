@@ -392,12 +392,10 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   var currentAppId = this.getCurrentAppId()
 
   var removed = this.activeSlots.removeApp(appId)
-
-  var deactivating = this.destroyAppById(appId)
   if (!removed && !force) {
     /** app is in stack, no need to be deactivated */
-    logger.info('app is not in stack, skip manipulating stack', appId)
-    return deactivating
+    logger.info('app is not in stack, skip deactivating', appId)
+    return Promise.resolve()
   }
   logger.info('deactivating app', appId, ', recover?', recover, `currentApp(${currentAppId})`)
   if (recover && currentAppId !== appId) {
@@ -408,6 +406,8 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   if (removed) {
     this.onEvict(appId)
   }
+
+  var deactivating = this.destroyAppById(appId)
 
   var carrierId
   if (appId === this.lastSubordinate) {
