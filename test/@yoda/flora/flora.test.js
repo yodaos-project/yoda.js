@@ -681,7 +681,7 @@ test('module->flora->client: persist msg, subscribe->send->unsubscribe->send', t
 test('module->flora->client: persist msg, send->subscribe->unsubscribe->send', t => {
   var int32 = 32
   var int64 = 64
-  var hello = 'hello flora'
+  var hello = 'hello flora 😄'
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `instant msg test[${msgId}]`
   var count = 0
