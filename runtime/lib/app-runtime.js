@@ -508,6 +508,45 @@ AppRuntime.prototype.openUrl = function (url, options) {
 }
 
 /**
+ * Dispatches a notification request to apps registered for the channel.
+ *
+ * @param {string} channel
+ * @param {any[]} params
+ */
+AppRuntime.prototype.dispatchNotification = function dispatchNotification (channel, params) {
+  var appIds = this.loader.notifications[channel]
+  if (!Array.isArray(appIds)) {
+    return Promise.reject(new Error(`Unknown notification channel '${channel}'`))
+  }
+  if (params == null) {
+    params = []
+  }
+  logger.info(`on system notification(${channel}):`, appIds)
+
+  var self = this
+  return step(0)
+
+  function step (idx) {
+    if (idx >= appIds.length) {
+      return Promise.resolve()
+    }
+    var appId = appIds[idx]
+    self.life.createApp(appId)
+      /** force quit app on create error */
+      .catch(err => {
+        logger.error(`create app ${appId} failed`, err.stack)
+        return self.life.destroyAppById(appId, { force: true })
+          .then(() => { /** rethrow error to break following procedures */throw err })
+      })
+      .then(() => self.life.onLifeCycle(appId, 'notification', [ channel ].concat(params)))
+      .catch(err => {
+        logger.error(`send notification(${channel}) failed with appId: ${appId}`, err.stack)
+      })
+      .then(() => step(++idx))
+  }
+}
+
+/**
  *
  * @param {string} appId -
  * @param {object} [options]
@@ -1100,6 +1139,10 @@ AppRuntime.prototype.onLoggedIn = function () {
     if (upgradeInfo) {
       this.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(upgradeInfo.changelog)}`)
     }
+
+    process.nextTick(() => {
+      this.dispatchNotification('on-ready', [])
+    })
 
     var config = JSON.stringify(this.onGetPropAll())
     return this.ttsMethod('connect', [config])

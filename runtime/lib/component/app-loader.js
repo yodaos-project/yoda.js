@@ -28,6 +28,10 @@ function AppChargeur (runtime) {
   this.hostSkillIdMap = {}
   /** appId -> manifest */
   this.appManifests = {}
+
+  this.notifications = {
+    'on-ready': []
+  }
 }
 
 AppChargeur.prototype.getAppIds = function getAppIds () {
@@ -102,27 +106,7 @@ AppChargeur.prototype.isSkillIdExcludedFromStack = function isSkillIdExcludedFro
 AppChargeur.prototype.setManifest = function setManifest (appId, manifest, options) {
   var dbusApp = _.get(options, 'dbusApp', false)
 
-  var skillIds = _.get(manifest, 'skills', [])
-  var permissions = _.get(manifest, 'permission', [])
-  var hosts = _.get(manifest, 'hosts', [])
-
-  if (typeof appId !== 'string' || !appId) {
-    throw new Error(`AppId is not valid at ${appId}.`)
-  }
-  if (this.appManifests[appId] != null) {
-    throw new Error(`AppId exists at ${appId}.`)
-  }
-  if (!Array.isArray(skillIds)) {
-    throw new Error(`manifest.skills is not valid at ${appId}.`)
-  }
-  if (!Array.isArray(hosts)) {
-    throw new Error(`manifest.hosts is not valid at ${appId}.`)
-  }
-  if (!Array.isArray(permissions)) {
-    throw new Error(`manifest.permission is not valid at ${appId}.`)
-  }
-
-  this.__loadApp(appId, null, manifest, skillIds, hosts, permissions)
+  this.__loadApp(appId, null, manifest)
   if (dbusApp) {
     this.config.dbusAppIds.push(appId)
   }
@@ -204,26 +188,7 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
         manifest = _.get(pkgInfo, 'metadata', {})
       }
 
-      var skillIds = _.get(manifest, 'skills', [])
-      var hosts = _.get(manifest, 'hosts', [])
-      var permissions = _.get(manifest, 'permission', [])
-      if (typeof appId !== 'string' || !appId) {
-        throw new Error(`AppId is not valid at ${root}.`)
-      }
-      if (this.appManifests[appId] != null) {
-        throw new Error(`AppId exists at ${root}.`)
-      }
-      if (!Array.isArray(skillIds)) {
-        throw new Error(`manifest.skills is not valid at ${root}.`)
-      }
-      if (!Array.isArray(hosts)) {
-        throw new Error(`manifest.hosts is not valid at ${root}.`)
-      }
-      if (!Array.isArray(permissions)) {
-        throw new Error(`manifest.permission is not valid at ${root}.`)
-      }
-
-      this.__loadApp(appId, root, manifest, skillIds, hosts, permissions)
+      this.__loadApp(appId, root, manifest)
     })
 }
 
@@ -239,10 +204,33 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
  * @param {string[]} permissions -
  * @returns {void}
  */
-AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest, skillIds, hosts, permissions) {
+AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) {
   manifest = Object.assign({}, manifest, { appHome: appHome })
-  this.appManifests[appId] = manifest
 
+  var skillIds = _.get(manifest, 'skills', [])
+  var hosts = _.get(manifest, 'hosts', [])
+  var permissions = _.get(manifest, 'permission', [])
+  var notifications = _.get(manifest, 'notifications', [])
+  if (typeof appId !== 'string' || !appId) {
+    throw new Error(`AppId is not valid at ${appHome}.`)
+  }
+  if (this.appManifests[appId] != null) {
+    throw new Error(`AppId conflicts at ${appId}(${appHome}).`)
+  }
+  if (!Array.isArray(skillIds)) {
+    throw new Error(`manifest.skills is not valid at ${appId}(${appHome}).`)
+  }
+  if (!Array.isArray(hosts)) {
+    throw new Error(`manifest.hosts is not valid at ${appId}(${appHome}).`)
+  }
+  if (!Array.isArray(permissions)) {
+    throw new Error(`manifest.permission is not valid at ${appId}(${appHome}).`)
+  }
+  if (!Array.isArray(notifications)) {
+    throw new Error(`manifest.notifications is not valid at ${appId}(${appHome}).`)
+  }
+
+  this.appManifests[appId] = manifest
   skillIds.forEach(skillId => {
     var skillAttrs
     if (Array.isArray(skillId)) {
@@ -251,7 +239,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest, 
       skillAttrs = arr[1]
     }
     if (typeof skillId !== 'string') {
-      throw new Error(`manifest.skills '${skillId}' by '${appId}' type mismatch, expecting a string.`)
+      throw new Error(`manifest.skills '${skillId}' by '${appId}' type mismatch, expecting a string or an array.`)
     }
     var currAppId = this.skillIdAppIdMap[skillId]
     if (currAppId != null) {
@@ -266,16 +254,40 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest, 
     }
   })
   hosts.forEach(host => {
-    var name = _.get(host, 'name')
-    var skillId = _.get(host, 'skillId')
+    var hostAttrs
+    if (Array.isArray(host)) {
+      hostAttrs = host[1]
+      host = host[0]
+    }
+    if (typeof host === 'object') {
+      hostAttrs = host
+      host = _.get(host, 'name')
+    } else {
+      throw new Error(`manifest.host '${host}' by '${appId}' type mismatch, expecting a string or an array.`)
+    }
+    var skillId = _.get(hostAttrs, 'skillId')
+
     if (skillIds.indexOf(skillId) < 0) {
-      throw new Error(`manifest.hosts '${skillId}' mapped from '${name}' doesn't owned by ${appId}.`)
+      throw new Error(`manifest.hosts '${skillId}' mapped from '${host}' doesn't owned by ${appId}.`)
     }
-    var currSkillId = this.hostSkillIdMap[name]
+    var currSkillId = this.hostSkillIdMap[host]
     if (currSkillId != null) {
-      throw new Error(`manifest.hosts '${name}' by '${currSkillId}' exists, declaring by ${appId}.`)
+      throw new Error(`manifest.hosts '${host}' by '${currSkillId}' exists, declaring by ${appId}.`)
     }
-    this.hostSkillIdMap[name] = skillId
+    this.hostSkillIdMap[host] = skillId
+  })
+
+  notifications.forEach(notification => {
+    if (Array.isArray(notification)) {
+      notification = notification[0]
+    }
+    if (typeof notification !== 'string') {
+      throw new Error(`manifest.notification '${notification}' by '${appId}' type mismatch, expecting a string or an array.`)
+    }
+    if (Object.keys(this.notifications).indexOf(notification) < 0) {
+      return
+    }
+    this.notifications[notification].push(appId)
   })
 
   this.runtime.permission.load(appId, permissions)

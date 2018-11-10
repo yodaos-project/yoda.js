@@ -220,6 +220,14 @@ Object.assign(ActivityDescriptor.prototype,
      */
     oppressing: {
       type: 'event'
+    },
+    /**
+     * Fires on notification requests.
+     * @event yodaRT.activity.Activity#notification
+     * @param {string} channel
+     */
+    notification: {
+      type: 'event'
     }
   },
   {
