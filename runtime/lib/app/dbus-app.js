@@ -10,6 +10,7 @@ function DbusApp (appId, manifest, runtime) {
   this.ifaceName = _.get(manifest, 'ifaceName')
   this.dbusService = runtime.dbusRegistry.service
 
+  this.on('ready', this._onEvent.bind(this, 'ready', appId))
   this.on('resume', this._onEvent.bind(this, 'resume', appId))
   this.on('pause', this._onEvent.bind(this, 'pause', appId))
   this.on('destroy', this._onEvent.bind(this, 'destroy', appId))
@@ -21,6 +22,12 @@ DbusApp.prototype._onEvent = function (name) {
   var params = Array.prototype.slice.call(arguments, 1)
   var eventName
   switch (name) {
+    case 'ready':
+      eventName = 'onReady'
+      params = [
+        params[0]
+      ]
+      break
     case 'resume':
       eventName = 'onResume'
       params = [
