@@ -285,7 +285,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function destroyAll () {
-        return this._runtime.destroyAll({ force: false })
+        return this._runtime.destroyAll({ force: false, resetServices: false })
       }
     },
     /**
