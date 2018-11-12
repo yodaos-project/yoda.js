@@ -367,12 +367,6 @@ Turen.prototype.handleStartVoice = function handleStartVoice () {
 Turen.prototype.handleEndVoice = function handleEndVoice () {
   this.pickingUp = false
   logger.info('on end of voice, asr:', this.asrState)
-  if (this.asrState === 'end') {
-    return
-  }
-  if (this.awaken) {
-    return this.resetAwaken()
-  }
 }
 
 /**
