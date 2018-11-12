@@ -1167,11 +1167,8 @@ AppRuntime.prototype.onLoggedIn = function () {
   }
 
   return Promise.all([
-    this.startDaemonApps()
-      .then(sendReady, err => {
-        logger.error('Unexpected error on starting daemon apps', err.stack)
-        return sendReady()
-      }).catch(err => logger.error('Unexpected error on destroying all apps', err.stack)),
+    sendReady() /** only send ready to currently alive apps */,
+    this.startDaemonApps(),
     this.turen.setTurenStartupFlag(),
     this.initiate()
       .then(() => new Promise(resolve => ota.getInfoIfFirstUpgradedBoot((err, info) => {
