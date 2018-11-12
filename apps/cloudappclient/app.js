@@ -182,14 +182,6 @@ module.exports = activity => {
 
   activity.on('ready', function () {
     logger.log(this.appId + ' app ready')
-  })
-
-  activity.on('error', function (err) {
-    logger.log('app error: ', err)
-  })
-
-  activity.on('create', function () {
-    logger.log(`${this.appId} app create`)
     logger.log('get CONFIG from OS')
     activity.get('all')
       .then((result) => {
@@ -199,7 +191,14 @@ module.exports = activity => {
       .catch((error) => {
         logger.log('get prop error', error)
       })
-    logger.log(this.appId + ' created')
+  })
+
+  activity.on('error', function (err) {
+    logger.log('app error: ', err)
+  })
+
+  activity.on('create', function () {
+    logger.log(`${this.appId} create`)
   })
 
   activity.on('pause', function () {
