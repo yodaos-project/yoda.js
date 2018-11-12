@@ -1,5 +1,20 @@
 #!/usr/bin/env bash
 
+HOST="device-account.rokid.com"
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h)
+      HOST="$2"
+      shift
+      ;;
+    --*)
+      echo "Illegal option $1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
 NOW_EPOCH_TIMESTAMP=`date +%s`
 DEVICE_ID=`getprop ro.boot.serialno`
 DEVICE_TYPE_ID=`getprop ro.boot.devicetypeid`
@@ -28,7 +43,6 @@ qs_stringify() {
 }
 
 POST_DATA=`qs_stringify '&' $MY_OPTS`
-HOST="device-account.rokid.com"
 URI="https://$HOST/device/loginV2.do"
 
 curl -D /tmp/LOGIN_HEADER -H "Content-Type: application/x-www-form-urlencoded" -d "$POST_DATA" $URI

@@ -52,8 +52,12 @@ CloudStore.prototype.connect = function connect () {
   var opts = { encoding: 'utf8' }
   return new Promise((resolve, reject) => {
     var handleResponse = this.handleResponse.bind(this)
+    var cmd = [
+      `nice -n -20 sh ${path.join(__dirname, './login/request.sh')}`,
+      `-h ${env.cloudgw.account}`
+    ].join(' ')
 
-    exec(`nice -n -20 sh ${path.join(__dirname, './login/request.sh')}`, opts, oncomplete)
+    exec(cmd, opts, oncomplete)
     function oncomplete (err, stdout, stderr) {
       if (err) {
         return reject(err)

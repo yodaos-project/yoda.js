@@ -1067,7 +1067,7 @@ AppRuntime.prototype.reconnect = function () {
     future = this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
   }
 
-  future.then(() => {
+  return future.then(() => {
     var masterId = property.get(masterKey)
     if (masterId) {
       return masterId
@@ -1087,7 +1087,7 @@ AppRuntime.prototype.reconnect = function () {
 
     // login -> mqtt
     this.custodian.onLogout()
-    this.cloudApi.connect()
+    return this.cloudApi.connect()
       .then((config) => {
         var opts = Object.assign({ uri: env.speechUri }, config)
 

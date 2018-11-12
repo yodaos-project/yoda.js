@@ -357,7 +357,15 @@ DBus.prototype.amsexport = {
     fn: function Relogin (cb) {
       this.runtime.custodian.onLogout()
       this.runtime.reconnect()
-      cb()
+        .then(
+          () => {
+            cb()
+          },
+          err => {
+            logger.error('unexpected error on re-login', err.stack)
+            cb()
+          }
+        )
     }
   },
   Hibernate: {
