@@ -5,15 +5,13 @@ help="
 Usage:
   -s <ssid> WiFi ssid
   -p <psk> WiFi Password
-  -m <masterId> UserId/MasterId the device is regstered with
 
 Example:
-  $ ./tools/configure-network -s <ssid> -p <psk> -m <masterId>
+  $ ./tools/configure-network -s <ssid> -p <psk>
 "
 
 ssid=""
 psk=""
-masterId=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -s)
@@ -22,10 +20,6 @@ while [ $# -gt 0 ]; do
       ;;
     -p)
       psk="$2"
-      shift
-      ;;
-    -m)
-      masterId="$2"
       shift
       ;;
     --help)
@@ -68,15 +62,4 @@ else
   printf "No network modification was made for no ssid or psk specified.\n$help\n"
 fi
 
-# MARK: - Setup MasterId
-if test -z "$masterId"; then
-  printf "Tips:
-  script can automatically setup masterId on device! try:
-
-  $ bash ./tools/configure-network -m <masterId>
-"
-else
-  adb shell setprop persist.system.user.userId "$masterId"
-fi
-
-adb shell reboot
+wpa_cli reconfigure
