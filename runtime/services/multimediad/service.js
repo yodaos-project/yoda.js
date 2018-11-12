@@ -192,6 +192,10 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
     logger.info('media cache blocked, waiting announcement timer.')
 
     player.__blockpausemodeTimer = setTimeout(() => {
+      if (!player.playing) {
+        logger.warn('player is not playing, skipping stage 1 announcement.')
+        return
+      }
       logger.info('media cache blocked, playing stage 1 announcement')
 
       this.lightd.invoke('networkLagSound', ['/opt/media/network_lag_common.ogg'])
@@ -200,6 +204,10 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
           if (!player.blockpausemodeEnabled) return
 
           player.__blockpausemodeTimer = setTimeout(() => {
+            if (!player.playing) {
+              logger.warn('player is not playing, skipping stage 2 announcement.')
+              return
+            }
             logger.info('media cache blocked, playing stage 2 announcement')
 
             this.lightd.invoke('networkLagSound', [
