@@ -107,7 +107,7 @@ AppChargeur.prototype.setManifest = function setManifest (appId, manifest, optio
   var dbusApp = _.get(options, 'dbusApp', false)
 
   this.__loadApp(appId, null, manifest)
-  if (dbusApp) {
+  if (dbusApp && this.config.dbusAppIds.indexOf(appId) < 0) {
     this.config.dbusAppIds.push(appId)
   }
 }

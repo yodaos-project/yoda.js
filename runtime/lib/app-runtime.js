@@ -831,6 +831,7 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
   logger.log('register dbus app with id: ', appId)
   try {
     this.loader.setManifest(appId, {
+      daemon: true, /** dbus apps shall be daemon app since they are running alone with vui */
       objectPath: objectPath,
       ifaceName: ifaceName,
       skills: [ appId ],
@@ -844,6 +845,8 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
     }
     throw err
   }
+  /** dbus apps are already running, creating a daemon app proxy for then */
+  return this.life.createApp(appId)
 }
 
 /**
