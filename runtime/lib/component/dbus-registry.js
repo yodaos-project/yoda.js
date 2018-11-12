@@ -351,6 +351,15 @@ DBus.prototype.amsexport = {
       cb(null)
     }
   },
+  Relogin: {
+    in: [],
+    out: [],
+    fn: function Relogin (cb) {
+      this.runtime.custodian.onLogout()
+      this.runtime.reconnect()
+      cb()
+    }
+  },
   Hibernate: {
     in: [],
     out: ['s'],
