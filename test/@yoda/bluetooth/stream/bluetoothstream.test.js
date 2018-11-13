@@ -14,9 +14,9 @@ test('start command receive success', (t) => {
   recvClient.on('recv_post', (name, type, msg) => {
     logger.info('===on===' + JSON.stringify(msg) + '==flag==' + flag)
     switch (flag) {
-      case 1:listenOn(msg, 'closed')
+      case 1:listenOn(msg, 'opened')
         break
-      case 2:listenOn(msg, 'opened')
+      case 2:listenOn(msg, 'closed')
         break
       case 3:listenOn(msg, 'closed')
         break
