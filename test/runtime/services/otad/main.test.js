@@ -24,6 +24,9 @@ test('ato should be ok ', t => {
       )
     },
     (cb, iface) => {
+      if (iface == null || typeof iface.all !== 'function') {
+        cb(new Error('VuiDaemon not ready, try again later.'))
+      }
       iface.all('@ota', cb)
       logger.info('========(cb, iface)=========')
     },
@@ -36,7 +39,11 @@ test('ato should be ok ', t => {
         cb(err)
       }
       logger.info('========config:' + config + '=========')
-      otaNetwork.cloudgw = new CloudGW(config)
+      try {
+        otaNetwork.cloudgw = new CloudGW(config)
+      } catch (err) {
+        cb(new Error('Unexpected error in initializing CloudGW, this may related to un-connected network or device not logged in yet.'))
+      }
       cb()
     },
     cb => dbus.getInterface(
