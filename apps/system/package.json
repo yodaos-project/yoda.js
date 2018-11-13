@@ -15,10 +15,7 @@
       "ACCESS_TTS"
     ],
     "hosts": [
-      {
-        "name": "rokid-exception",
-        "skillId": "ROKID.EXCEPTION"
-      }
+      [ "rokid-exception", { "skillId": "ROKID.EXCEPTION" } ]
     ]
   },
   "scripts": {
