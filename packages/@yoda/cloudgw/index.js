@@ -9,10 +9,11 @@ var https = require('https')
 var crypto = require('crypto')
 
 var _ = require('@yoda/util')._
+var env = require('@yoda/env')()
 var logger = require('logger')('cloudgw')
 var StatusCodeError = require('./status-code-error')
 
-var defaultHost = 'apigwrest.open.rokid.com'
+var defaultHost = env.cloudgw.restful || 'apigwrest.open.rokid.com'
 var signKeys = [ 'key', 'device_type_id', 'device_id', 'service', 'version', 'time', 'secret' ]
 var authKeys = [ 'version', 'time', 'sign', 'key', 'device_type_id', 'device_id', 'service' ]
 

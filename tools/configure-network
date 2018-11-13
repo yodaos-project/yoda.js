@@ -56,10 +56,10 @@ network={
 EOS
 EOC
   else
-    printf "Device already configured WiFi connection. No network modification was made."
+    printf "Device already configured WiFi connection. No network modification was made.\n"
   fi
 else
   printf "No network modification was made for no ssid or psk specified.\n$help\n"
 fi
 
-wpa_cli reconfigure
+adb shell wpa_cli reconfigure
