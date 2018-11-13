@@ -9,7 +9,6 @@ function Tts (options) {
   this.handle = {}
   this.options = options
 
-  // author: sudo<xiaofei.lan@rokid.com>
   // the role of these codes is to simulate tts recovery.
   this.lastText = ''
   this.lastAppId = ''

@@ -375,11 +375,11 @@ AppRuntime.prototype.stopMonologue = function (appId) {
 }
 
 /**
- * 解析服务端返回的NLP，并执行App生命周期
+ * Resolving the NLP from service and execute the application lifetime.
  * @private
- * @param {string} asr 语音识别后的文字
- * @param {object} nlp 服务端返回的NLP
- * @param {object} action 服务端返回的action
+ * @param {string} asr
+ * @param {object} nlp
+ * @param {object} action
  * @param {object} [options]
  * @param {boolean} [options.preemptive]
  * @param {boolean} [options.carrierId]
@@ -687,8 +687,7 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
 }
 
 /**
- *
- * 更新App stack
+ * Update the app stack.
  * @private
  * @param {string} skillId -
  * @param {'cut' | 'scene'} form -
@@ -759,7 +758,6 @@ AppRuntime.prototype.appGC = function appGC (appId) {
 }
 
 /**
- * 调用speech的pickup
  * @param {boolean} isPickup
  * @private
  */
@@ -822,7 +820,8 @@ AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
 }
 
 /**
- * 通过dbus注册extapp
+ * Register the dbus app.
+ *
  * @param {string} appId extapp的AppID
  * @param {object} profile extapp的profile
  * @private
@@ -850,7 +849,6 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
 }
 
 /**
- * 删除extapp
  * @param {string} appId
  * @private
  */
@@ -861,7 +859,6 @@ AppRuntime.prototype.deleteDbusApp = function (appId) {}
  * @param {Array} stack appid stack
  * @private
  */
-
 AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
   this.cloudSkillIdStack = stack || []
   logger.log('cloudStack', this.cloudSkillIdStack)
@@ -907,7 +904,6 @@ AppRuntime.prototype.onForward = function (message) {
   if (typeof data.content === 'string') {
     /**
      * FIXME: compatibility with message format of android Rokid app
-     * see more at: https://bug.rokid-inc.com/zentaopms/www/index.php?m=bug&f=view&bugID=15033
      */
     try {
       data.content = JSON.parse(data.content)
@@ -971,7 +967,7 @@ AppRuntime.prototype.onResetSettings = function () {
 }
 
 /**
- *  处理App发送的自定义配置，包括自定义激活词、夜间模式、唤醒音效开关、待机灯光开关、连续对话开关
+ * Handling the configs from RokidApp, includes activation words, night mode, and etc..
  * @param {string} message
  * @private
  */

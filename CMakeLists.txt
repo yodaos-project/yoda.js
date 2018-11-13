@@ -66,14 +66,10 @@ YodaLocalPackage(yoda-util @yoda/util)
 YodaLocalPackage(yoda-wifi @yoda/wifi)
 YodaLocalPackage(yoda-env @yoda/env)
 YodaLocalPackage(yoda-flora @yoda/flora)
-
 YodaLocalPackage(yodaos-mediakit @yodaos/mediakit)
 
 # system packages
 YodaLocalPackage(logger)
-YodaLocalPackage(lru-cache)
-YodaLocalPackage(pseudomap)
-YodaLocalPackage(yallist)
 
 # Tools
 ExternalProject_Add(rklogger
