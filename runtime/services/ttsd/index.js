@@ -9,6 +9,7 @@ var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
 var TtsWrap = require('@yoda/tts')
 var logger = require('logger')('ttsd')
+var env = require('@yoda/env')()
 var AudioManager = require('@yoda/audio').AudioManager
 var audioModuleName = 'tts'
 AudioManager.setPlayingState(audioModuleName, false)// vui prop definitions
@@ -299,5 +300,7 @@ dbusApis.update()
 logger.log('service tts started')
 
 retryGetConfig((config) => {
-  reConnect(JSON.parse(config))
+  config = JSON.parse(config)
+  config = Object.assign({}, config, { host: env.cloudgw.wss })
+  reConnect(config)
 })

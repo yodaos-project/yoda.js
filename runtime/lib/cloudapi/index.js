@@ -189,6 +189,8 @@ CloudStore.prototype.requestMqttToken = function requestMqttToken () {
       `-k ${this.config.key}`,
       `-s ${this.config.secret}`,
       `-u ${this.config.masterId}`,
+      `--device-id ${this.config.deviceId}`,
+      `--device-type-id ${this.config.deviceTypeId}`,
       `-h ${env.mqtt.registry}`
     ].join(' ')
 

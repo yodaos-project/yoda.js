@@ -5,8 +5,8 @@ NOW_EPOCH_TIMESTAMP=`date +%s`
 MQTT_VERSION="1"
 MQTT_SERVICE="mqtt"
 MQTT_HOST=""
-DEVICE_ID=`getprop ro.boot.serialno`
-DEVICE_TYPE_ID=`getprop ro.boot.devicetypeid`
+DEVICE_ID=""
+DEVICE_TYPE_ID=""
 DEVICE_KEY=""
 DEVICE_SECRET=""
 MASTER_ID=""
@@ -27,6 +27,14 @@ while [ $# -gt 0 ]; do
       ;;
     -h)
       MQTT_HOST="$2"
+      shift
+      ;;
+    --device-id)
+      DEVICE_ID="$2"
+      shift
+      ;;
+    --device-type-id)
+      DEVICE_TYPE_ID="$2"
       shift
       ;;
     --*)
