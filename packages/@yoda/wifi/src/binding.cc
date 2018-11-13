@@ -88,7 +88,7 @@ static napi_value GetWifiList(napi_env env, napi_callback_info info) {
     napi_create_string_utf8(env, list.ssid[i].ssid, strlen(list.ssid[i].ssid),
                             &jssid_val);
     napi_create_string_utf8(env, "signal", strlen("signal"), &jsig_name);
-    napi_create_double(env, list.ssid[i].sig, &jssid_val);
+    napi_create_double(env, list.ssid[i].sig, &jsig_val);
     napi_set_property(env, obj, jssid_name, jssid_val);
     napi_set_property(env, obj, jsig_name, jsig_val);
     napi_set_element(env, jlist, i, obj);
