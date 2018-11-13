@@ -258,11 +258,11 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     if (Array.isArray(host)) {
       hostAttrs = host[1]
       host = host[0]
-    }
-    if (typeof host === 'object') {
+    } else if (typeof host === 'object') {
       hostAttrs = host
       host = _.get(host, 'name')
-    } else {
+    }
+    if (typeof host !== 'string') {
       throw new Error(`manifest.host '${host}' by '${appId}' type mismatch, expecting a string or an array.`)
     }
     var skillId = _.get(hostAttrs, 'skillId')
