@@ -1,5 +1,6 @@
 #include "MediaPlayer.h"
 
+// cppcheck-suppress unusedFunction
 void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
   printf("got event %d thread %d\n", type, from);
   if (type == MEDIA_PREPARED) {
@@ -128,14 +129,14 @@ JS_FUNCTION(Player) {
   jerry_value_t jtag = jargv[0];
   if (!jerry_value_is_string(jtag)) {
     _this->handle = new MediaPlayer(NULL, 5 /** s */, true);
-    int ret = _this->handle->enableCacheMode(true);
+    _this->handle->enableCacheMode(true);
   } else {
     jerry_size_t size = jerry_get_string_size(jtag);
     char* tag = iotjs_buffer_allocate(size + 1);
     jerry_string_to_char_buffer(jtag, (jerry_char_t*)tag, size);
     tag[size] = '\0';
     _this->handle = new MediaPlayer(tag, 5 /** s */, true);
-    int ret = _this->handle->enableCacheMode(true);
+    _this->handle->enableCacheMode(true);
     iotjs_buffer_release(tag);
   }
 
@@ -326,12 +327,6 @@ JS_FUNCTION(SessionIdSetter) {
   } else {
     return JS_CREATE_ERROR(COMMON, "player is not ready");
   }
-}
-
-void iotjs_set_constant(jerry_value_t jobj, uint32_t idx, const char* v) {
-  jerry_value_t jval = jerry_create_string((const jerry_char_t*)v);
-  jerry_set_property_by_index(jobj, idx, jval);
-  jerry_release_value(jval);
 }
 
 void init(jerry_value_t exports) {
