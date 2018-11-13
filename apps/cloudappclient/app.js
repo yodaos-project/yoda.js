@@ -1,7 +1,7 @@
 'use strict'
 
 var Directive = require('./directive').Directive
-var TtsEventHandle = require('./ttsEventHandle')
+var TtsEventHandle = require('@yodaos/ttskit').Convergence
 var MediaEventHandle = require('@yodaos/mediakit').Convergence
 var logger = require('logger')('cloudAppClient')
 var Skill = require('./skill')
