@@ -38,7 +38,7 @@ typedef struct {
  */
 class MultimediaListener : public MediaPlayerListener {
  public:
-  MultimediaListener(iotjs_player_t* player_) {
+  explicit MultimediaListener(iotjs_player_t* player_) {
     prepared = false;
     player = player_;
   };
