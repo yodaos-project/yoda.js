@@ -2,6 +2,7 @@
 
 var AudioManager = require('@yoda/audio').AudioManager
 var wifi = require('@yoda/wifi')
+var TtsEventHandle = require('@yodaos/ttskit').Convergence
 var logger = require('logger')('alarm')
 var Cron = require('./node-cron')
 var fs = require('fs')
@@ -17,6 +18,8 @@ module.exports = function (activity) {
   var jobQueue = []
   var taskTimeout = null
   var volumeInterval = null
+  var stopTimeout = null
+  var ttsClient = new TtsEventHandle(activity.tts)
   activity.on('create', function () {
     logger.log('alarm create')
     addConfigFile()
@@ -33,6 +36,7 @@ module.exports = function (activity) {
       activity.tts.stop()
       taskTimeout && clearTimeout(taskTimeout)
       volumeInterval && clearInterval(volumeInterval)
+      stopTimeout && clearTimeout(stopTimeout)
       restoreEventsDefaults()
       activity.setBackground()
     })
@@ -266,6 +270,19 @@ module.exports = function (activity) {
       })
     })
   }
+
+  function ttsSpeak (tts) {
+    return new Promise((resolve, reject) => {
+      ttsClient.speak(tts, (name) => {
+        if (name === 'end') {
+          resolve()
+        } else {
+          reject(new Error('alarm stop'))
+        }
+      })
+    })
+  }
+
   function taskCallback (option, mode) {
     logger.log(option.id, ' start~!', jobQueue)
     if (jobQueue.indexOf(option.id) > -1) {
@@ -287,29 +304,34 @@ module.exports = function (activity) {
       tts = sameReminder.combinedTTS
       activity.setForeground().then(() => {
         if (state === wifi.NETSERVER_CONNECTED) {
-          return activity.tts.speak(tts || option.tts)
+          return ttsSpeak(tts || option.tts)
         }
       }).then(() => {
-        return activity.media.start('system://reminder_default.mp3', {
-          streamType: 'alarm',
-          impatient: false
+        activity.media.start('system://reminder_default.mp3', {
+          streamType: 'alarm'
         })
+        return activity.media.setLoopMode(true)
       }).then(() => {
-        restoreEventsDefaults()
-        scheduleHandler.clearReminderQueue()
-        var reminderList = sameReminder.reminderList
-        var reminderLen = reminderList.length
-        for (var k = 0; k < reminderLen; k++) {
-          clearTask(mode, reminderList[k])
-        }
-        activity.setBackground()
+        stopTimeout = setTimeout(() => {
+          restoreEventsDefaults()
+          scheduleHandler.clearReminderQueue()
+          var reminderList = sameReminder.reminderList
+          var reminderLen = reminderList.length
+          for (var k = 0; k < reminderLen; k++) {
+            clearTask(mode, reminderList[k])
+          }
+          activity.media.stop()
+          activity.setBackground()
+        }, 5 * 60 * 1000)
+      }).catch(() => {
+        // alarm only need end event, but promise has to reject
       })
     } else {
       activity.setForeground().then(() => {
         logger.log('media play')
       }).then(() => {
         if (state === wifi.NETSERVER_CONNECTED) {
-          return activity.tts.speak(option.tts)
+          return ttsSpeak(option.tts)
         }
       }).then(() => {
         if (state === wifi.NETSERVER_CONNECTED) {
@@ -320,7 +342,14 @@ module.exports = function (activity) {
           return activity.media.setLoopMode(true)
         }
       }).then(() => {
-        clearTask(mode, option)
+        stopTimeout = setTimeout(() => {
+          activity.media.stop()
+          clearTask(mode, option)
+          restoreEventsDefaults()
+          activity.setBackground()
+        }, 5 * 60 * 1000)
+      }).catch(() => {
+        // alarm only need end event, but promise has to reject
       })
     }
   }
