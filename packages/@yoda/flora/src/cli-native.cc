@@ -109,7 +109,8 @@ static jerry_value_t caps_to_jobject(iotjs_flora_cli_t* handle,
         break;
       case 'S':
         caps->read_string(sv);
-        prop = jerry_create_string_from_utf8(reinterpret_cast<const jerry_char_t*>(sv.c_str()));
+        prop = jerry_create_string_from_utf8(
+            reinterpret_cast<const jerry_char_t*>(sv.c_str()));
         iotjs_jval_set_property_jval(ele, "value", prop);
         jerry_release_value(prop);
         break;
