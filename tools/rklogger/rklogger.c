@@ -1,16 +1,3 @@
-/**
- * 实时打印rklua应用的日志
- *
- * rklua会读取ROKID_LUA_PORT环境变量，然后将日志输出到对应的端口
- *
- * Usage: rklogger [options] port
- *
- * 支持一个选项 -w ，rklogger永远等待port端口
- * 
- * 接收一个参数，就是端口号(默认15003)，然后监听这个端口，读取日志并打印
- *
- * @module rklogger
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -15,9 +15,9 @@ function Permission (runtime) {
 inherits(Permission, EventEmitter)
 
 /**
- * 添加应用权限配置
- * @param {string} appId 应用ID
- * @param {array} permission 权限配置
+ * Add the application permission config by the given `appId`.
+ * @param {string} appId
+ * @param {array} permission
  */
 Permission.prototype.load = function (appId, permission) {
   if (appId !== undefined) {
@@ -29,7 +29,7 @@ Permission.prototype.load = function (appId, permission) {
 }
 
 /**
- * 检查是否具有某个权限
+ * Check if the `appId` owns the permission.
  * @param {string} appId
  * @param {string} name
  * @param {object} [options] -
@@ -41,7 +41,7 @@ Permission.prototype.check = function (appId, name, options) {
   if (appId === undefined || name === undefined) {
     return false
   }
-  // 判断App是否声明了权限
+  // check if the app does specify the permission.
   if (this.permission[appId] && this.permission[appId][name] === true) {
     if (acquiresActive === false) {
       return true
