@@ -29,6 +29,7 @@ const char* filenames[] = {
 
 class Activation : public ClientCallback {
  public:
+  // cppcheck-suppress unusedFunction
   void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg) {
     char is_awakeswitch_open[PROP_VALUE_MAX];
     property_get("persist.sys.awakeswitch", (char*)is_awakeswitch_open, "");
@@ -56,6 +57,7 @@ class Activation : public ClientCallback {
     }
     startWavPlayer();
   }
+  // cppcheck-suppress unusedFunction
   void disconnected() {
     thread tmp([this]() { this->flora_disconnected(); });
     tmp.detach();
@@ -67,12 +69,11 @@ class Activation : public ClientCallback {
     reconn_mutex.unlock();
   }
   void start() {
-    int32_t r;
     shared_ptr<Client> cli;
     unique_lock<mutex> locker(reconn_mutex);
 
     while (true) {
-      r = Client::connect("unix:/var/run/flora.sock", this, 0, cli);
+      int32_t r = Client::connect("unix:/var/run/flora.sock", this, 0, cli);
       if (r != FLORA_CLI_SUCCESS) {
         fprintf(stderr, "init flora client failed, please retry\n");
         reconn_cond.wait_for(locker, chrono::seconds(5));
