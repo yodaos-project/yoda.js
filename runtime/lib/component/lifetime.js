@@ -288,7 +288,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
      * exit the carrier before next steps.
      */
     logger.info(`previous app ${lastSubordinate} started by a carrier`, cid)
-    if (cid !== appId && this.scheduler.isAppRunning(cid)) {
+    if (cid !== appId && cid !== carrierId && this.scheduler.isAppRunning(cid)) {
       logger.info(`carrier ${cid} is alive and not the app to be activated, destroying`)
       future = future.then(() => this.destroyAppById(cid))
     }
