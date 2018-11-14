@@ -163,6 +163,40 @@ test('previous scene app shall not be destroyed on carrier starting a cut app', 
     })
 })
 
+test('carrier app shall not be destroyed on carrier starting a new app with previous started scene app', t => {
+  mock.restore()
+  t.plan(1)
+
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.scheduler)
+
+  mock.eventBus.on('destruct', appId => {
+    if (appId === '0') {
+      t.fail('app "1" shall not be deactivated')
+    }
+    if (appId === '2') {
+      t.fail('carrier app "2" shall not be deactivated')
+    }
+  })
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0', 'scene', '2')
+    })
+    .then(() => {
+      return life.activateAppById('1', 'cut', '2')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1')
+
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('previous scene app shall not be destroyed on carrier starting it with cut form', t => {
   mock.restore()
   t.plan(1)
