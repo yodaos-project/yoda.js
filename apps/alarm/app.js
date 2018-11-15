@@ -276,8 +276,10 @@ module.exports = function (activity) {
       ttsClient.speak(tts, (name) => {
         if (name === 'end') {
           resolve()
-        } else {
+        } else if (name === 'error') {
           reject(new Error('alarm stop'))
+        } else {
+          logger.info('alarm tts event name', name)
         }
       })
     })
@@ -307,6 +309,7 @@ module.exports = function (activity) {
           return ttsSpeak(tts || option.tts)
         }
       }).then(() => {
+        logger.info('alarm start second media')
         activity.media.start('system://reminder_default.mp3', {
           streamType: 'alarm'
         })
@@ -334,6 +337,7 @@ module.exports = function (activity) {
           return ttsSpeak(option.tts)
         }
       }).then(() => {
+        logger.info('alarm start second media')
         if (state === wifi.NETSERVER_CONNECTED) {
           activity.media.start(option.url, { streamType: 'alarm' })
           return activity.media.setLoopMode(true)
