@@ -23,8 +23,6 @@ static napi_value VerifyOtaImage(napi_env env, napi_callback_info info) {
 
 static napi_value PrepareOta(napi_env env, napi_callback_info info) {
   napi_value returnVal;
-  bool index;
-  int rkSetValue;
   napi_status status;
   size_t argc = 1;
   napi_value argv[1];
@@ -63,13 +61,12 @@ static napi_value PrepareOta(napi_env env, napi_callback_info info) {
 }
 
 static napi_value GetRecoveryState(napi_env env, napi_callback_info info) {
-  int status;
   struct boot_cmd cmd;
   napi_value obj;
   napi_value key;
   napi_value value;
   memset(&cmd, 0, sizeof(cmd));
-  status = get_recovery_cmd_status(&cmd);
+  get_recovery_cmd_status(&cmd);
   napi_create_object(env, &obj);
   char bootChar[] = "boot_mode";
   napi_create_string_utf8(env, bootChar, strlen(bootChar), &key);
