@@ -200,6 +200,18 @@ Turen.prototype.recoverPausedOnAwaken = function recoverPausedOnAwaken () {
 }
 
 /**
+ * Clears memoized paused tts/media on awaken.
+ * @private
+ */
+Turen.prototype.resetPausedOnAwaken = function resetPausedOnAwaken () {
+  logger.info('trying to reset previously awaken paused tts/media')
+  return Promise.all([
+    this.runtime.ttsMethod('resetAwaken', [ '' ]),
+    this.runtime.multimediaMethod('resetAwaken', [ '' ])
+  ])
+}
+
+/**
  * Handle the "voice coming" event.
  * @private
  */
@@ -395,7 +407,10 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
     .then(success => {
       this.runtime.light.stop('@yoda', 'system://loading.js')
       if (success) {
-        return
+        /**
+         * Reset previously paused media to prevent un-intended recovering
+         */
+        return this.resetPausedOnAwaken()
       }
       /**
        * try to recover paused tts/media on awaken in case of
@@ -421,6 +436,10 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
     return this.recoverPausedOnAwaken()
   }
 
+  /**
+   * Reset previously paused media to prevent un-intended recovering
+   */
+  this.resetPausedOnAwaken()
   return this.runtime.openUrl('yoda-skill://rokid-exception/malicious-nlp')
     .then(
       () => this.runtime.light.stop('@yoda', 'system://loading.js'),
@@ -443,6 +462,10 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
     return this.recoverPausedOnAwaken()
   }
 
+  /**
+   * Reset previously paused media to prevent un-intended recovering
+   */
+  this.resetPausedOnAwaken()
   if (errCode >= 100) {
     /** network error */
     return this.announceNetworkLag()
