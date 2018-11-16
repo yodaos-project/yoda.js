@@ -25,7 +25,7 @@ struct HttpSessionAsyncTask {
 };
 
 static void ticketDeleter(HttpSession::Ticket* tic) {
-  auto task = (HttpSessionAsyncTask*)tic->request.userdata;
+  auto task = static_cast<HttpSessionAsyncTask*>(tic->request.userdata);
   if (task) {
     delete task;
   }
@@ -38,9 +38,10 @@ static list<HttpSessionAsyncTask*> tasks;
 class NodeHttpSessionRequestListener
     : public HttpSessionRequestListenerInterface {
  public:
+  // cppcheck-suppress unusedFunction
   virtual void onRequestFinished(HttpSession* session, HttpSession::Ticket* tic,
                                  HttpSession::Response* resp) {
-    auto task = (HttpSessionAsyncTask*)tic->request.userdata;
+    auto task = static_cast<HttpSessionAsyncTask*>(tic->request.userdata);
     if (!task) {
       return;
     }
@@ -64,6 +65,7 @@ class NodeHttpSessionRequestListener
     uv_async_send(&async);
   }
 
+  // cppcheck-suppress unusedFunction
   virtual void onRequestCanceled(HttpSession* session,
                                  HttpSession::Ticket* tic) {
     // do nothing
@@ -80,8 +82,6 @@ static void handleFinishedTickets(uv_async_t* handle) {
   taskMutex.unlock();
 
   const int argc = 2;
-  int code, error;
-  string *body, *message;
   napi_env env;
   napi_async_context ctx;
   napi_handle_scope scope;
@@ -89,10 +89,10 @@ static void handleFinishedTickets(uv_async_t* handle) {
 
   for (auto it = ts.begin(); it != ts.end(); ++it) {
     env = (*it)->env;
-    error = (*it)->error;
-    message = &(*it)->errorMessage;
-    code = (*it)->code;
-    body = &(*it)->body;
+    int error = (*it)->error;
+    int code = (*it)->code;
+    string* message = &(*it)->errorMessage;
+    string* body = &(*it)->body;
 
     NAPI_CALL_RETURN_VOID(env, napi_open_handle_scope(env, &scope));
     NAPI_CALL_RETURN_VOID(env,
@@ -297,7 +297,7 @@ static napi_value request(napi_env env, napi_callback_info info) {
 static napi_value Init(napi_env env, napi_value exports) {
   uv_loop_s* loop;
   NAPI_CALL(env, napi_get_uv_event_loop(env, &loop));
-  int ret = uv_async_init(loop, &async, handleFinishedTickets);
+  uv_async_init(loop, &async, handleFinishedTickets);
 
   napi_property_descriptor desc[] = {
     DECLARE_NAPI_PROPERTY("abort", abort),
