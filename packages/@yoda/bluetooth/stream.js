@@ -48,7 +48,7 @@ BluetoothMessageStream.prototype._onevent = function (data) {
     if (this._end) {
       return
     }
-    var msg = JSON.parse(data.get(0) + '')
+    var msg = JSON.parse(data[0] + '')
     if (msg.state) {
       /**
        * when channel is opened
@@ -99,8 +99,7 @@ BluetoothMessageStream.prototype._onevent = function (data) {
  */
 BluetoothMessageStream.prototype._send = function (cmdstr, props) {
   var data = Object.assign({ command: cmdstr }, props || {})
-  var msg = new floraFactory.Caps()
-  msg.write(JSON.stringify(data))
+  var msg = [ JSON.stringify(data) ]
 
   if (cmdstr === 'ON') { /** support offline cache for ON command */
     return this._flora.post('bluetooth.ble.command', msg, floraFactory.MSGTYPE_PERSIST)

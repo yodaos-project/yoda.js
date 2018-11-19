@@ -2,7 +2,6 @@ var logger = require('logger')('turen')
 
 var _ = require('@yoda/util')._
 var wifi = require('@yoda/wifi')
-var Caps = require('@yoda/flora').Caps
 var bluetooth = require('@yoda/bluetooth')
 
 var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
@@ -496,10 +495,7 @@ Turen.prototype.pickup = function pickup (isPickup) {
    * otherwise reset picking up discarding state to enable next nlp process,
    */
   this.pickingUpDiscardNext = !isPickup
-
-  var msg = new Caps()
-  msg.writeInt32(isPickup ? 1 : 0)
-  this.runtime.flora.post('rokid.turen.pickup', msg)
+  this.runtime.flora.post('rokid.turen.pickup', [ isPickup ? 1 : 0 ])
 
   if (!isPickup) {
     clearTimeout(this.solitaryVoiceComingTimer)
@@ -516,10 +512,8 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
     mute = !this.muted
   }
   this.muted = mute
-  var msg = new Caps()
   /** if mute is true, set rokid.turen.mute to 1 to disable turen */
-  msg.writeInt32(mute ? 1 : 0)
-  this.runtime.flora.post('rokid.turen.mute', msg)
+  this.runtime.flora.post('rokid.turen.mute', [ mute ? 1 : 0 ])
 
   if (this.asrState === 'pending' && mute) {
     this.resetAwaken()
@@ -534,11 +528,11 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  * @param {string} activationPy
  */
 Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
-  var caps = new Caps()
-  caps.write(activationWord)
-  caps.write(activationPy)
-  caps.writeInt32(1)
-  this.runtime.flora.post(VT_WORDS_ADD_WORD_CHANNEL, caps)
+  this.runtime.flora.post(VT_WORDS_ADD_WORD_CHANNEL, [
+      activationWord,
+      activaionPy,
+      1
+  ])
 }
 
 /**
@@ -546,9 +540,7 @@ Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
  * @param {string} activationTxt
  */
 Turen.prototype.deleteVtWord = function deleteVtWord (activationWord) {
-  var caps = new Caps()
-  caps.write(activationWord)
-  this.runtime.flora.post(VT_WORDS_DEL_WORD_CHANNEL, caps)
+  this.runtime.flora.post(VT_WORDS_DEL_WORD_CHANNEL, [ activationWord ])
 }
 
 /**

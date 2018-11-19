@@ -89,7 +89,7 @@ NetworkListener.prototype.start = function start () {
  */
 NetworkListener.prototype._onevent = function onevent (data) {
   try {
-    var msg = JSON.parse(data.get(0))
+    var msg = JSON.parse(data[0])
     if (this._online === null) {
       if (msg['Network'] === true) {
         this._online = true

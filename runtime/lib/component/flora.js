@@ -35,21 +35,21 @@ Flora.prototype.handlers = {
   'rokid.turen.local_awake': function (msg) {
     logger.log('voice local awake')
     var data = {}
-    data.sl = msg.get(0)
+    data.sl = msg[0]
     this.runtime.turen.handleEvent('voice local awake', data)
   },
   'rokid.speech.inter_asr': function (msg) {
-    var asr = msg.get(0)
+    var asr = msg[0]
     logger.log('asr pending', asr)
     this.runtime.turen.handleEvent('asr pending', asr)
   },
   'rokid.speech.final_asr': function (msg) {
-    var asr = msg.get(0)
+    var asr = msg[0]
     logger.log('asr end', asr)
     this.runtime.turen.handleEvent('asr end', { asr: asr })
   },
   'rokid.speech.extra': function (msg) {
-    var data = JSON.parse(msg.get(0))
+    var data = JSON.parse(msg[0])
     switch (data.activation) {
       case 'accept': {
         this.runtime.turen.handleEvent('asr accept')
@@ -82,12 +82,12 @@ Flora.prototype.handlers = {
       return
     }
 
-    logger.log(`NLP(${msg.get(0)}), action(${msg.get(1)})`)
+    logger.log(`NLP(${msg[0]}), action(${msg[1]})`)
     var data = {}
     data.asr = ''
     try {
-      data.nlp = JSON.parse(msg.get(0))
-      data.action = JSON.parse(msg.get(1))
+      data.nlp = JSON.parse(msg[0])
+      data.action = JSON.parse(msg[1])
     } catch (err) {
       logger.log('nlp/action parse failed, discarded.')
       return this.runtime.turen.handleEvent('malicious nlp', data)
@@ -95,8 +95,8 @@ Flora.prototype.handlers = {
     this.runtime.turen.handleEvent('nlp', data)
   },
   'rokid.speech.error': function (msg) {
-    var errCode = msg.get(0)
-    var speechId = msg.get(1)
+    var errCode = msg[0]
+    var speechId = msg[1]
     logger.error(`Unexpected speech error(${errCode}) for speech(${speechId}).`)
     return this.runtime.turen.handleEvent('speech error', errCode, speechId)
   }
@@ -111,9 +111,9 @@ function onAsr2Nlp (msg) {
   var err
   var seq
   try {
-    nlp = JSON.parse(msg.get(0))
-    action = JSON.parse(msg.get(1))
-    seq = msg.get(2)
+    nlp = JSON.parse(msg[0])
+    action = JSON.parse(msg[1])
+    seq = msg[2]
   } catch (ex) {
     logger.log('nlp/action parse failed, discarded')
     err = ex
@@ -131,8 +131,8 @@ Flora.prototype.handlers[`rokid.speech.error.${asr2nlpId}`] = onAsr2NlpError
 function onAsr2NlpError (msg) {
   var err
   var seq
-  err = new Error('speech put_text return error: ' + msg.get(0))
-  seq = msg.get(1)
+  err = new Error('speech put_text return error: ' + msg[0])
+  seq = msg[1]
 
   if (typeof this.asr2nlpCallbacks[seq] === 'function') {
     this.asr2nlpCallbacks[seq](err)
@@ -145,36 +145,15 @@ function onAsr2NlpError (msg) {
  */
 Flora.prototype.init = function init () {
   FloraComp.prototype.init.call(this, 'vui', floraConfig)
-
-  var msg = new floraFactory.Caps()
-  // lang
-  msg.writeInt32(0)
-  // codec
-  msg.writeInt32(0)
-  // vad mode + timeout
-  msg.writeInt32(1)
-  msg.writeInt32(500)
-  // no nlp
-  msg.writeInt32(0)
-  // no intermediate asr
-  msg.writeInt32(0)
-  // vad begin
-  msg.writeInt32(globalEnv.speechVadBegin)
-  // max voice fragment size
-  msg.writeInt32(globalEnv.speechVoiceFragment)
-  this.post('rokid.speech.options', msg, floraFactory.MSGTYPE_PERSIST)
-}
-
-/**
- * Flora disconnection event handler.
- */
-Flora.prototype.onDisconnect = function onDisconnect () {
-  FloraComp.prototype.onDisconnect.call(this)
-
-  // clear pending callback functions
-  var cbs = this.asr2nlpCallbacks
-  this.asr2nlpCallbacks = {}
-  process.nextTick(() => handleErrorCallbacks(cbs, 'flora client disconnected'))
+  this.post('rokid.speech.options', [
+      0,
+      0,
+      1, 500,
+      0,
+      0,
+      globalEnv.speechVadBegin,
+      globalEnv.speechVoiceFragment
+  ], floraFactory.MSGTYPE_PERSIST)
 }
 
 /**
@@ -186,23 +165,20 @@ Flora.prototype.updateSpeechPrepareOptions = function updateSpeechPrepareOptions
   if (speechAuthInfo == null) {
     return
   }
-  var uri = 'wss://apigwws.open.rokid.com:443/api'
-  var msg = new floraFactory.Caps()
+  var uri = globalEnv.speechUri
   if (speechAuthInfo.uri) {
     uri = speechAuthInfo.uri
   }
-  msg.write(uri)
-  msg.write(speechAuthInfo.key)
-  msg.write(speechAuthInfo.deviceTypeId)
-  msg.write(speechAuthInfo.secret)
-  msg.write(speechAuthInfo.deviceId)
-  // reconn interval
-  msg.writeInt32(10000)
-  // ping interval
-  msg.writeInt32(10000)
-  // noresp timeout
-  msg.writeInt32(20000)
-  this.post('rokid.speech.prepare_options', msg, floraFactory.MSGTYPE_PERSIST)
+  this.post('rokid.speech.prepare_options', [
+      uri,
+      speechAuthInfo.key,
+      speechAuthInfo.deviceTypeId,
+      speechAuthInfo.secret,
+      speechAuthInfo.deviceId,
+      globalEnv.speechReconnInterval,
+      globalEnv.speechPingInterval,
+      globalEnv.speechNoRespTimeout
+  ], floraFactory.MSGTYPE_PERSIST)
 }
 
 /**
@@ -212,9 +188,7 @@ Flora.prototype.updateSpeechPrepareOptions = function updateSpeechPrepareOptions
  */
 Flora.prototype.updateStack = function updateStack (stack) {
   logger.info('setStack', stack)
-  var msg = new floraFactory.Caps()
-  msg.write(stack)
-  this.post('rokid.speech.stack', msg, floraFactory.MSGTYPE_PERSIST)
+  this.post('rokid.speech.stack', [ stack ], floraFactory.MSGTYPE_PERSIST)
 }
 
 /**
@@ -239,7 +213,12 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, skillOptions, cb) {
   caps.write(asr2nlpId)
   caps.writeInt32(asr2nlpSeq)
   this.asr2nlpCallbacks[asr2nlpSeq++] = cb
-  this.post('rokid.speech.put_text', caps, floraFactory.MSGTYPE_INSTANT)
+  this.post('rokid.speech.put_text', [
+      asr,
+      skillOptions,
+      asr2nlpId,
+      asr2nlpSeq
+  ], floraFactory.MSGTYPE_INSTANT)
 }
 
 /**
