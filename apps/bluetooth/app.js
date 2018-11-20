@@ -26,6 +26,7 @@ module.exports = function (activity) {
   function broadcast (subsequent) {
     player.start(name, subsequent)
   }
+
   function bluetoothMessageSpeak (message, nlpIntent) {
     if (message.connect_state === 'disconnected' && message.a2dpstate !== 'close' &&
        message.a2dpstate === 'opened') {
@@ -70,6 +71,7 @@ module.exports = function (activity) {
       mediaAndSpeak(textTable['STRING_CLOSED'], 'system://closebluetooth.ogg')
     }
   }
+
   function bluetoothMessagelight (message) {
     if (message.broadcast_state === 'opened') {
       activity.light.play('system://bluetoothOpen.js', {}, { shouldResume: true })
@@ -78,11 +80,15 @@ module.exports = function (activity) {
         })
     } else { activity.light.stop('system://bluetoothOpen.js') }
   }
+
   function closebluetooth () {
     if (bluetoothMessage.a2dpstate !== 'closed') {
       player.end()
+    } else {
+      activity.setBackground()
     }
   }
+
   function disconnectPeer () {
     if (player !== null) { player.disconnectPeer() }
   }
@@ -144,6 +150,7 @@ module.exports = function (activity) {
       }
     })
   }
+
   function mediaAndBackground (text) {
     return activity.setForeground().then(() => {
       activity.playSound(text).then(() => {
@@ -164,6 +171,7 @@ module.exports = function (activity) {
       mediaAndBackground(mediaString)
     }
   }
+
   function speakAndExit (text) {
     return activity.tts.speak(text).catch((err) => {
       logger.error('bluetooth music tts error', err)
@@ -175,6 +183,7 @@ module.exports = function (activity) {
       .then(() => activity.exit())
   }
   activity.on('create', () => {
+    logger.log('activity.onCreate()')
     player = bluetooth.getPlayer()
     player.on('stateupdate', function (message) {
       logger.debug('stateupdate', message)
@@ -190,7 +199,9 @@ module.exports = function (activity) {
       bluetoothMessagelight(message)// light action
     })
   })
+
   activity.on('pause', () => {
+    logger.log(`activity.onPause(bt.play_state=${bluetoothMessage.play_state})`)
     if (bluetoothMessage.play_state === 'played') {
       activityPlayState = true
       pauseMusic()
@@ -198,6 +209,7 @@ module.exports = function (activity) {
   })
 
   activity.on('resume', () => {
+    logger.log(`activity.onResume(activityPlayState=${activityPlayState})`)
     player.resume()
     if (activityPlayState) {
       activityPlayState = false
@@ -206,11 +218,13 @@ module.exports = function (activity) {
   })
 
   activity.on('destroy', () => {
+    logger.log('activity.onDestroy()')
     player.end()
   })
 
   activity.on('request', function (nlp, action) {
     activityNlpIntent = nlp.intent
+    logger.log(`activity.onRequest(${nlp.intent})`)
     switch (nlp.intent) {
       case 'ask_bluetooth':
         speakAndBackground(textTable['STRING_ASK'])
@@ -250,6 +264,7 @@ module.exports = function (activity) {
   })
 
   activity.on('url', url => {
+    logger.log(`activity.onUrl(${url.pathname})`)
     switch (url.pathname) {
       case '/bluetooth_broadcast':
         broadcast()
