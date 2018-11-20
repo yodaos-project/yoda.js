@@ -18,9 +18,20 @@ inherits(Manager, EventEmitter)
 
 Manager.prototype.onrequest = function (nlp, action) {
   if (!action || !action.appId) {
-    logger.error(`Missing the appId! The action value is: [${action}]`)
+    logger.error(`Missing the appId! The action value is: [${JSON.stringify(action)}]`)
     if (this.skills.length === 0) {
       logger.log('there is no skill to run, emit [empty] event because missing appId!')
+      this.emit('empty')
+    } else {
+      this.resume()
+    }
+    return
+  }
+  var directives = _.get(action, 'response.action.directives', [])
+  if (directives.length <= 0) {
+    logger.warn(`directive is empty! The action value is: [${JSON.stringify(action)}]`)
+    if (this.skills.length === 0) {
+      logger.log('there is no skill to run, emit [empty] event because directive is empty!')
       this.emit('empty')
     } else {
       this.resume()
