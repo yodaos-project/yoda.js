@@ -8,6 +8,7 @@ var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var Url = require('url')
 var querystring = require('querystring')
+var fs = require('fs')
 
 var logger = require('logger')('yoda')
 
@@ -109,6 +110,7 @@ AppRuntime.prototype.init = function init (paths) {
   // initializing the whole process...
   this.resetCloudStack()
   this.resetServices()
+  this.shouldWelcome = !this.isStartupFlagExists()
 
   var future = Promise.resolve()
   if (property.get('sys.firstboot.init', 'persist') !== '1') {
@@ -120,8 +122,10 @@ AppRuntime.prototype.init = function init (paths) {
   }
 
   return future.then(() => {
-    this.light.appSound('@yoda', 'system://boot.ogg')
-    this.light.play('@yoda', 'system://boot.js', { fps: 200 })
+    if (this.shouldWelcome) {
+      this.light.appSound('@yoda', 'system://boot.ogg')
+      this.light.play('@yoda', 'system://boot.js', { fps: 200 })
+    }
     return this.loadApps(paths)
   }).then(() => {
     this.custodian.prepareNetwork()
@@ -1165,7 +1169,7 @@ AppRuntime.prototype.onLoggedIn = function () {
   return Promise.all([
     sendReady() /** only send ready to currently alive apps */,
     this.startDaemonApps(),
-    this.turen.setTurenStartupFlag(),
+    this.setStartupFlag(),
     this.initiate()
       .then(() => new Promise(resolve => ota.getInfoIfFirstUpgradedBoot((err, info) => {
         if (err) {
@@ -1179,6 +1183,33 @@ AppRuntime.prototype.onLoggedIn = function () {
         return deferred()
       })
   ])
+}
+
+/**
+ * Set a flag which informs startup service that it is time to boot other services.
+ */
+AppRuntime.prototype.setStartupFlag = function setStartupFlag () {
+  return new Promise((resolve, reject) => {
+    /**
+     * intended typo: bootts
+     */
+    fs.writeFile('/tmp/.com.rokid.activation.bootts', '', err => {
+      if (err) {
+        return reject(err)
+      }
+      resolve()
+    })
+  })
+}
+
+/**
+ * Determines if startup flag has been set.
+ * WARNING: This is a synchronous function.
+ *
+ * @returns {boolean}
+ */
+AppRuntime.prototype.isStartupFlagExists = function isStartupFlagExists () {
+  return fs.existsSync('/tmp/.com.rokid.activation.bootts')
 }
 
 AppRuntime.prototype.destruct = function destruct () {
