@@ -462,15 +462,15 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
     return this.recoverPausedOnAwaken()
   }
 
-  /**
-   * Reset previously paused media to prevent un-intended recovering
-   */
-  this.resetPausedOnAwaken()
   if (errCode >= 100) {
     /** network error */
     return this.announceNetworkLag()
   }
 
+  /**
+   * Reset previously paused media to prevent un-intended recovering
+   */
+  this.resetPausedOnAwaken()
   return this.runtime.openUrl(`yoda-skill://rokid-exception/speech-error?errCode=${errCode}`)
     .then(
       () => this.runtime.light.stop('@yoda', 'system://loading.js'),
