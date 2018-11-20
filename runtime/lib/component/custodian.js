@@ -51,6 +51,14 @@ Custodian.prototype.onNetworkConnect = function onNetworkConnect () {
     logger.info('check: dns is working and start login / bind.')
     this.runtime.reconnect()
   })
+
+  if (this.runtime.scheduler) {
+    var appMap = this.runtime.scheduler.appMap
+    Object.keys(appMap).forEach(key => {
+      var activity = appMap[key]
+      activity.emit('internal:network-connected')
+    })
+  }
 }
 
 /**
