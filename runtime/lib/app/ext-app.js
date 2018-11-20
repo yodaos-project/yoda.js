@@ -124,7 +124,9 @@ EventBus.prototype.onMessage = function onMessage (message) {
     this.logger.warn(`VuiDaemon received unknown ipc message type '${type}' from app.`)
     return
   }
-  this.logger.debug(`Received child message from ${this.appId}, type: ${type}`)
+  if (type !== 'ping') {
+    this.logger.debug(`Received child message from ${this.appId}, type: ${type}`)
+  }
   this[type](message)
 }
 
