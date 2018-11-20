@@ -468,16 +468,23 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
   }
 
   /**
-   * Reset previously paused media to prevent un-intended recovering
+   * FIXME: Raison d'etre
+   * cut app like alarm/timer shall be deactivated on awaken.
+   * Currently @yoda/system handles speech error in a such quick way, yet for
+   * some reason apps like cloud-app-client could not determines tts/media
+   * status in such a short time(events have to be transferred through
+   * 2/3 ipc).
+   * Thus just closing cut app here works as expected, and shall be fixed
+   * with a invocation queue in translator-ipc.
    */
-  this.resetPausedOnAwaken()
-  return this.runtime.openUrl(`yoda-skill://rokid-exception/speech-error?errCode=${errCode}`)
-    .then(
-      () => this.runtime.light.stop('@yoda', 'system://loading.js'),
-      err => {
-        this.runtime.light.stop('@yoda', 'system://loading.js')
-        logger.error('Unexpected error on open handling speech error', err.stack)
-      })
+  this.runtime.life.deactivateCutApp()
+    .then(() => {
+      this.recoverPausedOnAwaken()
+      return this.runtime.light.stop('@yoda', 'system://loading.js')
+    }, err => {
+      this.runtime.light.stop('@yoda', 'system://loading.js')
+      logger.error('Unexpected error on deactivating cut app', err.stack)
+    })
 }
 
 /**
