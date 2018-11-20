@@ -112,6 +112,13 @@ function EventBus (descriptor, socket, appId, pid) {
 
   this.eventSynTable = {}
   this.eventSyn = 0
+
+  descriptor.on('internal:network-connected', () => {
+    this.socket.send({
+      type: 'internal',
+      topic: 'network-connected'
+    })
+  })
 }
 inherits(EventBus, EventEmitter)
 

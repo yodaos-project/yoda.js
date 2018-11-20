@@ -1,6 +1,7 @@
 'use strict'
 var EventEmitter = require('events')
 var logger = require('logger')('@ipc')
+var wifi = require('@yoda/wifi')
 
 /**
  * interface Descriptor {
@@ -172,6 +173,13 @@ function translate (descriptor) {
   return activity
 }
 
+var internalListenMap = {
+  'network-connected': () => {
+    logger.info('network connected')
+    wifi.resetDns()
+  }
+}
+
 var listenMap = {
   event: msg => {
     var channel = `event:${msg.namespace ? msg.namespace + ':' : ''}${msg.event}`
@@ -199,6 +207,15 @@ var listenMap = {
   'fatal-error': msg => {
     var err = new Error(msg.message)
     throw err
+  },
+  internal: message => {
+    var handle = internalListenMap[message.topic]
+    if (handle == null) {
+      logger.info(`Unhandled Internal Ipc message type '${message.type}'.`)
+      return
+    }
+
+    handle(message)
   }
 }
 
