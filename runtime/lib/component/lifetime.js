@@ -741,3 +741,16 @@ LaVieEnPile.prototype.resumeLifetime = function resumeLifetime (options) {
   return this.onLifeCycle(currentAppId, 'resume')
     .catch(err => logger.error('Unexpected error on resuming previous app', err.stack))
 }
+
+/**
+ * Deactivate current cut app if exists.
+ */
+LaVieEnPile.prototype.deactivateCutApp = function deactivateCutApp (options) {
+  var appId = this.activeSlots.cut
+  if (appId == null) {
+    logger.info('no currently running cut app, skipping')
+    return Promise.resolve()
+  }
+  logger.info('deactivate cut app', appId)
+  return this.deactivateAppById(appId, options)
+}
