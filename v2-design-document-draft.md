@@ -1,4 +1,4 @@
-## RokidOS v2 Design Document Draft.
+## RokidOS v2 Design Document Draft
 
 The RokidOS v2's design principle is embrace the Web community mainly. We redesign most packages by embracing the Web API like:
 
