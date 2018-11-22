@@ -7,12 +7,13 @@ var DEFAULT_HOST = require('@yoda/env')().skills.alarmUri
 var DEFAULT_URI = '/skill-alarm/alarm/operate'
 var id = 0
 
-function createMd5 (extraData) {
+function _createMd5 (extraData) {
   return crypto.createHash('md5')
     .update(extraData.deviceId + extraData.deviceTypeId)
     .digest('hex')
     .toUpperCase()
 }
+
 function request (params) {
   params.activity.get()
     .then(extraData => {
@@ -25,7 +26,7 @@ function request (params) {
         nonce: extraData.deviceId + (new Date()).getTime() + id,
         requestTimestamp: (new Date()).getTime(),
         sessionId: (new Date()).getTime(),
-        sign: createMd5(extraData),
+        sign: _createMd5(extraData),
         signMethod: 'MD5',
         businessParams: params.businessParams || {}
       }

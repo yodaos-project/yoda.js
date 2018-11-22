@@ -3,7 +3,8 @@
 var Task = require('./task')
 var ScheduledTask = require('./scheduled-task')
 var validation = require('./pattern-validation')
-var parser = require('./parser')
+// var parser = require('./parser')
+var CronExpression = require('./expression')
 
 var priority = {
   'Remind': 100,
@@ -24,8 +25,9 @@ module.exports = (function () {
      *      3. only clocks: run the last setting clock.
      */
     function compareTask (id, current, refered) {
-      var currentInterval = parser.parseExpressionSync(current.expression)
-      var referedInterval = parser.parseExpressionSync(refered.expression)
+      var currentInterval = CronExpression.parseSync(current.expression)
+      var referedInterval = CronExpression.parseSync(refered.expression)
+
       // no concurrency alarm or reminder
       if (Math.floor(currentInterval.next().getTime() / 1000) !== Math.floor(referedInterval.next().getTime() / 1000)) {
         return true
@@ -57,6 +59,8 @@ module.exports = (function () {
         return ''
       }
       var sortQueue = self.reminderQueue.sort()
+
+      // same reminder compare
       var combinedTTS = ''
       var reminderList = []
       for (var i = 0; i < sortQueue.length; i++) {
@@ -87,6 +91,18 @@ module.exports = (function () {
       self.reminderQueue = []
     }
 
+    function clearPrevReminders (current, refered) {
+      var currentInterval = CronExpression.parseSync(current.expression)
+      var referedInterval = CronExpression.parseSync(refered.expression)
+      var currentTime = Math.floor(currentInterval.next().getTime() / 1000)
+      var referedTime = Math.floor(referedInterval.next().getTime() / 1000)
+      // no concurrency alarm or reminder
+      if (currentTime > referedTime + 1) {
+        return true
+      }
+      return false
+    }
+
     this.getJobConfig = function (id) {
       var isRunnable = false
       if (self.jobs[id].type === 'Remind') {
@@ -108,6 +124,9 @@ module.exports = (function () {
           }
           var compareResult = compareTask(id, currentObj, referedObj)
           if (currentObj.type === 'Remind') {
+            if (clearPrevReminders(currentObj, referedObj)) {
+              self.reminderQueue.splice(key, 1)
+            }
             isRunnable = true
             break
           } else {

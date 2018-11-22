@@ -47,6 +47,8 @@ module.exports = (function () {
 
     var patterns = pattern.split(' ')
     var executablePattern = convertExpression(pattern)
+
+    console.log('executablePattern===', executablePattern)
     var executablePatterns = executablePattern.split(' ')
 
     if (patterns.length === 5) {
