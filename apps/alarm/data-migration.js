@@ -15,6 +15,7 @@ module.exports = function getAlarms (activity, callback) {
         var reminders = _data.reminders || []
         if (alarms.length === 0 && reminders.length === 0) {
           requestAlarms('sync_alarm')
+          return
         } else {
           requestAlarms('upload_alarms', {
             alarms: alarms,
@@ -27,14 +28,11 @@ module.exports = function getAlarms (activity, callback) {
       }
     })
     .catch(err => {
-      if (err) { logger.error(err.stack) }
+      if (err) { logger.log(err.stack) }
       requestAlarms('sync_alarm')
     })
 
   function handleData (values) {
-    if (values[0] instanceof Error && values[1] instanceof Error) {
-      throw new Error('alarm no old data')
-    }
     var alarms = []
     var reminders = []
     if (values[0] instanceof Error) {
@@ -76,6 +74,7 @@ module.exports = function getAlarms (activity, callback) {
       reminderPromise
     ])
   }
+
   function requestAlarms (intent, businessParams) {
     request({
       activity: activity,
@@ -95,7 +94,9 @@ module.exports = function getAlarms (activity, callback) {
         }
         // clear config data
         fs.writeFile(CONFIGFILEPATH, '{}', (err) => {
-          logger.error(err && err.stack)
+          if (err) {
+            logger.error('alarm data migration: write file error', err.stack)
+          }
           callback && callback(command, true)
         })
       }
