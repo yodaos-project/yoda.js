@@ -500,6 +500,11 @@ Turen.prototype.pickup = function pickup (isPickup) {
   var msg = new Caps()
   msg.writeInt32(isPickup ? 1 : 0)
   this.runtime.flora.post('rokid.turen.pickup', msg)
+
+  if (!isPickup) {
+    clearTimeout(this.solitaryVoiceComingTimer)
+    clearTimeout(this.noVoiceInputTimer)
+  }
 }
 
 /**
