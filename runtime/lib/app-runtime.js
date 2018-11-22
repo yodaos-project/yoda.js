@@ -9,6 +9,7 @@ var inherits = require('util').inherits
 var Url = require('url')
 var querystring = require('querystring')
 var fs = require('fs')
+var childProcess = require('child_process')
 
 var logger = require('logger')('yoda')
 
@@ -1143,10 +1144,6 @@ AppRuntime.prototype.onLoggedIn = function () {
       this.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(upgradeInfo.changelog)}`)
     }
 
-    process.nextTick(() => {
-      this.dispatchNotification('on-ready', [])
-    })
-
     var config = JSON.stringify(this.onGetPropAll())
     return this.ttsMethod('connect', [config])
       .then((res) => {
@@ -1166,6 +1163,10 @@ AppRuntime.prototype.onLoggedIn = function () {
     return Promise.all(ids.map(it => this.life.onLifeCycle(it, 'ready')))
   }
 
+  var onDone = () => {
+    this.dispatchNotification('on-ready', [])
+  }
+
   return Promise.all([
     sendReady() /** only send ready to currently alive apps */,
     this.startDaemonApps(),
@@ -1182,7 +1183,10 @@ AppRuntime.prototype.onLoggedIn = function () {
         logger.error('Unexpected error on runtime.initiate', err.stack)
         return deferred()
       })
-  ])
+  ]).then(onDone, err => {
+    logger.error('Unexpected error on logged in', err.stack)
+    return onDone()
+  })
 }
 
 /**
@@ -1193,7 +1197,7 @@ AppRuntime.prototype.setStartupFlag = function setStartupFlag () {
     /**
      * intended typo: bootts
      */
-    fs.writeFile('/tmp/.com.rokid.activation.bootts', '', err => {
+    childProcess.exec('touch /tmp/.com.rokid.activation.bootts', err => {
       if (err) {
         return reject(err)
       }

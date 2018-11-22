@@ -67,11 +67,11 @@ function createExtApp (appId, metadata, runtime) {
     var timer = setTimeout(() => {
       cp.removeListener('message', onMessage)
       cp.kill()
-      reject(new Error(` ExtApp '${target}'(${cp.pid}) failed to be ready in 5s.`))
+      reject(new Error(` ExtApp '${target}'(${cp.pid}) failed to be ready in 15s.`))
       /** promise shall not be resolved/rejected multiple times */
       eventBus.removeAllListeners('status-report:error')
       eventBus.removeAllListeners('status-report:ready')
-    }, 5000)
+    }, 15 * 1000)
 
     eventBus.once('status-report:ready', () => {
       clearTimeout(timer)
