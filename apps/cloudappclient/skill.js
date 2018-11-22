@@ -57,6 +57,7 @@ Skill.prototype.handleEvent = function () {
     this.paused = false
     // In order to identify how many tasks are currently running
     this.task++
+    logger.log(`[start] before task count: ${this.task}`)
     // should not resume when user manually pause or stop media
     var resume = true
     this.directives.forEach((value) => {
@@ -69,6 +70,7 @@ Skill.prototype.handleEvent = function () {
       // A task is completed
       this.task--
       logger.info('execute end', this.appId, this.directives, this.paused)
+      logger.log(`[start] after task count: ${this.task}`)
       // If the skill is in the pause state, then nothing is done.
       if (this.paused === true) {
         return
@@ -142,9 +144,11 @@ Skill.prototype.handleEvent = function () {
       if (this.directives.length > 0) {
         // In order to identify how many tasks are currently running
         this.task++
+        logger.log(`[resume] before task count: ${this.task}`)
         this.exe.execute(this.directives, 'frontend', () => {
           // A task is completed
           this.task--
+          logger.log(`[resume] after task count: ${this.task}`)
           // If the skill is in the pause state, then nothing is done.
           if (this.paused === true) {
             return
