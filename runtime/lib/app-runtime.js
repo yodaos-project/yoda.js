@@ -1081,7 +1081,8 @@ AppRuntime.prototype.reconnect = function () {
     logger.info(`recconecting with -> ${masterId}`)
     // check if logged in and not for reconfiguring network,
     // just reconnect in background.
-    if (!masterId && this.custodian.isLoggedIn()) {
+    if (!this.custodian.isConfiguringNetwork() &&
+      !masterId && this.custodian.isLoggedIn()) {
       logger.info('no login process is required, just skip and wait for awaking')
       return
     }
