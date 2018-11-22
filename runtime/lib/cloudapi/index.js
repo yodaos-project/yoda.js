@@ -223,13 +223,18 @@ CloudStore.prototype.updateBasicInfo = function updateBasicInfo () {
 
   var networkInterface = _.get(os.networkInterfaces(), 'wlan0', [])
     .filter(it => _.get(it, 'family') === 'IPv4')[0]
+
+  var sn = property.get('ro.boot.serialno')
   var info = {
-    device_id: property.get('ro.boot.serialno'),
+    sn: sn,
+    device_id: sn,
     device_type_id: property.get('ro.boot.devicetypeid'),
     ota: property.get('ro.build.version.release'),
     mac: _.get(networkInterface, 'mac'),
     lan_ip: _.get(networkInterface, 'address')
   }
+  logger.info('upload the basic information', info)
+
   return new Promise((resolve, reject) => {
     this.cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
       { namespace: 'basic_info', values: info },
