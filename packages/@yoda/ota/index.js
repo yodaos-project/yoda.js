@@ -195,7 +195,7 @@ function resetOta (callback) {
   if (ret !== 0) {
     throw new Error(`set_recovery_cmd_status(${ret})`)
   }
-  lockInfo(function onInfoLocked (err, unlock) {
+  lockProc(function onProcLocked (err, unlock) {
     if (err) {
       logger.error('ota is running, terminating reset.')
       return callback(null, ret)
@@ -495,7 +495,7 @@ function runInBackground () {
   var cp = childProcess.spawn(process.argv[0], [ '/usr/yoda/services/otad/index.js' ], {
     env: process.env,
     detached: true,
-    stdio: 'ignore'
+    stdio: 'inherit'
   })
   cp.unref()
 }
