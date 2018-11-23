@@ -289,6 +289,26 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
+     * Starts the login flow
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function startLogin
+     * @param {String} [masterId] - the masterId to bind.
+     * @returns {Promise<void>}
+     */
+    startLogin: {
+      type: 'method',
+      returns: 'promise',
+      fn: function startLogin (masterId) {
+        return this._runtime.startLogin(masterId).catch((err) => {
+          if (err.code !== 'FUNCTION_IS_LOCKED') {
+            return Promise.reject(err)
+          }
+          logger.warn('call `startLogin` when its working, just skip it')
+        })
+      }
+    },
+    /**
      * Open the mics for continuely listenning for your users
      * without activation.
      *

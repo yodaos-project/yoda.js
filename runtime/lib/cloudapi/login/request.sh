@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 
 HOST="device-account.rokid.com"
+ROKID_MASTER_ID=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     -h)
       HOST="$2"
+      shift
+      ;;
+    -u)
+      ROKID_MASTER_ID="$2"
       shift
       ;;
     --*)
@@ -18,8 +23,6 @@ done
 NOW_EPOCH_TIMESTAMP=`date +%s`
 DEVICE_ID=`getprop ro.boot.serialno`
 DEVICE_TYPE_ID=`getprop ro.boot.devicetypeid`
-ROKID_MASTER_ID=`getprop app.network.masterId`
-setprop app.network.masterId ""
 
 __DIRNAME=`dirname $0`
 DEVICE_SECRET=`sh ${__DIRNAME}/print-secret.sh`

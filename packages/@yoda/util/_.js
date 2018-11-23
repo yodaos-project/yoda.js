@@ -94,3 +94,26 @@ function once (callback) {
     return ret
   }
 }
+
+module.exports.singleton = singleton
+function singleton (fn) {
+  fn._locked = false
+  var unlock = (res) => {
+    fn._locked = false
+  }
+  return function singletonCallback () {
+    if (fn._locked === true) {
+      var err = new Error('this function is locked')
+      err.code = 'FUNCTION_IS_LOCKED'
+      return Promise.reject(err)
+    }
+    fn._locked = true
+    var ret = fn.apply(this, arguments)
+    if (ret instanceof Promise) {
+      ret.then(unlock, unlock)
+    } else {
+      throw new TypeError('singleton only works on Promise object')
+    }
+    return ret
+  }
+}

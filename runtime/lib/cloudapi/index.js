@@ -45,8 +45,9 @@ function CloudStore (options) {
  * - sync date from service
  *
  * @method connect
+ * @param {string} [masterId] - the master id to bind.
  */
-CloudStore.prototype.connect = function connect () {
+CloudStore.prototype.connect = function connect (masterId) {
   this.options.notify('100', STRINGS.LOGIN_DOING)
 
   var opts = { encoding: 'utf8' }
@@ -54,7 +55,8 @@ CloudStore.prototype.connect = function connect () {
     var handleResponse = this.handleResponse.bind(this)
     var cmd = [
       `nice -n -20 sh ${path.join(__dirname, './login/request.sh')}`,
-      `-h ${env.cloudgw.account}`
+      `-h ${env.cloudgw.account}`,
+      masterId ? `-u ${masterId}` : undefined
     ].join(' ')
 
     exec(cmd, opts, oncomplete)
