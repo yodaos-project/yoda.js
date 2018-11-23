@@ -73,13 +73,15 @@ module.exports = function (app) {
         setupNetworkByBle()
         break
       case '/connected':
+        logger.info(`connecting masterId=${connectingMasterId} is set`)
+        sendWifiStatus({ topic: 'bind', sCode: '11', sMsg: 'wifi连接成功' })
+
+        // start login flow
+        app.login({ masterId: connectingMasterId })
+        // clear the masterId that is stored at network app.
         if (connectingMasterId) {
-          logger.info(`connecting masterId=${connectingMasterId} is set`)
-          logger.info('set app.network.masterId for login')
-          property.set('app.network.masterId', connectingMasterId)
           connectingMasterId = null
         }
-        sendWifiStatus({ topic: 'bind', sCode: '11', sMsg: 'wifi连接成功' })
         break
       case '/cloud_status':
         code = _.get(url.query, 'code')

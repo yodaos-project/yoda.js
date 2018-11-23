@@ -1061,23 +1061,22 @@ AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
   logger.log('received the wifi is online, reset DNS config.')
 
-  var future = Promise.resolve()
-  var masterKey = 'app.network.masterId'
-
   if (this.custodian.isConfiguringNetwork()) {
-    future = this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
+    return this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
   }
+  return this.login()
+}
+
+/**
+ * @private
+ * @param {object} [options] - the options to login.
+ * @param {string} [options.masterId] - the masterId to bind
+ */
+AppRuntime.prototype.login = _.singleton(function login (options) {
+  var masterId = _.get(options, 'masterId')
+  var future = Promise.resolve()
 
   return future.then(() => {
-    var masterId = property.get(masterKey)
-    if (masterId) {
-      return masterId
-    }
-    return new Promise((resolve) => {
-      logger.info('master id is not set, and just wait 1s to try again once')
-      setTimeout(() => resolve(property.get(masterKey)), 1000)
-    })
-  }).then((masterId) => {
     logger.info(`recconecting with -> ${masterId}`)
     // check if logged in and not for reconfiguring network,
     // just reconnect in background.
@@ -1089,7 +1088,7 @@ AppRuntime.prototype.reconnect = function () {
 
     // login -> mqtt
     this.custodian.onLogout()
-    return this.cloudApi.connect()
+    return this.cloudApi.connect(masterId)
       .then((config) => {
         var opts = Object.assign({ uri: env.speechUri }, config)
 
@@ -1118,7 +1117,7 @@ AppRuntime.prototype.reconnect = function () {
         }
       })
   })
-}
+})
 
 /**
  * @private
