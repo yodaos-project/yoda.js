@@ -73,6 +73,11 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
   this._networkConnected = false
   logger.info('on network disconnect, once logged in?', this._loggedIn)
 
+  if (this.isConfiguringNetwork()) {
+    logger.info('current is configuring network, just skip the disconnect open')
+    return
+  }
+
   if (wifi.getNumOfHistory() > 0) {
     logger.log('network switch, try to reconnect, waiting for user awake or button event')
     wifi.enableScanPassively()
