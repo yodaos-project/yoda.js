@@ -296,8 +296,7 @@ DBus.prototype.amsexport = {
         }
         if (data['Network'] === true) {
           this.runtime.custodian.onNetworkConnect()
-        } else if (!this.runtime.custodian.isConfiguringNetwork() &&
-          (data['Network'] === false || data['Wifi'] === false)) {
+        } else if (data['Network'] === false || data['Wifi'] === false) {
           this.runtime.custodian.onNetworkDisconnect()
         }
       } catch (err) {
