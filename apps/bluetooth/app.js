@@ -85,7 +85,7 @@ module.exports = function (activity) {
     if (bluetoothMessage.a2dpstate !== 'closed') {
       player.end()
     } else {
-      activity.setBackground()
+      mediaAndSpeak(textTable['STRING_CLOSED'], 'system://closebluetooth.ogg')
     }
   }
 
@@ -145,6 +145,7 @@ module.exports = function (activity) {
         logger.error('bluetooth music tts error', err)
       })
     }).then(() => {
+      logger.debug(`check play_state = ${bluetoothMessage.play_state}`)
       if (bluetoothMessage.play_state !== 'played') {
         activity.setBackground()
       }
@@ -257,8 +258,14 @@ module.exports = function (activity) {
       case 'connect_phone':
         broadcast()
         break
+      case 'like':
+        if (bluetoothMessage.play_state === 'played') {
+          resumeMusic()
+          speakAndBackground(textTable['STRING_LIKE'])
+        }
+        break
       default:
-        activity.exit()
+        speakAndBackground(textTable['STRING_FALLBACK'])
         break
     }
   })
