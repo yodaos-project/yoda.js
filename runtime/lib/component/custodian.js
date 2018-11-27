@@ -123,7 +123,7 @@ Custodian.prototype.resetNetwork = function resetNetwork (options) {
   property.set('state.network.connected', 'false')
 
   this._networkConnected = false
-  this.runtime.openUrl('yoda-skill://network/setup', { preemptive: true })
+  return this.runtime.openUrl('yoda-skill://network/setup', { preemptive: true })
 }
 
 /**

@@ -306,9 +306,6 @@ AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
   ]).catch((err) => {
     logger.error(`play longPress light or sound error: ${err.message}`)
   })
-  setTimeout(() => {
-    this.shouldStopLongPressMicLight = false
-  }, 5000)
 }
 
 /**
@@ -336,10 +333,15 @@ AppRuntime.prototype.stopLongPressMicLight = function stopLongPressMicLight () {
  * @param {boolean} [options.removeAll] - remove local wifi config?
  */
 AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
+  this.shouldStopLongPressMicLight = false
   // skip if current is at network app
   if (this.custodian.isConfiguringNetwork()) {
     logger.info('skip reset network when configuring network.')
     return
+  }
+
+  var deferred = () => {
+    this.light.stop('@yoda', '/opt/light/longPressMic.js')
   }
 
   /**
@@ -350,6 +352,10 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
     this.life.destroyAll(),
     this.setMicMute(false, { silent: true })
   ]).then(() => this.custodian.resetNetwork(options))
+    .then(deferred, err => {
+      logger.error('Unexpected error on resetting network', err.stack)
+      deferred()
+    })
 }
 
 /**
