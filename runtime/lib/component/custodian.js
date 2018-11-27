@@ -81,7 +81,6 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
   if (wifi.getNumOfHistory() > 0) {
     logger.log('network switch, try to reconnect, waiting for user awake or button event')
     wifi.enableScanPassively()
-    this.runtime.light.stop('@yoda', 'system://boot.js')
     return
   }
   logger.log('network disconnected, please connect to wifi first')

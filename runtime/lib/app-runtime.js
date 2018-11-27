@@ -1134,14 +1134,16 @@ AppRuntime.prototype.onLoggedIn = function () {
   var upgradeInfo
   var deferred = () => {
     perf.stub('started')
-    // not need to play startup music after relogin
-    this.light.stop('@yoda', 'system://boot.js')
     if (this.shouldWelcome) {
       logger.info('announcing welcome')
       this.setMicMute(false, { silent: true })
         .then(() => {
           this.light.appSound('@yoda', 'system://startup0.ogg')
           return this.light.play('@yoda', 'system://setWelcome.js')
+        })
+        .then(() => {
+          // not need to play startup music after relogin
+          this.light.stop('@yoda', 'system://boot.js')
         })
     }
     this.shouldWelcome = false
