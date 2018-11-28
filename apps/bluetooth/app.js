@@ -191,6 +191,14 @@ module.exports = function (activity) {
       if (bluetoothMessage.a2dpstate === 'closed' && message.a2dpstate === 'closed') {
         return
       }
+      logger.debug(`${bluetoothMessage.play_state} ==> ${message.play_state}`)
+      if (message.a2dpstate === 'opened' && message.connect_state === 'connected' && message.broadcast_state === 'closed') {
+        if (message.play_state === 'played' && bluetoothMessage.play_state === 'stopped') {
+          resumeMusic()
+        } else if (message.play_state === 'stopped' && bluetoothMessage.play_state === 'played') {
+          pauseMusic()
+        }
+      }
       bluetoothMessage = Object.assign(bluetoothMessage, message)
       if (message.play_state === 'played') {
         activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_ID })
