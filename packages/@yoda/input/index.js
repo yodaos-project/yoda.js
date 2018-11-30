@@ -107,8 +107,11 @@ InputEvent.prototype.onevent = function (state, action, code, time) {
  * @private
  * @param {Number} action - the action type
  * @param {Number} code - the event code
+ * @param {Number} slideValue - slide orientation if action is ACTION_SLIDE
+ * @param {Number} clickCount - click count if action is ACTION_CLICK or ACTION_DB_CLICK
+ * @param {Number} longpressTime - longpress duration if action is ACTION_LONGPRESSED
  */
-InputEvent.prototype.ongesture = function (action, code) {
+InputEvent.prototype.ongesture = function (action, code, slideValue, clickCount, longpressTime) {
   if (action === ACTION_CLICK) {
     /**
      * click event
@@ -133,6 +136,20 @@ InputEvent.prototype.ongesture = function (action, code) {
      * @property {Number} keyCode - the key code
      */
     this.emit('longpressed', { keyCode: code })
+  } else if (action === ACTION_SLIDE) {
+    /**
+     * clockwise slide event
+     * @event module:@yoda/input~InputEvent#slide-clockwise
+     * @type {Object}
+     * @property {Number} keyCode - the key code
+     */
+    /**
+     * counter clockwise slide event
+     * @event module:@yoda/input~InputEvent#slide-counter-clockwise
+     * @type {Object}
+     * @property {Number} keyCode - the key code
+     */
+    this.emit(slideValue === 1 ? 'slide-clockwise' : 'slide-counter-clockwise', { keyCode: code })
   }
 }
 

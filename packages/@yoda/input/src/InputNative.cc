@@ -196,9 +196,12 @@ void InputEventHandler::OnGestureEvent(uv_async_t* async) {
     fprintf(stderr, "no onevent function is registered\n");
     return;
   }
-  iotjs_jargs_t jargs = iotjs_jargs_create(2);
+  iotjs_jargs_t jargs = iotjs_jargs_create(5);
   iotjs_jargs_append_number(&jargs, (double)event->data.action);
   iotjs_jargs_append_number(&jargs, (double)event->data.key_code);
+  iotjs_jargs_append_number(&jargs, (double)event->data.slide_value);
+  iotjs_jargs_append_number(&jargs, (double)event->data.click_count);
+  iotjs_jargs_append_number(&jargs, (double)event->data.long_press_time);
   iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
   iotjs_jargs_destroy(&jargs);
   jerry_release_value(onevent);
