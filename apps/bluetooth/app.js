@@ -139,13 +139,14 @@ module.exports = function (activity) {
 
   function speakAndBackground (text) {
     return activity.setForeground().then(() => {
-      activity.tts.speak(text, { impatient: true }).catch((err) => {
+      logger.debug(`Begin speak tts: ${text}`)
+      return activity.tts.speak(text, { impatient: false }).catch((err) => {
         /* Bluetooth music connect and open cut mode, it may be implement activity.destry,
         so After playing TTS, go back to the background. set up TTS impatient: true. */
         logger.error('bluetooth music tts error', err)
       })
     }).then(() => {
-      logger.debug(`check play_state = ${bluetoothMessage.play_state}`)
+      logger.debug(`After speak tts, check play_state to determine if setBackground: ${bluetoothMessage.play_state}`)
       if (bluetoothMessage.play_state !== 'played') {
         activity.setBackground()
       }
