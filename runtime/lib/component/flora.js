@@ -194,16 +194,18 @@ Flora.prototype.updateStack = function updateStack (stack) {
 /**
  * Get NLP result of given asr text.
  * @param {string} asr
+ * @param {object} skillOptions
  * @param {Function} cb
  */
 Flora.prototype.getNlpResult = function getNlpResult (asr, skillOptions, cb) {
   if (typeof skillOptions === 'function') {
     cb = skillOptions
-    skillOptions = ''
+    skillOptions = {}
   }
-  if (typeof asr !== 'string' || typeof skillOptions !== 'string' || typeof cb !== 'function') {
-    throw TypeError()
+  if (typeof asr !== 'string' || typeof skillOptions !== 'object' || typeof cb !== 'function') {
+    throw TypeError('Invalid argument of getNlpResult')
   }
+  skillOptions = JSON.stringify(skillOptions)
   ++asr2nlpSeq
   this.asr2nlpCallbacks[asr2nlpSeq] = cb
   this.post('rokid.speech.put_text', [

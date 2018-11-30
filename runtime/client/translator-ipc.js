@@ -113,6 +113,10 @@ var PropertyDescriptions = {
     return proxyfier(name, descriptor, namespace, nsDescriptor)
   },
   event: function Event (name, descriptor, namespace, nsDescriptor) {
+    if (descriptor.subscribed) {
+      return
+    }
+    descriptor.subscribed = true
     var channel = `event:${namespace.name ? namespace.name + ':' : ''}${name}`
     eventBus.on(channel, function onEvent (params) {
       EventEmitter.prototype.emit.apply(namespace, [ name ].concat(params))

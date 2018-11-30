@@ -10,6 +10,10 @@ var scheduler = module.exports.scheduler = new Scheduler({}, runtime)
 
 var appMap = {}
 scheduler.createApp = function createApp (appId) {
+  if (this.isAppRunning(appId)) {
+    return Promise.resolve(this.getAppById(appId))
+  }
+
   var bus = module.exports.eventBus
 
   var app = new EventEmitter()
