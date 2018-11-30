@@ -135,6 +135,81 @@ test('shall not interpret malformed descriptor: non-array runtimeMethod params',
   }
 })
 
+test('gesture: fallbacks', t => {
+  var runtime = new AppRuntime()
+  var keyboard = new Keyboard(runtime)
+
+  keyboard.input = new EventEmitter()
+  keyboard.listen()
+
+  keyboard.config = {
+    fallbacks: {
+      click: {
+        runtimeMethod: 'foobar',
+        params: [ 'click' ]
+      },
+      dbclick: {
+        runtimeMethod: 'foobar',
+        params: [ 'dbclick' ]
+      }
+    }
+  }
+
+  var expectedEvents = ['click', 'dbclick']
+
+  runtime.foobar = function (event) {
+    var idx = expectedEvents.indexOf(event)
+    if (idx >= 0) {
+      expectedEvents.splice(idx, 1)
+      t.pass(`invoked ${event}`)
+    }
+    if (expectedEvents.length === 0) {
+      t.end()
+    }
+  }
+
+  keyboard.input.emit('click', { keyCode: 233 })
+  keyboard.input.emit('dbclick', { keyCode: 233 })
+
+  runtime.destruct()
+})
+
+test('gesture: override fallbacks', t => {
+  t.plan(1)
+  var runtime = new AppRuntime()
+  var keyboard = new Keyboard(runtime)
+
+  keyboard.input = new EventEmitter()
+  keyboard.listen()
+
+  keyboard.config = {
+    fallbacks: {
+      click: {
+        runtimeMethod: 'foobar',
+        params: [ 'click' ]
+      }
+    },
+    '233': {
+      click: {
+        runtimeMethod: 'onClick',
+        params: [ 'click' ]
+      }
+    }
+  }
+
+  runtime.foobar = function () {
+    t.fail('fallback shall not be invoked.')
+  }
+
+  runtime.onClick = function onClick () {
+    t.pass('clicked')
+  }
+
+  keyboard.input.emit('click', { keyCode: 233 })
+
+  runtime.destruct()
+})
+
 test('longpress: repetitive longpress', t => {
   t.plan(3)
   var runtime = new AppRuntime()
