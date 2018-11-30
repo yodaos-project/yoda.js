@@ -5,6 +5,7 @@ var _ = require('@yoda/util')._
 var lightApp = require('../app/light-app')
 var extApp = require('../app/ext-app')
 var DbusApp = require('../app/dbus-app')
+var executableProc = require('../app/executable-proc')
 
 module.exports = AppScheduler
 function AppScheduler (loader, runtime) {
@@ -58,15 +59,22 @@ AppScheduler.prototype.createApp = function createApp (appId) {
     return Promise.resolve(app)
   }
 
-  return extApp(appId, metadata, this.runtime)
+  var future
+  if (appType === 'exe') {
+    future = executableProc(appId, metadata, this.runtime)
+  } else {
+    future = extApp(appId, metadata, this.runtime)
+  }
+
+  return future
     .then(app => {
       logger.info(`App(${appId}) successfully started`)
-      app.once('exit', () => {
+      app.once('exit', (code, signal) => {
         if (this.appMap[appId] !== app) {
           logger.info(`Not matched app on exiting, skip unset executor.app(${appId})`)
           return
         }
-        this.handleAppExit(appId)
+        this.handleAppExit(appId, code, signal)
       })
 
       return this.handleAppCreate(appId, app)
@@ -86,11 +94,21 @@ AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
   return app
 }
 
-AppScheduler.prototype.handleAppExit = function handleAppExit (appId) {
+AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, signal) {
   logger.info(`${appId} exited.`)
   delete this.appMap[appId]
   this.appStatus[appId] = AppScheduler.status.exited
   this.runtime.appGC(appId)
+
+  if (code != null) {
+    var manifest = this.loader.getAppManifest(appId)
+    if (manifest && manifest.daemon) {
+      logger.info(`Restarting daemon app(${appId}) in 5s`)
+      setTimeout(() => {
+        this.createApp(appId)
+      }, 5 * 1000)
+    }
+  }
 }
 
 AppScheduler.prototype.suspendAllApps = function suspendAllApps (options) {

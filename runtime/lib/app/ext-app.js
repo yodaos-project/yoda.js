@@ -52,6 +52,7 @@ function createExtApp (appId, metadata, runtime) {
   cp.once('exit', (code, signal) => {
     logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
     descriptor.emit('exit', code, signal)
+    eventBus.emit('status-report:exit')
     eventBus.removeAllListeners()
   })
   descriptor.once('destruct', () => {
@@ -67,26 +68,33 @@ function createExtApp (appId, metadata, runtime) {
     var timer = setTimeout(() => {
       cp.removeListener('message', onMessage)
       cp.kill()
+      cleanup()
       reject(new Error(` ExtApp '${target}'(${cp.pid}) failed to be ready in 15s.`))
-      /** promise shall not be resolved/rejected multiple times */
-      eventBus.removeAllListeners('status-report:error')
-      eventBus.removeAllListeners('status-report:ready')
     }, 15 * 1000)
 
     eventBus.once('status-report:ready', () => {
-      clearTimeout(timer)
-      /** promise shall not be resolved/rejected multiple times */
-      eventBus.removeAllListeners('status-report:error')
+      cleanup()
       /** initiate ping-pong */
       eventBus.ping()
       resolve(descriptor)
     })
+
+    eventBus.once('status-report:exit', () => {
+      cleanup()
+      reject(new Error('App exits on startup'))
+    })
     eventBus.once('status-report:error', error => {
-      clearTimeout(timer)
-      /** promise shall not be resolved/rejected multiple times */
-      eventBus.removeAllListeners('status-report:ready')
+      cleanup()
       reject(error)
     })
+
+    function cleanup () {
+      clearTimeout(timer)
+      /** promise shall not be resolved/rejected multiple times */
+      ;['status-report:ready', 'status-report:error', 'status-report:exit'].forEach(e => {
+        eventBus.removeAllListeners(e)
+      })
+    }
   })
 }
 
