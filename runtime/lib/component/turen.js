@@ -529,9 +529,9 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  */
 Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
   this.runtime.flora.post(VT_WORDS_ADD_WORD_CHANNEL, [
-      activationWord,
-      activaionPy,
-      1
+    activationWord,
+    activationPy,
+    1
   ])
 }
 

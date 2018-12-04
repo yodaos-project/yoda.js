@@ -146,13 +146,13 @@ function onAsr2NlpError (msg) {
 Flora.prototype.init = function init () {
   FloraComp.prototype.init.call(this, 'vui', floraConfig)
   this.post('rokid.speech.options', [
-      0,
-      0,
-      1, 500,
-      0,
-      0,
-      globalEnv.speechVadBegin,
-      globalEnv.speechVoiceFragment
+    0,
+    0,
+    1, 500,
+    0,
+    0,
+    globalEnv.speechVadBegin,
+    globalEnv.speechVoiceFragment
   ], floraFactory.MSGTYPE_PERSIST)
 }
 
@@ -170,14 +170,14 @@ Flora.prototype.updateSpeechPrepareOptions = function updateSpeechPrepareOptions
     uri = speechAuthInfo.uri
   }
   this.post('rokid.speech.prepare_options', [
-      uri,
-      speechAuthInfo.key,
-      speechAuthInfo.deviceTypeId,
-      speechAuthInfo.secret,
-      speechAuthInfo.deviceId,
-      globalEnv.speechReconnInterval,
-      globalEnv.speechPingInterval,
-      globalEnv.speechNoRespTimeout
+    uri,
+    speechAuthInfo.key,
+    speechAuthInfo.deviceTypeId,
+    speechAuthInfo.secret,
+    speechAuthInfo.deviceId,
+    globalEnv.speechReconnInterval,
+    globalEnv.speechPingInterval,
+    globalEnv.speechNoRespTimeout
   ], floraFactory.MSGTYPE_PERSIST)
 }
 
@@ -214,10 +214,10 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, skillOptions, cb) {
   caps.writeInt32(asr2nlpSeq)
   this.asr2nlpCallbacks[asr2nlpSeq++] = cb
   this.post('rokid.speech.put_text', [
-      asr,
-      skillOptions,
-      asr2nlpId,
-      asr2nlpSeq
+    asr,
+    skillOptions,
+    asr2nlpId,
+    asr2nlpSeq
   ], floraFactory.MSGTYPE_INSTANT)
 }
 
@@ -226,6 +226,7 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, skillOptions, cb) {
  * @param {object} cbs
  * @param {string} msg
  */
+/**
 function handleErrorCallbacks (cbs, msg) {
   var err = new Error(msg)
 
@@ -233,3 +234,4 @@ function handleErrorCallbacks (cbs, msg) {
     cbs[key] && cbs[key](err)
   })
 }
+*/

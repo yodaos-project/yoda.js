@@ -6,7 +6,7 @@ var flora = require('@yoda/flora')
 var Agent = flora.Agent
 
 var reconnInterval = 10000
-var errUri = 'unix:/data/flora-error'
+// var errUri = 'unix:/data/flora-error'
 var okUri = 'unix:/var/run/flora.sock'
 var crypto = require('crypto')
 
@@ -194,8 +194,8 @@ test('module->flora->Caps: post/recv nesting array message', t => {
   t.equal(typeof postClient, 'object')
   postClient.start()
   var msg = [ [ 'this is subcaps' ],
-              'this is a string msg', 2222, 2.3302,
-              -11, [ 1, 2, 3] ]
+    'this is a string msg', 2222, 2.3302,
+    -11, [ 1, 2, 3 ] ]
   // TODO: this type have a problem
   // var x = new Uint8Array([21, 31]);
   // caps.write(x)
@@ -252,7 +252,7 @@ test('module->flora->Caps: post numbers', t => {
     1214748364444,
     -9223372547,
     2.3302,
-    -2.6602,
+    -2.6602
   ]
   postClient.post(msgName, msg, flora.MSGTYPE_PERSIST)
 
@@ -511,17 +511,18 @@ test('module->flora->client: close post', t => {
 // bug id = 1364
 //
 test.skip('module->flora->client: loop create connection', t => {
-  var clients = [];
+  var clients = []
   for (var count = 0; count < 20; count++) {
     clients[count] = new Agent(okUri, reconnInterval, 0)
     t.equal(typeof clients[count], 'object')
   }
 
-  var ci = 0;
+  var ci = 0
   var th = setInterval(() => {
     clients[ci++].close()
-    if (ci >= 20)
+    if (ci >= 20) {
       clearInterval(th)
+    }
   }, 5)
 
   setTimeout(() => {

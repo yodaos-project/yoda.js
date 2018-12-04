@@ -77,7 +77,7 @@ var Agent = require('./flora-cli.node').Agent
  * @param {String} name - msg name for subscribe
  * @param {module:@yoda/flora~SubscribeCallback} cb - callback if received msg that subscribed
  */
-Agent.prototype.subscribe = function(name, cb) {
+Agent.prototype.subscribe = function (name, cb) {
   this.nativeSubscribe(name, (msg, type) => {
     try {
       return cb(msg, type)
@@ -97,8 +97,8 @@ Agent.prototype.subscribe = function(name, cb) {
  * @param {Array} [msg] - msg content
  * @returns {Promise} promise that resolves with an array of {module:@yoda/flora~Response}
  */
-Agent.prototype.get = function(name, msg) {
-  if (typeof name !== "string") {
+Agent.prototype.get = function (name, msg) {
+  if (typeof name !== 'string') {
     return Promise.reject(exports.ERROR_INVALID_PARAM)
   }
   if (msg !== undefined && msg !== null && !Array.isArray(msg)) {
@@ -108,8 +108,9 @@ Agent.prototype.get = function(name, msg) {
     var r = this.nativeGet(name, msg, (responses) => {
       resolve(responses)
     })
-    if (r !== 0)
+    if (r !== 0) {
       reject(r)
+    }
   })
   return ret
 }
@@ -122,12 +123,12 @@ exports.Agent = Agent
  * @param {Number} code - return code
  * @param {Array} msg - reply message content
  */
-function Reply(code, msg) {
-  this.retCode = code;
-  this.msg = msg;
+function Reply (code, msg) {
+  this.retCode = code
+  this.msg = msg
 }
 
-exports.Reply = Reply;
+exports.Reply = Reply
 
 /**
  * @memberof module:@yoda/flora
