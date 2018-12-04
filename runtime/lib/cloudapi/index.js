@@ -228,11 +228,10 @@ CloudStore.prototype.updateBasicInfo = function updateBasicInfo () {
   var networkInterface = _.get(os.networkInterfaces(), 'wlan0', [])
     .filter(it => _.get(it, 'family') === 'IPv4')[0]
 
-  var sn = property.get('ro.boot.serialno')
   var info = {
-    sn: sn,
-    device_id: sn,
-    device_type_id: property.get('ro.boot.devicetypeid'),
+    sn: this.config.deviceId,
+    device_id: this.config.deviceId,
+    device_type_id: this.config.deviceTypeId,
     ota: property.get('ro.build.version.release'),
     mac: _.get(networkInterface, 'mac'),
     lan_ip: _.get(networkInterface, 'address')
