@@ -3,6 +3,7 @@ set -e
 
 help="
 Usage:
+  -c          Install configuration files.
   -t          Only includes tests.
   -r          Only includes resources.
   -a          Include tests and resources.
@@ -20,12 +21,16 @@ Example:
 
 os="YES"
 test="NO"
+configs="NO"
 resources="NO"
 exclude_app='NO'
 sn=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    -c)
+      configs="YES"
+      ;;
     -t)
       test="YES"
       ;;
@@ -76,10 +81,6 @@ function push() {
 }
 
 function install_os() {
-  # etc config
-  shell "rm -rf /etc/yoda/*"
-  push "./etc/*" "/etc/yoda/"
-
   # yoda runtime
   shell "rm -rf /usr/yoda/*"
   push "./runtime/*" "/usr/yoda/"
@@ -113,6 +114,12 @@ function install_apps {
   push "./apps/*" "/opt/apps/"
 }
 
+function install_configs() {
+  # etc config
+  shell "rm -rf /etc/yoda/*"
+  push "./etc/*" "/etc/yoda/"
+}
+
 shell "mount -o remount,rw /"
 
 if test "$os" = "YES"; then
@@ -129,4 +136,8 @@ fi
 
 if test "$exclude_app" = 'NO'; then
   install_apps
+fi
+
+if test "$config" = 'YES'; then
+  install_configs
 fi
