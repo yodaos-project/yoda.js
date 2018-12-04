@@ -13,8 +13,7 @@ typedef std::map<std::string, Napi::FunctionReference> SubscriptionMap;
 class MsgCallbackInfo {
  public:
   explicit MsgCallbackInfo(Napi::Env e)
-      : msgtype(FLORA_MSGTYPE_INSTANT),
-        env(e) {
+      : msgtype(FLORA_MSGTYPE_INSTANT), env(e) {
   }
 
   /**
