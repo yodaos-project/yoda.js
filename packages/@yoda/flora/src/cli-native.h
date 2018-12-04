@@ -17,6 +17,7 @@ class MsgCallbackInfo {
         env(e) {
   }
 
+  /**
   MsgCallbackInfo(const MsgCallbackInfo& o)
       : msgName(o.msgName),
         msg(o.msg),
@@ -24,6 +25,7 @@ class MsgCallbackInfo {
         env(o.env),
         reply(o.reply) {
   }
+  */
 
   std::string msgName;
   std::shared_ptr<Caps> msg;
