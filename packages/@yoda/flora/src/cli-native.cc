@@ -25,14 +25,14 @@ static void resp_async_cb(uv_async_t* handle) {
 Object ClientNative::Init(Napi::Env env, Object exports) {
   HandleScope scope(env);
 
-  Function ctor = DefineClass(env, "ClientNative", {
-      InstanceMethod("start", &ClientNative::start),
-      InstanceMethod("nativeSubscribe", &ClientNative::subscribe),
-      InstanceMethod("unsubscribe", &ClientNative::unsubscribe),
-      InstanceMethod("close", &ClientNative::close),
-      InstanceMethod("post", &ClientNative::post),
-      InstanceMethod("nativeGet", &ClientNative::get)
-  });
+  Function ctor =
+      DefineClass(env, "ClientNative",
+                  { InstanceMethod("start", &ClientNative::start),
+                    InstanceMethod("nativeSubscribe", &ClientNative::subscribe),
+                    InstanceMethod("unsubscribe", &ClientNative::unsubscribe),
+                    InstanceMethod("close", &ClientNative::close),
+                    InstanceMethod("post", &ClientNative::post),
+                    InstanceMethod("nativeGet", &ClientNative::get) });
   exports.Set("Agent", ctor);
   return exports;
 }
@@ -69,7 +69,7 @@ Value ClientNative::start(const CallbackInfo& info) {
     respAsync.data = this;
     uv_async_init(uv_default_loop(), &respAsync, resp_async_cb);
     napi_async_init(env, info.This(), String::New(env, "flora-agent"),
-        &asyncContext);
+                    &asyncContext);
     floraAgent.start();
     thisRef = Napi::Persistent(info.This());
   }
@@ -81,7 +81,8 @@ Value ClientNative::subscribe(const CallbackInfo& info) {
   if (!ready)
     return env.Undefined();
   if (info.Length() < 2 || !info[0].IsString() || !info[1].IsFunction()) {
-    TypeError::New(env, "String, Function excepted").ThrowAsJavaScriptException();
+    TypeError::New(env, "String, Function excepted")
+        .ThrowAsJavaScriptException();
     return env.Undefined();
   }
   std::string name = std::string(info[0].As<String>());
@@ -92,10 +93,11 @@ Value ClientNative::subscribe(const CallbackInfo& info) {
   if (!r.second) {
     return env.Undefined();
   }
-  floraAgent.subscribe(name.c_str(), [this, name, env](
-        std::shared_ptr<Caps>& msg, uint32_t type, Reply* reply) {
-      this->msgCallback(name, env, msg, type, reply);
-  });
+  floraAgent.subscribe(name.c_str(),
+                       [this, name, env](std::shared_ptr<Caps>& msg,
+                                         uint32_t type, Reply* reply) {
+                         this->msgCallback(name, env, msg, type, reply);
+                       });
   return env.Undefined();
 }
 
@@ -171,17 +173,18 @@ Value ClientNative::get(const CallbackInfo& info) {
   // TODO: timeout not work correctly, need modify flora service
   // if (info[2].IsNumber())
   //   timeout = info[2].As<Number>().Uint32Value();
-  shared_ptr<FunctionReference> cbr = make_shared<FunctionReference>(
-      Napi::Persistent(info[2].As<Function>()));
+  shared_ptr<FunctionReference> cbr =
+      make_shared<FunctionReference>(Napi::Persistent(info[2].As<Function>()));
   int32_t r = floraAgent.get(info[0].As<String>().Utf8Value().c_str(), msg,
-      [this, cbr](ResponseArray& resps) {
-        this->respCallback(cbr, resps);
-      });
+                             [this, cbr](ResponseArray& resps) {
+                               this->respCallback(cbr, resps);
+                             });
   return Number::New(env, r);
 }
 
 void ClientNative::msgCallback(const std::string& name, Napi::Env env,
-    std::shared_ptr<Caps>& msg, uint32_t type, Reply* reply) {
+                               std::shared_ptr<Caps>& msg, uint32_t type,
+                               Reply* reply) {
   unique_lock<mutex> locker(cb_mutex);
   pendingMsgs.emplace_back(env);
   std::list<MsgCallbackInfo>::iterator it = --pendingMsgs.end();
@@ -204,7 +207,7 @@ void ClientNative::msgCallback(const std::string& name, Napi::Env env,
 }
 
 void ClientNative::respCallback(shared_ptr<FunctionReference> cbr,
-    ResponseArray& responses) {
+                                ResponseArray& responses) {
   cb_mutex.lock();
   pendingResponses.emplace_back();
   list<RespCallbackInfo>::iterator it = --pendingResponses.end();
@@ -279,9 +282,10 @@ static bool genCapsByJSMsg(Array&& jsmsg, shared_ptr<Caps>& caps) {
       caps->write(v.As<Number>().DoubleValue());
     } else if (v.IsString()) {
       caps->write(v.As<String>().Utf8Value().c_str());
-    // iotjs not support ArrayBuffer
-    // } else if (v.IsArrayBuffer()) {
-    //   caps->write(v.As<ArrayBuffer>().Data(), v.As<ArrayBuffer>().ByteLength());
+      // iotjs not support ArrayBuffer
+      // } else if (v.IsArrayBuffer()) {
+      //   caps->write(v.As<ArrayBuffer>().Data(),
+      //   v.As<ArrayBuffer>().ByteLength());
     } else if (v.IsArray()) {
       shared_ptr<Caps> sub;
       if (!genCapsByJSMsg(v.As<Array>(), sub))
@@ -325,7 +329,9 @@ void ClientNative::handleMsgCallbacks() {
     subit = subscriptions.find(cbinfo.msgName);
     if (subit != subscriptions.end()) {
       cbret = subit->second.MakeCallback(cbinfo.env.Global(),
-          { jsmsg, Number::New(cbinfo.env, cbinfo.msgtype) }, asyncContext);
+                                         { jsmsg, Number::New(cbinfo.env,
+                                                              cbinfo.msgtype) },
+                                         asyncContext);
     }
     if (cbinfo.msgtype == FLORA_MSGTYPE_REQUEST) {
       genReplyByJSObject(cbret, *(cbinfo.reply));
@@ -373,7 +379,8 @@ void ClientNative::handleRespCallbacks() {
 
     HandleScope scope((*it).cbr->Env());
     jsresps = genJSResponseArray((*it).cbr->Env(), (*it).responses);
-    (*it).cbr->MakeCallback((*it).cbr->Env().Global(), { jsresps }, asyncContext);
+    (*it).cbr->MakeCallback((*it).cbr->Env().Global(), { jsresps },
+                            asyncContext);
 
     locker.lock();
     pendingResponses.pop_front();

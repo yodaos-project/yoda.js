@@ -11,11 +11,16 @@
 typedef std::map<std::string, Napi::FunctionReference> SubscriptionMap;
 
 class MsgCallbackInfo {
-public:
-  MsgCallbackInfo(Napi::Env e) : env(e) {}
+ public:
+  MsgCallbackInfo(Napi::Env e) : env(e) {
+  }
 
-  MsgCallbackInfo(const MsgCallbackInfo& o) : msgName(o.msgName),
-      msg(o.msg), msgtype(o.msgtype), env(o.env), reply(o.reply) {
+  MsgCallbackInfo(const MsgCallbackInfo& o)
+      : msgName(o.msgName),
+        msg(o.msg),
+        msgtype(o.msgtype),
+        env(o.env),
+        reply(o.reply) {
   }
 
   std::string msgName;
@@ -27,13 +32,13 @@ public:
 };
 
 class RespCallbackInfo {
-public:
+ public:
   std::shared_ptr<Napi::FunctionReference> cbr;
   flora::ResponseArray responses;
 };
 
 class ClientNative : public Napi::ObjectWrap<ClientNative> {
-public:
+ public:
   static Napi::Object Init(Napi::Env env, Napi::Object exports);
 
   ClientNative(const Napi::CallbackInfo& info);
@@ -42,7 +47,7 @@ public:
 
   void handleRespCallbacks();
 
-private:
+ private:
   Napi::Value start(const Napi::CallbackInfo& info);
 
   Napi::Value subscribe(const Napi::CallbackInfo& info);
@@ -56,12 +61,13 @@ private:
   Napi::Value get(const Napi::CallbackInfo& info);
 
   void msgCallback(const std::string& name, Napi::Env env,
-      std::shared_ptr<Caps>& msg, uint32_t type, flora::Reply* reply);
+                   std::shared_ptr<Caps>& msg, uint32_t type,
+                   flora::Reply* reply);
 
   void respCallback(std::shared_ptr<Napi::FunctionReference> cbr,
-      flora::ResponseArray& responses);
+                    flora::ResponseArray& responses);
 
-private:
+ private:
   flora::Agent floraAgent;
   SubscriptionMap subscriptions;
   uv_async_t msgAsync;
