@@ -62,7 +62,7 @@
  */
 
 /**
- * @callback module:@yoda/flora~SubscribeCallback
+ * @callback module:@yoda/flora~SubscribeMsgHandler
  * @param {any[]} - msg content
  * @param {number} - type of msg
  * @returns {module:@yoda/flora~Reply} reply message to sender of this REQUEST message
@@ -75,12 +75,12 @@ var Agent = require('./flora-cli.node').Agent
  * @method subscribe
  * @memberof module:@yoda/flora~Agent
  * @param {string} name - msg name for subscribe
- * @param {module:@yoda/flora~SubscribeCallback} cb - callback if received msg that subscribed
+ * @param {module:@yoda/flora~SubscribeMsgHandler} handler - msg handler of received msg
  */
-Agent.prototype.subscribe = function (name, cb) {
+Agent.prototype.subscribe = function (name, handler) {
   this.nativeSubscribe(name, (msg, type) => {
     try {
-      return cb(msg, type)
+      return handler(msg, type)
     } catch (e) {
       process.nextTick(() => {
         throw e
