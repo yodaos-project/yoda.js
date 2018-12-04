@@ -11,6 +11,7 @@ target_include_directories(shadow-flora-cli PRIVATE
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
   ${CMAKE_INCLUDE_DIR}/usr/include/caps
+  ${JSRUNTIME_SOURCE_DIR}/include
 )
 
 target_link_libraries(shadow-flora-cli iotjs flora-cli caps)
