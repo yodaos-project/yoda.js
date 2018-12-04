@@ -13,12 +13,12 @@ using namespace flora;
 static bool genCapsByJSMsg(Array&& jsmsg, shared_ptr<Caps>& caps);
 
 static void msg_async_cb(uv_async_t* handle) {
-  ClientNative* _this = (ClientNative*)handle->data;
+  ClientNative* _this = reinterpret_cast<ClientNative*>(handle->data);
   _this->handleMsgCallbacks();
 }
 
 static void resp_async_cb(uv_async_t* handle) {
-  ClientNative* _this = (ClientNative*)handle->data;
+  ClientNative* _this = reinterpret_cast<ClientNative*>(handle->data);
   _this->handleRespCallbacks();
 }
 
@@ -219,7 +219,6 @@ void ClientNative::respCallback(shared_ptr<FunctionReference> cbr,
 
 static Napi::Value genJSMsgContent(Napi::Env& env, std::shared_ptr<Caps>& msg) {
   Array ret = Array::New(env);
-  int32_t mtp;
   int32_t iv;
   int64_t lv;
   float fv;
@@ -232,7 +231,7 @@ static Napi::Value genJSMsgContent(Napi::Env& env, std::shared_ptr<Caps>& msg) {
     return env.Undefined();
 
   while (true) {
-    mtp = msg->next_type();
+    int32_t mtp = msg->next_type();
     if (mtp == CAPS_ERR_EOO)
       break;
     switch (mtp) {
