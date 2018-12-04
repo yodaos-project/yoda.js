@@ -7,9 +7,9 @@
 /**
  * @class module:@yoda/flora~Agent
  * @classdesc agent of flora connection
- * @param {String} uri - uri of flora service
- * @param {Number} [reconnInterval=10000] - reconnect interval time when flora disconnected
- * @param {Number} [bufsize=32768] - flora msg buf size
+ * @param {string} uri - uri of flora service
+ * @param {number} [reconnInterval=10000] - reconnect interval time when flora disconnected
+ * @param {number} [bufsize=32768] - flora msg buf size
  */
 
 /**
@@ -28,17 +28,17 @@
  * unsubscribe flora msg
  * @method unsubscribe
  * @memberof module:@yoda/flora~Agent
- * @param {String} name - msg name for unsubscribe
+ * @param {string} name - msg name for unsubscribe
  */
 
 /**
  * post msg
  * @method post
  * @memberof module:@yoda/flora~Agent
- * @param {String} name - msg name
- * @param {Array} msg - msg content
- * @param {Number} type - msg type (MSGTYPE_INSTANT | MSGTYPE_PERSIST}
- * @returns {Number} 0 for success, otherwise error code
+ * @param {string} name - msg name
+ * @param {any[]} msg - msg content
+ * @param {number} type - msg type (MSGTYPE_INSTANT | MSGTYPE_PERSIST}
+ * @returns {number} 0 for success, otherwise error code
  */
 
 /**
@@ -48,23 +48,23 @@
 
 /**
  * @memberof module:@yoda/flora~Response
- * @member {Number} retCode
+ * @member {number} retCode
  */
 
 /**
  * @memberof module:@yoda/flora~Response
- * @member {Array} msg
+ * @member {any[]} msg
  */
 
 /**
  * @memberof module:@yoda/flora~Response
- * @member {String} sender
+ * @member {string} sender
  */
 
 /**
  * @callback module:@yoda/flora~SubscribeCallback
- * @param {Array} - msg content
- * @param {Number} - type of msg
+ * @param {any[]} - msg content
+ * @param {number} - type of msg
  * @returns {module:@yoda/flora~Reply} reply message to sender of this REQUEST message
  */
 
@@ -74,7 +74,7 @@ var Agent = require('./flora-cli.node').Agent
  * subscribe flora msg
  * @method subscribe
  * @memberof module:@yoda/flora~Agent
- * @param {String} name - msg name for subscribe
+ * @param {string} name - msg name for subscribe
  * @param {module:@yoda/flora~SubscribeCallback} cb - callback if received msg that subscribed
  */
 Agent.prototype.subscribe = function (name, cb) {
@@ -93,8 +93,8 @@ Agent.prototype.subscribe = function (name, cb) {
  * post msg and get response
  * @method get
  * @memberof module:@yoda/flora~Agent
- * @param {String} name - msg name
- * @param {Array} [msg] - msg content
+ * @param {string} name - msg name
+ * @param {any[]} [msg] - msg content
  * @returns {Promise} promise that resolves with an array of {module:@yoda/flora~Response}
  */
 Agent.prototype.get = function (name, msg) {
@@ -120,8 +120,8 @@ exports.Agent = Agent
 /**
  * @class module:@yoda/flora~Reply
  * @classdesc reply message for REQUEST
- * @param {Number} code - return code
- * @param {Array} msg - reply message content
+ * @param {number} code - return code
+ * @param {any[]} msg - reply message content
  */
 function Reply (code, msg) {
   this.retCode = code
@@ -132,31 +132,31 @@ exports.Reply = Reply
 
 /**
  * @memberof module:@yoda/flora
- * @member {Number} MSGTYPE_INSTANT
+ * @member {number} MSGTYPE_INSTANT
  */
 exports.MSGTYPE_INSTANT = 0
 /**
  * @memberof module:@yoda/flora
- * @member {Number} MSGTYPE_PERSIST
+ * @member {number} MSGTYPE_PERSIST
  */
 exports.MSGTYPE_PERSIST = 1
 /**
  * @memberof module:@yoda/flora
- * @member {Number} MSGTYPE_REQUEST
+ * @member {number} MSGTYPE_REQUEST
  */
 exports.MSGTYPE_REQUEST = 2
 /**
  * @memberof module:@yoda/flora
- * @member {Number} ERROR_INVALID_URI
+ * @member {number} ERROR_INVALID_URI
  */
 exports.ERROR_INVALID_URI = -1
 /**
  * @memberof module:@yoda/flora
- * @member {Number} ERROR_INVALID_PARAM
+ * @member {number} ERROR_INVALID_PARAM
  */
 exports.ERROR_INVALID_PARAM = -2
 /**
  * @memberof module:@yoda/flora
- * @member {Number} ERROR_NOT_CONNECTED
+ * @member {number} ERROR_NOT_CONNECTED
  */
 exports.ERROR_NOT_CONNECTED = -3
