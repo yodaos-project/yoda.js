@@ -11,6 +11,7 @@ var logger = require('logger')('cloudapi')
 var property = require('@yoda/property')
 var CloudGw = require('@yoda/cloudgw')
 var MqttClient = require('./mqtt/client')
+var parseHttpHeader = require('./util').parseHttpHeader
 var STRINGS = require('../../strings/login.json')
 
 /**
@@ -139,23 +140,20 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
  * @method
  */
 CloudStore.prototype.syncDate = function syncDate () {
-  fs.readFile('/tmp/LOGIN_HEADER', 'utf8', (err, headers) => {
-    if (err || !headers) {
+  fs.readFile('/tmp/LOGIN_HEADER', 'utf8', (err, text) => {
+    if (err || !text) {
       logger.warn('/tmp/LOGIN_HEADER invalid body, discard sync')
       return
     }
-    var lines = headers.split('\r\n')
-    logger.info('current response is', lines[0])
-    if (!/^HTTP\/1\.1 200/.test(lines[0])) {
-      logger.warn('the last response is not 200 status code, discard sync')
-      return
-    }
-    for (var i = 1; i < lines.length; i++) {
-      var obj = lines[i].split(':')
-      if (obj[0] === 'Date' && typeof obj[1] === 'string') {
-        sync(lines[i].replace('Date:', '').trim())
-        break
+    try {
+      var headers = parseHttpHeader(text)
+      if (headers && headers.date) {
+        sync(headers.date)
+      } else {
+        logger.warn('skip sync date, reason: no date found from headers', text)
       }
+    } catch (err) {
+      logger.warn(`sync date error: ${err && err.message}`)
     }
   })
 }
