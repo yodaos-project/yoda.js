@@ -104,15 +104,11 @@ Agent.prototype.get = function (name, msg) {
   if (msg !== undefined && msg !== null && !Array.isArray(msg)) {
     return Promise.reject(exports.ERROR_INVALID_PARAM)
   }
-  var ret = new Promise((resolve, reject) => {
-    var r = this.nativeGet(name, msg, (responses) => {
-      resolve(responses)
-    })
-    if (r !== 0) {
+  return new Promise((resolve, reject) => {
+    if (this.nativeGet(name, msg, resolve) !== 0) {
       reject(r)
     }
   })
-  return ret
 }
 
 exports.Agent = Agent
