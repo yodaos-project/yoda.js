@@ -5,6 +5,7 @@ var path = require('path')
 
 var logger = require('logger')('dbus')
 var _ = require('@yoda/util')._
+var safeParse = require('@yoda/util').json.safeParse
 var AudioManager = require('@yoda/audio').AudioManager
 
 var DbusRemoteCall = require('../dbus-remote-call')
@@ -497,6 +498,27 @@ DBus.prototype.amsexport = {
             }
           )
       })
+    }
+  },
+  OpenUrl: {
+    in: ['s', 's'],
+    out: ['s'],
+    fn: function OpenUrl (url, optionsJson, cb) {
+      var options
+      if (typeof optionsJson === 'function') {
+        cb = optionsJson
+        options = {}
+      } else {
+        options = safeParse(optionsJson)
+      }
+      this.runtime.openUrl(url, options)
+        .then(result => {
+          cb(null, JSON.stringify({ ok: true, result: result }))
+        })
+        .catch(err => {
+          logger.info('unexpected error on opening url', url, optionsJson, err.stack)
+          cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
+        })
     }
   }
 }
