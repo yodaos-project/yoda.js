@@ -18,7 +18,7 @@ module.exports = AppChargeur
  */
 function AppChargeur (runtime) {
   this.runtime = runtime
-  this.config = defaultConfig
+  this.config = this.markupConfig(defaultConfig)
 
   /** skillId -> appId */
   this.skillIdAppIdMap = {}
@@ -32,6 +32,21 @@ function AppChargeur (runtime) {
   this.notifications = {
     'on-ready': []
   }
+}
+
+AppChargeur.prototype.markupConfig = function markupConfig (config) {
+  if (config == null || typeof config !== 'object') {
+    config = {}
+  }
+  ;['lightAppIds',
+    'dbusAppIds',
+    'cloudStackExcludedSkillIds'
+  ].forEach(key => {
+    if (!Array.isArray(config[key])) {
+      config[key] = []
+    }
+  })
+  return config
 }
 
 AppChargeur.prototype.getAppIds = function getAppIds () {
@@ -68,6 +83,9 @@ AppChargeur.prototype.getTypeOfApp = function getTypeOfApp (appId) {
   }
   if (this.config.dbusAppIds.indexOf(appId) >= 0) {
     return 'dbus'
+  }
+  if (_.get(this.getAppManifest(appId), 'rawExecutable', false) === true) {
+    return 'exe'
   }
   return 'ext'
 }
@@ -207,16 +225,17 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
 AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) {
   manifest = Object.assign({}, manifest, { appHome: appHome })
 
-  var skillIds = _.get(manifest, 'skills', [])
-  var hosts = _.get(manifest, 'hosts', [])
-  var permissions = _.get(manifest, 'permission', [])
-  var notifications = _.get(manifest, 'notifications', [])
   if (typeof appId !== 'string' || !appId) {
     throw new Error(`AppId is not valid at ${appHome}.`)
   }
   if (this.appManifests[appId] != null) {
     throw new Error(`AppId conflicts at ${appId}(${appHome}).`)
   }
+
+  var skillIds = _.get(manifest, 'skills', [])
+  var hosts = _.get(manifest, 'hosts', [])
+  var permissions = _.get(manifest, 'permission', [])
+  var notifications = _.get(manifest, 'notifications', [])
   if (!Array.isArray(skillIds)) {
     throw new Error(`manifest.skills is not valid at ${appId}(${appHome}).`)
   }
