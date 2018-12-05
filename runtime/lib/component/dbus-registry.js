@@ -520,6 +520,49 @@ DBus.prototype.amsexport = {
           cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
         })
     }
+  },
+  LaunchApp: {
+    in: ['s', 's'],
+    out: ['s'],
+    fn: function LaunchApp (appId, optionsJson, cb) {
+      var options
+      if (typeof optionsJson === 'function') {
+        cb = optionsJson
+        options = {}
+      } else {
+        options = safeParse(optionsJson)
+      }
+      logger.info('launch requested by dbus iface', appId)
+      var stopBeforeLaunch = _.get(options, 'stopBeforeLaunch', true)
+      var future = Promise.resolve()
+      if (stopBeforeLaunch) {
+        future = this.runtime.scheduler.suspendApp(appId, { force: true })
+      }
+      future
+        .then(() => this.runtime.scheduler.createApp(appId))
+        .then(() => {
+          cb(null, JSON.stringify({ ok: true, result: { appId: appId } }))
+        })
+        .catch(err => {
+          logger.info('unexpected error on launch app', appId, err.stack)
+          cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
+        })
+    }
+  },
+  ForceStop: {
+    in: ['s'],
+    out: ['s'],
+    fn: function ForceStop (appId, cb) {
+      logger.info('force stop requested by dbus iface', appId)
+      this.runtime.scheduler.suspendApp(appId, { force: true })
+        .then(() => {
+          cb(null, JSON.stringify({ ok: true, result: { appId: appId } }))
+        })
+        .catch(err => {
+          logger.info('unexpected error on launch app', appId, err.stack)
+          cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
+        })
+    }
   }
 }
 
