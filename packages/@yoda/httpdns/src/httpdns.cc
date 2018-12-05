@@ -23,14 +23,14 @@ struct HttpdnsAsyncTask {
   }
 };
 
-static int cb(int status, void *userdata) {
-  struct HttpdnsAsyncTask *task = (struct HttpdnsAsyncTask *)userdata;
+static int cb(int status, void* userdata) {
+  struct HttpdnsAsyncTask* task = (struct HttpdnsAsyncTask*)userdata;
   task->status = status;
   uv_async_send(&task->async_handle);
 }
 
 static void handleFinishedService(uv_async_t* handle) {
-  struct HttpdnsAsyncTask *task = (struct HttpdnsAsyncTask *)handle->data;
+  struct HttpdnsAsyncTask* task = (struct HttpdnsAsyncTask*)handle->data;
   napi_env env = task->env;
   napi_ref reference = task->callback;
   napi_value fun;
@@ -106,7 +106,7 @@ static napi_value HttpdnsResolveByGslb(napi_env env, napi_callback_info info) {
     task->async_handle.data = task;
   }
 
-  ret = httpdns_resolve_gslb(sn, devType, timeout, cb, (void *)task);
+  ret = httpdns_resolve_gslb(sn, devType, timeout, cb, (void*)task);
   if (ret == 0) {
     napi_get_boolean(env, true, &returnVal);
     return returnVal;
