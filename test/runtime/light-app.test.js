@@ -159,7 +159,7 @@ test('should populate methods', t => {
     .then(app => {
       var activity = app.activity
 
-      var activityMethods = [ 'destroyAll', 'exit', 'get',
+      var activityMethods = [ 'exit', 'get',
         'playSound', 'setBackground', 'setConfirm', 'setForeground', 'setPickup' ]
       activityMethods.forEach(it => {
         t.strictEqual(typeof activity[it], 'function', `activity.${it} has to be a function`)

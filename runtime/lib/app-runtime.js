@@ -600,41 +600,6 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
 }
 
 /**
- * Send 'destroy' event to all apps, also clears app contexts.
- *
- * @private
- * @param {object} [options]
- * @param {object} [options.force=true] - Force quit all apps.
- * @param {boolean} [options.resetServices=true]
- * @returns {Promise<void>}
- */
-AppRuntime.prototype.destroyAll = function (options) {
-  var force = _.get(options, 'force', true)
-  var resetServices = _.get(options, 'resetServices', true)
-
-  this.resetCloudStack()
-
-  var promises = []
-
-  /**
-   * Destroy all apps, then restart daemon apps
-   */
-  promises.push(this.life.destroyAll({ force: force })
-    .then(() => this.startDaemonApps()))
-  // deleting the running app
-  this.cloudSkillIdStack = []
-  // this.resetCloudStack()
-
-  if (!resetServices) {
-    return Promise.all(promises)
-  }
-
-  promises.concat(this.resetServices())
-
-  return Promise.all(promises)
-}
-
-/**
  *
  * @param {object} [options] -
  * @param {boolean} [options.lightd=true] -

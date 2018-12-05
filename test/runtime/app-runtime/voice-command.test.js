@@ -7,11 +7,6 @@ var helper = require('../../helper')
 var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
 
 test.skip('test onVoiceCommand', (t) => {
-  var destroyAll = AppRuntime.prototype.destroyAll
-  AppRuntime.prototype.destroyAll = function destroyAllProxy () {
-    return destroyAll.call(this, { resetServices: false })
-  }
-
   var testSceneCreate = new EventEmitter()
   var testSceneDestroy = new EventEmitter()
   var testCutInterrupt = new EventEmitter()
