@@ -46,6 +46,8 @@ class ClientNative : public Napi::ObjectWrap<ClientNative> {
 
   explicit ClientNative(const Napi::CallbackInfo& info);
 
+  ~ClientNative();
+
   void handleMsgCallbacks();
 
   void handleRespCallbacks();
@@ -70,6 +72,8 @@ class ClientNative : public Napi::ObjectWrap<ClientNative> {
   void respCallback(std::shared_ptr<Napi::FunctionReference> cbr,
                     flora::ResponseArray& responses);
 
+  void close();
+
  private:
   flora::Agent floraAgent;
   SubscriptionMap subscriptions;
@@ -81,5 +85,6 @@ class ClientNative : public Napi::ObjectWrap<ClientNative> {
   std::condition_variable cb_cond;
   Napi::Reference<Napi::Value> thisRef;
   napi_async_context asyncContext = nullptr;
+  napi_env thisEnv;
   bool ready = false;
 };

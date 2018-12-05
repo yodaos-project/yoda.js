@@ -40,6 +40,7 @@ Object ClientNative::Init(Napi::Env env, Object exports) {
 ClientNative::ClientNative(const CallbackInfo& info)
     : ObjectWrap<ClientNative>(info) {
   Napi::Env env = info.Env();
+  thisEnv = env;
   HandleScope scope(env);
   size_t len = info.Length();
   if (len < 1 || !info[0].IsString()) {
@@ -59,6 +60,10 @@ ClientNative::ClientNative(const CallbackInfo& info)
   }
   floraAgent.config(FLORA_AGENT_CONFIG_BUFSIZE, n);
   ready = true;
+}
+
+ClientNative::~ClientNative() {
+  close();
 }
 
 Value ClientNative::start(const CallbackInfo& info) {
@@ -115,17 +120,21 @@ Value ClientNative::unsubscribe(const CallbackInfo& info) {
   return env.Undefined();
 }
 
-Value ClientNative::close(const CallbackInfo& info) {
-  Napi::Env env = info.Env();
+void ClientNative::close() {
   if (ready) {
     floraAgent.close();
-    napi_async_destroy(env, asyncContext);
-    asyncContext = nullptr;
     uv_close((uv_handle_t*)&msgAsync, nullptr);
     uv_close((uv_handle_t*)&respAsync, nullptr);
     thisRef.Unref();
+    napi_async_destroy(thisEnv, asyncContext);
+    asyncContext = nullptr;
+    ready = false;
   }
-  return env.Undefined();
+}
+
+Value ClientNative::close(const CallbackInfo& info) {
+  close();
+  return info.Env().Undefined();
 }
 
 Value ClientNative::post(const CallbackInfo& info) {
