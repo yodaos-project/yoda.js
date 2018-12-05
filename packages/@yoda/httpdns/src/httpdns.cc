@@ -43,7 +43,7 @@ static void handleFinishedService(uv_async_t* handle) {
   napi_get_boolean(env, 0 == task->status, &argv[0]);
   napi_make_callback(env, nullptr, global, fun, 1, argv, nullptr);
   napi_close_handle_scope(env, scope);
-  if (task) {
+  if (task != NULL) {
     delete task;
   }
   uv_close((uv_handle_t*)handle, nullptr);
