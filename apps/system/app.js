@@ -17,7 +17,7 @@ module.exports = function (activity) {
       case 'usersleep':
       case 'byebyesleep':
       case 'ROKID.SYSTEM.EXIT':
-        activity.destroyAll()
+        activity.hibernate()
         break
       default:
         fallback()

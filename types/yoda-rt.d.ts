@@ -10,7 +10,6 @@ declare global {
       appId: string
       appHome: string
 
-      destroyAll(): Promise<void>
       exit(): Promise<void>
       get(key: string): Promise<any>
       playSound(uri: string): Promise<void>

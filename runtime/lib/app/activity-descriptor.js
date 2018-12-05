@@ -275,17 +275,20 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Exits the current application and clean up others.
+     * Put device into hibernation. Terminates apps in stack (i.e. apps in active and paused).
+     *
+     * Also clears apps' contexts.
+     *
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @function destroyAll
+     * @function hibernate
      * @returns {Promise<void>}
      */
-    destroyAll: {
+    hibernate: {
       type: 'method',
       returns: 'promise',
-      fn: function destroyAll () {
-        return this._runtime.destroyAll({ force: false, resetServices: false })
+      fn: function hibernate () {
+        return this._runtime.hibernate()
       }
     },
     /**
