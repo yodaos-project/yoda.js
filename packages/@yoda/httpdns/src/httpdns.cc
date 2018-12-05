@@ -27,13 +27,13 @@ class HttpdnsAsyncTask {
 };
 
 static int notifyFinishedNotify(int status, void* userdata) {
-  HttpdnsAsyncTask* task = (HttpdnsAsyncTask*)userdata;
+  HttpdnsAsyncTask* task = reinterpret_cast<HttpdnsAsyncTask*>(userdata);
   task->status = status;
   uv_async_send(&task->async_handle);
 }
 
 static void handleFinishedService(uv_async_t* handle) {
-  HttpdnsAsyncTask* task = (HttpdnsAsyncTask*)handle->data;
+  HttpdnsAsyncTask* task = reinterpret_cast<HttpdnsAsyncTask*>(handle->data);
   napi_env env = task->env;
   napi_ref reference = task->callback;
   napi_value fun;
@@ -44,12 +44,21 @@ static void handleFinishedService(uv_async_t* handle) {
   napi_open_handle_scope(env, &scope);
   napi_get_reference_value(env, reference, &fun);
   napi_get_global(env, &global);
-  napi_get_boolean(env, 0 == task->status, &argv[0]);
+
+  if (0 != task->status) {
+    napi_value errorMsg;
+    napi_create_string_utf8(env, "sync httpdns service failed",
+                            NAPI_AUTO_LENGTH, &errorMsg);
+    napi_create_error(env, nullptr, errorMsg, &argv[0]);
+  } else {
+    napi_get_undefined(env, &argv[0]);
+  }
+
   napi_make_callback(env, nullptr, global, fun, 1, argv, nullptr);
   napi_close_handle_scope(env, scope);
   uv_close((uv_handle_t*)handle, nullptr);
 
-  if (NULL != task) {
+  if (nullptr != task) {
     delete task;
   }
 }
