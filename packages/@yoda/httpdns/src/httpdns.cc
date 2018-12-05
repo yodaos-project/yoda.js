@@ -11,11 +11,14 @@ using namespace std;
 static bool g_httpdns_initd = false;
 static uv_async_t async;
 
-struct HttpdnsAsyncTask {
+class HttpdnsAsyncTask {
+ public:
   napi_env env;
   napi_ref callback;
   uv_async_t async_handle;
   int status;
+
+ public:
   ~HttpdnsAsyncTask() {
     if (env && callback) {
       NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, callback));
@@ -23,33 +26,35 @@ struct HttpdnsAsyncTask {
   }
 };
 
-static int cb(int status, void* userdata) {
-  struct HttpdnsAsyncTask* task = (struct HttpdnsAsyncTask*)userdata;
+static int notifyFinishedNotify(int status, void* userdata) {
+  HttpdnsAsyncTask* task = (HttpdnsAsyncTask*)userdata;
   task->status = status;
   uv_async_send(&task->async_handle);
 }
 
 static void handleFinishedService(uv_async_t* handle) {
-  struct HttpdnsAsyncTask* task = (struct HttpdnsAsyncTask*)handle->data;
+  HttpdnsAsyncTask* task = (HttpdnsAsyncTask*)handle->data;
   napi_env env = task->env;
   napi_ref reference = task->callback;
   napi_value fun;
   napi_handle_scope scope;
+  napi_value global;
+  napi_value argv[1];
+
   napi_open_handle_scope(env, &scope);
   napi_get_reference_value(env, reference, &fun);
-  napi_value global;
   napi_get_global(env, &global);
-  napi_value argv[1];
   napi_get_boolean(env, 0 == task->status, &argv[0]);
   napi_make_callback(env, nullptr, global, fun, 1, argv, nullptr);
   napi_close_handle_scope(env, scope);
-  if (task != NULL) {
+  uv_close((uv_handle_t*)handle, nullptr);
+
+  if (NULL != task) {
     delete task;
   }
-  uv_close((uv_handle_t*)handle, nullptr);
 }
 
-static napi_value HttpdnsResolveByGslb(napi_env env, napi_callback_info info) {
+static napi_value syncService(napi_env env, napi_callback_info info) {
   int ret;
   int timeout;
   size_t key;
@@ -60,6 +65,7 @@ static napi_value HttpdnsResolveByGslb(napi_env env, napi_callback_info info) {
   napi_value argv[4];
   napi_value returnVal;
   napi_ref callback = nullptr;
+  uv_loop_t* loop;
 
   if (false == g_httpdns_initd) {
     g_httpdns_initd = true;
@@ -98,15 +104,15 @@ static napi_value HttpdnsResolveByGslb(napi_env env, napi_callback_info info) {
   napi_create_reference(env, argv[3], 1, &callback);
   auto task = new HttpdnsAsyncTask();
   if (callback) {
-    uv_loop_t* loop;
+    task->callback = callback;
     napi_get_uv_event_loop(env, &loop);
     uv_async_init(loop, &task->async_handle, handleFinishedService);
-    task->callback = callback;
     task->env = env;
     task->async_handle.data = task;
   }
 
-  ret = httpdns_resolve_gslb(sn, devType, timeout, cb, (void*)task);
+  ret = httpdns_resolve_gslb(sn, devType, timeout, notifyFinishedNotify,
+                             (void*)task);
   if (ret == 0) {
     napi_get_boolean(env, true, &returnVal);
     return returnVal;
@@ -116,7 +122,7 @@ static napi_value HttpdnsResolveByGslb(napi_env env, napi_callback_info info) {
   }
 }
 
-static napi_value HttpdnsGetIpByHost(napi_env env, napi_callback_info info) {
+static napi_value resolve(napi_env env, napi_callback_info info) {
   int ret;
   size_t key;
   size_t hostLen;
@@ -148,8 +154,8 @@ static napi_value HttpdnsGetIpByHost(napi_env env, napi_callback_info info) {
 
 static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
-    DECLARE_NAPI_PROPERTY("httpdnsResolveByGslb", HttpdnsResolveByGslb),
-    DECLARE_NAPI_PROPERTY("httpdnsGetIpByHost", HttpdnsGetIpByHost),
+    DECLARE_NAPI_PROPERTY("syncService", syncService),
+    DECLARE_NAPI_PROPERTY("resolve", resolve),
   };
   napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc);
   return exports;

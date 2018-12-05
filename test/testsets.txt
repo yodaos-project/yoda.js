@@ -6,6 +6,7 @@
 @yoda/system/*.test.js
 @yoda/cloudgw/*.test.js
 @yoda/httpsession/*.test.js
+@yoda/httpdns/*.test.js
 @yoda/flora/*.test.js
 @yoda/ota/*.test.js
 logger/*.test.js

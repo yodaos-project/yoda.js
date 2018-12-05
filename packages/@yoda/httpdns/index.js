@@ -15,7 +15,7 @@ var native = require('./httpdns.node')
  * @param {number} [timeout]
  * @returns {boolean} true: start resoleve httpdns from GSLB
  */
-exports.syncService = native.httpdnsResolveByGslb
+exports.syncService = native.syncService
 
 /**
  * get ip addr by hostname.
@@ -23,4 +23,4 @@ exports.syncService = native.httpdnsResolveByGslb
  * @param {string} hostname
  * @returns {string} get ip addr
  */
-exports.resolve = native.httpdnsGetIpByHost
+exports.resolve = native.resolve

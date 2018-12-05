@@ -9,7 +9,6 @@ include_directories(
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/shadow-node
-  /usr/local/include/shadow-node
 )
 set_target_properties(node-httpdns PROPERTIES
     PREFIX ""
