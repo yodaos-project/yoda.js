@@ -2,42 +2,34 @@
 
 var test = require('tape')
 var logger = require('logger')('flora-test')
-var floraFactory = require('@yoda/flora')
+var flora = require('@yoda/flora')
+var Agent = flora.Agent
 
-var errUri = 'unix:/data/flora-error'
+var reconnInterval = 10000
+// var errUri = 'unix:/data/flora-error'
 var okUri = 'unix:/var/run/flora.sock'
 var crypto = require('crypto')
 
-test('module->flora->connect: err uri', t => {
-  var client = floraFactory.connect(errUri, 0)
-  t.equal(client, undefined, 'err uri return undefined')
-  t.end()
-})
-
 test('module->flora->persist msg', t => {
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
   var int32 = 32
   var int64 = 64
   var hello = 'hello flora'
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `persist msg test one[${msgId}]`
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+  recvClient.subscribe(msgName, (msg, type) => {
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    t.equal(msg[0], int32, `recv post msg[0] ${msg[0]}`)
+    t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+    t.equal(msg[2], hello, `recv post msg[2] ${msg[2]}`)
     recvClient.close()
     t.end()
   })
-  recvClient.subscribe(msgName)
-  var postClient = floraFactory.connect(okUri, 0)
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+  recvClient.start()
+  var postClient = new Agent(okUri, reconnInterval, 0)
+  postClient.start()
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_PERSIST)
   postClient.close()
 })
 
@@ -48,43 +40,33 @@ test('module->flora->persist msg: subscribe first and then send, get twice msg',
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `persist msg test two[${msgId}]`
   var count = 0
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
+  recvClient.subscribe(msgName, (msg, type) => {
     count++
     logger.info(count)
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
     if (count === 1) {
-      t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-      t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-      t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+      t.equal(msg[0], int32, `recv post msg[0] ${msg[0]}`)
+      t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+      t.equal(msg[2], hello, `recv post msg[2] ${msg[2]}`)
     }
     if (count === 2) {
-      t.equal(msg.get(0), hello, `recv post msg[0] ${msg.get(0)}`)
-      t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-      t.equal(msg.get(2), int32, `recv post msg[2] ${msg.get(2)}`)
+      t.equal(msg[0], hello, `recv post msg[0] ${msg[0]}`)
+      t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+      t.equal(msg[2], int32, `recv post msg[2] ${msg[2]}`)
       recvClient.close()
       t.end()
     }
   })
-
-  recvClient.subscribe(msgName)
-  var postClient = floraFactory.connect(okUri, 0)
+  recvClient.start()
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
+  postClient.start()
   // first post
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_PERSIST)
   // second post
-  var caps2 = new floraFactory.Caps()
-  caps2.write(hello)
-  caps2.writeInt64(int64)
-  caps2.writeInt32(int32)
-  postClient.post(msgName, caps2, floraFactory.MSGTYPE_PERSIST)
+  postClient.post(msgName, [ hello, int64, int32 ], flora.MSGTYPE_PERSIST)
   postClient.close()
 })
 
@@ -95,34 +77,26 @@ test('module->flora->persist msg: send first and then subscribe, get the last ms
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `persist msg test two[${msgId}]`
 
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
+  postClient.start()
   // first post
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_PERSIST)
   // second post
-  var caps2 = new floraFactory.Caps()
-  caps2.write(hello)
-  caps2.writeInt64(int64)
-  caps2.writeInt32(int32)
-  postClient.post(msgName, caps2, floraFactory.MSGTYPE_PERSIST)
+  postClient.post(msgName, [ hello, int64, int32 ], flora.MSGTYPE_PERSIST)
   postClient.close()
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    t.equal(msg.get(0), hello, `recv post msg[0] ${msg.get(0)}`)
-    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-    t.equal(msg.get(2), int32, `recv post msg[2] ${msg.get(2)}`)
+  recvClient.subscribe(msgName, (msg, type) => {
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    t.equal(msg[0], hello, `recv post msg[0] ${msg[0]}`)
+    t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+    t.equal(msg[2], int32, `recv post msg[2] ${msg[2]}`)
     recvClient.close()
     t.end()
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 })
 
 test('module->flora->instant msg: send first and then subscribe, get nothing', t => {
@@ -132,20 +106,17 @@ test('module->flora->instant msg: send first and then subscribe, get nothing', t
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `persist msg test two[${msgId}]`
 
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+  postClient.start()
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.fail('not should recv msg')
+  recvClient.subscribe(msgName, (msg, type) => {
+    t.fail('should not recv msg')
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
   setTimeout(() => {
     recvClient.close()
     postClient.close()
@@ -160,27 +131,23 @@ test('module->flora->instant msg: subscribe first and then send, get msg', t => 
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `instant msg test[${msgId}]`
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_INSTANT, `recv post type: ${type}`)
+  recvClient.subscribe(msgName, (msg, type) => {
+    t.equal(type, flora.MSGTYPE_INSTANT, `recv post type: ${type}`)
     logger.info(msg)
-    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+    t.equal(msg[0], int32, `recv post msg[0] ${msg[0]}`)
+    t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+    t.equal(msg[2], hello, `recv post msg[2] ${msg[2]}`)
     recvClient.close()
     t.end()
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+  postClient.start()
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
   postClient.close()
 })
 
@@ -192,401 +159,186 @@ test('module->flora->instant msg: subscribe first and then send twice, get twice
   var msgName = `instant msg test[${msgId}]`
   var count = 0
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
+  recvClient.subscribe(msgName, (msg, type) => {
     count++
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_INSTANT, `recv post type: ${type}`)
+    t.equal(type, flora.MSGTYPE_INSTANT, `recv post type: ${type}`)
     if (count === 1) {
-      t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-      t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-      t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+      t.equal(msg[0], int32, `recv post msg[0] ${msg[0]}`)
+      t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+      t.equal(msg[2], hello, `recv post msg[2] ${msg[2]}`)
     }
     if (count === 2) {
-      t.equal(msg.get(0), hello, `recv post msg[0] ${msg.get(0)}`)
-      t.equal(msg.get(1), int32, `recv post msg[1] ${msg.get(1)}`)
-      t.equal(msg.get(2), int64, `recv post msg[2] ${msg.get(2)}`)
+      t.equal(msg[0], hello, `recv post msg[0] ${msg[0]}`)
+      t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+      t.equal(msg[2], int32, `recv post msg[2] ${msg[2]}`)
       recvClient.close()
       t.end()
     }
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
-
-  var caps2 = new floraFactory.Caps()
-  caps2.write(hello)
-  caps2.writeInt32(int32)
-  caps2.writeInt64(int64)
-  postClient.post(msgName, caps2, floraFactory.MSGTYPE_INSTANT)
+  postClient.start()
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
+  postClient.post(msgName, [ hello, int64, int32 ], flora.MSGTYPE_INSTANT)
   postClient.close()
 })
 
-test('module->flora->send instant msg，subscribe persist msg', t => {
-  var int32 = 32
-  var int64 = 64
-  var hello = 'hello flora'
-  var msgId = crypto.randomBytes(5).toString('hex')
-  var msgName = `msg type test[${msgId}]`
-
-  var recvClient = floraFactory.connect(okUri, 0)
-  t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    recvClient.close()
-    postClient.close()
-    t.end()
-  })
-  recvClient.subscribe(msgName)
-
-  var postClient = floraFactory.connect(okUri, 0)
-  t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-})
-
-test('module->flora->send persist msg，subscribe instant msg', t => {
-  var int32 = 32
-  var int64 = 64
-  var hello = 'hello flora'
-  var msgId = crypto.randomBytes(5).toString('hex')
-  var msgName = `msg type test[${msgId}]`
-
-  var recvClient = floraFactory.connect(okUri, 0)
-  t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    recvClient.close()
-    postClient.close()
-    t.end()
-  })
-  recvClient.subscribe(msgName)
-
-  var postClient = floraFactory.connect(okUri, 0)
-  t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
-})
-
-test('module->flora->Caps: write method', t => {
+test('module->flora->Caps: post/recv nesting array message', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  var subcaps = new floraFactory.Caps()
-  subcaps.write(undefined)
-  subcaps.write(null)
-  subcaps.write('this is subcaps')
-  caps.write(subcaps)
+  postClient.start()
+  var msg = [ [ 'this is subcaps' ],
+    'this is a string msg', 2222, 2.3302,
+    -11, [ 1, 2, 3 ] ]
   // TODO: this type have a problem
   // var x = new Uint8Array([21, 31]);
   // caps.write(x)
-  caps.write('this is a string msg')
-  caps.write(2222)
-  caps.write(true)
-  caps.write(2.3302)
-  caps.write(-11)
-  caps.write([1, 2, 3])
-  caps.write({
-    a: 1,
-    b: 2
-  })
   // TODO: error
   // caps.write(caps)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+  postClient.post(msgName, msg, flora.MSGTYPE_PERSIST)
 
-  var recvClient = floraFactory.connect(okUri, 0)
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
+  recvClient.subscribe(msgName, (msg, type) => {
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
     logger.info(msg)
-    logger.info(msg.get(0))
-    logger.info(msg.get(0).get(0))
-    logger.info(msg.get(0).get(1))
-    logger.info(msg.get(1))
-    t.ok(msg.get(0) instanceof floraFactory.Caps)
-    t.ok(msg.get(0).get(0) instanceof floraFactory.Caps)
-    t.equal(msg.get(0).get(0).get(0), undefined)
-    t.equal(msg.get(0).get(1), 'this is subcaps')
-    t.equal(msg.get(1), 'this is a string msg')
+    logger.info(msg[0])
+    logger.info(msg[0][0])
+    logger.info(msg[0][1])
+    logger.info(msg[1])
+    t.ok(Array.isArray(msg[0]))
+    t.ok(Array.isArray(msg[5]))
+    t.equal(msg[0][1], undefined)
+    t.equal(msg[0][0], 'this is subcaps')
+    t.equal(msg[1], 'this is a string msg')
     recvClient.close()
     postClient.close()
     t.end()
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 })
 
-test('module->flora->Caps: get method', t => {
+test('module->flora->Caps: post numbers', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  var subcaps = new floraFactory.Caps()
-  subcaps.write('this is subcaps msg')
-  caps.write(subcaps)
-  caps.write('this is a caps msg')
-  caps.write(500)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-  postClient.close()
+  postClient.start()
+  var msg = [
+    2147483646,
+    2147483647,
+    2147483648,
+    -2147483647,
+    -2147483648,
+    -2147483649,
+    2.6302,
+    -2.3302,
 
-  var recvClient = floraFactory.connect(okUri, 0)
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    1214748364444,
+    -92233720368547,
+    2.302,
+    -2.602,
+
+    121474833,
+    -922330,
+    2.3,
+    -2.7,
+
+    1214748364444,
+    -9223372547,
+    2.3302,
+    -2.6602
+  ]
+  postClient.post(msgName, msg, flora.MSGTYPE_PERSIST)
+
+  var recvClient = new Agent(okUri, reconnInterval, 0)
+  recvClient.subscribe(msgName, (msg, type) => {
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
     logger.info(msg)
-    t.ok(msg.get(0) instanceof floraFactory.Caps, 'subcaps')
-    t.equal(typeof msg.get(0).get(0), 'string')
-    // TODO: err
-    // t.equal(msg.get(0).get(0).get(0), undefined)
-    t.equal(msg.get(0).get(0), 'this is subcaps msg')
-    t.equal(msg.get(1), 'this is a caps msg')
-    t.equal(msg.get(2), undefined)
-    t.equal(msg.get(-1), undefined)
-    recvClient.close()
-    t.end()
-  })
-  recvClient.subscribe(msgName)
-})
-
-test('module->flora->Caps: writeInt32 method', t => {
-  var msgId = crypto.randomBytes(5).toString('hex')
-  var msgName = `write method test[${msgId}]`
-  var postClient = floraFactory.connect(okUri, 0)
-  t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32('this is a string msg')
-  caps.writeInt32(true)
-  caps.writeInt32(undefined)
-  caps.writeInt32(null)
-  caps.writeInt32([1, 2, 3])
-  caps.writeInt32({
-    a: 1,
-    b: 2
-  })
-  caps.writeInt32(caps)
-  caps.writeInt32(2147483646)
-  caps.writeInt32(2147483647)
-  caps.writeInt32(2147483648)
-  caps.writeInt32(-2147483647)
-  caps.writeInt32(-2147483648)
-  caps.writeInt32(-2147483649)
-  caps.writeInt32(2.6302)
-  caps.writeInt32(-2.3302)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-
-  var recvClient = floraFactory.connect(okUri, 0)
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    logger.info(msg)
-    t.equal(typeof msg.get(0), 'number')
-    t.equal(msg.get(0), 2147483646, `msg.get(0)`)
-    t.equal(msg.get(1), 2147483647, `msg.get(1)`)
-    t.equal(msg.get(2), 2147483647, `msg.get(2)`)
-    t.equal(msg.get(3), -2147483647, `msg.get(3)`)
-    t.equal(msg.get(4), -2147483648, `msg.get(4)`)
-    t.equal(msg.get(5), -2147483648, `msg.get(5)`)
-    t.equal(msg.get(6), 2, `msg.get(6)`)
-    t.equal(msg.get(7), -2, `msg.get(7)`)
+    t.equal(typeof msg[0], 'number')
+    t.equal(msg[0], 2147483646, `msg[0]`)
+    t.equal(msg[1], 2147483647, `msg[1]`)
+    t.equal(msg[2], 2147483648, `msg[2]`)
+    t.equal(msg[3], -2147483647, `msg[3]`)
+    t.equal(msg[4], -2147483648, `msg[4]`)
+    t.equal(msg[5], -2147483649, `msg[5]`)
+    t.equal(msg[6], 2.6302, `msg[6]`)
+    t.equal(msg[7], -2.3302, `msg[7]`)
+    t.equal(msg[8], 1214748364444, `msg[8]`)
+    t.equal(msg[9], -92233720368547, `msg[9]`)
+    t.equal(msg[10], 2.302, `msg[10]`)
+    t.equal(msg[11], -2.602, `msg[11]`)
+    t.equal(msg[12], 121474833, `msg[12]`)
+    t.equal(msg[13], -922330, `msg[13]`)
+    t.equal(msg[14], 2.3, `msg[14]`)
+    t.equal(msg[15], -2.7, `msg[15]`)
+    t.equal(msg[16], 1214748364444, `msg[16]`)
+    t.equal(msg[17], -9223372547, `msg[17]`)
+    t.equal(msg[18], 2.3302, `msg[18]`)
+    t.equal(msg[19], -2.6602, `msg[19]`)
     recvClient.close()
     postClient.close()
     t.end()
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 })
 
-test('module->flora->Caps: writeInt64 method', t => {
-  var msgId = crypto.randomBytes(5).toString('hex')
-  var msgName = `write method test[${msgId}]`
-  var postClient = floraFactory.connect(okUri, 0)
-  var caps = new floraFactory.Caps()
-  t.equal(typeof postClient, 'object')
-  caps.writeInt64('this is a string msg')
-  caps.writeInt64(true)
-  caps.writeInt64(undefined)
-  caps.writeInt64(null)
-  caps.writeInt64([1, 2, 3])
-  caps.writeInt64({
-    a: 1,
-    b: 2
-  })
-  caps.writeInt64(caps)
-  caps.writeInt64(1214748364444)
-  caps.writeInt64(-92233720368547)
-  caps.writeInt64(2.302)
-  caps.writeInt64(-2.602)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-
-  var recvClient = floraFactory.connect(okUri, 0)
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    logger.info(msg)
-    t.equal(typeof msg.get(0), 'number')
-    t.equal(msg.get(0), 1214748364444, `msg.get(0)`)
-    t.equal(msg.get(1), -92233720368547, `msg.get(1)`)
-    t.equal(msg.get(2), 2, `msg.get(2)`)
-    t.equal(msg.get(3), -2, `msg.get(3)`)
-    recvClient.close()
-    postClient.close()
-    t.end()
-  })
-  recvClient.subscribe(msgName)
-})
-
-/**
- * need confirmation
- */
-test.skip('module->flora->Caps: writeFloat method', t => {
-  var msgId = crypto.randomBytes(5).toString('hex')
-  var msgName = `write method test[${msgId}]`
-  var postClient = floraFactory.connect(okUri, 0)
-  var caps = new floraFactory.Caps()
-  t.equal(typeof postClient, 'object')
-  caps.writeFloat('this is a string msg')
-  caps.writeFloat(true)
-  caps.writeFloat([1, 2, 3])
-  caps.writeFloat({
-    a: 1,
-    b: 2
-  })
-  caps.writeFloat(caps)
-  caps.writeFloat(121474833)
-  caps.writeFloat(-922330)
-  caps.writeFloat(2.3)
-  caps.writeFloat(-2.7)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-
-  var recvClient = floraFactory.connect(okUri, 0)
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    logger.info(msg)
-    t.ok(msg instanceof floraFactory.Caps)
-    t.equal(typeof msg.get(0), 'number')
-    t.equal(msg.get(0), 121474833, `msg.get(0)`)
-    t.equal(msg.get(1), -922330, `msg.get(1)`)
-    // t.equal(msg.get(2), 2, `msg.get(2)`)
-    // t.equal(msg.get(3), -2, `msg.get(3)`)
-    recvClient.close()
-    postClient.close()
-    t.end()
-  })
-  recvClient.subscribe(msgName)
-})
-
-test('module->flora->Caps: writeDouble method', t => {
-  var msgId = crypto.randomBytes(5).toString('hex')
-  var msgName = `write method test[${msgId}]`
-  var postClient = floraFactory.connect(okUri, 0)
-  var caps = new floraFactory.Caps()
-  t.equal(typeof postClient, 'object')
-  caps.writeDouble('this is a string msg')
-  caps.writeDouble(true)
-  caps.writeDouble([1, 2, 3])
-  caps.writeDouble({
-    a: 1,
-    b: 2
-  })
-  caps.writeDouble(caps)
-  caps.writeDouble(1214748364444)
-  caps.writeDouble(-9223372547)
-  caps.writeDouble(2.3302)
-  caps.writeDouble(-2.6602)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-
-  var recvClient = floraFactory.connect(okUri, 0)
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    logger.info(msg)
-    t.ok(msg instanceof floraFactory.Caps)
-    t.equal(typeof msg.get(0), 'number')
-    t.equal(msg.get(0), 1214748364444, `msg.get(0)`)
-    t.equal(msg.get(1), -9223372547, `msg.get(1)`)
-    t.equal(msg.get(2), 2.3302, `msg.get(2)`)
-    t.equal(msg.get(3), -2.6602, `msg.get(3)`)
-    recvClient.close()
-    postClient.close()
-    t.end()
-  })
-  recvClient.subscribe(msgName)
-})
-
-/**
- * bug id = 1363
- */
+//
+// bug id = 1363
+//
 test('module->flora->connect buffer, default 0', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `msg buffer test[${msgId}]`
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    console.log(msg.get(0).length)
+  recvClient.subscribe(msgName, (msg, type) => {
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    console.log(msg[0].length)
     recvClient.close()
     t.end()
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
+  postClient.start()
   var length = 32693 // TODO: err 目前最大支持32693
   var hello = Buffer.alloc(length, 0x74, 'utf8')
   console.log(hello.length)
-
-  var caps = new floraFactory.Caps()
-  caps.write(hello.toString('utf8'))
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-
+  postClient.post(msgName, [ hello.toString('utf8') ], flora.MSGTYPE_PERSIST)
   postClient.close()
 })
 
-/**
- * bug id = 1363
- */
+//
+// bug id = 1363
+//
 test('module->flora->connect buffer, set value', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `msg buffer test[${msgId}]`
 
-  var recvClient = floraFactory.connect(okUri, 8000)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    console.log(msg.get(0).length)
+  recvClient.subscribe(msgName, (msg, type) => {
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    console.log(msg[0].length)
     recvClient.close()
     t.end()
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 
-  var postClient = floraFactory.connect(okUri, 8000)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
+  postClient.start()
   var length = 32693
   var hello = Buffer.alloc(length, 0x74, 'utf8')
   console.log(hello.length)
-
-  var caps = new floraFactory.Caps()
-  caps.write(hello.toString('utf8'))
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
-
+  postClient.post(msgName, [ hello.toString('utf8') ], flora.MSGTYPE_PERSIST)
   postClient.close()
 })
 
@@ -598,34 +350,27 @@ test('module->flora->client: instant msg, unsubscribe msg', t => {
   var msgName = `instant msg test[${msgId}]`
   var count = 0
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
+  recvClient.subscribe(msgName, (msg, type) => {
     count++
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_INSTANT, `recv post type: ${type}`)
-    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+    t.equal(type, flora.MSGTYPE_INSTANT, `recv post type: ${type}`)
+    t.equal(msg[0], int32, `recv post msg[0] ${msg[0]}`)
+    t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+    t.equal(msg[2], hello, `recv post msg[2] ${msg[2]}`)
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+  postClient.start()
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
 
-  recvClient.unsubscribe(msgName)
-
-  var caps2 = new floraFactory.Caps()
-  caps2.write(hello)
-  caps2.writeInt32(int32)
-  caps2.writeInt64(int64)
-  postClient.post(msgName, caps2, floraFactory.MSGTYPE_INSTANT)
-  postClient.close()
+  setTimeout(() => {
+    recvClient.unsubscribe(msgName)
+    postClient.post(msgName, [ hello, int32, int64 ], flora.MSGTYPE_INSTANT)
+    postClient.close()
+  }, 500)
 
   setTimeout(() => {
     t.equal(count, 1)
@@ -642,34 +387,27 @@ test('module->flora->client: persist msg, subscribe->send->unsubscribe->send', t
   var msgName = `instant msg test[${msgId}]`
   var count = 0
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
+  recvClient.subscribe(msgName, (msg, type) => {
     count++
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    t.equal(msg[0], int32, `recv post msg[0] ${msg[0]}`)
+    t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+    t.equal(msg[2], hello, `recv post msg[2] ${msg[2]}`)
   })
-  recvClient.subscribe(msgName)
+  recvClient.start()
 
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+  postClient.start()
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_PERSIST)
 
-  recvClient.unsubscribe(msgName)
-
-  var caps2 = new floraFactory.Caps()
-  caps2.write(hello)
-  caps2.writeInt32(int32)
-  caps2.writeInt64(int64)
-  postClient.post(msgName, caps2, floraFactory.MSGTYPE_PERSIST)
-  postClient.close()
+  setTimeout(() => {
+    recvClient.unsubscribe(msgName)
+    postClient.post(msgName, [ hello, int32, int64 ], flora.MSGTYPE_PERSIST)
+    postClient.close()
+  }, 500)
 
   setTimeout(() => {
     t.equal(count, 1)
@@ -686,33 +424,25 @@ test('module->flora->client: persist msg, send->subscribe->unsubscribe->send', t
   var msgName = `instant msg test[${msgId}]`
   var count = 0
 
-  var recvClient = floraFactory.connect(okUri, 0)
-  t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    count++
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_PERSIST, `recv post type: ${type}`)
-    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
-  })
-
-  var postClient = floraFactory.connect(okUri, 0)
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_PERSIST)
+  postClient.start()
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_PERSIST)
 
-  recvClient.subscribe(msgName)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
+  t.equal(typeof recvClient, 'object')
+  recvClient.subscribe(msgName, (msg, type) => {
+    count++
+    t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
+    t.equal(msg[0], int32, `recv post msg[0] ${msg[0]}`)
+    t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+    t.equal(msg[2], hello, `recv post msg[2] ${msg[2]}`)
+  })
+  recvClient.start()
+
   setTimeout(() => {
     recvClient.unsubscribe(msgName)
-    var caps2 = new floraFactory.Caps()
-    caps2.write(hello)
-    caps2.writeInt32(int32)
-    caps2.writeInt64(int64)
-    postClient.post(msgName, caps2, floraFactory.MSGTYPE_PERSIST)
+    postClient.post(msgName, [ hello, int32, int64 ], flora.MSGTYPE_PERSIST)
     postClient.close()
     setTimeout(() => {
       t.equal(count, 1)
@@ -730,35 +460,27 @@ test('module->flora->client: close recv', t => {
   var msgName = `close test[${msgId}]`
   var count = 0
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
+  recvClient.subscribe(msgName, (msg, type) => {
     count++
-    t.equal(name, msgName, `recv post name: ${name}`)
-    t.equal(type, floraFactory.MSGTYPE_INSTANT, `recv post type: ${type}`)
-    t.equal(msg.get(0), int32, `recv post msg[0] ${msg.get(0)}`)
-    t.equal(msg.get(1), int64, `recv post msg[1] ${msg.get(1)}`)
-    t.equal(msg.get(2), hello, `recv post msg[2] ${msg.get(2)}`)
+    t.equal(type, flora.MSGTYPE_INSTANT, `recv post type: ${type}`)
+    t.equal(msg[0], int32, `recv post msg[0] ${msg[0]}`)
+    t.equal(msg[1], int64, `recv post msg[1] ${msg[1]}`)
+    t.equal(msg[2], hello, `recv post msg[2] ${msg[2]}`)
     recvClient.close()
-    var caps2 = new floraFactory.Caps()
-    caps2.write(hello)
-    caps2.writeInt32(int32)
-    caps2.writeInt64(int64)
-    postClient.post(msgName, caps2, floraFactory.MSGTYPE_INSTANT)
+    postClient.post(msgName, [ hello, int32, int64 ], flora.MSGTYPE_INSTANT)
     postClient.close()
     setTimeout(() => {
       t.equal(count, 1)
       t.end()
     }, 1000)
   })
-  recvClient.subscribe(msgName, floraFactory.MSGTYPE_INSTANT)
-  var postClient = floraFactory.connect(okUri, 0)
+  recvClient.start()
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+  postClient.start()
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
 })
 
 test('module->flora->client: close post', t => {
@@ -768,60 +490,62 @@ test('module->flora->client: close post', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `close test[${msgId}]`
 
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
+  recvClient.subscribe(msgName, (msg, type) => {
     t.fail('should not recv msg')
   })
-  recvClient.subscribe(msgName)
-  var postClient = floraFactory.connect(okUri, 0)
+  recvClient.start()
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
+  postClient.start()
   postClient.close()
-  var caps = new floraFactory.Caps()
-  caps.writeInt32(int32)
-  caps.writeInt64(int64)
-  caps.write(hello)
-  postClient.post(msgName, caps, floraFactory.MSGTYPE_INSTANT)
+  postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
   setTimeout(() => {
     recvClient.close()
     t.end()
   }, 2000)
 })
 
-/**
- * bug id = 1364
- */
+//
+// bug id = 1364
+//
 test.skip('module->flora->client: loop create connection', t => {
+  var clients = []
   for (var count = 0; count < 20; count++) {
-    var client = floraFactory.connect(okUri, 0)
-    t.equal(typeof client, 'object')
-    setTimeout(() => {
-      client.close()
-    }, 5 * count)
+    clients[count] = new Agent(okUri, reconnInterval, 0)
+    t.equal(typeof clients[count], 'object')
   }
+
+  var ci = 0
+  var th = setInterval(() => {
+    clients[ci++].close()
+    if (ci >= 20) {
+      clearInterval(th)
+    }
+  }, 5)
+
   setTimeout(() => {
     t.end()
   }, 2000)
 })
 
 test('module->flora->client: loop post msg', t => {
-  var recvClient = floraFactory.connect(okUri, 0)
+  var recvClient = new Agent(okUri, reconnInterval, 0)
   var count = 0
-  recvClient.on('recv_post', (name, type, msg) => {
-    t.equal(name, `id=${count}`, `name is id=${count}`)
-    t.equal(msg.get(0), `hello${count}`, `value is hello${count}`)
-    count++
-  })
   for (var i = 0; i < 100; i++) {
-    recvClient.subscribe(`id=${i}`)
+    recvClient.subscribe(`id=${i}`, (msg, type) => {
+      t.equal(msg[0], `hello${count}`, `value is hello${count}`)
+      count++
+    })
   }
-  var postClient = floraFactory.connect(okUri, 0)
+  recvClient.start()
+  var postClient = new Agent(okUri, reconnInterval, 0)
   t.equal(typeof postClient, 'object')
+  postClient.start()
   for (var j = 0; j < 100; j++) {
-    var caps = new floraFactory.Caps()
-    caps.write(`hello${j}`)
     logger.info(`i=${j}`)
-    postClient.post(`id=${j}`, caps, floraFactory.MSGTYPE_INSTANT)
+    postClient.post(`id=${j}`, [ `hello${j}` ], flora.MSGTYPE_INSTANT)
   }
   setTimeout(() => {
     t.equal(count, 100)
@@ -829,33 +553,4 @@ test('module->flora->client: loop post msg', t => {
     postClient.close()
     t.end()
   }, 3000)
-})
-
-/**
- * need flora server disconnect
- */
-test.skip('module->flora->client: disconnect event', t => {
-  var recvClient = floraFactory.connect(okUri, 0)
-  t.equal(typeof recvClient, 'object')
-  recvClient.on('recv_post', (name, type, msg) => {
-    logger.info('recv_post')
-    logger.info(name)
-    logger.info(type)
-    logger.info(msg)
-  })
-  recvClient.on('disconnected', (name, type, msg) => {
-    t.pass('disconnected event')
-  })
-  recvClient.subscribe('disconnect event')
-  var postClient = floraFactory.connect(okUri, 0)
-  t.equal(typeof postClient, 'object')
-  var caps = new floraFactory.Caps()
-  caps.write(`hello flora!`)
-  postClient.post('disconnect event', caps, floraFactory.MSGTYPE_INSTANT)
-
-  setTimeout(() => {
-    recvClient.close()
-    postClient.close()
-    t.end()
-  }, 10000)
 })

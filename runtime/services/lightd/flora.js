@@ -30,7 +30,7 @@ Flora.prototype.handlers = {
     if (property.get('state.network.connected') !== 'true') {
       return
     }
-    var degree = msg.get(0)
+    var degree = msg[0]
     this.light.setDegree('@yoda', degree)
   }
 }

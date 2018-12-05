@@ -94,8 +94,7 @@ BluetoothPlayer.prototype._onevent = function (data) {
  */
 BluetoothPlayer.prototype._send = function (cmdstr, props) {
   var data = Object.assign({ command: cmdstr }, props || {})
-  var msg = new floraFactory.Caps()
-  msg.write(JSON.stringify(data))
+  var msg = [ JSON.stringify(data) ]
 
   if (cmdstr === 'ON') {
     return this._flora.post('bluetooth.a2dpsink.command', msg, floraFactory.MSGTYPE_PERSIST)
