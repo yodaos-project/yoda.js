@@ -60,6 +60,8 @@ static void handleFinishedService(uv_async_t* handle) {
 
   if (nullptr != task) {
     delete task;
+  } else {
+    return;
   }
 }
 
