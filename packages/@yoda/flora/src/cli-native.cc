@@ -22,24 +22,66 @@ static void resp_async_cb(uv_async_t* handle) {
   _this->handleRespCallbacks();
 }
 
-Object ClientNative::Init(Napi::Env env, Object exports) {
+static void async_close_cb(uv_handle_t* handle) {
+  uv_async_t* ah = reinterpret_cast<uv_async_t*>(handle);
+  reinterpret_cast<ClientNative*>(ah->data)->refDown();
+}
+
+Object NativeObjectWrap::Init(Napi::Env env, Object exports) {
   HandleScope scope(env);
 
   Function ctor =
       DefineClass(env, "ClientNative",
-                  { InstanceMethod("start", &ClientNative::start),
-                    InstanceMethod("nativeSubscribe", &ClientNative::subscribe),
-                    InstanceMethod("unsubscribe", &ClientNative::unsubscribe),
-                    InstanceMethod("close", &ClientNative::close),
-                    InstanceMethod("post", &ClientNative::post),
-                    InstanceMethod("nativeGet", &ClientNative::get) });
+                  { InstanceMethod("start", &NativeObjectWrap::start),
+                    InstanceMethod("nativeSubscribe",
+                                   &NativeObjectWrap::subscribe),
+                    InstanceMethod("unsubscribe",
+                                   &NativeObjectWrap::unsubscribe),
+                    InstanceMethod("close", &NativeObjectWrap::close),
+                    InstanceMethod("post", &NativeObjectWrap::post),
+                    InstanceMethod("nativeGet", &NativeObjectWrap::get) });
   exports.Set("Agent", ctor);
   return exports;
 }
 
-ClientNative::ClientNative(const CallbackInfo& info)
-    : ObjectWrap<ClientNative>(info) {
+NativeObjectWrap::NativeObjectWrap(const CallbackInfo& info)
+    : ObjectWrap<NativeObjectWrap>(info) {
+  thisClient = new ClientNative();
+  thisClient->initialize(info);
+}
+
+NativeObjectWrap::~NativeObjectWrap() {
+  thisClient->close();
+}
+
+Napi::Value NativeObjectWrap::start(const Napi::CallbackInfo& info) {
+  return thisClient->start(info);
+}
+
+Napi::Value NativeObjectWrap::subscribe(const Napi::CallbackInfo& info) {
+  return thisClient->subscribe(info);
+}
+
+Napi::Value NativeObjectWrap::unsubscribe(const Napi::CallbackInfo& info) {
+  return thisClient->unsubscribe(info);
+}
+
+Napi::Value NativeObjectWrap::close(const Napi::CallbackInfo& info) {
+  thisClient->close();
+  return info.Env().Undefined();
+}
+
+Napi::Value NativeObjectWrap::post(const Napi::CallbackInfo& info) {
+  return thisClient->post(info);
+}
+
+Napi::Value NativeObjectWrap::get(const Napi::CallbackInfo& info) {
+  return thisClient->get(info);
+}
+
+void ClientNative::initialize(const CallbackInfo& info) {
   Napi::Env env = info.Env();
+  thisEnv = env;
   HandleScope scope(env);
   size_t len = info.Length();
   if (len < 1 || !info[0].IsString()) {
@@ -58,12 +100,13 @@ ClientNative::ClientNative(const CallbackInfo& info)
     n = info[2].As<Number>().DoubleValue();
   }
   floraAgent.config(FLORA_AGENT_CONFIG_BUFSIZE, n);
-  ready = true;
+  status |= NATIVE_STATUS_CONFIGURED;
 }
 
 Value ClientNative::start(const CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (ready) {
+  if ((status & NATIVE_STATUS_CONFIGURED) &&
+      !(status & NATIVE_STATUS_STARTED)) {
     msgAsync.data = this;
     uv_async_init(uv_default_loop(), &msgAsync, msg_async_cb);
     respAsync.data = this;
@@ -72,13 +115,14 @@ Value ClientNative::start(const CallbackInfo& info) {
                     &asyncContext);
     floraAgent.start();
     thisRef = Napi::Persistent(info.This());
+    status |= NATIVE_STATUS_STARTED;
   }
   return env.Undefined();
 }
 
 Value ClientNative::subscribe(const CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (!ready)
+  if (!(status & NATIVE_STATUS_CONFIGURED))
     return env.Undefined();
   if (info.Length() < 2 || !info[0].IsString() || !info[1].IsFunction()) {
     TypeError::New(env, "String, Function excepted")
@@ -103,34 +147,43 @@ Value ClientNative::subscribe(const CallbackInfo& info) {
 
 Value ClientNative::unsubscribe(const CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (!ready)
+  if (!(status & NATIVE_STATUS_CONFIGURED))
     return env.Undefined();
   if (info.Length() < 1 || !info[0].IsString()) {
     TypeError::New(env, "String excepted").ThrowAsJavaScriptException();
     return env.Undefined();
   }
   std::string name = std::string(info[0].As<String>());
-  subscriptions.erase(name);
+  SubscriptionMap::iterator it = subscriptions.find(name);
+  if (it != subscriptions.end()) {
+    it->second.Unref();
+    subscriptions.erase(it);
+  }
   floraAgent.unsubscribe(name.c_str());
   return env.Undefined();
 }
 
-Value ClientNative::close(const CallbackInfo& info) {
-  Napi::Env env = info.Env();
-  if (ready) {
+void ClientNative::close() {
+  if ((status & NATIVE_STATUS_CONFIGURED) && (status & NATIVE_STATUS_STARTED)) {
+    SubscriptionMap::iterator subit;
+
     floraAgent.close();
-    napi_async_destroy(env, asyncContext);
-    asyncContext = nullptr;
-    uv_close((uv_handle_t*)&msgAsync, nullptr);
-    uv_close((uv_handle_t*)&respAsync, nullptr);
+    uv_close((uv_handle_t*)&msgAsync, async_close_cb);
+    uv_close((uv_handle_t*)&respAsync, async_close_cb);
+    for (subit = subscriptions.begin(); subit != subscriptions.end(); ++subit) {
+      subit->second.Unref();
+    }
+    subscriptions.clear();
     thisRef.Unref();
+    napi_async_destroy(thisEnv, asyncContext);
+    asyncContext = nullptr;
+    status &= (~NATIVE_STATUS_STARTED);
   }
-  return env.Undefined();
 }
 
 Value ClientNative::post(const CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (!ready)
+  if (!(status & NATIVE_STATUS_CONFIGURED))
     return Number::New(env, ERROR_INVALID_URI);
   if (info.Length() < 1 || !info[0].IsString()) {
     return Number::New(env, ERROR_INVALID_PARAM);
@@ -162,7 +215,7 @@ Value ClientNative::post(const CallbackInfo& info) {
 
 Value ClientNative::get(const CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (!ready)
+  if (!(status & NATIVE_STATUS_CONFIGURED))
     return Number::New(env, ERROR_INVALID_URI);
   // assert(info.Length() == 3);
   shared_ptr<Caps> msg;
@@ -175,6 +228,8 @@ Value ClientNative::get(const CallbackInfo& info) {
   //   timeout = info[2].As<Number>().Uint32Value();
   shared_ptr<FunctionReference> cbr =
       make_shared<FunctionReference>(Napi::Persistent(info[2].As<Function>()));
+  // TODO: if callback of flora.get never invokded, the FunctionReference will
+  // never Unref!!
   int32_t r = floraAgent.get(info[0].As<String>().Utf8Value().c_str(), msg,
                              [this, cbr](ResponseArray& resps) {
                                this->respCallback(cbr, resps);
@@ -215,6 +270,12 @@ void ClientNative::respCallback(shared_ptr<FunctionReference> cbr,
   (*it).responses = responses;
   cb_mutex.unlock();
   uv_async_send(&respAsync);
+}
+
+void ClientNative::refDown() {
+  --asyncHandleCount;
+  if (asyncHandleCount == 0)
+    delete this;
 }
 
 static Napi::Value genJSMsgContent(Napi::Env& env, std::shared_ptr<Caps>& msg) {
@@ -382,13 +443,14 @@ void ClientNative::handleRespCallbacks() {
                             asyncContext);
 
     locker.lock();
+    (*it).cbr->Unref();
     pendingResponses.pop_front();
     locker.unlock();
   }
 }
 
 static Object InitNode(Napi::Env env, Object exports) {
-  return ClientNative::Init(env, exports);
+  return NativeObjectWrap::Init(env, exports);
 }
 
 NODE_API_MODULE(flora, InitNode);
