@@ -60,7 +60,10 @@ test('manager: test create skill and start', (t) => {
     response: {
       action: {
         shouldEndSession: false,
-        form: 'cut'
+        form: 'cut',
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -96,7 +99,10 @@ test('manager2: test scene and cut skill', (t) => {
     response: {
       action: {
         form: 'scene',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -108,7 +114,10 @@ test('manager2: test scene and cut skill', (t) => {
     response: {
       action: {
         form: 'cut',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -157,7 +166,10 @@ test('manager3: test scene destroy', (t) => {
     response: {
       action: {
         form: 'scene',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -169,7 +181,10 @@ test('manager3: test scene destroy', (t) => {
     response: {
       action: {
         form: 'cut',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -181,7 +196,10 @@ test('manager3: test scene destroy', (t) => {
     response: {
       action: {
         form: 'scene',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
