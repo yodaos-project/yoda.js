@@ -34,6 +34,10 @@ static int notifyFinishedNotify(int status, void* userdata) {
 
 static void handleFinishedService(uv_async_t* handle) {
   HttpdnsAsyncTask* task = reinterpret_cast<HttpdnsAsyncTask*>(handle->data);
+  if (nullptr == task) {
+    return;
+  }
+
   napi_env env = task->env;
   napi_ref reference = task->callback;
   napi_value fun;
@@ -58,11 +62,7 @@ static void handleFinishedService(uv_async_t* handle) {
   napi_close_handle_scope(env, scope);
   uv_close((uv_handle_t*)handle, nullptr);
 
-  if (nullptr == task) {
-    return;
-  } else {
-    delete task;
-  }
+  delete task;
 }
 
 static napi_value syncService(napi_env env, napi_callback_info info) {
