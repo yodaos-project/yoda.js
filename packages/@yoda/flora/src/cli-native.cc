@@ -33,8 +33,10 @@ Object NativeObjectWrap::Init(Napi::Env env, Object exports) {
   Function ctor =
       DefineClass(env, "ClientNative",
                   { InstanceMethod("start", &NativeObjectWrap::start),
-                    InstanceMethod("nativeSubscribe", &NativeObjectWrap::subscribe),
-                    InstanceMethod("unsubscribe", &NativeObjectWrap::unsubscribe),
+                    InstanceMethod("nativeSubscribe",
+                                   &NativeObjectWrap::subscribe),
+                    InstanceMethod("unsubscribe",
+                                   &NativeObjectWrap::unsubscribe),
                     InstanceMethod("close", &NativeObjectWrap::close),
                     InstanceMethod("post", &NativeObjectWrap::post),
                     InstanceMethod("nativeGet", &NativeObjectWrap::get) });
@@ -103,8 +105,8 @@ void ClientNative::initialize(const CallbackInfo& info) {
 
 Value ClientNative::start(const CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if ((status & NATIVE_STATUS_CONFIGURED)
-      && !(status & NATIVE_STATUS_STARTED)) {
+  if ((status & NATIVE_STATUS_CONFIGURED) &&
+      !(status & NATIVE_STATUS_STARTED)) {
     msgAsync.data = this;
     uv_async_init(uv_default_loop(), &msgAsync, msg_async_cb);
     respAsync.data = this;
@@ -162,8 +164,7 @@ Value ClientNative::unsubscribe(const CallbackInfo& info) {
 }
 
 void ClientNative::close() {
-  if ((status & NATIVE_STATUS_CONFIGURED)
-      && (status & NATIVE_STATUS_STARTED)) {
+  if ((status & NATIVE_STATUS_CONFIGURED) && (status & NATIVE_STATUS_STARTED)) {
     SubscriptionMap::iterator subit;
 
     floraAgent.close();
@@ -227,7 +228,8 @@ Value ClientNative::get(const CallbackInfo& info) {
   //   timeout = info[2].As<Number>().Uint32Value();
   shared_ptr<FunctionReference> cbr =
       make_shared<FunctionReference>(Napi::Persistent(info[2].As<Function>()));
-  // TODO: if callback of flora.get never invokded, the FunctionReference will never Unref!!
+  // TODO: if callback of flora.get never invokded, the FunctionReference will
+  // never Unref!!
   int32_t r = floraAgent.get(info[0].As<String>().Utf8Value().c_str(), msg,
                              [this, cbr](ResponseArray& resps) {
                                this->respCallback(cbr, resps);
