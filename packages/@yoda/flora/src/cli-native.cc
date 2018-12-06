@@ -11,6 +11,7 @@ using namespace Napi;
 using namespace flora;
 
 static bool genCapsByJSMsg(Array&& jsmsg, shared_ptr<Caps>& caps);
+static bool genCapsByJSCaps(Object&& jsmsg, shared_ptr<Caps>& caps);
 
 static void msg_async_cb(uv_async_t* handle) {
   ClientNative* _this = reinterpret_cast<ClientNative*>(handle->data);
