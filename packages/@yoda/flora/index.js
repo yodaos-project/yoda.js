@@ -11,18 +11,18 @@
  * var agent = new flora.Agent('unix:/var/run/flora.sock')
  *
  * // subscribe msg
- * agent.subscribe("test msg1", (msg, type) => {
- *   console.log("recv msg", msg)
+ * agent.subscribe('test msg1', (msg, type) => {
+ *   console.log('recv msg', msg)
  * })
  *
  * // connect to unix domain socket '/var/run/flora.sock'
  * agent.start()
  *
  * // post msg
- * agent.post("test msg1", [ 1, 2, "hello world", [ "foo" ] ], flora.MSGTYPE_INSTANT)
+ * agent.post('test msg1', [ 1, 2, 'hello world', [ 'foo' ] ], flora.MSGTYPE_INSTANT)
  *
  * // close agent
- * // close agent after 1 second, for wait agent receive "test msg1"
+ * // close agent after 1 second, for wait agent receive 'test msg1'
  * setTimeout(() => {
  *   agent.close()
  * }, 1000)
