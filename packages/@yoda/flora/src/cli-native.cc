@@ -38,7 +38,7 @@ Object NativeObjectWrap::Init(Napi::Env env, Object exports) {
                     InstanceMethod("unsubscribe",
                                    &NativeObjectWrap::unsubscribe),
                     InstanceMethod("close", &NativeObjectWrap::close),
-                    InstanceMethod("post", &NativeObjectWrap::post),
+                    InstanceMethod("nativePost", &NativeObjectWrap::post),
                     InstanceMethod("nativeGet", &NativeObjectWrap::get) });
   exports.Set("Agent", ctor);
   return exports;
@@ -185,27 +185,22 @@ Value ClientNative::post(const CallbackInfo& info) {
   Napi::Env env = info.Env();
   if (!(status & NATIVE_STATUS_CONFIGURED))
     return Number::New(env, ERROR_INVALID_URI);
-  if (info.Length() < 1 || !info[0].IsString()) {
-    return Number::New(env, ERROR_INVALID_PARAM);
-  }
   std::string name = info[0].As<String>().Utf8Value();
   shared_ptr<Caps> msg;
-  if (info.Length() >= 2) {
-    if (!info[1].IsArray()) {
+
+  // msg is Caps object
+  if (info[3].As<Boolean>().Value()) {
+    if (!genCapsByJSCaps(info[1].As<Object>(), msg)) {
       return Number::New(env, ERROR_INVALID_PARAM);
     }
-    if (!genCapsByJSMsg(info[1].As<Array>(), msg)) {
+  } else {
+    if (info[1].IsArray() && !genCapsByJSMsg(info[1].As<Array>(), msg)) {
       return Number::New(env, ERROR_INVALID_PARAM);
     }
   }
   uint32_t msgtype = FLORA_MSGTYPE_INSTANT;
-  if (info.Length() >= 3) {
-    if (info[2].IsNumber()) {
-      msgtype = info[2].As<Number>().Uint32Value();
-      if (msgtype >= FLORA_NUMBER_OF_MSGTYPE) {
-        return Number::New(env, ERROR_INVALID_PARAM);
-      }
-    }
+  if (info[2].IsNumber()) {
+    msgtype = info[2].As<Number>().Uint32Value();
   }
   if (floraAgent.post(name.c_str(), msg, msgtype) != FLORA_CLI_SUCCESS) {
     return Number::New(env, ERROR_NOT_CONNECTED);
@@ -219,8 +214,15 @@ Value ClientNative::get(const CallbackInfo& info) {
     return Number::New(env, ERROR_INVALID_URI);
   // assert(info.Length() == 3);
   shared_ptr<Caps> msg;
-  if (info[1].IsArray() && !genCapsByJSMsg(info[1].As<Array>(), msg)) {
-    return Number::New(env, ERROR_INVALID_PARAM);
+  // msg is Caps object
+  if (info[3].As<Boolean>().Value()) {
+    if (!genCapsByJSCaps(info[1].As<Object>(), msg)) {
+      return Number::New(env, ERROR_INVALID_PARAM);
+    }
+  } else {
+    if (info[1].IsArray() && !genCapsByJSMsg(info[1].As<Array>(), msg)) {
+      return Number::New(env, ERROR_INVALID_PARAM);
+    }
   }
   // uint32_t timeout = 0;
   // TODO: timeout not work correctly, need modify flora service
@@ -354,6 +356,15 @@ static bool genCapsByJSMsg(Array&& jsmsg, shared_ptr<Caps>& caps) {
     } else
       return false;
   }
+  return true;
+}
+
+static bool genCapsByJSCaps(Object&& jsmsg, shared_ptr<Caps>& caps) {
+  void* ptr = nullptr;
+  napi_unwrap(jsmsg.Env(), jsmsg, &ptr);
+  if (ptr == nullptr)
+    return false;
+  caps = Caps::convert(*reinterpret_cast<caps_t*>(ptr));
   return true;
 }
 

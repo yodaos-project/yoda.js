@@ -57,16 +57,6 @@
  */
 
 /**
- * post msg
- * @method post
- * @memberof module:@yoda/flora~Agent
- * @param {string} name - msg name
- * @param {any[]} msg - msg content
- * @param {number} type - msg type (MSGTYPE_INSTANT | MSGTYPE_PERSIST}
- * @returns {number} 0 for success, otherwise error code
- */
-
-/**
  * @class module:@yoda/flora~Response
  * @classdesc Response of Agent.get returns
  */
@@ -94,6 +84,12 @@
  */
 
 var Agent = require('./flora-cli.node').Agent
+var Caps
+try {
+  Caps = require('../caps').Caps
+} catch (e) {
+  Caps = undefined
+}
 
 /**
  * subscribe flora msg
@@ -114,6 +110,46 @@ Agent.prototype.subscribe = function (name, handler) {
   })
 }
 
+function isCaps (msg) {
+  return typeof Caps === 'function' && (msg instanceof Caps)
+}
+
+function isValidMsg (msg) {
+  if (msg === undefined || msg === null) {
+    return true
+  }
+  if (Array.isArray(msg)) {
+    return true
+  }
+  return isCaps(msg)
+}
+
+function isValidPostType (type) {
+  if (type === undefined) {
+    return true
+  }
+  if (typeof type !== 'number') {
+    return false
+  }
+  return type >= exports.MSGTYPE_INSTANT && type <= exports.MSGTYPE_PERSIST
+}
+
+/**
+ * post msg
+ * @method post
+ * @memberof module:@yoda/flora~Agent
+ * @param {string} name - msg name
+ * @param {any[]} msg - msg content
+ * @param {number} type - msg type (MSGTYPE_INSTANT | MSGTYPE_PERSIST}
+ * @returns {number} 0 for success, otherwise error code
+ */
+Agent.prototype.post = function (name, msg, type) {
+  if (typeof name !== 'string' || !isValidMsg(msg) || !isValidPostType(type)) {
+    return exports.ERROR_INVALID_PARAM
+  }
+  return this.nativePost(name, msg, type, isCaps(msg))
+}
+
 /**
  * post msg and get response
  * @method get
@@ -123,14 +159,11 @@ Agent.prototype.subscribe = function (name, handler) {
  * @returns {Promise} promise that resolves with an array of {module:@yoda/flora~Response}
  */
 Agent.prototype.get = function (name, msg) {
-  if (typeof name !== 'string') {
-    return Promise.reject(exports.ERROR_INVALID_PARAM)
-  }
-  if (msg !== undefined && msg !== null && !Array.isArray(msg)) {
+  if (typeof name !== 'string' || !isValidMsg(msg)) {
     return Promise.reject(exports.ERROR_INVALID_PARAM)
   }
   return new Promise((resolve, reject) => {
-    var r = this.nativeGet(name, msg, resolve)
+    var r = this.nativeGet(name, msg, resolve, isCaps(msg))
     if (r !== 0) {
       reject(r)
     }
