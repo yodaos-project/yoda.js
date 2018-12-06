@@ -1,0 +1,12 @@
+codecov:
+  notify:
+    require_ci_to_pass: yes
+  bot: yodaos-coverage-bot
+
+coverage:
+  range: 60..100
+  round: down
+  precision: 2
+  parsers:
+    javascript:
+      enable_partials: yes

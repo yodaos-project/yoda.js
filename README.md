@@ -1,5 +1,8 @@
 # YodaRT
 
+[![Build Status](https://ci.rokid.com/buildStatus/icon?job=rokid-ci-yodart-unit-tests)](https://ci.rokid.com/job/rokid-ci-yodart-unit-tests)
+[![codecov](https://codecov.io/gh/Rokid/YodaRT/branch/master/graph/badge.svg)](https://codecov.io/gh/Rokid/YodaRT)
+
 YodaRT is the JavaScript layer in YodaOS. It provides the main functionalities includes:
 
 - Getting and handling NLP request
