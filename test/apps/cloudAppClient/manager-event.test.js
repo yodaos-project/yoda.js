@@ -67,7 +67,10 @@ test('manager: cut skill create and start', (t) => {
     response: {
       action: {
         shouldEndSession: false,
-        form: 'cut'
+        form: 'cut',
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -98,7 +101,10 @@ test('manager: service skill create and start', (t) => {
     response: {
       action: {
         shouldEndSession: false,
-        form: 'service'
+        form: 'service',
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -129,7 +135,10 @@ test('manager: scene skill create and start', (t) => {
     response: {
       action: {
         shouldEndSession: false,
-        form: 'scene'
+        form: 'scene',
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -178,7 +187,10 @@ test('manager test-2: scene->cut', (t) => {
     response: {
       action: {
         form: 'scene',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -190,7 +202,10 @@ test('manager test-2: scene->cut', (t) => {
     response: {
       action: {
         form: 'service',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -257,7 +272,10 @@ test('manager test-3: scene1->cut->scene2', (t) => {
     response: {
       action: {
         form: 'scene',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -269,7 +287,10 @@ test('manager test-3: scene1->cut->scene2', (t) => {
     response: {
       action: {
         form: 'cut',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -281,7 +302,10 @@ test('manager test-3: scene1->cut->scene2', (t) => {
     response: {
       action: {
         form: 'scene',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -318,7 +342,10 @@ test('manager test-4: scene1->cut->scene1[resume]->scene2', t => {
       response: {
         action: {
           form: 'scene',
-          shouldEndSession: false
+          shouldEndSession: false,
+          directives: [{
+            type: 'test'
+          }]
         }
       }
     })
@@ -362,7 +389,10 @@ test('manager test-4: scene1->cut->scene1[resume]->scene2', t => {
     response: {
       action: {
         form: 'scene',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -374,7 +404,10 @@ test('manager test-4: scene1->cut->scene1[resume]->scene2', t => {
     response: {
       action: {
         form: 'service',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -405,7 +438,10 @@ test('manager test-5: cut->scene1[start]->scene2', t => {
       response: {
         action: {
           form: 'scene',
-          shouldEndSession: false
+          shouldEndSession: false,
+          directives: [{
+            type: 'test'
+          }]
         }
       }
     })
@@ -436,7 +472,10 @@ test('manager test-5: cut->scene1[start]->scene2', t => {
     response: {
       action: {
         form: 'cut',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -448,7 +487,10 @@ test('manager test-5: cut->scene1[start]->scene2', t => {
     response: {
       action: {
         form: 'scene',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -479,7 +521,10 @@ test('manager test-6: cut1->cut2->scene', t => {
       response: {
         action: {
           form: 'scene',
-          shouldEndSession: false
+          shouldEndSession: false,
+          directives: [{
+            type: 'test'
+          }]
         }
       }
     })
@@ -505,7 +550,10 @@ test('manager test-6: cut1->cut2->scene', t => {
     response: {
       action: {
         form: 'cut',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })
@@ -517,7 +565,10 @@ test('manager test-6: cut1->cut2->scene', t => {
     response: {
       action: {
         form: 'cut',
-        shouldEndSession: false
+        shouldEndSession: false,
+        directives: [{
+          type: 'test'
+        }]
       }
     }
   })

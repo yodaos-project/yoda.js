@@ -98,7 +98,7 @@ Manager.prototype.append = function (nlp, action) {
 Manager.prototype.next = function (skill) {
   logger.log(`next skill`)
   var cur = this.getCurrentSkill()
-  if (cur.appId !== skill.appId) {
+  if (cur && cur.appId !== skill.appId) {
     return
   }
   this.skills.pop()
@@ -143,6 +143,28 @@ Manager.prototype.destroy = function () {
     this.skills[i].emit('destroy')
   }
   this.skills = []
+}
+
+/**
+ * destroy a skill by given appId
+ * @param {string} appId The appId
+ */
+Manager.prototype.destroyByAppId = function (appId) {
+  var cur = this.getCurrentSkill()
+  // there is currently no skill to execute.
+  if (cur === false) {
+    process.nextTick(() => {
+      this.emit('empty')
+    })
+    return
+  }
+  // Ignore this operation if the skill is not found.
+  if (cur.appId !== appId) {
+    return
+  }
+  // destroy this skill and execute next skill.
+  cur.emit('destroy')
+  cur.emit('exit')
 }
 
 Manager.prototype.getCurrentSkill = function () {

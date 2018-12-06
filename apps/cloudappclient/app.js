@@ -237,8 +237,14 @@ module.exports = activity => {
       }
       return
     }
+    var appId = _.get(nlp, 'appId')
+    if (appId && intentType === 'EXIT') {
+      logger.warn(`The intent value is [EXIT] with appId: [${appId}]`)
+      sos.destroyByAppId(appId)
+      return
+    }
     if (intentType === 'EXIT') {
-      logger.log(`${this.appId} intent EXIT`)
+      logger.warn(`${this.appId}: intent value is [EXIT]`)
       sos.destroy()
       activity.setBackground()
       return
