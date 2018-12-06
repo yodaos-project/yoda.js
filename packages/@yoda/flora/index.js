@@ -7,25 +7,25 @@
  *
  * ```js
  * // create flora agent instance
- * var flora = require('@yoda/flora');
- * var agent = new flora.Agent('unix:/var/run/flora.sock');
+ * var flora = require('@yoda/flora')
+ * var agent = new flora.Agent('unix:/var/run/flora.sock')
  *
  * // subscribe msg
  * agent.subscribe("test msg1", (msg, type) => {
- *   console.log("recv msg", msg);
- * });
+ *   console.log("recv msg", msg)
+ * })
  *
  * // connect to unix domain socket '/var/run/flora.sock'
- * agent.start();
+ * agent.start()
  *
  * // post msg
- * agent.post("test msg1", [ 1, 2, "hello world", [ "foo" ] ], flora.MSGTYPE_INSTANT);
+ * agent.post("test msg1", [ 1, 2, "hello world", [ "foo" ] ], flora.MSGTYPE_INSTANT)
  *
  * // close agent
  * // close agent after 1 second, for wait agent receive "test msg1"
  * setTimeout(() => {
- *   agent.close();
- * }, 1000);
+ *   agent.close()
+ * }, 1000)
  * ```
  */
 
