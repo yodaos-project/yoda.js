@@ -91,17 +91,31 @@ try {
   Caps = undefined
 }
 
+function genCaps(hackedCaps) {
+  if (typeof Caps !== 'function') {
+    return undefined
+  }
+  return new Caps(hackedCaps)
+}
+
 /**
  * subscribe flora msg
  * @method subscribe
  * @memberof module:@yoda/flora~Agent
  * @param {string} name - msg name for subscribe
  * @param {module:@yoda/flora~SubscribeMsgHandler} handler - msg handler of received msg
+ * @param {boolean} recvCaps - if true, received message is Caps instance, otherwise message is an Array
  */
-Agent.prototype.subscribe = function (name, handler) {
+Agent.prototype.subscribe = function (name, handler, recvCaps) {
   this.nativeSubscribe(name, (msg, type) => {
+    var cbmsg
+    if (recvCaps) {
+      cbmsg = genCaps(msg)
+    } else {
+      cbmsg = this.nativeGenArray(msg)
+    }
     try {
-      return handler(msg, type)
+      return handler(cbmsg, type)
     } catch (e) {
       process.nextTick(() => {
         throw e
@@ -163,7 +177,20 @@ Agent.prototype.get = function (name, msg) {
     return Promise.reject(exports.ERROR_INVALID_PARAM)
   }
   return new Promise((resolve, reject) => {
-    var r = this.nativeGet(name, msg, resolve, isCaps(msg))
+    var isCapsMsg = isCaps(msg)
+    var r = this.nativeGet(name, msg, (replys) => {
+      if (Array.isArray(replys)) {
+        var i
+        for (i = 0; i < replys.length; ++i) {
+          if (isCapsMsg) {
+            replys[i].msg = genCaps(replys[i].msg)
+          } else {
+            replys[i].msg = this.nativeGenArray(replys[i].msg)
+          }
+        }
+      }
+      resolve(replys)
+    })
     if (r !== 0) {
       reject(r)
     }
