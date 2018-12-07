@@ -510,7 +510,7 @@ test('module->flora->client: close post', t => {
 //
 // bug id = 1364
 //
-test.skip('module->flora->client: loop create connection', t => {
+test('module->flora->client: loop create connection', { timeout: 10 * 1000 }, t => {
   var clients = []
   for (var count = 0; count < 20; count++) {
     clients[count] = new Agent(okUri, reconnInterval, 0)
@@ -530,7 +530,7 @@ test.skip('module->flora->client: loop create connection', t => {
   }, 2000)
 })
 
-test('module->flora->client: loop post msg', t => {
+test('module->flora->client: loop post msg', { timeout: 10 * 1000 }, t => {
   var recvClient = new Agent(okUri, reconnInterval, 0)
   var count = 0
   for (var i = 0; i < 100; i++) {
