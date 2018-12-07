@@ -39,7 +39,7 @@ BluetoothPlayer.prototype._onevent = function (data) {
       return
     }
 
-    var msg = JSON.parse(data.get(0) + '')
+    var msg = JSON.parse(data[0] + '')
     if (msg.action === 'volumechange') {
       var vol = msg.value
       if (vol === undefined) {
