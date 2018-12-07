@@ -40,7 +40,8 @@ Object NativeObjectWrap::Init(Napi::Env env, Object exports) {
                     InstanceMethod("unsubscribe",
                                    &NativeObjectWrap::unsubscribe),
                     InstanceMethod("close", &NativeObjectWrap::close),
-                    InstanceMethod("nativeGenArray", &NativeObjectWrap::genArray),
+                    InstanceMethod("nativeGenArray",
+                                   &NativeObjectWrap::genArray),
                     InstanceMethod("nativePost", &NativeObjectWrap::post),
                     InstanceMethod("nativeGet", &NativeObjectWrap::get) });
   exports.Set("Agent", ctor);
@@ -251,8 +252,8 @@ Value ClientNative::genArray(const CallbackInfo& info) {
   if (!info[0].IsObject())
     return env.Undefined();
   HackedNativeCaps* hackedCaps = nullptr;
-  if (napi_unwrap(env, info[0], (void**)&hackedCaps) != napi_ok
-      || hackedCaps == nullptr) {
+  if (napi_unwrap(env, info[0], (void**)&hackedCaps) != napi_ok ||
+      hackedCaps == nullptr) {
     return env.Undefined();
   }
   return genJSArrayByCaps(env, hackedCaps->caps);
@@ -299,7 +300,8 @@ void ClientNative::refDown() {
     delete this;
 }
 
-static Napi::Value genJSArrayByCaps(Napi::Env& env, std::shared_ptr<Caps>& msg) {
+static Napi::Value genJSArrayByCaps(Napi::Env& env,
+                                    std::shared_ptr<Caps>& msg) {
   Array ret = Array::New(env);
   int32_t iv;
   int64_t lv;

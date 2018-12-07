@@ -91,7 +91,7 @@ try {
   Caps = undefined
 }
 
-function genCaps(hackedCaps) {
+function genCaps (hackedCaps) {
   if (typeof Caps !== 'function') {
     return undefined
   }

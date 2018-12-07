@@ -41,7 +41,7 @@ class RespCallbackInfo {
 };
 
 class HackedNativeCaps {
-public:
+ public:
   std::shared_ptr<Caps> caps;
 };
 
