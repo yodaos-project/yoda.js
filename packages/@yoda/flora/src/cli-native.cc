@@ -247,14 +247,15 @@ Value ClientNative::get(const CallbackInfo& info) {
 }
 
 Value ClientNative::genArray(const CallbackInfo& info) {
+  Napi::Env env = info.Env();
   if (!info[0].IsObject())
-    return info.Env().Undefined();
+    return env.Undefined();
   HackedNativeCaps* hackedCaps = nullptr;
-  if (napi_unwrap(info.Env(), info[0], &hackedCaps) != napi_ok
+  if (napi_unwrap(env, info[0], (void**)&hackedCaps) != napi_ok
       || hackedCaps == nullptr) {
-    return info.Env().Undefined();
+    return env.Undefined();
   }
-  return genJSArrayByCaps(info.Env(), hackedCaps->caps);
+  return genJSArrayByCaps(env, hackedCaps->caps);
 }
 
 void ClientNative::msgCallback(const std::string& name, Napi::Env env,
@@ -403,7 +404,7 @@ static void genReplyByJSObject(Napi::Value& jsv, Reply& reply) {
   }
 }
 
-static void freeHackedCaps(void* data, void* arg) {
+static void freeHackedCaps(napi_env, void* data, void* arg) {
   delete reinterpret_cast<HackedNativeCaps*>(data);
 }
 
@@ -420,7 +421,7 @@ static napi_value genHackedCaps(napi_env env, shared_ptr<Caps> msg) {
 }
 
 void ClientNative::handleMsgCallbacks() {
-  Napi::Value jsmsg;
+  napi_value jsmsg;
   SubscriptionMap::iterator subit;
   Napi::Value cbret;
   unique_lock<mutex> locker(cb_mutex, defer_lock);
