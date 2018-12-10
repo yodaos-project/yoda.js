@@ -86,7 +86,7 @@
 var Agent = require('./flora-cli.node').Agent
 var Caps
 try {
-  Caps = require('../caps').Caps
+  Caps = require('@yoda/caps/caps.node').Caps
 } catch (e) {
   Caps = undefined
 }

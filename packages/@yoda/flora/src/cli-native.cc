@@ -222,15 +222,11 @@ Value ClientNative::get(const CallbackInfo& info) {
     return Number::New(env, ERROR_INVALID_URI);
   // assert(info.Length() == 3);
   shared_ptr<Caps> msg;
-  // msg is Caps object
-  if (info[3].As<Boolean>().Value()) {
-    if (!genCapsByJSCaps(info[1].As<Object>(), msg)) {
-      return Number::New(env, ERROR_INVALID_PARAM);
-    }
-  } else {
-    if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
-      return Number::New(env, ERROR_INVALID_PARAM);
-    }
+  // msg is Array or Caps object
+  if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
+    return Number::New(env, ERROR_INVALID_PARAM);
+  } else if (info[1].IsExternal() && !genCapsByJSCaps(info[1].As<Object>(), msg)) {
+    return Number::New(env, ERROR_INVALID_PARAM);
   }
   // uint32_t timeout = 0;
   // TODO: timeout not work correctly, need modify flora service

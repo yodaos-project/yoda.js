@@ -21,9 +21,13 @@ ExternalProject_Add(${NAME}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 endfunction()
 
-macro(YodaGitPackage NAME REPO TAG)
+function(YodaGitPackage NAME REPO TAG)
+set(PATH ${NAME})
+if(ARGC GREATER 3)
+set(PATH ${ARGV3})
+endif()
 ExternalProject_Add(${NAME}
-  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/${NAME}
+  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/packages/${PATH}
   GIT_REPOSITORY ${REPO}
   GIT_TAG ${TAG}
   TIMEOUT 10
@@ -35,19 +39,19 @@ ExternalProject_Add(${NAME}
     -DCMAKE_EXTERNAL_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
     -DCMAKE_INCLUDE_PATH=${CMAKE_STAGING_PREFIX}/usr/include
-    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/${NAME}
+    -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/${PATH}
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_SYSTEM_PERFIX_PATH=${CMAKE_SYSTEM_PREFIX_PATH}
     -DCMAKE_STAGING_PERFIX=${CMAKE_STAGING_PREFIX}
     -DCMAKE_LIBRARY_PATH=${CMAKE_LIBRARY_PATH}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
-endmacro()
+endfunction()
 
 # remote packages
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
 YodaGitPackage(node-flock https://github.com/shadow-node/node-flock.git master)
-YodaGitPackage(node-caps https://github.com/shadow-node/node-caps.git master)
+YodaGitPackage(node-caps https://github.com/shadow-node/node-caps.git master @yoda/caps)
 
 # local packages
 YodaLocalPackage(yoda-audio @yoda/audio)
