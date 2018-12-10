@@ -249,7 +249,7 @@ Value ClientNative::get(const CallbackInfo& info) {
 
 Value ClientNative::genArray(const CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (!info[0].IsObject())
+  if (!info[0].IsExternal())
     return env.Undefined();
   HackedNativeCaps* hackedCaps = nullptr;
   if (napi_unwrap(env, info[0], (void**)&hackedCaps) != napi_ok ||
