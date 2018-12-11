@@ -225,7 +225,8 @@ Value ClientNative::get(const CallbackInfo& info) {
   // msg is Array or Caps object
   if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
     return Number::New(env, ERROR_INVALID_PARAM);
-  } else if (info[1].IsExternal() && !genCapsByJSCaps(info[1].As<Object>(), msg)) {
+  } else if (info[1].IsExternal() &&
+             !genCapsByJSCaps(info[1].As<Object>(), msg)) {
     return Number::New(env, ERROR_INVALID_PARAM);
   }
   // uint32_t timeout = 0;
