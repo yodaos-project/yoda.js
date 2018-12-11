@@ -373,7 +373,7 @@ AlarmCore.prototype.createConfigFile = function () {
           return
         }
         fs.writeFile(CONFIGFILEPATH, '{}', function (err) {
-          logger.error('alarm write file failed', err.stack)
+          logger.error('alarm write file failed', err && err.stack)
         })
       })
     }
