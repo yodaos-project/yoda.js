@@ -169,7 +169,8 @@ module.exports = activity => {
     var appId = _.get(dt, 'data.packageInfo.name', '')
     var form = _.get(dt, 'data.packageInfo.form', 'cut')
     var command = dt.data.command || ''
-    activity.openUrl(`yoda-skill://${appId}/?command=${command}`, form)
+    // Native directives should not preempt cloudAppclient
+    activity.openUrl(`yoda-skill://${appId}/?command=${command}`, { form: form, preemptive: false })
       .then(() => {
         logger.log('url open success')
         next()
