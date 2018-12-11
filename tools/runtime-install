@@ -138,6 +138,6 @@ if test "$exclude_app" = 'NO'; then
   install_apps
 fi
 
-if test "$config" = 'YES'; then
+if test "$configs" = 'YES'; then
   install_configs
 fi

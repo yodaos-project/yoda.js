@@ -88,10 +88,9 @@ inherits(AppRuntime, EventEmitter)
 /**
  * Start AppRuntime
  *
- * @param {string[]} paths -
  * @returns {Promise<void>}
  */
-AppRuntime.prototype.init = function init (paths) {
+AppRuntime.prototype.init = function init () {
   if (this.inited) {
     return Promise.resolve()
   }
@@ -127,7 +126,7 @@ AppRuntime.prototype.init = function init (paths) {
       this.light.appSound('@yoda', 'system://boot.ogg')
       this.light.play('@yoda', 'system://boot.js', { fps: 200 })
     }
-    return this.loadApps(paths)
+    return this.loadApps()
   }).then(() => {
     this.custodian.prepareNetwork()
     this.inited = true
@@ -135,12 +134,11 @@ AppRuntime.prototype.init = function init (paths) {
 }
 
 /**
- * Load applications from the given paths
- * @param {Array} paths - the loaded paths.
+ * Load applications.
  */
-AppRuntime.prototype.loadApps = function loadApps (paths) {
+AppRuntime.prototype.loadApps = function loadApps () {
   logger.info('start loading applications')
-  return this.loader.loadPaths(paths)
+  return this.loader.reload()
     .then(() => {
       this.loadAppComplete = true
       logger.log('load app complete')

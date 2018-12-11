@@ -34,11 +34,48 @@ function AppChargeur (runtime) {
   }
 }
 
+AppChargeur.prototype.reload = function reload (appId) {
+  if (appId && this.appManifests[appId]) {
+    var manifest = this.appManifests[appId]
+    delete this.appManifests[appId]
+    manifest.skills.forEach(skill => {
+      var skillId = skill[0]
+      delete this.skillIdAppIdMap[skillId]
+      delete this.skillAttrsMap[skillId]
+    })
+    manifest.hosts.forEach(host => {
+      var hostname = host[0]
+      delete this.hostSkillIdMap[hostname]
+    })
+    manifest.notifications.forEach(notification => {
+      var ntf = notification[0]
+      var idx = this.notifications[ntf].indexOf(appId)
+      this.notifications[ntf].splice(idx, 1)
+    })
+    return this.loadApp(manifest.appHome)
+  }
+  /** skillId -> appId */
+  this.skillIdAppIdMap = {}
+  /** skillId -> skillAttrs */
+  this.skillAttrsMap = {}
+  /** hostName -> skillId */
+  this.hostSkillIdMap = {}
+  /** appId -> manifest */
+  this.appManifests = {}
+
+  this.notifications = {
+    'on-ready': []
+  }
+
+  return this.loadPaths(this.config.paths)
+}
+
 AppChargeur.prototype.markupConfig = function markupConfig (config) {
   if (config == null || typeof config !== 'object') {
     config = {}
   }
-  ;['lightAppIds',
+  ;['paths',
+    'lightAppIds',
     'dbusAppIds',
     'cloudStackExcludedSkillIds'
   ].forEach(key => {
@@ -215,16 +252,11 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
  *
  * @private
  * @param {string} appId -
- * @param {Manifest} menifest -
  * @param {string} appHome -
- * @param {string[]} skillIds -
- * @param {object[]} hosts -
- * @param {string[]} permissions -
+ * @param {Manifest} manifest -
  * @returns {void}
  */
 AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) {
-  manifest = Object.assign({}, manifest, { appHome: appHome })
-
   if (typeof appId !== 'string' || !appId) {
     throw new Error(`AppId is not valid at ${appHome}.`)
   }
@@ -249,8 +281,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     throw new Error(`manifest.notifications is not valid at ${appId}(${appHome}).`)
   }
 
-  this.appManifests[appId] = manifest
-  skillIds.forEach(skillId => {
+  skillIds = skillIds.map(skillId => {
     var skillAttrs
     if (Array.isArray(skillId)) {
       var arr = skillId
@@ -271,8 +302,9 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     if (skillAttrs) {
       this.skillAttrsMap[skillId] = skillAttrs
     }
+    return [skillId, skillAttrs]
   })
-  hosts.forEach(host => {
+  hosts = hosts.map(host => {
     var hostAttrs
     if (Array.isArray(host)) {
       hostAttrs = host[1]
@@ -286,7 +318,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     }
     var skillId = _.get(hostAttrs, 'skillId')
 
-    if (skillIds.indexOf(skillId) < 0) {
+    if (this.skillIdAppIdMap[skillId] !== appId) {
       throw new Error(`manifest.hosts '${skillId}' mapped from '${host}' doesn't owned by ${appId}.`)
     }
     var currSkillId = this.hostSkillIdMap[host]
@@ -294,9 +326,10 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
       throw new Error(`manifest.hosts '${host}' by '${currSkillId}' exists, declaring by ${appId}.`)
     }
     this.hostSkillIdMap[host] = skillId
+    return [host, hostAttrs]
   })
 
-  notifications.forEach(notification => {
+  notifications = notifications.map(notification => {
     if (Array.isArray(notification)) {
       notification = notification[0]
     }
@@ -307,7 +340,15 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
       return
     }
     this.notifications[notification].push(appId)
+    return [notification]
   })
 
   this.runtime.permission.load(appId, permissions)
+  this.appManifests[appId] = {
+    skills: skillIds,
+    hosts: hosts,
+    permissions: permissions,
+    notifications: notifications,
+    appHome: appHome
+  }
 }
