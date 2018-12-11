@@ -57,16 +57,6 @@
  */
 
 /**
- * post msg
- * @method post
- * @memberof module:@yoda/flora~Agent
- * @param {string} name - msg name
- * @param {any[]} msg - msg content
- * @param {number} type - msg type (MSGTYPE_INSTANT | MSGTYPE_PERSIST}
- * @returns {number} 0 for success, otherwise error code
- */
-
-/**
  * @class module:@yoda/flora~Response
  * @classdesc Response of Agent.get returns
  */
@@ -94,6 +84,19 @@
  */
 
 var Agent = require('./flora-cli.node').Agent
+var Caps
+try {
+  Caps = require('@yoda/caps/caps.node').Caps
+} catch (e) {
+  Caps = undefined
+}
+
+function genCaps (hackedCaps) {
+  if (typeof Caps !== 'function') {
+    return undefined
+  }
+  return new Caps(hackedCaps)
+}
 
 /**
  * subscribe flora msg
@@ -101,17 +104,64 @@ var Agent = require('./flora-cli.node').Agent
  * @memberof module:@yoda/flora~Agent
  * @param {string} name - msg name for subscribe
  * @param {module:@yoda/flora~SubscribeMsgHandler} handler - msg handler of received msg
+ * @param {boolean} recvCaps - if true, received message is Caps instance, otherwise message is an Array
  */
-Agent.prototype.subscribe = function (name, handler) {
+Agent.prototype.subscribe = function (name, handler, recvCaps) {
   this.nativeSubscribe(name, (msg, type) => {
+    var cbmsg
+    if (recvCaps) {
+      cbmsg = genCaps(msg)
+    } else {
+      cbmsg = this.nativeGenArray(msg)
+    }
     try {
-      return handler(msg, type)
+      return handler(cbmsg, type)
     } catch (e) {
       process.nextTick(() => {
         throw e
       })
     }
   })
+}
+
+function isCaps (msg) {
+  return typeof Caps === 'function' && (msg instanceof Caps)
+}
+
+function isValidMsg (msg) {
+  if (msg === undefined || msg === null) {
+    return true
+  }
+  if (Array.isArray(msg)) {
+    return true
+  }
+  return isCaps(msg)
+}
+
+function isValidPostType (type) {
+  if (type === undefined) {
+    return true
+  }
+  if (typeof type !== 'number') {
+    return false
+  }
+  return type >= exports.MSGTYPE_INSTANT && type <= exports.MSGTYPE_PERSIST
+}
+
+/**
+ * post msg
+ * @method post
+ * @memberof module:@yoda/flora~Agent
+ * @param {string} name - msg name
+ * @param {any[]} msg - msg content
+ * @param {number} type - msg type (MSGTYPE_INSTANT | MSGTYPE_PERSIST}
+ * @returns {number} 0 for success, otherwise error code
+ */
+Agent.prototype.post = function (name, msg, type) {
+  if (typeof name !== 'string' || !isValidMsg(msg) || !isValidPostType(type)) {
+    return exports.ERROR_INVALID_PARAM
+  }
+  return this.nativePost(name, msg, type, isCaps(msg))
 }
 
 /**
@@ -123,14 +173,24 @@ Agent.prototype.subscribe = function (name, handler) {
  * @returns {Promise} promise that resolves with an array of {module:@yoda/flora~Response}
  */
 Agent.prototype.get = function (name, msg) {
-  if (typeof name !== 'string') {
-    return Promise.reject(exports.ERROR_INVALID_PARAM)
-  }
-  if (msg !== undefined && msg !== null && !Array.isArray(msg)) {
+  if (typeof name !== 'string' || !isValidMsg(msg)) {
     return Promise.reject(exports.ERROR_INVALID_PARAM)
   }
   return new Promise((resolve, reject) => {
-    var r = this.nativeGet(name, msg, resolve)
+    var isCapsMsg = isCaps(msg)
+    var r = this.nativeGet(name, msg, (replys) => {
+      if (Array.isArray(replys)) {
+        var i
+        for (i = 0; i < replys.length; ++i) {
+          if (isCapsMsg) {
+            replys[i].msg = genCaps(replys[i].msg)
+          } else {
+            replys[i].msg = this.nativeGenArray(replys[i].msg)
+          }
+        }
+      }
+      resolve(replys)
+    })
     if (r !== 0) {
       reject(r)
     }

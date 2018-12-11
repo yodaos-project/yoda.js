@@ -40,6 +40,11 @@ class RespCallbackInfo {
   flora::ResponseArray responses;
 };
 
+class HackedNativeCaps {
+ public:
+  std::shared_ptr<Caps> caps;
+};
+
 #define NATIVE_STATUS_CONFIGURED 0x1
 #define NATIVE_STATUS_STARTED 0x2
 #define ASYNC_HANDLE_COUNT 2
@@ -59,6 +64,8 @@ class ClientNative {
   Napi::Value post(const Napi::CallbackInfo& info);
 
   Napi::Value get(const Napi::CallbackInfo& info);
+
+  Napi::Value genArray(const Napi::CallbackInfo& info);
 
   void initialize(const Napi::CallbackInfo& info);
 
@@ -112,6 +119,8 @@ class NativeObjectWrap : public Napi::ObjectWrap<NativeObjectWrap> {
   Napi::Value post(const Napi::CallbackInfo& info);
 
   Napi::Value get(const Napi::CallbackInfo& info);
+
+  Napi::Value genArray(const Napi::CallbackInfo& info);
 
  private:
   ClientNative* thisClient = nullptr;
