@@ -10,7 +10,9 @@ using namespace std;
 using namespace Napi;
 using namespace flora;
 
-static bool genCapsByJSMsg(Array&& jsmsg, shared_ptr<Caps>& caps);
+static bool genCapsByJSArray(Array&& jsmsg, shared_ptr<Caps>& caps);
+static bool genCapsByJSCaps(Object&& jsmsg, shared_ptr<Caps>& caps);
+static Napi::Value genJSArrayByCaps(Napi::Env& env, std::shared_ptr<Caps>& msg);
 
 static void msg_async_cb(uv_async_t* handle) {
   ClientNative* _this = reinterpret_cast<ClientNative*>(handle->data);
@@ -38,7 +40,9 @@ Object NativeObjectWrap::Init(Napi::Env env, Object exports) {
                     InstanceMethod("unsubscribe",
                                    &NativeObjectWrap::unsubscribe),
                     InstanceMethod("close", &NativeObjectWrap::close),
-                    InstanceMethod("post", &NativeObjectWrap::post),
+                    InstanceMethod("nativeGenArray",
+                                   &NativeObjectWrap::genArray),
+                    InstanceMethod("nativePost", &NativeObjectWrap::post),
                     InstanceMethod("nativeGet", &NativeObjectWrap::get) });
   exports.Set("Agent", ctor);
   return exports;
@@ -77,6 +81,10 @@ Napi::Value NativeObjectWrap::post(const Napi::CallbackInfo& info) {
 
 Napi::Value NativeObjectWrap::get(const Napi::CallbackInfo& info) {
   return thisClient->get(info);
+}
+
+Napi::Value NativeObjectWrap::genArray(const Napi::CallbackInfo& info) {
+  return thisClient->genArray(info);
 }
 
 void ClientNative::initialize(const CallbackInfo& info) {
@@ -185,27 +193,22 @@ Value ClientNative::post(const CallbackInfo& info) {
   Napi::Env env = info.Env();
   if (!(status & NATIVE_STATUS_CONFIGURED))
     return Number::New(env, ERROR_INVALID_URI);
-  if (info.Length() < 1 || !info[0].IsString()) {
-    return Number::New(env, ERROR_INVALID_PARAM);
-  }
   std::string name = info[0].As<String>().Utf8Value();
   shared_ptr<Caps> msg;
-  if (info.Length() >= 2) {
-    if (!info[1].IsArray()) {
+
+  // msg is Caps object
+  if (info[3].As<Boolean>().Value()) {
+    if (!genCapsByJSCaps(info[1].As<Object>(), msg)) {
       return Number::New(env, ERROR_INVALID_PARAM);
     }
-    if (!genCapsByJSMsg(info[1].As<Array>(), msg)) {
+  } else {
+    if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
       return Number::New(env, ERROR_INVALID_PARAM);
     }
   }
   uint32_t msgtype = FLORA_MSGTYPE_INSTANT;
-  if (info.Length() >= 3) {
-    if (info[2].IsNumber()) {
-      msgtype = info[2].As<Number>().Uint32Value();
-      if (msgtype >= FLORA_NUMBER_OF_MSGTYPE) {
-        return Number::New(env, ERROR_INVALID_PARAM);
-      }
-    }
+  if (info[2].IsNumber()) {
+    msgtype = info[2].As<Number>().Uint32Value();
   }
   if (floraAgent.post(name.c_str(), msg, msgtype) != FLORA_CLI_SUCCESS) {
     return Number::New(env, ERROR_NOT_CONNECTED);
@@ -219,7 +222,11 @@ Value ClientNative::get(const CallbackInfo& info) {
     return Number::New(env, ERROR_INVALID_URI);
   // assert(info.Length() == 3);
   shared_ptr<Caps> msg;
-  if (info[1].IsArray() && !genCapsByJSMsg(info[1].As<Array>(), msg)) {
+  // msg is Array or Caps object
+  if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
+    return Number::New(env, ERROR_INVALID_PARAM);
+  } else if (info[1].IsExternal() &&
+             !genCapsByJSCaps(info[1].As<Object>(), msg)) {
     return Number::New(env, ERROR_INVALID_PARAM);
   }
   // uint32_t timeout = 0;
@@ -235,6 +242,18 @@ Value ClientNative::get(const CallbackInfo& info) {
                                this->respCallback(cbr, resps);
                              });
   return Number::New(env, r);
+}
+
+Value ClientNative::genArray(const CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  if (!info[0].IsExternal())
+    return env.Undefined();
+  HackedNativeCaps* hackedCaps = nullptr;
+  if (napi_unwrap(env, info[0], (void**)&hackedCaps) != napi_ok ||
+      hackedCaps == nullptr) {
+    return env.Undefined();
+  }
+  return genJSArrayByCaps(env, hackedCaps->caps);
 }
 
 void ClientNative::msgCallback(const std::string& name, Napi::Env env,
@@ -278,7 +297,8 @@ void ClientNative::refDown() {
     delete this;
 }
 
-static Napi::Value genJSMsgContent(Napi::Env& env, std::shared_ptr<Caps>& msg) {
+static Napi::Value genJSArrayByCaps(Napi::Env& env,
+                                    std::shared_ptr<Caps>& msg) {
   Array ret = Array::New(env);
   int32_t iv;
   int64_t lv;
@@ -323,14 +343,14 @@ static Napi::Value genJSMsgContent(Napi::Env& env, std::shared_ptr<Caps>& msg) {
       //   break;
       case CAPS_MEMBER_TYPE_OBJECT:
         msg->read(cv);
-        ret[idx++] = genJSMsgContent(env, cv);
+        ret[idx++] = genJSArrayByCaps(env, cv);
         break;
     }
   }
   return ret;
 }
 
-static bool genCapsByJSMsg(Array&& jsmsg, shared_ptr<Caps>& caps) {
+static bool genCapsByJSArray(Array&& jsmsg, shared_ptr<Caps>& caps) {
   caps = Caps::new_instance();
   uint32_t len = jsmsg.Length();
   uint32_t i;
@@ -348,12 +368,21 @@ static bool genCapsByJSMsg(Array&& jsmsg, shared_ptr<Caps>& caps) {
       //   v.As<ArrayBuffer>().ByteLength());
     } else if (v.IsArray()) {
       shared_ptr<Caps> sub;
-      if (!genCapsByJSMsg(v.As<Array>(), sub))
+      if (!genCapsByJSArray(v.As<Array>(), sub))
         return false;
       caps->write(sub);
     } else
       return false;
   }
+  return true;
+}
+
+static bool genCapsByJSCaps(Object&& jsmsg, shared_ptr<Caps>& caps) {
+  void* ptr = nullptr;
+  napi_unwrap(jsmsg.Env(), jsmsg, &ptr);
+  if (ptr == nullptr)
+    return false;
+  caps = reinterpret_cast<HackedNativeCaps*>(ptr)->caps;
   return true;
 }
 
@@ -366,13 +395,32 @@ static void genReplyByJSObject(Napi::Value& jsv, Reply& reply) {
   reply.ret_code = (int32_t)(m.As<Number>());
   m = jsv.As<Object>().Get("msg");
   if (m.IsArray()) {
-    if (!genCapsByJSMsg(m.As<Array>(), reply.data))
+    if (!genCapsByJSArray(m.As<Array>(), reply.data))
+      reply.data.reset();
+  } else if (m.IsObject()) {
+    if (!genCapsByJSCaps(m.As<Object>(), reply.data))
       reply.data.reset();
   }
 }
 
+static void freeHackedCaps(napi_env, void* data, void* arg) {
+  delete reinterpret_cast<HackedNativeCaps*>(data);
+}
+
+static napi_value genHackedCaps(napi_env env, shared_ptr<Caps> msg) {
+  napi_value jsobj;
+  if (napi_create_object(env, &jsobj) != napi_ok) {
+    napi_get_undefined(env, &jsobj);
+    return jsobj;
+  }
+  HackedNativeCaps* hackedCaps = new HackedNativeCaps();
+  hackedCaps->caps = msg;
+  napi_wrap(env, jsobj, hackedCaps, freeHackedCaps, nullptr, nullptr);
+  return jsobj;
+}
+
 void ClientNative::handleMsgCallbacks() {
-  Napi::Value jsmsg;
+  napi_value jsmsg;
   SubscriptionMap::iterator subit;
   Napi::Value cbret;
   unique_lock<mutex> locker(cb_mutex, defer_lock);
@@ -385,7 +433,7 @@ void ClientNative::handleMsgCallbacks() {
     locker.unlock();
 
     HandleScope scope(cbinfo.env);
-    jsmsg = genJSMsgContent(cbinfo.env, cbinfo.msg);
+    jsmsg = genHackedCaps(cbinfo.env, cbinfo.msg);
     subit = subscriptions.find(cbinfo.msgName);
     if (subit != subscriptions.end()) {
       cbret = subit->second.MakeCallback(cbinfo.env.Global(),
@@ -418,7 +466,7 @@ static Value genJSResponseArray(Napi::Env env, ResponseArray& resps) {
     ele = Object::New(env);
     Response& resp = resps[i];
     ele["retCode"] = Number::New(env, resp.ret_code);
-    ele["msg"] = genJSMsgContent(env, resp.data);
+    ele["msg"] = genHackedCaps(env, resp.data);
     ele["sender"] = String::New(env, resp.extra);
     result[i] = ele;
   }
