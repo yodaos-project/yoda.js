@@ -90,6 +90,8 @@ static napi_value SetRecoveryOk(napi_env env, napi_callback_info info) {
   struct boot_cmd cmd;
   const char* state = BOOTSTATE_NONE;
   memset(&cmd, 0, sizeof(cmd));
+  
+  int statusVal;
   statusVal = get_recovery_cmd_status(&cmd);
   if (statusVal != 0) {
     napi_create_int32(env, statusVal, &returnVal);
