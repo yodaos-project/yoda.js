@@ -97,6 +97,10 @@ static napi_value SetRecoveryOk(napi_env env, napi_callback_info info) {
     napi_create_int32(env, statusVal, &returnVal);
     return returnVal;
   }
+  if (cmd == NULL) {
+    napi_create_int32(env, -1, &returnVal);
+    return returnVal;
+  }
   strncpy(cmd.boot_mode, NULL, 0);
   strncpy(cmd.recovery_path, NULL, 0);
   strncpy(cmd.recovery_state, state, strlen(state) + 1);
