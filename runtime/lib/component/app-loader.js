@@ -179,7 +179,11 @@ AppChargeur.prototype.loadPath = function loadPath (path) {
     .then(res => {
       return Promise.all(
         res.filter(it => it[1].isDirectory())
-          .map(it => this.loadApp(it[0]))
+          .map(it => this.loadApp(it[0])
+            .catch(err => {
+              logger.error('Unexpected error on loading app', it[0], err.stack)
+            })
+          )
       )
     })
 }
