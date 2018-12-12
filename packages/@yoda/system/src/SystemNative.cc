@@ -89,6 +89,8 @@ static napi_value SetRecoveryOk(napi_env env, napi_callback_info info) {
   napi_value returnVal;
   struct boot_cmd cmd;
   const char* state = BOOTSTATE_NONE;
+  const char* mode = "";
+  const char* path = "";
   memset(&cmd, 0, sizeof(cmd));
 
   int statusVal;
@@ -101,8 +103,8 @@ static napi_value SetRecoveryOk(napi_env env, napi_callback_info info) {
     napi_create_int32(env, -1, &returnVal);
     return returnVal;
   }
-  strncpy(cmd.boot_mode, NULL, 0);
-  strncpy(cmd.recovery_path, NULL, 0);
+  strncpy(cmd.boot_mode, mode, strlen(mode) + 1);
+  strncpy(cmd.recovery_path, path, strlen(mode) + 1);
   strncpy(cmd.recovery_state, state, strlen(state) + 1);
 
   int status = set_recovery_cmd_status(&cmd);
