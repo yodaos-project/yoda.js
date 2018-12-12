@@ -619,31 +619,27 @@ DBus.prototype.yodadebug = {
       }
       var floraEmit = (channel, args, ms) => {
         setTimeout(() => {
-          this.runtime.flora.__cli.callbacks[0](channel, '', {
-            get: (idx) => _.get(args, idx)
-          })
+          this.runtime.flora.post(channel, args)
         }, ms)
       }
-      floraEmit('rokid.turen.voice_coming', [], 0)
-      floraEmit('rokid.turen.local_awake', [0], 100)
-      floraEmit('rokid.turen.start_voice', [], 150)
-      floraEmit('rokid.speech.inter_asr', ['若琪'], 200)
-      if (asr) {
-        floraEmit('rokid.speech.final_asr', [asr], 250)
-        this.runtime.flora.getNlpResult(asr, (err, nlp, action) => {
-          if (err) {
-            return logger.error('Unexpected error on get nlp for asr', asr, err.stack)
-          }
-          cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } }))
-          floraEmit('rokid.speech.nlp', [JSON.stringify(nlp), JSON.stringify(action)], 300)
-        })
-      } else {
-        floraEmit('rokid.speech.extra', ['{"activation": "fake"}'], 250)
-      }
-      floraEmit('rokid.turen.end_voice', [], 300)
       if (!asr) {
+        floraEmit('rokid.turen.voice_coming', [], 0)
+        floraEmit('rokid.turen.local_awake', [0], 100)
+        floraEmit('rokid.speech.inter_asr', ['若琪'], 200)
+        floraEmit('rokid.speech.extra', ['{"activation": "fake"}'], 600)
         cb(null, JSON.stringify({ ok: true, result: null }))
       }
+      this.runtime.flora.getNlpResult(asr, (err, nlp, action) => {
+        if (err) {
+          return logger.error('Unexpected error on get nlp for asr', asr, err.stack)
+        }
+        floraEmit('rokid.turen.voice_coming', [], 0)
+        floraEmit('rokid.turen.local_awake', [0], 100)
+        floraEmit('rokid.speech.inter_asr', ['若琪'], 200)
+        floraEmit('rokid.speech.final_asr', [asr], 250)
+        cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } }))
+        floraEmit('rokid.speech.nlp', [JSON.stringify(nlp), JSON.stringify(action)], 600)
+      })
     }
   },
   mockKeyboard: {
