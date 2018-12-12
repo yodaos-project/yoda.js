@@ -204,10 +204,8 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, skillOptions, cb) {
   if (typeof asr !== 'string' || typeof skillOptions !== 'string' || typeof cb !== 'function') {
     throw TypeError()
   }
-  if (this.__cli == null) {
-    return process.nextTick(() => cb(new Error('flora service connect failed')))
-  }
-  this.asr2nlpCallbacks[asr2nlpSeq++] = cb
+  ++asr2nlpSeq
+  this.asr2nlpCallbacks[asr2nlpSeq] = cb
   this.post('rokid.speech.put_text', [
     asr,
     skillOptions,
