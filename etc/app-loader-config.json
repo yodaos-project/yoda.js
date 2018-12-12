@@ -1,4 +1,7 @@
 {
+  "paths": [
+    "/opt/apps"
+  ],
   "lightAppIds": [
     "@yoda/battery",
     "@yoda/composition-de-voix",
