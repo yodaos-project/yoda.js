@@ -33,6 +33,6 @@ function entry () {
     logger.debug('vui is started')
 
     var runtime = new AppRuntime()
-    runtime.init(['/opt/apps'])
+    runtime.init()
   })
 }

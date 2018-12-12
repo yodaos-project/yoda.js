@@ -327,13 +327,6 @@ DBus.prototype.amsexport = {
       cb(null, true)
     }
   },
-  Reload: {
-    in: [],
-    out: ['b'],
-    fn: function Reload (cb) {
-      cb(null, true)
-    }
-  },
   Ping: {
     in: [],
     out: ['b'],
@@ -563,6 +556,41 @@ DBus.prototype.amsexport = {
           cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
         })
     }
+  },
+  ListPackages: {
+    in: [],
+    out: ['s'],
+    fn: function ListPackages (cb) {
+      cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests }))
+    }
+  },
+  Reload: {
+    in: ['s'],
+    out: ['s'],
+    fn: function Reload (appId, cb) {
+      if (typeof appId === 'function') {
+        cb = appId
+        appId = undefined
+      }
+      console.log('reloading', appId)
+      var future
+      if (appId) {
+        future = this.runtime.life.destroyAppById(appId, { force: true })
+          .then(() => this.runtime.loader.reload(appId))
+          .then(() => {
+            cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests[appId] }))
+          })
+      } else {
+        future = this.runtime.life.destroyAll({ force: true })
+          .then(() => this.runtime.loader.reload())
+          .then(() => {
+            cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests }))
+          })
+      }
+      future.catch(err => {
+        cb(null, JSON.stringify({ ok: true, error: err.message, stack: err.stack }))
+      })
+    }
   }
 }
 
@@ -607,6 +635,22 @@ DBus.prototype.yodadebug = {
         }
       })
       cb(null, JSON.stringify(ret))
+    }
+  },
+  GetLoader: {
+    in: [],
+    out: ['s'],
+    fn: function (cb) {
+      cb(null, JSON.stringify({
+        ok: true,
+        result: {
+          skillIdAppIdMap: this.runtime.loader.skillIdAppIdMap,
+          skillAttrsMap: this.runtime.loader.skillAttrsMap,
+          hostSkillIdMap: this.runtime.loader.hostSkillIdMap,
+          appManifests: this.runtime.loader.appManifests,
+          notifications: this.runtime.loader.notifications
+        }
+      }))
     }
   },
   mockAsr: {
