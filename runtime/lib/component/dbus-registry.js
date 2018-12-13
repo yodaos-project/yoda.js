@@ -558,9 +558,19 @@ DBus.prototype.amsexport = {
     }
   },
   ListPackages: {
-    in: [],
+    in: ['s'],
     out: ['s'],
-    fn: function ListPackages (cb) {
+    fn: function ListPackages (optionJson, cb) {
+      if (typeof optionJson === 'function') {
+        cb = optionJson
+        optionJson = undefined
+      }
+      var options = safeParse(optionJson)
+      var packageName = _.get(options, 'packageName')
+      if (packageName) {
+        cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests[packageName] }))
+        return
+      }
       cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests }))
     }
   },
@@ -572,7 +582,7 @@ DBus.prototype.amsexport = {
         cb = appId
         appId = undefined
       }
-      console.log('reloading', appId)
+
       var future
       if (appId) {
         future = this.runtime.life.destroyAppById(appId, { force: true })
