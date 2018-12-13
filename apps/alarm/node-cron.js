@@ -76,7 +76,7 @@ module.exports = (function () {
             expression: jobObj.expression,
             createTime: jobObj.createTime
           }
-          if (!clearPrevReminders(currentObj, referedObj)) {
+          if (!isSameReminders(currentObj, referedObj)) {
             combinedTTS += jobObj.tts
             reminderList.push({
               id: jobObj.id,
@@ -110,6 +110,18 @@ module.exports = (function () {
       var referedTime = Math.floor(referedInterval.next().getTime() / 1000)
       // no concurrency alarm or reminder
       if (currentTime > referedTime + 1) {
+        return true
+      }
+      return false
+    }
+
+    function isSameReminders (current, refered) {
+      var currentInterval = CronExpression.parseSync(current.expression)
+      var referedInterval = CronExpression.parseSync(refered.expression)
+      var currentTime = Math.floor(currentInterval.next().getTime() / 1000)
+      var referedTime = Math.floor(referedInterval.next().getTime() / 1000)
+      // no concurrency alarm or reminder
+      if (currentTime > referedTime + 1 || currentTime < referedTime - 1) {
         return true
       }
       return false
