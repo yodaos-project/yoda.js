@@ -32,3 +32,10 @@ test('multiple arguments ', (t) => {
     )
   )
 })
+
+test('log content has format print ', (t) => {
+  t.plan(1)
+  t.doesNotThrow(() =>
+    logger.info('xxxx%sxx%dxx')
+  )
+})
