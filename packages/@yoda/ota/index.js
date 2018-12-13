@@ -365,15 +365,15 @@ function runInCurrentContext (callback) {
       doRun(cb)
     }
   ], (err, info) => {
-    if (err) {
-      return callback(err)
-    }
+    logger.info('ota unlocking proc lock.')
     if (typeof unlockProc !== 'function') {
       /** lockProc failed */
       return callback(new Error('Cannot unlock proc.lock for not existing unlock handle'))
     }
-    logger.info('ota unlocking proc lock.')
     unlockProc(() => {
+      if (err) {
+        return callback(err)
+      }
       callback(null, info)
     })
   })
