@@ -54,7 +54,7 @@ module.exports = (function () {
      *
      * @returns {string} combined tts.
      */
-    this.combineReminderTts = function () {
+    this.combineReminderTts = function (activeId) {
       if (self.reminderQueue.length === 0) {
         return ''
       }
@@ -65,18 +65,32 @@ module.exports = (function () {
       var reminderList = []
       for (var i = 0; i < sortQueue.length; i++) {
         var jobObj = self.jobs[sortQueue[i]]
+        
         if (jobObj) {
-          combinedTTS += jobObj.tts
-          reminderList.push({
-            id: jobObj.id,
-            createTime: jobObj.createTime,
+          var currentObj = {
+            type: self.jobs[activeId].type,
+            expression: self.jobs[activeId].expression,
+            createTime: self.jobs[activeId].createTime
+          }
+          var referedObj = {
             type: jobObj.type,
-            tts: jobObj.tts,
-            url: jobObj.url,
-            mode: jobObj.mode,
-            time: jobObj.time,
-            date: jobObj.date
-          })
+            expression: jobObj.expression,
+            createTime: jobObj.createTime
+          }
+          if (!clearPrevReminders(currentObj, referedObj)) {
+            combinedTTS += jobObj.tts
+            reminderList.push({
+              id: jobObj.id,
+              createTime: jobObj.createTime,
+              type: jobObj.type,
+              tts: jobObj.tts,
+              url: jobObj.url,
+              mode: jobObj.mode,
+              time: jobObj.time,
+              date: jobObj.date
+            })
+          }
+          
         }
       }
       return {

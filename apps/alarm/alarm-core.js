@@ -235,7 +235,7 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
   var state = wifi.getNetworkState()
 
   if (option.type === 'Remind') {
-    var sameReminder = this.scheduleHandler.combineReminderTts()
+    var sameReminder = this.scheduleHandler.combineReminderTts(this.activeOption.id)
     tts = sameReminder.combinedTTS
     this.activity.setForeground().then(() => {
       if (state === wifi.NETSERVER_CONNECTED) {
