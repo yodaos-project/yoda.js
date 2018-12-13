@@ -65,7 +65,6 @@ module.exports = (function () {
       var reminderList = []
       for (var i = 0; i < sortQueue.length; i++) {
         var jobObj = self.jobs[sortQueue[i]]
-        
         if (jobObj) {
           var currentObj = {
             type: self.jobs[activeId].type,
@@ -90,7 +89,6 @@ module.exports = (function () {
               date: jobObj.date
             })
           }
-          
         }
       }
       return {
