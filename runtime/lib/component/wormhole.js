@@ -153,6 +153,17 @@ Wormhole.prototype.handlers = {
     this.runtime.onCustomConfig(data)
   },
   /**
+   * @member app event
+   */
+  event: function (text) {
+    try {
+      var data = JSON.parse(text)
+      this.runtime.onAppEvent(data)
+    } catch (error) {
+      logger.error(`parse app event error: ${text}`)
+    }
+  },
+  /**
    * @member UNIVERSAL_UNBIND
    */
   UNIVERSAL_UNBIND: function (data) {
