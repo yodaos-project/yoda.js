@@ -347,7 +347,7 @@ CronExpression.prototype._findSchedule = function () {
   // Iterate and match schedule
   while (true) {
     // Match month
-    if (!matchSchedule(current.getMonth(), this._fields.month)) {
+    if (!matchSchedule(current.getMonth() + 1, this._fields.month)) {
       current.addMonth()
       current.setDate(1)
       current.setHours(0)
@@ -479,7 +479,7 @@ CronExpression.parseSync = function (expression, options) {
   }
 
   if (!options.currentDate) {
-    options.currentDate = new Date()
+    options.currentDate = new Date((new Date()).getTime() - 7000)
   }
 
   // Is input expression predefined?
