@@ -28,7 +28,7 @@ static napi_value Print(napi_env env, napi_callback_info info) {
   NAPI_CALL(env, napi_get_value_string_utf8(env, argv[2], text, s2 + 1, &s2));
   text[s2] = 0;
 
-  jslog(level, NULL, 0, tag, text);
+  jslog(level, NULL, 0, tag, "%s", text);
   free(tag);
   free(text);
   return NULL;
