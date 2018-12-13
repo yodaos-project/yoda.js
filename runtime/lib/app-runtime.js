@@ -457,6 +457,43 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     })
 }
 
+AppRuntime.prototype.onAppEvent = function (data, options) {
+  var preemptive = _.get(options, 'preemptive', true)
+  var carrierId = _.get(options, 'carrierId')
+  var form = _.get(options, 'form')
+  var appId = this.loader.getAppIdBySkillId(data.appId)
+  logger.info(`onAppEvent(${appId})`)
+  if (appId == null) {
+    logger.warn(`Local app '${data.appId}' not found.`)
+    return Promise.resolve(false)
+  }
+  return this.life.createApp(appId)
+    .catch(err => {
+      logger.error(`create app ${appId} failed`, err.stack)
+      /** force quit app on create error */
+      return this.life.destroyAppById(appId, { force: true })
+        .then(() => { /** rethrow error to break following procedures */throw err })
+    })
+    .then(() => {
+      if (!preemptive) {
+        logger.info(`app is not preemptive, skip activating app ${appId}`)
+        return
+      }
+
+      logger.info(`app is preemptive, activating app ${appId}`)
+      return this.life.activateAppById(appId, form, carrierId)
+    })
+    .then(() => {
+      logger.info(`onLifeCycle(appcmd, ${appId}, ${JSON.stringify(data)})`)
+      return this.life.onLifeCycle(appId, 'appcmd', [ data.intent, data.slots ])
+    })
+    .then(() => true)
+    .catch(err => {
+      logger.error(`Unexpected error on app ${appId} handling remote event`, err.stack)
+      return false
+    })
+}
+
 /**
  *
  * > Note: currently only `yoda-skill:` scheme is supported.

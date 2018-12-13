@@ -228,6 +228,15 @@ Object.assign(ActivityDescriptor.prototype,
      */
     notification: {
       type: 'event'
+    },
+    /**
+     * Fires on app event.
+     * @event yodaRT.activity.Activity#appcmd
+     * @param {string} intent - the intent of app event.
+     * @param {object} data - the extra data.
+     */
+    appcmd: {
+      type: 'event'
     }
   },
   {

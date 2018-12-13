@@ -1,12 +1,23 @@
 'use strict'
 
-var logger = require('logger')('bluetooth-player')
+var logger = require('logger')('bluetooth-sink')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
-var AudioManager = require('@yoda/audio').AudioManager
 var floraFactory = require('@yoda/flora')
 var FloraComp = require('@yoda/flora/comp')
 var helper = require('./helper')
+var AudioManager = require('@yoda/audio').AudioManager
+
+var lastMsg = {
+  'a2dpstate': 'closed',
+  'connect_state': 'invalid',
+  'connect_address': null,
+  'connect_name': null,
+  'play_state': 'invalid',
+  'broadcast_state': 'closed',
+  'linknum': 0
+}
+var lastCmd
 
 /**
  * Use `bluetooth.getPlayer()` instead of this constructor.
@@ -20,12 +31,11 @@ function BluetoothPlayer () {
   this._flora.handlers = {
     'bluetooth.a2dpsink.event': this._onevent.bind(this)
   }
-  this._flora.init('bluetooth-mediaplayer', {
+  this._flora.init('bluetooth-a2dpsink', {
     'uri': 'unix:/var/run/flora.sock',
     'bufsize': 40960,
     'reconnInterval': 10000
   })
-  this._end = false
 }
 inherits(BluetoothPlayer, EventEmitter)
 
@@ -34,51 +44,54 @@ inherits(BluetoothPlayer, EventEmitter)
  */
 BluetoothPlayer.prototype._onevent = function (data) {
   try {
-    if (this._end) {
-      logger.info('zmq connection has been closed, just skip the message')
-      return
-    }
-
     var msg = JSON.parse(data[0] + '')
-    if (msg.action === 'volumechange') {
+    logger.debug(`on event(action:${msg.action})`)
+
+    if (msg.action === 'stateupdate') {
+      logger.debug(`a2dp:${lastMsg.a2dpstate}=>${msg.a2dpstate}, conn:${lastMsg.connect_state}=>${msg.connect_state}, play:${lastMsg.play_state}=>${msg.play_state}, bc:${lastMsg.broadcast_state}=>${msg.broadcast_state}`)
+      if (msg.a2dpstate === lastMsg.a2dpstate && msg.connect_state === lastMsg.connect_state && msg.play_state === lastMsg.play_state && msg.broadcast_state === lastMsg.broadcast_state) {
+        logger.warn('Ignore useless msg!')
+      }
+
+      if (msg.a2dpstate === 'opened' && msg.connect_state === 'invalid' && msg.play_state === 'invalid') {
+        this.emit('opened', msg.linknum > 0)
+      } else if (msg.a2dpstate === 'open failed' && msg.connect_state === 'invalid' && msg.play_state === 'invalid') {
+        this.emit('open failed')
+      } else if (msg.a2dpstate === 'closed') {
+        this.emit('closed')
+      } else if (msg.a2dpstate === 'opened' && msg.connect_state === 'connected') {
+        if (msg.play_state === 'invalid') {
+          var connectedDevice = {'address': msg.connect_address, 'name': msg.connect_name}
+          this.emit('connected', connectedDevice)
+        } else if (msg.play_state === 'played') {
+          this.emit('played')
+        } else if (msg.play_state === 'stopped') {
+          if (lastCmd === 'pause') {
+            this.emit('paused')
+          } else {
+            this.emit('stopped')
+          }
+          lastCmd = null
+        }
+      } else if (msg.a2dpstate === 'opened' && msg.connect_state === 'disconnected') {
+        this.emit('disconnected')
+      }
+
+      if (msg.a2dpstate === 'opened' && msg.connect_state === 'invalid' && msg.play_state === 'invalid' && msg.broadcast_state === 'opened') {
+        this.emit('discoverable')
+      } else if (msg.broadcast_state === 'closed' && lastMsg.broadcast_state === 'opened') {
+        this.emit('undiscoverable')
+      }
+      lastMsg = Object.assign(lastMsg, msg)
+    } else if (msg.action === 'volumechange') {
       var vol = msg.value
       if (vol === undefined) {
         vol = AudioManager.getVolume(AudioManager.STREAM_PLAYBACK)
       }
       AudioManager.setVolume(vol)
-      logger.info(`set volume ${vol} for bluetooth player`)
-      /**
-       * When the volume needs to be changed from bluetooth service.
-       * @event module:@yoda/bluetooth.BluetoothPlayer#opened
-       */
-      return this.emit('volumechange', msg)
+      logger.info(`Set volume ${vol} for bluetooth a2dp sink.`)
+      return this.emit('volume changed', vol)
     }
-    // only if the connect_state && play_state is invalid, mapped as `opened`.
-    if (msg.a2dpstate === 'opened' &&
-      msg.connect_state === 'invalid' &&
-      msg.play_state === 'invalid') {
-      /**
-       * When the bluetooth(a2dp) is opened.
-       * @event module:@yoda/bluetooth.BluetoothPlayer#opened
-       */
-      this.emit('opened')
-    } else if (msg.a2dpstate === 'closed') {
-      /**
-       * When the bluetooth(a2dp) is closed.
-       * @event module:@yoda/bluetooth.BluetoothPlayer#closed
-       */
-      this.emit('closed')
-    }
-    /**
-     * When play state updates.
-     * @event module:@yoda/bluetooth.BluetoothPlayer#stateupdate
-     * @type {object}
-     * @property {string} a2dpstate - the a2dp state
-     * @property {string} connect_state - if the connect
-     * @property {string} connect_name - the connected device name
-     * @property {string} play_state - the state of playing on the peer device
-     */
-    this.emit('stateupdate', msg)
   } catch (err) {
     /**
      * When something is wrong.
@@ -129,28 +142,52 @@ BluetoothPlayer.prototype._send = function (cmdstr, props) {
  * player.start('YodaOS Bluetooth')
  *
  */
-BluetoothPlayer.prototype.start = function start (name, subsequent, cb) {
-  this._end = false
-  if (typeof cb === 'function') {
-    this.once('opened', cb)
+BluetoothPlayer.prototype.open = function open (name, autoplay) {
+  logger.debug(`open(autoplay:${autoplay})`)
+  if (lastMsg.a2dpstate === 'opened') {
+    logger.warn('open() while last state is already opened.')
   }
-  this.resume()
-  return this._send('ON', {
-    name: name,
-    unique: true,
-    subsequent: subsequent
-  })
+  if (autoplay) {
+    return this._send('ON', {name: name, unique: true, subsequent: 'PLAY'})
+  } else {
+    return this._send('ON', {name: name, unique: true})
+  }
 }
 
 /**
  * End the bluetooth player.
  * @returns {null}
  */
+BluetoothPlayer.prototype.close = function close () {
+  logger.debug(`close(cur state: ${lastMsg.a2dpstate})`)
+  if (lastMsg.a2dpstate === 'closed') {
+    logger.warn('close() while last state is already closed.')
+  }
+  this._send('OFF')
+}
 BluetoothPlayer.prototype.end = function end () {
-  this.once('closed', () => {
-    this._end = true
+  this.close()
+}
+
+/**
+ * Connect to devices
+ */
+BluetoothPlayer.prototype.connect = function connectTo (addr, name) {
+  logger.warn('connect() is not supported for SINK!')
+  process.nextTick(() => {
+    return this.emit('connect failed')
   })
-  process.nextTick(() => this._send('OFF'))
+}
+
+/**
+ * Disconnect from device
+ */
+BluetoothPlayer.prototype.disconnect = function disconnectFrom () {
+  logger.debug('disconnect()')
+  if (lastMsg.connect_state !== 'connected') {
+    logger.warn('disconnect() while last state is not connected.')
+  }
+  return this._send('DISCONNECT_PEER')
 }
 
 /**
@@ -159,14 +196,14 @@ BluetoothPlayer.prototype.end = function end () {
  * when the device is awaken, system needs the bluetooth player suspends,
  * and listenning the user.
  */
-BluetoothPlayer.prototype.suspend = function suspend () {
+BluetoothPlayer.prototype.mute = function mute () {
   return this._send('MUTE')
 }
 
 /**
  * Resume from the `suspend` state.
  */
-BluetoothPlayer.prototype.resume = function resume () {
+BluetoothPlayer.prototype.unmute = function unmute () {
   return this._send('UNMUTE')
 }
 
@@ -174,8 +211,13 @@ BluetoothPlayer.prototype.resume = function resume () {
  * Play the music.
  * @returns {null}
  */
-BluetoothPlayer.prototype.play = function play () {
-  this.resume()
+BluetoothPlayer.prototype.start = function start () {
+  logger.debug(`start(play_state = ${lastMsg.play_state})`)
+  if (lastMsg.play_state === 'played') {
+    // Yet still try send 'PLAY' cmd.
+    logger.warn('start() while last state is already played.')
+  }
+  this.unmute()
   return this._send('PLAY')
 }
 
@@ -184,6 +226,11 @@ BluetoothPlayer.prototype.play = function play () {
  * @returns {null}
  */
 BluetoothPlayer.prototype.stop = function stop () {
+  logger.debug(`stop(play_state = ${lastMsg.play_state})`)
+  if (lastMsg.play_state === 'stopped') {
+    // Yet still try send 'STOP' cmd.
+    logger.warn('stop() while last state is already stopped.')
+  }
   return this._send('STOP')
 }
 
@@ -192,16 +239,13 @@ BluetoothPlayer.prototype.stop = function stop () {
  * @returns {null}
  */
 BluetoothPlayer.prototype.pause = function pause () {
+  logger.debug(`pause(play_state = ${lastMsg.play_state})`)
+  if (lastMsg.play_state === 'stopped') {
+    // Yet still try send 'PAUSE' cmd.
+    logger.warn('pause() while last state is already stopped.')
+  }
+  lastCmd = 'pause'
   return this._send('PAUSE')
-}
-
-/**
- * Play next music.
- * @returns {null}
- */
-BluetoothPlayer.prototype.next = function next () {
-  this.resume()
-  return this._send('NEXT')
 }
 
 /**
@@ -209,22 +253,45 @@ BluetoothPlayer.prototype.next = function next () {
  * @returns {null}
  */
 BluetoothPlayer.prototype.prev = function prev () {
-  this.resume()
   return this._send('PREV')
 }
 
 /**
- * Disconnect from device
+ * Play next music.
+ * @returns {null}
  */
-BluetoothPlayer.prototype.disconnectPeer = function disconnectDevice () {
-  return this._send('DISCONNECT_PEER')
+BluetoothPlayer.prototype.next = function next () {
+  return this._send('NEXT')
+}
+
+/**
+ * Some status query functions.
+ */
+BluetoothPlayer.prototype.isOpened = function isOpened () {
+  return lastMsg.a2dpstate === 'opened'
+}
+
+BluetoothPlayer.prototype.isConnected = function isConnected () {
+  return lastMsg.connect_state === 'connected'
+}
+
+BluetoothPlayer.prototype.getConnectedDevice = function getConnectedDevice () {
+  return {address: lastMsg.connect_address, name: lastMsg.connect_name}
+}
+
+BluetoothPlayer.prototype.isPlaying = function isPlaying () {
+  return lastMsg.play_state === 'played'
+}
+
+BluetoothPlayer.prototype.isDiscoverable = function isDiscoverable () {
+  return lastMsg.broadcast_state === 'opened'
 }
 
 /**
  * Disconnect the event socket, this is deprecated please use `.destroyConnection()`
  * instead.
  */
-BluetoothPlayer.prototype.disconnect = function disconnect () {
+BluetoothPlayer.prototype.disconnectConnection = function disconnectConnection () {
   return helper.disconnectAfterClose(this, 2000)
 }
 
