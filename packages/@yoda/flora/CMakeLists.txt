@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 project(shadow-flora CXX)
 set(CMAKE_CXX_STANDARD 11)
 
-
 add_library(shadow-flora-cli MODULE
 	src/cli-native.cc
 	src/cli-native.h
@@ -10,6 +9,11 @@ add_library(shadow-flora-cli MODULE
 
 if (BUILD_INDEPENDENT)
 option(BUILD_DEBUG "compile with debug flags" OFF)
+option(USE_GCC "force use gcc" OFF)
+if (USE_GCC)
+SET(CMAKE_C_COMPILER gcc)
+SET(CMAKE_CXX_COMPILER g++)
+endif()
 
 include(${CUSTOM_CMAKE_MODULES}/common.mk)
 

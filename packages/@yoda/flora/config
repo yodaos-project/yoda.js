@@ -13,6 +13,7 @@ Configuration:
     --prefix=PREFIX             install prefix
     --cmake-modules=DIR         directory of cmake modules file exist
     --find-root-path=DIR        root dir for search dependencies libs
+    --use-gcc                   force use gcc compiler (in macosx)
 
 Dependencies:
     --mutils=DIR                specify mutils install dir
@@ -60,6 +61,9 @@ do
 		--find-root-path=*)
 			CMAKE_ARGS=(${CMAKE_ARGS[@]} -DCMAKE_FIND_ROOT_PATH=$conf_optarg)
 			;;
+    --use-gcc)
+      CMAKE_ARGS=(${CMAKE_ARGS[@]} -DUSE_GCC=ON)
+      ;;
 		--mutils=*)
 			CMAKE_ARGS=(${CMAKE_ARGS[@]} -DmutilsPrefix=$conf_optarg)
 			;;
