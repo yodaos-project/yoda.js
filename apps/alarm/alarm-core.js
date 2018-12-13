@@ -294,8 +294,9 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
  * @param {String} Options mode
  */
 AlarmCore.prototype._onTaskActive = function (option, mode) {
-  this.activeOption = option
+  this.clearAll()
   this.activity.setForeground().then(() => {
+    this.activeOption = option
     this._preventEventsDefaults()
     this._controlVolume(10, 1000, 7)
     var state = wifi.getNetworkState()
