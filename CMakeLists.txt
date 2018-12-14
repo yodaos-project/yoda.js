@@ -15,7 +15,6 @@ ExternalProject_Add(${NAME}
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/${PATH}
-    -DJSRUNTIME_SOURCE_DIR=${JSRUNTIME_SOURCE_DIR}
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
@@ -40,6 +39,7 @@ ExternalProject_Add(${NAME}
     -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
     -DCMAKE_INCLUDE_PATH=${CMAKE_STAGING_PREFIX}/usr/include
     -DCMAKE_INSTALL_DIR=${CMAKE_INSTALL_DIR}/usr/lib/node_modules/${PATH}
+    -DJSRUNTIME_SOURCE_DIR=${JSRUNTIME_SOURCE_DIR}
     -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
     -DCMAKE_SYSTEM_PERFIX_PATH=${CMAKE_SYSTEM_PREFIX_PATH}
     -DCMAKE_STAGING_PERFIX=${CMAKE_STAGING_PREFIX}
@@ -52,6 +52,7 @@ endfunction()
 YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
 YodaGitPackage(node-flock https://github.com/shadow-node/node-flock.git master)
 YodaGitPackage(node-caps https://github.com/shadow-node/node-caps.git master @yoda/caps)
+YodaGitPackage(node-flora https://github.com/shadow-node/node-flora.git master @yoda/flora)
 
 # local packages
 YodaLocalPackage(yoda-audio @yoda/audio)
@@ -72,7 +73,6 @@ YodaLocalPackage(yoda-tts @yoda/tts)
 YodaLocalPackage(yoda-util @yoda/util)
 YodaLocalPackage(yoda-wifi @yoda/wifi)
 YodaLocalPackage(yoda-env @yoda/env)
-YodaLocalPackage(yoda-flora @yoda/flora)
 YodaLocalPackage(yodaos-mediakit @yodaos/mediakit)
 YodaLocalPackage(yodaos-ttskit @yodaos/ttskit)
 
