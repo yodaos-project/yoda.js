@@ -423,13 +423,16 @@ void ClientNative::handleMsgCallbacks() {
   napi_value jsmsg;
   SubscriptionMap::iterator subit;
   Napi::Value cbret;
-  unique_lock<mutex> locker(cb_mutex, defer_lock);
+  unique_lock<mutex> locker(cb_mutex);
+  list<MsgCallbackInfo>::iterator mit = pendingMsgs.begin();
+  list<MsgCallbackInfo>::iterator rmit;
+  locker.unlock();
 
   while (true) {
     locker.lock();
-    if (pendingMsgs.empty())
+    if (mit == pendingMsgs.end())
       break;
-    MsgCallbackInfo cbinfo(pendingMsgs.front());
+    MsgCallbackInfo cbinfo(*mit);
     locker.unlock();
 
     HandleScope scope(cbinfo.env);
@@ -444,12 +447,15 @@ void ClientNative::handleMsgCallbacks() {
     if (cbinfo.msgtype == FLORA_MSGTYPE_REQUEST) {
       genReplyByJSObject(cbret, *(cbinfo.reply));
       locker.lock();
-      pendingMsgs.front().handled = true;
+      (*mit).handled = true;
+      ++mit;
       cb_cond.notify_all();
       locker.unlock();
     } else {
       locker.lock();
-      pendingMsgs.pop_front();
+      rmit = mit;
+      ++mit;
+      pendingMsgs.erase(rmit);
       locker.unlock();
     }
   }
