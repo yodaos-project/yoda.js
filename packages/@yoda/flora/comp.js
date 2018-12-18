@@ -18,8 +18,7 @@ FloraComp.prototype.init = function (fid, config) {
   if (typeof config !== 'object') {
     config = defaultConfig
   }
-  this.agent = new flora.Agent(config.uri + '#' + fid,
-    config.reconnInterval, config.bufsize)
+  this.agent = new flora.Agent(config.uri + '#' + fid, config)
 
   if (typeof this.handlers === 'object') {
     Object.keys(this.handlers).forEach((key) => {
@@ -38,9 +37,9 @@ FloraComp.prototype.destruct = function () {
   }
 }
 
-FloraComp.prototype.post = function (name, msg, type) {
+FloraComp.prototype.post = function (name, msg, type, opts) {
   if (this.agent instanceof flora.Agent) {
-    return this.agent.post(name, msg, type)
+    return this.agent.post(name, msg, type, opts)
   }
   return flora.ERROR_NOT_CONNECTED
 }

@@ -33,8 +33,9 @@
  * @class module:@yoda/flora~Agent
  * @classdesc agent of flora connection
  * @param {string} uri - uri of flora service
- * @param {number} [reconnInterval=10000] - reconnect interval time when flora disconnected
- * @param {number} [bufsize=32768] - flora msg buf size
+ * @param {object} options
+ * @param {number} options.reconnInterval - reconnect interval time when flora disconnected. default value 10000
+ * @param {number} options.bufsize - flora msg buf size. default value 32768
  */
 
 /**
@@ -68,7 +69,7 @@
 
 /**
  * @memberof module:@yoda/flora~Response
- * @member {any[]} msg
+ * @member {any[]|module:@yoda/flora~Caps} msg
  */
 
 /**
@@ -98,18 +99,23 @@ function genCaps (hackedCaps) {
   return new Caps(hackedCaps)
 }
 
+function isCapsFormat (opts) {
+  return typeof opts === 'object' && opts.format === 'caps'
+}
+
 /**
  * subscribe flora msg
  * @method subscribe
  * @memberof module:@yoda/flora~Agent
  * @param {string} name - msg name for subscribe
  * @param {module:@yoda/flora~SubscribeMsgHandler} handler - msg handler of received msg
- * @param {boolean} recvCaps - if true, received message is Caps instance, otherwise message is an Array
+ * @param {object} options
+ * @param {string} options.format - specify format of received message. format string values: 'array' | 'caps'
  */
-Agent.prototype.subscribe = function (name, handler, recvCaps) {
+Agent.prototype.subscribe = function (name, handler, options) {
   this.nativeSubscribe(name, (msg, type) => {
     var cbmsg
-    if (recvCaps) {
+    if (isCapsFormat(options)) {
       cbmsg = genCaps(msg)
     } else {
       cbmsg = this.nativeGenArray(msg)
@@ -153,8 +159,10 @@ function isValidPostType (type) {
  * @method post
  * @memberof module:@yoda/flora~Agent
  * @param {string} name - msg name
- * @param {any[]} msg - msg content
- * @param {number} type - msg type (MSGTYPE_INSTANT | MSGTYPE_PERSIST}
+ * @param {any[]|module:@yoda/caps~Caps} msg - msg content
+ * @param {number} type - msg type:
+ *                        module:@yoda/flora~MSGTYPE_INSTANT
+ *                        module:@yoda/flora~MSGTYPE_PERSIST
  * @returns {number} 0 for success, otherwise error code
  */
 Agent.prototype.post = function (name, msg, type) {
@@ -169,20 +177,21 @@ Agent.prototype.post = function (name, msg, type) {
  * @method get
  * @memberof module:@yoda/flora~Agent
  * @param {string} name - msg name
- * @param {any[]} [msg] - msg content
+ * @param {any[]|module:@yoda/caps~Caps} [msg] - msg content
+ * @param {object} options
+ * @param {string} options.format - specify format of received message. format string values: 'array' | 'caps'
  * @returns {Promise} promise that resolves with an array of {module:@yoda/flora~Response}
  */
-Agent.prototype.get = function (name, msg) {
+Agent.prototype.get = function (name, msg, options) {
   if (typeof name !== 'string' || !isValidMsg(msg)) {
     return Promise.reject(exports.ERROR_INVALID_PARAM)
   }
   return new Promise((resolve, reject) => {
-    var isCapsMsg = isCaps(msg)
     var r = this.nativeGet(name, msg, (replys) => {
       if (Array.isArray(replys)) {
         var i
         for (i = 0; i < replys.length; ++i) {
-          if (isCapsMsg) {
+          if (isCapsFormat(options)) {
             replys[i].msg = genCaps(replys[i].msg)
           } else {
             replys[i].msg = this.nativeGenArray(replys[i].msg)
@@ -190,7 +199,7 @@ Agent.prototype.get = function (name, msg) {
         }
       }
       resolve(replys)
-    })
+    }, isCaps(msg))
     if (r !== 0) {
       reject(r)
     }
