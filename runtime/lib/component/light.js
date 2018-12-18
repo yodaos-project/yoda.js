@@ -13,6 +13,7 @@ var MEDIA_SOURCE = '/opt/media'
 function Light (dbusRegistry) {
   EventEmitter.call(this)
   this.dbusRegistry = dbusRegistry
+  this._nightMode = false
 }
 inherits(Light, EventEmitter)
 
@@ -169,6 +170,18 @@ Light.prototype.lightMethod = function (name, args) {
     '/rokid/light',
     'com.rokid.light.key',
     name, args)
+}
+
+/**
+ * set night mode
+ * @param {bool} nightMode true if opened
+ */
+Light.prototype.setNightMode = function (nightMode) {
+  this._nightMode = nightMode
+  if (this._nightMode)
+    this.lightMethod('setGlobalAlphaFactor', ['0.1'])
+  else
+    this.lightMethod('setGlobalAlphaFactor', ['1'])
 }
 
 module.exports = Light

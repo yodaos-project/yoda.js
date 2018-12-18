@@ -183,7 +183,17 @@ dbusApis.addMethod('stopNetworkLagSound', {
   service.stopFile('@network-lag')
   cb(null, true)
 })
-
+dbusApis.addMethod('setGlobalAlphaFactor', {
+  in: ['s'],
+  out: []
+}, function (alphaFactor, cb) {
+  logger.info(`global alpha factor  ${alphaFactor}`)
+  var v = Number(alphaFactor)
+  if (typeof v != 'number' || v < 0 && v > 1)
+    v = 1
+  service.setGlobalAlphaFactor(v)
+  cb(null)
+})
 dbusApis.update()
 
 logger.log('light service started')
