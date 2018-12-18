@@ -737,6 +737,22 @@ DBus.prototype.yodadebug = {
       }
     }
   },
+  HeapSnapshot: {
+    in: ['s'],
+    out: ['s'],
+    fn: function HeapSnapshot (storePath, cb) {
+      if (typeof cb !== 'function') {
+        throw new Error('Unrecognizable dbus invocation')
+      }
+      if (!path.isAbsolute(storePath)) {
+        cb(null, '{"ok":false,"message":"storePath is not an absolute path."}')
+        return
+      }
+      var profiler = require('profiler')
+      profiler.takeSnapshot(storePath)
+      cb(null, '{"ok":true}')
+    }
+  },
   reportMemoryUsage: {
     in: [],
     out: ['s'],
