@@ -32,10 +32,16 @@ class Activation : public ClientCallback {
   // cppcheck-suppress unusedFunction
   void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg) {
     char is_awakeswitch_open[PROP_VALUE_MAX];
-    property_get("persist.sys.awakeswitch", (char*)is_awakeswitch_open, "");
+    property_get("persist.nightmode.awakeswitch", (char*)is_awakeswitch_open, "");
     if (strcmp(is_awakeswitch_open, "close") == 0) {
-      fprintf(stdout, "awakeswitch is closed, just skip\n");
+      fprintf(stdout, "nightmode.awakeswitch is closed, just skip\n");
       return;
+    } else {
+      property_get("persist.sys.awakeswitch", (char*)is_awakeswitch_open, "");
+      if (strcmp(is_awakeswitch_open, "close") == 0) {
+        fprintf(stdout, "awakeswitch is closed, just skip\n");
+        return;
+      }
     }
 
     char network_is_available[PROP_VALUE_MAX];
@@ -55,6 +61,7 @@ class Activation : public ClientCallback {
       rk_set_stream_volume(STREAM_SYSTEM, vol);
       volume_set = true;
     }
+
     startWavPlayer();
   }
   // cppcheck-suppress unusedFunction
