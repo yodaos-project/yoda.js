@@ -32,7 +32,7 @@ var SwitchKey = 'nightmode.switch'
 var StatusKey = 'nightmode.status'
 var StartTimeKey = 'nightmode.starttime'
 var EndTimeKey = 'nightmode.endtime'
-var AwakeSwitchKey = 'sys.awakeswitch'
+var AwakeSwitchKey = 'nightmode.awakeswitch'
 
 function getSwitch() {
   return property.get(SwitchKey, 'persist')
@@ -58,7 +58,7 @@ function getStartTime() {
     return '22:00'
 }
 
-function setStartTime() {
+function setStartTime(s) {
   property.set(StartTimeKey, s, 'persist')
 }
 
@@ -70,7 +70,7 @@ function getEndTime() {
     return '8:00'
 }
 
-function setEndTime() {
+function setEndTime(s) {
   property.set(EndTimeKey, s, 'persist')
 }
 
@@ -126,6 +126,8 @@ function NightMode(light, sound, life) {
  * @param {object} option night mode option
  */
 NightMode.prototype.setOption = function (option) {
+  if (option == undefined)
+    return
   if (option.action !== undefined && typeof option.action == 'string'
     && option.action == "open") {
     setSwitch('on')
@@ -185,7 +187,7 @@ NightMode.prototype.enable = function() {
  * @private
  */
 NightMode.prototype.init = function () {
-  logger.info('init')
+  logger.info('night mode init')
   this.fsmMain(FSMCode.Start)
 }
 
