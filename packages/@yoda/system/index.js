@@ -5,6 +5,7 @@
  */
 
 var native = require('./system.node')
+var property = require('@yoda/property')
 
 /**
  * Reboot the system.
@@ -102,4 +103,15 @@ exports.parseDateString = function parseDateString (date, format) {
     throw new TypeError('format must be a string')
   }
   return native.strptime(date, format)
+}
+
+/**
+ * Get unified device name.
+ * @returns {string} the device name.
+ */
+exports.getDeviceName = function getDeviceName () {
+  var uuid = (property.get('ro.boot.serialno') || '').substr(-6)
+  var productName = property.get('ro.rokid.build.productname') || 'Rokid-speaker-'
+  var deviceName = [ productName, uuid ].join('-')
+  return deviceName
 }
