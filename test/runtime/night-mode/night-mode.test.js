@@ -5,7 +5,6 @@ var helper = require('../../helper')
 var NightMode = require(`${helper.paths.runtime}/lib/component/night-mode`)
 var mock = require('../../helper/mock')
 
-
 test('night mode check', function (t) {
   var light = {}
   var sound = {}
@@ -25,7 +24,7 @@ test('night mode check', function (t) {
   var option = {}
   var tag1
   var tag2
-  
+
   mock.restore()
   // switch off
   mock.mockReturns(light, 'setNightMode', undefined)
@@ -38,7 +37,7 @@ test('night mode check', function (t) {
   option.startTime = `${startTime.getHours()}:00`
   option.endTime = `${endTime.getHours()}:59`
   nightMode.setOption(option)
-  
+
   tag1 = false
   tag2 = false
   mock.restore()
@@ -95,7 +94,7 @@ test('night mode check', function (t) {
   option.startTime = `${startTime.getHours()}:${startTime.getMinutes()}`
   option.endTime = `${endTime.getHours()}:${endTime.getMinutes()}`
   nightMode.setOption(option)
-  
+
   tag1 = false
   tag2 = false
   mock.restore()
