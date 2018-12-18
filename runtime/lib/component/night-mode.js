@@ -7,7 +7,6 @@ var FSMCode = {
   Start: 0,
   End: 254,
   WaitAsync: 255,
-  
   CheckSwitchOn: 1,
   CheckSwitchOff: 2,
   CheckStatusOff: 3,
@@ -34,59 +33,57 @@ var StartTimeKey = 'nightmode.starttime'
 var EndTimeKey = 'nightmode.endtime'
 var AwakeSwitchKey = 'nightmode.awakeswitch'
 
-function getSwitch() {
+function getSwitch () {
   return property.get(SwitchKey, 'persist')
 }
 
-function setSwitch(s) {
+function setSwitch (s) {
   property.set(SwitchKey, s, 'persist')
 }
 
-function getStatus() {
+function getStatus () {
   return property.get(StatusKey, 'persist')
 }
 
-function setStatus(s) {
+function setStatus (s) {
   property.set(StatusKey, s, 'persist')
 }
 
-function getStartTime() {
+function getStartTime () {
   var s = property.get(StartTimeKey, 'persist')
-  if (s != undefined)
+  if (s !== undefined) {
     return s
-  else
+  } else {
     return '22:00'
+  }
 }
 
-function setStartTime(s) {
+function setStartTime (s) {
   property.set(StartTimeKey, s, 'persist')
 }
 
-function getEndTime() {
+function getEndTime () {
   var s = property.get(EndTimeKey, 'persist')
-  if (s != undefined)
+  if (s !== undefined) {
     return s
-  else
+  } else {
     return '8:00'
+  }
 }
 
-function setEndTime(s) {
+function setEndTime (s) {
   property.set(EndTimeKey, s, 'persist')
 }
 
-function setStatus(s) {
-  property.set(StatusKey, s, 'persist')
-}
-
-function setAwakeSwitch(s) {
+function setAwakeSwitch (s) {
   property.set(AwakeSwitchKey, s, 'persist')
 }
 
-function formatTime(str) {
+function formatTime (str) {
   var d = new Date()
   d.setSeconds(0)
   try {
-    if (typeof str == 'string') {
+    if (typeof str === 'string') {
       var array = str.split(':')
       if (array.length === 2) {
         d.setHours(parseInt(array[0]))
@@ -94,8 +91,7 @@ function formatTime(str) {
         return d
       }
     }
-  }
-  catch(err) {
+  } catch (err) {
     logger.warn(`night mode time paser error: ${str}`)
     d.setHours(0)
     d.setMinutes(0)
@@ -109,7 +105,7 @@ var fsmWait = 2
 var fsmEnd = 3
 var fsmError = 4
 
-function NightMode(light, sound, life) {
+function NightMode (light, sound, life) {
   this._life = life
   this._sound = sound
   this._light = light
@@ -120,38 +116,42 @@ function NightMode(light, sound, life) {
   this._fsmWaitingBreaker = undefined
 }
 
-
 /**
  * Get option frm cloud
  * @param {object} option night mode option
  */
 NightMode.prototype.setOption = function (option) {
-  if (option == undefined)
+  if (option === undefined) {
     return
-  if (option.action !== undefined && typeof option.action == 'string'
-    && option.action == "open") {
+  }
+  if (option.action !== undefined && typeof option.action === 'string' &&
+    option.action === 'open') {
     setSwitch('on')
   } else {
     setSwitch('off')
   }
-  var sTime = '23:00',eTime = '7:00'
-  if (option.startTime !== undefined && typeof option.startTime == 'string')
+  var sTime = '23:00'
+  var eTime = '7:00'
+  if (option.startTime !== undefined && typeof option.startTime === 'string') {
     sTime = option.startTime
-  if (option.endTime !== undefined && typeof option.endTime == 'string')
+  }
+  if (option.endTime !== undefined && typeof option.endTime === 'string') {
     eTime = option.endTime
-  
+  }
+
   setStartTime(sTime)
   setEndTime(eTime)
   logger.info(`setOption in, fsm status is ${this._fsmStatus}`)
-  if (this._fsmStatus == fsmWait) {
+  if (this._fsmStatus === fsmWait) {
     if (this._fsmWaitingBreaker) {
       logger.info('fsm waiting break')
       this._fsmWaitingBreaker()
     }
-  } else if (this._fsmStatus == fsmEnd) {
+  } else if (this._fsmStatus === fsmEnd) {
     this.fsmMain(FSMCode.Start)
-  } else
+  } else {
     logger.error(`setOption in, but fsm status is invalid`)
+  }
 }
 
 /**
@@ -160,8 +160,9 @@ NightMode.prototype.setOption = function (option) {
  * @private
  */
 NightMode.prototype.disable = function () {
-  if (this._volumeSaved != 0)
+  if (this._volumeSaved !== 0) {
     this._sound.setVolume(this._volumeSaved)
+  }
   this._light.setNightMode(false)
   setStatus('off')
   setAwakeSwitch('open')
@@ -171,7 +172,7 @@ NightMode.prototype.disable = function () {
  * @function enable
  * @private
  */
-NightMode.prototype.enable = function() {
+NightMode.prototype.enable = function () {
   var curVolume = this._sound.getVolume()
   if (this._nightModeVolume < curVolume) {
     this._volumeSaved = curVolume
@@ -202,18 +203,19 @@ NightMode.prototype.checkTime = function () {
   var now = new Date()
   var start = formatTime(getStartTime())
   var end = formatTime(getEndTime())
-  if (start > end)
+  if (start > end) {
     end.setDate(end.getDate() + 1)
+  }
   if (start > now) {
     start.setDate(start.getDate() - 1)
     end.setDate(end.getDate() - 1)
   }
   logger.info(`check time now:${now}   start:${start}   end:${end}`)
-  if (now > start && now < end)
+  if (now > start && now < end) {
     return end - now
-  else {
+  } else {
     start.setDate(start.getDate() + 1)
-    return now - start;
+    return now - start
   }
 }
 
@@ -224,7 +226,7 @@ NightMode.prototype.checkTime = function () {
  * @private
  */
 NightMode.prototype.fsmMain = function (code) {
-  while (code != FSMCode.End && code != FSMCode.WaitAsync) {
+  while (code !== FSMCode.End && code !== FSMCode.WaitAsync) {
     logger.info(`fsmMain ${code}`)
     this._fsmStatus = fsmRunning
     switch (code) {
@@ -272,17 +274,18 @@ NightMode.prototype.fsmMain = function (code) {
         break
       case FSMCode.CheckAgain:
         code = this.fsmCheckSwitch(code)
-        break;
+        break
       default:
         logger.error(`${code} fsmMain error`)
         this._fsmStatus = fsmError
-        return;
+        return
     }
   }
-  if (code == FSMCode.WaitAsync)
+  if (code === FSMCode.WaitAsync) {
     this._fsmStatus = fsmWait
-  else if (code == FSMCode.End)
+  } else if (code === FSMCode.End) {
     this._fsmStatus = fsmEnd
+  }
 }
 /**
  * fsm function for switch checking
@@ -294,7 +297,7 @@ NightMode.prototype.fsmMain = function (code) {
 NightMode.prototype.fsmCheckSwitch = function (code) {
   var switchStatus = getSwitch()
   logger.info(`FSMCheckSwitch ${switchStatus}`)
-  return switchStatus  == 'on' ? FSMCode.CheckSwitchOn : FSMCode.CheckSwitchOff
+  return switchStatus === 'on' ? FSMCode.CheckSwitchOn : FSMCode.CheckSwitchOff
 }
 
 /**
@@ -307,7 +310,7 @@ NightMode.prototype.fsmCheckSwitch = function (code) {
 NightMode.prototype.fsmCheckStatusX = function (code) {
   var switchStatus = getSwitch()
   logger.info(`FSMCheckStatusX ${switchStatus}`)
-  return switchStatus == 'on' ? FSMCode.CheckStatusOnX : FSMCode.CheckStatusOffX
+  return switchStatus === 'on' ? FSMCode.CheckStatusOnX : FSMCode.CheckStatusOffX
 }
 
 /**
@@ -320,7 +323,7 @@ NightMode.prototype.fsmCheckStatusX = function (code) {
 NightMode.prototype.fsmCheckStatus = function (code) {
   var status = getStatus()
   logger.info(`FSMCheckStatus ${status}`)
-  return status == 'on' ? FSMCode.CheckStatusOn : FSMCode.CheckStatusOff
+  return status === 'on' ? FSMCode.CheckStatusOn : FSMCode.CheckStatusOff
 }
 
 /**
@@ -346,7 +349,6 @@ NightMode.prototype.fsmNightModeTrunOff = function (code) {
   logger.info('fsmNightModeTrunOff')
   this.disable()
   return FSMCode.NightModeDisabled
-
 }
 
 /**
@@ -373,7 +375,6 @@ NightMode.prototype.fsmCheckTimeX = function (code) {
   var rst = this.checkTime()
   logger.info(`FSMCheckTimeX ${rst}`)
   return rst >= 0 ? FSMCode.CheckTimeSuccessX : FSMCode.CheckTimeFailedX
-
 }
 
 /**
@@ -398,8 +399,9 @@ NightMode.prototype.fsmNightModeTurnOffX = function (code) {
  */
 NightMode.prototype.fsmSetTimeout = function (code) {
   var waitMs = this.checkTime()
-  if (waitMs < 0)
+  if (waitMs < 0) {
     waitMs = -waitMs
+  }
   this._fsmTimer = setTimeout(() => {
     this.fsmMain(FSMCode.CheckAgain)
   }, waitMs)
@@ -434,7 +436,7 @@ NightMode.prototype.fsmCheckActivity = function (code) {
  * @private
  */
 NightMode.prototype.fsmCheckActivityX = function (code) {
-  var activity = this._life.getCurrentAppId() != undefined
+  var activity = (this._life.getCurrentAppId() !== undefined)
   logger.info(`FSMCheckActivityX ${activity}`)
   return activity ? FSMCode.CheckActivityTrueX : FSMCode.CheckActivityFalseX
 }

@@ -996,12 +996,11 @@ AppRuntime.prototype.onLoadCustomConfig = function (config) {
   }
   try {
     var option = JSON.parse(config)
-    if (option.nightMode != undefined) {
+    if (option.nightMode !== undefined) {
       var nightMode = JSON.parse(option.nightMode)
       this.nightMode.setOption(nightMode)
     }
-  }
-  catch(err) {
+  } catch (err) {
     logger.warn(`customconfig load error: ${config}\n${err}`)
   }
   this.openUrl(`yoda-skill://custom-config/firstLoad?config=${config}`)

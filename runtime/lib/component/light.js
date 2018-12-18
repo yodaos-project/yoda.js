@@ -178,10 +178,11 @@ Light.prototype.lightMethod = function (name, args) {
  */
 Light.prototype.setNightMode = function (nightMode) {
   this._nightMode = nightMode
-  if (this._nightMode)
+  if (this._nightMode) {
     this.lightMethod('setGlobalAlphaFactor', ['0.1'])
-  else
+  } else {
     this.lightMethod('setGlobalAlphaFactor', ['1'])
+  }
 }
 
 module.exports = Light

@@ -115,10 +115,11 @@ module.exports = {
    * light.fill(255, 255, 233, 0.3); // this will render rgba(255,255,233,0.3)
    */
   fill: function fillColor (red, green, blue, alpha) {
-    if (typeof alpha === 'number' && alpha >= 0 && alpha < 1)
+    if (typeof alpha === 'number' && alpha >= 0 && alpha < 1) {
       alpha *= globalAlphaFactor
-    else
+    } else {
       alpha = globalAlphaFactor
+    }
     if (alpha < 1) {
       red = Math.floor(alpha * red)
       green = Math.floor(alpha * green)
@@ -157,10 +158,11 @@ module.exports = {
    * @private
    */
   _pixel: function (index, red, green, blue, alpha) {
-    if (typeof alpha === 'number' && alpha >= 0 && alpha < 1)
+    if (typeof alpha === 'number' && alpha >= 0 && alpha < 1) {
       alpha *= globalAlphaFactor
-    else
+    } else {
       alpha = globalAlphaFactor
+    }
     if (alpha < 1) {
       red = Math.floor(alpha * red)
       green = Math.floor(alpha * green)
