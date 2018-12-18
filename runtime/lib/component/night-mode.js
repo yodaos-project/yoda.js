@@ -79,23 +79,24 @@ function setAwakeSwitch (s) {
   property.set(AwakeSwitchKey, s, 'persist')
 }
 
-function formatTime (str) {
+function formatTime (str, defalutH, defaultM) {
   var d = new Date()
   d.setSeconds(0)
+  var hh = defalutH
+  var mm = defaultM
   try {
     if (typeof str === 'string') {
       var array = str.split(':')
       if (array.length === 2) {
-        d.setHours(parseInt(array[0]))
-        d.setMinutes(parseInt(array[1]))
-        return d
+        hh = parseInt(array[0])
+        mm = parseInt(array[1])
       }
     }
   } catch (err) {
     logger.warn(`night mode time paser error: ${str}`)
-    d.setHours(0)
-    d.setMinutes(0)
   }
+  d.setHours(hh)
+  d.setMinutes(mm)
   return d
 }
 
@@ -201,8 +202,8 @@ NightMode.prototype.init = function () {
  */
 NightMode.prototype.checkTime = function () {
   var now = new Date()
-  var start = formatTime(getStartTime())
-  var end = formatTime(getEndTime())
+  var start = formatTime(getStartTime(), 22, 0)
+  var end = formatTime(getEndTime(), 7, 0)
   if (start > end) {
     end.setDate(end.getDate() + 1)
   }
