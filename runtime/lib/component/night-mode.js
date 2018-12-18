@@ -309,7 +309,7 @@ NightMode.prototype.fsmCheckSwitch = function (code) {
  * @private
  */
 NightMode.prototype.fsmCheckStatusX = function (code) {
-  var switchStatus = getSwitch()
+  var switchStatus = getStatus()
   logger.info(`FSMCheckStatusX ${switchStatus}`)
   return switchStatus === 'on' ? FSMCode.CheckStatusOnX : FSMCode.CheckStatusOffX
 }
