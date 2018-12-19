@@ -1,0 +1,575 @@
+'use strict'
+
+var logger = require('logger')('bluetooth-a2dp')
+var inherits = require('util').inherits
+var EventEmitter = require('events').EventEmitter
+var floraFactory = require('@yoda/flora')
+var FloraComp = require('@yoda/flora/comp')
+var protocol = require('./protocol.json')
+var AudioManager = require('@yoda/audio').AudioManager
+var _ = require('@yoda/util')._
+
+/**
+ * @typedef {Object} PROFILE
+ * @property {string} BLE - Bluetooth low energy profile.
+ * @property {string} A2DP - Bluetooth advanced audio distribution profile.
+ */
+
+/**
+ * @typedef {Object} A2DP_MODE
+ * @property {string} SINK - A2dp sink mode.
+ * @property {string} SOURCE - A2dp source mode.
+ */
+
+/**
+ * @typedef {Object} RADIO_STATE
+ * @property {string} ON - Bluetooth radio state is ON.
+ * @property {string} OFF - Bluetooth radio state is OFF.
+ * @property {string} ON_FAILED - Turn on bluetooth radio failed.
+ */
+
+/**
+ * @typedef {Object} CONNECTION_STATE
+ * @property {string} CONNECTED - Successfully connected to remote device.
+ * @property {string} DISCONNECTED - Disconnected from remote deivce.
+ * @property {string} CONNECT_FAILED - Failed to connect to remote device.
+ * @property {string} AUTOCONNECT_FAILED - Auto connection to history paired device failed after turn on bluetooth.
+ */
+
+/**
+ * @typedef {Object} AUDIO_STATE
+ * @property {string} PLAYING - Music stream is playing.
+ * @property {string} PAUSED - Music stream is paused.
+ * @property {string} STOPPED - Music stream is stopped.
+ * @property {string} VOLUMN_CHANGED - Music stream's volumn is changed.
+ */
+
+/**
+ * @typedef {Object} DISCOVERY_STATE
+ * @property {string} ON - Local device is discoverable.
+ * @property {string} OFF - Local device is undiscoverable.
+ * @property {string} DEVICE_LIST_CHANGED - Found new around bluetooth devices.
+ */
+
+/**
+ * Use `bluetooth.getAdapter(PROFILE.A2DP)` instead of this constructor.
+ * @class
+ * @memberof module:@yoda/bluetooth
+ * @constructor
+ * @param {string} deviceName - The device name.
+ */
+function BluetoothA2dp (deviceName) {
+  EventEmitter.call(this)
+
+  this.lastMsg = {
+    'a2dpstate': 'closed',
+    'connect_state': 'invalid',
+    'connect_address': null,
+    'connect_name': null,
+    'play_state': 'invalid',
+    'broadcast_state': 'closed',
+    'linknum': 0
+  }
+  this._end = false
+  this.lastCmd = ''
+  this.lastMode = protocol.A2DP_MODE.SINK
+  this.localName = deviceName
+  this.unique = false
+
+  this._flora = new FloraComp(logger)
+  this._flora.handlers = {
+    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
+    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
+  }
+  this._flora.init('bluetooth-a2dp', {
+    'uri': 'unix:/var/run/flora.sock',
+    'bufsize': 40960,
+    'reconnInterval': 10000
+  })
+}
+inherits(BluetoothA2dp, EventEmitter)
+
+/**
+ * @private
+ */
+BluetoothA2dp.prototype._onSinkEvent = function (data) {
+  if (this._end) {
+    logger.warn('Already destroied!')
+    return
+  }
+  try {
+    var msg = JSON.parse(data[0] + '')
+    logger.debug(`on sink event(action:${msg.action})`)
+
+    if (msg.action === 'stateupdate') {
+      logger.debug(`a2dp:${this.lastMsg.a2dpstate}=>${msg.a2dpstate}, conn:${this.lastMsg.connect_state}=>${msg.connect_state}, play:${this.lastMsg.play_state}=>${msg.play_state}, bc:${this.lastMsg.broadcast_state}=>${msg.broadcast_state}`)
+      if (msg.a2dpstate === this.lastMsg.a2dpstate && msg.connect_state === this.lastMsg.connect_state && msg.play_state === this.lastMsg.play_state && msg.broadcast_state === this.lastMsg.broadcast_state) {
+        logger.warn('Ignore last sink same msg!')
+        return
+      }
+
+      if (msg.a2dpstate === 'opened' && msg.connect_state === 'invalid' && msg.play_state === 'invalid') {
+        /**
+         * When bluetooth's radio state is changed, such as on/off.
+         * @event module:@yoda/bluetooth.BluetoothA2dp#radio_state_changed
+         */
+        this.emit('radio_state_changed', protocol.A2DP_MODE.SINK, protocol.RADIO_STATE.ON, {autoConn: msg.linknum > 0})
+        this.unique = false
+      } else if (msg.a2dpstate === 'open failed' && msg.connect_state === 'invalid' && msg.play_state === 'invalid') {
+        this.emit('radio_state_changed', protocol.A2DP_MODE.SINK, protocol.RADIO_STATE.ON_FAILED)
+      } else if (msg.a2dpstate === 'closed') {
+        if (!this.unique) {
+          this.emit('radio_state_changed', protocol.A2DP_MODE.SINK, protocol.RADIO_STATE.OFF)
+        }
+      } else if (msg.a2dpstate === 'opened' && msg.connect_state === 'connected') {
+        if (msg.play_state === 'invalid') {
+          var connectedDevice = {'address': msg.connect_address, 'name': msg.connect_name}
+          /**
+           * When bluetooth's connection state is changed, such as connected/disconnected.
+           * @event module:@yoda/bluetooth.BluetoothA2dp#connection_state_changed
+           */
+          this.emit('connection_state_changed', protocol.A2DP_MODE.SINK, protocol.CONNECTION_STATE.CONNECTED, connectedDevice)
+        } else if (msg.play_state === 'played') {
+          /**
+           * When bluetooth's audio stream state is changed, such as playing/paused.
+           * @event module:@yoda/bluetooth.BluetoothA2dp#audio_state_changed
+           */
+          this.emit('audio_state_changed', protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.PLAYING)
+        } else if (msg.play_state === 'stopped') {
+          if (this.lastCmd === 'pause') {
+            this.emit('audio_state_changed', protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.PAUSED)
+          } else {
+            this.emit('audio_state_changed', protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.STOPPED)
+          }
+          this.lastCmd = null
+        }
+      } else if (msg.a2dpstate === 'opened' && msg.connect_state === 'disconnected') {
+        if (!this.unique) {
+          this.emit('connection_state_changed', protocol.A2DP_MODE.SINK, protocol.CONNECTION_STATE.DISCONNECTED)
+        }
+      }
+
+      if (msg.a2dpstate === 'opened' && msg.connect_state === 'invalid' && msg.play_state === 'invalid' && msg.broadcast_state === 'opened') {
+        /**
+         * When bluetooth's discovery state is changed, such as undiscoverable or device list changed.
+         * @event module:@yoda/bluetooth.BluetoothA2dp#discovery_state_changed
+         */
+        this.emit('discovery_state_changed', protocol.A2DP_MODE.SINK, protocol.DISCOVERY_STATE.ON)
+      } else if (msg.broadcast_state === 'closed' && this.lastMsg.broadcast_state === 'opened') {
+        this.emit('discovery_state_changed', protocol.A2DP_MODE.SINK, protocol.DISCOVERY_STATE.OFF)
+      }
+      this.lastMsg = Object.assign(this.lastMsg, msg)
+    } else if (msg.action === 'volumechange') {
+      var vol = msg.value
+      if (vol === undefined) {
+        vol = AudioManager.getVolume(AudioManager.STREAM_PLAYBACK)
+      }
+      AudioManager.setVolume(vol)
+      logger.info(`Set volume ${vol} for bluetooth a2dp sink.`)
+      this.emit('audio_state_changed', protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.VOLUMN_CHANGED, {volumn: vol})
+    }
+  } catch (err) {
+    logger.error(`on a2dpSinkEvent error(${JSON.stringify(err)})`)
+  }
+}
+
+/**
+ * @private
+ */
+BluetoothA2dp.prototype._onSourceEvent = function (data) {
+  if (this._end) {
+    logger.warn('Already destroied!')
+    return
+  }
+  try {
+    var msg = JSON.parse(data[0] + '')
+    logger.debug(`on source event(action:${msg.action})`)
+
+    if (msg.action === 'stateupdate') {
+      logger.debug(`a2dp:${this.lastMsg.a2dpstate}=>${msg.a2dpstate}, conn:${this.lastMsg.connect_state}=>${msg.connect_state}, bc:${this.lastMsg.broadcast_state}=>${msg.broadcast_state}`)
+      if (msg.a2dpstate === this.lastMsg.a2dpstate && msg.connect_state === this.lastMsg.connect_state && msg.broadcast_state === this.lastMsg.broadcast_state) {
+        logger.warn('Ignore last source same msg!')
+        return
+      }
+
+      if (msg.a2dpstate === 'opened' && msg.connect_state === 'invalid') {
+        this.emit('radio_state_changed', protocol.A2DP_MODE.SOURCE, protocol.RADIO_STATE.ON, {autoConn: msg.linknum > 0})
+        this.unique = false
+      } else if (msg.a2dpstate === 'open failed' && msg.connect_state === 'invalid') {
+        this.emit('radio_state_changed', protocol.A2DP_MODE.SOURCE, protocol.RADIO_STATE.ON_FAILED)
+      } else if (msg.a2dpstate === 'closed') {
+        if (!this.unique) {
+          this.emit('radio_state_changed', protocol.A2DP_MODE.SOURCE, protocol.RADIO_STATE.OFF)
+        }
+      } else if (msg.a2dpstate === 'opened' && msg.connect_state === 'connected') {
+        var connectedDevice = {'address': msg.connect_address, 'name': msg.connect_name}
+        this.emit('connection_state_changed', protocol.A2DP_MODE.SOURCE, protocol.CONNECTION_STATE.CONNECTED, connectedDevice)
+      } else if (msg.a2dpstate === 'opened' && msg.connect_state === 'disconnected') {
+        if (!this.unique) {
+          this.emit('connection_state_changed', protocol.A2DP_MODE.SOURCE, protocol.CONNECTION_STATE.DISCONNECTED)
+        }
+      } else if (msg.a2dpstate === 'opened' && msg.connect_state === 'connect failed') {
+        this.emit('connection_state_changed', protocol.A2DP_MODE.SOURCE, protocol.CONNECTION_STATE.CONNECT_FAILED)
+      } else if (msg.a2dpstate === 'opened' && msg.connect_state === 'connect over') {
+        this.emit('connection_state_changed', protocol.A2DP_MODE.SOURCE, protocol.CONNECTION_STATE.AUTOCONNECT_FAILED)
+      }
+      this.lastMsg = Object.assign(this.lastMsg, msg)
+    } else if (msg.action === 'discovery') {
+      var results = msg.results
+      var nbr = results.deviceList != null ? results.deviceList.length : 0
+      logger.debug(`Found ${nbr} devices, is_comp: ${results.is_completed}, currentDevice: ${results.currentDevice}`)
+      for (var i = 0; i < nbr; i++) {
+        logger.debug(`  ${results.deviceList[i].name} : ${results.deviceList[i].address}`)
+      }
+      this.emit('discovery_state_changed', protocol.A2DP_MODE.SOURCE, protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED, results)
+    }
+  } catch (err) {
+    logger.error(`on a2dpSourceEvent error(${JSON.stringify(err)})`)
+  }
+}
+
+/**
+ * @private
+ */
+BluetoothA2dp.prototype._send = function (mode, cmdstr, props) {
+  var data = Object.assign({ command: cmdstr }, props || {})
+  var msg = [ JSON.stringify(data) ]
+  var name = (mode === protocol.A2DP_MODE.SINK ? 'bluetooth.a2dpsink.command' : 'bluetooth.a2dpsource.command')
+  var type = (cmdstr === 'ON' ? floraFactory.MSGTYPE_PERSIST : floraFactory.MSGTYPE_INSTANT)
+  return this._flora.post(name, msg, type)
+}
+
+/**
+ * Turn on the bluetooth. It will starts `a2dp-sink` or `a2dp-source` according parameter `mode`.
+ *
+ * You can listen following changed states:
+ * - `protocol.RADIO_STATE.ON` when bluetooth is opened successfully.
+ * - `protocol.RADIO_STATE.ON_FAILED` when bluetooth cannot be opened.
+ * - `protocol.CONNECTION_STATE.AUTOCONNECT_FAILED` when bluetooth opened but auto connect to history paired device failed.
+ *
+ * @param {A2DP_MODE} [mode] - Specify the bluetooth a2dp profile mode. If this param is not provided, will starts `A2DP_MODE.SINK` for default.
+ * @param {object} [options] - The extra options.
+ * @param {boolean} [options.autoplay=false] - Whether after autoconnected, music should be played automatically.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#radio_state_changed
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#connection_state_changed
+ * @example
+ * var bluetooth = require('@yoda/bluetooth')
+ * var protocol = bluetooth.protocol
+ * var a2dp = bluetooth.getAdapter(protocol.PROFILE.A2DP)
+ * a2dp.on('radio_state_changed', function (mode, state, extra) {
+ *   console.log(`bluetooth mode: ${mode}, state: ${state}`)
+ * })
+ * a2dp.open(protocol.A2DP_MODE.SINK, {autoplay: true})
+ */
+BluetoothA2dp.prototype.open = function (mode, options) {
+  if (mode === undefined) {
+    mode = protocol.A2DP_MODE.SINK
+  }
+  var autoplay = _.get(options, 'autoplay', false)
+  logger.debug(`open(${this.lastMode}=>${mode}, autoplay:${autoplay})`)
+  if (this.lastMode !== mode && this.isOpened()) {
+    this.unique = true
+  }
+  this.lastMode = mode
+  var msg = {
+    name: this.localName,
+    unique: true
+  }
+  if (autoplay) {
+    msg.subsequent = 'PLAY'
+  }
+  this._send(mode, 'ON', msg)
+}
+
+/**
+ * Turn off the bluetooth.
+ *
+ * You can listen following changed state events:
+ * - `protocol.RADIO_STATE.OFF` when bluetooth is closed.
+ *
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#radio_state_changed
+ */
+BluetoothA2dp.prototype.close = function () {
+  logger.debug(`close(${this.lastMode}, ${this.lastMsg.a2dpstate})`)
+  if (this.lastMsg.a2dpstate === 'closed') {
+    logger.warn('close() while last state is already closed.')
+  }
+  this._send(this.lastMode, 'OFF')
+}
+
+/**
+ * Connect bluetooth to remote device.
+ *
+ * You can listen following changed states:
+ * - `protocol.CONNECTION_STATE.CONNECTED` when successfully connected to remote device.
+ * - `protocol.CONNECTION_STATE.CONNECT_FAILED` when cannot connect to remote device.
+ * @param {string} addr - Specify the remote bluetooth device's MAC address.
+ * @param {string} name - Specify the remote bluetooth device's name.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#connection_state_changed
+ */
+BluetoothA2dp.prototype.connect = function (addr, name) {
+  logger.debug(`connect(${this.lastMode}, ${name}:${addr})`)
+  if (this.lastMode === protocol.A2DP_MODE.SOURCE) {
+    var target = {'address': addr, 'name': name}
+    if (this.lastMsg.a2dpstate !== 'opened') {
+      logger.warn('connect() while last state is not opened.')
+    }
+    if (this.lastMsg.connect_state === 'connected' && this.lastMsg.connect_address === addr) {
+      logger.warn('connect() to same already connected device?')
+    }
+    this._send(this.lastMode, 'CONNECT', target)
+  } else {
+    logger.warn('connect() is not supported for SINK!')
+    process.nextTick(() => {
+      this.emit(protocol.STATE_CHANGED.CONNECTION, this.lastMode, protocol.CONNECTION_STATE.CONNECT_FAILED)
+    })
+  }
+}
+
+/**
+ * Disconnect bluetooth from remote device.
+ *
+ * You can listen following changed state:
+ * - `protocol.CONNECTION_STATE.DISCONNECTED` after disconnected from remote device.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#connection_state_changed
+ */
+BluetoothA2dp.prototype.disconnect = function () {
+  logger.debug(`disconnect(${this.lastMode})`)
+  if (this.lastMsg.connect_state !== 'connected') {
+    logger.warn('disconnect() while last state is not connected.')
+  }
+  this._send(this.lastMode, 'DISCONNECT_PEER')
+}
+
+/**
+ * Mute a2dp-sink music stream.
+ *
+ *  No state changed after this command execution.
+ * @returns {null}
+ */
+BluetoothA2dp.prototype.mute = function () {
+  logger.debug(`mute(${this.lastMode})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    this._send(this.lastMode, 'MUTE')
+  }
+}
+
+/**
+ * Unmute a2dp-sink music stream.
+ *
+ * No state changed after this command execution.
+ * @returns {null}
+ */
+BluetoothA2dp.prototype.unmute = function () {
+  logger.debug(`unmute(${this.lastMode})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    this._send(this.lastMode, 'UNMUTE')
+  }
+}
+
+/**
+ * Play a2dp-sink music stream.
+ *
+ * You can listen following changed state:
+ * - `protocol.AUDIO_STATE.PLAYING` after music play started.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
+ */
+BluetoothA2dp.prototype.play = function () {
+  logger.debug(`play(${this.lastMode}, play_state: ${this.lastMsg.play_state})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    if (this.lastMsg.play_state === 'played') {
+      logger.warn('play() while last state is already played.')
+    }
+    this.unmute()
+    this._send(this.lastMode, 'PLAY')
+  }
+}
+
+/**
+ * Pause a2dp-sink music stream.
+ *
+ * You can listen following changed state:
+ * - `protocol.AUDIO_STATE.PAUSED` after music play paused.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
+ */
+BluetoothA2dp.prototype.pause = function () {
+  logger.debug(`pause(${this.lastMode}, play_state: ${this.lastMsg.play_state})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    if (this.lastMsg.play_state === 'stopped') {
+      logger.warn('pause() while last state is already stopped.')
+    }
+    this.lastCmd = 'pause'
+    this._send(this.lastMode, 'PAUSE')
+  }
+}
+
+/**
+ * Stop a2dp-sink music stream.
+ *
+ * You can listen following changed state:
+ * - `protocol.AUDIO_STATE.STOPPED` after music play stopped.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
+ */
+BluetoothA2dp.prototype.stop = function () {
+  logger.debug(`stop(${this.lastMode}, play_state: ${this.lastMsg.play_state})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    if (this.lastMsg.play_state === 'stopped') {
+      logger.warn('stop() while last state is already stopped.')
+    }
+    this.lastCmd = 'stop'
+    this._send(this.lastMode, 'STOP')
+  }
+}
+
+/**
+ * Play a2dp-sink previous song.
+ *
+ * No state changed after this command execution.
+ * @returns {null}
+ */
+BluetoothA2dp.prototype.prev = function () {
+  logger.debug(`prev(${this.lastMode})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    this._send(this.lastMode, 'PREV')
+  }
+}
+
+/**
+ * Play a2dp-sink next song.
+ *
+ * No state changed after this command execution.
+ * @returns {null}
+ */
+BluetoothA2dp.prototype.next = function () {
+  logger.debug(`next(${this.lastMode})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    this._send(this.lastMode, 'NEXT')
+  }
+}
+
+/**
+ * Set local device discoverable.
+ *
+ * You can listen following changed state:
+ * - `protocol.DISCOVER_STATE.ON` after set succeeded.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#discovery_state_changed
+ * @private
+ */
+BluetoothA2dp.prototype.setDiscoverable = function () {
+  logger.debug('Todo: not implemenet yet.')
+}
+
+/**
+ * Set local device undiscoverable.
+ *
+ * You can listen following changed state:
+ * - `protocol.DISCOVER_STATE.OFF` after set succeeded.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#discovery_state_changed
+ * @private
+ */
+BluetoothA2dp.prototype.setUndiscoverable = function () {
+  logger.debug('Todo: not implemenet yet.')
+}
+
+/**
+ * Discovery around bluetooth devices.
+ *
+ * You can listen following changed state:
+ * - `protocol.DISCOVER_STATE.DEVICE_LIST_CHANGED` while some bluetooth devices have been found.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#discovery_state_changed
+ */
+BluetoothA2dp.prototype.discovery = function () {
+  logger.debug(`discovery(${this.lastMode}, cur state: ${this.lastMsg.a2dpstate})`)
+  if (this.lastMode === protocol.A2DP_MODE.SOURCE) {
+    if (this.lastMsg.a2dpstate !== 'opened') {
+      logger.warn('discovery() while last state is not opened.')
+    }
+    this._send(this.lastMode, 'DISCOVERY')
+  }
+}
+
+/**
+ * Get current running A2DP profile mode.
+ * @returns {A2DP_MODE} - The current running A2DP profile mode.
+ */
+BluetoothA2dp.prototype.getMode = function () {
+  return this.lastMode
+}
+
+/**
+ * Get if bluetooth is opened.
+ * @returns {boolean} - `true` if bluetooth is opened else `false`.
+ */
+BluetoothA2dp.prototype.isOpened = function () {
+  return this.lastMsg.a2dpstate === 'opened'
+}
+
+/**
+ * Get if this device is connected with remote device.
+ * @returns {boolean} - `true` if blueooth is connected with remote device else `false`.
+ */
+BluetoothA2dp.prototype.isConnected = function () {
+  return this.lastMsg.connect_state === 'connected'
+}
+
+/**
+ * @typedef {Object} BluetoothDevice
+ * @property {string} name - The device's name.
+ * @property {string} address - The device's MAC address.
+ */
+
+/**
+ * Get connected bluetooth device.
+ * @returns {BluetoothDevice|null} - Current connected bluetooth device object or `null` if no connected device.
+ */
+BluetoothA2dp.prototype.getConnectedDevice = function () {
+  if (!this.isConnected()) {
+    return null
+  } else {
+    return {
+      address: this.lastMsg.connect_address,
+      name: this.lastMsg.connect_name
+    }
+  }
+}
+
+/**
+ * Get if a2dp-sink music is playing.
+ * @returns {boolean} - `true` if bluetooth music is playing else `false`.
+ */
+BluetoothA2dp.prototype.isPlaying = function () {
+  return this.lastMsg.play_state === 'played'
+}
+
+/**
+ * Get if this deivce is under discoverable.
+ * @returns {boolean} - `true` if local device is under discoverable else `false`.
+ */
+BluetoothA2dp.prototype.isDiscoverable = function () {
+  return this.lastMsg.broadcast_state === 'opened'
+}
+
+/**
+ * Destroy bluetooth profile adapter, thus means bluetooth will always be turned `OFF` automatically.
+ */
+BluetoothA2dp.prototype.destroy = function () {
+  var destroyFunc = function () {
+    this.removeAllListeners()
+    this._flora.destruct()
+    this._end = true
+  }.bind(this)
+  this.close()
+  setTimeout(destroyFunc, 3000)
+}
+
+exports.BluetoothA2dp = BluetoothA2dp
