@@ -55,7 +55,9 @@ NativeObjectWrap::NativeObjectWrap(const CallbackInfo& info)
 }
 
 NativeObjectWrap::~NativeObjectWrap() {
-  thisClient->close();
+  if (thisClient) {
+    thisClient->close();
+  }
 }
 
 Napi::Value NativeObjectWrap::start(const Napi::CallbackInfo& info) {
@@ -71,7 +73,11 @@ Napi::Value NativeObjectWrap::unsubscribe(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value NativeObjectWrap::close(const Napi::CallbackInfo& info) {
-  thisClient->close();
+  ClientNative* tmp = thisClient;
+  if (tmp) {
+    thisClient = nullptr;
+    tmp->close();
+  }
   return info.Env().Undefined();
 }
 
