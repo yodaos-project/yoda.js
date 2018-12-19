@@ -484,13 +484,34 @@ DBus.prototype.amsexport = {
         }
         this.runtime.onVoiceCommand(text, nlp, action)
           .then(
-            () => cb(null, '{"ok":true}'),
+            () => cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } })),
             err => {
               logger.error('unexpected error on voice command', err.stack)
               cb(null, JSON.stringify({ ok: false, error: err.message }))
             }
           )
       })
+    }
+  },
+  NLPIntent: {
+    in: ['s'],
+    out: ['s'],
+    fn: function NLPIntent (json, cb) {
+      var input = safeParse(json)
+      var text = input.text
+      var nlp = input.nlp
+      var action = input.action
+      if (text == null || nlp == null || action == null) {
+        return cb(null, JSON.stringify({ ok: false, message: 'Invalid Argument' }))
+      }
+      this.runtime.onVoiceCommand(text, nlp, action)
+        .then(
+          () => cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } })),
+          err => {
+            logger.error('unexpected error on voice command', err.stack)
+            cb(null, JSON.stringify({ ok: false, error: err.message }))
+          }
+        )
     }
   },
   OpenUrl: {
