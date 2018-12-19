@@ -576,7 +576,7 @@ Light.prototype.setPickup = function (appId, duration, withAwaken) {
 }
 
 Light.prototype.setGlobalAlphaFactor = function (alphaFactor) {
-  light.setGlobalAlphaFactor(alphaFactor)
+  manager.setGlobalAlphaFactor(alphaFactor)
 }
 
 module.exports = Light

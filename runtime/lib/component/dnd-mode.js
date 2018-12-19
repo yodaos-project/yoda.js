@@ -1,7 +1,7 @@
 'use strict'
 
 var property = require('@yoda/property')
-var logger = require('logger')('nightmode')
+var logger = require('logger')('dndmode')
 
 var FSMCode = {
   Start: 0,
@@ -11,27 +11,27 @@ var FSMCode = {
   CheckSwitchOff: 2,
   CheckStatusOff: 3,
   CheckStatusOn: 4,
-  NightModeDisabled: 5,
+  DNDModeDisabled: 5,
   CheckStatusOnX: 6,
   CheckStatusOffX: 7,
   CheckTimeSuccess: 8,
   CheckTimeFailed: 9,
-  NightModeDisabledX: 10,
+  DNDModeDisabledX: 10,
   CheckTimeSuccessX: 11,
   CheckTimeFailedX: 12,
   CheckActivityTrue: 13,
   CheckActivityFalse: 14,
   CheckActivityTrueX: 15,
   CheckActivityFalseX: 16,
-  NightModeEnabled: 17,
+  DNDModeEnabled: 17,
   CheckAgain: 18
 }
 
-var SwitchKey = 'nightmode.switch'
-var StatusKey = 'nightmode.status'
-var StartTimeKey = 'nightmode.starttime'
-var EndTimeKey = 'nightmode.endtime'
-var AwakeSwitchKey = 'nightmode.awakeswitch'
+var SwitchKey = 'dndmode.switch'
+var StatusKey = 'dndmode.status'
+var StartTimeKey = 'dndmode.starttime'
+var EndTimeKey = 'dndmode.endtime'
+var AwakeSwitchKey = 'dndmode.awakeswitch'
 
 function getSwitch () {
   return property.get(SwitchKey, 'persist')
@@ -79,24 +79,24 @@ function setAwakeSwitch (s) {
   property.set(AwakeSwitchKey, s, 'persist')
 }
 
-function formatTime (str, defalutH, defaultM) {
+function formatTime (str, defalutHour, defaultMinute) {
   var d = new Date()
   d.setSeconds(0)
-  var hh = defalutH
-  var mm = defaultM
+  var hour = defalutHour
+  var minute = defaultMinute
   try {
     if (typeof str === 'string') {
       var array = str.split(':')
       if (array.length === 2) {
-        hh = parseInt(array[0])
-        mm = parseInt(array[1])
+        hour = parseInt(array[0])
+        minute = parseInt(array[1])
       }
     }
   } catch (err) {
-    logger.warn(`night mode time paser error: ${str}`)
+    logger.warn(`dnd mode time paser error: ${str}`)
   }
-  d.setHours(hh)
-  d.setMinutes(mm)
+  d.setHours(hour)
+  d.setMinutes(minute)
   return d
 }
 
@@ -106,11 +106,11 @@ var fsmWait = 2
 var fsmEnd = 3
 var fsmError = 4
 
-function NightMode (light, sound, life) {
+function DNDMode (light, sound, life) {
   this._life = life
   this._sound = sound
   this._light = light
-  this._nightModeVolume = 10
+  this._dndModeVolume = 10
   this._volumeSaved = 0
   this._fsmStatus = fsmReady
   this._fsmTimer = undefined
@@ -119,9 +119,9 @@ function NightMode (light, sound, life) {
 
 /**
  * Get option frm cloud
- * @param {object} option night mode option
+ * @param {object} option dnd mode option
  */
-NightMode.prototype.setOption = function (option) {
+DNDMode.prototype.setOption = function (option) {
   if (option === undefined) {
     return
   }
@@ -131,17 +131,17 @@ NightMode.prototype.setOption = function (option) {
   } else {
     setSwitch('off')
   }
-  var sTime = '23:00'
-  var eTime = '7:00'
+  var startTime = '23:00'
+  var endTime = '7:00'
   if (option.startTime !== undefined && typeof option.startTime === 'string') {
-    sTime = option.startTime
+    startTime = option.startTime
   }
   if (option.endTime !== undefined && typeof option.endTime === 'string') {
-    eTime = option.endTime
+    endTime = option.endTime
   }
 
-  setStartTime(sTime)
-  setEndTime(eTime)
+  setStartTime(startTime)
+  setEndTime(endTime)
   logger.info(`setOption in, fsm status is ${this._fsmStatus}`)
   if (this._fsmStatus === fsmWait) {
     if (this._fsmWaitingBreaker) {
@@ -156,51 +156,51 @@ NightMode.prototype.setOption = function (option) {
 }
 
 /**
- * Disable night mode
+ * Disable dnd mode
  * @function disable
  * @private
  */
-NightMode.prototype.disable = function () {
+DNDMode.prototype.disable = function () {
   if (this._volumeSaved !== 0) {
     this._sound.setVolume(this._volumeSaved)
   }
-  this._light.setNightMode(false)
+  this._light.setDNDMode(false)
   setStatus('off')
   setAwakeSwitch('open')
 }
 /**
- * Enable night mode
+ * Enable dnd mode
  * @function enable
  * @private
  */
-NightMode.prototype.enable = function () {
+DNDMode.prototype.enable = function () {
   var curVolume = this._sound.getVolume()
-  if (this._nightModeVolume < curVolume) {
+  if (this._dndModeVolume < curVolume) {
     this._volumeSaved = curVolume
-    this._sound.setVolume(this._nightModeVolume)
+    this._sound.setVolume(this._dndModeVolume)
   }
-  this._light.setNightMode(true)
+  this._light.setDNDMode(true)
   setStatus('on')
   setAwakeSwitch('close')
 }
 /**
- * init night mode
+ * init dnd mode
  * @function init
  * @private
  */
-NightMode.prototype.init = function () {
-  logger.info('night mode init')
+DNDMode.prototype.init = function () {
+  logger.info('dnd mode init')
   this.fsmMain(FSMCode.Start)
 }
 
 /**
- * Check night mode time, return positive number if in night mode time
+ * Check dnd mode time, return positive number if in dnd mode time
  * @function enable
  * @returns {number} if result > 0, it's the millisecond to end time
  *                   if result < 0, it's the millisecond to start time
  * @private
  */
-NightMode.prototype.checkTime = function () {
+DNDMode.prototype.checkTime = function () {
   var now = new Date()
   var start = formatTime(getStartTime(), 22, 0)
   var end = formatTime(getEndTime(), 7, 0)
@@ -226,7 +226,7 @@ NightMode.prototype.checkTime = function () {
  * @param {Number} code - fsm code
  * @private
  */
-NightMode.prototype.fsmMain = function (code) {
+DNDMode.prototype.fsmMain = function (code) {
   while (code !== FSMCode.End && code !== FSMCode.WaitAsync) {
     logger.info(`fsmMain ${code}`)
     this._fsmStatus = fsmRunning
@@ -241,11 +241,11 @@ NightMode.prototype.fsmMain = function (code) {
         code = this.fsmCheckStatus(code)
         break
       case FSMCode.CheckStatusOff:
-      case FSMCode.NightModeDisabled:
+      case FSMCode.DNDModeDisabled:
         code = this.fsmEnd(code)
         break
       case FSMCode.CheckStatusOn:
-        code = this.fsmNightModeTrunOff(code)
+        code = this.fsmDNDModeTrunOff(code)
         break
       case FSMCode.CheckStatusOnX:
         code = this.fsmCheckTime(code)
@@ -260,18 +260,18 @@ NightMode.prototype.fsmMain = function (code) {
         code = this.fsmCheckActivity(code)
         break
       case FSMCode.CheckActivityFalse:
-        code = this.fsmNightModeTurnOn(code)
+        code = this.fsmDNDModeTurnOn(code)
         break
       case FSMCode.CheckActivityTrueX:
-      case FSMCode.NightModeEnabled:
+      case FSMCode.DNDModeEnabled:
       case FSMCode.CheckActivityTrue:
       case FSMCode.CheckTimeSuccess:
-      case FSMCode.NightModeDisabledX:
+      case FSMCode.DNDModeDisabledX:
       case FSMCode.CheckTimeFailedX:
         code = this.fsmSetTimeout(code)
         break
       case FSMCode.CheckActivityFalseX:
-        code = this.fsmNightModeTurnOffX(code)
+        code = this.fsmDNDModeTurnOffX(code)
         break
       case FSMCode.CheckAgain:
         code = this.fsmCheckSwitch(code)
@@ -295,33 +295,33 @@ NightMode.prototype.fsmMain = function (code) {
  * @returns switch on or switch off
  * @private
  */
-NightMode.prototype.fsmCheckSwitch = function (code) {
+DNDMode.prototype.fsmCheckSwitch = function (code) {
   var switchValue = getSwitch()
   logger.info(`FSMCheckSwitch ${switchValue}`)
   return switchValue === 'on' ? FSMCode.CheckSwitchOn : FSMCode.CheckSwitchOff
 }
 
 /**
- * fsm function for current night mode status checking
+ * fsm function for current dnd mode status checking
  * @function fsmCheckStatusX
  * @param {Number} code - fsm code
  * @returns status On or status off
  * @private
  */
-NightMode.prototype.fsmCheckStatusX = function (code) {
+DNDMode.prototype.fsmCheckStatusX = function (code) {
   var status = getStatus()
   logger.info(`FSMCheckStatusX ${status}`)
   return status === 'on' ? FSMCode.CheckStatusOnX : FSMCode.CheckStatusOffX
 }
 
 /**
- * fsm function for current night mode status checking
+ * fsm function for current dnd mode status checking
  * @function fsmCheckStatus
  * @param {Number} code - fsm code
  * @returns status on or status off
  * @private
  */
-NightMode.prototype.fsmCheckStatus = function (code) {
+DNDMode.prototype.fsmCheckStatus = function (code) {
   var status = getStatus()
   logger.info(`FSMCheckStatus ${status}`)
   return status === 'on' ? FSMCode.CheckStatusOn : FSMCode.CheckStatusOff
@@ -334,61 +334,61 @@ NightMode.prototype.fsmCheckStatus = function (code) {
  * @returns end
  * @private
  */
-NightMode.prototype.fsmEnd = function (code) {
+DNDMode.prototype.fsmEnd = function (code) {
   logger.info('FSMEnd')
   return FSMCode.End
 }
 
 /**
- * fsm disable night mode
- * @function fsmNightModeTrunOff
+ * fsm disable dnd mode
+ * @function fsmDNDModeTrunOff
  * @param {Number} code - fsm code
- * @returns night mode disabled
+ * @returns dnd mode disabled
  * @private
  */
-NightMode.prototype.fsmNightModeTrunOff = function (code) {
-  logger.info('fsmNightModeTrunOff')
+DNDMode.prototype.fsmDNDModeTrunOff = function (code) {
+  logger.info('fsmDNDModeTrunOff')
   this.disable()
-  return FSMCode.NightModeDisabled
+  return FSMCode.DNDModeDisabled
 }
 
 /**
- * fsm check night mode time
+ * fsm check dnd mode time
  * @function fsmCheckTime
  * @param {Number} code - fsm code
  * @returns success or failed
  * @private
  */
-NightMode.prototype.fsmCheckTime = function (code) {
+DNDMode.prototype.fsmCheckTime = function (code) {
   var rst = this.checkTime()
   logger.info(`FSMCheckTime ${rst}`)
   return rst >= 0 ? FSMCode.CheckTimeSuccess : FSMCode.CheckTimeFailed
 }
 
 /**
- * fsm check night mode time
+ * fsm check dnd mode time
  * @function fsmCheckTimeX
  * @param {Number} code - fsm code
  * @returns success or failed
  * @private
  */
-NightMode.prototype.fsmCheckTimeX = function (code) {
+DNDMode.prototype.fsmCheckTimeX = function (code) {
   var rst = this.checkTime()
   logger.info(`FSMCheckTimeX ${rst}`)
   return rst >= 0 ? FSMCode.CheckTimeSuccessX : FSMCode.CheckTimeFailedX
 }
 
 /**
- * fsm disable night mode
- * @function fsmNightModeTurnOffX
+ * fsm disable dnd mode
+ * @function fsmDNDModeTurnOffX
  * @param {Number} code - fsm code
- * @returns night mode disabled
+ * @returns dnd mode disabled
  * @private
  */
-NightMode.prototype.fsmNightModeTurnOffX = function (code) {
-  logger.info('fsmNightModeTurnOffX')
+DNDMode.prototype.fsmDNDModeTurnOffX = function (code) {
+  logger.info('fsmDNDModeTurnOffX')
   this.disable()
-  return FSMCode.NightModeDisabledX
+  return FSMCode.DNDModeDisabledX
 }
 
 /**
@@ -398,7 +398,7 @@ NightMode.prototype.fsmNightModeTurnOffX = function (code) {
  * @returns wait
  * @private
  */
-NightMode.prototype.fsmSetTimeout = function (code) {
+DNDMode.prototype.fsmSetTimeout = function (code) {
   var waitMs = this.checkTime()
   if (waitMs < 0) {
     waitMs = -waitMs
@@ -412,7 +412,7 @@ NightMode.prototype.fsmSetTimeout = function (code) {
     this._fsmTimer = undefined
     this.fsmMain(FSMCode.CheckAgain)
   }
-  logger.info(`wait ${waitMs}ms for next night mode checking ${this._fsmWaitingBreaker}`)
+  logger.info(`wait ${waitMs}ms for next dnd mode checking ${this._fsmWaitingBreaker}`)
   return FSMCode.WaitAsync
 }
 
@@ -423,7 +423,7 @@ NightMode.prototype.fsmSetTimeout = function (code) {
  * @returns CheckActivityTrue if working, CheckActivityFalse if not working
  * @private
  */
-NightMode.prototype.fsmCheckActivity = function (code) {
+DNDMode.prototype.fsmCheckActivity = function (code) {
   var activity = this._life.getCurrentAppId()
   logger.info(`FSMCheckActivity ${activity}`)
   return activity ? FSMCode.CheckActivityTrue : FSMCode.CheckActivityFalse
@@ -436,22 +436,22 @@ NightMode.prototype.fsmCheckActivity = function (code) {
  * @returns CheckActivityTrueX if working, CheckActivityFalseX if not working
  * @private
  */
-NightMode.prototype.fsmCheckActivityX = function (code) {
+DNDMode.prototype.fsmCheckActivityX = function (code) {
   var activity = (this._life.getCurrentAppId() !== undefined)
   logger.info(`FSMCheckActivityX ${activity}`)
   return activity ? FSMCode.CheckActivityTrueX : FSMCode.CheckActivityFalseX
 }
 /**
- * fsm turn on night mode
- * @function fsmNightModeTurnOn
+ * fsm turn on dnd mode
+ * @function fsmDNDModeTurnOn
  * @param {Number} code - fsm code
- * @returns NightModeEnabled
+ * @returns DNDModeEnabled
  * @private
  */
-NightMode.prototype.fsmNightModeTurnOn = function (code) {
-  logger.info('fsmNightModeTurnOn')
+DNDMode.prototype.fsmDNDModeTurnOn = function (code) {
+  logger.info('fsmDNDModeTurnOn')
   this.enable()
-  return FSMCode.NightModeEnabled
+  return FSMCode.DNDModeEnabled
 }
 
-module.exports = NightMode
+module.exports = DNDMode

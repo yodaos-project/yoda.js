@@ -39,21 +39,9 @@ var enabled = false;
   native.enable()
   enabled = true
 })()
-var globalAlphaFactor = 1
+
 module.exports = {
-  /**
-   * set global alpha factor
-   * @function setGlobalAlphaFactor
-   * @param {number} - global alpha
-   */
-  setGlobalAlphaFactor: function (factor) {
-    if (typeof factor === 'number' && factor >= 0 && factor <= 1) {
-      globalAlphaFactor = factor
-    } else {
-      globalAlphaFactor = 1
-    }
-    logger.info(`set global aplha factor to ${factor} - ${globalAlphaFactor}`)
-  },
+
   /**
    * Enable the light write
    * @function enable
@@ -120,11 +108,6 @@ module.exports = {
    */
   fill: function fillColor (red, green, blue, alpha) {
     if (typeof alpha === 'number' && alpha >= 0 && alpha < 1) {
-      alpha *= globalAlphaFactor
-    } else {
-      alpha = globalAlphaFactor
-    }
-    if (alpha < 1) {
       red = Math.floor(alpha * red)
       green = Math.floor(alpha * green)
       blue = Math.floor(alpha * blue)
@@ -162,8 +145,7 @@ module.exports = {
    * @private
    */
   _pixel: function (index, red, green, blue, alpha) {
-    alpha *= globalAlphaFactor
-    if (alpha < 1) {
+    if (typeof alpha === 'number' && alpha >= 0 && alpha < 1) {
       red = Math.floor(alpha * red)
       green = Math.floor(alpha * green)
       blue = Math.floor(alpha * blue)

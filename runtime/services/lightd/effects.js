@@ -68,6 +68,7 @@ module.exports = LightRenderingContextManager
  */
 function LightRenderingContextManager () {
   this.id = 0
+  this._globalAlphaFactor = 1
 }
 
 /**
@@ -80,7 +81,19 @@ function LightRenderingContextManager () {
 LightRenderingContextManager.prototype.getContext = function getContext () {
   var context = new LightRenderingContext()
   context._id = this.id++
+  context.setGlobalAlphaFactor(this._globalAlphaFactor)
   return context
+}
+
+/**
+ * Set the global alpha factor
+ * @memberof yodaRT.light.LightRenderingContext
+ * @method setGlobalAlphaFactor
+ * @instance
+ * @returns {number} the factor.
+ */
+LightRenderingContextManager.prototype.setGlobalAlphaFactor = function (alphaFactor) {
+    this._globalAlphaFactor = alphaFactor
 }
 
 /**
@@ -95,6 +108,7 @@ function LightRenderingContext () {
   this._handle = {}
   this._soundPlayer = null
   this.ledsConfig = light.getProfile()
+  this._globalAlphaFactor = 1
 }
 
 /**
@@ -107,6 +121,34 @@ function LightRenderingContext () {
  */
 LightRenderingContext.prototype._getCurrentId = function () {
   return -1
+}
+
+/**
+ * Set the global alpha factor
+ * @memberof yodaRT.light.LightRenderingContext
+ * @method setGlobalAlphaFactor
+ * @instance
+ * @returns {number} the factor.
+ */
+LightRenderingContext.prototype.setGlobalAlphaFactor = function (alphaFactor) {
+  if (alphaFactor !== undefined && typeof alphaFactor === 'number' && alphaFactor >= 0 && alphaFactor <= 1)
+    this._globalAlphaFactor = alphaFactor
+}
+
+/**
+ * Apply the global alpha factor
+ * @memberof yodaRT.light.LightRenderingContext
+ * @method applyGlobalAlphaFactor
+ * @instance
+ * @private
+ * @returns {number} the alpha.
+ */
+LightRenderingContext.prototype.applyGlobalAlphaFactor = function (alpha) {
+  if (a !== undefined && typeof a === 'number' && a >= 0 && a <= 1)
+    alpha *= this._globalAlphaFactor
+  else
+    alpha = this._globalAlphaFactor
+  return alpha
 }
 
 /**
@@ -263,6 +305,7 @@ LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
+  a = this.applyGlobalAlphaFactor(a)
   return light.pixel(pos, r, g, b, a)
 }
 
@@ -281,6 +324,7 @@ LightRenderingContext.prototype.fill = function (r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
+  a = this.applyGlobalAlphaFactor(a)
   return light.fill(r, g, b, a)
 }
 

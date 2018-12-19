@@ -6,6 +6,9 @@ var EventEmitter = require('events').EventEmitter
 var LIGHT_SOURCE = '/opt/light'
 var MEDIA_SOURCE = '/opt/media'
 
+var DND_MODE_ALPHA_FACTOR = '0.5'
+var NORMAL_MODE_ALPHA_FACTOR = '1'
+
 /**
  * convinient tools for call lightd
  * @param {object} dbusRegistry dbus client
@@ -13,7 +16,7 @@ var MEDIA_SOURCE = '/opt/media'
 function Light (dbusRegistry) {
   EventEmitter.call(this)
   this.dbusRegistry = dbusRegistry
-  this._nightMode = false
+  this._dndMode = false
 }
 inherits(Light, EventEmitter)
 
@@ -174,14 +177,14 @@ Light.prototype.lightMethod = function (name, args) {
 
 /**
  * set night mode
- * @param {bool} nightMode true if opened
+ * @param {bool} dndMode true if opened
  */
-Light.prototype.setNightMode = function (nightMode) {
-  this._nightMode = nightMode
-  if (this._nightMode) {
-    this.lightMethod('setGlobalAlphaFactor', ['0.1'])
+Light.prototype.setDNDMode = function (dndMode) {
+  this._dndMode = dndMode
+  if (this._dndMode) {
+    this.lightMethod('setGlobalAlphaFactor', [DND_MODE_ALPHA_FACTOR])
   } else {
-    this.lightMethod('setGlobalAlphaFactor', ['1'])
+    this.lightMethod('setGlobalAlphaFactor', [NORMAL_MODE_ALPHA_FACTOR])
   }
 }
 

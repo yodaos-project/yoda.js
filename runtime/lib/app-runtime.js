@@ -34,7 +34,7 @@ var Lifetime = require('./component/lifetime')
 var Wormhole = require('./component/wormhole')
 var Light = require('./component/light')
 var Sound = require('./component/sound')
-var NightMode = require('./component/night-mode')
+var DNDMode = require('./component/dnd-mode')
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -83,7 +83,7 @@ function AppRuntime () {
   this.light = new Light(this.dbusRegistry)
   this.sound = new Sound(this)
   this.shouldStopLongPressMicLight = false
-  this.nightMode = new NightMode(this.light, this.sound, this.life)
+  this.dndMode = new DNDMode(this.light, this.sound, this.life)
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -122,7 +122,7 @@ AppRuntime.prototype.init = function init () {
       return this.light.ttsSound('@system', 'system://firstboot.ogg')
     })
   }
-  this.nightMode.init()
+  this.dndMode.init()
   return future.then(() => {
     if (this.shouldWelcome) {
       this.light.appSound('@yoda', 'system://boot.ogg')
@@ -998,7 +998,7 @@ AppRuntime.prototype.onLoadCustomConfig = function (config) {
     var option = JSON.parse(config)
     if (option.nightMode !== undefined) {
       var nightMode = JSON.parse(option.nightMode)
-      this.nightMode.setOption(nightMode)
+      this.dndMode.setOption(nightMode)
     }
   } catch (err) {
     logger.warn(`customconfig load error: ${config}\n${err}`)
