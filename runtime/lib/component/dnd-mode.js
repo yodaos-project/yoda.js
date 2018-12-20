@@ -38,16 +38,16 @@ function getSwitch () {
   return property.get(SwitchKey, 'persist')
 }
 
-function setSwitch (s) {
-  property.set(SwitchKey, s, 'persist')
+function setSwitch (switchValue) {
+  property.set(SwitchKey, switchValue, 'persist')
 }
 
 function getStatus () {
   return property.get(StatusKey, 'persist')
 }
 
-function setStatus (s) {
-  property.set(StatusKey, s, 'persist')
+function setStatus (status) {
+  property.set(StatusKey, status, 'persist')
 }
 
 function getStartTime () {
@@ -59,8 +59,8 @@ function getStartTime () {
   }
 }
 
-function setStartTime (s) {
-  property.set(StartTimeKey, s, 'persist')
+function setStartTime (startTime) {
+  property.set(StartTimeKey, startTime, 'persist')
 }
 
 function getEndTime () {
@@ -72,29 +72,29 @@ function getEndTime () {
   }
 }
 
-function setEndTime (s) {
-  property.set(EndTimeKey, s, 'persist')
+function setEndTime (endTime) {
+  property.set(EndTimeKey, endTime, 'persist')
 }
 
-function setAwakeSwitch (s) {
-  property.set(AwakeSwitchKey, s, 'persist')
+function setAwakeSwitch (awakeSwitch) {
+  property.set(AwakeSwitchKey, awakeSwitch, 'persist')
 }
 
-function formatTime (str, defalutHour, defaultMinute) {
+function formatTime (timeStr, defaultHour, defaultMinute) {
   var d = new Date()
   d.setSeconds(0)
-  var hour = defalutHour
+  var hour = defaultHour
   var minute = defaultMinute
   try {
-    if (typeof str === 'string') {
-      var array = str.split(':')
+    if (typeof timeStr === 'string') {
+      var array = timeStr.split(':')
       if (array.length === 2) {
         hour = parseInt(array[0])
         minute = parseInt(array[1])
       }
     }
   } catch (err) {
-    logger.warn(`dnd mode time paser error: ${str}`)
+    logger.warn(`dnd mode time paser error: ${timeStr}`)
   }
   d.setHours(hour)
   d.setMinutes(minute)
