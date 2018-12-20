@@ -175,8 +175,8 @@ Value ClientNative::subscribe(const CallbackInfo& info) {
     return env.Undefined();
   }
   floraAgent.subscribe(name.c_str(),
-                       [this, name, env](std::shared_ptr<Caps>& msg,
-                                         uint32_t type, Reply* reply) {
+                       [this, env](const char* name, std::shared_ptr<Caps>& msg,
+                                   uint32_t type, Reply* reply) {
                          this->msgCallback(name, env, msg, type, reply);
                        });
   return env.Undefined();
@@ -288,7 +288,7 @@ Value ClientNative::genArray(const CallbackInfo& info) {
   return genJSArrayByCaps(env, hackedCaps->caps);
 }
 
-void ClientNative::msgCallback(const std::string& name, Napi::Env env,
+void ClientNative::msgCallback(const char* name, Napi::Env env,
                                std::shared_ptr<Caps>& msg, uint32_t type,
                                Reply* reply) {
   unique_lock<mutex> locker(cb_mutex);
