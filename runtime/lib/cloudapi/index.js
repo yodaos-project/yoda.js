@@ -81,14 +81,14 @@ CloudStore.prototype.connect = function connect (masterId) {
     this.options.notify('101', STRINGS.LOGIN_DONE)
     this.options.notify('201', STRINGS.BIND_MASTER_DONE)
     return this.handleResponse(data)
-  }).then(() => {
-      logger.info(`handle response ${data}`)
-      return this.config
-    }).catch((err) => {
-      logger.info(`handle response ${data} error ${err}`)
-      return this.config
-    })
+  }).then((data) => {
+    logger.info(`handle response ${data}`)
+    return this.config
   }, (err) => {
+    logger.info(`handle response error:${err}`)
+    return this.config
+  }).catch((err) => {
+    console.log(333)
     if (err.code === 'BIND_MASTER_REQUIRED') {
       throw err
     }
@@ -106,45 +106,45 @@ CloudStore.prototype.connect = function connect (masterId) {
  * @method
  */
 CloudStore.prototype.handleResponse = function handleResponse (data) {
-  return new Promise((resolve, reject) => {
-    this.config.deviceId = data.deviceId
-    this.config.deviceTypeId = data.deviceTypeId
-    this.config.key = data.key
-    this.config.secret = data.secret
-    this.config.extraInfo = data.extraInfo
+  this.config.deviceId = data.deviceId
+  this.config.deviceTypeId = data.deviceTypeId
+  this.config.key = data.key
+  this.config.secret = data.secret
+  this.config.extraInfo = data.extraInfo
 
-    // start check the basic info
-    var basicInfo = null
-    try {
-      basicInfo = JSON.parse(this.config.extraInfo.basic_info)
-      if (!basicInfo.master) {
-        throw new Error('bind master is required')
-      } else {
-        // everything is ok, just make api available and
-        // start initialize mqtt client.
-        this.apiAvailable = true
-        this.config.masterId = basicInfo.master
-        this.cloudgw = new CloudGw(Object.assign({
-          host: env.cloudgw.restful
-        }, this.config))
+  // start check the basic info
+  var basicInfo = null
+  try {
+    basicInfo = JSON.parse(this.config.extraInfo.basic_info)
+    if (!basicInfo.master) {
+      throw new Error('bind master is required')
+    } else {
+      // everything is ok, just make api available and
+      // start initialize mqtt client.
+      this.apiAvailable = true
+      this.config.masterId = basicInfo.master
+      this.cloudgw = new CloudGw(Object.assign({
+        host: env.cloudgw.restful
+      }, this.config))
 
-        if (!this.options.disableMqtt) {
-          this.mqttcli.start({
-            forceReconnect: true
-          })
-        }
-        return this.syncDate().then((err) => {
-          resolve(err)
-        }).catch((err) => {
-          reject(err)
+      if (!this.options.disableMqtt) {
+        this.mqttcli.start({
+          forceReconnect: true
         })
       }
-    } catch (_) {
-      var err = new Error('bind master is required')
-      err.code = 'BIND_MASTER_REQUIRED'
-      reject(err)
+      return new Promise((resolve, reject) => {
+        this.syncDate().then((err) => {
+          resolve(true)
+        }).catch((err) => {
+          resolve(true)
+        })
+      })
     }
-  })
+  } catch (_) {
+    var err = new Error('bind master is required')
+    err.code = 'BIND_MASTER_REQUIRED'
+    throw  err
+  }
 }
 
 /**
@@ -179,6 +179,7 @@ CloudStore.prototype.syncDate = function syncDate () {
         }
       }
       if (error) {
+        console.log(`dada ${error}`)
         reject(error)
       }
     })

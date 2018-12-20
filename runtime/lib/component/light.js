@@ -16,7 +16,6 @@ var NORMAL_MODE_ALPHA_FACTOR = '1'
 function Light (dbusRegistry) {
   EventEmitter.call(this)
   this.dbusRegistry = dbusRegistry
-  this._dndMode = false
 }
 inherits(Light, EventEmitter)
 
@@ -180,8 +179,7 @@ Light.prototype.lightMethod = function (name, args) {
  * @param {bool} dndMode true if opened
  */
 Light.prototype.setDNDMode = function (dndMode) {
-  this._dndMode = dndMode
-  if (this._dndMode) {
+  if (dndMode) {
     this.lightMethod('setGlobalAlphaFactor', [DND_MODE_ALPHA_FACTOR])
   } else {
     this.lightMethod('setGlobalAlphaFactor', [NORMAL_MODE_ALPHA_FACTOR])
