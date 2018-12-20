@@ -236,7 +236,7 @@ EventBus.prototype.invoke = function onInvoke (message) {
     throw new Error(`Not implemented return type '${fnDescriptor.returns}' for method '${methodStr}'`)
   }
   var fn = fnDescriptor.fn
-  fn.apply(nsObj, params)
+  Promise.resolve(fn.apply(nsObj, params))
     .then(result => this.socket.send({
       type: 'promise',
       action: 'resolve',
