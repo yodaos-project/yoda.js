@@ -24,7 +24,9 @@ function restartTest () {
   closeAgents()
   recvCounter = 0
   createAgents()
-  postMsg()
+  setTimeout(() => {
+    postMsg()
+  }, 100)
 }
 
 function createAgents () {
@@ -51,4 +53,6 @@ function createAgents () {
 }
 
 createAgents()
-postMsg()
+setTimeout(() => {
+  postMsg()
+}, 100)
