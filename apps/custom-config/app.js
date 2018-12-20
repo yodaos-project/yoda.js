@@ -106,18 +106,16 @@ module.exports = function customConfig (activity) {
         activity.turen.addVtWord(this.txt, this.py)
         sendAddUpdateStatusToServer(action)
         sendSuccessStatusToApp(action, true)
-        activity.exit()
       } else if (action === SWITCH_VT_ADD) {
         activity.turen.addVtWord(this.txt, this.py)
         sendAddUpdateStatusToServer(action)
         sendSuccessStatusToApp(action, true)
-        activity.exit()
       } else if (action === SWITCH_VT_DELETE) {
         activity.turen.deleteVtWord(this.txt)
         sendDeleteStatusToServer(action)
         sendSuccessStatusToApp(action, true)
-        activity.exit()
       }
+      activity.exit()
     }
   }
 
@@ -126,14 +124,12 @@ module.exports = function customConfig (activity) {
       if (action === SWITCH_VT_UPDATE) {
         activity.turen.deleteVtWord(this.oldTxt)
         activity.turen.addVtWord(this.txt, this.py)
-        activity.exit()
       } else if (action === SWITCH_VT_ADD) {
         activity.turen.addVtWord(this.txt, this.py)
-        activity.exit()
       } else if (action === SWITCH_VT_DELETE) {
         activity.turen.deleteVtWord(this.txt)
-        activity.exit()
       }
+      activity.exit()
     }
   }
 
@@ -221,7 +217,6 @@ module.exports = function customConfig (activity) {
         }
       }
     }
-    activity.exit()
   }
 
   function nightMode (action) {
