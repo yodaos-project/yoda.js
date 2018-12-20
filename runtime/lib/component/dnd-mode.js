@@ -80,9 +80,13 @@ function setAwakeSwitch (awakeSwitch) {
   property.set(AwakeSwitchKey, awakeSwitch, 'persist')
 }
 
+var TIME_ZONE = 8
+
 function formatTime (timeStr, defaultHour, defaultMinute) {
   var d = new Date()
+  var curTimeZone = d.getTimezoneOffset() / 60
   d.setSeconds(0)
+  d.setMilliseconds(0)
   var hour = defaultHour
   var minute = defaultMinute
   try {
@@ -97,6 +101,8 @@ function formatTime (timeStr, defaultHour, defaultMinute) {
     logger.warn(`dnd mode time paser error: ${timeStr}`)
   }
   d.setHours(hour)
+  // TODO custom-config should add timeZone
+  d.setHours(d.getHours() + curTimeZone - TIME_ZONE)
   d.setMinutes(minute)
   return d
 }
@@ -243,7 +249,7 @@ class DNDMode {
     if (start > end) {
       end.setDate(end.getDate() + 1)
     }
-    logger.info(`check time now:${now}   start:${start}   end:${end}`)
+    logger.info(`check time now:${Number(now)}   start:${Number(start)}   end:${Number(end)}`)
     if (now >= start && now < end) {
       return end - now
     } else if (now < start) {
@@ -441,7 +447,7 @@ class DNDMode {
     }
     this._fsmTimer = setTimeout(() => {
       this.fsmMain(FSMCode.CheckAgain)
-    }, waitMs + 1000)
+    }, waitMs)
     this._fsmWaitingBreaker = () => {
       clearTimeout(this._fsmTimer)
       this._fsmWaitingBreaker = undefined

@@ -88,7 +88,6 @@ CloudStore.prototype.connect = function connect (masterId) {
     logger.info(`handle response error:${err}`)
     return this.config
   }).catch((err) => {
-    console.log(333)
     if (err.code === 'BIND_MASTER_REQUIRED') {
       throw err
     }
@@ -133,9 +132,9 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
         })
       }
       return new Promise((resolve, reject) => {
-        this.syncDate().then((err) => {
+        this.syncDate().then(() => {
           resolve(true)
-        }).catch((err) => {
+        }).catch(() => {
           resolve(true)
         })
       })
@@ -143,7 +142,7 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
   } catch (_) {
     var err = new Error('bind master is required')
     err.code = 'BIND_MASTER_REQUIRED'
-    throw  err
+    throw err
   }
 }
 
@@ -179,7 +178,6 @@ CloudStore.prototype.syncDate = function syncDate () {
         }
       }
       if (error) {
-        console.log(`dada ${error}`)
         reject(error)
       }
     })
