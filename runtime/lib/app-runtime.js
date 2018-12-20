@@ -977,6 +977,7 @@ AppRuntime.prototype.onCustomConfig = function (message) {
   if (msg.nightMode) {
     this.openUrl(appendUrl('nightMode', msg.nightMode), option)
   } else if (msg.vt_words) {
+    option.preemptive = false
     this.openUrl(appendUrl('vt_words', msg.vt_words[0]), option)
   } else if (msg.continuousDialog) {
     this.openUrl(appendUrl('continuousDialog', msg.continuousDialog), option)
