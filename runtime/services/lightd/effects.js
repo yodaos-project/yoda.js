@@ -87,13 +87,13 @@ LightRenderingContextManager.prototype.getContext = function getContext () {
 
 /**
  * Set the global alpha factor
- * @memberof yodaRT.light.LightRenderingContext
+ * @memberof yodaRT.light.LightRenderingContextManager
  * @method setGlobalAlphaFactor
- * @instance
  * @returns {number} the factor.
  */
 LightRenderingContextManager.prototype.setGlobalAlphaFactor = function (alphaFactor) {
-    this._globalAlphaFactor = alphaFactor
+  logger.info(`global alpha factor has been set ${alphaFactor}`)
+  this._globalAlphaFactor = alphaFactor
 }
 
 /**
@@ -131,8 +131,9 @@ LightRenderingContext.prototype._getCurrentId = function () {
  * @returns {number} the factor.
  */
 LightRenderingContext.prototype.setGlobalAlphaFactor = function (alphaFactor) {
-  if (alphaFactor !== undefined && typeof alphaFactor === 'number' && alphaFactor >= 0 && alphaFactor <= 1)
+  if (alphaFactor !== undefined && typeof alphaFactor === 'number' && alphaFactor >= 0 && alphaFactor <= 1) {
     this._globalAlphaFactor = alphaFactor
+  }
 }
 
 /**
@@ -144,10 +145,11 @@ LightRenderingContext.prototype.setGlobalAlphaFactor = function (alphaFactor) {
  * @returns {number} the alpha.
  */
 LightRenderingContext.prototype.applyGlobalAlphaFactor = function (alpha) {
-  if (a !== undefined && typeof a === 'number' && a >= 0 && a <= 1)
+  if (alpha !== undefined && typeof a === 'number' && alpha >= 0 && alpha <= 1) {
     alpha *= this._globalAlphaFactor
-  else
+  } else {
     alpha = this._globalAlphaFactor
+  }
   return alpha
 }
 

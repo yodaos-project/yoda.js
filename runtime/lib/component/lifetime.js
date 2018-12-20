@@ -596,6 +596,9 @@ LaVieEnPile.prototype.onEvict = function onEvict (appId) {
   }
   process.nextTick(() => {
     this.emit('evict', appId)
+    if (!this.getCurrentAppId()) {
+      this.emit('idle')
+    }
   })
 }
 

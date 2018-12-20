@@ -976,7 +976,9 @@ AppRuntime.prototype.onCustomConfig = function (message) {
     preemptive: true,
     form: 'cut'
   }
-  if (msg.vt_words) {
+  if (msg.nightMode) {
+    this.dndMode.setOption(msg.nightMode)
+  } else if (msg.vt_words) {
     this.openUrl(appendUrl('vt_words', msg.vt_words[0]), option)
   } else if (msg.continuousDialog) {
     this.openUrl(appendUrl('continuousDialog', msg.continuousDialog), option)
@@ -998,6 +1000,7 @@ AppRuntime.prototype.onLoadCustomConfig = function (config) {
     var option = JSON.parse(config)
     if (option.nightMode !== undefined) {
       var nightMode = JSON.parse(option.nightMode)
+      logger.info(`customconfig loaded: ${config}`)
       this.dndMode.setOption(nightMode)
     }
   } catch (err) {
@@ -1086,6 +1089,7 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
         this.wormhole.init(this.cloudApi.mqttcli)
         this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
         this.onLoggedIn()
+        this.dndMode.recheck()
       }, (err) => {
         if (err && err.code === 'BIND_MASTER_REQUIRED') {
           logger.error('bind master is required, just clear the local and enter network')

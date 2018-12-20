@@ -2,6 +2,7 @@
 
 var property = require('@yoda/property')
 var logger = require('logger')('dndmode')
+var EventEmitter = require('events').EventEmitter
 
 var FSMCode = {
   Start: 0,
@@ -106,15 +107,28 @@ var fsmWait = 2
 var fsmEnd = 3
 var fsmError = 4
 
+var DNDModeVolume = 10
+
 function DNDMode (light, sound, life) {
+  EventEmitter.call(this)
   this._life = life
   this._sound = sound
   this._light = light
-  this._dndModeVolume = 10
   this._volumeSaved = 0
   this._fsmStatus = fsmReady
   this._fsmTimer = undefined
   this._fsmWaitingBreaker = undefined
+  this._isOptionBreaker = false
+  this._life.on('idle', () => {
+    if (this._fsmStatus === fsmWait) {
+      if (this._fsmWaitingBreaker) {
+        logger.info('fsm waiting break : device is idle')
+        this._fsmWaitingBreaker()
+      }
+    } else if (this._fsmStatus === fsmEnd) {
+      this.fsmMain(FSMCode.Start)
+    }
+  })
 }
 
 /**
@@ -143,6 +157,7 @@ DNDMode.prototype.setOption = function (option) {
   setStartTime(startTime)
   setEndTime(endTime)
   logger.info(`setOption in, fsm status is ${this._fsmStatus}`)
+  this._isOptionBreaker = true
   if (this._fsmStatus === fsmWait) {
     if (this._fsmWaitingBreaker) {
       logger.info('fsm waiting break')
@@ -153,6 +168,24 @@ DNDMode.prototype.setOption = function (option) {
   } else {
     logger.error(`setOption in, but fsm status is invalid`)
   }
+  this._isOptionBreaker = false
+}
+
+/**
+ * recheck dnd mode
+ */
+DNDMode.prototype.recheck = function () {
+  logger.info(`recheck dnd mode, fsm status is ${this._fsmStatus}`)
+  if (this._fsmStatus === fsmWait) {
+    if (this._fsmWaitingBreaker) {
+      logger.info('fsm waiting break')
+      this._fsmWaitingBreaker()
+    }
+  } else if (this._fsmStatus === fsmEnd) {
+    this.fsmMain(FSMCode.Start)
+  } else {
+    logger.error(`recheck dnd mode, but fsm status is invalid`)
+  }
 }
 
 /**
@@ -161,6 +194,7 @@ DNDMode.prototype.setOption = function (option) {
  * @private
  */
 DNDMode.prototype.disable = function () {
+  // TODO volume changed event
   if (this._volumeSaved !== 0) {
     this._sound.setVolume(this._volumeSaved)
   }
@@ -175,9 +209,9 @@ DNDMode.prototype.disable = function () {
  */
 DNDMode.prototype.enable = function () {
   var curVolume = this._sound.getVolume()
-  if (this._dndModeVolume < curVolume) {
+  if (DNDModeVolume < curVolume) {
     this._volumeSaved = curVolume
-    this._sound.setVolume(this._dndModeVolume)
+    this._sound.setVolume(DNDModeVolume)
   }
   this._light.setDNDMode(true)
   setStatus('on')
@@ -207,14 +241,12 @@ DNDMode.prototype.checkTime = function () {
   if (start > end) {
     end.setDate(end.getDate() + 1)
   }
-  if (start > now) {
-    start.setDate(start.getDate() - 1)
-    end.setDate(end.getDate() - 1)
-  }
   logger.info(`check time now:${now}   start:${start}   end:${end}`)
-  if (now > start && now < end) {
+  if (now >= start && now < end) {
     return end - now
-  } else {
+  } else if (now < start) {
+    return now - start
+  } else if (now >= end) {
     start.setDate(start.getDate() + 1)
     return now - start
   }
@@ -336,6 +368,7 @@ DNDMode.prototype.fsmCheckStatus = function (code) {
  */
 DNDMode.prototype.fsmEnd = function (code) {
   logger.info('FSMEnd')
+  this._volumeSaved = 0
   return FSMCode.End
 }
 
@@ -362,7 +395,7 @@ DNDMode.prototype.fsmDNDModeTrunOff = function (code) {
 DNDMode.prototype.fsmCheckTime = function (code) {
   var rst = this.checkTime()
   logger.info(`FSMCheckTime ${rst}`)
-  return rst >= 0 ? FSMCode.CheckTimeSuccess : FSMCode.CheckTimeFailed
+  return rst > 0 ? FSMCode.CheckTimeSuccess : FSMCode.CheckTimeFailed
 }
 
 /**
@@ -375,7 +408,7 @@ DNDMode.prototype.fsmCheckTime = function (code) {
 DNDMode.prototype.fsmCheckTimeX = function (code) {
   var rst = this.checkTime()
   logger.info(`FSMCheckTimeX ${rst}`)
-  return rst >= 0 ? FSMCode.CheckTimeSuccessX : FSMCode.CheckTimeFailedX
+  return rst > 0 ? FSMCode.CheckTimeSuccessX : FSMCode.CheckTimeFailedX
 }
 
 /**
@@ -405,7 +438,7 @@ DNDMode.prototype.fsmSetTimeout = function (code) {
   }
   this._fsmTimer = setTimeout(() => {
     this.fsmMain(FSMCode.CheckAgain)
-  }, waitMs)
+  }, waitMs + 1000)
   this._fsmWaitingBreaker = () => {
     clearTimeout(this._fsmTimer)
     this._fsmWaitingBreaker = undefined
@@ -424,9 +457,13 @@ DNDMode.prototype.fsmSetTimeout = function (code) {
  * @private
  */
 DNDMode.prototype.fsmCheckActivity = function (code) {
-  var activity = this._life.getCurrentAppId()
-  logger.info(`FSMCheckActivity ${activity}`)
-  return activity ? FSMCode.CheckActivityTrue : FSMCode.CheckActivityFalse
+  if (!this._isOptionBreaker) {
+    var activity = this._life.getCurrentAppId()
+    logger.info(`FSMCheckActivity ${activity}`)
+    return activity ? FSMCode.CheckActivityTrue : FSMCode.CheckActivityFalse
+  } else {
+    return FSMCode.CheckActivityFalse
+  }
 }
 
 /**
@@ -437,9 +474,13 @@ DNDMode.prototype.fsmCheckActivity = function (code) {
  * @private
  */
 DNDMode.prototype.fsmCheckActivityX = function (code) {
-  var activity = (this._life.getCurrentAppId() !== undefined)
-  logger.info(`FSMCheckActivityX ${activity}`)
-  return activity ? FSMCode.CheckActivityTrueX : FSMCode.CheckActivityFalseX
+  if (!this._isOptionBreaker) {
+    var activity = this._life.getCurrentAppId()
+    logger.info(`FSMCheckActivityX ${activity}`)
+    return activity ? FSMCode.CheckActivityTrueX : FSMCode.CheckActivityFalseX
+  } else {
+    return FSMCode.CheckActivityFalseX
+  }
 }
 /**
  * fsm turn on dnd mode

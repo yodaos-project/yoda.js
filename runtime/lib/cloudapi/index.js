@@ -53,7 +53,6 @@ CloudStore.prototype.connect = function connect (masterId) {
 
   var opts = { encoding: 'utf8' }
   return new Promise((resolve, reject) => {
-    var handleResponse = this.handleResponse.bind(this)
     var cmd = [
       `nice -n -20 sh ${path.join(__dirname, './login/request.sh')}`,
       `-h ${env.cloudgw.account}`
@@ -72,17 +71,22 @@ CloudStore.prototype.connect = function connect (masterId) {
         if (!res.success) {
           throw new Error(`cloud login failed ${res.msg}(${res.code})`)
         }
-        handleResponse(JSON.parse(res.data))
-        return resolve(true)
+        return resolve(JSON.parse(res.data))
       } catch (err) {
         logger.error(err)
         return reject(err)
       }
     }
-  }).then(() => {
+  }).then((data) => {
     this.options.notify('101', STRINGS.LOGIN_DONE)
     this.options.notify('201', STRINGS.BIND_MASTER_DONE)
-    return this.config
+    return this.handleResponse(data).then(() => {
+      logger.info(`handle response ${data}`)
+      return this.config
+    }).catch((err) => {
+      logger.info(`handle response ${data} error ${err}`)
+      return this.config
+    })
   }, (err) => {
     if (err.code === 'BIND_MASTER_REQUIRED') {
       throw err
@@ -101,60 +105,82 @@ CloudStore.prototype.connect = function connect (masterId) {
  * @method
  */
 CloudStore.prototype.handleResponse = function handleResponse (data) {
-  this.config.deviceId = data.deviceId
-  this.config.deviceTypeId = data.deviceTypeId
-  this.config.key = data.key
-  this.config.secret = data.secret
-  this.config.extraInfo = data.extraInfo
+  return new Promise((resolve, reject) => {
+    this.config.deviceId = data.deviceId
+    this.config.deviceTypeId = data.deviceTypeId
+    this.config.key = data.key
+    this.config.secret = data.secret
+    this.config.extraInfo = data.extraInfo
 
-  // start check the basic info
-  var basicInfo = null
-  try {
-    basicInfo = JSON.parse(this.config.extraInfo.basic_info)
-    if (!basicInfo.master) {
-      throw new Error('bind master is required')
-    } else {
-      // everything is ok, just make api available and
-      // start initialize mqtt client.
-      this.apiAvailable = true
-      this.config.masterId = basicInfo.master
-      this.cloudgw = new CloudGw(Object.assign({
-        host: env.cloudgw.restful
-      }, this.config))
-      this.syncDate()
+    // start check the basic info
+    var basicInfo = null
+    try {
+      basicInfo = JSON.parse(this.config.extraInfo.basic_info)
+      if (!basicInfo.master) {
+        throw new Error('bind master is required')
+      } else {
+        // everything is ok, just make api available and
+        // start initialize mqtt client.
+        this.apiAvailable = true
+        this.config.masterId = basicInfo.master
+        this.cloudgw = new CloudGw(Object.assign({
+          host: env.cloudgw.restful
+        }, this.config))
 
-      if (!this.options.disableMqtt) {
-        this.mqttcli.start({
-          forceReconnect: true
+        if (!this.options.disableMqtt) {
+          this.mqttcli.start({
+            forceReconnect: true
+          })
+        }
+        return this.syncDate().then((err) => {
+          resolve(err)
+        }).catch((err) => {
+          reject(err)
         })
       }
+    } catch (_) {
+      var err = new Error('bind master is required')
+      err.code = 'BIND_MASTER_REQUIRED'
+      reject(err)
     }
-  } catch (_) {
-    var err = new Error('bind master is required')
-    err.code = 'BIND_MASTER_REQUIRED'
-    throw err
-  }
+  })
 }
 
 /**
  * @method
  */
 CloudStore.prototype.syncDate = function syncDate () {
-  fs.readFile('/tmp/LOGIN_HEADER', 'utf8', (err, text) => {
-    if (err || !text) {
-      logger.warn('/tmp/LOGIN_HEADER invalid body, discard sync')
-      return
-    }
-    try {
-      var headers = parseHttpHeader(text)
-      if (headers && headers.date) {
-        sync(headers.date)
+  return new Promise((resolve, reject) => {
+    fs.readFile('/tmp/LOGIN_HEADER', 'utf8', (err, text) => {
+      var error
+      if (err || !text) {
+        logger.warn('/tmp/LOGIN_HEADER invalid body, discard sync')
+        error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
+        error.code = 'SYNC_DATE'
       } else {
-        logger.warn('skip sync date, reason: no date found from headers', text)
+        try {
+          var headers = parseHttpHeader(text)
+          if (headers && headers.date) {
+            sync(headers.date).then(() => {
+              resolve(true)
+            }, (err) => {
+              reject(err)
+            })
+          } else {
+            logger.warn('skip sync date, reason: no date found from headers', text)
+            error = new Error('skip sync date, reason: no date found from headers')
+            error.code = 'SYNC_DATE'
+          }
+        } catch (err) {
+          logger.warn(`sync date error: ${err && err.message}`)
+          error = new Error('skip sync date, reason: no date found from headers')
+          error.code = 'SYNC_DATE'
+        }
       }
-    } catch (err) {
-      logger.warn(`sync date error: ${err && err.message}`)
-    }
+      if (error) {
+        reject(error)
+      }
+    })
   })
 }
 
