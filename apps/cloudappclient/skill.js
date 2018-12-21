@@ -97,8 +97,8 @@ Skill.prototype.handleEvent = function () {
       }
       // continue perform the remaining tasks, if any.
       if (this.directives.length > 0) {
-        logger.log('continue run directives')
-        return this.emit('start')
+        logger.log('continue run directives on nextTick')
+        return
       }
       this.directives = []
       logger.log(`${this.appId} exit because exe complete`)
@@ -162,7 +162,8 @@ Skill.prototype.handleEvent = function () {
           }
           // continue perform the remaining tasks, if any.
           if (this.directives.length > 0) {
-            return this.emit('start')
+            logger.log('[resume] continue run directives on nextTick')
+            return
           }
           this.directives = []
           // exit self. nothing to do
