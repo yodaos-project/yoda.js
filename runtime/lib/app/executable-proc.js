@@ -6,7 +6,7 @@ var fs = require('fs')
 var promisify = require('util').promisify
 var logger = require('logger')('ext-app')
 var _ = require('@yoda/util')._
-var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
+var ActivityDescriptor = require('../descriptor/activity-descriptor')
 
 var readFileAsync = promisify(fs.readFile)
 var statAsync = promisify(fs.stat)
