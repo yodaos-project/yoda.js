@@ -5,8 +5,6 @@ var helper = require('../../helper')
 var NightMode = require(`${helper.paths.runtime}/lib/component/dnd-mode`)
 var mock = require('../../helper/mock')
 
-
-
 test('night mode check', function (t) {
   var light = {}
   var sound = {}
@@ -21,7 +19,7 @@ test('night mode check', function (t) {
 
   var nightMode = new NightMode(light, sound, life)
   nightMode.init()
-  var timeZone = (new Date()).getTimezoneOffset()/60
+  var timeZone = (new Date()).getTimezoneOffset() / 60
   var startTime
   var endTime
   var option = {}
@@ -120,8 +118,8 @@ test('night mode check', function (t) {
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
     var dt = new Date()
     tag1 = true
-    if (dt.getHours() - timeZone + 8 >= 23
-      || dt.getHours() - timeZone + 8 <= 7) {
+    if (dt.getHours() - timeZone + 8 >= 23 ||
+      dt.getHours() - timeZone + 8 <= 7) {
       t.ok(isNightMode, 'light enter night mode')
     } else {
       t.ok(!isNightMode, 'light exit night mode')
@@ -130,8 +128,8 @@ test('night mode check', function (t) {
   mock.mockReturns(sound, 'setVolume', (volume) => {
     var dt = new Date()
     tag2 = true
-    if (dt.getHours() - timeZone + 8 >= 23
-      || dt.getHours() - timeZone + 8 <= 7) {
+    if (dt.getHours() - timeZone + 8 >= 23 ||
+      dt.getHours() - timeZone + 8 <= 7) {
       t.ok(volume === 50, 'sound enter night mode')
     } else {
       t.ok(volume !== 50, 'sound exit night mode')
@@ -152,8 +150,8 @@ test('night mode check', function (t) {
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
     var dt = new Date()
     tag1 = true
-    if (dt.getHours() - timeZone + 8 >= 23
-      || dt.getHours() - timeZone + 8 <= 7) {
+    if (dt.getHours() - timeZone + 8 >= 23 ||
+      dt.getHours() - timeZone + 8 <= 7) {
       t.ok(isNightMode, 'light enter night mode')
     } else {
       t.ok(!isNightMode, 'light exit night mode')
@@ -162,8 +160,7 @@ test('night mode check', function (t) {
   mock.mockReturns(sound, 'setVolume', (volume) => {
     var dt = new Date()
     tag2 = true
-    if (dt.getHours() - timeZone + 8 >= 23
-      || dt.getHours() - timeZone + 8 <= 7) {
+    if (dt.getHours() - timeZone + 8 >= 23 || dt.getHours() - timeZone + 8 <= 7) {
       t.ok(volume === 50, 'sound enter night mode')
     } else {
       t.ok(volume !== 50, 'sound exit night mode')
