@@ -22,7 +22,6 @@ function sync (source) {
 
   var cmd = `date -u -s "${str}"`
   logger.log(`exec ${cmd} from <${source}>`)
-  console.log(`exec ${cmd} from <${source}>   ${Date.now()}  ${Number(new Date())}`)
   return new Promise(function (resolve, reject) {
     exec(cmd, {}, function (err, stdout, stderr) {
       console.log(`exec ${err}  ${Date.now()}  ${Number(new Date())}`)
