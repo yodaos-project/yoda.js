@@ -150,7 +150,6 @@ Wormhole.prototype.handlers = {
    * @member custom_config
    */
   custom_config: function (data) {
-    logger.info(data)
     this.runtime.onCustomConfig(data)
   },
   /**
