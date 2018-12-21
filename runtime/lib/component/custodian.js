@@ -83,8 +83,15 @@ Custodian.prototype.onNetworkDisconnect = function onNetworkDisconnect () {
     wifi.enableScanPassively()
     return
   }
-  logger.log('network disconnected, please connect to wifi first')
-  this.runtime.openUrl('yoda-skill://network/setup', { preemptive: true })
+
+  /**
+   * If no history found, we should reset network state and goto network automatically.
+   */
+  logger.log('network disconnected and no history found')
+  logger.log('reset network and goto network to config')
+  this.runtime.resetNetwork({ removeAll: true }).then(() => {
+    this.runtime.openUrl('yoda-skill://network/setup', { preemptive: true })
+  })
 }
 
 Custodian.prototype.onLoggedIn = function onLoggedIn () {
