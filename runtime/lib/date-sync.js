@@ -15,10 +15,7 @@ function sync (source) {
   } else {
     date.hours += TIMEZONE
   }
-  var str = [
-    [date.year, date.month, date.date].join('-'),
-    [date.hours, date.minutes, date.seconds].join(':')
-  ].join(' ')
+  var str = `${date.year}-${date.month}-${date.date} ${date.hours}:${date.minutes}:${date.seconds}`
 
   var cmd = `date -u -s "${str}"`
   logger.log(`exec ${cmd} from <${source}>`)

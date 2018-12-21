@@ -188,11 +188,11 @@ dbusApis.addMethod('setGlobalAlphaFactor', {
   out: []
 }, function (alphaFactor, cb) {
   logger.info(`global alpha factor  ${alphaFactor}`)
-  var v = Number(alphaFactor)
+  var v = parseFloat(alphaFactor)
   if (typeof v !== 'number' || (v < 0 || v > 1)) {
     v = 1
   }
-  service.setGlobalAlphaFactor(v)
+  service.manager.setGlobalAlphaFactor(v)
   cb(null)
 })
 dbusApis.update()

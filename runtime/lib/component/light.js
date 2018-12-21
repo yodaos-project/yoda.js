@@ -176,7 +176,7 @@ Light.prototype.lightMethod = function (name, args) {
 
 /**
  * set night mode
- * @param {bool} dndMode true if opened
+ * @param {boolean} dndMode true if opened
  */
 Light.prototype.setDNDMode = function (dndMode) {
   if (dndMode) {

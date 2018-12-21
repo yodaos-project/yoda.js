@@ -997,10 +997,11 @@ AppRuntime.prototype.onLoadCustomConfig = function (config) {
     return
   }
   try {
+    // TODO move config-process to component
     var option = JSON.parse(config)
     if (option.nightMode !== undefined) {
       var nightMode = JSON.parse(option.nightMode)
-      logger.info(`customconfig loaded: ${config}`)
+      logger.info(`dnd mode config loaded: ${option.nightMode}`)
       this.dndMode.setOption(nightMode)
     }
   } catch (err) {

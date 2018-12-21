@@ -131,12 +131,9 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
           forceReconnect: true
         })
       }
-      return new Promise((resolve, reject) => {
-        this.syncDate().then(() => {
-          resolve(true)
-        }).catch(() => {
-          resolve(true)
-        })
+      return this.syncDate().catch((err) => {
+        logger.warn(`sync date error: ${err}`)
+        return true
       })
     }
   } catch (_) {

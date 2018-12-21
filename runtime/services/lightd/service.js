@@ -10,9 +10,8 @@ var LIGHT_SOURCE = '/opt/light/'
 var maxUserspaceLayers = 3
 var maxSystemspaceLayers = 100
 
-var manager = new LightRenderingContextManager()
-
 function Light () {
+  this.manager = new LightRenderingContextManager()
   // load system light config
   this.systemspace = {}
   try {
@@ -60,7 +59,7 @@ Light.prototype.init = function () {
 
 Light.prototype.getContext = function () {
   var self = this
-  var context = manager.getContext()
+  var context = this.manager.getContext()
   this.prevContext = context
   context._getCurrentId = function () {
     if (self.prevContext) {
@@ -573,10 +572,6 @@ Light.prototype.setPickup = function (appId, duration, withAwaken) {
       logger.log('setPickup complete')
     }
   })
-}
-
-Light.prototype.setGlobalAlphaFactor = function (alphaFactor) {
-  manager.setGlobalAlphaFactor(alphaFactor)
 }
 
 module.exports = Light

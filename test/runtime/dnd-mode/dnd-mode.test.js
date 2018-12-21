@@ -74,10 +74,10 @@ test('night mode check', function (t) {
   mock.restore()
   // wait for entering into night mode  because app stack is not empty
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
-    t.ok('app stack is not empty, but light night mode was set')
+    t.failed('already enabled')
   })
   mock.mockReturns(sound, 'setVolume', (volume) => {
-    // t.fail('app stack is not empty, but sound night mode was set')
+    t.failed('already enabled')
   })
   mock.mockReturns(sound, 'getVolume', 50)
   mock.mockReturns(life, 'getCurrentAppId', 'some-app')
@@ -88,6 +88,7 @@ test('night mode check', function (t) {
   tag2 = false
   mock.restore()
   // switch off
+  console.log('switch off')
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
     tag1 = true
     t.ok(!isNightMode, 'light exit night mode')
@@ -105,8 +106,8 @@ test('night mode check', function (t) {
   option.startTime = `${startTime}:00`
   option.endTime = `${endTime}:59`
   nightMode.setOption(option)
-  t.ok(tag1, 'light not set 4')
-  t.ok(tag2, 'sound not set 4')
+  t.ok(tag1, 'light not set 3')
+  t.ok(tag2, 'sound not set 3')
 
   // recheck
   nightMode.recheck()

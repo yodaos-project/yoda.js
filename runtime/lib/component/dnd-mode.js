@@ -2,7 +2,6 @@
 
 var property = require('@yoda/property')
 var logger = require('logger')('dndmode')
-var EventEmitter = require('events').EventEmitter
 
 var FSMCode = {
   Start: 0,
@@ -28,226 +27,66 @@ var FSMCode = {
   CheckAgain: 18
 }
 
-var SwitchKey = 'dndmode.switch'
-var StatusKey = 'dndmode.status'
-var StartTimeKey = 'dndmode.starttime'
-var EndTimeKey = 'dndmode.endtime'
-var AwakeSwitchKey = 'dndmode.awakeswitch'
-
-function getSwitch () {
-  return property.get(SwitchKey, 'persist')
-}
-
-function setSwitch (switchValue) {
-  property.set(SwitchKey, switchValue, 'persist')
-}
-
-function getStatus () {
-  return property.get(StatusKey, 'persist')
-}
-
-function setStatus (status) {
-  property.set(StatusKey, status, 'persist')
-}
-
-function getStartTime () {
-  var s = property.get(StartTimeKey, 'persist')
-  if (s !== undefined) {
-    return s
-  } else {
-    return '22:00'
-  }
-}
-
-function setStartTime (startTime) {
-  property.set(StartTimeKey, startTime, 'persist')
-}
-
-function getEndTime () {
-  var s = property.get(EndTimeKey, 'persist')
-  if (s !== undefined) {
-    return s
-  } else {
-    return '8:00'
-  }
-}
-
-function setEndTime (endTime) {
-  property.set(EndTimeKey, endTime, 'persist')
-}
-
-function setAwakeSwitch (awakeSwitch) {
-  property.set(AwakeSwitchKey, awakeSwitch, 'persist')
-}
-
+var DND_MODE_VOLUME = 10
 var TIME_ZONE = 8
+var SWITCH_KEY = 'dndmode.switch'
+var STATUS_KEY = 'dndmode.status'
+var START_TIME_KEY = 'dndmode.starttime'
+var END_TIME_KEY = 'dndmode.endtime'
+var AWAKE_SWITCH_KEY = 'dndmode.awakeswitch'
 
-function formatTime (timeStr, defaultHour, defaultMinute) {
-  var d = new Date()
-  var curTimeZone = d.getTimezoneOffset() / 60
-  d.setSeconds(0)
-  d.setMilliseconds(0)
-  var hour = defaultHour
-  var minute = defaultMinute
-  try {
-    if (typeof timeStr === 'string') {
-      var array = timeStr.split(':')
-      if (array.length === 2) {
-        hour = parseInt(array[0])
-        minute = parseInt(array[1])
-      }
-    }
-  } catch (err) {
-    logger.warn(`dnd mode time paser error: ${timeStr}`)
-  }
-  d.setHours(hour)
-  // TODO custom-config should add timeZone
-  d.setHours(d.getHours() + curTimeZone - TIME_ZONE)
-  d.setMinutes(minute)
-  return d
-}
+var FSM_READY = 0
+var FSM_RUNNING = 1
+var FSM_WAITING = 2
+var FSM_END = 3
+var FSM_ERROR = 4
 
-var fsmReady = 0
-var fsmRunning = 1
-var fsmWait = 2
-var fsmEnd = 3
-var fsmError = 4
-
-var DNDModeVolume = 10
-
-class DNDMode {
+class DNDCommon {
   constructor (light, sound, life) {
-    EventEmitter.call(this)
-    this._life = life
-    this._sound = sound
-    this._light = light
-    this._volumeSaved = 0
-    this._fsmStatus = fsmReady
-    this._fsmTimer = undefined
-    this._waitSleep = false
-    this._fsmWaitingBreaker = undefined
-    this._isOptionBreaker = false
-    this._life.on('idle', () => {
-      if (this._waitSleep && this._fsmStatus === fsmWait) {
-        this._waitSleep = false
-        if (this._fsmWaitingBreaker) {
-          logger.info('fsm waiting break : device is idle')
-          this._fsmWaitingBreaker()
-        }
-      } else if (this._fsmStatus === fsmEnd) {
-        this.fsmMain(FSMCode.Start)
-      }
-    })
+    this.life = life
+    this.sound = sound
+    this.light = light
+    this.volumeSaved = 0
   }
-
-  /**
-   * Get option frm cloud
-   * @param {object} option dnd mode option
-   */
-  setOption (option) {
-    if (option === undefined) {
-      return
-    }
-    if (option.action !== undefined && typeof option.action === 'string' &&
-      option.action === 'open') {
-      setSwitch('on')
-    } else {
-      setSwitch('off')
-    }
-    var startTime = '23:00'
-    var endTime = '7:00'
-    if (option.startTime !== undefined && typeof option.startTime === 'string') {
-      startTime = option.startTime
-    }
-    if (option.endTime !== undefined && typeof option.endTime === 'string') {
-      endTime = option.endTime
-    }
-
-    setStartTime(startTime)
-    setEndTime(endTime)
-    logger.info(`setOption in, fsm status is ${this._fsmStatus}`)
-    this._isOptionBreaker = true
-    if (this._fsmStatus === fsmWait) {
-      if (this._fsmWaitingBreaker) {
-        logger.info('fsm waiting break')
-        this._fsmWaitingBreaker()
-      }
-    } else if (this._fsmStatus === fsmEnd) {
-      this.fsmMain(FSMCode.Start)
-    } else {
-      logger.error(`setOption in, but fsm status is invalid`)
-    }
-    this._isOptionBreaker = false
-  }
-
-  /**
-   * recheck dnd mode
-   */
-  recheck () {
-    logger.info(`recheck dnd mode, fsm status is ${this._fsmStatus}`)
-    if (this._fsmStatus === fsmWait) {
-      if (this._fsmWaitingBreaker) {
-        logger.info('fsm waiting break')
-        this._fsmWaitingBreaker()
-      }
-    } else if (this._fsmStatus === fsmEnd) {
-      this.fsmMain(FSMCode.Start)
-    } else {
-      logger.error(`recheck dnd mode, but fsm status is invalid`)
-    }
-  }
-
   /**
    * Disable dnd mode
    * @function disable
-   * @private
    */
   disable () {
     // TODO volume changed event
-    if (this._volumeSaved !== 0) {
-      this._sound.setVolume(this._volumeSaved)
+    if (this.volumeSaved !== 0) {
+      this.sound.setVolume(this.volumeSaved)
     }
-    this._light.setDNDMode(false)
-    setStatus('off')
-    setAwakeSwitch('open')
+    this.light.setDNDMode(false)
+    DNDCommon.setStatus('off')
+    DNDCommon.setAwakeSwitch('open')
   }
 
   /**
    * Enable dnd mode
    * @function enable
-   * @private
    */
   enable () {
-    var curVolume = this._sound.getVolume()
-    if (DNDModeVolume < curVolume) {
-      this._volumeSaved = curVolume
-      this._sound.setVolume(DNDModeVolume)
+    var curVolume = this.sound.getVolume()
+    if (DND_MODE_VOLUME < curVolume) {
+      this.volumeSaved = curVolume
+      this.sound.setVolume(DND_MODE_VOLUME)
     }
-    this._light.setDNDMode(true)
-    setStatus('on')
-    setAwakeSwitch('close')
+    this.light.setDNDMode(true)
+    DNDCommon.setStatus('on')
+    DNDCommon.setAwakeSwitch('close')
   }
 
   /**
-   * init dnd mode
-   * @function init
+   * Get dnd mode time span from now to start/end, return positive number if in dnd mode time
+   * @function getDNDTime
+   * @returns {number} - if result >= 0, it's the millisecond to end time
+   *                   - if result < 0, it's the millisecond to start time
    */
-  init () {
-    logger.info('dnd mode init')
-    this.fsmMain(FSMCode.Start)
-  }
-
-  /**
-   * Check dnd mode time, return positive number if in dnd mode time
-   * @function enable
-   * @returns {number} if result > 0, it's the millisecond to end time
-   *                   if result < 0, it's the millisecond to start time
-   * @private
-   */
-  checkTime () {
+  getDNDTime () {
     var now = new Date()
-    var start = formatTime(getStartTime(), 22, 0)
-    var end = formatTime(getEndTime(), 7, 0)
+    var start = DNDCommon.formatTime(DNDCommon.getStartTime(), 22, 0)
+    var end = DNDCommon.formatTime(DNDCommon.getEndTime(), 7, 0)
     if (start > end) {
       end.setDate(end.getDate() + 1)
     }
@@ -263,46 +102,296 @@ class DNDMode {
   }
 
   /**
+   * Get the switch value
+   * @function getSwitch
+   * @returns {string} switch value
+   */
+  static getSwitch () {
+    return property.get(SWITCH_KEY, 'persist')
+  }
+
+  /**
+   * Set the switch value
+   * @function setSwitch
+   * @param {string} switchValue - switch value 'on'/'off', set 'off' by default
+   */
+  static setSwitch (switchValue) {
+    if (switchValue !== 'on' && switchValue !== 'off') {
+      switchValue = 'off'
+    }
+    property.set(SWITCH_KEY, switchValue, 'persist')
+  }
+
+  /**
+   * Get the dnd mode status
+   * @function getStatus
+   * @returns {string} status 'on'/'off'
+   */
+  static getStatus () {
+    return property.get(STATUS_KEY, 'persist')
+  }
+
+  /**
+   * Set the dnd mode status
+   * @function getStatus
+   * @param {string} status 'on'/'off', set 'off' by default
+   */
+  static setStatus (status) {
+    if (status !== 'on' && status !== 'off') {
+      status = 'off'
+    }
+    property.set(STATUS_KEY, status, 'persist')
+  }
+
+  /**
+   * Get start time of the dnd mode
+   * @function getStartTime
+   * @returns {string} the start time with hours and minutes (+8 tz for now)
+   */
+  static getStartTime () {
+    var s = property.get(START_TIME_KEY, 'persist')
+    if (s !== undefined) {
+      return s
+    } else {
+      return '22:00'
+    }
+  }
+
+  /**
+   * Set start time of the dnd mode
+   * @function setStartTime
+   * @param {string} startTime - the start time with hours and minutes (+8 tz for now)
+   */
+  static setStartTime (startTime) {
+    property.set(START_TIME_KEY, startTime, 'persist')
+  }
+
+  /**
+   * Get end time of the dnd mode
+   * @function getEndTime
+   * @returns {string} the end time with hours and minutes (+8 tz for now)
+   */
+  static getEndTime () {
+    var s = property.get(END_TIME_KEY, 'persist')
+    if (s !== undefined) {
+      return s
+    } else {
+      return '8:00'
+    }
+  }
+
+  /**
+   * Set end time of the dnd mode
+   * @function getEndTime
+   * @param {string} endTime - the end time with hours and minutes (+8 tz for now)
+   */
+  static setEndTime (endTime) {
+    property.set(END_TIME_KEY, endTime, 'persist')
+  }
+
+  /**
+   * Set awake switch of the dnd mode
+   * @function getEndTime
+   * @param {string} awakeSwitch - awake switch 'open'/'close', set 'close' by default
+   */
+  static setAwakeSwitch (awakeSwitch) {
+    if (awakeSwitch !== 'open' || awakeSwitch !== 'close') {
+      awakeSwitch = 'close'
+    }
+    property.set(AWAKE_SWITCH_KEY, awakeSwitch, 'persist')
+  }
+
+  /**
+   * format start/end time 'hh:mm' to datetime today
+   * @function getEndTime
+   * @param {string} timeStr - time with hours and minutes eg '22:00'
+   * @param {number} defaultHour - default hours
+   * @param {number} defaultMinute - default minutes
+   * @returns {Date} the start/end time today
+   */
+  static formatTime (timeStr, defaultHour, defaultMinute) {
+    var d = new Date()
+    var curTimeZone = d.getTimezoneOffset() / 60
+    d.setSeconds(0)
+    d.setMilliseconds(0)
+    var hour = defaultHour
+    var minute = defaultMinute
+    try {
+      if (typeof timeStr === 'string') {
+        var array = timeStr.split(':')
+        if (array.length === 2) {
+          hour = parseInt(array[0])
+          minute = parseInt(array[1])
+        }
+      }
+    } catch (err) {
+      logger.warn(`dnd mode time paser error: ${timeStr}`)
+    }
+    d.setHours(hour)
+    // TODO custom-config should add timeZone
+    d.setHours(d.getHours() + curTimeZone - TIME_ZONE)
+    d.setMinutes(minute)
+    return d
+  }
+
+  /**
+   * Get the device active status
+   * @function isActivity
+   * @returns {string|null} app id if active or null if sleep
+   */
+  isActivity () {
+    return this.life.getCurrentAppId()
+  }
+
+  /**
+   * restore status for fsm
+   * @function clear
+   */
+  clear () {
+    this.volumeSaved = 0
+  }
+}
+
+class DNDMode {
+  /**
+   * constructor of DNDMode
+   * @function constructor
+   * @param {object} light - light object form runtime
+   * @param {object} sound - sound object form runtime
+   * @param {object} life - life object form runtime
+   */
+  constructor (light, sound, life) {
+    this.common = new DNDCommon(light, sound, life)
+    this.fsmStatus = FSM_READY
+    this.fsmTimer = undefined
+    this.waitSleep = false
+    this.fsmWaitingBreaker = undefined
+    this.isOptionBreaker = false
+    life.on('idle', this.onDeviceIdle.bind(this))
+  }
+
+  /**
+   * when the device changes from active to idle, this function will be triggered
+   * @function onDeviceIdle
+   */
+  onDeviceIdle () {
+    if (this.waitSleep && this.fsmStatus === FSM_WAITING) {
+      this.waitSleep = false
+      if (this.fsmWaitingBreaker) {
+        logger.info('fsm waiting break : device is idle')
+        this.fsmWaitingBreaker()
+      }
+    } else if (this.fsmStatus === FSM_END) {
+      this.start(FSMCode.Start)
+    }
+  }
+  /**
+   * Get option from cloud
+   * @param {object} option dnd mode option
+   */
+  setOption (option) {
+    if (option === undefined) {
+      return
+    }
+    if (option.action !== undefined && typeof option.action === 'string' &&
+      option.action === 'open') {
+      DNDCommon.setSwitch('on')
+    } else {
+      DNDCommon.setSwitch('off')
+    }
+    var startTime = '23:00'
+    var endTime = '7:00'
+    if (option.startTime !== undefined && typeof option.startTime === 'string') {
+      startTime = option.startTime
+    }
+    if (option.endTime !== undefined && typeof option.endTime === 'string') {
+      endTime = option.endTime
+    }
+
+    DNDCommon.setStartTime(startTime)
+    DNDCommon.setEndTime(endTime)
+    logger.info(`setOption in, fsm status is ${this.fsmStatus}`)
+    this.isOptionBreaker = true
+    if (this.fsmStatus === FSM_WAITING) {
+      if (this.fsmWaitingBreaker) {
+        logger.info('fsm waiting break')
+        this.fsmWaitingBreaker()
+      }
+    } else if (this.fsmStatus === FSM_END) {
+      this.start(FSMCode.Start)
+    } else {
+      logger.error(`setOption in, but fsm status is invalid`)
+    }
+    this.isOptionBreaker = false
+  }
+
+  /**
+   * recheck dnd mode
+   */
+  recheck () {
+    logger.info(`recheck dnd mode, fsm status is ${this.fsmStatus}`)
+    if (this.fsmStatus === FSM_WAITING) {
+      if (this.fsmWaitingBreaker) {
+        logger.info('fsm waiting break')
+        this.fsmWaitingBreaker()
+      }
+    } else if (this.fsmStatus === FSM_END) {
+      this.start(FSMCode.Start)
+    } else {
+      logger.error(`recheck dnd mode, but fsm status is invalid`)
+    }
+  }
+
+  /**
+   * init dnd mode
+   * @function init
+   */
+  init () {
+    logger.info('dnd mode init')
+    this.start(FSMCode.Start)
+  }
+
+  /**
    * fsm main
-   * @function fsmMain
-   * @param {Number} code - fsm code
+   * @function start
+   * @param {number} code - fsm code
    * @private
    */
-  fsmMain (code) {
+  start (code) {
     while (code !== FSMCode.End && code !== FSMCode.WaitAsync) {
       logger.info(`fsmMain ${code}`)
-      this._fsmStatus = fsmRunning
+      this.fsmStatus = FSM_RUNNING
       switch (code) {
         case FSMCode.Start:
-          code = this.fsmCheckSwitch(code)
+          code = this.checkSwitch(code)
           break
         case FSMCode.CheckSwitchOn:
-          code = this.fsmCheckStatusX(code)
+          code = this.checkStatusX(code)
           break
         case FSMCode.CheckSwitchOff:
-          code = this.fsmCheckStatus(code)
+          code = this.checkStatus(code)
           break
         case FSMCode.CheckStatusOff:
         case FSMCode.DNDModeDisabled:
-          code = this.fsmEnd(code)
+          code = this.end(code)
           break
         case FSMCode.CheckStatusOn:
-          code = this.fsmDNDModeTrunOff(code)
+          code = this.turnOff(code)
           break
         case FSMCode.CheckStatusOnX:
-          code = this.fsmCheckTime(code)
+          code = this.checkTime(code)
           break
         case FSMCode.CheckStatusOffX:
-          code = this.fsmCheckTimeX(code)
+          code = this.checkTimeX(code)
           break
         case FSMCode.CheckTimeFailed:
-          code = this.fsmCheckActivityX(code)
+          code = this.checkActivityX(code)
           break
         case FSMCode.CheckTimeSuccessX:
-          code = this.fsmCheckActivity(code)
+          code = this.checkActivity(code)
           break
         case FSMCode.CheckActivityFalse:
-          code = this.fsmDNDModeTurnOn(code)
+          code = this.turnOn(code)
           break
         case FSMCode.CheckActivityTrueX:
         case FSMCode.DNDModeEnabled:
@@ -310,185 +399,185 @@ class DNDMode {
         case FSMCode.CheckTimeSuccess:
         case FSMCode.DNDModeDisabledX:
         case FSMCode.CheckTimeFailedX:
-          code = this.fsmSetTimeout(code)
+          code = this.setTimeout(code)
           break
         case FSMCode.CheckActivityFalseX:
-          code = this.fsmDNDModeTurnOffX(code)
+          code = this.turnOffX(code)
           break
         case FSMCode.CheckAgain:
-          code = this.fsmCheckSwitch(code)
+          code = this.checkSwitch(code)
           break
         default:
           logger.error(`${code} fsmMain error`)
-          this._fsmStatus = fsmError
+          this.fsmStatus = FSM_ERROR
           return
       }
     }
     if (code === FSMCode.WaitAsync) {
-      this._fsmStatus = fsmWait
+      this.fsmStatus = FSM_WAITING
     } else if (code === FSMCode.End) {
-      this._fsmStatus = fsmEnd
+      this.fsmStatus = FSM_END
     }
   }
 
   /**
    * fsm function for switch checking
-   * @function fsmCheckSwitch
-   * @param {Number} code - fsm code
-   * @returns switch on or switch off
+   * @function checkSwitch
+   * @param {number} code - fsm code
+   * @returns {number} switch on or switch off
    * @private
    */
-  fsmCheckSwitch (code) {
-    var switchValue = getSwitch()
+  checkSwitch (code) {
+    var switchValue = DNDCommon.getSwitch()
     logger.info(`FSMCheckSwitch ${switchValue}`)
     return switchValue === 'on' ? FSMCode.CheckSwitchOn : FSMCode.CheckSwitchOff
   }
 
   /**
    * fsm function for current dnd mode status checking
-   * @function fsmCheckStatusX
-   * @param {Number} code - fsm code
-   * @returns status On or status off
+   * @function checkStatusX
+   * @param {number} code - fsm code
+   * @returns {number} status On or status off
    * @private
    */
-  fsmCheckStatusX (code) {
-    var status = getStatus()
+  checkStatusX (code) {
+    var status = DNDCommon.getStatus()
     logger.info(`FSMCheckStatusX ${status}`)
     return status === 'on' ? FSMCode.CheckStatusOnX : FSMCode.CheckStatusOffX
   }
 
   /**
    * fsm function for current dnd mode status checking
-   * @function fsmCheckStatus
-   * @param {Number} code - fsm code
-   * @returns status on or status off
+   * @function checkStatus
+   * @param {number} code - fsm code
+   * @returns {number} status on or status off
    * @private
    */
-  fsmCheckStatus (code) {
-    var status = getStatus()
+  checkStatus (code) {
+    var status = DNDCommon.getStatus()
     logger.info(`FSMCheckStatus ${status}`)
     return status === 'on' ? FSMCode.CheckStatusOn : FSMCode.CheckStatusOff
   }
 
   /**
    * fsm end
-   * @function fsmEnd
-   * @param {Number} code - fsm code
-   * @returns end
+   * @function end
+   * @param {number} code - fsm code
+   * @returns {number} end
    * @private
    */
-  fsmEnd (code) {
+  end (code) {
     logger.info('FSMEnd')
-    this._volumeSaved = 0
+    this.common.clear()
     return FSMCode.End
   }
 
   /**
    * fsm disable dnd mode
-   * @function fsmDNDModeTrunOff
-   * @param {Number} code - fsm code
-   * @returns dnd mode disabled
+   * @function turnOff
+   * @param {number} code - fsm code
+   * @returns {number} dnd mode disabled
    * @private
    */
-  fsmDNDModeTrunOff (code) {
-    logger.info('fsmDNDModeTrunOff')
-    this.disable()
+  turnOff (code) {
+    logger.info('turnOff')
+    this.common.disable()
     return FSMCode.DNDModeDisabled
   }
 
   /**
    * fsm check dnd mode time
-   * @function fsmCheckTime
-   * @param {Number} code - fsm code
-   * @returns success or failed
+   * @function checkTime
+   * @param {number} code - fsm code
+   * @returns {number} success or failed
    * @private
    */
-  fsmCheckTime (code) {
-    var rst = this.checkTime()
+  checkTime (code) {
+    var rst = this.common.getDNDTime()
     logger.info(`FSMCheckTime ${rst}`)
     return rst > 0 ? FSMCode.CheckTimeSuccess : FSMCode.CheckTimeFailed
   }
 
   /**
    * fsm check dnd mode time
-   * @function fsmCheckTimeX
-   * @param {Number} code - fsm code
-   * @returns success or failed
+   * @function checkTimeX
+   * @param {number} code - fsm code
+   * @returns {number} success or failed
    * @private
    */
-  fsmCheckTimeX (code) {
-    var rst = this.checkTime()
+  checkTimeX (code) {
+    var rst = this.common.getDNDTime()
     logger.info(`FSMCheckTimeX ${rst}`)
     return rst > 0 ? FSMCode.CheckTimeSuccessX : FSMCode.CheckTimeFailedX
   }
 
   /**
    * fsm disable dnd mode
-   * @function fsmDNDModeTurnOffX
-   * @param {Number} code - fsm code
-   * @returns dnd mode disabled
+   * @function turnOffX
+   * @param {number} code - fsm code
+   * @returns {number} dnd mode disabled
    * @private
    */
-  fsmDNDModeTurnOffX (code) {
-    logger.info('fsmDNDModeTurnOffX')
-    this.disable()
+  turnOffX (code) {
+    logger.info('turnOffX')
+    this.common.disable()
     return FSMCode.DNDModeDisabledX
   }
 
   /**
    * fsm wait for start or end or something else(new option from cloud)
-   * @function fsmSetTimeout
-   * @param {Number} code - fsm code
-   * @returns wait
+   * @function setTimeout
+   * @param {number} code - fsm code
+   * @returns {number} wait async
    * @private
    */
-  fsmSetTimeout (code) {
-    var waitMs = this.checkTime()
+  setTimeout (code) {
+    var waitMs = this.common.getDNDTime()
     if (waitMs < 0) {
       waitMs = -waitMs
     }
-    if (code === FSMCode.CheckActivityTrue || code === FSMCode.CheckActivityTrueX)
-      this._waitSleep = true
-    this._fsmTimer = setTimeout(() => {
-      this.fsmMain(FSMCode.CheckAgain)
+    this.waitSleep = (code === FSMCode.CheckActivityTrue || code === FSMCode.CheckActivityTrueX)
+    this.fsmTimer = setTimeout(() => {
+      this.start(FSMCode.CheckAgain)
     }, waitMs)
-    this._fsmWaitingBreaker = () => {
-      clearTimeout(this._fsmTimer)
-      this._fsmWaitingBreaker = undefined
-      this._fsmTimer = undefined
-      this.fsmMain(FSMCode.CheckAgain)
+    this.fsmWaitingBreaker = () => {
+      clearTimeout(this.fsmTimer)
+      this.fsmWaitingBreaker = undefined
+      this.fsmTimer = undefined
+      this.start(FSMCode.CheckAgain)
     }
-    logger.info(`wait ${waitMs}ms for next dnd mode checking ${this._fsmWaitingBreaker}`)
+    logger.info(`wait ${waitMs}ms for next dnd mode checking ${this.fsmWaitingBreaker}`)
     return FSMCode.WaitAsync
   }
 
   /**
    * fsm check the machine's working status
-   * @function fsmCheckActivity
-   * @param {Number} code - fsm code
-   * @returns CheckActivityTrue if working, CheckActivityFalse if not working
+   * @function checkActivity
+   * @param {number} code - fsm code
+   * @returns {number} CheckActivityTrue if working, CheckActivityFalse if not working
    * @private
    */
-  fsmCheckActivity (code) {
-    if (!this._isOptionBreaker) {
-      var activity = this._life.getCurrentAppId()
+  checkActivity (code) {
+    if (!this.isOptionBreaker) {
+      var activity = this.common.isActivity()
       logger.info(`FSMCheckActivity ${activity}`)
       return activity ? FSMCode.CheckActivityTrue : FSMCode.CheckActivityFalse
     } else {
+      logger.info(`FSMCheckActivity from option changed, always return FALSE`)
       return FSMCode.CheckActivityFalse
     }
   }
 
   /**
    * fsm check the machine's working status
-   * @function fsmCheckActivity
-   * @param {Number} code - fsm code
-   * @returns CheckActivityTrueX if working, CheckActivityFalseX if not working
+   * @function checkActivity
+   * @param {number} code - fsm code
+   * @returns {number} CheckActivityTrueX if working, CheckActivityFalseX if not working
    * @private
    */
-  fsmCheckActivityX (code) {
-    if (!this._isOptionBreaker) {
-      var activity = this._life.getCurrentAppId()
+  checkActivityX (code) {
+    if (!this.isOptionBreaker) {
+      var activity = this.common.isActivity()
       logger.info(`FSMCheckActivityX ${activity}`)
       return activity ? FSMCode.CheckActivityTrueX : FSMCode.CheckActivityFalseX
     } else {
@@ -498,14 +587,14 @@ class DNDMode {
 
   /**
    * fsm turn on dnd mode
-   * @function fsmDNDModeTurnOn
-   * @param {Number} code - fsm code
-   * @returns DNDModeEnabled
+   * @function turnOn
+   * @param {number} code - fsm code
+   * @returns {number} DNDModeEnabled
    * @private
    */
-  fsmDNDModeTurnOn (code) {
-    logger.info('fsmDNDModeTurnOn')
-    this.enable()
+  turnOn (code) {
+    logger.info('turnOn')
+    this.common.enable()
     return FSMCode.DNDModeEnabled
   }
 }
