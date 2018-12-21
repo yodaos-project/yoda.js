@@ -124,10 +124,12 @@ class DNDMode {
     this._volumeSaved = 0
     this._fsmStatus = fsmReady
     this._fsmTimer = undefined
+    this._waitSleep = false
     this._fsmWaitingBreaker = undefined
     this._isOptionBreaker = false
     this._life.on('idle', () => {
-      if (this._fsmStatus === fsmWait) {
+      if (this._waitSleep && this._fsmStatus === fsmWait) {
+        this._waitSleep = false
         if (this._fsmWaitingBreaker) {
           logger.info('fsm waiting break : device is idle')
           this._fsmWaitingBreaker()
@@ -445,6 +447,8 @@ class DNDMode {
     if (waitMs < 0) {
       waitMs = -waitMs
     }
+    if (code === FSMCode.CheckActivityTrue || code === FSMCode.CheckActivityTrueX)
+      this._waitSleep = true
     this._fsmTimer = setTimeout(() => {
       this.fsmMain(FSMCode.CheckAgain)
     }, waitMs)
