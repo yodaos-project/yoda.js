@@ -96,6 +96,7 @@ Skill.prototype.handleEvent = function () {
         return
       }
       // continue perform the remaining tasks, if any.
+      // notice: directives will perform on nextTick. see Skill.prototype.onrequest for more detail.
       if (this.directives.length > 0) {
         logger.log('continue run directives on nextTick')
         return
@@ -161,6 +162,7 @@ Skill.prototype.handleEvent = function () {
             return
           }
           // continue perform the remaining tasks, if any.
+          // notice: directives will perform on nextTick. see Skill.prototype.onrequest for more detail.
           if (this.directives.length > 0) {
             logger.log('[resume] continue run directives on nextTick')
             return
