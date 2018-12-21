@@ -2,6 +2,7 @@
 var logger = require('logger')('scheduler')
 var _ = require('@yoda/util')._
 
+var Constants = require('../../constants').AppScheduler
 var lightApp = require('../app/light-app')
 var extApp = require('../app/ext-app')
 var DbusApp = require('../app/dbus-app')
@@ -14,18 +15,11 @@ function AppScheduler (loader, runtime) {
 
   this.appMap = {}
   this.appStatus = {}
-}
-
-AppScheduler.status = {
-  notRunning: 'not running',
-  creating: 'creating',
-  running: 'running',
-  destructing: 'destructing',
-  exited: 'exited'
+  this.appLaunchOptions = {}
 }
 
 AppScheduler.prototype.isAppRunning = function isAppRunning (appId) {
-  return this.appStatus[appId] === AppScheduler.status.running
+  return this.appStatus[appId] === Constants.status.running
 }
 
 AppScheduler.prototype.getAppById = function getAppById (appId) {
@@ -33,20 +27,25 @@ AppScheduler.prototype.getAppById = function getAppById (appId) {
 }
 
 AppScheduler.prototype.getAppStatusById = function getAppStatusById (appId) {
-  return this.appStatus[appId] || AppScheduler.status.notRunning
+  return this.appStatus[appId] || Constants.status.notRunning
 }
 
-AppScheduler.prototype.createApp = function createApp (appId) {
+AppScheduler.prototype.createApp = function createApp (appId, mode) {
   if (this.isAppRunning(appId)) {
     return Promise.resolve(this.getAppById(appId))
   }
-  if (this.appStatus[appId] === AppScheduler.status.creating) {
+  if (this.appStatus[appId] === Constants.status.creating) {
     return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
   }
-  this.appStatus[appId] = AppScheduler.status.creating
+  this.appStatus[appId] = Constants.status.creating
 
   var appType = this.loader.getTypeOfApp(appId)
   var metadata = this.loader.getAppManifest(appId)
+
+  if (Constants.modes[mode] == null) {
+    mode = Constants.modes.default
+  }
+  this.appLaunchOptions[appId] = { type: appType, mode: mode }
 
   if (appType === 'light') {
     return lightApp(appId, metadata, this.runtime)
@@ -59,12 +58,15 @@ AppScheduler.prototype.createApp = function createApp (appId) {
     return Promise.resolve(app)
   }
 
+  logger.info('app creating prev', appId, appType)
   var future
   if (appType === 'exe') {
     future = executableProc(appId, metadata, this.runtime)
   } else {
-    future = extApp(appId, metadata, this.runtime)
+    logger.info('ext app creating', appId)
+    future = extApp(appId, metadata, this.runtime, mode)
   }
+  logger.info('app creating', appId, typeof future.then)
 
   return future
     .then(app => {
@@ -87,7 +89,7 @@ AppScheduler.prototype.createApp = function createApp (appId) {
 
 AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
   this.appMap[appId] = app
-  this.appStatus[appId] = AppScheduler.status.running
+  this.appStatus[appId] = Constants.status.running
   app.emit('ready')
   app.emit('create')
 
@@ -97,7 +99,8 @@ AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
 AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, signal) {
   logger.info(`${appId} exited.`)
   delete this.appMap[appId]
-  this.appStatus[appId] = AppScheduler.status.exited
+  delete this.appLaunchOptions[appId]
+  this.appStatus[appId] = Constants.status.exited
   this.runtime.appGC(appId)
 
   if (code != null) {
@@ -140,7 +143,7 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   var app = this.appMap[appId]
   if (app) {
     app.destruct()
-    this.appStatus[appId] = AppScheduler.status.destructing
+    this.appStatus[appId] = Constants.status.destructing
   }
 
   return Promise.resolve()

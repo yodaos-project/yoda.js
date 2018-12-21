@@ -2,6 +2,7 @@ var dbus = require('dbus').getBus('session')
 var compose = require('@yoda/util').compose
 
 var methodName = process.argv[2]
+var args = process.argv.slice(3)
 
 compose([
   cb => {
@@ -33,7 +34,7 @@ compose([
       return process.exit(1)
     }
     console.log('-> calling debug interface:', methodName)
-    iface[methodName](cb)
+    iface[methodName].apply(iface, args.concat(cb))
   }
 ], function onDone (err, result) {
   if (err) {

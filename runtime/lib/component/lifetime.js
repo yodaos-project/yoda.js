@@ -215,19 +215,12 @@ LaVieEnPile.prototype.isMonopolized = function isMonopolized () {
  *   - LaVieEnPile#activateAppById
  *   - LaVieEnPile#setBackgroundById
  *
+ * > Deprecated: Use AppScheduler.createApp instead.
+ *
  * @param {string} appId -
  * @returns {Promise<AppDescriptor>}
  */
 LaVieEnPile.prototype.createApp = function createApp (appId) {
-  var appCreated = this.scheduler.isAppRunning(appId)
-  if (appCreated) {
-    /** No need to recreate app */
-    logger.info('app is already running, skip creating', appId)
-    return Promise.resolve(this.scheduler.getAppById(appId))
-  }
-
-  // Launch app
-  logger.info('app is not running, creating', appId)
   return this.scheduler.createApp(appId)
 }
 

@@ -5,7 +5,7 @@ var path = require('path')
 var EventEmitter = require('events')
 
 var helper = require('../helper')
-var Descriptors = require(`${helper.paths.runtime}/lib/app/activity-descriptor`)
+var Descriptors = require(`${helper.paths.runtime}/lib/descriptor`)
 var lightApp = require(`${helper.paths.runtime}/lib/app/light-app`)
 var proxy = require('../fixture/simple-app').proxy
 
