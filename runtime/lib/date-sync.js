@@ -24,7 +24,6 @@ function sync (source) {
   logger.log(`exec ${cmd} from <${source}>`)
   return new Promise(function (resolve, reject) {
     exec(cmd, {}, function (err, stdout, stderr) {
-      console.log(`exec ${err}  ${Date.now()}  ${Number(new Date())}`)
       if (err) {
         reject(err)
       } else {
