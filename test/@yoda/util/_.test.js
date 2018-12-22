@@ -129,6 +129,36 @@ var suites = [
         expected: false
       }
     ]
+  },
+  {
+    fn: 'endsWith',
+    cases: [
+      {
+        title: 'should ignore nil value',
+        params: [ null ],
+        expected: false
+      },
+      {
+        title: 'should ignore non-string value',
+        params: [ {} ],
+        expected: false
+      },
+      {
+        title: 'should match normal string',
+        params: [ 'foobar', 'bar' ],
+        expected: true
+      },
+      {
+        title: 'should match whole string',
+        params: [ 'foobar', 'foobar' ],
+        expected: true
+      },
+      {
+        title: 'should not match string',
+        params: [ 'foobar', 'foo' ],
+        expected: false
+      }
+    ]
   }
 ]
 

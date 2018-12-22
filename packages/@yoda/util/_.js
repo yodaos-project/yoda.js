@@ -51,6 +51,17 @@ function startsWith (str, search, pos) {
   return str.substring(!pos || pos < 0 ? 0 : +pos, search.length) === search
 }
 
+module.exports.endsWith = endsWith
+function endsWith (str, search, length) {
+  if (typeof str !== 'string') {
+    return false
+  }
+  if (length === undefined || length > str.length) {
+    length = str.length
+  }
+  return str.substring(length - search.length, length) === search
+}
+
 module.exports.sample = sample
 function sample (arr) {
   var length = get(arr, 'length', 0)
