@@ -12,6 +12,7 @@ var property = require('@yoda/property')
 var CloudGw = require('@yoda/cloudgw')
 var MqttClient = require('./mqtt/client')
 var parseHttpHeader = require('./util').parseHttpHeader
+var promisify = require('util').promisify
 var STRINGS = require('../../strings/login.json')
 
 /**
@@ -147,37 +148,29 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
  * @method
  */
 CloudStore.prototype.syncDate = function syncDate () {
-  return new Promise((resolve, reject) => {
-    fs.readFile('/tmp/LOGIN_HEADER', 'utf8', (err, text) => {
-      var error
-      if (err || !text) {
-        logger.warn('/tmp/LOGIN_HEADER invalid body, discard sync')
-        error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
-        error.code = 'SYNC_DATE'
+  var readFileAsync = promisify(fs.readFile)
+  return readFileAsync('/tmp/LOGIN_HEADER', 'utf8').then((text) => {
+    try {
+      var headers = parseHttpHeader(text)
+      if (headers && headers.date) {
+        return sync(headers.date)
       } else {
-        try {
-          var headers = parseHttpHeader(text)
-          if (headers && headers.date) {
-            sync(headers.date).then(() => {
-              resolve(true)
-            }, (err) => {
-              reject(err)
-            })
-          } else {
-            logger.warn('skip sync date, reason: no date found from headers', text)
-            error = new Error('skip sync date, reason: no date found from headers')
-            error.code = 'SYNC_DATE'
-          }
-        } catch (err) {
-          logger.warn(`sync date error: ${err && err.message}`)
-          error = new Error('skip sync date, reason: no date found from headers')
-          error.code = 'SYNC_DATE'
-        }
+        logger.warn('skip sync date, reason: no date found from headers', text)
+        error = new Error('skip sync date, reason: no date found from headers')
+        error.code = 'SYNC_DATE'
+        return Promise.reject(error)
       }
-      if (error) {
-        reject(error)
-      }
-    })
+    } catch (err) {
+      logger.warn(`sync date error: ${err && err.message}`)
+      error = new Error('skip sync date, reason: no date found from headers')
+      error.code = 'SYNC_DATE'
+      return Promise.reject(error)
+    }
+  }).catch((err) => {
+    logger.warn(`/tmp/LOGIN_HEADER invalid body, discard sync, ${err}`)
+    error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
+    error.code = 'SYNC_DATE'
+    return Promise.reject(error)
   })
 }
 
