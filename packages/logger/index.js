@@ -88,9 +88,6 @@ Logger.prototype.warn = createLoggerFunction('warn')
  */
 Logger.prototype.error = createLoggerFunction('error')
 
-// disable cloud by default
-native.enableCloud(0)
-
 /**
  * @example
  * var logger = require('logger')('some tag')
@@ -103,3 +100,32 @@ native.enableCloud(0)
 module.exports = function (name) {
   return new Logger(name)
 }
+
+var UPLOAD_MIN_LEVEL = 0
+var UPLOAD_MAX_LEVEL = 5
+
+// disable cloud by default
+native.enableCloud(UPLOAD_MIN_LEVEL, '')
+
+/**
+ * enable log upload to cloud
+ *
+ * @example
+ * var enableGlobalUploadCloud = require('logger').setGlobalUploadLevel
+ * setGlobalUploadLevel(level, "your gw token")
+ *
+ * @function defaults
+ * @param {Number} uploadLevel - [UPLOAD_MIN_LEVEL, UPLOAD_MAX_LEVEL]
+ * @param {String} token
+ */
+module.exports.setGlobalUploadLevel = function (uploadLevel, authorization) {
+  if (uploadLevel > UPLOAD_MAX_LEVEL || uploadLevel < UPLOAD_MIN_LEVEL) {
+    throw new Error(
+      `upload level should between ${UPLOAD_MIN_LEVEL},${UPLOAD_MAX_LEVEL}`
+    )
+  }
+  native.enableCloud(uploadLevel, authorization)
+}
+
+module.exports.UPLOAD_MIN_LEVEL= UPLOAD_MIN_LEVEL
+module.exports.UPLOAD_MAX_LEVEL= UPLOAD_MAX_LEVEL

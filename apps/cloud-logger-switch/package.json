@@ -1,0 +1,13 @@
+{
+  "name": "@yoda/cloud-logger-switch",
+  "version": "1.0.0",
+  "description": "global cloud log on-off switch",
+  "main": "app.js",
+  "metadata": {
+    "skills": [
+      "com.rokid.log.service"
+    ]
+  },
+  "author": "Ximin Chen <ximin.chen@rokid.com>",
+  "license": "UNLICENSED"
+}
