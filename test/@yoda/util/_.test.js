@@ -129,6 +129,81 @@ var suites = [
         expected: false
       }
     ]
+  },
+  {
+    fn: 'endsWith',
+    cases: [
+      {
+        title: 'should ignore nil value',
+        params: [ null ],
+        expected: false
+      },
+      {
+        title: 'should ignore non-string value',
+        params: [ {} ],
+        expected: false
+      },
+      {
+        title: 'should match normal string',
+        params: [ 'foobar', 'bar' ],
+        expected: true
+      },
+      {
+        title: 'should match whole string',
+        params: [ 'foobar', 'foobar' ],
+        expected: true
+      },
+      {
+        title: 'should not match string',
+        params: [ 'foobar', 'foo' ],
+        expected: false
+      }
+    ]
+  },
+  {
+    fn: 'camelCase',
+    cases: [
+      {
+        title: 'should ignore nil value',
+        params: [ null ],
+        expected: ''
+      },
+      {
+        title: 'should ignore non-string value',
+        params: [ {} ],
+        expected: ''
+      },
+      {
+        title: 'should format kebab case string',
+        params: [ 'foo-bar' ],
+        expected: 'fooBar'
+      },
+      {
+        title: 'should format kebab case string with number',
+        params: [ 'foo-bar-0' ],
+        expected: 'fooBar0'
+      },
+      {
+        title: 'should format kebab case string with trailing dash',
+        params: [ 'foo-bar-' ],
+        expected: 'fooBar'
+      },
+      {
+        title: 'should format snake case string',
+        params: [ 'foo_bar' ],
+        expected: 'fooBar'
+      },
+      {
+        title: 'should format snake case string with number',
+        params: [ 'foo_bar0' ],
+        expected: 'fooBar0'
+      },
+      {
+        title: 'should format snake case string with trailing underscore',
+        params: [ 'foo_bar_' ],
+        expected: 'fooBar'
+      }
+    ]
   }
 ]
 
