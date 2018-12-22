@@ -15,6 +15,8 @@ var parseHttpHeader = require('./util').parseHttpHeader
 var promisify = require('util').promisify
 var STRINGS = require('../../strings/login.json')
 
+var readFileAsync = promisify(fs.readFile)
+
 /**
  * This `CloudStore` is the object that provides APIs for connecting
  * Rokid Cloud Service.
@@ -148,10 +150,10 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
  * @method
  */
 CloudStore.prototype.syncDate = function syncDate () {
-  var readFileAsync = promisify(fs.readFile)
   return readFileAsync('/tmp/LOGIN_HEADER', 'utf8').then((text) => {
     try {
       var headers = parseHttpHeader(text)
+      var error
       if (headers && headers.date) {
         return sync(headers.date)
       } else {
@@ -168,7 +170,7 @@ CloudStore.prototype.syncDate = function syncDate () {
     }
   }).catch((err) => {
     logger.warn(`/tmp/LOGIN_HEADER invalid body, discard sync, ${err}`)
-    error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
+    var error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
     error.code = 'SYNC_DATE'
     return Promise.reject(error)
   })

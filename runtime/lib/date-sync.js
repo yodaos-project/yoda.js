@@ -7,9 +7,9 @@ var promisify = require('util').promisify
 
 var TIMEZONE = 0
 var DATE_FORMAT = '%A, %d %b %Y %H:%M:%S'
+var execAsync = promisify(exec)
 
 function sync (source) {
-  var execAsync = promisify(exec)
   var date = parseDateString(source, DATE_FORMAT)
   if (date.hours + TIMEZONE >= 24) {
     date.date += 1
