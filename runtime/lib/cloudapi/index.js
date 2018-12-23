@@ -160,19 +160,19 @@ CloudStore.prototype.syncDate = function syncDate () {
         logger.warn('skip sync date, reason: no date found from headers', text)
         error = new Error('skip sync date, reason: no date found from headers')
         error.code = 'SYNC_DATE'
-        return Promise.reject(error)
+        throw error
       }
     } catch (err) {
       logger.warn(`sync date error: ${err && err.message}`)
       error = new Error('skip sync date, reason: no date found from headers')
       error.code = 'SYNC_DATE'
-      return Promise.reject(error)
+      throw error
     }
   }).catch((err) => {
     logger.warn(`/tmp/LOGIN_HEADER invalid body, discard sync, ${err}`)
     var error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
     error.code = 'SYNC_DATE'
-    return Promise.reject(error)
+    throw error
   })
 }
 

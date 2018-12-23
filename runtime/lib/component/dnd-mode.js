@@ -29,6 +29,7 @@ var FSMCode = {
 
 var DND_MODE_VOLUME = 10
 var TIME_ZONE = 8
+var SAVED_VOLUME_KEY = 'dndmode.savedvolume'
 var SWITCH_KEY = 'dndmode.switch'
 var STATUS_KEY = 'dndmode.status'
 var START_TIME_KEY = 'dndmode.starttime'
@@ -46,7 +47,6 @@ class DNDCommon {
     this.life = life
     this.sound = sound
     this.light = light
-    this.volumeSaved = 0
   }
   /**
    * Disable dnd mode
@@ -54,8 +54,10 @@ class DNDCommon {
    */
   disable () {
     // TODO volume changed event
-    if (this.volumeSaved !== 0) {
-      this.sound.setVolume(this.volumeSaved)
+    var volume = DNDCommon.getSavedVolume()
+    if (volume !== 0) {
+      this.sound.setVolume(volume)
+      DNDCommon.setSavedVolume(0)
     }
     this.light.setDNDMode(false)
     DNDCommon.setStatus('off')
@@ -69,8 +71,8 @@ class DNDCommon {
   enable () {
     var curVolume = this.sound.getVolume()
     if (DND_MODE_VOLUME < curVolume) {
-      this.volumeSaved = curVolume
       this.sound.setVolume(DND_MODE_VOLUME)
+      DNDCommon.setSavedVolume(curVolume)
     }
     this.light.setDNDMode(true)
     DNDCommon.setStatus('on')
@@ -83,7 +85,7 @@ class DNDCommon {
    * @returns {number} - if result >= 0, it's the millisecond to end time
    *                   - if result < 0, it's the millisecond to start time
    */
-  getDNDTime () {
+  static getDNDTime () {
     var now = new Date()
     var start = DNDCommon.formatTime(DNDCommon.getStartTime(), 22, 0)
     var end = DNDCommon.formatTime(DNDCommon.getEndTime(), 7, 0)
@@ -99,6 +101,28 @@ class DNDCommon {
       start.setDate(start.getDate() + 1)
       return now - start
     }
+  }
+
+  /**
+   * Get the saved volume value
+   * @function getSavedVolume
+   * @returns {number} saved volume value
+   */
+  static getSavedVolume () {
+    try {
+      return parseInt(property.get(SAVED_VOLUME_KEY, 'persist'))
+    } catch (_) {
+      return 0
+    }
+  }
+
+  /**
+   * Set the saved volume value
+   * @function setSavedVolume
+   * @param {number} volume - saved volume value
+   */
+  static setSavedVolume (volume) {
+    property.set(SAVED_VOLUME_KEY, volume.toString(), 'persist')
   }
 
   /**
@@ -241,14 +265,6 @@ class DNDCommon {
    */
   isActivity () {
     return this.life.getCurrentAppId()
-  }
-
-  /**
-   * restore status for fsm
-   * @function clear
-   */
-  clear () {
-    this.volumeSaved = 0
   }
 }
 
@@ -468,7 +484,6 @@ class DNDMode {
    */
   end (code) {
     logger.info('FSMEnd')
-    this.common.clear()
     return FSMCode.End
   }
 
@@ -493,7 +508,7 @@ class DNDMode {
    * @private
    */
   checkTime (code) {
-    var rst = this.common.getDNDTime()
+    var rst = DNDCommon.getDNDTime()
     logger.info(`FSMCheckTime ${rst}`)
     return rst > 0 ? FSMCode.CheckTimeSuccess : FSMCode.CheckTimeFailed
   }
@@ -506,7 +521,7 @@ class DNDMode {
    * @private
    */
   checkTimeX (code) {
-    var rst = this.common.getDNDTime()
+    var rst = DNDCommon.getDNDTime()
     logger.info(`FSMCheckTimeX ${rst}`)
     return rst > 0 ? FSMCode.CheckTimeSuccessX : FSMCode.CheckTimeFailedX
   }
@@ -532,7 +547,7 @@ class DNDMode {
    * @private
    */
   setTimeout (code) {
-    var waitMs = this.common.getDNDTime()
+    var waitMs = DNDCommon.getDNDTime()
     if (waitMs < 0) {
       waitMs = -waitMs
     }
