@@ -44,18 +44,8 @@ class Activation : public ClientCallback {
       fprintf(stdout, "current network is not available, just skip\n");
       return;
     }
-
-    int id = rand() % 4;
-    prepareWavPlayer(filenames[id], "system", true);
-    if (volume_set != true) {
-      char val[PROP_VALUE_MAX];
-      property_get("persist.audio.volume.system", (char*)&val, "");
-      int vol = atoi(val);
-      fprintf(stdout, "init activation volume to %d\n", vol);
-      rk_set_stream_volume(STREAM_SYSTEM, vol);
-      volume_set = true;
-    }
     startWavPlayer();
+    prepareForNextAwake();
   }
   // cppcheck-suppress unusedFunction
   void disconnected() {
@@ -71,7 +61,7 @@ class Activation : public ClientCallback {
   void start() {
     shared_ptr<Client> cli;
     unique_lock<mutex> locker(reconn_mutex);
-
+    prepareForNextAwake();
     while (true) {
       int32_t r = Client::connect("unix:/var/run/flora.sock", this, 0, cli);
       if (r != FLORA_CLI_SUCCESS) {
@@ -90,6 +80,19 @@ class Activation : public ClientCallback {
   shared_ptr<Client> flora_cli;
   mutex reconn_mutex;
   condition_variable reconn_cond;
+
+  void prepareForNextAwake() {
+      int id = rand() % 4;
+      prepareWavPlayer(filenames[id], "system", true);
+      if (!volume_set) {
+          char val[PROP_VALUE_MAX];
+          property_get("persist.audio.volume.system", (char*)&val, "");
+          int vol = atoi(val);
+          fprintf(stdout, "init activation volume to %d\n", vol);
+          rk_set_stream_volume(STREAM_SYSTEM, vol);
+          volume_set = true;
+      }
+  }
 };
 
 int main(int argc, char** argv) {
