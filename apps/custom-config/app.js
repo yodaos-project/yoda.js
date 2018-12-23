@@ -48,7 +48,7 @@ module.exports = function customConfig (activity) {
     } else if (intent === INTENT_THEME_LIGHT_SWITCH) {
       onLightSwitchStatusChanged(actionValue, false)
     } else if (intent === INTENT_WAKE_SOUND_SWITCH) {
-      onWakeupSwitchStatusChanged(actionValue, false)
+      onWakeupEffectStatusChanged(actionValue, false)
     }
   })
 
@@ -90,7 +90,7 @@ module.exports = function customConfig (activity) {
     } else if (urlObj.pathname === '/continuousDialog') {
       onPickupSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/wakeupSoundEffects') {
-      onWakeupSwitchStatusChanged(action, isFirstLoad)
+      onWakeupEffectStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/standbyLight') {
       onLightSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/firstLoad') {
@@ -204,7 +204,7 @@ module.exports = function customConfig (activity) {
     }
   }
 
-  function onWakeupSwitchStatusChanged (action, isFirstLoad) {
+  function onWakeupEffectStatusChanged (action, isFirstLoad) {
     if (action) {
       property.set('sys.awakeswitch', action, 'persist')
       if (!isFirstLoad) {
@@ -355,7 +355,7 @@ module.exports = function customConfig (activity) {
       var wakeupSoundEffectsObj = safeParse(wakeupSoundEffectsText)
       if (wakeupSoundEffectsObj) {
         logger.info('wakeupSoundEffects.action:  ', wakeupSoundEffectsObj.action)
-        onWakeupSwitchStatusChanged(wakeupSoundEffectsObj.action, true)
+        onWakeupEffectStatusChanged(wakeupSoundEffectsObj.action, true)
       }
     }
     if (_.get(customConfig, 'nightMode')) {
