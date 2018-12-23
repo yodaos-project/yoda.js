@@ -151,28 +151,22 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
  */
 CloudStore.prototype.syncDate = function syncDate () {
   return readFileAsync('/tmp/LOGIN_HEADER', 'utf8').then((text) => {
+    var error
     try {
       var headers = parseHttpHeader(text)
-      var error
-      if (headers && headers.date) {
-        return sync(headers.date)
-      } else {
-        logger.warn('skip sync date, reason: no date found from headers', text)
-        error = new Error('skip sync date, reason: no date found from headers')
-        error.code = 'SYNC_DATE'
-        throw error
-      }
     } catch (err) {
-      logger.warn(`sync date error: ${err && err.message}`)
+      logger.warn(`/tmp/LOGIN_HEADER invalid body, discard sync, ${err}`)
+      error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
+      error.code = 'SYNC_DATE'
+      throw error
+    }
+    if (!headers || !headers.date) {
+      logger.warn('skip sync date, reason: no date found from headers', text)
       error = new Error('skip sync date, reason: no date found from headers')
       error.code = 'SYNC_DATE'
       throw error
     }
-  }).catch((err) => {
-    logger.warn(`/tmp/LOGIN_HEADER invalid body, discard sync, ${err}`)
-    var error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
-    error.code = 'SYNC_DATE'
-    throw error
+    return sync(headers.date)
   })
 }
 
