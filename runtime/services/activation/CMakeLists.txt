@@ -1,7 +1,7 @@
 project(activation CXX)
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(activation activation.cc)
+add_executable(activation activation.cc ./message/*.cc)
 target_include_directories(activation PRIVATE
   ${CMAKE_INCLUDE_DIR}/include
   ${CMAKE_INCLUDE_DIR}/usr/include

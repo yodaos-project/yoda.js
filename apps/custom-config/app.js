@@ -204,16 +204,58 @@ module.exports = function customConfig (activity) {
     }
   }
 
-  function onWakeupEffectStatusChanged (action, isFirstLoad) {
+  // function onWakeupEffectStatusChanged (action, isFirstLoad) {
+  //   if (action) {
+  //     property.set('sys.awakeswitch', action, 'persist')
+  //     if (!isFirstLoad) {
+  //       if (action === SWITCH_OPEN) {
+  //         activity.tts.speak(WAKE_SOUND_OPEN).then(() => activity.exit())
+  //       } else if (action === SWITCH_CLOSE) {
+  //         activity.tts.speak(WAKE_SOUND_CLOSE).then(() => activity.exit())
+  //       } else {
+  //         activity.tts.speak(CONFIG_FAILED).then(() => activity.exit())
+  //       }
+  //     }
+  //   }
+  // }
+
+  function onWakeupEffectStatusChanged (queryObj, isFirstLoad) {
     if (action) {
       property.set('sys.awakeswitch', action, 'persist')
-      if (!isFirstLoad) {
-        if (action === SWITCH_OPEN) {
-          activity.tts.speak(WAKE_SOUND_OPEN).then(() => activity.exit())
-        } else if (action === SWITCH_CLOSE) {
-          activity.tts.speak(WAKE_SOUND_CLOSE).then(() => activity.exit())
-        } else {
-          activity.tts.speak(CONFIG_FAILED).then(() => activity.exit())
+      if (queryObj && queryObj.action) {
+        if (!queryObj.type || queryObj.type === AWAKE_EFFECT_DEFAULT) {
+          property.set('sys.awakeswitch', queryObj.action, 'persist')
+        } else if (queryObj.type === AWAKE_EFFECT_CUSTOM) {
+          property.set('sys.customawakeswitch', queryObj.action, 'persist')
+          if (typeof queryObj.value !== 'object')
+            return
+          var downloadCount = queryObj.value.length
+          var errCount = 0
+          for (var i = 0; i < queryObj.value.length; ++i) {
+            if (queryObj.value[i].wakeupUrl && queryObj.value[i].wakeupId) {
+              doDownloadFile(queryObj.value[i].wakeupUrl, `/data/custom_awake_effect/${queryObj.value[i].wakeupId}.wav`,
+                null, (err) => {
+                  downloadCount--
+                  if (err) {
+                    logger.warn(`download awake effect error: ${err}`)
+                    errCount++
+                  }
+                  if (downloadCount === 0) {
+                    // todo flora post, delete old wav file
+                    floraAgent.post(AWAKE_EFFECT,)
+                  }
+                })
+            }
+          }
+        }
+        if (!isFirstLoad) {
+          if (action === SWITCH_OPEN) {
+            activity.tts.speak(WAKE_SOUND_OPEN).then(() => activity.exit())
+          } else if (action === SWITCH_CLOSE) {
+            activity.tts.speak(WAKE_SOUND_CLOSE).then(() => activity.exit())
+          } else {
+            activity.tts.speak(CONFIG_FAILED).then(() => activity.exit())
+          }
         }
       }
     }
