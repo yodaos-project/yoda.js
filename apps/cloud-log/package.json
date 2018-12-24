@@ -1,5 +1,5 @@
 {
-  "name": "@yoda/cloud-logger-switch",
+  "name": "@yoda/cloud-log",
   "version": "1.0.0",
   "description": "global cloud log on-off switch",
   "main": "app.js",
