@@ -43,15 +43,10 @@ static napi_value EnableCloud(napi_env env, napi_callback_info info) {
   NAPI_CALL(env, napi_get_value_int32(env, argv[0], &enabled));
 
   size_t authorizationSize = 0;
-  NAPI_CALL(env, napi_get_value_string_utf8(env,
-                                            argv[1],
-                                            NULL,
-                                            0,
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[1], NULL, 0,
                                             &authorizationSize));
   char authorization[authorizationSize + 1];
-  NAPI_CALL(env, napi_get_value_string_utf8(env,
-                                            argv[1],
-                                            authorization,
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[1], authorization,
                                             authorizationSize + 1,
                                             &authorizationSize));
   authorization[authorizationSize] = '\0';
