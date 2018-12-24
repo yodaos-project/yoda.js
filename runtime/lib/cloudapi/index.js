@@ -81,14 +81,11 @@ CloudStore.prototype.connect = function connect (masterId) {
       }
     }
   }).then((data) => {
-    this.options.notify('101', STRINGS.LOGIN_DONE)
-    this.options.notify('201', STRINGS.BIND_MASTER_DONE)
     return this.handleResponse(data)
   }).then((data) => {
     logger.info(`handle response ${data}`)
-    return this.config
-  }, (err) => {
-    logger.info(`handle response error:${err}`)
+    this.options.notify('101', STRINGS.LOGIN_DONE)
+    this.options.notify('201', STRINGS.BIND_MASTER_DONE)
     return this.config
   }).catch((err) => {
     if (err.code === 'BIND_MASTER_REQUIRED') {
