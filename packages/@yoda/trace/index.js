@@ -72,7 +72,7 @@ function upload (traces) {
     rokidDtId: deviceTypeId,
     data: traces || []
   }
-  
+
   var options = {
     method: 'POST',
     body: JSON.stringify(body),
