@@ -44,7 +44,7 @@ function upload (traces) {
     throw new TypeError('Expect traces length greater than 0.')
   }
   var deviceTypeId = _.get(traces, '0.rokidDtId')
-  if (typeof path !== 'string' || deviceTypeId.trim() === '') {
+  if (typeof deviceTypeId !== 'string' || deviceTypeId.trim() === '') {
     deviceTypeId = property.get('ro.boot.devicetypeid')
   }
   var deviceId = property.get('ro.boot.serialno')
