@@ -219,7 +219,7 @@ class DNDCommon {
    * @param {string} awakeSwitch - awake switch 'open'/'close', set 'close' by default
    */
   static setAwakeSwitch (awakeSwitch) {
-    if (awakeSwitch !== 'open' || awakeSwitch !== 'close') {
+    if (awakeSwitch !== 'open' && awakeSwitch !== 'close') {
       awakeSwitch = 'close'
     }
     property.set(AWAKE_SWITCH_KEY, awakeSwitch, 'persist')
