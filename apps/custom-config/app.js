@@ -8,8 +8,8 @@ var cloudgw = null
 
 module.exports = function customConfig (activity) {
   var CONFIG_FAILED = '设置失败'
-  var LIGHT_SWITCH_OPEN = '我现在没有待机灯光，你可以试试其他功能'
-  var LIGHT_SWITCH_CLOSE = '我现在没有待机灯光，你可以试试其他功能'
+  var LIGHT_SWITCH_OPEN = '灯光已开启'
+  var LIGHT_SWITCH_CLOSE = '灯光已关闭'
   var WAKE_SOUND_OPEN = '已为你开启'
   var WAKE_SOUND_CLOSE = '已关闭'
   var PICKUP_SWITCH_OPEN = '当前不支持连续对话'
@@ -28,6 +28,7 @@ module.exports = function customConfig (activity) {
   var SWITCH_VT_ADD = 'add'
   var SWITCH_VT_DELETE = 'delete'
   var VT_WORDS_TOPIC = 'custom_config'
+  var STANDBY_LIGHT_JS = 'system://setSysStandby.js'
   this.startTime = null
   this.endTime = null
   this.inNightMode = false
@@ -39,6 +40,7 @@ module.exports = function customConfig (activity) {
   this.py = null
   this.txt = null
 
+  initStandbyLight()
   activity.on('request', (nlp, action) => {
     var intent = nlp.intent
     var actionValue = _.get(nlp, 'slots.open.type') || _.get(nlp, 'slots.close.type')
@@ -46,7 +48,7 @@ module.exports = function customConfig (activity) {
     if (intent === INTENT_KEEP_CONFIRM_SWITCH) {
       onPickupSwitchStatusChanged(actionValue, false)
     } else if (intent === INTENT_THEME_LIGHT_SWITCH) {
-      onLightSwitchStatusChanged(actionValue, false)
+      onStandbyLightSwitchStatusChanged(actionValue, false)
     } else if (intent === INTENT_WAKE_SOUND_SWITCH) {
       onWakeupSwitchStatusChanged(actionValue, false)
     }
@@ -92,12 +94,20 @@ module.exports = function customConfig (activity) {
     } else if (urlObj.pathname === '/wakeupSoundEffects') {
       onWakeupSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/standbyLight') {
-      onLightSwitchStatusChanged(action, isFirstLoad)
+      onStandbyLightSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/firstLoad') {
       var config = queryObj.config
       onLoadCustomConfig(config)
     }
   })
+  function initStandbyLight () {
+    var switchValue = property.get('persist.sys.standbylightswitch')
+    if (switchValue === SWITCH_OPEN) {
+      activity.light.play(STANDBY_LIGHT_JS, {}, {shouldResume: true})
+    } else {
+      activity.light.stop(STANDBY_LIGHT_JS)
+    }
+  }
 
   function onVtWordSwitchStatusChanged (action, isFirstLoad) {
     if (action && !isFirstLoad) {
@@ -189,9 +199,14 @@ module.exports = function customConfig (activity) {
     }
   }
 
-  function onLightSwitchStatusChanged (action, isFirstLoad) {
+  function onStandbyLightSwitchStatusChanged (action, isFirstLoad) {
     if (action) {
-      property.set('sys.lightswitch', action, 'persist')
+      property.set('sys.standbylightswitch', action, 'persist')
+      if (action === SWITCH_OPEN) {
+        activity.light.play(STANDBY_LIGHT_JS, {}, {shouldResume: true})
+      } else if (action === SWITCH_CLOSE) {
+        activity.light.stop(STANDBY_LIGHT_JS)
+      }
       if (!isFirstLoad) {
         if (action === SWITCH_OPEN) {
           activity.tts.speak(LIGHT_SWITCH_OPEN).then(() => activity.exit())
@@ -347,7 +362,7 @@ module.exports = function customConfig (activity) {
       var standbyLightObj = safeParse(standbyLightText)
       if (standbyLightObj) {
         logger.info('standbyLight.action:  ', standbyLightObj.action)
-        onLightSwitchStatusChanged(standbyLightObj.action, true)
+        onStandbyLightSwitchStatusChanged(standbyLightObj.action, true)
       }
     }
     if (_.get(customConfig, 'wakeupSoundEffects')) {
