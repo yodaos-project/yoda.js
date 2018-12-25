@@ -29,13 +29,6 @@ module.exports = function customConfig (activity) {
   var SWITCH_VT_DELETE = 'delete'
   var VT_WORDS_TOPIC = 'custom_config'
   var STANDBY_LIGHT_JS = 'system://setSysStandby.js'
-  this.startTime = null
-  this.endTime = null
-  this.inNightMode = false
-  this.nextDeltaTime = null
-  this.deltaTime = null
-  this.waitForCloseTimer = null
-  this.waitForNextTimer = null
   this.oldTxt = null
   this.py = null
   this.txt = null
@@ -80,11 +73,7 @@ module.exports = function customConfig (activity) {
     }
 
     logger.info('on Url----> action: ' + action + '; urlObj.pathname: ' + urlObj.pathname + ';   isFirstLoad: ' + isFirstLoad)
-    if (urlObj.pathname === '/nightMode') {
-      this.startTime = queryObj.startTime
-      this.endTime = queryObj.endTime
-      nightMode(action)
-    } else if (urlObj.pathname === '/vt_words') {
+    if (urlObj.pathname === '/vt_words') {
       this.oldTxt = queryObj.oldTxt
       this.txt = queryObj.txt
       this.py = queryObj.py
@@ -234,105 +223,6 @@ module.exports = function customConfig (activity) {
     }
   }
 
-  function nightMode (action) {
-    logger.info('nightMode---->: ' + action)
-    if (action === 'open') {
-      refreshNightMode(true)
-    } else if (action === 'close') {
-      clearTimeout(this.waitForCloseTimer)
-      clearTimeout(this.waitForNextTimer)
-      setNightMode(false)
-    }
-    return Promise.resolve()
-  }
-
-  function checkTime () {
-    var curDate = new Date()
-    var curHour = curDate.getHours()
-    var curMinute = curDate.getMinutes()
-    var start = this.startTime.split(':')
-    var end = this.endTime.split(':')
-    if (start.length !== 2 || end.length !== 2) {
-      return false
-    }
-    var startHour = Number(start[0])
-    var startMinute = Number(start[1])
-    var endHour = Number(end[0])
-    var endMinute = Number(end[1])
-    logger.info('checkTime---->curTime: ' + curHour + ':' + curMinute)
-    logger.info('checkTime---->startTime: ' + this.startTime)
-    logger.info('checkTime---->endTime: ' + this.endTime)
-    if (startHour > endHour ||
-      (startHour === endHour && startMinute > endMinute)) {
-      if ((curHour > startHour) ||
-        (curHour === startHour && curMinute >= startMinute) ||
-        (curHour < endHour) ||
-        (curHour === endHour && curMinute <= endMinute)) {
-        logger.info('checkTime---->:in diff day and in nightmode time range ')
-        if (curHour >= endHour) {
-          this.deltaTime = ((endHour + 24 - curHour) * 60 * 60 * 1000 + (endMinute - curMinute + 1) * 60 * 1000)
-        } else {
-          this.deltaTime = ((endHour - curHour) * 60 * 60 * 1000 + (endMinute - curMinute + 1) * 60 * 1000)
-        }
-        logger.info('checkTime,in diff day and in nightmode time range  && closeDeltaTime is : ' + this.deltaTime)
-        return true
-      } else {
-        this.nextDeltaTime = ((startHour - curHour) * 60 * 60 * 1000 + (startMinute - curMinute + 1) * 60 * 1000)
-        logger.info('checkTime,in diff day and not in nightmode time range  && nextDeltaTime is : ' + this.nextDeltaTime)
-      }
-    } else {
-      if ((curHour > startHour || (curHour === startHour && curMinute >= startMinute)) &&
-      ((curHour < endHour) || (curHour === endHour && curMinute <= endMinute))) {
-        logger.info('checkTime---->:in same day and in nightmode time range ')
-        this.deltaTime = ((endHour - curHour) * 60 * 60 * 1000 + (endMinute - curMinute + 1) * 60 * 1000)
-        logger.info('checkTime,in same day and in nightmode time range  && closeDeltaTime is : ' + this.deltaTime)
-        return true
-      } else {
-        if (curHour >= endHour) {
-          this.nextDeltaTime = ((startHour + 24 - curHour) * 60 * 60 * 1000 + (startMinute - curMinute + 1) * 60 * 1000)
-        } else {
-          this.nextDeltaTime = ((startHour - curHour) * 60 * 60 * 1000 + (startMinute - curMinute + 1) * 60 * 1000)
-        }
-        logger.info('checkTime, in same day and not in nightmode time range  && nextDeltaTime is : ' + this.nextDeltaTime)
-      }
-    }
-    return false
-  }
-
-  function refreshNightMode (isForce) {
-    logger.info('refreshNightMode---->isForce: ' + isForce)
-    if (checkTime()) {
-      setNightMode(true)
-      waitForCloseNightMode()
-    } else {
-      setNightMode(false)
-      waitForNextNightMode()
-    }
-  }
-
-  function setNightMode (isOpen) {
-    property.set('sys.nightmode.status', isOpen ? 'open' : 'close', 'persist')
-    if (isOpen) {
-      this.inNightMode = true
-    } else {
-      this.inNightMode = false
-    }
-  }
-
-  function waitForCloseNightMode () {
-    logger.info('waitForCloseNightMode---->deltaTime: ' + this.deltaTime)
-    this.waitForCloseTimer = setTimeout(() => {
-      refreshNightMode(false)
-    }, this.deltaTime)
-  }
-
-  function waitForNextNightMode () {
-    logger.info('waitForNextNightMode---->nextDeltaTime: ' + this.nextDeltaTime)
-    this.waitForNextTimer = setTimeout(() => {
-      refreshNightMode(true)
-    }, this.nextDeltaTime)
-  }
-
   function onLoadCustomConfig (config) {
     if (config === undefined) {
       return
@@ -371,16 +261,6 @@ module.exports = function customConfig (activity) {
       if (wakeupSoundEffectsObj) {
         logger.info('wakeupSoundEffects.action:  ', wakeupSoundEffectsObj.action)
         onWakeupSwitchStatusChanged(wakeupSoundEffectsObj.action, true)
-      }
-    }
-    if (_.get(customConfig, 'nightMode')) {
-      var nightModeText = customConfig.nightMode
-      var nightModeObj = safeParse(nightModeText)
-      if (nightModeObj) {
-        logger.info(' nightMode:  ', nightModeObj)
-        this.startTime = nightModeObj.startTime
-        this.endTime = nightModeObj.endTime
-        nightMode(nightModeObj.action)
       }
     }
   }

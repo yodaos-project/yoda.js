@@ -34,6 +34,7 @@ var Lifetime = require('./component/lifetime')
 var Wormhole = require('./component/wormhole')
 var Light = require('./component/light')
 var Sound = require('./component/sound')
+var DNDMode = require('./component/dnd-mode')
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -82,6 +83,7 @@ function AppRuntime () {
   this.light = new Light(this.dbusRegistry)
   this.sound = new Sound(this)
   this.shouldStopLongPressMicLight = false
+  this.dndMode = new DNDMode(this.light, this.sound, this.life)
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -120,7 +122,7 @@ AppRuntime.prototype.init = function init () {
       return this.light.ttsSound('@system', 'system://firstboot.ogg')
     })
   }
-
+  this.dndMode.init()
   return future.then(() => {
     if (this.shouldWelcome) {
       this.light.appSound('@yoda', 'system://boot.ogg')
@@ -1011,7 +1013,7 @@ AppRuntime.prototype.onCustomConfig = function (message) {
     form: 'cut'
   }
   if (msg.nightMode) {
-    this.openUrl(appendUrl('nightMode', msg.nightMode), option)
+    this.dndMode.setOption(msg.nightMode)
   } else if (msg.vt_words) {
     option.preemptive = false
     this.openUrl(appendUrl('vt_words', msg.vt_words[0]), option)
@@ -1030,6 +1032,17 @@ AppRuntime.prototype.onCustomConfig = function (message) {
 AppRuntime.prototype.onLoadCustomConfig = function (config) {
   if (config === undefined) {
     return
+  }
+  try {
+    // TODO move config-process to component
+    var option = JSON.parse(config)
+    if (option.nightMode !== undefined) {
+      var nightMode = JSON.parse(option.nightMode)
+      logger.info(`dnd mode config loaded: ${option.nightMode}`)
+      this.dndMode.setOption(nightMode)
+    }
+  } catch (err) {
+    logger.warn(`customconfig load error: ${config}\n${err}`)
   }
   this.openUrl(`yoda-skill://custom-config/firstLoad?config=${config}`)
 }
@@ -1114,6 +1127,7 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
         this.wormhole.init(this.cloudApi.mqttcli)
         this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
         this.onLoggedIn()
+        this.dndMode.recheck()
       }, (err) => {
         if (err && err.code === 'BIND_MASTER_REQUIRED') {
           logger.error('bind master is required, just clear the local and enter network')

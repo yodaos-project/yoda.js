@@ -12,7 +12,10 @@ var property = require('@yoda/property')
 var CloudGw = require('@yoda/cloudgw')
 var MqttClient = require('./mqtt/client')
 var parseHttpHeader = require('./util').parseHttpHeader
+var promisify = require('util').promisify
 var STRINGS = require('../../strings/login.json')
+
+var readFileAsync = promisify(fs.readFile)
 
 /**
  * This `CloudStore` is the object that provides APIs for connecting
@@ -53,7 +56,6 @@ CloudStore.prototype.connect = function connect (masterId) {
 
   var opts = { encoding: 'utf8' }
   return new Promise((resolve, reject) => {
-    var handleResponse = this.handleResponse.bind(this)
     var cmd = [
       `nice -n -20 sh ${path.join(__dirname, './login/request.sh')}`,
       `-h ${env.cloudgw.account}`
@@ -72,18 +74,19 @@ CloudStore.prototype.connect = function connect (masterId) {
         if (!res.success) {
           throw new Error(`cloud login failed ${res.msg}(${res.code})`)
         }
-        handleResponse(JSON.parse(res.data))
-        return resolve(true)
+        return resolve(JSON.parse(res.data))
       } catch (err) {
         logger.error(err)
         return reject(err)
       }
     }
+  }).then((data) => {
+    return this.handleResponse(data)
   }).then(() => {
     this.options.notify('101', STRINGS.LOGIN_DONE)
     this.options.notify('201', STRINGS.BIND_MASTER_DONE)
     return this.config
-  }, (err) => {
+  }).catch((err) => {
     if (err.code === 'BIND_MASTER_REQUIRED') {
       throw err
     }
@@ -121,13 +124,16 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
       this.cloudgw = new CloudGw(Object.assign({
         host: env.cloudgw.restful
       }, this.config))
-      this.syncDate()
 
       if (!this.options.disableMqtt) {
         this.mqttcli.start({
           forceReconnect: true
         })
       }
+      return this.syncDate().catch((err) => {
+        logger.warn(`sync date error: ${err}`)
+        return true
+      })
     }
   } catch (_) {
     var err = new Error('bind master is required')
@@ -140,21 +146,23 @@ CloudStore.prototype.handleResponse = function handleResponse (data) {
  * @method
  */
 CloudStore.prototype.syncDate = function syncDate () {
-  fs.readFile('/tmp/LOGIN_HEADER', 'utf8', (err, text) => {
-    if (err || !text) {
-      logger.warn('/tmp/LOGIN_HEADER invalid body, discard sync')
-      return
-    }
+  return readFileAsync('/tmp/LOGIN_HEADER', 'utf8').then((text) => {
+    var error
     try {
       var headers = parseHttpHeader(text)
-      if (headers && headers.date) {
-        sync(headers.date)
-      } else {
-        logger.warn('skip sync date, reason: no date found from headers', text)
-      }
     } catch (err) {
-      logger.warn(`sync date error: ${err && err.message}`)
+      logger.warn(`/tmp/LOGIN_HEADER invalid body, discard sync, ${err}`)
+      error = new Error('/tmp/LOGIN_HEADER invalid body, discard sync')
+      error.code = 'SYNC_DATE'
+      throw error
     }
+    if (!headers || !headers.date) {
+      logger.warn('skip sync date, reason: no date found from headers', text)
+      error = new Error('skip sync date, reason: no date found from headers')
+      error.code = 'SYNC_DATE'
+      throw error
+    }
+    return sync(headers.date)
   })
 }
 
