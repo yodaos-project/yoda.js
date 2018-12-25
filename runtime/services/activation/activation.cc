@@ -75,11 +75,17 @@ void Activation::prepareForNextAwake() {
 }
 
 void Activation::playAwake() {
-  char network_is_available[PROP_VALUE_MAX];
-  property_get("state.network.connected", (char *) network_is_available, "");
-  if (strcmp(network_is_available, "true") != 0) {
-    fprintf(stdout, "current network is not available, just skip\n");
+  char propValue[PROP_VALUE_MAX];
+  property_get("persist.dndmode.awakeswitch", (char*)propValue, "");
+  if (strcmp(propValue, "close") == 0) {
+    fprintf(stdout, "dndmode.awakeswitch is closed, just skip\n");
     return;
+  } else {
+    property_get("state.network.connected", (char *) propValue, "");
+    if (strcmp(propValue, "true") != 0) {
+      fprintf(stdout, "current network is not available, just skip\n");
+      return;
+    }
   }
   startWavPlayer();
   prepareForNextAwake();
@@ -89,6 +95,7 @@ void Activation::applyAwakeEffect(shared_ptr <Caps> &msg) {
   refreshFileList();
   prePrepareWavPlayer(filename_list, filename_list_size);
   fprintf(stdout, "wav player has been preloaded all activation files\n");
+  prepareForNextAwake();
 }
 
 void Activation::initPath() {

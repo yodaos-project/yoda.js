@@ -35,6 +35,10 @@ class CustomConfig {
       logger.error(err)
       return
     }
+    if (msg.nightMode) {
+      this.runtime.dndMode.setOption(msg.nightMode)
+      delete msg.nightMode
+    }
     for (var i = 0; i < config.length; ++i) {
       if (config[i].configName && msg[config[i].configName]) {
         if (config[i].dataType === 'object') {
