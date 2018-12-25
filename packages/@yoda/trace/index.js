@@ -1,5 +1,9 @@
 'use strict'
 
+/**
+ * @module @yoda/trace
+ */
+
 var crypto = require('crypto')
 var httpsession = require('@yoda/httpsession')
 var _ = require('@yoda/util')._
@@ -8,40 +12,38 @@ var DEFAULT_HOST = require('@yoda/env')().trace.uploadUrl
 var DEFAULT_URI = '/das-tracing-collection/tracingUpload'
 var property = require('@yoda/property')
 
-function _createMd5 (rokidId, nonce) {
+function _createMd5 (id, nonce) {
   return crypto.createHash('md5')
-    .update(rokidId + 'apiVersion1.0.0' + 'nonce' + nonce + rokidId)
+    .update(id + 'apiVersion1.0.0' + 'nonce' + nonce + id)
     .digest('hex')
     .toUpperCase()
 }
 
 /**
  * @typedef trace
- * @property {string} eventId
- * @property {string} eventName
- * @property {number} eventType
- * @property {string} rokidDtId
- * @property {string} k
- * @property {string} v
- * @property {Object} extraKvs
+ * @property {string} eventId - defined by the product.
+ * @property {string} eventName - defined by the product.
+ * @property {number} eventType - 0 basic data, 1 system events, 2 application events, 3 log event.
+ * @property {string} rokidDtId - unique device identification.
+ * @property {string} k - the k defined by the product, from 0 to 9, exceeds the use of extraKvs.
+ * @property {string} v - that corresponds to k one by one.
+ * @property {object} extraKvs - extension.
  */
 
 /**
-  * Upload buried data
+  * Upload buried data, failure to throw an exception, no callback.
   * @function upload
   * @param {module:@yoda/trace~trace[]} traces - buried point data.
   * @example
-  * upload([{"rokidDtId":"0ABA0AA4F71949C4A3FB0418BF025113","eventId":"datacollection-test",
-  *  "eventName":"datacollection-test","eventType":1,"extraKvs":{},"k0":"test","v0":"test"}])
+  * upload([{"rokidDtId":"rokidDtId","eventId":"datacollection-test","eventName":"datacollection-test",
+  * "eventType":1,"extraKvs":{},"k0":"test","v0":"test"}])
   */
 function upload (traces) {
-  if (!(Array.isArray(traces))) {
-    logger.error('Error: traces is not an object Array')
+  if (!Array.isArray(traces)) {
     throw new TypeError('Expect a object Array on traces.')
   }
   if (traces.length === 0) {
-    logger.debug('traces length is 0!')
-    throw new TypeError('Expect traces length greater than 0.')
+    throw new Error('Expect traces length greater than 0.')
   }
   var deviceTypeId = _.get(traces, '0.rokidDtId')
   if (typeof deviceTypeId !== 'string' || deviceTypeId.trim() === '') {
@@ -78,17 +80,14 @@ function upload (traces) {
     body: JSON.stringify(body),
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'text/plain;charset=utf-8',
-      'Content-Length': body.length
+      'Content-Type': 'text/plain;charset=utf-8'
     }
   }
   httpsession.request(DEFAULT_HOST + DEFAULT_URI, options, (err, res) => {
     if (err) {
-      logger.error(err && err.stack)
       throw new Error(`Error: request failed ${err}`)
     }
     if (res.code !== 200) {
-      logger.error(`Error: failed get data with ${res}`)
       throw new Error(`Error: failed get data with ${res}`)
     }
   })
