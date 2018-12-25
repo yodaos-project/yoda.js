@@ -9,8 +9,8 @@ int ledBit = 3;
 
 JS_FUNCTION(Enable) {
   light.lumen_set_enable(true);
-  ledCount = light.m_ledCount;
-  ledBit = light.m_pixelFormat;
+  ledCount = light.getLedCount();
+  ledBit = light.getPixelFormat();
   if (ledCount <= 0) {
     return JS_CREATE_ERROR(RANGE, "Can't get the number of leds");
   }
@@ -51,9 +51,9 @@ JS_FUNCTION(Render) {
 
 JS_FUNCTION(GetProfile) {
   jerry_value_t profile = jerry_create_object();
-  iotjs_jval_set_property_number(profile, "leds", light.m_ledCount);
-  iotjs_jval_set_property_number(profile, "format", light.m_pixelFormat);
-  iotjs_jval_set_property_number(profile, "maximumFps", light.m_fps);
+  iotjs_jval_set_property_number(profile, "leds", light.getLedCount());
+  iotjs_jval_set_property_number(profile, "format", light.getPixelFormat());
+  iotjs_jval_set_property_number(profile, "maximumFps", light.getFps());
 #ifdef MIC_ANGLE_DEVIATION
   iotjs_jval_set_property_number(profile, "micAngle", MIC_ANGLE_DEVIATION);
 #else
