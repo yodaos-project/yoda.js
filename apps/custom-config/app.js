@@ -4,7 +4,9 @@ var logger = require('logger')('custom-config')
 var Url = require('url')
 var property = require('@yoda/property')
 var CloudGW = require('@yoda/cloudgw')
+var ActivationConfig = require('/etc/yoda/env.json')
 var cloudgw = null
+var fs = require('fs')
 
 var AWAKE_EFFECT = 'rokid.custom_config.awake_effect'
 /**
@@ -247,21 +249,22 @@ module.exports = function customConfig (activity) {
     }
   }
 
-  // function onWakeupEffectStatusChanged (action, isFirstLoad) {
-  //   if (action) {
-  //     property.set('sys.awakeswitch', action, 'persist')
-  //     if (!isFirstLoad) {
-  //       if (action === SWITCH_OPEN) {
-  //         activity.tts.speak(WAKE_SOUND_OPEN).then(() => activity.exit())
-  //       } else if (action === SWITCH_CLOSE) {
-  //         activity.tts.speak(WAKE_SOUND_CLOSE).then(() => activity.exit())
-  //       } else {
-  //         activity.tts.speak(CONFIG_FAILED).then(() => activity.exit())
-  //       }
-  //     }
-  //   }
-  // }
-
+  function clearCustomWakeupDir () {
+    fs.readdir(ActivationConfig.customPath,function(err,files){
+      if(!files)
+        return;
+      files.forEach(function(ele){
+        fs.stat(path+"/"+ele,function(err,info){
+          if(info.isDirectory()){
+            console.log("dir: "+ele)
+            readDir(path+"/"+ele);
+          }else{
+            console.log("file: "+ele)
+          }
+        })
+      })
+    })
+  }
   function onWakeupEffectStatusChanged (queryObj, isFirstLoad) {
     if (queryObj && queryObj.action) {
       if (!queryObj.type || queryObj.type === AWAKE_EFFECT_DEFAULT) {
@@ -274,7 +277,7 @@ module.exports = function customConfig (activity) {
         var errCount = 0
         for (var i = 0; i < queryObj.value.length; ++i) {
           if (queryObj.value[i].wakeupUrl && queryObj.value[i].wakeupId) {
-            doDownloadFile(queryObj.value[i].wakeupUrl, `/data/custom_awake_effect/${queryObj.value[i].wakeupId}.wav`,
+            doDownloadFile(queryObj.value[i].wakeupUrl, `${ActivationConfig.customPath}${queryObj.value[i].wakeupId}.wav`,
               null, (err) => {
                 downloadCount--
                 if (err) {
@@ -285,7 +288,7 @@ module.exports = function customConfig (activity) {
                   // todo flora post, delete old wav file
                   var caps = new Caps()
                   caps.writeInt32(0)
-                  floraAgent.post(AWAKE_EFFECT, caps, floraAgent.MSGTYPE_PERSIST)
+                  floraAgent.post(AWAKE_EFFECT, caps, floraAgent.MSGTYPE_INSTANT)
                 }
               })
           }
