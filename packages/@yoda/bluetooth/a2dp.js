@@ -92,8 +92,8 @@ function BluetoothA2dp (deviceName) {
     'linknum': 0
   }
   this._end = false
-  this.lastMode = protocol.A2DP_MODE.SINK
-  this.localName = deviceName
+  this.lastMode = protocol.A2DP_MODE.SINK // last used a2dp mode
+  this.localName = deviceName // local bluetooth device name
 
   this._flora = new FloraComp(logger)
   this._flora.handlers = {
@@ -123,25 +123,26 @@ BluetoothA2dp.prototype.matchState = function (msg, filter) {
  */
 BluetoothA2dp.prototype.handleEvent = function (data, mode) {
   if (this._end) {
-    logger.warn(`a2dp-${mode} Already destroied!`)
+    logger.warn(`${mode} Already destroied!`)
     return
   }
   try {
     var msg = JSON.parse(data[0] + '')
-    logger.debug(`on a2dp-${mode} event(action:${msg.action})`)
+    logger.debug(`on ${mode} event(action:${msg.action})`)
 
     if (msg.action === 'stateupdate') {
-      logger.debug(`a2dp:${this.lastMsg.a2dpstate}=>${msg.a2dpstate}, 
-        conn:${this.lastMsg.connect_state}=>${msg.connect_state},
-        play:${this.lastMsg.play_state}=>${msg.play_state}, 
-        bc:${this.lastMsg.broadcast_state}=>${msg.broadcast_state}`)
+      var last = this.lastMsg
+      logger.debug(`last: ${last.a2dpstate} ${last.connect_state} ${last.play_state} ${last.broadcast_state}`)
+      logger.debug(`now:  ${msg.a2dpstate} ${msg.connect_state} ${msg.play_state} ${msg.broadcast_state}`)
       if (this.matchState(msg, this.lastMsg)) {
-        logger.warn(`Ignore last ${mode} same msg!`)
-        return
+        logger.warn(`Received ${mode} same msg!`)
       }
-      stateFilters.forEach(function (filter) {
+      var stateHit = false
+      for (var i = 0; i < stateFilters.length; i++) {
+        var filter = stateFilters[i]
         if (this.matchState(msg, filter.inflowMsg)) {
           var event = filter.outflowEvent
+          logger.debug(`Match ${event.type}.${event.state}`)
           var generator = filter.extraDataGenerator
           if (generator === undefined || generator === null || typeof generator !== 'function') {
             this.emit(event.type, mode, event.state)
@@ -149,8 +150,12 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
             var extraData = generator(msg)
             this.emit(event.type, mode, event.state, extraData)
           }
+          stateHit = true
         }
-      })
+      }
+      if (!stateHit) {
+        logger.warn(`Mismatch state, please check state-mapping!`)
+      }
       this.lastMsg = Object.assign(this.lastMsg, msg)
     } else if (msg.action === 'volumechange') {
       var vol = msg.value
@@ -170,7 +175,7 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       this.emit('discovery_state_changed', protocol.A2DP_MODE.SOURCE, protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED, results)
     }
   } catch (err) {
-    logger.error(`on a2dp-${mode} error(${JSON.stringify(err)})`)
+    logger.error(`on ${mode} error(${JSON.stringify(err)})`)
   }
 }
 
