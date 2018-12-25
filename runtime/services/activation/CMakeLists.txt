@@ -7,7 +7,7 @@ target_include_directories(activation PRIVATE
   ${CMAKE_INCLUDE_DIR}/usr/include
   ${CMAKE_INCLUDE_DIR}/usr/include/caps
 )
-target_link_libraries(activation flora-cli caps
+target_link_libraries(activation flora-cli caps cjson
   property android_cutils
   wavplayer pthread dl pulse rt rkvolumecontrol)
 

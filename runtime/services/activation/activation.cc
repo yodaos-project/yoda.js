@@ -147,7 +147,7 @@ vector<string> Activation::getFiles(const string &path) {
   DIR *dir;
   dir = opendir(path.c_str());
   if (nullptr == dir) {
-    fprintf(stdout, "Can not open dir\n", path.c_str());
+    fprintf(stdout, "Can not open dir: %s\n", path.c_str());
     return rst;
   }
 
