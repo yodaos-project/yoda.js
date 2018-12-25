@@ -10,6 +10,9 @@ var _ = require('@yoda/util')._
 var DEFAULT_HOST = require('@yoda/env')().trace.uploadUrl
 var DEFAULT_URI = '/das-tracing-collection/tracingUpload'
 var property = require('@yoda/property')
+var deviceId = property.get('ro.boot.serialno')
+var releaseVersion = property.get('ro.build.version.release')
+var defaultDeviceTypeId = property.get('ro.boot.devicetypeid')
 
 function _createMd5 (id, nonce) {
   return crypto.createHash('md5')
@@ -46,12 +49,11 @@ function upload (traces) {
   }
   var deviceTypeId = _.get(traces, '0.rokidDtId')
   if (typeof deviceTypeId !== 'string' || deviceTypeId.trim() === '') {
-    deviceTypeId = property.get('ro.boot.devicetypeid')
+    deviceTypeId = defaultDeviceTypeId
   }
-  var deviceId = property.get('ro.boot.serialno')
   var timestamp = Date.now().toFixed(0)
   var common = {
-    osVersion: property.get('ro.build.version.release'),
+    osVersion: releaseVersion,
     session: deviceId,
     timestamp: timestamp
   }
