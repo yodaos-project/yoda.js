@@ -53,7 +53,7 @@ var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 var globalAlphaFactor = 1
 
 function applyAlphaFactor (alpha) {
-  if (alpha !== undefined && typeof a === 'number' && alpha >= 0 && alpha <= 1) {
+  if (alpha !== undefined && typeof alpha === 'number' && alpha >= 0 && alpha <= 1) {
     alpha *= globalAlphaFactor
   } else {
     alpha = globalAlphaFactor
