@@ -17,3 +17,4 @@ runtime/app-loader/*.test.js
 runtime/services/lightd/*.test.js
 runtime/services/lightd/effects/*.test.js
 runtime/cloudapi-util.*.js
+runtime/night-mode/*.test.js

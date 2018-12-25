@@ -12,6 +12,16 @@ test('fill default buffer should be ok', t => {
   }, 1500)
 })
 
+test('fill invalid alpha', t => {
+  light.fill(255, 255, 255, '10')
+  t.ok(light.write())
+  setTimeout(() => {
+    light.fill(255, 0, 0, -1)
+    t.ok(light.write())
+    t.end()
+  }, 1500)
+})
+
 test('fill outside buffer should be ok', t => {
   var buf = Buffer.alloc(36)
   buf.fill(255)

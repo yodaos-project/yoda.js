@@ -35,6 +35,7 @@ var Wormhole = require('./component/wormhole')
 var Light = require('./component/light')
 var Sound = require('./component/sound')
 var CustomConfig = require('./component/custom-config')
+var DNDMode = require('./component/dnd-mode')
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -85,6 +86,7 @@ function AppRuntime () {
   this.shouldStopLongPressMicLight = false
   this.customConfig = new CustomConfig(this)
   this.onCustomConfig = this.customConfig.onCustomConfig.bind(this.customConfig)
+  this.dndMode = new DNDMode(this.light, this.sound, this.life)
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -123,7 +125,7 @@ AppRuntime.prototype.init = function init () {
       return this.light.ttsSound('@system', 'system://firstboot.ogg')
     })
   }
-
+  this.dndMode.init()
   return future.then(() => {
     if (this.shouldWelcome) {
       this.light.appSound('@yoda', 'system://boot.ogg')
@@ -1059,6 +1061,7 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
         this.wormhole.init(this.cloudApi.mqttcli)
         this.customConfig.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
         this.onLoggedIn()
+        this.dndMode.recheck()
       }, (err) => {
         if (err && err.code === 'BIND_MASTER_REQUIRED') {
           logger.error('bind master is required, just clear the local and enter network')

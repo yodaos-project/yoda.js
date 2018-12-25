@@ -6,6 +6,9 @@ var EventEmitter = require('events').EventEmitter
 var LIGHT_SOURCE = '/opt/light'
 var MEDIA_SOURCE = '/opt/media'
 
+var DND_MODE_ALPHA_FACTOR = '0.5'
+var NORMAL_MODE_ALPHA_FACTOR = '1'
+
 /**
  * convinient tools for call lightd
  * @param {object} dbusRegistry dbus client
@@ -169,6 +172,18 @@ Light.prototype.lightMethod = function (name, args) {
     '/rokid/light',
     'com.rokid.light.key',
     name, args)
+}
+
+/**
+ * set night mode
+ * @param {boolean} dndMode true if opened
+ */
+Light.prototype.setDNDMode = function (dndMode) {
+  if (dndMode) {
+    this.lightMethod('setGlobalAlphaFactor', [DND_MODE_ALPHA_FACTOR])
+  } else {
+    this.lightMethod('setGlobalAlphaFactor', [NORMAL_MODE_ALPHA_FACTOR])
+  }
 }
 
 module.exports = Light
