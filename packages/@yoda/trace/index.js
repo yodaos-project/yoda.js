@@ -7,7 +7,6 @@
 var crypto = require('crypto')
 var httpsession = require('@yoda/httpsession')
 var _ = require('@yoda/util')._
-var logger = require('logger')('trace')
 var DEFAULT_HOST = require('@yoda/env')().trace.uploadUrl
 var DEFAULT_URI = '/das-tracing-collection/tracingUpload'
 var property = require('@yoda/property')
