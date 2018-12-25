@@ -34,6 +34,7 @@ var Lifetime = require('./component/lifetime')
 var Wormhole = require('./component/wormhole')
 var Light = require('./component/light')
 var Sound = require('./component/sound')
+var CustomConfig = require('./component/custom-config')
 
 module.exports = AppRuntime
 perf.stub('init')
@@ -82,6 +83,8 @@ function AppRuntime () {
   this.light = new Light(this.dbusRegistry)
   this.sound = new Sound(this)
   this.shouldStopLongPressMicLight = false
+  this.customConfig = new CustomConfig(this)
+  this.onCustomConfig = this.customConfig.onCustomConfig.bind(this.customConfig)
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -977,64 +980,6 @@ AppRuntime.prototype.onResetSettings = function () {
 }
 
 /**
- * Handling the configs from RokidApp, includes activation words, night mode, and etc..
- * @param {string} message
- * @private
- */
-AppRuntime.prototype.onCustomConfig = function (message) {
-  var appendUrl = (pathname, params) => {
-    var url = `yoda-skill://custom-config/${pathname}?`
-    var queryString = (params) => {
-      var query = ''
-      for (var key in params) {
-        var value = params[key]
-        query += `&${key}=${value}`
-      }
-      url += query
-      return url
-    }
-    return queryString(params)
-  }
-  var msg = null
-  try {
-    if (typeof message === 'object') {
-      msg = message
-    } else if (typeof message === 'string') {
-      msg = JSON.parse(message)
-    }
-  } catch (err) {
-    logger.error(err)
-    return
-  }
-  var option = {
-    preemptive: true,
-    form: 'cut'
-  }
-  if (msg.nightMode) {
-    this.openUrl(appendUrl('nightMode', msg.nightMode), option)
-  } else if (msg.vt_words) {
-    option.preemptive = false
-    this.openUrl(appendUrl('vt_words', msg.vt_words[0]), option)
-  } else if (msg.continuousDialog) {
-    this.openUrl(appendUrl('continuousDialog', msg.continuousDialog), option)
-  } else if (msg.wakeupSoundEffects) {
-    this.openUrl(appendUrl('wakeupSoundEffects', msg.wakeupSoundEffects), option)
-  } else if (msg.standbyLight) {
-    this.openUrl(appendUrl('standbyLight', msg.standbyLight), option)
-  }
-}
-
-/**
- * @private
- */
-AppRuntime.prototype.onLoadCustomConfig = function (config) {
-  if (config === undefined) {
-    return
-  }
-  this.openUrl(`yoda-skill://custom-config/firstLoad?config=${config}`)
-}
-
-/**
  * @private
  */
 AppRuntime.prototype.ttsMethod = function (name, args) {
@@ -1112,7 +1057,7 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
           return Object.assign({}, config)
         }
         this.wormhole.init(this.cloudApi.mqttcli)
-        this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
+        this.customConfig.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
         this.onLoggedIn()
       }, (err) => {
         if (err && err.code === 'BIND_MASTER_REQUIRED') {

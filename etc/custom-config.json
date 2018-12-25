@@ -1,0 +1,43 @@
+[
+  {
+    "configName": "nightMode",
+    "dataType": "object",
+    "appOption": {
+      "preemptive": true,
+      "form": "cut"
+    }
+  },
+  {
+    "configName": "vt_words",
+    "dataType": "array",
+    "arrayIndex": 0,
+    "appOption": {
+      "preemptive": false,
+      "form": "cut"
+    }
+  },
+  {
+    "configName": "continuousDialog",
+    "dataType": "object",
+    "appOption": {
+      "preemptive": true,
+      "form": "cut"
+    }
+  },
+  {
+    "configName": "wakeupSoundEffects",
+    "dataType": "object",
+    "appOption": {
+      "preemptive": true,
+      "form": "cut"
+    }
+  },
+  {
+    "configName": "standbyLight",
+    "dataType": "object",
+    "appOption": {
+      "preemptive": true,
+      "form": "cut"
+    }
+  }
+]

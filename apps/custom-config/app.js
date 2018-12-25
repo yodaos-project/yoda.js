@@ -6,6 +6,49 @@ var property = require('@yoda/property')
 var CloudGW = require('@yoda/cloudgw')
 var cloudgw = null
 
+var AWAKE_EFFECT = 'rokid.custom_config.awake_effect'
+/**
+ *
+ * @private
+ * @param {string} url
+ * @param {string} dest
+ * @param {object} options - options.noCheckCertificate / options.continue
+ * @param {Function} callback
+ */
+function doDownloadFile (url, dest, options, callback) {
+  var args = []
+  if (options.noCheckCertificate) {
+    args = args.concat('--no-check-certificate')
+  }
+  if (options.continue) {
+    args = args.concat('-c')
+  }
+  args = args.concat('-O', dest, url)
+  var cp = childProcess.spawn('wget', args)
+
+  var returned = false
+  cp.on('error', function onChildProcessError (err) {
+    if (returned) {
+      return
+    }
+    returned = true
+    callback(err)
+  }) /** cp.on('error') */
+  cp.on('exit', function onChildProcessExit (code, signal) {
+    if (returned) {
+      return
+    }
+    if (code === 0) {
+      callback(null)
+      return
+    }
+    var err = new Error(`Failed on download ota image for exit code ${code} and signal ${signal}`)
+    err.code = code
+    err.signal = signal
+    callback(err)
+  }) /** cp.on('exit') */
+}
+
 module.exports = function customConfig (activity) {
   var CONFIG_FAILED = '设置失败'
   var LIGHT_SWITCH_OPEN = '我现在没有待机灯光，你可以试试其他功能'
@@ -220,42 +263,41 @@ module.exports = function customConfig (activity) {
   // }
 
   function onWakeupEffectStatusChanged (queryObj, isFirstLoad) {
-    if (action) {
-      property.set('sys.awakeswitch', action, 'persist')
-      if (queryObj && queryObj.action) {
-        if (!queryObj.type || queryObj.type === AWAKE_EFFECT_DEFAULT) {
-          property.set('sys.awakeswitch', queryObj.action, 'persist')
-        } else if (queryObj.type === AWAKE_EFFECT_CUSTOM) {
-          property.set('sys.customawakeswitch', queryObj.action, 'persist')
-          if (typeof queryObj.value !== 'object')
-            return
-          var downloadCount = queryObj.value.length
-          var errCount = 0
-          for (var i = 0; i < queryObj.value.length; ++i) {
-            if (queryObj.value[i].wakeupUrl && queryObj.value[i].wakeupId) {
-              doDownloadFile(queryObj.value[i].wakeupUrl, `/data/custom_awake_effect/${queryObj.value[i].wakeupId}.wav`,
-                null, (err) => {
-                  downloadCount--
-                  if (err) {
-                    logger.warn(`download awake effect error: ${err}`)
-                    errCount++
-                  }
-                  if (downloadCount === 0) {
-                    // todo flora post, delete old wav file
-                    floraAgent.post(AWAKE_EFFECT,)
-                  }
-                })
-            }
+    if (queryObj && queryObj.action) {
+      if (!queryObj.type || queryObj.type === AWAKE_EFFECT_DEFAULT) {
+        property.set('sys.awakeswitch', queryObj.action, 'persist')
+      } else if (queryObj.type === AWAKE_EFFECT_CUSTOM) {
+        property.set('sys.customawakeswitch', queryObj.action, 'persist')
+        if (typeof queryObj.value !== 'object')
+          return
+        var downloadCount = queryObj.value.length
+        var errCount = 0
+        for (var i = 0; i < queryObj.value.length; ++i) {
+          if (queryObj.value[i].wakeupUrl && queryObj.value[i].wakeupId) {
+            doDownloadFile(queryObj.value[i].wakeupUrl, `/data/custom_awake_effect/${queryObj.value[i].wakeupId}.wav`,
+              null, (err) => {
+                downloadCount--
+                if (err) {
+                  logger.warn(`download awake effect error: ${err}`)
+                  errCount++
+                }
+                if (downloadCount === 0) {
+                  // todo flora post, delete old wav file
+                  var caps = new Caps()
+                  caps.writeInt32(0)
+                  floraAgent.post(AWAKE_EFFECT, caps, floraAgent.MSGTYPE_PERSIST)
+                }
+              })
           }
         }
-        if (!isFirstLoad) {
-          if (action === SWITCH_OPEN) {
-            activity.tts.speak(WAKE_SOUND_OPEN).then(() => activity.exit())
-          } else if (action === SWITCH_CLOSE) {
-            activity.tts.speak(WAKE_SOUND_CLOSE).then(() => activity.exit())
-          } else {
-            activity.tts.speak(CONFIG_FAILED).then(() => activity.exit())
-          }
+      }
+      if (!isFirstLoad) {
+        if (queryObj.action === SWITCH_OPEN) {
+          activity.tts.speak(WAKE_SOUND_OPEN).then(() => activity.exit())
+        } else if (queryObj.action === SWITCH_CLOSE) {
+          activity.tts.speak(WAKE_SOUND_CLOSE).then(() => activity.exit())
+        } else {
+          activity.tts.speak(CONFIG_FAILED).then(() => activity.exit())
         }
       }
     }

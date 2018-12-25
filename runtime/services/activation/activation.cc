@@ -29,7 +29,7 @@ const char* filenames[] = {
         "/opt/media/awake_05.wav"
 };
 const char* VOICE_COMING = "rokid.turen.voice_coming";
-const char* AWAKE_EFFECT = "rokid.activation.awake_effect";
+const char* AWAKE_EFFECT = "rokid.custom_config.awake_effect";
 
 class Activation : public ClientCallback {
 public:
