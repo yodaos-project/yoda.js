@@ -82,8 +82,7 @@ CloudStore.prototype.connect = function connect (masterId) {
     }
   }).then((data) => {
     return this.handleResponse(data)
-  }).then((data) => {
-    logger.info(`handle response ${data}`)
+  }).then(() => {
     this.options.notify('101', STRINGS.LOGIN_DONE)
     this.options.notify('201', STRINGS.BIND_MASTER_DONE)
     return this.config
