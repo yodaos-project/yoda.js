@@ -9,19 +9,18 @@ var fs = require('fs')
 var promisify = require('util').promisify
 var childProcess = require('child_process')
 var flora = require('@yoda/flora')
-
+var Caps = require('@yoda/caps/caps.node').Caps
 var readDirAsync = promisify(fs.readdir)
 var unlinkAsync = promisify(fs.unlink)
 var downloadAsync = promisify(doDownloadFile)
 var cloudgw = null
 
-var AWAKE_EFFECT_DEFAULT = 0
-var AWAKE_EFFECT_CUSTOM = 1
+var AWAKE_EFFECT_DEFAULT = '0'
+var AWAKE_EFFECT_CUSTOM = '1'
 var AWAKE_EFFECT = 'rokid.custom_config.awake_effect'
 
 var uri = 'unix:/var/run/flora.sock'
-var floraAgent
-floraAgent = new flora.Agent(`${uri}#custom_config`)
+var floraAgent = new flora.Agent(`${uri}#custom_config`)
 floraAgent.start()
 
 /**
@@ -34,10 +33,10 @@ floraAgent.start()
  */
 function doDownloadFile (url, dest, options, callback) {
   var args = []
-  if (options.noCheckCertificate) {
+  if (options && options.noCheckCertificate) {
     args = args.concat('--no-check-certificate')
   }
-  if (options.continue) {
+  if (options && options.continue) {
     args = args.concat('-c')
   }
   args = args.concat('-O', dest, url)
@@ -114,7 +113,7 @@ module.exports = function customConfig (activity) {
   })
 
   activity.on('url', (url) => {
-    logger.info('on Url---->is called: ')
+    logger.info(`on Url---->is called`)
     var urlObj = Url.parse(url)
     var queryObj = urlObj.query
     if (typeof queryObj === 'object') {
@@ -141,7 +140,8 @@ module.exports = function customConfig (activity) {
     } else if (urlObj.pathname === '/continuousDialog') {
       onPickupSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/wakeupSoundEffects') {
-      onWakeupEffectStatusChanged(action, isFirstLoad)
+      var wakeupEffect = safeParse(queryObj.param)
+      onWakeupEffectStatusChanged(wakeupEffect, isFirstLoad)
     } else if (urlObj.pathname === '/standbyLight') {
       onStandbyLightSwitchStatusChanged(action, isFirstLoad)
     } else if (urlObj.pathname === '/firstLoad') {
@@ -284,6 +284,7 @@ module.exports = function customConfig (activity) {
     var promises = []
     for (var i = 0; i < queryValues.length; ++i) {
       if (queryValues[i].wakeupUrl && queryValues[i].wakeupId) {
+        logger.info(`download ${queryValues[i].wakeupUrl}`)
         promises.push(downloadAsync(queryValues[i].wakeupUrl,
           `${path}${queryValues[i].wakeupId}.wav`, null))
       }
@@ -300,9 +301,11 @@ module.exports = function customConfig (activity) {
         if (typeof queryObj.value !== 'object') {
           return
         }
-        clearDir(ActivationConfig.customPath).then(() => {
-          downloadWav(queryObj.value, ActivationConfig.customPath).then(() => {
-            floraAgent.post(AWAKE_EFFECT, [0], floraAgent.MSGTYPE_INSTANT)
+        clearDir(ActivationConfig.activation.customPath).then(() => {
+          downloadWav(queryObj.value, ActivationConfig.activation.customPath).then(() => {
+            var caps = new Caps()
+            caps.writeInt32(0)
+            floraAgent.post(AWAKE_EFFECT, caps, floraAgent.MSGTYPE_INSTANT)
           }).catch((err) => {
             logger.warn(`download custom awake effect error: ${err}`)
           })
