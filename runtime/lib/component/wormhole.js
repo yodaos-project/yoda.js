@@ -153,6 +153,20 @@ Wormhole.prototype.handlers = {
     this.runtime.onCustomConfig(data)
   },
   /**
+   * @member event
+   */
+  event: function (data) {
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data)
+      } catch (error) {
+        logger.error('parse mqtt forward message error: message -> ', data)
+        return
+      }
+    }
+    this.handleAppEvent(data)
+  },
+  /**
    * @member UNIVERSAL_UNBIND
    */
   UNIVERSAL_UNBIND: function (data) {
@@ -194,4 +208,28 @@ Wormhole.prototype.updateVolume = function updateVolume () {
   }
   logger.log('on request volume ->', res)
   this.sendToApp('event', res)
+}
+
+Wormhole.prototype.handleAppEvent = function handleAppEvent (data) {
+  if (typeof data.appId !== 'string') {
+    logger.error('Expecting data.appId exists in mqtt event message.')
+    return
+  }
+  var form = _.get(data, 'form') || 'cut'
+  var mockNlp = Object.assign({
+    cloud: false,
+    rokidAppCmd: true
+  }, data)
+  var mockAction = {
+    appId: data.appId,
+    version: '2.0.0',
+    startWithActiveWord: false,
+    response: {
+      action: {
+        appId: data.appId,
+        form: form
+      }
+    }
+  }
+  this.runtime.onVoiceCommand('', mockNlp, mockAction)
 }

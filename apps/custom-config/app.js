@@ -104,6 +104,7 @@ module.exports = function customConfig (activity) {
         sendDeleteStatusToServer(action)
         sendSuccessStatusToApp(action, true)
       }
+      activity.exit()
     }
   }
 
@@ -117,6 +118,7 @@ module.exports = function customConfig (activity) {
       } else if (action === SWITCH_VT_DELETE) {
         activity.turen.deleteVtWord(this.txt)
       }
+      activity.exit()
     }
   }
 

@@ -128,7 +128,7 @@ function readInfo (callback) {
       try {
         info = JSON.parse(data)
       } catch (err) {
-        return callback(err)
+        return callback(null, null)
       }
       return callback(null, info)
     }) /** END: fs.readFile */

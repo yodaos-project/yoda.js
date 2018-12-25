@@ -484,13 +484,34 @@ DBus.prototype.amsexport = {
         }
         this.runtime.onVoiceCommand(text, nlp, action)
           .then(
-            () => cb(null, '{"ok":true}'),
+            () => cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } })),
             err => {
               logger.error('unexpected error on voice command', err.stack)
               cb(null, JSON.stringify({ ok: false, error: err.message }))
             }
           )
       })
+    }
+  },
+  NLPIntent: {
+    in: ['s'],
+    out: ['s'],
+    fn: function NLPIntent (json, cb) {
+      var input = safeParse(json)
+      var text = input.text
+      var nlp = input.nlp
+      var action = input.action
+      if (text == null || nlp == null || action == null) {
+        return cb(null, JSON.stringify({ ok: false, message: 'Invalid Argument' }))
+      }
+      this.runtime.onVoiceCommand(text, nlp, action)
+        .then(
+          () => cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } })),
+          err => {
+            logger.error('unexpected error on voice command', err.stack)
+            cb(null, JSON.stringify({ ok: false, error: err.message }))
+          }
+        )
     }
   },
   OpenUrl: {
@@ -525,19 +546,20 @@ DBus.prototype.amsexport = {
       } else {
         options = safeParse(optionsJson)
       }
-      logger.info('launch requested by dbus iface', appId)
       var stopBeforeLaunch = _.get(options, 'stopBeforeLaunch', true)
+      var mode = _.get(options, 'mode')
+      logger.info('launch requested by dbus iface', appId, 'mode', mode)
       var future = Promise.resolve()
       if (stopBeforeLaunch) {
         future = this.runtime.scheduler.suspendApp(appId, { force: true })
       }
       future
-        .then(() => this.runtime.scheduler.createApp(appId))
+        .then(() => this.runtime.scheduler.createApp(appId, mode))
         .then(() => {
-          cb(null, JSON.stringify({ ok: true, result: { appId: appId } }))
+          cb(null, JSON.stringify({ ok: true, result: { appId: appId, mode: mode } }))
         })
         .catch(err => {
-          logger.info('unexpected error on launch app', appId, err.stack)
+          logger.info('unexpected error on launch app', appId, 'mode', mode, err.stack)
           cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
         })
     }
@@ -619,7 +641,8 @@ DBus.prototype.yodadebug = {
           monopolist: this.runtime.life.monopolist,
           appIdOnPause: this.runtime.life.appIdOnPause,
           cloudAppStack: this.runtime.domain,
-          appStatus: this.runtime.scheduler.appStatus
+          appStatus: this.runtime.scheduler.appStatus,
+          appRuntimeInfo: this.runtime.scheduler.appRuntimeInfo
         }
       }))
     }
