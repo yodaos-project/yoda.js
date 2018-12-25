@@ -5,8 +5,12 @@ var Url = require('url')
 var property = require('@yoda/property')
 var CloudGW = require('@yoda/cloudgw')
 var ActivationConfig = require('/etc/yoda/env.json')
-var cloudgw = null
 var fs = require('fs')
+var promisify = require('util').promisify
+var readDirAsync = promisify(fs.readdir)
+var statAsync = promisify(fs.stat)
+var unlinkAsync = promisify(fs.unlink)
+var cloudgw = null
 
 var AWAKE_EFFECT = 'rokid.custom_config.awake_effect'
 /**
@@ -264,22 +268,21 @@ module.exports = function customConfig (activity) {
     }
   }
 
-  function clearCustomWakeupDir () {
-    fs.readdir(ActivationConfig.customPath,function(err,files){
+  function clearDir (path) {
+    return readDirAsync(path).then((files) => {
       if(!files)
-        return;
-      files.forEach(function(ele){
-        fs.stat(ActivationConfig.customPath + "/" + ele, function (err,info) {
-          if(info.isDirectory()) {
-            console.log("dir: "+ele)
-            readDir(path+"/"+ele);
-          } else {
-            console.log("file: "+ele)
-          }
+        return true;
+      var promises = []
+      for(var i = 0; i < files.length; ++i) {
+       var f = files[i]
+        promises.push(unlinkAsync(path + f))
+        Promise.all(promises).then(() => {
+          return true
         })
-      })
+      }
     })
   }
+
   function onWakeupEffectStatusChanged (queryObj, isFirstLoad) {
     if (queryObj && queryObj.action) {
       if (!queryObj.type || queryObj.type === AWAKE_EFFECT_DEFAULT) {
