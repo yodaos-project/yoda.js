@@ -269,11 +269,11 @@ module.exports = function customConfig (activity) {
       if(!files)
         return;
       files.forEach(function(ele){
-        fs.stat(path+"/"+ele,function(err,info){
-          if(info.isDirectory()){
+        fs.stat(ActivationConfig.customPath + "/" + ele, function (err,info) {
+          if(info.isDirectory()) {
             console.log("dir: "+ele)
             readDir(path+"/"+ele);
-          }else{
+          } else {
             console.log("file: "+ele)
           }
         })
