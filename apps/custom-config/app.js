@@ -7,12 +7,23 @@ var CloudGW = require('@yoda/cloudgw')
 var ActivationConfig = require('/etc/yoda/env.json')
 var fs = require('fs')
 var promisify = require('util').promisify
+var childProcess = require('child_process')
+var flora = require('@yoda/flora')
+
 var readDirAsync = promisify(fs.readdir)
-var statAsync = promisify(fs.stat)
 var unlinkAsync = promisify(fs.unlink)
+var downloadAsync = promisify(doDownloadFile)
 var cloudgw = null
 
+var AWAKE_EFFECT_DEFAULT = 0
+var AWAKE_EFFECT_CUSTOM = 1
 var AWAKE_EFFECT = 'rokid.custom_config.awake_effect'
+
+var uri = 'unix:/var/run/flora.sock'
+var floraAgent
+floraAgent = new flora.Agent(`${uri}#custom_config`)
+floraAgent.start()
+
 /**
  *
  * @private
@@ -48,7 +59,7 @@ function doDownloadFile (url, dest, options, callback) {
       callback(null)
       return
     }
-    var err = new Error(`Failed on download ota image for exit code ${code} and signal ${signal}`)
+    var err = new Error(`Failed on download file[${url}] for exit code ${code} and signal ${signal}`)
     err.code = code
     err.signal = signal
     callback(err)
@@ -270,17 +281,25 @@ module.exports = function customConfig (activity) {
 
   function clearDir (path) {
     return readDirAsync(path).then((files) => {
-      if(!files)
-        return true;
-      var promises = []
-      for(var i = 0; i < files.length; ++i) {
-       var f = files[i]
-        promises.push(unlinkAsync(path + f))
-        Promise.all(promises).then(() => {
-          return true
-        })
+      if (!files) {
+        return true
       }
+      var promises = []
+      for (var i = 0; i < files.length; ++i) {
+        promises.push(unlinkAsync(path + files[i]))
+      }
+      return Promise.all(promises).catch((_) => true)
     })
+  }
+  function downloadWav (queryValues, path) {
+    var promises = []
+    for (var i = 0; i < queryValues.length; ++i) {
+      if (queryValues[i].wakeupUrl && queryValues[i].wakeupId) {
+        promises.push(downloadAsync(queryValues[i].wakeupUrl,
+          `${path}${queryValues[i].wakeupId}.wav`, null))
+      }
+    }
+    return Promise.all(promises)
   }
 
   function onWakeupEffectStatusChanged (queryObj, isFirstLoad) {
@@ -289,28 +308,16 @@ module.exports = function customConfig (activity) {
         property.set('sys.awakeswitch', queryObj.action, 'persist')
       } else if (queryObj.type === AWAKE_EFFECT_CUSTOM) {
         property.set('sys.customawakeswitch', queryObj.action, 'persist')
-        if (typeof queryObj.value !== 'object')
+        if (typeof queryObj.value !== 'object') {
           return
-        var downloadCount = queryObj.value.length
-        var errCount = 0
-        for (var i = 0; i < queryObj.value.length; ++i) {
-          if (queryObj.value[i].wakeupUrl && queryObj.value[i].wakeupId) {
-            doDownloadFile(queryObj.value[i].wakeupUrl, `${ActivationConfig.customPath}${queryObj.value[i].wakeupId}.wav`,
-              null, (err) => {
-                downloadCount--
-                if (err) {
-                  logger.warn(`download awake effect error: ${err}`)
-                  errCount++
-                }
-                if (downloadCount === 0) {
-                  // todo flora post, delete old wav file
-                  var caps = new Caps()
-                  caps.writeInt32(0)
-                  floraAgent.post(AWAKE_EFFECT, caps, floraAgent.MSGTYPE_INSTANT)
-                }
-              })
-          }
         }
+        clearDir(ActivationConfig.customPath).then(() => {
+          downloadWav(queryObj.value, ActivationConfig.customPath).then(() => {
+            floraAgent.post(AWAKE_EFFECT, [0], floraAgent.MSGTYPE_INSTANT)
+          }).catch((err) => {
+            logger.warn(`download custom awake effect error: ${err}`)
+          })
+        })
       }
       if (!isFirstLoad) {
         if (queryObj.action === SWITCH_OPEN) {
