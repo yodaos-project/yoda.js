@@ -6,7 +6,7 @@ var stateFilters = [
   // turn on bluetooth succeeded
   {
     inflowMsg: {a2dpstate: 'opened', connect_state: 'invalid', play_state: 'invalid', broadcast_state: 'opened'},
-    outflowEvent: {type: 'radio_state_changed', state: protocol.RADIO_STATE_ON},
+    outflowEvent: {type: 'radio_state_changed', state: protocol.RADIO_STATE.ON},
     extraDataGenerator: (msg) => {
       return {autoConn: msg.linknum > 0}
     }
@@ -32,7 +32,7 @@ var stateFilters = [
   // disconnect from remote device
   {
     inflowMsg: {a2dpstate: 'opened', connect_state: 'disconnected', play_state: 'invalid', broadcast_state: 'opened'},
-    outflowEvent: {type: 'connection_state_changed', state: protocol.CONNECTION_STATE.CONNECTED}
+    outflowEvent: {type: 'connection_state_changed', state: protocol.CONNECTION_STATE.DISCONNECTED}
   },
   // connect to remote device failed
   {
