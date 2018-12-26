@@ -1,0 +1,7 @@
+{
+  "UNKNOWN_INTENT": "什么升级",
+  "NO_UPDATES_AVAILABLE": "已经是最新的系统版本了",
+  "UPDATES_DOWNLOADING": "你有新的版本可以升级，下载马上可以完成",
+  "OTA_PREPARATION_FAILED": "准备升级失败",
+  "GENERIC_VERSION_ANNOUNCEMENT": "你可以在手机app的设备信息页面看到我现在的系统版本号"
+}
