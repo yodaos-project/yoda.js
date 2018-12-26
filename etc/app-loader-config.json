@@ -10,7 +10,7 @@
     "@yoda/ota",
     "@yoda/system",
     "@yoda/volume",
-    "@yoda/cloud-log"
+    "@yoda/log-switch"
   ],
   "dbusAppIds": [],
   "cloudStackExcludedSkillIds": [
