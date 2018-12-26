@@ -12,6 +12,9 @@ using namespace flora;
 
 const char* VOICE_COMING = "rokid.turen.voice_coming";
 const char* AWAKE_EFFECT = "rokid.custom_config.awake_effect";
+const char AWAKE_SOUND_DEFAULE = '0';
+const char AWAKE_SOUND_CUSTOM = '1';
+
 const int32_t FILE_MAX_SIZE = 20 * 1024;
 Activation::Activation() {
   srand(time(NULL));
@@ -62,23 +65,25 @@ void Activation::start() {
 }
 
 void Activation::prepareForNextAwake() {
-  int id = rand() % filename_list_size;
-  prepareWavPlayer(filename_list[id], "system", true);
-  if (!volume_set) {
-    char val[PROP_VALUE_MAX];
-    property_get("persist.audio.volume.system", (char *) &val, "");
-    int vol = atoi(val);
-    fprintf(stdout, "init activation volume to %d\n", vol);
-    rk_set_stream_volume(STREAM_SYSTEM, vol);
-    volume_set = true;
+  if (is_open) {
+    int id = rand() % filename_list_size;
+    prepareWavPlayer(filename_list[id], "system", true);
+    if (!volume_set) {
+      char val[PROP_VALUE_MAX];
+      property_get("persist.audio.volume.system", (char *) &val, "");
+      int vol = atoi(val);
+      fprintf(stdout, "init activation volume to %d\n", vol);
+      rk_set_stream_volume(STREAM_SYSTEM, vol);
+      volume_set = true;
+    }
   }
 }
 
 void Activation::playAwake() {
   char propValue[PROP_VALUE_MAX];
-  property_get("persist.dndmode.awakeswitch", (char*)propValue, "");
-  if (strcmp(propValue, "close") == 0) {
-    fprintf(stdout, "dndmode.awakeswitch is closed, just skip\n");
+  property_get("persist.dndmode.awakeswitch", (char *) propValue, "");
+  if (strcmp(propValue, "open") != 0) {
+    fprintf(stdout, "dnd mode, just skip\n");
     return;
   } else {
     property_get("state.network.connected", (char *) propValue, "");
@@ -87,15 +92,19 @@ void Activation::playAwake() {
       return;
     }
   }
-  startWavPlayer();
-  prepareForNextAwake();
+  if (is_open) {
+    startWavPlayer();
+    prepareForNextAwake();
+  }
 }
 
 void Activation::applyAwakeEffect(shared_ptr <Caps> &msg) {
   refreshFileList();
-  prePrepareWavPlayer(filename_list, filename_list_size);
-  fprintf(stdout, "wav player has been preloaded all activation files\n");
-  prepareForNextAwake();
+  if (is_open && filename_list_size > 0) {
+    prePrepareWavPlayer(filename_list, filename_list_size);
+    fprintf(stdout, "wav player has been preloaded all activation files\n");
+    prepareForNextAwake();
+  }
 }
 
 void Activation::initPath() {
@@ -172,20 +181,30 @@ vector<string> Activation::getFiles(const string &path) {
 }
 
 void Activation::refreshFileList() {
-  char is_awakeswitch_open[PROP_VALUE_MAX];
-  property_get("persist.sys.awakeswitch", (char *) is_awakeswitch_open, "");
-  bool defaultSwitch = strcmp(is_awakeswitch_open, "open") == 0;
-  property_get("persist.sys.customawakeswitch", (char *) is_awakeswitch_open, "");
-  bool customSwitch = strcmp(is_awakeswitch_open, "open") == 0;
-  if (customSwitch) {
-    files = getFiles(custom_path);
-  }
-  if (files.size() == 0 && defaultSwitch) {
-    files = getFiles(default_path);
-  }
-  filename_list_size = files.size() > 10 ? 10 : files.size();
-  for(size_t i = 0; i < filename_list_size; ++i) {
-    filename_list[i] = files[i].data();
+  char propValue[PROP_VALUE_MAX];
+  property_get("persist.sys.awakeswitch", (char *) propValue, "");
+  fprintf(stdout, "persist.sys.awakeswitch: %s\n", propValue);
+  is_open = strcmp(propValue, "open") == 0;
+  if (is_open) {
+    files.clear();
+    property_get("persist.sys.awakesound", (char *) propValue, "");
+    fprintf(stdout, "persist.sys.awakesound: %s\n", propValue);
+    char awakeSound = strcmp(propValue, "0") == 0 ? AWAKE_SOUND_DEFAULE : AWAKE_SOUND_CUSTOM;
+    if (awakeSound == AWAKE_SOUND_CUSTOM) {
+      files = getFiles(custom_path);
+      if (files.size() == 0) {
+        files = getFiles(default_path);
+      }
+    } else {
+      files = getFiles(default_path);
+    }
+    fprintf(stdout, "persist.sys.awakesound: %s\n", propValue);
+    filename_list_size = files.size() > 10 ? 10 : files.size();
+    for(size_t i = 0; i < filename_list_size; ++i) {
+      filename_list[i] = files[i].data();
+    }
+  } else {
+    filename_list_size = 0;
   }
 }
 

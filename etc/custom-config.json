@@ -1,6 +1,7 @@
 {
   "nightMode": {
     "dataType": "object",
+    "stringify": false,
     "appOption": {
       "preemptive": true,
       "form": "cut"
@@ -8,8 +9,8 @@
   },
   "vt_words": {
     "configName": "",
+    "stringify": true,
     "dataType": "array",
-    "arrayIndex": 0,
     "appOption": {
       "preemptive": false,
       "form": "cut"
@@ -24,6 +25,15 @@
   },
   "wakeupSoundEffects": {
     "dataType": "object",
+    "stringify": true,
+    "appOption": {
+      "preemptive": true,
+      "form": "cut"
+    }
+  },
+  "wakeup": {
+    "dataType": "object",
+    "stringify": true,
     "appOption": {
       "preemptive": true,
       "form": "cut"
@@ -31,6 +41,7 @@
   },
   "standbyLight": {
     "dataType": "object",
+    "stringify": false,
     "appOption": {
       "preemptive": true,
       "form": "cut"

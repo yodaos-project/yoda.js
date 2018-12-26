@@ -1,30 +1,43 @@
 var logger = require('logger')('custom-config-runtime')
 var config = require('/etc/yoda/custom-config.json')
 var querystring = require('querystring')
-
-var testWakeupSoundEffects = {
-  action: 'open',
-  type: '1',
-  value: [{
-    wakeupId: 'de152fdc-1ad7-43dc-85d9-6bc279baa459',
-    voiceId: '',
-    wakeupUrl: 'http://10.88.2.29:5000/awake_04.wav'
-  }]
-}
+var safeParse = require('@yoda/util').json.safeParse
 
 class CustomConfig {
   constructor (runtime) {
     this.runtime = runtime
   }
+
+  /**
+   * interce the configuration message for dnd-model etc
+   * @param msg
+   */
+  interce (msg) {
+    logger.info(`interce ${JSON.stringify(msg)}`)
+    if (msg.nightMode) {
+      if (typeof msg.nightMode === 'object') {
+        this.runtime.dndMode.setOption(msg.nightMode)
+        delete msg.nightMode
+      } else if (typeof msg.nightMode === 'string') {
+        var nightMode = safeParse(msg.nightMode)
+        if (nightMode) {
+
+          this.runtime.dndMode.setOption(nightMode)
+        }
+        delete msg.nightMode
+      }
+    }
+  }
+
   /**
    * Handling the configs from RokidApp, includes activation words, night mode, and etc..
    * @param {string} message
    */
   onCustomConfig (message) {
-    var appendUrl = (pathname, params) => {
+    var appendUrl = (pathname, params, stringify) => {
       var obj
-      if (typeof params === 'string') {
-        obj = {param: params}
+      if (stringify) {
+        obj = {param: JSON.stringify(params)}
       } else {
         obj = params
       }
@@ -41,39 +54,34 @@ class CustomConfig {
       logger.error(err)
       return
     }
-    if (msg.nightMode) {
-      this.runtime.dndMode.setOption(msg.nightMode)
-      delete msg.nightMode
-    }
-    msg.wakeupSoundEffects = JSON.stringify(testWakeupSoundEffects)
-    logger.error(`${JSON.stringify(testWakeupSoundEffects)}`)
+    this.interce(msg)
     for (var field in msg) {
       if (msg.hasOwnProperty(field) && config.hasOwnProperty(field)) {
         var conf = config[field]
-        var value = msg[field]
-        logger.error(`${JSON.stringify(value)}`)
+        var value
+        value = msg[field]
         if (!conf.appOption || !conf.dataType) {
           logger.warn(`custom-config.json has invalid field [${field}]`)
           continue
         }
-        if (conf.dataType === 'object') {
-          this.runtime.openUrl(appendUrl(field, value, conf.appOption))
-        } else if (conf.dataType === 'array') {
-          if (conf.arrayIndex && typeof conf.arrayIndex === 'number') {
-            this.runtime.openUrl(appendUrl(field, value[conf.arrayIndex], conf.appOption))
-          } else {
-            this.runtime.openUrl(appendUrl(field, value, conf.appOption))
-          }
-        }
+        logger.info(`open url: ${field}`)
+        this.runtime.openUrl(appendUrl(field, value, conf.stringify),conf.appOption)
       }
     }
   }
 
+  /**
+   * first load custom config
+   * @param {string} config - cunstom config from cloud
+   */
   onLoadCustomConfig (config) {
     if (config === undefined) {
       return
     }
-    this.runtime.openUrl(`yoda-skill://custom-config/firstLoad?config=${config}`)
+    var configObj = safeParse(config)
+    this.interce(configObj)
+    var sConfig = JSON.stringify(configObj)
+    this.runtime.openUrl(`yoda-skill://custom-config/firstLoad?config=${sConfig}`)
   }
 }
 

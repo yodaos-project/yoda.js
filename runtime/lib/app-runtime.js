@@ -84,9 +84,9 @@ function AppRuntime () {
   this.light = new Light(this.dbusRegistry)
   this.sound = new Sound(this)
   this.shouldStopLongPressMicLight = false
+  this.dndMode = new DNDMode(this.light, this.sound, this.life)
   this.customConfig = new CustomConfig(this)
   this.onCustomConfig = this.customConfig.onCustomConfig.bind(this.customConfig)
-  this.dndMode = new DNDMode(this.light, this.sound, this.life)
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -1044,7 +1044,6 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
     return this.cloudApi.connect(masterId)
       .then((config) => {
         var opts = Object.assign({ uri: env.speechUri }, config)
-
         // TODO: move to use cloudapi?
         require('@yoda/ota/network').cloudgw = this.cloudApi.cloudgw
         // FIXME: schedule this update later?
@@ -1059,7 +1058,10 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
           return Object.assign({}, config)
         }
         this.wormhole.init(this.cloudApi.mqttcli)
-        this.customConfig.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
+        if (config && typeof config === 'object' && config.extraInfo && typeof config.extraInfo === 'object' &&
+          config.extraInfo.custom_config && typeof config.extraInfo.custom_config  === 'string') {
+          this.customConfig.onLoadCustomConfig(config.extraInfo.custom_config)
+        }
         this.onLoggedIn()
         this.dndMode.recheck()
       }, (err) => {

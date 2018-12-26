@@ -34,6 +34,7 @@ private:
 
   vector<string> files;
   const char *filename_list[10];
+  bool is_open = true;
   size_t filename_list_size;
   string default_path = "/opt/media/activation/";
   string custom_path = "/data/activation/media/";
