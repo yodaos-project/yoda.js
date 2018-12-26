@@ -10,6 +10,7 @@ var Remote = require('../../lib/dbus-remote-call.js')
 var TtsWrap = require('@yoda/tts')
 var logger = require('logger')('ttsd')
 var env = require('@yoda/env')()
+var property = require('@yoda/property')
 var AudioManager = require('@yoda/audio').AudioManager
 var audioModuleName = 'tts'
 AudioManager.setPlayingState(audioModuleName, false)// vui prop definitions
@@ -78,6 +79,8 @@ function reConnect (CONFIG) {
     _TTS.reconnect()
     return
   }
+  // for detail, see https://developer.rokid.com/docs/3-ApiReference/openvoice-api.html#ttsrequest
+  CONFIG.declaimer = property.get('rokid.tts.declaimer', 'persist')
 
   if (_TTS) { _TTS.disconnect() }
 
