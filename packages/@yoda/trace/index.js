@@ -84,7 +84,7 @@ function upload (traces) {
       'Content-Type': 'text/plain;charset=utf-8'
     }
   }
-  httpsession.request(DEFAULT_HOST + DEFAULT_URI, options, (err, res) => {
+  var req = httpsession.request(DEFAULT_HOST + DEFAULT_URI, options, (err, res) => {
     if (err) {
       throw new Error(`Error: request failed ${err}`)
     }
@@ -92,6 +92,7 @@ function upload (traces) {
       throw new Error(`Error: failed get data with ${res}`)
     }
   })
+  req.end()
 }
 
 module.exports = upload

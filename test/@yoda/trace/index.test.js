@@ -22,12 +22,10 @@ test('array length check', (t) => {
 })
 
 test('success', (t) => {
-  t.ok(() => {
-    upload([{
-      eventId: 'datacollection-test',
-      eventName: 'datacollection-test',
-      eventType: 1
-    }])
-  })
+  upload([{
+    eventId: 'datacollection-test',
+    eventName: 'datacollection-test',
+    eventType: 1
+  }])
   t.end()
 })
