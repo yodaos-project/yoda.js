@@ -46,7 +46,13 @@ class Activation : public ClientCallback {
     }
 
     int id = rand() % 4;
-    prepareWavPlayer(filenames[id], "system", true);
+    char audio_hold[PROP_VALUE_MAX];
+    bool hold = true;
+    property_get("persist.act.audio.holdcon", (char*)audio_hold, "yes");
+    if (strcmp(audio_hold, "no") == 0) {
+      hold = false;
+    }
+    prepareWavPlayer(filenames[id], "system", hold);
     if (volume_set != true) {
       char val[PROP_VALUE_MAX];
       property_get("persist.audio.volume.system", (char*)&val, "");
@@ -101,4 +107,3 @@ int main(int argc, char** argv) {
   activation.start();
   return 1;
 }
-
