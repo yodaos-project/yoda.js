@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include <librplayer/OpusPlayer.h>
-
+#include <cutils/properties.h>
 using namespace std;
 using namespace rokid;
 using namespace speech;
@@ -43,6 +43,7 @@ class TtsService {
   send_event_callback send_event;
   bool prepared = false;
   bool need_destroy_ = false;
+  bool holdconnect = true;
 
  private:
   PrepareOptions options;

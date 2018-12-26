@@ -64,17 +64,17 @@ void* TtsService::PollEvent(void* params) {
         break;
       }
       case TTS_RES_END: {
-        _player.drain();
+        _player.drain(self->holdconnect);
         self->send_event(self, TTS_RES_END, res.id, 0);
         break;
       }
       case TTS_RES_CANCELLED: {
-        _player.drain();
+        _player.drain(self->holdconnect);
         self->send_event(self, TTS_RES_CANCELLED, res.id, 0);
         break;
       }
       case TTS_RES_ERROR: {
-        _player.drain();
+        _player.drain(self->holdconnect);
         self->send_event(self, TTS_RES_ERROR, res.id, res.err);
         break;
       }
@@ -103,7 +103,11 @@ bool TtsService::prepare(const char* host, int port, const char* branch,
   // options.reconn_interval = 3000;
   // options.ping_interval = 5000;
   // options.no_resp_timeout = 3000;
-
+  char audio_hold[PROP_VALUE_MAX];
+  property_get("persist.tts.audio.holdcon", (char*)audio_hold, "yes");
+  if (strcmp(audio_hold, "no") == 0) {
+    holdconnect = false;
+  }
   tts_handle = Tts::new_instance();
   tts_options = TtsOptions::new_instance();
   if (declaimer) {
