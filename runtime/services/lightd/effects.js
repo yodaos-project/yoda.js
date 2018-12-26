@@ -50,6 +50,17 @@ var path = require('path')
 
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
+var globalAlphaFactor = 1
+
+function applyAlphaFactor (alpha) {
+  if (alpha !== undefined && typeof alpha === 'number' && alpha >= 0 && alpha <= 1) {
+    alpha *= globalAlphaFactor
+  } else {
+    alpha = globalAlphaFactor
+  }
+  return alpha
+}
+
 module.exports = LightRenderingContextManager
 
 /**
@@ -81,6 +92,17 @@ LightRenderingContextManager.prototype.getContext = function getContext () {
   var context = new LightRenderingContext()
   context._id = this.id++
   return context
+}
+
+/**
+ * Set the global alpha factor
+ * @memberof yodaRT.light.LightRenderingContextManager
+ * @method setGlobalAlphaFactor
+ * @returns {number} the factor.
+ */
+LightRenderingContextManager.prototype.setGlobalAlphaFactor = function (alphaFactor) {
+  logger.info(`global alpha factor has been set ${alphaFactor}`)
+  globalAlphaFactor = alphaFactor
 }
 
 /**
@@ -263,6 +285,7 @@ LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
+  a = applyAlphaFactor(a)
   return light.pixel(pos, r, g, b, a)
 }
 
@@ -281,6 +304,7 @@ LightRenderingContext.prototype.fill = function (r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
+  a = applyAlphaFactor(a)
   return light.fill(r, g, b, a)
 }
 
