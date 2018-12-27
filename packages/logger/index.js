@@ -106,11 +106,11 @@ var UPLOAD_MIN_LEVEL = 1
 var UPLOAD_MAX_LEVEL = 5
 
 /**
- * set min upload level to cloud
+ * set upload level to cloud
  *
  * @example
- * // enable
  * var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
+ * // enable
  * setGlobalUploadLevel(level, "your gw token")
  * // disable
  * setGlobalUploadLevel(UPLOAD_DISABLE_LEVEL)
@@ -120,7 +120,7 @@ var UPLOAD_MAX_LEVEL = 5
  *                         set level between
  *                         [UPLOAD_MIN_LEVEL, UPLOAD_MAX_LEVEL] to enable
  * @param {string} token - cloudgw token
- * @throws {error} level out of range
+ * @throws {error} level out of range or missing authorization
  */
 module.exports.setGlobalUploadLevel = function (level, authorization) {
   if (level === UPLOAD_DISABLE_LEVEL) {

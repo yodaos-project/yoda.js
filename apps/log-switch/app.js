@@ -6,7 +6,6 @@ var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
 var logger = require('logger')('log-switch')
 var cloudgw = require('@yoda/cloudgw')
 var property = require('@yoda/property')
-var config = null
 var persistKey = 'log.cloud.level'
 
 module.exports = function (activity) {
@@ -30,24 +29,17 @@ function onCloudLogLevelSwitch (activity, level) {
   level = parseInt(level)
   logger.info(`cloud logger switch to ${level}`)
   if (MIN_LEVEL <= level && level <= MAX_LEVEL) {
-    if (!config) {
-      logger.info('updating config')
-      activity.get().then(conf => {
-        logger.info('cloud log updated conf')
-        config = conf
-        setLevel(level)
-      }, err => {
-        logger.error('cloud log update conf error', err)
-      })
-      return
-    }
+    activity.get().then(config => {
+      setLevel(level, config)
+    }, err => {
+      logger.error('cloud log update conf error', err)
+    })
   } else {
-    level = DISABLE_LEVEL
+    setLevel(DISABLE_LEVEL)
   }
-  setLevel(level)
 }
 
-function setLevel (level) {
+function setLevel (level, config) {
   logger.info(`set cloud level ${level}`)
   var authorization
   if (level !== DISABLE_LEVEL) {
