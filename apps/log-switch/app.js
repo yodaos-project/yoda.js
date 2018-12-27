@@ -53,6 +53,11 @@ function setLevel (level) {
   if (level !== DISABLE_LEVEL) {
     authorization = cloudgw.getAuth(config)
   }
-  setGlobalUploadLevel(level, authorization)
+
+  try {
+    setGlobalUploadLevel(level, authorization)
+  } catch (err) {
+    logger.error('set upload level error', err)
+  }
   property.set(persistKey, level, 'persist')
 }
