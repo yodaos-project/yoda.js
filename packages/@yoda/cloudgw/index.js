@@ -136,3 +136,4 @@ Cloudgw.prototype.request = function request (path, data, options, callback) {
 }
 
 module.exports = Cloudgw
+module.exports.getAuth = getAuth
