@@ -6,9 +6,14 @@ var childProcess = require('child_process')
 var path = require('path')
 var logger = require('logger')('ext-app')
 var _ = require('@yoda/util')._
-var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
 
-var entry = path.join(__dirname, '..', '..', 'client', 'ext-app-entry.js')
+var kAppModesTest = require('../../constants').AppScheduler.modes.test
+var ActivityDescriptor = require('../descriptor/activity-descriptor')
+var ActivityTestDescriptor = require('../descriptor/activity-test-descriptor')
+
+var entriesDir = path.join(__dirname, '..', '..', 'client')
+var defaultEntry = path.join(entriesDir, 'ext-app-entry.js')
+var testEntry = path.join(entriesDir, 'ext-test-entry.js')
 
 module.exports = createExtApp
 /**
@@ -18,11 +23,16 @@ module.exports = createExtApp
  * @param {string} target - app home directory
  * @param {AppRuntime} runtime -
  */
-function createExtApp (appId, metadata, runtime) {
+function createExtApp (appId, metadata, runtime, mode) {
   var target = _.get(metadata, 'appHome')
+  var entry = defaultEntry
   var descriptor = new ActivityDescriptor(appId, target, runtime)
+  if (mode & kAppModesTest) {
+    entry = testEntry
+    descriptor.test = new ActivityTestDescriptor(descriptor, appId, target, runtime)
+  }
 
-  var cp = childProcess.fork(entry, [ target ], {
+  var cp = childProcess.fork(entry, [ target, mode ], {
     cwd: target,
     env: Object.assign({}, process.env),
     stdio: 'inherit'
@@ -236,7 +246,7 @@ EventBus.prototype.invoke = function onInvoke (message) {
     throw new Error(`Not implemented return type '${fnDescriptor.returns}' for method '${methodStr}'`)
   }
   var fn = fnDescriptor.fn
-  fn.apply(nsObj, params)
+  Promise.resolve(fn.apply(nsObj, params))
     .then(result => this.socket.send({
       type: 'promise',
       action: 'resolve',

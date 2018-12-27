@@ -50,6 +50,13 @@ Sound.prototype.setVolume = function setVolume (volume) {
 }
 
 /**
+ * Get volume
+ */
+Sound.prototype.getVolume = function getVolume () {
+  return this.manager.getVolume()
+}
+
+/**
  * Unmute speaker.
  */
 Sound.prototype.unmute = function unmute () {

@@ -18,7 +18,7 @@ var info = {imageUrl: '/test/test',
   status: 'downloaded'
 }
 
-test('Info should not null,if info.json is not existed', t => {
+test('Info should be null,if info.json is not existed', t => {
   t.plan(1)
   fs.writeFile(infoFile, JSON.stringify(info), () => {
     fs.unlink(infoFile, () => {
@@ -31,6 +31,17 @@ test('Info should not null,if info.json is not existed', t => {
           t.end()
         }
       })
+    })
+  })
+})
+
+test('Info should be null, if info.json is malformed json', t => {
+  t.plan(2)
+  fs.writeFile(infoFile, 'foobar', () => {
+    ota.readInfo((err, info) => {
+      t.error(err)
+      t.true(info === null, 'info shall be null on malformed json')
+      t.end()
     })
   })
 })

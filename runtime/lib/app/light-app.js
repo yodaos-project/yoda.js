@@ -3,7 +3,7 @@
 var logger = require('logger')('lapp')
 
 var _ = require('@yoda/util')._
-var ActivityDescriptor = require('./activity-descriptor').ActivityDescriptor
+var ActivityDescriptor = require('../descriptor/activity-descriptor')
 var translate = require('../../client/translator-in-process').translate
 /**
  *

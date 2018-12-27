@@ -4,14 +4,13 @@ var test = require('tape')
 var logger = require('logger')('flora-test')
 var flora = require('@yoda/flora')
 var Agent = flora.Agent
-
-var reconnInterval = 10000
+var agentOptions = { reconnInterval: 10000, bufsize: 0 }
 // var errUri = 'unix:/data/flora-error'
 var okUri = 'unix:/var/run/flora.sock'
 var crypto = require('crypto')
 
 test('module->flora->persist msg', t => {
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   var int32 = 32
   var int64 = 64
@@ -27,7 +26,7 @@ test('module->flora->persist msg', t => {
     t.end()
   })
   recvClient.start()
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   postClient.start()
   postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_PERSIST)
   postClient.close()
@@ -40,7 +39,7 @@ test('module->flora->persist msg: subscribe first and then send, get twice msg',
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `persist msg test two[${msgId}]`
   var count = 0
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     count++
@@ -60,7 +59,7 @@ test('module->flora->persist msg: subscribe first and then send, get twice msg',
     }
   })
   recvClient.start()
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   // first post
@@ -77,7 +76,7 @@ test('module->flora->persist msg: send first and then subscribe, get the last ms
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `persist msg test two[${msgId}]`
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   // first post
@@ -86,7 +85,7 @@ test('module->flora->persist msg: send first and then subscribe, get the last ms
   postClient.post(msgName, [ hello, int64, int32 ], flora.MSGTYPE_PERSIST)
   postClient.close()
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
@@ -106,12 +105,12 @@ test('module->flora->instant msg: send first and then subscribe, get nothing', t
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `persist msg test two[${msgId}]`
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     t.fail('should not recv msg')
@@ -131,7 +130,7 @@ test('module->flora->instant msg: subscribe first and then send, get msg', t => 
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `instant msg test[${msgId}]`
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     t.equal(type, flora.MSGTYPE_INSTANT, `recv post type: ${type}`)
@@ -144,7 +143,7 @@ test('module->flora->instant msg: subscribe first and then send, get msg', t => 
   })
   recvClient.start()
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
@@ -159,7 +158,7 @@ test('module->flora->instant msg: subscribe first and then send twice, get twice
   var msgName = `instant msg test[${msgId}]`
   var count = 0
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     count++
@@ -179,7 +178,7 @@ test('module->flora->instant msg: subscribe first and then send twice, get twice
   })
   recvClient.start()
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
@@ -190,7 +189,7 @@ test('module->flora->instant msg: subscribe first and then send twice, get twice
 test('module->flora->Caps: post/recv nesting array message', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   var msg = [ [ 'this is subcaps' ],
@@ -203,7 +202,7 @@ test('module->flora->Caps: post/recv nesting array message', t => {
   // caps.write(caps)
   postClient.post(msgName, msg, flora.MSGTYPE_PERSIST)
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   recvClient.subscribe(msgName, (msg, type) => {
     t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
     logger.info(msg)
@@ -226,7 +225,7 @@ test('module->flora->Caps: post/recv nesting array message', t => {
 test('module->flora->Caps: post numbers', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `write method test[${msgId}]`
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   var msg = [
@@ -256,7 +255,7 @@ test('module->flora->Caps: post numbers', t => {
   ]
   postClient.post(msgName, msg, flora.MSGTYPE_PERSIST)
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   recvClient.subscribe(msgName, (msg, type) => {
     t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
     logger.info(msg)
@@ -295,7 +294,7 @@ test('module->flora->connect buffer, default 0', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `msg buffer test[${msgId}]`
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
@@ -305,7 +304,7 @@ test('module->flora->connect buffer, default 0', t => {
   })
   recvClient.start()
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   var length = 32693 // TODO: err 目前最大支持32693
@@ -322,7 +321,7 @@ test('module->flora->connect buffer, set value', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `msg buffer test[${msgId}]`
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     t.equal(type, flora.MSGTYPE_PERSIST, `recv post type: ${type}`)
@@ -332,7 +331,7 @@ test('module->flora->connect buffer, set value', t => {
   })
   recvClient.start()
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   var length = 32693
@@ -350,7 +349,7 @@ test('module->flora->client: instant msg, unsubscribe msg', t => {
   var msgName = `instant msg test[${msgId}]`
   var count = 0
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     count++
@@ -361,7 +360,7 @@ test('module->flora->client: instant msg, unsubscribe msg', t => {
   })
   recvClient.start()
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
@@ -387,7 +386,7 @@ test('module->flora->client: persist msg, subscribe->send->unsubscribe->send', t
   var msgName = `instant msg test[${msgId}]`
   var count = 0
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     count++
@@ -398,7 +397,7 @@ test('module->flora->client: persist msg, subscribe->send->unsubscribe->send', t
   })
   recvClient.start()
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_PERSIST)
@@ -424,12 +423,12 @@ test('module->flora->client: persist msg, send->subscribe->unsubscribe->send', t
   var msgName = `instant msg test[${msgId}]`
   var count = 0
 
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_PERSIST)
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     count++
@@ -460,7 +459,7 @@ test('module->flora->client: close recv', t => {
   var msgName = `close test[${msgId}]`
   var count = 0
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     count++
@@ -477,7 +476,7 @@ test('module->flora->client: close recv', t => {
     }, 1000)
   })
   recvClient.start()
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   postClient.post(msgName, [ int32, int64, hello ], flora.MSGTYPE_INSTANT)
@@ -490,13 +489,13 @@ test('module->flora->client: close post', t => {
   var msgId = crypto.randomBytes(5).toString('hex')
   var msgName = `close test[${msgId}]`
 
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   t.equal(typeof recvClient, 'object')
   recvClient.subscribe(msgName, (msg, type) => {
     t.fail('should not recv msg')
   })
   recvClient.start()
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   postClient.close()
@@ -513,7 +512,7 @@ test('module->flora->client: close post', t => {
 test('module->flora->client: loop create connection', { timeout: 10 * 1000 }, t => {
   var clients = []
   for (var count = 0; count < 20; count++) {
-    clients[count] = new Agent(okUri, reconnInterval, 0)
+    clients[count] = new Agent(okUri, agentOptions)
     t.equal(typeof clients[count], 'object')
   }
 
@@ -531,7 +530,7 @@ test('module->flora->client: loop create connection', { timeout: 10 * 1000 }, t 
 })
 
 test('module->flora->client: loop post msg', { timeout: 10 * 1000 }, t => {
-  var recvClient = new Agent(okUri, reconnInterval, 0)
+  var recvClient = new Agent(okUri, agentOptions)
   var count = 0
   for (var i = 0; i < 100; i++) {
     recvClient.subscribe(`id=${i}`, (msg, type) => {
@@ -540,7 +539,7 @@ test('module->flora->client: loop post msg', { timeout: 10 * 1000 }, t => {
     })
   }
   recvClient.start()
-  var postClient = new Agent(okUri, reconnInterval, 0)
+  var postClient = new Agent(okUri, agentOptions)
   t.equal(typeof postClient, 'object')
   postClient.start()
   for (var j = 0; j < 100; j++) {

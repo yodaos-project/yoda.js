@@ -55,7 +55,9 @@ NativeObjectWrap::NativeObjectWrap(const CallbackInfo& info)
 }
 
 NativeObjectWrap::~NativeObjectWrap() {
-  thisClient->close();
+  if (thisClient) {
+    thisClient->close();
+  }
 }
 
 Napi::Value NativeObjectWrap::start(const Napi::CallbackInfo& info) {
@@ -71,7 +73,11 @@ Napi::Value NativeObjectWrap::unsubscribe(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value NativeObjectWrap::close(const Napi::CallbackInfo& info) {
-  thisClient->close();
+  ClientNative* tmp = thisClient;
+  if (tmp) {
+    thisClient = nullptr;
+    tmp->close();
+  }
   return info.Env().Undefined();
 }
 
@@ -87,6 +93,34 @@ Napi::Value NativeObjectWrap::genArray(const Napi::CallbackInfo& info) {
   return thisClient->genArray(info);
 }
 
+#define DEFAULT_RECONN_INTERVAL 10000
+#define DEFAULT_BUFSIZE 32768
+typedef struct {
+  uint32_t reconnInterval;
+  uint32_t bufsize;
+} AgentOptions;
+
+static void parseAgentOptions(const Napi::Value& jsopts,
+                              AgentOptions& cxxopts) {
+  if (jsopts.IsObject()) {
+    Napi::Value v = jsopts.As<Object>().Get("reconnInterval");
+    if (v.IsNumber()) {
+      cxxopts.reconnInterval = v.As<Number>().Uint32Value();
+    } else {
+      cxxopts.reconnInterval = DEFAULT_RECONN_INTERVAL;
+    }
+    v = jsopts.As<Object>().Get("bufsize");
+    if (v.IsNumber()) {
+      cxxopts.bufsize = v.As<Number>().Uint32Value();
+    } else {
+      cxxopts.bufsize = DEFAULT_BUFSIZE;
+    }
+  } else {
+    cxxopts.reconnInterval = DEFAULT_RECONN_INTERVAL;
+    cxxopts.bufsize = DEFAULT_BUFSIZE;
+  }
+}
+
 void ClientNative::initialize(const CallbackInfo& info) {
   Napi::Env env = info.Env();
   thisEnv = env;
@@ -98,16 +132,11 @@ void ClientNative::initialize(const CallbackInfo& info) {
   }
   std::string uri = std::string(info[0].As<String>());
   floraAgent.config(FLORA_AGENT_CONFIG_URI, uri.c_str());
-  uint32_t n = 10000;
-  if (len > 1 && info[1].IsNumber()) {
-    n = info[1].As<Number>().DoubleValue();
-  }
-  floraAgent.config(FLORA_AGENT_CONFIG_RECONN_INTERVAL, n);
-  n = 0;
-  if (len > 2 && info[2].IsNumber()) {
-    n = info[2].As<Number>().DoubleValue();
-  }
-  floraAgent.config(FLORA_AGENT_CONFIG_BUFSIZE, n);
+
+  AgentOptions opts;
+  parseAgentOptions(info[1], opts);
+  floraAgent.config(FLORA_AGENT_CONFIG_RECONN_INTERVAL, opts.reconnInterval);
+  floraAgent.config(FLORA_AGENT_CONFIG_BUFSIZE, opts.bufsize);
   status |= NATIVE_STATUS_CONFIGURED;
 }
 
@@ -146,8 +175,8 @@ Value ClientNative::subscribe(const CallbackInfo& info) {
     return env.Undefined();
   }
   floraAgent.subscribe(name.c_str(),
-                       [this, name, env](std::shared_ptr<Caps>& msg,
-                                         uint32_t type, Reply* reply) {
+                       [this, env](const char* name, std::shared_ptr<Caps>& msg,
+                                   uint32_t type, Reply* reply) {
                          this->msgCallback(name, env, msg, type, reply);
                        });
   return env.Undefined();
@@ -222,12 +251,15 @@ Value ClientNative::get(const CallbackInfo& info) {
     return Number::New(env, ERROR_INVALID_URI);
   // assert(info.Length() == 3);
   shared_ptr<Caps> msg;
-  // msg is Array or Caps object
-  if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
-    return Number::New(env, ERROR_INVALID_PARAM);
-  } else if (info[1].IsExternal() &&
-             !genCapsByJSCaps(info[1].As<Object>(), msg)) {
-    return Number::New(env, ERROR_INVALID_PARAM);
+  // msg is Caps object
+  if (info[3].As<Boolean>().Value()) {
+    if (!genCapsByJSCaps(info[1].As<Object>(), msg)) {
+      return Number::New(env, ERROR_INVALID_PARAM);
+    }
+  } else {
+    if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
+      return Number::New(env, ERROR_INVALID_PARAM);
+    }
   }
   // uint32_t timeout = 0;
   // TODO: timeout not work correctly, need modify flora service
@@ -256,7 +288,7 @@ Value ClientNative::genArray(const CallbackInfo& info) {
   return genJSArrayByCaps(env, hackedCaps->caps);
 }
 
-void ClientNative::msgCallback(const std::string& name, Napi::Env env,
+void ClientNative::msgCallback(const char* name, Napi::Env env,
                                std::shared_ptr<Caps>& msg, uint32_t type,
                                Reply* reply) {
   unique_lock<mutex> locker(cb_mutex);
@@ -423,13 +455,16 @@ void ClientNative::handleMsgCallbacks() {
   napi_value jsmsg;
   SubscriptionMap::iterator subit;
   Napi::Value cbret;
-  unique_lock<mutex> locker(cb_mutex, defer_lock);
+  unique_lock<mutex> locker(cb_mutex);
+  list<MsgCallbackInfo>::iterator mit = pendingMsgs.begin();
+  list<MsgCallbackInfo>::iterator rmit;
+  locker.unlock();
 
   while (true) {
     locker.lock();
-    if (pendingMsgs.empty())
+    if (mit == pendingMsgs.end())
       break;
-    MsgCallbackInfo cbinfo(pendingMsgs.front());
+    MsgCallbackInfo cbinfo(*mit);
     locker.unlock();
 
     HandleScope scope(cbinfo.env);
@@ -444,12 +479,15 @@ void ClientNative::handleMsgCallbacks() {
     if (cbinfo.msgtype == FLORA_MSGTYPE_REQUEST) {
       genReplyByJSObject(cbret, *(cbinfo.reply));
       locker.lock();
-      pendingMsgs.front().handled = true;
+      (*mit).handled = true;
+      ++mit;
       cb_cond.notify_all();
       locker.unlock();
     } else {
       locker.lock();
-      pendingMsgs.pop_front();
+      rmit = mit;
+      ++mit;
+      pendingMsgs.erase(rmit);
       locker.unlock();
     }
   }
