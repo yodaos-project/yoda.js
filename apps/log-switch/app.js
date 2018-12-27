@@ -14,7 +14,7 @@ module.exports = function (activity) {
     var level = property.get(persistKey, 'persist')
     logger.info(`cloud log init level: ${level}`)
     if (!level) {
-      level = 1
+      level = MIN_LEVEL
     }
     onCloudLogLevelSwitch(activity, level)
   })
