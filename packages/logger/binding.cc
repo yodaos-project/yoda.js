@@ -52,7 +52,6 @@ static napi_value EnableCloud(napi_env env, napi_callback_info info) {
   authorization[authorizationSize] = '\0';
 
   set_cloudlog_on_with_auth(enabled, authorization);
-  free(authorization);
 
   return NULL;
 }
