@@ -105,8 +105,8 @@ function downloadWav (wakeupSoundEffects, path) {
  * Wakeup effect processor
  */
 class WakeupEffect extends BaseConfig {
-  constructor (activity, floraAgent, cloudgwConfig) {
-    super(activity, floraAgent, cloudgwConfig)
+  constructor (activity, cloudgwConfig) {
+    super(activity, cloudgwConfig)
     if (!ActivationConfig) {
       logger.warn(`Activation config is null`)
       ActivationConfig = {}

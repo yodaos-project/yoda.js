@@ -2,7 +2,6 @@ var _ = require('@yoda/util')._
 var safeParse = require('@yoda/util').json.safeParse
 var logger = require('logger')('custom-config')
 var Url = require('url')
-var flora = require('@yoda/flora')
 var WakeupEffect = require('./wakeup-effect')
 var StandbyLight = require('./standby-light')
 var ContinuousDialog = require('./continuous-dialog')
@@ -12,11 +11,17 @@ var activity
 var intentMap = {}
 var urlMap = {}
 var processorList = []
-var floraAgent = new flora.Agent(`unix:/var/run/flora.sock#custom_config`)
-floraAgent.start()
 
 module.exports = function CustomConfig (activityIn) {
   activity = activityIn
+  processorList.push(new StandbyLight(activity))
+  processorList.push(new WakeupEffect(activity))
+  processorList.push(new ContinuousDialog(activity))
+  processorList.push(new VtWord(activity))
+  for (var i = 0; i < processorList.length; ++i) {
+    Object.assign(intentMap, processorList[i].getIntentMap())
+    Object.assign(urlMap, processorList[i].getUrlMap())
+  }
   activity.on('ready', onReady)
   activity.on('request', onRequest)
   activity.on('url', onUrl)
@@ -55,13 +60,8 @@ function onUrl (url) {
  */
 function onReady () {
   activity.get().then(config => {
-    processorList.push(new StandbyLight(activity, floraAgent, config))
-    processorList.push(new WakeupEffect(activity, floraAgent, config))
-    processorList.push(new ContinuousDialog(activity, floraAgent, config))
-    processorList.push(new VtWord(activity, floraAgent, config))
     for (var i = 0; i < processorList.length; ++i) {
-      Object.assign(intentMap, processorList[i].getIntentMap())
-      Object.assign(urlMap, processorList[i].getUrlMap())
+      processorList[i].ready(config)
     }
   })
 }

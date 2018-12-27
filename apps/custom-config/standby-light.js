@@ -13,8 +13,8 @@ var SWITCH_CLOSE = 'close'
  * standby light handler
  */
 class StandbyLight extends BaseConfig {
-  constructor (activity, floraAgent, cloudgwConfig) {
-    super(activity, floraAgent, cloudgwConfig)
+  constructor (activity) {
+    super(activity)
     this.initStandbyLight()
   }
 

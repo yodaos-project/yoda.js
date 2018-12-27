@@ -83,8 +83,12 @@ class VtWord extends BaseConfig {
         phoneme: ''
       }])
     }
-    this.cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
-      { namespace: 'custom_config', values: sendVtObj })
+    if (this.cloudgw) {
+      this.cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
+        { namespace: 'custom_config', values: sendVtObj })
+    } else {
+      logger.warn(`cloudgw is not ready for sendAddUpdateStatusToServer`)
+    }
   }
 
   /**
@@ -101,8 +105,12 @@ class VtWord extends BaseConfig {
         phoneme: ''
       }])
     }
-    this.cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
-      { namespace: 'custom_config', values: sendVtObj })
+    if (this.cloudgw) {
+      this.cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
+        { namespace: 'custom_config', values: sendVtObj })
+    } else {
+      logger.warn(`cloudgw is not ready for sendDeleteStatusToServer`)
+    }
   }
 
   /**

@@ -1,13 +1,14 @@
 'use strict'
 var CloudGW = require('@yoda/cloudgw')
+var flora = require('./singleton-flora')
 /**
  * base config class
  */
 class BaseConfig {
-  constructor (activity, floraAgent, cloudgwConfig) {
+  constructor (activity) {
     this.activity = activity
-    this.floraAgent = floraAgent
-    this.cloudgw = new CloudGW(cloudgwConfig)
+    this.floraAgent = flora.getInstance()
+    this.cloudgw = null
   }
 
   /**
@@ -24,6 +25,14 @@ class BaseConfig {
    */
   getIntentMap () {
     return null
+  }
+
+  /**
+   * ready for cloudgw
+   * @param config
+   */
+  ready (cloudgwConfig) {
+    this.cloudgw = new CloudGW(cloudgwConfig)
   }
 }
 
