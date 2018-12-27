@@ -161,10 +161,12 @@ AppChargeur.prototype.isSkillIdExcludedFromStack = function isSkillIdExcludedFro
 AppChargeur.prototype.setManifest = function setManifest (appId, manifest, options) {
   var dbusApp = _.get(options, 'dbusApp', false)
 
-  this.__loadApp(appId, null, manifest)
   if (dbusApp && this.config.dbusAppIds.indexOf(appId) < 0) {
     this.config.dbusAppIds.push(appId)
+    /** dbus apps shall be daemon app since they are running alone with vui */
+    manifest.daemon = true
   }
+  this.__loadApp(appId, null, manifest)
 }
 
 /**
@@ -348,7 +350,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
   })
 
   this.runtime.permission.load(appId, permissions)
-  this.appManifests[appId] = Object.assign(_.pick(manifest, 'daemon'), {
+  this.appManifests[appId] = Object.assign(_.pick(manifest, 'daemon', 'objectPath', 'ifaceName'), {
     skills: skillIds,
     hosts: hosts,
     permissions: permissions,
