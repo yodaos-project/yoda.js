@@ -46,8 +46,8 @@ class Activation : public ClientCallback {
     int id = rand() % 4;
     char audio_hold[PROP_VALUE_MAX];
     bool hold = true;
-    property_get("persist.act.audio.holdcon", (char*)audio_hold, "yes");
-    if (strcmp(audio_hold, "no") == 0) {
+    property_get("persist.act.audio.holdcon", (char*)audio_hold, "1");
+    if (strcmp(audio_hold, "0") == 0) {
       hold = false;
     }
     prepareWavPlayer(filenames[id], "system", hold);
