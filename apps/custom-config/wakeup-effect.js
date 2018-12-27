@@ -25,8 +25,7 @@ var unlinkAsync = promisify(fs.unlink)
 var downloadAsync = promisify(doDownloadFile)
 
 /**
- *
- * @private
+ * download file use `wget`
  * @param {string} url
  * @param {string} dest
  * @param {object} options - options.noCheckCertificate / options.continue
@@ -92,10 +91,9 @@ function clearDir (path) {
  */
 function downloadWav (wakeupSoundEffects, path) {
   var promises = []
-  logger.info(`download ${JSON.stringify(wakeupSoundEffects)}  ${path}`)
   for (var i = 0; i < wakeupSoundEffects.length; ++i) {
-    if (wakeupSoundEffects[i].wakeupUrl && wakeupSoundEffects[i].wakeupId) {
-      logger.info(`download ${wakeupSoundEffects[i].wakeupUrl}`)
+    if (wakeupSoundEffects[i].hasOwnProperty('wakeupUrl') && wakeupSoundEffects[i].hasOwnProperty('wakeupId')) {
+      logger.info(`download ${wakeupSoundEffects[i].wakeupUrl} to '${path}'`)
       promises.push(downloadAsync(wakeupSoundEffects[i].wakeupUrl,
         `${path}${wakeupSoundEffects[i].wakeupId}.wav`, null))
     }
@@ -107,8 +105,8 @@ function downloadWav (wakeupSoundEffects, path) {
  * Wakeup effect processor
  */
 class WakeupEffect extends BaseConfig {
-  constructor (activity, floraAgent, cloudgw) {
-    super(activity, floraAgent, cloudgw)
+  constructor (activity, floraAgent, cloudgwConfig) {
+    super(activity, floraAgent, cloudgwConfig)
     if (!ActivationConfig) {
       logger.warn(`Activation config is null`)
       ActivationConfig = {}

@@ -5,29 +5,42 @@ var BaseConfig = require('./base-config')
 var LIGHT_SWITCH_OPEN = '灯光已开启'
 var LIGHT_SWITCH_CLOSE = '灯光已关闭'
 var CONFIG_FAILED = '设置失败'
-
 var STANDBY_LIGHT_JS = 'system://setSysStandby.js'
 var SWITCH_OPEN = 'open'
 var SWITCH_CLOSE = 'close'
 
+/**
+ * standby light handler
+ */
 class StandbyLight extends BaseConfig {
-  constructor (activity, floraAgent, cloudgw) {
-    super(activity, floraAgent, cloudgw)
+  constructor (activity, floraAgent, cloudgwConfig) {
+    super(activity, floraAgent, cloudgwConfig)
     this.initStandbyLight()
   }
 
+  /**
+   * get intent map
+   * @returns {object} intent map
+   */
   getIntentMap () {
     return {
       lightswitch: this.applyStandbyLightSwitch.bind(this)
     }
   }
 
+  /**
+   * get url map
+   * @returns {object} url map
+   */
   getUrlMap () {
     return {
       standbyLight: this.onStandbyLightSwitchStatusChanged.bind(this)
     }
   }
 
+  /**
+   * init the standby light
+   */
   initStandbyLight () {
     var switchValue = property.get('persist.sys.standbylightswitch')
     if (switchValue === SWITCH_OPEN) {
@@ -37,12 +50,21 @@ class StandbyLight extends BaseConfig {
     }
   }
 
+  /**
+   * handler of the skill url
+   * @param {object} queryObj
+   */
   onStandbyLightSwitchStatusChanged (queryObj) {
     if (queryObj) {
       this.applyStandbyLightSwitch(queryObj.action, queryObj.isFirstLoad)
     }
   }
 
+  /**
+   * handler of the intent
+   * @param {string} action
+   * @param {boolean} isFirstLoad
+   */
   applyStandbyLightSwitch (action, isFirstLoad) {
     if (action) {
       property.set('sys.standbylightswitch', action, 'persist')

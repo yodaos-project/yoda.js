@@ -11,7 +11,7 @@ var logger = require('logger')('custom-config-vtwords')
 class VtWord extends BaseConfig {
   /**
    * get the url handler object
-   * @returns {{vt_words: any}}
+   * @returns {object} url map
    */
   getUrlMap () {
     return {
@@ -71,7 +71,7 @@ class VtWord extends BaseConfig {
 
   /**
    * call the cloud api: addOrUpdateDeviceInfo
-   * @param queryObj
+   * @param {object} queryObj
    */
   sendAddUpdateStatusToServer (queryObj) {
     var sendVtObj = {
@@ -89,7 +89,7 @@ class VtWord extends BaseConfig {
 
   /**
    * call the cloud api: sendDeleteStatusToServer
-   * @param queryObj
+   * @param {object} queryObj
    */
   sendDeleteStatusToServer (queryObj) {
     var sendVtObj = {
@@ -107,8 +107,8 @@ class VtWord extends BaseConfig {
 
   /**
    * call the wormhole to send success message to app
-   * @param queryObj
-   * @param setStatus - result for operating
+   * @param {object} queryObj
+   * @param {boolean} setStatus - result for operating
    */
   sendSuccessStatusToApp (queryObj, setStatus) {
     var sendObj = {

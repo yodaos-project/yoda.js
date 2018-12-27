@@ -9,25 +9,45 @@ var PICKUP_SWITCH_OPEN = '当前不支持连续对话'
 var PICKUP_SWITCH_CLOSE = '当前不支持连续对话'
 var CONFIG_FAILED = '设置失败'
 
+/**
+ * continuous dialog handler
+ */
 class ContinuousDialog extends BaseConfig {
+  /**
+   * get intent map
+   * @returns {object} - intent map
+   */
   getIntentMap () {
     return {
       pickupswitch: this.applyPickupSwitch.bind(this)
     }
   }
 
+  /**
+   * get url map
+   * @returns {object} - url map
+   */
   getUrlMap () {
     return {
       continuousDialog: this.onPickupSwitchStatusChanged.bind(this)
     }
   }
 
+  /**
+   * handler of skill url
+   * @param {object} queryObj
+   */
   onPickupSwitchStatusChanged (queryObj) {
     if (queryObj) {
       this.applyPickupSwitch(queryObj.action, queryObj.isFirstLoad)
     }
   }
 
+  /**
+   * handler of intent
+   * @param action
+   * @param isFirstLoad
+   */
   applyPickupSwitch (action, isFirstLoad) {
     if (action) {
       property.set('sys.pickupswitch', action, 'persist')
