@@ -6,6 +6,7 @@ var getAlarms = require('./data-migration')
 var Core = require('./alarm-core')
 
 module.exports = function (activity) {
+  logger.log('alarm load')
   var AlarmCore = new Core(activity)
 
   activity.on('create', function () {
@@ -25,12 +26,14 @@ module.exports = function (activity) {
   })
 
   activity.on('url', url => {
+    logger.log('alarm event: url', url)
     var command = JSON.parse(url.query.command || '[]')
     AlarmCore.doTask(command)
     activity.setBackground()
   })
 
   activity.on('request', function (nlp, action) {
+    logger.log('alarm event: request', nlp)
     var command = {}
     if (nlp.intent === 'RokidAppChannelForward') {
       command = JSON.parse(nlp.forwardContent.command)
