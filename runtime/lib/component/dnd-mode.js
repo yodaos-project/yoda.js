@@ -272,11 +272,12 @@ class DNDMode {
   /**
    * constructor of DNDMode
    * @function constructor
-   * @param {object} light - light object form runtime
-   * @param {object} sound - sound object form runtime
-   * @param {object} life - life object form runtime
+   * @param {object} runtime - app runtime
    */
-  constructor (light, sound, life) {
+  constructor (runtime) {
+    var light = runtime.component.light
+    var life = runtime.component.lifetime
+    var sound = runtime.component.sound
     this.common = new DNDCommon(light, sound, life)
     this.fsmStatus = FSM_READY
     this.fsmTimer = undefined

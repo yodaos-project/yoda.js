@@ -13,9 +13,9 @@ var NORMAL_MODE_ALPHA_FACTOR = '1'
  * convinient tools for call lightd
  * @param {object} dbusRegistry dbus client
  */
-function Light (dbusRegistry) {
+function Light (runtime) {
   EventEmitter.call(this)
-  this.dbusRegistry = dbusRegistry
+  this.dbusRegistry = runtime.component.dbusRegistry
 }
 inherits(Light, EventEmitter)
 

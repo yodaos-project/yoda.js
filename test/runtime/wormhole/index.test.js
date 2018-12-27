@@ -7,9 +7,13 @@ var Wormhole = require(`${helper.paths.runtime}/lib/component/wormhole`)
 test('shall handle messages', t => {
   t.plan(2)
 
-  var runtime = {}
+  var runtime = { component: {} }
   var wormhole = new Wormhole(runtime)
   var mqttClient = new EventEmitter()
+  var handler
+  mqttClient.setMessageHandler = fn => {
+    handler = fn
+  }
   wormhole.init(mqttClient)
 
   Wormhole.prototype.handlers = Object.assign({}, {
@@ -19,5 +23,5 @@ test('shall handle messages', t => {
     }
   }, Wormhole.prototype.handlers)
 
-  mqttClient.emit('message', 'test', 'foobar')
+  handler('test', 'foobar')
 })
