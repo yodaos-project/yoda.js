@@ -105,9 +105,6 @@ var UPLOAD_DISABLE_LEVEL = 0
 var UPLOAD_MIN_LEVEL = 1
 var UPLOAD_MAX_LEVEL = 5
 
-// disable cloud by default
-native.enableCloud(UPLOAD_MIN_LEVEL, '')
-
 /**
  * set min upload level to cloud
  *
