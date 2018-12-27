@@ -13,7 +13,7 @@ module.exports = function (activity) {
     AlarmCore.createConfigFile()
     var state = wifi.getNetworkState()
     if (state === wifi.NETSERVER_CONNECTED) {
-      getAlarms(activity, AlarmCore.init)
+      getAlarms(activity, (command) => AlarmCore.init(command))
     } else {
       AlarmCore.getTasksFromConfig((command) => {
         AlarmCore.init(command)
