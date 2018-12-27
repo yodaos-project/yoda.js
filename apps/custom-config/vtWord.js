@@ -1,5 +1,5 @@
 'use strict'
-var BaseConfig = require('baseConfig')
+var BaseConfig = require('./baseConfig')
 
 var SWITCH_VT_UPDATE = 'update'
 var SWITCH_VT_ADD = 'add'
@@ -9,17 +9,20 @@ var safeParse = require('@yoda/util').json.safeParse
 var logger = require('logger')('custom-config-vtwords')
 
 class VtWord extends BaseConfig {
-
-  getIntentMap () {
-    return null
-  }
-
+  /**
+   * get the url handler object
+   * @returns {{vt_words: any}}
+   */
   getUrlMap () {
     return {
       'vt_words': this.onVtWordSwitchStatusChanged.bind(this)
     }
   }
 
+  /**
+   * handle the url of 'vt_words'
+   * @param {object} queryObj
+   */
   onVtWordSwitchStatusChanged (queryObj) {
     var realQueryObj
     var isFirstLoad = false
@@ -31,8 +34,9 @@ class VtWord extends BaseConfig {
       isFirstLoad = true
       logger.info(`vt words in ${queryObj}`)
     }
-    if (!realQueryObj || !(realQueryObj instanceof Array))
+    if (!realQueryObj || !(realQueryObj instanceof Array)) {
       return
+    }
     realQueryObj = realQueryObj[0]
     if (!isFirstLoad && realQueryObj.action) {
       if (realQueryObj.action === SWITCH_VT_UPDATE) {
@@ -65,6 +69,10 @@ class VtWord extends BaseConfig {
     }
   }
 
+  /**
+   * call the cloud api: addOrUpdateDeviceInfo
+   * @param queryObj
+   */
   sendAddUpdateStatusToServer (queryObj) {
     var sendVtObj = {
       vt_words: JSON.stringify([{
@@ -79,6 +87,10 @@ class VtWord extends BaseConfig {
       { namespace: 'custom_config', values: sendVtObj })
   }
 
+  /**
+   * call the cloud api: sendDeleteStatusToServer
+   * @param queryObj
+   */
   sendDeleteStatusToServer (queryObj) {
     var sendVtObj = {
       vt_words: JSON.stringify([{
@@ -93,7 +105,12 @@ class VtWord extends BaseConfig {
       { namespace: 'custom_config', values: sendVtObj })
   }
 
-  sendSuccessStatusToApp (queryObj,  setStatus) {
+  /**
+   * call the wormhole to send success message to app
+   * @param queryObj
+   * @param setStatus - result for operating
+   */
+  sendSuccessStatusToApp (queryObj, setStatus) {
     var sendObj = {
       vt_words: JSON.stringify([{
         py: queryObj.py,

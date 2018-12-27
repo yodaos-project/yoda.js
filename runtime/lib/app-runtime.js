@@ -1059,7 +1059,7 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
         }
         this.wormhole.init(this.cloudApi.mqttcli)
         if (config && typeof config === 'object' && config.extraInfo && typeof config.extraInfo === 'object' &&
-          config.extraInfo.custom_config && typeof config.extraInfo.custom_config  === 'string') {
+          config.extraInfo.custom_config && typeof config.extraInfo.custom_config === 'string') {
           this.customConfig.onLoadCustomConfig(config.extraInfo.custom_config)
         }
         this.onLoggedIn()

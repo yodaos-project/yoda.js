@@ -1,8 +1,12 @@
+'use strict'
 var logger = require('logger')('custom-config-runtime')
 var config = require('/etc/yoda/custom-config.json')
 var querystring = require('querystring')
 var safeParse = require('@yoda/util').json.safeParse
 
+/**
+ * handle all custom-config
+ */
 class CustomConfig {
   constructor (runtime) {
     this.runtime = runtime
@@ -10,10 +14,9 @@ class CustomConfig {
 
   /**
    * interce the configuration message for dnd-model etc
-   * @param msg
+   * @param {string|object} msg
    */
   interce (msg) {
-    logger.info(`interce ${JSON.stringify(msg)}`)
     if (msg.nightMode) {
       if (typeof msg.nightMode === 'object') {
         this.runtime.dndMode.setOption(msg.nightMode)
@@ -21,7 +24,6 @@ class CustomConfig {
       } else if (typeof msg.nightMode === 'string') {
         var nightMode = safeParse(msg.nightMode)
         if (nightMode) {
-
           this.runtime.dndMode.setOption(nightMode)
         }
         delete msg.nightMode
@@ -30,19 +32,26 @@ class CustomConfig {
   }
 
   /**
+   * construct the skill url
+   * @param {string} pathname - skill path
+   * @param {object} params - skill prarms
+   * @param {boolean} stringify - is the params should be stringify
+   * @returns {string} url for custom-config skill
+   */
+  appendUrl (pathname, params, stringify) {
+    var obj
+    if (stringify) {
+      obj = {param: JSON.stringify(params)}
+    } else {
+      obj = params
+    }
+    return `yoda-skill://custom-config/${pathname}?${querystring.stringify(obj)}`
+  }
+  /**
    * Handling the configs from RokidApp, includes activation words, night mode, and etc..
    * @param {string} message
    */
   onCustomConfig (message) {
-    var appendUrl = (pathname, params, stringify) => {
-      var obj
-      if (stringify) {
-        obj = {param: JSON.stringify(params)}
-      } else {
-        obj = params
-      }
-      return `yoda-skill://custom-config/${pathname}?${querystring.stringify(obj)}`
-    }
     var msg = null
     try {
       if (typeof message === 'object') {
@@ -65,14 +74,14 @@ class CustomConfig {
           continue
         }
         logger.info(`open url: ${field}`)
-        this.runtime.openUrl(appendUrl(field, value, conf.stringify),conf.appOption)
+        this.runtime.openUrl(this.appendUrl(field, value, conf.stringify), conf.appOption)
       }
     }
   }
 
   /**
    * first load custom config
-   * @param {string} config - cunstom config from cloud
+   * @param {string} config - custom config from cloud
    */
   onLoadCustomConfig (config) {
     if (config === undefined) {

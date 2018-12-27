@@ -8,11 +8,11 @@ class BaseConfig {
   }
 
   getUrlMap () {
-    throw Error('getUrlMap is not implemented')
+    return null
   }
 
   getIntentMap () {
-    throw Error('getIntentMap is not implemented')
+    return null
   }
 }
 

@@ -4,10 +4,10 @@ var logger = require('logger')('custom-config')
 var Url = require('url')
 var CloudGW = require('@yoda/cloudgw')
 var flora = require('@yoda/flora')
-var WakeupEffect = require('wakeupEffect')
-var StandbyLight = require('standbyLight')
-var ContinuousDialog = require('continuousDialog')
-var VtWord = require('vtWord')
+var WakeupEffect = require('./wakeupEffect')
+var StandbyLight = require('./standbyLight')
+var ContinuousDialog = require('./continuousDialog')
+var VtWord = require('./vtWord')
 
 var activity
 var intentMap = {}
@@ -77,7 +77,7 @@ function onReady () {
 function onRequest (nlp, action) {
   var intent = nlp.intent
   var actionValue = _.get(nlp, 'slots.open.type') || _.get(nlp, 'slots.close.type')
-  logger.info('request---->intent:' + intent + ';   action: ' + actionValue)
+  logger.info(`request---->intent: ${intent};   action:  + ${actionValue}`)
   var func = intentMap[intent]
   if (func) {
     func(actionValue)
