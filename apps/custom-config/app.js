@@ -4,10 +4,10 @@ var logger = require('logger')('custom-config')
 var Url = require('url')
 var CloudGW = require('@yoda/cloudgw')
 var flora = require('@yoda/flora')
-var WakeupEffect = require('./wakeupEffect')
-var StandbyLight = require('./standbyLight')
-var ContinuousDialog = require('./continuousDialog')
-var VtWord = require('./vtWord')
+var WakeupEffect = require('./wakeup-effect')
+var StandbyLight = require('./standby-light')
+var ContinuousDialog = require('./continuous-dialog')
+var VtWord = require('./vt-word')
 
 var activity
 var intentMap = {}

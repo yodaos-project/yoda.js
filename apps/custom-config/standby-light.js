@@ -1,6 +1,6 @@
 'use strict'
 var property = require('@yoda/property')
-var BaseConfig = require('./baseConfig')
+var BaseConfig = require('./base-config')
 
 var LIGHT_SWITCH_OPEN = '灯光已开启'
 var LIGHT_SWITCH_CLOSE = '灯光已关闭'

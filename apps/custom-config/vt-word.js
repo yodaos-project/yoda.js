@@ -1,5 +1,5 @@
 'use strict'
-var BaseConfig = require('./baseConfig')
+var BaseConfig = require('./base-config')
 
 var SWITCH_VT_UPDATE = 'update'
 var SWITCH_VT_ADD = 'add'
