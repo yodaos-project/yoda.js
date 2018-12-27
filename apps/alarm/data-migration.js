@@ -97,7 +97,7 @@ module.exports = function getAlarms (activity, callback) {
           if (err) {
             logger.error('alarm data migration: write file error', err.stack)
           }
-          callback && callback(command, true)
+          callback && callback(command)
         })
       }
     })
