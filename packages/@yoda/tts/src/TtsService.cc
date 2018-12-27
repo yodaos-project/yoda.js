@@ -104,8 +104,8 @@ bool TtsService::prepare(const char* host, int port, const char* branch,
   // options.ping_interval = 5000;
   // options.no_resp_timeout = 3000;
   char audio_hold[PROP_VALUE_MAX];
-  property_get("persist.tts.audio.holdcon", (char*)audio_hold, "yes");
-  if (strcmp(audio_hold, "no") == 0) {
+  property_get("persist.tts.audio.holdcon", (char*)audio_hold, "1");
+  if (strcmp(audio_hold, "0") == 0) {
     holdconnect = false;
   }
   tts_handle = Tts::new_instance();
