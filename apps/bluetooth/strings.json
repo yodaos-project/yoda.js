@@ -1,0 +1,28 @@
+{
+  "A2DP_SINK": {
+    "OPEN_BEGIN": "蓝牙已打开，你可以在手机上找到",
+    "OPEN_END": "来连接我的蓝牙。",
+    "OPEN_AUTOCONN": "蓝牙已打开。",
+    "OPEN_FAILED": "蓝牙暂时无法打开，稍候再试一次吧！",
+    "CONNECT_MOBILE_BEGIN": "当前没有可连接的设备，你可以在手机上找到",
+    "CONNECT_MOBILE_END": "并进行连接。",
+    "DISCONNECTED": "蓝牙已断开，现在你可以连接新的设备。"
+  },
+  
+  "A2DP_SOURCE": {
+    "OPEN_BEGIN": "正在进行蓝牙搜索，请在",
+    "OPEN_END": "中找到你想要连接的设备。",
+    "OPEN_AUTOCONN": "正在搜索你的设备...",
+    "OPEN_FAILED": "暂时无法进行蓝牙搜索，稍候再试一次吧！",
+    "CONNECT_MOBILE_BEGIN": "当前没有可连接的设备，请在",
+    "CONNECT_MOBILE_END": "中找到你想要连接的设备。",
+    "DISCONNECTED": "蓝牙已断开，请在若琪App中连接其它蓝牙音箱。",
+    "ACCESS_NAME": "若琪App"
+  },
+  
+  "CONNECED_BEGIN": "已连接上你的",
+  "CLOSED": "蓝牙已关闭。",
+  "ASK": "你可以对我说，若琪，打开蓝牙。",
+  "LIKE": "蓝牙音乐暂不支持收藏功能。",
+  "FALLBACK": "蓝牙音乐暂不支持此功能。"
+}
