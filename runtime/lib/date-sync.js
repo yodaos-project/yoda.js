@@ -3,9 +3,11 @@
 var exec = require('child_process').exec
 var parseDateString = require('@yoda/system').parseDateString
 var logger = require('logger')('date-sync')
+var promisify = require('util').promisify
 
-var TIMEZONE = 8
+var TIMEZONE = 0
 var DATE_FORMAT = '%A, %d %b %Y %H:%M:%S'
+var execAsync = promisify(exec)
 
 function sync (source) {
   var date = parseDateString(source, DATE_FORMAT)
@@ -15,13 +17,10 @@ function sync (source) {
   } else {
     date.hours += TIMEZONE
   }
-  var str = [
-    [date.year, date.month, date.date].join('-'),
-    [date.hours, date.minutes, date.seconds].join(':')
-  ].join(' ')
+  var str = `${date.year}-${date.month}-${date.date} ${date.hours}:${date.minutes}:${date.seconds}`
 
-  var cmd = `date -s "${str}"`
+  var cmd = `date -u -s "${str}"`
   logger.log(`exec ${cmd} from <${source}>`)
-  exec(cmd)
+  return execAsync(cmd, {})
 }
 exports.sync = sync
