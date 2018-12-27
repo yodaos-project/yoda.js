@@ -47,14 +47,6 @@ class Loader {
     this.registry[name] = Klass
     this.loadToTarget(name, Klass)
   }
-
-  ['get'] (name) {
-    var container = this.registry[name]
-    if (container == null) {
-      return null
-    }
-    return container.instance
-  }
 }
 
 module.exports = Loader
