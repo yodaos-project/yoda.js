@@ -60,8 +60,8 @@ function onReady () {
     processorList.push(new ContinuousDialog(activity, floraAgent, config))
     processorList.push(new VtWord(activity, floraAgent, config))
     for (var i = 0; i < processorList.length; ++i) {
-      intentMap = Object.assign(intentMap, processorList[i].getIntentMap())
-      urlMap = Object.assign(urlMap, processorList[i].getUrlMap())
+      Object.assign(intentMap, processorList[i].getIntentMap())
+      Object.assign(urlMap, processorList[i].getUrlMap())
     }
   })
 }
