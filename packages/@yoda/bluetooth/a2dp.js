@@ -138,8 +138,7 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
         logger.warn(`Received ${mode} same msg!`)
       }
       var stateHit = false
-      for (var i = 0; i < stateFilters.length; i++) {
-        var filter = stateFilters[i]
+      stateFilters.forEach((filter) => {
         if (this.matchState(msg, filter.inflowMsg)) {
           var event = filter.outflowEvent
           logger.debug(`Match ${event.type}.${event.state}`)
@@ -152,7 +151,7 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
           }
           stateHit = true
         }
-      }
+      })
       if (!stateHit) {
         logger.warn(`Mismatch state, please check state-mapping!`)
       }
@@ -169,8 +168,10 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       var results = msg.results
       var nbr = results.deviceList != null ? results.deviceList.length : 0
       logger.debug(`Found ${nbr} devices, is_comp: ${results.is_completed}, currentDevice: ${results.currentDevice}`)
-      for (var i = 0; i < nbr; i++) {
-        logger.debug(`  ${results.deviceList[i].name} : ${results.deviceList[i].address}`)
+      if (nbr > 0) {
+        results.deviceList.forEach((device) => {
+          logger.debug(`  ${device.name} : ${device.address}`)
+        })
       }
       this.emit('discovery_state_changed', protocol.A2DP_MODE.SOURCE, protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED, results)
     }
