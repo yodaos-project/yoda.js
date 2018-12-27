@@ -1,0 +1,78 @@
+
+/**
+ * @namespace yodaRT.activity.httpgw
+ */
+
+var inherits = require('util').inherits
+var EventEmitter = require('events').EventEmitter
+var cloudgw = require('@yoda/cloudgw')
+
+module.exports = HttpgwDescriptor
+
+/**
+ * @memberof yodaRT.activity.Activity
+ * @class HttpgwClient
+ * @hideconstructor
+ * @extends EventEmitter
+ */
+function HttpgwDescriptor (activityDescriptor, appId, appHome, runtime) {
+  EventEmitter.call(this)
+  this._activityDescriptor = activityDescriptor
+  this._appId = appId
+  this._appHome = appHome
+  this._runtime = runtime
+}
+inherits(HttpgwDescriptor, EventEmitter)
+HttpgwDescriptor.prototype.toJSON = function toJSON () {
+  return HttpgwDescriptor.prototype
+}
+Object.assign(HttpgwDescriptor.prototype,
+  {
+    type: 'namespace'
+  },
+  {
+    /**
+     * Request with HTTPGW API.
+     *
+     * @memberof yodaRT.activity.Activity.HttpgwClient
+     * @instance
+     * @function request
+     * @param {string} path - the path for httpgw.
+     * @param {object} data - the data for httpgw.
+     * @param {string} data.namespace - the httpgw service namespace.
+     * @param {string} data.values - the data for the given namespace.
+     * @returns {Promise<object>}
+     */
+    request: {
+      type: 'method',
+      returns: 'promise',
+      fn: function request (path, data) {
+        return new Promise((resolve, reject) => {
+          this._runtime.cloudapi.cloudgw(path, data, (err, data) => {
+            if (err) {
+              return reject(err)
+            }
+            resolve(data)
+          })
+        })
+      }
+    },
+    /**
+     * Get the httpgw signature.
+     *
+     * @memberof yodaRT.activity.Activity.HttpgwClient
+     * @instance
+     * @function getSignature
+     * @returns {Promise<string>}
+     */
+    getSignature: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getSignature () {
+        return this._runtime.onGetPropAll().then((props) => {
+          return cloudgw.getAuth(props)
+        })
+      }
+    }
+  }
+)

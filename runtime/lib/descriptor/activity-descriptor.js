@@ -18,6 +18,7 @@ var MultimediaDescriptor = require('./multimedia-descriptor')
 var TtsDescriptor = require('./tts-descriptor')
 var TurenDescriptor = require('./turen-descriptor')
 var WormholeDescriptor = require('./wormhole-descriptor')
+var HttpgwDescriptor = require('./httpgw-descriptor')
 
 module.exports = ActivityDescriptor
 
@@ -96,6 +97,14 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.TurenClient} turen
    */
   this.turen = new TurenDescriptor(this, appId, appHome, runtime)
+
+  /**
+   * The `HttpgwClient` is used to work with Rokid HTTPGW service.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {yodaRT.activity.Activity.HttpgwClient} httpgw
+   */
+  this.httpgw = new HttpgwDescriptor(this, appId, appHome, runtime)
 
   /**
    * Get current `appId`.
@@ -255,6 +264,7 @@ Object.assign(ActivityDescriptor.prototype,
       returns: 'promise',
       fn: function get () {
         // TODO(Yorkie): check permission.
+        logger.warn('activity.get() is deprecated, please use @yoda/property instead.')
         return Promise.resolve(this._runtime.onGetPropAll())
       }
     },

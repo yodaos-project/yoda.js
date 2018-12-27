@@ -6,5 +6,6 @@ module.exports = {
   MultimediaDescriptor: require('./multimedia-descriptor'),
   TtsDescriptor: require('./tts-descriptor'),
   TurenDescriptor: require('./turen-descriptor'),
-  WormholeDescriptor: require('./wormhole-descriptor')
+  WormholeDescriptor: require('./wormhole-descriptor'),
+  HttpgwDescriptor: require('./httpgw-descriptor')
 }
