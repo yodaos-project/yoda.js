@@ -5,6 +5,7 @@ var MAX_LEVEL = require('@yoda/logger').UPLOAD_MAX_LEVEL
 var setGlobalUploadLevel = require('@yoda/logger').setGlobalUploadLevel
 var logger = require('@yoda/logger')('log-switch')
 var cloudgw = require('@yoda/cloudgw')
+var _ = require('@yoda/util')._
 var config = null
 
 module.exports = function (activity) {
@@ -13,13 +14,30 @@ module.exports = function (activity) {
   })
   activity.on('request', function (nlp, action) {
     if (nlp.intent === 'RokidAppChannelForward') {
-      onCloudLogLevelSwitch(activity, nlp)
+      var level = nlp.forwardContent.intent
+      onCloudLogLevelSwitch(level)
+    }
+  })
+  activity.on('url', function (url) {
+    switch (url.pathname) {
+      case 'switch':
+        var level = _.get(url.query, 'level')
+        if (!level) {
+          logger.error('missing switch level')
+          break
+        }
+        onCloudLogLevelSwitch(level)
+        break
+    
+      default:
+        logger.warn(`unknown url ${url}`)
+        break
     }
   })
 }
 
-function onCloudLogLevelSwitch (activity, nlp) {
-  var level = parseInt(nlp.forwardContent.intent)
+function onCloudLogLevelSwitch (level) {
+  level = parseInt(level)
   logger.info(`cloud logger switch to ${level}`)
   if (level === DISABLE_LEVEL) {
     setGlobalUploadLevel(DISABLE_LEVEL)
