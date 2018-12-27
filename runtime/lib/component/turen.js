@@ -49,17 +49,17 @@ function Turen (runtime) {
 }
 
 Turen.prototype.init = function init () {
-  if (this.bluetoothPlayer) {
+  if (this.bluetoothA2dp) {
     this.destruct()
   }
-  this.bluetoothPlayer = bluetooth.getPlayer()
+  this.bluetoothA2dp = bluetooth.getAdapter(bluetooth.protocol.PROFILE.A2DP)
 }
 
 Turen.prototype.destruct = function destruct () {
-  if (this.bluetoothPlayer == null) {
+  if (this.bluetoothA2dp == null) {
     return
   }
-  this.bluetoothPlayer._flora.destruct()
+  this.bluetoothA2dp.destroy()
 }
 
 /**
@@ -188,7 +188,7 @@ Turen.prototype.recoverPausedOnAwaken = function recoverPausedOnAwaken () {
   var currentAppId = this.runtime.life.getCurrentAppId()
 
   logger.info('unmute possibly paused bluetooth player')
-  this.bluetoothPlayer && this.bluetoothPlayer.resume()
+  this.bluetoothA2dp && this.bluetoothA2dp.unmute()
 
   logger.info('trying to resume previously awaken paused tts/media', currentAppId)
   return Promise.all([
