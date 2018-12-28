@@ -124,7 +124,12 @@ AppRuntime.prototype.init = function init () {
   }
   this.dndMode.init()
   return future.then(() => {
-    if (this.shouldWelcome) {
+    // Turn on sound by default.
+    var welcomeAudio = env.welcomeAudio
+    if (welcomeAudio === undefined) {
+      welcomeAudio = true
+    }
+    if (this.shouldWelcome && welcomeAudio) {
       this.light.appSound('@yoda', 'system://boot.ogg')
       this.light.play('@yoda', 'system://boot.js', { fps: 200 })
     }
