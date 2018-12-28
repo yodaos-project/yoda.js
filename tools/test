@@ -6,7 +6,7 @@ Usage:
   -l                  run tests on local machine
   -p <pattern>        test file pattern, defaults to '$pattern'
   --reporter <name>   test result reporter, no reporter by default
-  -s          Select which device to be installed on if multiple devices presents.
+  -s                  Select which device to be installed on if multiple devices presents.
 
 Example:
   $ ./tools/test --reporter tap-nyan --pattern '**/*.test.js'
