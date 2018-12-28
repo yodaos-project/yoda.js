@@ -88,7 +88,7 @@ function clearDir (path) {
  * Download wav files
  * @param wakeupSoundEffects - array of query value
  * @param path - download path
- * @returns {Promise<any[]>}
+ * @returns {Promise}
  */
 function downloadWav (wakeupSoundEffects, path) {
   var promises = []
@@ -131,7 +131,7 @@ class WakeupEffect extends BaseConfig {
 
   /**
    * Get the intent -> function map for current processor
-   * @returns {{awakeswitch: any}}
+   * @returns {object}
    */
   getIntentMap () {
     return {
@@ -142,7 +142,7 @@ class WakeupEffect extends BaseConfig {
 
   /**
    * Get the url -> function map for current processor
-   * @returns {{wakeupSoundEffects: any}}
+   * @returns {object}
    */
   getUrlMap () {
     return {
@@ -166,7 +166,7 @@ class WakeupEffect extends BaseConfig {
 
   /**
    * get all wakeup sound file name
-   * @returns {*}
+   * @returns {array} array of file name
    */
   getFileList () {
     var awakeSound = property.get('sys.wakeupsound', 'persist')
