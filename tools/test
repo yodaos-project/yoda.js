@@ -78,5 +78,4 @@ iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
   fi
 fi
 
-$cmd ls
-# $cmd $scripts $coverage $timeout | $reporter
+$cmd $scripts $coverage $timeout | $reporter
