@@ -16,7 +16,7 @@ function Wormhole (runtime) {
   }
 }
 
-Wormhole.prototype.init = function init (mqttClient) {
+Wormhole.prototype.setClient = function setClient (mqttClient) {
   logger.info('initialize the wormhole with a new mqtt connection.')
   this.mqtt = mqttClient
   this.mqtt.setMessageHandler(this.messageHandler.bind(this))

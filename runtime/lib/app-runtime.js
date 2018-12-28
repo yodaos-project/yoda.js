@@ -74,13 +74,10 @@ AppRuntime.prototype.init = function init () {
   if (this.inited) {
     return Promise.resolve()
   }
-  this.component.flora.init()
-  this.component.turen.init()
+  this.componentsInvoke('init')
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
 
-  this.component.dbusRegistry.init()
-  this.component.keyboard.init()
   this.component.lifetime.on('stack-reset', () => {
     this.resetCloudStack()
   })
@@ -100,7 +97,6 @@ AppRuntime.prototype.init = function init () {
       return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
     })
   }
-  this.component.dndMode.init()
   return future.then(() => {
     if (this.shouldWelcome) {
       this.component.light.appSound('@yoda', 'system://boot.ogg')
@@ -110,6 +106,32 @@ AppRuntime.prototype.init = function init () {
   }).then(() => {
     this.component.custodian.prepareNetwork()
     this.inited = true
+  })
+}
+
+/**
+ * Destructs runtime.
+ */
+AppRuntime.prototype.destruct = function destruct () {
+  this.componentsInvoke('destruct')
+}
+
+/**
+ * Invokes method on each component if exists with args.
+ *
+ * @param {string} method - method name to be invoked.
+ * @param {any[]} args - arguments on invocation.
+ */
+AppRuntime.prototype.componentsInvoke = function componentsInvoke (method, args) {
+  if (args == null) {
+    args = []
+  }
+  Object.keys(this.componentLoader.registry).forEach(it => {
+    var comp = this.component[it]
+    var fn = comp[method]
+    if (typeof fn === 'function') {
+      fn.apply(comp, args)
+    }
   })
 }
 
@@ -1101,7 +1123,7 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
         this.onGetPropAll = function onGetPropAll () {
           return Object.assign({}, config)
         }
-        this.component.wormhole.init(this.cloudApi.mqttcli)
+        this.component.wormhole.setClient(this.cloudApi.mqttcli)
         this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
         this.onLoggedIn()
         this.component.dndMode.recheck()
@@ -1213,11 +1235,4 @@ AppRuntime.prototype.setStartupFlag = function setStartupFlag () {
  */
 AppRuntime.prototype.isStartupFlagExists = function isStartupFlagExists () {
   return fs.existsSync('/tmp/.com.rokid.activation.bootts')
-}
-
-AppRuntime.prototype.destruct = function destruct () {
-  this.component.keyboard.destruct()
-  this.component.flora.destruct()
-  this.component.dbusRegistry.destruct()
-  this.component.turen.destruct()
 }
