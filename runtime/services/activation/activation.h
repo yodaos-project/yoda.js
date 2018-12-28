@@ -32,19 +32,12 @@ private:
   mutex reconn_mutex;
   condition_variable reconn_cond;
 
-  vector<string> files;
-  const char *filename_list[10];
+  std::vector<std::string> files_from_flora;
   bool is_open = true;
-  size_t filename_list_size;
-  string default_path = "/opt/media/activation/";
-  string custom_path = "/data/activation/media/";
 
   void prepareForNextAwake();
   void playAwake();
-  void applyAwakeEffect(shared_ptr<Caps> &msg);
-  void initPath();
-  vector<string> getFiles(const string &path);
-  void refreshFileList();
+  void applyAwakeSound(shared_ptr<Caps> &msg);
   // cppcheck-suppress unusedFunction
   void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg);
   void disconnected();

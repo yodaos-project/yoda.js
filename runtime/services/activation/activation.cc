@@ -11,17 +11,14 @@ using namespace std;
 using namespace flora;
 
 const char* VOICE_COMING = "rokid.turen.voice_coming";
-const char* AWAKE_EFFECT = "rokid.custom_config.awake_effect";
-const char AWAKE_SOUND_DEFAULE = '0';
-const char AWAKE_SOUND_CUSTOM = '1';
+const char* WAKEUP_SOUND = "rokid.custom_config.wakeup_sound";
 
 const int32_t FILE_MAX_SIZE = 20 * 1024;
+const int32_t MAX_PLAY_LIST = 10;
+
 Activation::Activation() {
   srand(time(NULL));
-  initPath();
-  refreshFileList();
-  prePrepareWavPlayer(filename_list, filename_list_size);
-  fprintf(stdout, "wav player has been preloaded all activation files\n");
+  is_open = false;
 }
 
 // cppcheck-suppress unusedFunction
@@ -29,7 +26,7 @@ void Activation::recv_post(const char *name, uint32_t msgtype, shared_ptr <Caps>
   if (strcmp(VOICE_COMING, name) == 0) {
     playAwake();
   } else {
-    applyAwakeEffect(msg);
+    applyAwakeSound(msg);
   }
 }
 
@@ -57,7 +54,7 @@ void Activation::start() {
       reconn_cond.wait_for(locker, chrono::seconds(5));
     } else {
       cli->subscribe(VOICE_COMING);
-      cli->subscribe(AWAKE_EFFECT);
+      cli->subscribe(WAKEUP_SOUND);
       flora_cli = cli;
       reconn_cond.wait(locker);
     }
@@ -66,8 +63,8 @@ void Activation::start() {
 
 void Activation::prepareForNextAwake() {
   if (is_open) {
-    int id = rand() % filename_list_size;
-    prepareWavPlayer(filename_list[id], "system", true);
+    int id = rand() % files_from_flora.size();
+    prepareWavPlayer(files_from_flora[id].c_str(), "system", true);
     if (!volume_set) {
       char val[PROP_VALUE_MAX];
       property_get("persist.audio.volume.system", (char *) &val, "");
@@ -98,112 +95,27 @@ void Activation::playAwake() {
   }
 }
 
-void Activation::applyAwakeEffect(shared_ptr <Caps> &msg) {
-  refreshFileList();
-  if (is_open && filename_list_size > 0) {
-    prePrepareWavPlayer(filename_list, filename_list_size);
+#define CAPS_READ(action) if (action != CAPS_SUCCESS) goto ERROR
+
+void Activation::applyAwakeSound(shared_ptr <Caps> &msg) {
+  int32_t fCount;
+  CAPS_READ(msg->read(fCount));
+  files_from_flora.clear();
+  if (fCount > MAX_PLAY_LIST)
+    fCount = MAX_PLAY_LIST;
+  const char *filename_list[MAX_PLAY_LIST];
+  for(int i = 0; i < fCount; ++i) {
+    files_from_flora.emplace_back();
+    CAPS_READ(msg->read_string(files_from_flora.back()));
+    filename_list[i] = files_from_flora[i].c_str();
+  }
+  is_open = fCount > 0;
+  if (is_open) {
+    prePrepareWavPlayer(filename_list, files_from_flora.size());
     fprintf(stdout, "wav player has been preloaded all activation files\n");
     prepareForNextAwake();
   }
-}
-
-void Activation::initPath() {
-  std::ifstream ifile("/etc/yoda/env.json");
-  char buf[FILE_MAX_SIZE];
-  char ch;
-  int32_t size = 0;
-  while(size < FILE_MAX_SIZE && ifile.get(ch))
-    buf[size++] = ch;
-  cJSON *root = cJSON_Parse(buf);
-  if (!root) {
-    fprintf(stdout, "read env.json error: %s\n", cJSON_GetErrorPtr());
-    return;
-  }
-  if (root->type == cJSON_Object) {
-    cJSON *activation = cJSON_GetObjectItem(root, "activation");
-    if (activation && activation->type == cJSON_Object) {
-      cJSON *defaultPath = cJSON_GetObjectItem(activation, "defaultPath");
-      if (defaultPath && defaultPath->type == cJSON_String) {
-        fprintf(stdout, "read defaultPath success: %s\n", defaultPath->valuestring);
-        default_path = defaultPath->valuestring;
-        if (default_path.length() > 1 && default_path[default_path.length() - 1] != '/')
-          default_path += "/";
-      } else {
-        fprintf(stdout, "read defaultPath error\n");
-      }
-      cJSON *customPath = cJSON_GetObjectItem(activation, "customPath");
-      if (customPath && customPath->type == cJSON_String) {
-        fprintf(stdout, "read customPath success: %s\n", customPath->valuestring);
-        custom_path = customPath->valuestring;
-        if (custom_path.length() > 1 && custom_path[custom_path.length() - 1] != '/')
-          custom_path += "/";
-      } else {
-        fprintf(stdout, "read customPath error\n");
-      }
-    }
-  }
-  cJSON_Delete(root);
   return;
-}
-
-vector<string> Activation::getFiles(const string &path) {
-  vector<string> rst;
-  // check the parameter !
-  if (nullptr == path.c_str()) {
-    fprintf(stdout, "dir path is null\n");
-    return rst;
-  }
-  struct stat s;
-  lstat(path.c_str(), &s);
-  if (!S_ISDIR(s.st_mode)) {
-    fprintf(stdout, "dir_name is not a valid directory\n");
-    return rst;
-  }
-  struct dirent *filename;
-  DIR *dir;
-  dir = opendir(path.c_str());
-  if (nullptr == dir) {
-    fprintf(stdout, "Can not open dir: %s\n", path.c_str());
-    return rst;
-  }
-
-  /* read all the files in the dir */
-  while ((filename = readdir(dir)) != nullptr) {
-    // get rid of "." and ".."
-    if (strcmp(filename->d_name, ".") == 0 ||
-        strcmp(filename->d_name, "..") == 0)
-      continue;
-    string tmp = path + filename->d_name;
-    fprintf(stdout, "activation file: %s\n", tmp.c_str());
-    rst.push_back(tmp);
-  }
-  return rst;
-}
-
-void Activation::refreshFileList() {
-  char propValue[PROP_VALUE_MAX];
-  property_get("persist.sys.awakeswitch", (char *) propValue, "");
-  fprintf(stdout, "persist.sys.awakeswitch: %s\n", propValue);
-  is_open = strcmp(propValue, "open") == 0;
-  if (is_open) {
-    files.clear();
-    property_get("persist.sys.awakesound", (char *) propValue, "");
-    fprintf(stdout, "persist.sys.awakesound: %s\n", propValue);
-    char awakeSound = strcmp(propValue, "0") == 0 ? AWAKE_SOUND_DEFAULE : AWAKE_SOUND_CUSTOM;
-    if (awakeSound == AWAKE_SOUND_CUSTOM) {
-      files = getFiles(custom_path);
-      if (files.size() == 0) {
-        files = getFiles(default_path);
-      }
-    } else {
-      files = getFiles(default_path);
-    }
-    fprintf(stdout, "persist.sys.awakesound: %s\n", propValue);
-    filename_list_size = files.size() > 10 ? 10 : files.size();
-    for(size_t i = 0; i < filename_list_size; ++i) {
-      filename_list[i] = files[i].data();
-    }
-  } else {
-    filename_list_size = 0;
-  }
+ERROR:
+  fprintf(stdout, "apply wakeup sound error\n");
 }

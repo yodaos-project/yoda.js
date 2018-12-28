@@ -1,13 +1,13 @@
 'use strict'
 var CloudGW = require('@yoda/cloudgw')
-var flora = require('./singleton-flora')()
+var flora = require('./singleton-flora')
 /**
  * base config class
  */
 class BaseConfig {
   constructor (activity) {
     this.activity = activity
-    this.floraAgent = flora
+    this.floraAgent = flora.getInstance()
     this.cloudgw = null
   }
 

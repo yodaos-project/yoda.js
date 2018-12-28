@@ -9,10 +9,11 @@ var Caps = require('@yoda/caps/caps.node').Caps
 var property = require('@yoda/property')
 var safeParse = require('@yoda/util').json.safeParse
 var logger = require('logger')('custom-config-wakeup')
+var flora = require('./singleton-flora')
 
 // var AWAKE_EFFECT_DEFAULT = '0'
 var AWAKE_EFFECT_CUSTOM = '1'
-var AWAKE_EFFECT = 'rokid.custom_config.awake_effect'
+var AWAKE_EFFECT = 'rokid.custom_config.wakeup_sound'
 
 var WAKE_SOUND_OPEN = '已为你开启'
 var WAKE_SOUND_CLOSE = '已关闭'
@@ -55,7 +56,7 @@ function doDownloadFile (url, dest, options, callback) {
       return
     }
     if (code === 0) {
-      callback(null)
+      callback(null, dest)
       return
     }
     var err = new Error(`Failed on download file[${url}] for exit code ${code} and signal ${signal}`)
@@ -105,15 +106,27 @@ function downloadWav (wakeupSoundEffects, path) {
  * Wakeup effect processor
  */
 class WakeupEffect extends BaseConfig {
-  constructor (activity, cloudgwConfig) {
-    super(activity, cloudgwConfig)
+  constructor (activity) {
+    super(activity)
     if (!ActivationConfig) {
       logger.warn(`Activation config is null`)
       ActivationConfig = {}
     }
     if (!ActivationConfig.hasOwnProperty('customPath')) {
-      ActivationConfig.customPath = '/data/activation/media'
+      ActivationConfig.customPath = '/data/activation/media/'
+    } else {
+      if (!ActivationConfig.customPath[ActivationConfig.customPath.length - 1] === '/') {
+        ActivationConfig.customPath += '/'
+      }
     }
+    if (!ActivationConfig.hasOwnProperty('defaultPath')) {
+      ActivationConfig.defaultPath = '/opt/media/activation/'
+    } else {
+      if (!ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] === '/') {
+        ActivationConfig.defaultPath += '/'
+      }
+    }
+    this.init()
   }
 
   /**
@@ -140,23 +153,63 @@ class WakeupEffect extends BaseConfig {
 
   /**
    * notify activation service to reload config
+   * @param {array} fileNameList - file name list
    */
-  notifyActivation () {
+  notifyActivation (fileNameList) {
     var caps = new Caps()
-    caps.writeInt32(0)
-    this.floraAgent.post(AWAKE_EFFECT, caps, this.floraAgent.MSGTYPE_INSTANT)
+    caps.writeInt32(fileNameList.length)
+    fileNameList.forEach(function (f) {
+      caps.writeString(f)
+    })
+    this.floraAgent.post(AWAKE_EFFECT, caps, flora.MSGTYPE_PERSIST)
   }
 
+  /**
+   * get all wakeup sound file name
+   * @returns {*}
+   */
+  getFileList () {
+    var awakeSound = property.get('sys.wakeupsound', 'persist')
+    var path = awakeSound === AWAKE_EFFECT_CUSTOM ? ActivationConfig.customPath : ActivationConfig.defaultPath
+    return readDirAsync(path).then((files) => {
+      for(var i = 0; i < files.length; ++i) {
+        files[i] = path + files[i]
+      }
+      return files
+    })
+  }
   /**
    * process request from intent
    * only default wakeup effect for now
    * @param {string} action - 'open'/'close'
    */
   onWakeupEffectStatusChangedFromIntent (action) {
-    property.set('sys.awakeswitch', action, 'persist')
-    this.notifyActivation()
+    property.set('sys.wakeupwitch', action, 'persist')
+    if (action === 'close') {
+      this.notifyActivation([])
+    } else {
+      this.getFileList().then((fileList) => {
+        if (!fileList || !(fileList instanceof Array)) {
+          fileList = []
+        }
+        this.notifyActivation(fileList)
+      })
+    }
   }
 
+  /**
+   * init the activation status
+   */
+  init () {
+    var action = property.get('sys.wakeupwitch', 'persist')
+    if (action === SWITCH_CLOSE) {
+      this.notifyActivation([])
+    } else {
+      this.getFileList().then((fileList) => {
+        this.notifyActivation(fileList)
+      })
+    }
+  }
   /**
    * process request from url
    * @param {string} queryObj - object from url,
@@ -172,25 +225,33 @@ class WakeupEffect extends BaseConfig {
    * @param isFirstLoad -
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
+    logger.error(`x ${queryObj.action} ${queryObj.type}`)
     if (queryObj && queryObj.action) {
-      property.set('sys.awakeswitch', queryObj.action, 'persist')
-      if (queryObj.type) {
-        property.set('sys.awakesound', queryObj.type, 'persist')
+      property.set('sys.wakeupswitch', queryObj.action, 'persist')
+      if (queryObj.type !== undefined) {
+        property.set('sys.wakeupsound', queryObj.type, 'persist')
       }
-      if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
-        if (typeof queryObj.wakeupSoundEffects !== 'object') {
-          return
-        }
-        clearDir(ActivationConfig.customPath).then(() => {
-          downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath).then(() => {
-            this.notifyActivation()
-          }).catch((err) => {
-            logger.warn(`download custom awake effect error: ${err}`)
-          })
-        })
+      if (queryObj.action === SWITCH_CLOSE) {
+        this.notifyActivation([])
       } else {
-        this.notifyActivation()
+        if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
+          if (typeof queryObj.wakeupSoundEffects !== 'object') {
+            return
+          }
+          clearDir(ActivationConfig.customPath).then(() => {
+            downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath).then((fileList) => {
+              this.notifyActivation(fileList)
+            }).catch((err) => {
+              logger.warn(`download custom wakeup sound error: ${err}`)
+            })
+          })
+        } else {
+          this.getFileList().then((fileList) => {
+            this.notifyActivation(fileList)
+          })
+        }
       }
+
       if (!isFirstLoad) {
         if (queryObj.action === SWITCH_OPEN) {
           this.activity.tts.speak(WAKE_SOUND_OPEN).then(() => this.activity.exit())
