@@ -172,7 +172,7 @@ class WakeupEffect extends BaseConfig {
     var awakeSound = property.get('sys.wakeupsound', 'persist')
     var path = awakeSound === AWAKE_EFFECT_CUSTOM ? ActivationConfig.customPath : ActivationConfig.defaultPath
     return readDirAsync(path).then((files) => {
-      for(var i = 0; i < files.length; ++i) {
+      for (var i = 0; i < files.length; ++i) {
         files[i] = path + files[i]
       }
       return files
@@ -225,7 +225,6 @@ class WakeupEffect extends BaseConfig {
    * @param isFirstLoad -
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
-    logger.error(`x ${queryObj.action} ${queryObj.type}`)
     if (queryObj && queryObj.action) {
       property.set('sys.wakeupswitch', queryObj.action, 'persist')
       if (queryObj.type !== undefined) {
