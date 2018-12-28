@@ -1,19 +1,19 @@
 'use strict'
 var CloudGW = require('@yoda/cloudgw')
-var flora = require('./singleton-flora')
+var flora = require('./singleton-flora')()
 /**
  * base config class
  */
 class BaseConfig {
   constructor (activity) {
     this.activity = activity
-    this.floraAgent = flora.getInstance()
+    this.floraAgent = flora
     this.cloudgw = null
   }
 
   /**
    * url map getter
-   * @returns {null}
+   * @returns {null} return null by default
    */
   getUrlMap () {
     return null
@@ -21,7 +21,7 @@ class BaseConfig {
 
   /**
    * intent map getter
-   * @returns {null}
+   * @returns {null} return null by default
    */
   getIntentMap () {
     return null
@@ -29,7 +29,7 @@ class BaseConfig {
 
   /**
    * ready for cloudgw
-   * @param config
+   * @param {object} cloudgwConfig
    */
   ready (cloudgwConfig) {
     this.cloudgw = new CloudGW(cloudgwConfig)

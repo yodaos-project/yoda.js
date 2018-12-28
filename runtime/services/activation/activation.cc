@@ -207,6 +207,3 @@ void Activation::refreshFileList() {
     filename_list_size = 0;
   }
 }
-
-
-
