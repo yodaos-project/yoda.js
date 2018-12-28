@@ -35,14 +35,24 @@ static napi_value Print(napi_env env, napi_callback_info info) {
 }
 
 static napi_value EnableCloud(napi_env env, napi_callback_info info) {
-  size_t argc = 1;
-  napi_value argv[1];
+  size_t argc = 2;
+  napi_value argv[2];
   NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
   int32_t enabled = 0;
   NAPI_CALL(env, napi_get_value_int32(env, argv[0], &enabled));
 
-  set_cloudlog_on(enabled);
+  size_t authorizationSize = 0;
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[1], NULL, 0,
+                                            &authorizationSize));
+  char authorization[authorizationSize + 1];
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[1], authorization,
+                                            authorizationSize + 1,
+                                            &authorizationSize));
+  authorization[authorizationSize] = '\0';
+
+  set_cloudlog_on_with_auth(enabled, authorization);
+
   return NULL;
 }
 

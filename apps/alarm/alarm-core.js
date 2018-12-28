@@ -330,7 +330,7 @@ AlarmCore.prototype._onTaskActive = function (option, mode) {
  * @param {Object} Options pattern
  */
 AlarmCore.prototype.startTask = function (commandOpt, pattern) {
-  logger.log('alarm start')
+  logger.log('alarm task start')
   this.scheduleHandler.create(pattern, () => {
     this._onTaskActive(commandOpt, commandOpt.mode)
   }, commandOpt)
@@ -374,7 +374,9 @@ AlarmCore.prototype.createConfigFile = function () {
           return
         }
         fs.writeFile(CONFIGFILEPATH, '{}', function (err) {
-          logger.error('alarm write file failed', err.stack)
+          if (err) {
+            logger.error('alarm write file failed', err.stack)
+          }
         })
       })
     }

@@ -4,6 +4,11 @@ var _ = require('@yoda/util')._
 var ota = require('@yoda/ota')
 var system = require('@yoda/system')
 var logger = require('logger')('otap')
+var promisify = require('util')
+
+var strings = require('./strings.json')
+
+var getAvailableInfoAsync = promisify(ota.getAvailableInfo)
 
 var intentHandler = {
   start_sys_upgrade: checkUpdateAvailability,
@@ -23,7 +28,7 @@ module.exports = function (activity) {
     }
     var handler = intentHandler[intent]
     if (handler == null) {
-      return activity.tts.speak('什么升级')
+      return activity.tts.speak(strings.UNKNOWN_INTENT)
         .then(() => activity.exit())
     }
     logger.info(`OtaApp got nlp ${nlp.intent}`)
@@ -51,17 +56,14 @@ module.exports = function (activity) {
  */
 function checkUpdateAvailability (activity) {
   logger.info('fetching available ota info')
-  ota.getAvailableInfo(function onInfo (error, info) {
-    if (error) {
-      logger.error('Unexpected error on check available updates', error.stack)
-    }
-    if (error || info == null) {
-      return activity.tts.speak('已经是最新的系统版本了')
+  getAvailableInfoAsync().then(info => {
+    if (info == null) {
+      return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
         .then(() => activity.exit())
     }
     if (info.status !== 'downloaded') {
       ota.runInBackground()
-      return activity.tts.speak('你有新的版本可以升级，下载马上可以完成')
+      return activity.tts.speak(strings.UPDATES_DOWNLOADING)
         .then(() => activity.exit())
     }
     var result = isUpgradeSuitableNow()
@@ -72,7 +74,7 @@ function checkUpdateAvailability (activity) {
     logger.info(`using ota image ${info.imagePath}`)
     var ret = system.prepareOta(info.imagePath)
     if (ret !== 0) {
-      return activity.tts.speak('准备升级失败')
+      return activity.tts.speak(strings.OTA_PREPARATION_FAILED)
         .then(() => activity.exit())
     }
     return activity.media.start('system://ota_start_update.ogg', { impatient: false })
@@ -80,7 +82,11 @@ function checkUpdateAvailability (activity) {
         logger.error('Unexpected error on announcing start update', err.stack)
         system.reboot()
       })
-  }) /** ota.getAvailableInfo */
+  }, error => {
+    logger.error('Unexpected error on check available updates', error.stack)
+    return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
+      .then(() => activity.exit())
+  })
 }
 
 /**
@@ -88,7 +94,7 @@ function checkUpdateAvailability (activity) {
  * @param {YodaRT.Activity} activity
  */
 function whatsCurrentVersion (activity) {
-  activity.tts.speak('你可以在手机app的设备信息页面看到我现在的系统版本号')
+  activity.tts.speak(strings.GENERIC_VERSION_ANNOUNCEMENT)
     .then(() => activity.exit())
 }
 
