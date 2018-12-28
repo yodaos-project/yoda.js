@@ -7,6 +7,7 @@ var SWITCH_VT_DELETE = 'delete'
 var VT_WORDS_TOPIC = 'custom_config'
 var safeParse = require('@yoda/util').json.safeParse
 var logger = require('logger')('custom-config-vtwords')
+var CloudGW = require('@yoda/cloudgw')
 
 class VtWord extends BaseConfig {
   /**
@@ -18,7 +19,13 @@ class VtWord extends BaseConfig {
       'vt_words': this.onVtWordSwitchStatusChanged.bind(this)
     }
   }
-
+  /**
+   * ready for cloudgw
+   * @param {object} cloudgwConfig
+   */
+  ready (cloudgwConfig) {
+    this.cloudgw = new CloudGW(cloudgwConfig)
+  }
   /**
    * handle the url of 'vt_words'
    * @param {object} queryObj

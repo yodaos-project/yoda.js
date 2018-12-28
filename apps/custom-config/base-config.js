@@ -1,5 +1,4 @@
 'use strict'
-var CloudGW = require('@yoda/cloudgw')
 var flora = require('./singleton-flora')
 /**
  * base config class
@@ -32,7 +31,6 @@ class BaseConfig {
    * @param {object} cloudgwConfig
    */
   ready (cloudgwConfig) {
-    this.cloudgw = new CloudGW(cloudgwConfig)
   }
 }
 
