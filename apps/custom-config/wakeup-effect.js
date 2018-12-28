@@ -80,7 +80,9 @@ function clearDir (path) {
     for (var i = 0; i < files.length; ++i) {
       promises.push(unlinkAsync(path + files[i]))
     }
-    return Promise.all(promises).catch((_) => true)
+    return Promise.all(promises).catch((error) => {
+      logger.warn(`clear dir error: ${error}`)
+    })
   })
 }
 
