@@ -29,8 +29,8 @@ class TtsService {
 
   bool prepare(const char* host, int port, const char* branch,
                const char* auth_key, const char* device_type,
-               const char* device_id, const char* secret,
-               const char* declaimer, bool holdcon = true);
+               const char* device_id, const char* secret, const char* declaimer,
+               bool holdcon = true);
   int speak(const char*);
   int cancel(int id);
   int disconnect();
