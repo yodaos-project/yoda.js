@@ -4,7 +4,8 @@
     "ON_CLOSED": "system://closebluetooth.ogg",
     "ON_OPENED_FAILED": "system://openbluetootherror.ogg",
     "ON_CONNECTED": "system://connectbluetooth.ogg",
-    "ON_AUTOCONNECT_FAILED": "system://openbluetooth.ogg"
+    "ON_CONNECTED_FAILED": "system://connectfailedbluetooth.ogg",
+    "ON_AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg"
   },
   "LIGHT": {
     "ON_DISCOVERABLE": "system://bluetoothOpen.js",
