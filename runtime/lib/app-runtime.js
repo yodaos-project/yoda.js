@@ -110,10 +110,10 @@ AppRuntime.prototype.init = function init () {
 }
 
 /**
- * Destructs runtime.
+ * Deinit runtime.
  */
-AppRuntime.prototype.destruct = function destruct () {
-  this.componentsInvoke('destruct')
+AppRuntime.prototype.deinit = function deinit () {
+  this.componentsInvoke('deinit')
 }
 
 /**

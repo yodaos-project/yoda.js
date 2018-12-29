@@ -43,10 +43,6 @@ DBus.prototype.init = function init () {
   this.listenSignals()
 }
 
-DBus.prototype.destruct = function destruct () {
-
-}
-
 DBus.prototype.callMethod = function callMethod (
   serviceName, objectPath, interfaceName,
   member, args) {

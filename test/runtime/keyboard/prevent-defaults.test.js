@@ -35,7 +35,7 @@ test('shall prevent default', t => {
   keyboard.restoreKeyDefaults('@test/simple-app', '233', 'click')
   keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('shall listen all type events of one key code', t => {
@@ -71,5 +71,5 @@ test('shall listen all type events of one key code', t => {
   keyboard.restoreKeyDefaults('@test/simple-app', '233')
   keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })

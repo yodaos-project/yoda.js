@@ -30,7 +30,7 @@ KeyboardHandler.prototype.init = function init () {
   this.listen()
 }
 
-KeyboardHandler.prototype.destruct = function destruct () {
+KeyboardHandler.prototype.deinit = function deinit () {
   this.input.disconnect()
 }
 

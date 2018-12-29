@@ -25,13 +25,13 @@ test('shall handle voice coming', t => {
     .then(() => {
       t.strictEqual(turen.awaken, true, 'turen shall be awaken on voice coming')
 
-      runtime.destruct()
+      runtime.deinit()
       t.end()
     })
     .catch(err => {
       t.error(err)
 
-      runtime.destruct()
+      runtime.deinit()
       t.end()
     })
 })

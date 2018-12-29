@@ -51,12 +51,12 @@ function Turen (runtime) {
 
 Turen.prototype.init = function init () {
   if (this.bluetoothA2dp) {
-    this.destruct()
+    this.deinit()
   }
   this.bluetoothA2dp = bluetooth.getAdapter(bluetooth.protocol.PROFILE.A2DP)
 }
 
-Turen.prototype.destruct = function destruct () {
+Turen.prototype.deinit = function deinit () {
   if (this.bluetoothA2dp == null) {
     return
   }
