@@ -15,8 +15,9 @@ var flora = require('./singleton-flora')
 var AWAKE_EFFECT_CUSTOM = '1'
 var AWAKE_EFFECT = 'rokid.custom_config.wakeup_sound'
 
-var WAKE_SOUND_OPEN = '已为你开启'
-var WAKE_SOUND_CLOSE = '已关闭'
+var WAKE_SOUND_OPEN_DEFAULT = '唤醒应答已设置为默认声音'
+var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>>你录制的声音'
+var WAKE_SOUND_CLOSE = '已关闭唤醒应答'
 var CONFIG_FAILED = '设置失败'
 var SWITCH_OPEN = 'open'
 var SWITCH_CLOSE = 'close'
@@ -255,7 +256,11 @@ class WakeupEffect extends BaseConfig {
 
       if (!isFirstLoad) {
         if (queryObj.action === SWITCH_OPEN) {
-          this.activity.tts.speak(WAKE_SOUND_OPEN).then(() => this.activity.exit())
+          if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
+            this.activity.tts.speak(WAKE_SOUND_OPEN_CUSTOM).then(() => this.activity.exit())
+          } else {
+            this.activity.tts.speak(WAKE_SOUND_OPEN_DEFAULT).then(() => this.activity.exit())
+          }
         } else if (queryObj.action === SWITCH_CLOSE) {
           this.activity.tts.speak(WAKE_SOUND_CLOSE).then(() => this.activity.exit())
         } else {
