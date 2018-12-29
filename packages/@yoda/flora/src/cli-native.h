@@ -37,7 +37,8 @@ class MsgCallbackInfo {
 class RespCallbackInfo {
  public:
   std::shared_ptr<Napi::FunctionReference> cbr;
-  flora::ResponseArray responses;
+  int32_t rescode;
+  flora::Response response;
 };
 
 class HackedNativeCaps {
@@ -61,9 +62,13 @@ class ClientNative {
 
   Napi::Value unsubscribe(const Napi::CallbackInfo& info);
 
+  Napi::Value declareMethod(const Napi::CallbackInfo& info);
+
+  Napi::Value removeMethod(const Napi::CallbackInfo& info);
+
   Napi::Value post(const Napi::CallbackInfo& info);
 
-  Napi::Value get(const Napi::CallbackInfo& info);
+  Napi::Value call(const Napi::CallbackInfo& info);
 
   Napi::Value genArray(const Napi::CallbackInfo& info);
 
@@ -78,11 +83,12 @@ class ClientNative {
                    uint32_t type, flora::Reply* reply);
 
   void respCallback(std::shared_ptr<Napi::FunctionReference> cbr,
-                    flora::ResponseArray& responses);
+                    int32_t rescode, flora::Response& response);
 
  private:
   flora::Agent floraAgent;
   SubscriptionMap subscriptions;
+  SubscriptionMap remoteMethods;
   uv_async_t msgAsync;
   uv_async_t respAsync;
   std::list<MsgCallbackInfo> pendingMsgs;
@@ -113,11 +119,15 @@ class NativeObjectWrap : public Napi::ObjectWrap<NativeObjectWrap> {
 
   Napi::Value unsubscribe(const Napi::CallbackInfo& info);
 
+  Napi::Value declareMethod(const Napi::CallbackInfo& info);
+
+  Napi::Value removeMethod(const Napi::CallbackInfo& info);
+
   Napi::Value close(const Napi::CallbackInfo& info);
 
   Napi::Value post(const Napi::CallbackInfo& info);
 
-  Napi::Value get(const Napi::CallbackInfo& info);
+  Napi::Value call(const Napi::CallbackInfo& info);
 
   Napi::Value genArray(const Napi::CallbackInfo& info);
 
