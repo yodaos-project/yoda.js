@@ -19,13 +19,11 @@
 using namespace std;
 using namespace flora;
 
-const char* filenames[] = {
-  "/opt/media/awake_01.wav",
-  "/opt/media/awake_02.wav",
-  "/opt/media/awake_03.wav",
-  "/opt/media/awake_04.wav",
-  "/opt/media/awake_05.wav"
-};
+const char* filenames[] = { "/opt/media/awake_01.wav",
+                            "/opt/media/awake_02.wav",
+                            "/opt/media/awake_03.wav",
+                            "/opt/media/awake_04.wav",
+                            "/opt/media/awake_05.wav" };
 
 class Activation : public ClientCallback {
  public:
@@ -52,7 +50,13 @@ class Activation : public ClientCallback {
     }
 
     int id = rand() % 4;
-    prepareWavPlayer(filenames[id], "system", true);
+    char audio_hold[PROP_VALUE_MAX];
+    bool hold = true;
+    property_get("persist.act.audio.holdcon", (char*)audio_hold, "1");
+    if (strcmp(audio_hold, "0") == 0) {
+      hold = false;
+    }
+    prepareWavPlayer(filenames[id], "system", hold);
     if (volume_set != true) {
       char val[PROP_VALUE_MAX];
       property_get("persist.audio.volume.system", (char*)&val, "");
@@ -108,4 +112,3 @@ int main(int argc, char** argv) {
   activation.start();
   return 1;
 }
-

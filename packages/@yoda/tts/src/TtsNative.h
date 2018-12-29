@@ -38,7 +38,7 @@ typedef struct {
 class TtsNative : public TtsService {
  public:
   TtsNative(){};
-  TtsNative(iotjs_tts_t* ttswrap_) {
+  explicit TtsNative(iotjs_tts_t* ttswrap_) {
     ttswrap = ttswrap_;
     send_event = &TtsNative::SendEvent;
   };
