@@ -6,10 +6,10 @@ var mock = require('../../helper/mock')
 var Turen = require(`${helper.paths.runtime}/lib/component/turen`)
 
 function mockDaemonProxies (runtime) {
-  mock.mockReturns(runtime.light, 'play', Promise.resolve())
-  mock.mockReturns(runtime.light, 'stop', Promise.resolve())
-  mock.mockReturns(runtime.light, 'appSound', Promise.resolve())
-  mock.mockReturns(runtime.light, 'lightMethod', Promise.resolve())
+  mock.mockReturns(runtime.component.light, 'play', Promise.resolve())
+  mock.mockReturns(runtime.component.light, 'stop', Promise.resolve())
+  mock.mockReturns(runtime.component.light, 'appSound', Promise.resolve())
+  mock.mockReturns(runtime.component.light, 'lightMethod', Promise.resolve())
   mock.mockReturns(runtime, 'ttsMethod', Promise.resolve())
   mock.mockReturns(runtime, 'multimediaMethod', Promise.resolve())
 }
@@ -18,20 +18,20 @@ test('shall handle voice coming', t => {
   var runtime = new AppRuntime()
   var turen = new Turen(runtime)
 
-  mock.mockReturns(runtime.custodian, 'isPrepared', true)
+  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
   mockDaemonProxies(runtime)
 
   turen.handleEvent('voice coming', {})
     .then(() => {
       t.strictEqual(turen.awaken, true, 'turen shall be awaken on voice coming')
 
-      runtime.destruct()
+      runtime.deinit()
       t.end()
     })
     .catch(err => {
       t.error(err)
 
-      runtime.destruct()
+      runtime.deinit()
       t.end()
     })
 })

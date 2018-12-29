@@ -8,7 +8,7 @@ var mock = require('./mock')
 test('app preemption', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -79,7 +79,7 @@ test('app preemption', t => {
 test('shall not deactivate app if app to be activated is in stack', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -148,7 +148,7 @@ test('shall not recover if app to be deactivated is paused', t => {
   t.plan(1)
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -175,7 +175,7 @@ test('shall not recover if app to be deactivated is paused', t => {
 test('shall not throw on activating if previous app is not alive', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(1).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -200,7 +200,7 @@ test('shall not throw on activating if previous app is not alive', t => {
 test('app form switch to scene by background/foreground', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -239,7 +239,7 @@ test('app form switch to scene by background/foreground', t => {
 test('in stack app form switch to scene', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {

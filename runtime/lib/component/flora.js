@@ -19,6 +19,7 @@ module.exports = Flora
 function Flora (runtime) {
   FloraComp.call(this, logger)
   this.runtime = runtime
+  this.component = runtime.component
   this.speechAuthInfo = null
   this.voiceCtx = { lastFaked: false }
 
@@ -30,50 +31,50 @@ Flora.prototype.handlers = {
   'rokid.turen.voice_coming': function (msg) {
     logger.log('voice coming')
     this.voiceCtx.lastFaked = false
-    this.runtime.turen.handleEvent('voice coming', {})
+    this.component.turen.handleEvent('voice coming', {})
   },
   'rokid.turen.local_awake': function (msg) {
     logger.log('voice local awake')
     var data = {}
     data.sl = msg[0]
-    this.runtime.turen.handleEvent('voice local awake', data)
+    this.component.turen.handleEvent('voice local awake', data)
   },
   'rokid.speech.inter_asr': function (msg) {
     var asr = msg[0]
     logger.log('asr pending', asr)
-    this.runtime.turen.handleEvent('asr pending', asr)
+    this.component.turen.handleEvent('asr pending', asr)
   },
   'rokid.speech.final_asr': function (msg) {
     var asr = msg[0]
     logger.log('asr end', asr)
-    this.runtime.turen.handleEvent('asr end', { asr: asr })
+    this.component.turen.handleEvent('asr end', { asr: asr })
   },
   'rokid.speech.extra': function (msg) {
     var data = JSON.parse(msg[0])
     switch (data.activation) {
       case 'accept': {
-        this.runtime.turen.handleEvent('asr accept')
+        this.component.turen.handleEvent('asr accept')
         break
       }
       case 'fake': {
         this.voiceCtx.lastFaked = true
-        this.runtime.turen.handleEvent('asr fake')
+        this.component.turen.handleEvent('asr fake')
         break
       }
       case 'reject': {
-        this.runtime.turen.handleEvent('asr reject')
+        this.component.turen.handleEvent('asr reject')
         break
       }
       default:
         logger.info('Unhandled speech extra', data)
-        this.runtime.turen.handleEvent('asr extra', data)
+        this.component.turen.handleEvent('asr extra', data)
     }
   },
   'rokid.turen.start_voice': function (msg) {
-    this.runtime.turen.handleEvent('start voice')
+    this.component.turen.handleEvent('start voice')
   },
   'rokid.turen.end_voice': function (msg) {
-    this.runtime.turen.handleEvent('end voice')
+    this.component.turen.handleEvent('end voice')
   },
   'rokid.speech.nlp': function (msg) {
     if (this.voiceCtx.lastFaked) {
@@ -90,15 +91,15 @@ Flora.prototype.handlers = {
       data.action = JSON.parse(msg[1])
     } catch (err) {
       logger.log('nlp/action parse failed, discarded.')
-      return this.runtime.turen.handleEvent('malicious nlp', data)
+      return this.component.turen.handleEvent('malicious nlp', data)
     }
-    this.runtime.turen.handleEvent('nlp', data)
+    this.component.turen.handleEvent('nlp', data)
   },
   'rokid.speech.error': function (msg) {
     var errCode = msg[0]
     var speechId = msg[1]
     logger.error(`Unexpected speech error(${errCode}) for speech(${speechId}).`)
-    return this.runtime.turen.handleEvent('speech error', errCode, speechId)
+    return this.component.turen.handleEvent('speech error', errCode, speechId)
   }
 }
 Flora.prototype.handlers[`rokid.speech.nlp.${asr2nlpId}`] = onAsr2Nlp

@@ -10,6 +10,7 @@ var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
 module.exports = Turen
 function Turen (runtime) {
   this.runtime = runtime
+  this.component = runtime.component
 
   /**
    * indicates microphone muted or not.
@@ -50,12 +51,12 @@ function Turen (runtime) {
 
 Turen.prototype.init = function init () {
   if (this.bluetoothA2dp) {
-    this.destruct()
+    this.deinit()
   }
   this.bluetoothA2dp = bluetooth.getAdapter(bluetooth.protocol.PROFILE.A2DP)
 }
 
-Turen.prototype.destruct = function destruct () {
+Turen.prototype.deinit = function deinit () {
   if (this.bluetoothA2dp == null) {
     return
   }
@@ -133,14 +134,14 @@ Turen.prototype.setAwaken = function setAwaken () {
   }
   this.awaken = true
 
-  var currAppId = this.runtime.life.getCurrentAppId()
+  var currAppId = this.component.lifetime.getCurrentAppId()
   logger.info('awaking, current app', currAppId)
 
   /**
    * pause lifetime to prevent incoming app preemption;
    * doesn't care when pauseLifetime ends.
    */
-  this.runtime.life.pauseLifetime()
+  this.component.lifetime.pauseLifetime()
 
   /**
    * no need to determine if tts is previously been paused.
@@ -168,8 +169,8 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
   clearTimeout(this.noVoiceInputTimer)
 
   var promises = [
-    this.runtime.light.stop('@yoda', 'system://awake.js'),
-    this.runtime.life.resumeLifetime({ recover: recover })
+    this.component.light.stop('@yoda', 'system://awake.js'),
+    this.component.lifetime.resumeLifetime({ recover: recover })
   ]
 
   if (!recover) {
@@ -185,7 +186,7 @@ Turen.prototype.resetAwaken = function resetAwaken (options) {
  * @private
  */
 Turen.prototype.recoverPausedOnAwaken = function recoverPausedOnAwaken () {
-  var currentAppId = this.runtime.life.getCurrentAppId()
+  var currentAppId = this.component.lifetime.getCurrentAppId()
 
   logger.info('unmute possibly paused bluetooth player')
   this.bluetoothA2dp && this.bluetoothA2dp.unmute()
@@ -214,12 +215,12 @@ Turen.prototype.resetPausedOnAwaken = function resetPausedOnAwaken () {
  * @private
  */
 Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
-  if (!this.runtime.custodian.isPrepared()) {
+  if (!this.component.custodian.isPrepared()) {
     logger.warn('Network not connected, preparing to announce unavailability.')
     this.pickup(false)
 
-    var currentAppId = this.runtime.life.getCurrentAppId()
-    if (this.runtime.custodian.isConfiguringNetwork()) {
+    var currentAppId = this.component.lifetime.getCurrentAppId()
+    if (this.component.custodian.isConfiguringNetwork()) {
       /**
        * Configuring network, delegates event to network app.
        */
@@ -234,7 +235,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
          * continuing currently app.
          */
         logger.info('no WiFi history exists, continuing currently running app.')
-        return this.runtime.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
+        return this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
           .then(() =>
           /** awaken is not set for no network available, recover media directly */
             this.recoverPausedOnAwaken()
@@ -244,7 +245,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
        * No WiFi connection history found, introduce device setup procedure.
        */
       logger.info('no WiFi history exists, announcing guide to network configuration.')
-      return this.runtime.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
+      return this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
         .then(() =>
           /** awaken is not set for no network available, recover media directly */
           this.recoverPausedOnAwaken()
@@ -258,7 +259,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
      */
     logger.info('announcing network connecting on voice coming.')
     wifi.enableScanPassively()
-    return this.runtime.light.ttsSound('@yoda', 'system://wifi_is_connecting.ogg')
+    return this.component.light.ttsSound('@yoda', 'system://wifi_is_connecting.ogg')
       .then(() =>
         /** awaken is not set for no network available, recover media directly */
         this.recoverPausedOnAwaken()
@@ -340,7 +341,7 @@ Turen.prototype.handleAsrEnd = function handleAsrEnd () {
      */
     return Promise.all(promises)
   }
-  return Promise.all(promises.concat(this.runtime.light.play('@yoda', 'system://loading.js')))
+  return Promise.all(promises.concat(this.component.light.play('@yoda', 'system://loading.js')))
 }
 
 /**
@@ -403,7 +404,7 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
   }
   return future.then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action))
     .then(success => {
-      this.runtime.light.stop('@yoda', 'system://loading.js')
+      this.component.light.stop('@yoda', 'system://loading.js')
       if (success) {
         /**
          * Reset previously paused media to prevent un-intended recovering
@@ -416,7 +417,7 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
        */
       this.recoverPausedOnAwaken()
     }, err => {
-      this.runtime.light.stop('@yoda', 'system://loading.js')
+      this.component.light.stop('@yoda', 'system://loading.js')
       logger.error('Unexpected error on open handling nlp', err.stack)
     })
 }
@@ -429,7 +430,7 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
     this.pickup(false)
     this.resetAwaken({ recover: false })
   }
-  if (!this.runtime.custodian.isPrepared()) {
+  if (!this.component.custodian.isPrepared()) {
     logger.warn('Network not connected, recovering players.')
     return this.recoverPausedOnAwaken()
   }
@@ -440,9 +441,9 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
   this.resetPausedOnAwaken()
   return this.runtime.openUrl('yoda-skill://rokid-exception/malicious-nlp')
     .then(
-      () => this.runtime.light.stop('@yoda', 'system://loading.js'),
+      () => this.component.light.stop('@yoda', 'system://loading.js'),
       err => {
-        this.runtime.light.stop('@yoda', 'system://loading.js')
+        this.component.light.stop('@yoda', 'system://loading.js')
         logger.error('Unexpected error on open handling malicious nlp', err.stack)
       })
 }
@@ -455,7 +456,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
     this.pickup(false)
     this.resetAwaken({ recover: false })
   }
-  if (!this.runtime.custodian.isPrepared()) {
+  if (!this.component.custodian.isPrepared()) {
     logger.warn('Network not connected or not logged in, recovering players.')
     return this.recoverPausedOnAwaken()
   }
@@ -475,12 +476,12 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
    * Thus just closing cut app here works as expected, and shall be fixed
    * with a invocation queue in translator-ipc.
    */
-  this.runtime.life.deactivateCutApp()
+  this.component.lifetime.deactivateCutApp()
     .then(() => {
       this.recoverPausedOnAwaken()
-      return this.runtime.light.stop('@yoda', 'system://loading.js')
+      return this.component.light.stop('@yoda', 'system://loading.js')
     }, err => {
-      this.runtime.light.stop('@yoda', 'system://loading.js')
+      this.component.light.stop('@yoda', 'system://loading.js')
       logger.error('Unexpected error on deactivating cut app', err.stack)
     })
 }
@@ -495,7 +496,7 @@ Turen.prototype.pickup = function pickup (isPickup) {
    * otherwise reset picking up discarding state to enable next nlp process,
    */
   this.pickingUpDiscardNext = !isPickup
-  this.runtime.flora.post('rokid.turen.pickup', [ isPickup ? 1 : 0 ])
+  this.component.flora.post('rokid.turen.pickup', [ isPickup ? 1 : 0 ])
 
   if (!isPickup) {
     clearTimeout(this.solitaryVoiceComingTimer)
@@ -513,7 +514,7 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
   }
   this.muted = mute
   /** if mute is true, set rokid.turen.mute to 1 to disable turen */
-  this.runtime.flora.post('rokid.turen.mute', [ mute ? 1 : 0 ])
+  this.component.flora.post('rokid.turen.mute', [ mute ? 1 : 0 ])
 
   if (this.asrState === 'pending' && mute) {
     this.resetAwaken()
@@ -528,7 +529,7 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  * @param {string} activationPy
  */
 Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
-  this.runtime.flora.post(VT_WORDS_ADD_WORD_CHANNEL, [
+  this.component.flora.post(VT_WORDS_ADD_WORD_CHANNEL, [
     activationWord,
     activationPy,
     1
@@ -540,7 +541,7 @@ Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
  * @param {string} activationTxt
  */
 Turen.prototype.deleteVtWord = function deleteVtWord (activationWord) {
-  this.runtime.flora.post(VT_WORDS_DEL_WORD_CHANNEL, [ activationWord ])
+  this.component.flora.post(VT_WORDS_DEL_WORD_CHANNEL, [ activationWord ])
 }
 
 /**
@@ -550,11 +551,11 @@ Turen.prototype.announceNetworkLag = function announceNetworkLag () {
   if (this.awaken) {
     this.resetAwaken({ recover: false })
   }
-  return this.runtime.light.lightMethod('networkLagSound', [ '/opt/media/network_lag_common.ogg' ])
+  return this.component.light.lightMethod('networkLagSound', [ '/opt/media/network_lag_common.ogg' ])
     .then(
       () => {
         /** stop network lag light effects */
-        this.runtime.light.lightMethod('stopNetworkLagSound', [])
+        this.component.light.lightMethod('stopNetworkLagSound', [])
         if (this.awaken) {
           return
         }
@@ -563,7 +564,7 @@ Turen.prototype.announceNetworkLag = function announceNetworkLag () {
       err => {
         logger.error('Unexpected error on playing network lag sound', err.stack)
         /** stop network lag light effects */
-        this.runtime.light.lightMethod('stopNetworkLagSound', [])
+        this.component.light.lightMethod('stopNetworkLagSound', [])
         if (this.awaken) {
           return
         }

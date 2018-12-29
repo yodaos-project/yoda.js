@@ -10,7 +10,7 @@ test('simultaneous cut app preemption', t => {
 
   mock.restore()
   mock.mockAppExecutors(2)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
@@ -41,7 +41,7 @@ test('simultaneous scene app preemption', t => {
 
   mock.restore()
   mock.mockAppExecutors(2)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
@@ -72,7 +72,7 @@ test('simultaneous scene and cut app preemption', t => {
 
   mock.restore()
   mock.mockAppExecutors(2)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
@@ -103,7 +103,7 @@ test('simultaneous cut and scene app preemption', t => {
 
   mock.restore()
   mock.mockAppExecutors(2)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
