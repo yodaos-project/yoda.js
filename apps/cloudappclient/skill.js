@@ -102,6 +102,13 @@ Skill.prototype.handleEvent = function () {
         return
       }
       this.directives = []
+      if (this.form === 'cut') {
+        this.exe.execute([{
+          type: 'pickup',
+          action: '',
+          data: {}
+        }], 'frontend')
+      }
       logger.log(`${this.appId} exit because exe complete`)
       // exit self. nothing to do
       this.emit('exit')
