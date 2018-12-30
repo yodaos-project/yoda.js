@@ -124,6 +124,21 @@ module.exports = function (activity) {
     return setVolume(vol, options)
   }
 
+  var fastMuteTimer
+  function decVolumeWithFastMuteTimer (value, options) {
+    var timeout = _.get(options, 'timeout', 2000)
+    logger.debug('set timer', timeout)
+    fastMuteTimer = setTimeout(() => {
+      logger.debug('timer trigger')
+      decVolume(/** set volume to 0 */100, options)
+    }, timeout)
+    decVolume(value, options)
+  }
+
+  function resetFastMuteTimer () {
+    clearTimeout(fastMuteTimer)
+  }
+
   /**
    *
    * @param {object} [options]
@@ -266,6 +281,14 @@ module.exports = function (activity) {
         break
       case '/volume_down':
         decVolume(100 / partition, { type: 'effect' })
+        break
+      case '/volume_down_with_fast_mute': {
+        var timeout = parseInt(_.get(url.query, 'timeout', 2000))
+        decVolumeWithFastMuteTimer(100 / partition, { type: 'effect', timeout: timeout })
+        break
+      }
+      case '/volume_down_fast_mute_reset':
+        resetFastMuteTimer()
         break
       case '/set_volume': {
         var vol = parseInt(_.get(url.query, 'value'))
