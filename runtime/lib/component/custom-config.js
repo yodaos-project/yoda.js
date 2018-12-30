@@ -13,10 +13,10 @@ class CustomConfig {
   }
 
   /**
-   * interce the configuration message for dnd-model etc
+   * intercept the configuration message for dnd-model etc
    * @param {string|object} msg
    */
-  interce (msg) {
+  intercept (msg) {
     if (msg.nightMode) {
       if (typeof msg.nightMode === 'object') {
         this.runtime.component.dndMode.setOption(msg.nightMode)
@@ -63,7 +63,7 @@ class CustomConfig {
       logger.error(err)
       return
     }
-    this.interce(msg)
+    this.intercept(msg)
     for (var field in msg) {
       if (msg.hasOwnProperty(field) && config.hasOwnProperty(field)) {
         var conf = config[field]
@@ -88,7 +88,7 @@ class CustomConfig {
       return
     }
     var configObj = safeParse(config)
-    this.interce(configObj)
+    this.intercept(configObj)
     var sConfig = JSON.stringify(configObj)
     this.runtime.openUrl(`yoda-skill://custom-config/firstLoad?config=${sConfig}`)
   }
