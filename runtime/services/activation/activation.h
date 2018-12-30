@@ -31,9 +31,8 @@ private:
   shared_ptr<Client> flora_cli;
   mutex reconn_mutex;
   condition_variable reconn_cond;
-
   std::vector<std::string> files_from_flora;
-  bool is_open = true;
+  bool is_open = false;
 
   void prepareForNextAwake();
   void playAwake();

@@ -18,7 +18,6 @@ const int32_t MAX_PLAY_LIST = 10;
 
 Activation::Activation() {
   srand(time(NULL));
-  is_open = false;
 }
 
 // cppcheck-suppress unusedFunction
@@ -95,7 +94,6 @@ void Activation::playAwake() {
     prepareForNextAwake();
   }
 }
-
 
 void Activation::applyAwakeSound(shared_ptr <Caps> &msg) {
 #define CAPS_READ(action) if (action != CAPS_SUCCESS) goto ERROR
