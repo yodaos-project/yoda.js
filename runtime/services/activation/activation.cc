@@ -23,7 +23,7 @@ Activation::Activation() {
 
 // cppcheck-suppress unusedFunction
 void Activation::recv_post(const char *name, uint32_t msgtype, shared_ptr <Caps> &msg) {
-  if (strcmp(VOICE_COMING, name) == 0) {
+  if (name && strcmp(VOICE_COMING, name) == 0) {
     playAwake();
   } else {
     applyAwakeSound(msg);
@@ -98,6 +98,8 @@ void Activation::playAwake() {
 #define CAPS_READ(action) if (action != CAPS_SUCCESS) goto ERROR
 
 void Activation::applyAwakeSound(shared_ptr <Caps> &msg) {
+  if (!msg)
+    goto ERROR;
   int32_t fCount;
   CAPS_READ(msg->read(fCount));
   files_from_flora.clear();
