@@ -1,0 +1,5 @@
+{
+  "interception": {
+    "turenDidWakeUp": ["custodian"]
+  }
+}
