@@ -1055,7 +1055,7 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
         }
         this.component.wormhole.setClient(this.cloudApi.mqttcli)
         var customConfig = _.get(config, 'extraInfo.custom_config')
-        if (customConfig === 'string') {
+        if (customConfig && typeof customConfig === 'string') {
           this.component.customConfig.onLoadCustomConfig(customConfig)
         }
         this.onLoggedIn()
