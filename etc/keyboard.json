@@ -42,7 +42,13 @@
     },
     "longpress": {
       "repeat": true,
-      "url": "yoda-skill://volume/volume_down",
+      "url": "yoda-skill://volume/volume_down_with_fast_mute",
+      "options": {
+        "preemptive": false
+      }
+    },
+    "keyup": {
+      "url": "yoda-skill://volume/volume_down_fast_mute_reset",
       "options": {
         "preemptive": false
       }
