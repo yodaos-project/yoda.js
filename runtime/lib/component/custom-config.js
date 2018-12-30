@@ -19,12 +19,12 @@ class CustomConfig {
   interce (msg) {
     if (msg.nightMode) {
       if (typeof msg.nightMode === 'object') {
-        this.runtime.dndMode.setOption(msg.nightMode)
+        this.runtime.component.dndMode.setOption(msg.nightMode)
         delete msg.nightMode
       } else if (typeof msg.nightMode === 'string') {
         var nightMode = safeParse(msg.nightMode)
         if (nightMode) {
-          this.runtime.dndMode.setOption(nightMode)
+          this.runtime.component.dndMode.setOption(nightMode)
         }
         delete msg.nightMode
       }
