@@ -150,7 +150,13 @@ Wormhole.prototype.handlers = {
    * @member custom_config
    */
   custom_config: function (data) {
-    this.runtime.onCustomConfig(data)
+    this.runtime.component.customConfig.onCustomConfig(data)
+  },
+  /**
+   * @member custom_config_v2
+   */
+  custom_config_v2: function (data) {
+    this.runtime.component.customConfig.onCustomConfig(data)
   },
   /**
    * @member event

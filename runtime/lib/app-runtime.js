@@ -978,75 +978,6 @@ AppRuntime.prototype.onResetSettings = function () {
 }
 
 /**
- * Handling the configs from RokidApp, includes activation words, night mode, and etc..
- * @param {string} message
- * @private
- */
-AppRuntime.prototype.onCustomConfig = function (message) {
-  var appendUrl = (pathname, params) => {
-    var url = `yoda-skill://custom-config/${pathname}?`
-    var queryString = (params) => {
-      var query = ''
-      for (var key in params) {
-        var value = params[key]
-        query += `&${key}=${value}`
-      }
-      url += query
-      return url
-    }
-    return queryString(params)
-  }
-  var msg = null
-  try {
-    if (typeof message === 'object') {
-      msg = message
-    } else if (typeof message === 'string') {
-      msg = JSON.parse(message)
-    }
-  } catch (err) {
-    logger.error(err)
-    return
-  }
-  var option = {
-    preemptive: true,
-    form: 'cut'
-  }
-  if (msg.nightMode) {
-    this.component.dndMode.setOption(msg.nightMode)
-  } else if (msg.vt_words) {
-    option.preemptive = false
-    this.openUrl(appendUrl('vt_words', msg.vt_words[0]), option)
-  } else if (msg.continuousDialog) {
-    this.openUrl(appendUrl('continuousDialog', msg.continuousDialog), option)
-  } else if (msg.wakeupSoundEffects) {
-    this.openUrl(appendUrl('wakeupSoundEffects', msg.wakeupSoundEffects), option)
-  } else if (msg.standbyLight) {
-    this.openUrl(appendUrl('standbyLight', msg.standbyLight), option)
-  }
-}
-
-/**
- * @private
- */
-AppRuntime.prototype.onLoadCustomConfig = function (config) {
-  if (config === undefined) {
-    return
-  }
-  try {
-    // TODO move config-process to component
-    var option = JSON.parse(config)
-    if (option.nightMode !== undefined) {
-      var nightMode = JSON.parse(option.nightMode)
-      logger.info(`dnd mode config loaded: ${option.nightMode}`)
-      this.component.dndMode.setOption(nightMode)
-    }
-  } catch (err) {
-    logger.warn(`customconfig load error: ${config}\n${err}`)
-  }
-  this.openUrl(`yoda-skill://custom-config/firstLoad?config=${config}`)
-}
-
-/**
  * @private
  */
 AppRuntime.prototype.ttsMethod = function (name, args) {
@@ -1109,7 +1040,6 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
     return this.cloudApi.connect(masterId)
       .then((config) => {
         var opts = Object.assign({ uri: env.speechUri }, config)
-
         // TODO: move to use cloudapi?
         require('@yoda/ota/network').cloudgw = this.cloudApi.cloudgw
         // FIXME: schedule this update later?
@@ -1124,7 +1054,10 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
           return Object.assign({}, config)
         }
         this.component.wormhole.setClient(this.cloudApi.mqttcli)
-        this.onLoadCustomConfig(_.get(config, 'extraInfo.custom_config', ''))
+        var customConfig = _.get(config, 'extraInfo.custom_config')
+        if (customConfig && typeof customConfig === 'string') {
+          this.component.customConfig.onLoadCustomConfig(customConfig)
+        }
         this.onLoggedIn()
         this.component.dndMode.recheck()
       }, (err) => {
