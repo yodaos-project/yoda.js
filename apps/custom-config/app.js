@@ -15,8 +15,20 @@ module.exports = function CustomConfig (activity) {
   processorList.push(new ContinuousDialog(activity))
   processorList.push(new VtWord(activity))
   for (var i = 0; i < processorList.length; ++i) {
-    Object.assign(intentMap, processorList[i].getIntentMap())
-    Object.assign(urlMap, processorList[i].getUrlMap())
+    var tmpIntentMap = processorList[i].getIntentMap()
+    for (var intentKey in tmpIntentMap) {
+      if (!tmpIntentMap.hasOwnProperty(intentKey) || typeof tmpIntentMap[intentKey] !== 'function') {
+        throw new Error(`value of intent map [${intentKey}] should be function`)
+      }
+    }
+    Object.assign(intentMap, tmpIntentMap)
+    var tmpUrlMap = processorList[i].getUrlMap()
+    for (var urlKey in tmpUrlMap) {
+      if (!tmpUrlMap.hasOwnProperty(urlKey) || typeof tmpUrlMap[urlKey] !== 'function') {
+        throw new Error(`value of url map [${urlKey}] should be function`)
+      }
+    }
+    Object.assign(urlMap, tmpUrlMap)
   }
   activity.on('ready', onReady)
   activity.on('request', onRequest)
