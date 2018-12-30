@@ -23,11 +23,12 @@ Activation::Activation() {
 
 // cppcheck-suppress unusedFunction
 void Activation::recv_post(const char *name, uint32_t msgtype, shared_ptr <Caps> &msg) {
-  if (name && strcmp(VOICE_COMING, name) == 0) {
+  if (strcmp(VOICE_COMING, name) == 0) {
     playAwake();
-  } else {
+  } else if (strcmp(WAKEUP_SOUND, name) == 0) {
     applyAwakeSound(msg);
-  }
+  } else
+    fprintf(stderr, "unexpected message from [%s]\n", name);
 }
 
 // cppcheck-suppress unusedFunction
@@ -95,9 +96,9 @@ void Activation::playAwake() {
   }
 }
 
-#define CAPS_READ(action) if (action != CAPS_SUCCESS) goto ERROR
 
 void Activation::applyAwakeSound(shared_ptr <Caps> &msg) {
+#define CAPS_READ(action) if (action != CAPS_SUCCESS) goto ERROR
   if (!msg)
     goto ERROR;
   int32_t fCount;
