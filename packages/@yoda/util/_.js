@@ -51,6 +51,40 @@ function startsWith (str, search, pos) {
   return str.substring(!pos || pos < 0 ? 0 : +pos, search.length) === search
 }
 
+module.exports.endsWith = endsWith
+function endsWith (str, search, length) {
+  if (typeof str !== 'string') {
+    return false
+  }
+  if (length === undefined || length > this.length) {
+    length = str.length
+  }
+  return str.substring(length - search.length, length) === search
+}
+
+module.exports.camelCase = camelCase
+function camelCase (str) {
+  if (typeof str !== 'string') {
+    return ''
+  }
+  var words = str.match(/[a-z0-9]*/ig)
+  if (words == null) {
+    return ''
+  }
+  var result = words
+    .map(it => {
+      if (it.length === 0) {
+        return ''
+      }
+      return it[0].toUpperCase() + it.substring(1)
+    })
+    .join('')
+  if (result.length === 0) {
+    return ''
+  }
+  return result[0].toLowerCase() + result.substring(1)
+}
+
 module.exports.sample = sample
 function sample (arr) {
   var length = get(arr, 'length', 0)

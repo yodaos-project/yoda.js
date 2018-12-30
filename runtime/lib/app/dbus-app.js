@@ -8,7 +8,7 @@ function DbusApp (appId, manifest, runtime) {
   this.appId = appId
   this.objectPath = _.get(manifest, 'objectPath')
   this.ifaceName = _.get(manifest, 'ifaceName')
-  this.dbusService = runtime.dbusRegistry.service
+  this.dbusService = runtime.component.dbusRegistry.service
 
   this.on('ready', this._onEvent.bind(this, 'ready', appId))
   this.on('resume', this._onEvent.bind(this, 'resume', appId))

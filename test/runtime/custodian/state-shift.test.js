@@ -19,12 +19,17 @@ test('custodian state shall shifts', t => {
     startApp: function () {
       t.fail('runtime#startApp shall not be called since logged in')
     },
-    light: {
-      stop: function () {}
-    },
-    wormhole: {
-      setOffline: function () {
-        t.pass('onNetworkDisconnect shall trigger runtime.wormhole#setOffline')
+    component: {
+      lifetime: {
+        getCurrentAppId: () => undefined
+      },
+      light: {
+        stop: function () {}
+      },
+      wormhole: {
+        setOffline: function () {
+          t.pass('onNetworkDisconnect shall trigger runtime.wormhole#setOffline')
+        }
       }
     }
   }
@@ -56,15 +61,20 @@ test('custodian shall start network app on network disconnect if not logged in',
   mock.mockReturns(wifi, 'getNumOfHistory', 0)
 
   var runtime = {
-    openUrl: function () {
-      t.pass('onNetworkDisconnect shall trigger runtime#openUrl')
+    resetNetwork: function () {
+      t.pass('onNetworkDisconnect shall trigger runtime#resetNetwork')
     },
-    light: {
-      stop: function () {}
-    },
-    wormhole: {
-      setOffline: function () {
-        t.fail('onNetworkDisconnect shall not trigger runtime.wormhole#setOffline')
+    component: {
+      lifetime: {
+        getCurrentAppId: () => undefined
+      },
+      light: {
+        stop: function () {}
+      },
+      wormhole: {
+        setOffline: function () {
+          t.fail('onNetworkDisconnect shall not trigger runtime.wormhole#setOffline')
+        }
       }
     }
   }
@@ -84,16 +94,21 @@ test('custodian shall reset network', t => {
     openUrl: function () {
       t.pass('resetNetwork shall trigger runtime#startApp')
     },
-    light: {
-      stop: function () {}
-    },
-    wormhole: {
-      setOffline: function () {
-        t.pass('resetNetwork shall trigger runtime.wormhole#setOffline')
-      }
-    },
     onGetPropAll: function () {
       return { foobar: 10 }
+    },
+    component: {
+      lifetime: {
+        getCurrentAppId: () => undefined
+      },
+      light: {
+        stop: function () {}
+      },
+      wormhole: {
+        setOffline: function () {
+          t.pass('resetNetwork shall trigger runtime.wormhole#setOffline')
+        }
+      }
     }
   }
   var custodian = new Custodian(runtime)

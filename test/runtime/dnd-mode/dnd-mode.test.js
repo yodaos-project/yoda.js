@@ -17,7 +17,7 @@ test('night mode check', function (t) {
   mock.mockReturns(life, 'getCurrentAppId', undefined)
   mock.mockReturns(life, 'on', undefined)
 
-  var nightMode = new NightMode(light, sound, life)
+  var nightMode = new NightMode({ component: { lifetime: life, light: light, sound: sound } })
   nightMode.init()
   var timeZone = (new Date()).getTimezoneOffset() / 60
   var startTime

@@ -9,7 +9,7 @@ test('daemon app status', t => {
   mock.restore()
   mock.mockAppExecutors(1)
   mock.mockAppExecutors(1, true, 1)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   life.createApp('1')
     .then(() => {
@@ -75,7 +75,7 @@ test('non-daemon app status', t => {
   mock.restore()
 
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   life.createApp('1')
     .then(() => {
@@ -134,7 +134,7 @@ test('should get app data by id', t => {
   mock.restore()
 
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {

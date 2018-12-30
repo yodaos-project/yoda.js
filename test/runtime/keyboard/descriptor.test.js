@@ -35,7 +35,7 @@ test('shall interpret descriptor: openUrl', t => {
 
   keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('shall interpret descriptor: runtimeMethod', t => {
@@ -67,7 +67,7 @@ test('shall interpret descriptor: runtimeMethod', t => {
 
   keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('shall not interpret malformed descriptor: openUrl - url', t => {
@@ -171,7 +171,7 @@ test('gesture: fallbacks', t => {
   keyboard.input.emit('click', { keyCode: 233 })
   keyboard.input.emit('dbclick', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('gesture: override fallbacks', t => {
@@ -207,7 +207,7 @@ test('gesture: override fallbacks', t => {
 
   keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('longpress: repetitive longpress', t => {
@@ -236,7 +236,7 @@ test('longpress: repetitive longpress', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1000 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1500 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('longpress: round longpress timeDelta', t => {
@@ -265,7 +265,7 @@ test('longpress: round longpress timeDelta', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1001 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1256 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('longpress: non-repetitive longpress', t => {
@@ -298,7 +298,7 @@ test('longpress: non-repetitive longpress', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 2500 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 3000 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('longpress: prevent subsequent keyup event', t => {
@@ -332,7 +332,7 @@ test('longpress: prevent subsequent keyup event', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1000 })
   keyboard.input.emit('keyup', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('longpress: multiple endpoints for time delta', t => {
@@ -369,5 +369,5 @@ test('longpress: multiple endpoints for time delta', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 7000 })
   keyboard.input.emit('keyup', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })

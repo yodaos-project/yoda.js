@@ -12,10 +12,10 @@ test('shall prevent default', t => {
   var keyboard = new Keyboard(runtime)
   var app = new EventEmitter()
   app.keyboard = new EventEmitter()
-  runtime.scheduler.getAppById = function () {
+  runtime.component.appScheduler.getAppById = function () {
     return app
   }
-  runtime.life.getCurrentAppId = function () {
+  runtime.component.lifetime.getCurrentAppId = function () {
     return '@test/simple-app'
   }
 
@@ -35,7 +35,7 @@ test('shall prevent default', t => {
   keyboard.restoreKeyDefaults('@test/simple-app', '233', 'click')
   keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })
 
 test('shall listen all type events of one key code', t => {
@@ -44,10 +44,10 @@ test('shall listen all type events of one key code', t => {
   var keyboard = new Keyboard(runtime)
   var app = new EventEmitter()
   app.keyboard = new EventEmitter()
-  runtime.scheduler.getAppById = function () {
+  runtime.component.appScheduler.getAppById = function () {
     return app
   }
-  runtime.life.getCurrentAppId = function () {
+  runtime.component.lifetime.getCurrentAppId = function () {
     return '@test/simple-app'
   }
 
@@ -71,5 +71,5 @@ test('shall listen all type events of one key code', t => {
   keyboard.restoreKeyDefaults('@test/simple-app', '233')
   keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.destruct()
+  runtime.deinit()
 })

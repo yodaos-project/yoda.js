@@ -78,9 +78,9 @@ module.exports = LaVieEnPile
  * @param {AppScheduler} scheduler - AppScheduler that manages app processes.
  *
  */
-function LaVieEnPile (scheduler) {
+function LaVieEnPile (runtime) {
   EventEmitter.call(this)
-  this.scheduler = scheduler
+  this.scheduler = runtime.component.appScheduler
   /**
    * @typedef AppPreemptionData
    * @property {'cut' | 'scene'} form

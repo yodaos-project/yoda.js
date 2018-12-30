@@ -131,7 +131,7 @@ ActivityDescriptor.prototype.toString = function toString () {
 }
 ActivityDescriptor.prototype.destruct = function destruct () {
   this._registeredDbusSignals.forEach(it => {
-    this._runtime.dbusRegistry.removeAllListeners(it)
+    this._runtime.component.dbusRegistry.removeAllListeners(it)
   })
   this.emit('destruct')
 }
@@ -371,10 +371,10 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setBackground () {
-        if (!this._runtime.permission.check(this._appId, 'INTERRUPT', { acquiresActive: false })) {
+        if (!this._runtime.component.permission.check(this._appId, 'INTERRUPT', { acquiresActive: false })) {
           return Promise.reject(new Error('Permission denied.'))
         }
-        return this._runtime.life.setBackgroundById(this._appId).then(() => {})
+        return this._runtime.component.lifetime.setBackgroundById(this._appId).then(() => {})
       }
     },
     /**
@@ -394,7 +394,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function setForeground (options) {
-        if (!this._runtime.permission.check(this._appId, 'INTERRUPT', { acquiresActive: false })) {
+        if (!this._runtime.component.permission.check(this._appId, 'INTERRUPT', { acquiresActive: false })) {
           return Promise.reject(new Error('Permission denied.'))
         }
         var form
@@ -439,11 +439,11 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function playSound (uri) {
-        if (this._runtime.life.getCurrentAppId() !== this._appId) {
+        if (this._runtime.component.lifetime.getCurrentAppId() !== this._appId) {
           return Promise.reject(new Error('currently app is not active'))
         }
         var absPath = yodaPath.transformPathScheme(uri, MEDIA_SOURCE, this._appHome + '/media')
-        return this._runtime.light.appSound(this._appId, absPath)
+        return this._runtime.component.light.appSound(this._appId, absPath)
       }
     },
     /**
@@ -459,7 +459,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function voiceCommand (text, options) {
-        if (!this._runtime.permission.check(this._appId, 'ACCESS_VOICE_COMMAND')) {
+        if (!this._runtime.component.permission.check(this._appId, 'ACCESS_VOICE_COMMAND')) {
           return Promise.reject(new Error('Permission denied.'))
         }
         return this._runtime.voiceCommand(text, Object.assign({}, options, { appId: this._appId }))
@@ -479,7 +479,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function startMonologue () {
-        if (!this._runtime.permission.check(this._appId, 'ACCESS_MONOPOLIZATION')) {
+        if (!this._runtime.component.permission.check(this._appId, 'ACCESS_MONOPOLIZATION')) {
           return Promise.reject(new Error('Permission denied.'))
         }
         return this._runtime.startMonologue(this._appId)
@@ -499,7 +499,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function stopMonologue () {
-        if (!this._runtime.permission.check(this._appId, 'ACCESS_MONOPOLIZATION')) {
+        if (!this._runtime.component.permission.check(this._appId, 'ACCESS_MONOPOLIZATION')) {
           return Promise.reject(new Error('Permission denied.'))
         }
         return this._runtime.stopMonologue(this._appId)
@@ -559,7 +559,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function getMicMute () {
-        return Promise.resolve(this._runtime.turen.muted)
+        return Promise.resolve(this._runtime.component.turen.muted)
       }
     }
   }

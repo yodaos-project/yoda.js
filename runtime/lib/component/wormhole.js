@@ -16,7 +16,7 @@ function Wormhole (runtime) {
   }
 }
 
-Wormhole.prototype.init = function init (mqttClient) {
+Wormhole.prototype.setClient = function setClient (mqttClient) {
   logger.info('initialize the wormhole with a new mqtt connection.')
   this.mqtt = mqttClient
   this.mqtt.setMessageHandler(this.messageHandler.bind(this))
@@ -91,7 +91,7 @@ Wormhole.prototype.handlers = {
    * @member asr
    */
   asr: function (asr) {
-    this.runtime.flora.getNlpResult(asr, (err, nlp, action) => {
+    this.component.flora.getNlpResult(asr, (err, nlp, action) => {
       if (err) {
         logger.error('occurrs some error in speechT', err)
       } else {

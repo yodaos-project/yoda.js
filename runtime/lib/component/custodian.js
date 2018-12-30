@@ -7,6 +7,7 @@ module.exports = Custodian
 function Custodian (runtime) {
   wifi.enableScanPassively()
   this.runtime = runtime
+  this.component = runtime.component
 
   /**
    * set this._networkConnected = undefined at initial to
@@ -52,8 +53,8 @@ Custodian.prototype.onNetworkConnect = function onNetworkConnect () {
     this.runtime.reconnect()
   })
 
-  if (this.runtime.scheduler) {
-    var appMap = this.runtime.scheduler.appMap
+  if (this.component.scheduler) {
+    var appMap = this.component.scheduler.appMap
     Object.keys(appMap).forEach(key => {
       var activity = appMap[key]
       activity.emit('internal:network-connected')
@@ -100,7 +101,7 @@ Custodian.prototype.onLoggedIn = function onLoggedIn () {
 
 Custodian.prototype.onLogout = function onLogout () {
   this._loggedIn = false
-  this.runtime.wormhole.setOffline()
+  this.component.wormhole.setOffline()
   property.set('state.rokid.logged', 'false')
   // reset the onGetPropAll...
   this.runtime.onGetPropAll = function () {
@@ -162,7 +163,7 @@ Custodian.prototype.isLoggedIn = function isLoggedIn () {
  * Determines if network configuring app is currently active app.
  */
 Custodian.prototype.isConfiguringNetwork = function isConfiguringNetwork () {
-  return this.runtime.life.getCurrentAppId() === '@yoda/network'
+  return this.component.lifetime.getCurrentAppId() === '@yoda/network'
 }
 
 Custodian.prototype.prepareNetwork = function prepareNetwork () {

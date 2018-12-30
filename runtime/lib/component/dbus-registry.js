@@ -15,6 +15,7 @@ module.exports = DBus
 function DBus (runtime) {
   EventEmitter.call(this)
   this.runtime = runtime
+  this.component = runtime.component
 }
 util.inherits(DBus, EventEmitter)
 
@@ -40,10 +41,6 @@ DBus.prototype.init = function init () {
   })
 
   this.listenSignals()
-}
-
-DBus.prototype.destruct = function destruct () {
-
 }
 
 DBus.prototype.callMethod = function callMethod (
@@ -123,7 +120,7 @@ DBus.prototype.extapp = {
     out: ['b'],
     fn: function register (appId, objectPath, ifaceName, cb) {
       logger.info('dbus registering app', appId, objectPath, ifaceName)
-      if (!this.runtime.custodian.isPrepared()) {
+      if (!this.component.custodian.isPrepared()) {
         /** prevent app to invoke runtime methods if runtime is not logged in yet */
         return cb(null, false)
       }
@@ -153,11 +150,11 @@ DBus.prototype.extapp = {
         form = null
       }
       logger.info('on start', Array.prototype.slice.call(arguments, 0))
-      this.runtime.life.createApp(appId)
+      this.component.lifetime.createApp(appId)
         .then(() => {
           logger.info(`activating dbus app '${appId}'`)
           this.runtime.updateCloudStack(appId, 'cut')
-          return this.runtime.life.activateAppById(appId, form)
+          return this.component.lifetime.activateAppById(appId, form)
         })
         .then(
           () => cb(null),
@@ -169,7 +166,7 @@ DBus.prototype.extapp = {
     in: ['s'],
     out: [],
     fn: function exit (appId, cb) {
-      if (appId !== this.runtime.life.getCurrentAppId()) {
+      if (appId !== this.component.lifetime.getCurrentAppId()) {
         logger.log('exit app permission deny')
         return cb(null)
       }
@@ -181,10 +178,10 @@ DBus.prototype.extapp = {
     in: ['s', 's'],
     out: ['s'],
     fn: function tts (appId, text, cb) {
-      if (this.runtime.loader.getAppManifest(appId) == null) {
+      if (this.component.appLoader.getAppManifest(appId) == null) {
         return cb(null, '-1')
       }
-      var permit = this.runtime.permission.check(appId, 'ACCESS_TTS')
+      var permit = this.component.permission.check(appId, 'ACCESS_TTS')
       if (!permit) {
         return cb(null, '-1')
       }
@@ -197,7 +194,7 @@ DBus.prototype.extapp = {
           }
 
           var channel = `callback:tts:${ttsId}`
-          var app = this.runtime.scheduler.getAppById(appId)
+          var app = this.component.appScheduler.getAppById(appId)
           this.on(channel, event => {
             if (['end', 'cancel', 'error'].indexOf(event) < 0) {
               return
@@ -218,10 +215,10 @@ DBus.prototype.extapp = {
     in: ['s'],
     out: ['s'],
     fn: function media (appId, url, cb) {
-      if (this.runtime.loader.getAppManifest(appId) == null) {
+      if (this.component.appLoader.getAppManifest(appId) == null) {
         return cb(null, '-1')
       }
-      var permit = this.runtime.permission.check(appId, 'ACCESS_MULTIMEDIA')
+      var permit = this.component.permission.check(appId, 'ACCESS_MULTIMEDIA')
       if (!permit) {
         return cb(null, '-1')
       }
@@ -236,7 +233,7 @@ DBus.prototype.extapp = {
           }
 
           var channel = `callback:multimedia:${multimediaId}`
-          var app = this.runtime.scheduler.getAppById(appId)
+          var app = this.component.appScheduler.getAppById(appId)
           this.on(channel, event => {
             if (['playbackcomplete', 'cancel', 'error'].indexOf(event) < 0) {
               return
@@ -281,7 +278,7 @@ DBus.prototype.amsexport = {
 
         if (data.upgrade === true) {
           this.runtime.startApp('@upgrade', {}, {})
-        } else if (this.runtime.custodian.isConfiguringNetwork()) {
+        } else if (this.component.custodian.isConfiguringNetwork()) {
           logger.info('recevice message with data', data)
           var filter = [
             'CTRL-EVENT-SCAN-STARTED',
@@ -296,9 +293,9 @@ DBus.prototype.amsexport = {
           }
         }
         if (data['Network'] === true) {
-          this.runtime.custodian.onNetworkConnect()
+          this.component.custodian.onNetworkConnect()
         } else if (data['Network'] === false || data['Wifi'] === false) {
-          this.runtime.custodian.onNetworkDisconnect()
+          this.component.custodian.onNetworkDisconnect()
         }
       } catch (err) {
         logger.error(err && err.stack)
@@ -319,7 +316,7 @@ DBus.prototype.amsexport = {
     out: ['b'],
     fn: function SendIntentRequest (asr, nlp, action, cb) {
       console.log('sendintent', asr, nlp, action)
-      this.runtime.turen.handleEvent('nlp', {
+      this.component.turen.handleEvent('nlp', {
         asr: asr,
         nlp: nlp,
         action: action
@@ -348,7 +345,7 @@ DBus.prototype.amsexport = {
     in: [],
     out: [],
     fn: function Relogin (cb) {
-      this.runtime.custodian.onLogout()
+      this.component.custodian.onLogout()
       this.runtime.reconnect()
         .then(
           () => {
@@ -455,7 +452,7 @@ DBus.prototype.amsexport = {
     fn: function GetMicrophoneMuted (cb) {
       cb(null, JSON.stringify({
         ok: true,
-        result: this.runtime.turen.muted
+        result: this.component.turen.muted
       }))
     }
   },
@@ -477,7 +474,7 @@ DBus.prototype.amsexport = {
     in: ['s'],
     out: ['s'],
     fn: function TextNLP (text, cb) {
-      this.runtime.flora.getNlpResult(text, (err, nlp, action) => {
+      this.component.flora.getNlpResult(text, (err, nlp, action) => {
         if (err) {
           logger.error('Unexpected error on get nlp for asr', text, err.stack)
           return cb(null, JSON.stringify({ ok: false, error: err.message }))
@@ -551,10 +548,10 @@ DBus.prototype.amsexport = {
       logger.info('launch requested by dbus iface', appId, 'mode', mode)
       var future = Promise.resolve()
       if (stopBeforeLaunch) {
-        future = this.runtime.scheduler.suspendApp(appId, { force: true })
+        future = this.component.appScheduler.suspendApp(appId, { force: true })
       }
       future
-        .then(() => this.runtime.scheduler.createApp(appId, mode))
+        .then(() => this.component.appScheduler.createApp(appId, mode))
         .then(() => {
           cb(null, JSON.stringify({ ok: true, result: { appId: appId, mode: mode } }))
         })
@@ -569,7 +566,7 @@ DBus.prototype.amsexport = {
     out: ['s'],
     fn: function ForceStop (appId, cb) {
       logger.info('force stop requested by dbus iface', appId)
-      this.runtime.scheduler.suspendApp(appId, { force: true })
+      this.component.appScheduler.suspendApp(appId, { force: true })
         .then(() => {
           cb(null, JSON.stringify({ ok: true, result: { appId: appId } }))
         })
@@ -590,10 +587,10 @@ DBus.prototype.amsexport = {
       var options = safeParse(optionJson)
       var packageName = _.get(options, 'packageName')
       if (packageName) {
-        cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests[packageName] }))
+        cb(null, JSON.stringify({ ok: true, result: this.component.appLoader.appManifests[packageName] }))
         return
       }
-      cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests }))
+      cb(null, JSON.stringify({ ok: true, result: this.component.appLoader.appManifests }))
     }
   },
   Reload: {
@@ -607,16 +604,16 @@ DBus.prototype.amsexport = {
 
       var future
       if (appId) {
-        future = this.runtime.life.destroyAppById(appId, { force: true })
-          .then(() => this.runtime.loader.reload(appId))
+        future = this.component.lifetime.destroyAppById(appId, { force: true })
+          .then(() => this.component.appLoader.reload(appId))
           .then(() => {
-            cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests[appId] }))
+            cb(null, JSON.stringify({ ok: true, result: this.component.appLoader.appManifests[appId] }))
           })
       } else {
-        future = this.runtime.life.destroyAll({ force: true })
-          .then(() => this.runtime.loader.reload())
+        future = this.component.lifetime.destroyAll({ force: true })
+          .then(() => this.component.appLoader.reload())
           .then(() => {
-            cb(null, JSON.stringify({ ok: true, result: this.runtime.loader.appManifests }))
+            cb(null, JSON.stringify({ ok: true, result: this.component.appLoader.appManifests }))
           })
       }
       future.catch(err => {
@@ -634,15 +631,15 @@ DBus.prototype.yodadebug = {
       cb(null, JSON.stringify({
         ok: true,
         result: {
-          activeSlots: this.runtime.life.activeSlots,
-          appDataMap: this.runtime.life.appDataMap,
-          backgroundAppIds: this.runtime.life.backgroundAppIds,
-          carrierId: this.runtime.life.carrierId,
-          monopolist: this.runtime.life.monopolist,
-          appIdOnPause: this.runtime.life.appIdOnPause,
+          activeSlots: this.component.lifetime.activeSlots,
+          appDataMap: this.component.lifetime.appDataMap,
+          backgroundAppIds: this.component.lifetime.backgroundAppIds,
+          carrierId: this.component.lifetime.carrierId,
+          monopolist: this.component.lifetime.monopolist,
+          appIdOnPause: this.component.lifetime.appIdOnPause,
           cloudAppStack: this.runtime.domain,
-          appStatus: this.runtime.scheduler.appStatus,
-          appRuntimeInfo: this.runtime.scheduler.appRuntimeInfo
+          appStatus: this.component.appScheduler.appStatus,
+          appRuntimeInfo: this.component.appScheduler.appRuntimeInfo
         }
       }))
     }
@@ -662,7 +659,7 @@ DBus.prototype.yodadebug = {
         'noVoiceInputTimeout'
       ]
       keys.forEach(key => {
-        ret.result[key] = this.runtime.turen[key]
+        ret.result[key] = this.component.turen[key]
         if (ret.result[key] === undefined) {
           ret.result[key] = null
         }
@@ -677,11 +674,11 @@ DBus.prototype.yodadebug = {
       cb(null, JSON.stringify({
         ok: true,
         result: {
-          skillIdAppIdMap: this.runtime.loader.skillIdAppIdMap,
-          skillAttrsMap: this.runtime.loader.skillAttrsMap,
-          hostSkillIdMap: this.runtime.loader.hostSkillIdMap,
-          appManifests: this.runtime.loader.appManifests,
-          notifications: this.runtime.loader.notifications
+          skillIdAppIdMap: this.component.appLoader.skillIdAppIdMap,
+          skillAttrsMap: this.component.appLoader.skillAttrsMap,
+          hostSkillIdMap: this.component.appLoader.hostSkillIdMap,
+          appManifests: this.component.appLoader.appManifests,
+          notifications: this.component.appLoader.notifications
         }
       }))
     }
@@ -696,7 +693,7 @@ DBus.prototype.yodadebug = {
       }
       var floraEmit = (channel, args, ms) => {
         setTimeout(() => {
-          this.runtime.flora.post(channel, args)
+          this.component.flora.post(channel, args)
         }, ms)
       }
       if (!asr) {
@@ -706,7 +703,7 @@ DBus.prototype.yodadebug = {
         floraEmit('rokid.speech.extra', ['{"activation": "fake"}'], 600)
         cb(null, JSON.stringify({ ok: true, result: null }))
       }
-      this.runtime.flora.getNlpResult(asr, (err, nlp, action) => {
+      this.component.flora.getNlpResult(asr, (err, nlp, action) => {
         if (err) {
           return logger.error('Unexpected error on get nlp for asr', asr, err.stack)
         }
@@ -729,7 +726,7 @@ DBus.prototype.yodadebug = {
       } catch (err) {
         return cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
       }
-      this.runtime.keyboard.input.emit(cmd.event, { keyCode: cmd.keyCode, keyTime: cmd.keyTime })
+      this.component.keyboard.input.emit(cmd.event, { keyCode: cmd.keyCode, keyTime: cmd.keyTime })
       return cb(null, JSON.stringify({ ok: true, result: null }))
     }
   },

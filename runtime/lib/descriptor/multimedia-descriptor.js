@@ -36,12 +36,12 @@ MultimediaDescriptor.prototype._listenMediaEvent = function _listenMediaEvent (m
   var channel = `callback:multimedia:${multimediaId}`
   var terminationEvents = ['playbackcomplete', 'cancel', 'error']
   self._activityDescriptor._registeredDbusSignals.push(channel)
-  self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
+  self._runtime.component.dbusRegistry.on(channel, function onDbusSignal (event) {
     logger.info('received multimedia event', channel, event)
     if (terminationEvents.indexOf(event) >= 0) {
       /** stop listening upcoming events for channel */
       // FIXME(Yorkie): `removeListener()` fails on check function causes a memory leak
-      self._runtime.dbusRegistry.removeAllListeners(channel)
+      self._runtime.component.dbusRegistry.removeAllListeners(channel)
       var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
       self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
     }
@@ -127,7 +127,7 @@ Object.assign(MultimediaDescriptor.prototype,
         var self = this
         var streamType = _.get(options, 'streamType', 'playback')
 
-        if (!self._runtime.permission.check(self._appId, 'ACCESS_MULTIMEDIA', {
+        if (!self._runtime.component.permission.check(self._appId, 'ACCESS_MULTIMEDIA', {
           acquiresActive: false
         })) {
           return Promise.reject(new Error('Permission denied.'))
@@ -180,7 +180,7 @@ Object.assign(MultimediaDescriptor.prototype,
         var impatient = _.get(options, 'impatient', true)
         var streamType = _.get(options, 'streamType', 'playback')
 
-        if (!self._runtime.permission.check(self._appId, 'ACCESS_MULTIMEDIA')) {
+        if (!self._runtime.component.permission.check(self._appId, 'ACCESS_MULTIMEDIA')) {
           return Promise.reject(new Error('Permission denied.'))
         }
 
@@ -256,7 +256,7 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function resume () {
-        if (!this._runtime.permission.check(this._appId, 'ACCESS_MULTIMEDIA')) {
+        if (!this._runtime.component.permission.check(this._appId, 'ACCESS_MULTIMEDIA')) {
           return Promise.reject(new Error('Permission denied.'))
         }
         return this._runtime.multimediaMethod('resume', [this._appId])

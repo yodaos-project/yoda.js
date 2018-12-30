@@ -10,7 +10,7 @@ test('should destroy app by id', t => {
   t.plan(1)
 
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     t.strictEqual(appId, '1')
@@ -26,7 +26,7 @@ test('should destroy app by id', t => {
   t.plan(1)
 
   mock.mockAppExecutors(5, true)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     t.strictEqual(appId, '1')
@@ -42,7 +42,7 @@ test('should destroy all apps', t => {
   t.plan(5)
 
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     t.pass(`${appId} destructed`)
@@ -59,7 +59,7 @@ test('should destroy all daemon apps by force', t => {
   t.plan(5)
 
   mock.mockAppExecutors(5, true)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     t.pass(`${appId} destructed`)

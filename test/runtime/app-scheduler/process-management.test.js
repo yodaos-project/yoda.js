@@ -6,21 +6,23 @@ var mock = require('./mock')
 var Scheduler = require(`${helper.paths.runtime}/lib/component/app-scheduler`)
 
 var target = path.join(helper.paths.fixture, 'noop-app')
-var runtime = {
-  appGC: function () {}
-}
 
 require('@yoda/oh-my-little-pony')
 
 test('shall create child process', t => {
   t.plan(5)
   var appId = '@test'
-  var loader = mock.getLoader({
-    '@test': {
-      appHome: target
+  var runtime = {
+    appGC: function () {},
+    component: {
+      appLoader: mock.getLoader({
+        '@test': {
+          appHome: target
+        }
+      })
     }
-  })
-  var scheduler = new Scheduler(loader, runtime)
+  }
+  var scheduler = new Scheduler(runtime)
   t.looseEqual(scheduler.appStatus[appId], null)
   var promise = scheduler.createApp(appId)
   t.strictEqual(scheduler.appStatus[appId], 'creating')

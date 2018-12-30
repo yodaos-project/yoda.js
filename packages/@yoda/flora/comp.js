@@ -31,7 +31,7 @@ FloraComp.prototype.init = function (fid, config) {
   }
 }
 
-FloraComp.prototype.destruct = function () {
+FloraComp.prototype.deinit = function () {
   if (this.agent instanceof flora.Agent) {
     this.agent.close()
   }
