@@ -334,8 +334,12 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
+  var lastAppForm = this.getCurrentAppForm()
   var memoStack = this.activeSlots.copy()
   this.activeSlots.addApp(appId, isScene)
+  if (lastAppId !== appId) {
+    this.onPreemption(lastAppId, lastAppForm)
+  }
   var deferred = () => {
     return this.onLifeCycle(appId, 'active', activateParams)
   }
@@ -343,10 +347,10 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   if (form === 'scene') {
     // Exit all apps in stack on incoming scene nlp
     logger.info(`on scene app '${appId}' preempting, deactivating all apps in stack.`)
-    if (memoStack.cut) {
+    if (memoStack.cut !== appId) {
       this.onEvict(memoStack.cut, 'cut')
     }
-    if (memoStack.scene) {
+    if (memoStack.scene !== appId) {
       this.onEvict(memoStack.scene, 'scene')
     }
     return future.then(() =>
@@ -373,12 +377,11 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
       .then(deferred)
   }
 
-  this.onEvict(lastAppId, 'cut')
-
   /**
    * currently running app is a normal app, deactivate it
    */
   logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
+  this.onEvict(lastAppId, 'cut')
   /** no need to recover previously paused scene app if exists */
   return future.then(() => this.deactivateAppById(lastAppId, { recover: false, force: true }))
     .then(deferred)
@@ -623,6 +626,15 @@ LaVieEnPile.prototype.onEvict = function onEvict (appId, form) {
     if (isIdle) {
       this.emit('idle')
     }
+  })
+}
+
+/**
+ * Emit event `preemption` with the app id as first argument to listeners.
+ */
+LaVieEnPile.prototype.onPreemption = function onPreemption (appId, form) {
+  process.nextTick(() => {
+    this.emit('preemption', appId, form)
   })
 }
 

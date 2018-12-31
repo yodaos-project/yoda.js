@@ -157,6 +157,34 @@ test('shall evict scene app on scene preemption', t => {
     })
 })
 
+test('shall not evict on app form upgrade', t => {
+  mock.restore()
+  t.plan(1)
+
+  mock.mockAppExecutors(2)
+  var life = new Lifetime(mock.runtime)
+
+  life.on('evict', (appId, form) => {
+    t.fail('no eviction shall be made')
+  })
+
+  Promise.all(_.times(2).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0', 'cut')
+    })
+    .then(() => {
+      console.log(life.activeSlots)
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      t.pass()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('shall evict cut app on setBackground', t => {
   mock.restore()
   t.plan(2)

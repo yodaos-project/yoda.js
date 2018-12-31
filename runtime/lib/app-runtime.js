@@ -81,7 +81,7 @@ AppRuntime.prototype.init = function init () {
   this.component.lifetime.on('stack-reset', () => {
     this.resetCloudStack()
   })
-  this.component.lifetime.on('evict', appId => {
+  this.component.lifetime.on('preemption', appId => {
     this.appPause(appId)
   })
   // initializing the whole process...
