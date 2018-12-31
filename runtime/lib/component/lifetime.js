@@ -9,16 +9,14 @@ var _ = require('@yoda/util')._
  * Active app slots. Only two slots are currently supported: cut and scene.
  * And only two app could be able to be on slots simultaneously.
  */
-function AppSlots () {
-  this.cut = null
-  this.scene = null
+function AppSlots (cut, scene) {
+  this.cut = cut
+  this.scene = scene
 }
 
 AppSlots.prototype.addApp = function addApp (appId, isScene) {
-  if (isScene && this.cut === appId) {
-    this.cut = null
-  }
   if (isScene) {
+    this.cut = null
     this.scene = appId
     return
   }
@@ -28,7 +26,7 @@ AppSlots.prototype.addApp = function addApp (appId, isScene) {
 /**
  * Remove app from app slots.
  * @param {string} appId
- * @returns {boolean} returns true if app is removed from slots, false otherwise.
+ * @returns {false|'cut'|'scene'} returns form if app is removed from slots, false otherwise.
  */
 AppSlots.prototype.removeApp = function removeApp (appId) {
   if (appId == null) {
@@ -36,21 +34,30 @@ AppSlots.prototype.removeApp = function removeApp (appId) {
   }
   if (this.cut === appId) {
     this.cut = null
-    return true
+    return 'cut'
   }
   if (this.scene === appId) {
     this.scene = null
-    return true
+    return 'scene'
   }
   return false
 }
 
 /**
- * Get a copy of current slots in array form.
+ * Get a copy of current slots.
+ *
+ * @returns {AppSlots}
+ */
+AppSlots.prototype.copy = function copy () {
+  return new AppSlots(this.cut, this.scene)
+}
+
+/**
+ * Get a array copy of current slots in array form.
  *
  * @returns {string[]}
  */
-AppSlots.prototype.copy = function copy () {
+AppSlots.prototype.toArray = function toArray () {
   return [ this.cut, this.scene ].filter(it => it != null)
 }
 
@@ -147,6 +154,22 @@ LaVieEnPile.prototype.getCurrentAppId = function getCurrentAppId () {
   }
   appId = this.activeSlots.scene
   return appId
+}
+
+/**
+ * Get app form of top app in stack.
+ * @returns {'cut' | 'scene' | null} form, or null if no app was in stack.
+ */
+LaVieEnPile.prototype.getCurrentAppForm = function getCurrentAppForm () {
+  var appId = this.activeSlots.cut
+  if (appId != null) {
+    return 'cut'
+  }
+  appId = this.activeSlots.scene
+  if (appId != null) {
+    return 'scene'
+  }
+  return null
 }
 
 /**
@@ -311,9 +334,12 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
-  var stack = this.activeSlots.copy()
-  this.activeSlots.addApp(appId, wasScene || form === 'scene')
-  this.onEvict(lastAppId)
+  var lastAppForm = this.getCurrentAppForm()
+  var memoStack = this.activeSlots.copy()
+  this.activeSlots.addApp(appId, isScene)
+  if (lastAppId !== appId) {
+    this.onPreemption(lastAppId, lastAppForm)
+  }
   var deferred = () => {
     return this.onLifeCycle(appId, 'active', activateParams)
   }
@@ -321,8 +347,14 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   if (form === 'scene') {
     // Exit all apps in stack on incoming scene nlp
     logger.info(`on scene app '${appId}' preempting, deactivating all apps in stack.`)
+    if (memoStack.cut !== appId) {
+      this.onEviction(memoStack.cut, 'cut')
+    }
+    if (memoStack.scene !== appId) {
+      this.onEviction(memoStack.scene, 'scene')
+    }
     return future.then(() =>
-      Promise.all(stack.filter(it => it !== appId)
+      Promise.all(memoStack.toArray().filter(it => it !== appId)
         .map(it => this.deactivateAppById(it, { recover: false, force: true }))))
       .then(deferred)
   }
@@ -349,6 +381,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
    * currently running app is a normal app, deactivate it
    */
   logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
+  this.onEviction(lastAppId, 'cut')
   /** no need to recover previously paused scene app if exists */
   return future.then(() => this.deactivateAppById(lastAppId, { recover: false, force: true }))
     .then(deferred)
@@ -384,8 +417,8 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   }
   var currentAppId = this.getCurrentAppId()
 
-  var removed = this.activeSlots.removeApp(appId)
-  if (!removed && !force) {
+  var removedSlot = this.activeSlots.removeApp(appId)
+  if (!removedSlot && !force) {
     /** app is in stack, no need to be deactivated */
     logger.info('app is not in stack, skip deactivating', appId)
     return Promise.resolve()
@@ -396,8 +429,8 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   }
 
   delete this.appDataMap[appId]
-  if (removed) {
-    this.onEvict(appId)
+  if (removedSlot) {
+    this.onEviction(appId, removedSlot)
   }
 
   var deactivating = this.destroyAppById(appId)
@@ -488,14 +521,14 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   var recover = _.get(options, 'recover', true)
 
   logger.info('set background', appId)
-  var removed = this.activeSlots.removeApp(appId)
-  if (removed) {
+  var removedSlot = this.activeSlots.removeApp(appId)
+  if (removedSlot) {
     delete this.appDataMap[appId]
-    this.onEvict(appId)
+    this.onEviction(appId, removedSlot)
   }
 
   var idx = this.backgroundAppIds.indexOf(appId)
-  if (idx >= 0 && !removed) {
+  if (idx >= 0 && !removedSlot) {
     logger.info('app already in background', appId)
     return Promise.resolve()
   }
@@ -505,7 +538,7 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
 
   var future = this.onLifeCycle(appId, 'background')
 
-  if (!recover || !removed) {
+  if (!recover || !removedSlot) {
     /**
      * No recover shall be taken if app is not active.
      */
@@ -581,17 +614,27 @@ LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) 
 }
 
 /**
- * Emit event `evict` with the evicted app id as first argument to listeners.
+ * Emit event `eviction` with the evicted app id as first argument to listeners.
  */
-LaVieEnPile.prototype.onEvict = function onEvict (appId) {
+LaVieEnPile.prototype.onEviction = function onEvict (appId, form) {
   if (!appId) {
     return
   }
+  var isIdle = !this.getCurrentAppId()
   process.nextTick(() => {
-    this.emit('evict', appId)
-    if (!this.getCurrentAppId()) {
+    this.emit('eviction', appId, form)
+    if (isIdle) {
       this.emit('idle')
     }
+  })
+}
+
+/**
+ * Emit event `preemption` with the app id as first argument to listeners.
+ */
+LaVieEnPile.prototype.onPreemption = function onPreemption (appId, form) {
+  process.nextTick(() => {
+    this.emit('preemption', appId, form)
   })
 }
 
