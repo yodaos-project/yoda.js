@@ -348,10 +348,10 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     // Exit all apps in stack on incoming scene nlp
     logger.info(`on scene app '${appId}' preempting, deactivating all apps in stack.`)
     if (memoStack.cut !== appId) {
-      this.onEvict(memoStack.cut, 'cut')
+      this.onEviction(memoStack.cut, 'cut')
     }
     if (memoStack.scene !== appId) {
-      this.onEvict(memoStack.scene, 'scene')
+      this.onEviction(memoStack.scene, 'scene')
     }
     return future.then(() =>
       Promise.all(memoStack.toArray().filter(it => it !== appId)
@@ -381,7 +381,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
    * currently running app is a normal app, deactivate it
    */
   logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
-  this.onEvict(lastAppId, 'cut')
+  this.onEviction(lastAppId, 'cut')
   /** no need to recover previously paused scene app if exists */
   return future.then(() => this.deactivateAppById(lastAppId, { recover: false, force: true }))
     .then(deferred)
@@ -430,7 +430,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
 
   delete this.appDataMap[appId]
   if (removedSlot) {
-    this.onEvict(appId, removedSlot)
+    this.onEviction(appId, removedSlot)
   }
 
   var deactivating = this.destroyAppById(appId)
@@ -524,7 +524,7 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   var removedSlot = this.activeSlots.removeApp(appId)
   if (removedSlot) {
     delete this.appDataMap[appId]
-    this.onEvict(appId, removedSlot)
+    this.onEviction(appId, removedSlot)
   }
 
   var idx = this.backgroundAppIds.indexOf(appId)
@@ -614,15 +614,15 @@ LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) 
 }
 
 /**
- * Emit event `evict` with the evicted app id as first argument to listeners.
+ * Emit event `eviction` with the evicted app id as first argument to listeners.
  */
-LaVieEnPile.prototype.onEvict = function onEvict (appId, form) {
+LaVieEnPile.prototype.onEviction = function onEvict (appId, form) {
   if (!appId) {
     return
   }
   var isIdle = !this.getCurrentAppId()
   process.nextTick(() => {
-    this.emit('evict', appId, form)
+    this.emit('eviction', appId, form)
     if (isIdle) {
       this.emit('idle')
     }

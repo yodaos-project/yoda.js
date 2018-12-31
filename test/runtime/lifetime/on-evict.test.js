@@ -12,7 +12,7 @@ test('shall evict cut app on deactivate', t => {
   mock.mockAppExecutors(1)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.strictEqual(appId, '0')
     t.strictEqual(form, 'cut')
   })
@@ -37,7 +37,7 @@ test('shall evict scene app on deactivate', t => {
   mock.mockAppExecutors(1)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.strictEqual(appId, '0')
     t.strictEqual(form, 'scene')
   })
@@ -62,7 +62,7 @@ test('shall evict cut app on cut preemption', t => {
   mock.mockAppExecutors(2)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.strictEqual(appId, '0', 'appId shall be 0')
     t.strictEqual(form, 'cut', 'form shall be cut')
   })
@@ -87,7 +87,7 @@ test('shall evict cut app on scene preemption', t => {
   mock.mockAppExecutors(2)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.strictEqual(appId, '0', 'appId shall be 0')
     t.strictEqual(form, 'cut', 'form shall be cut')
   })
@@ -112,7 +112,7 @@ test('shall not evict scene app on cut preemption', t => {
   mock.mockAppExecutors(2)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.fail('no eviction')
   })
 
@@ -139,7 +139,7 @@ test('shall evict scene app on scene preemption', t => {
   mock.mockAppExecutors(2)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.strictEqual(appId, '0')
     t.strictEqual(form, 'scene')
   })
@@ -164,7 +164,7 @@ test('shall not evict on app form upgrade', t => {
   mock.mockAppExecutors(2)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.fail('no eviction shall be made')
   })
 
@@ -192,7 +192,7 @@ test('shall evict cut app on setBackground', t => {
   mock.mockAppExecutors(3)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.strictEqual(appId, '0')
     t.strictEqual(form, 'cut')
   })
@@ -217,7 +217,7 @@ test('shall evict scene app on setBackground', t => {
   mock.mockAppExecutors(3)
   var life = new Lifetime(mock.runtime)
 
-  life.on('evict', (appId, form) => {
+  life.on('eviction', (appId, form) => {
     t.strictEqual(appId, '0')
     t.strictEqual(form, 'scene')
   })
