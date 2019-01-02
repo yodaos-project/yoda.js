@@ -1,0 +1,22 @@
+{
+  "common": {
+    "reconnInterval": 10000,
+    "pingInterval": 10000,
+    "noRespTimeout": 20000
+  },
+  "speech": {
+    "lang": 0,
+    "codec": 0,
+    "vadMode": 1,
+    "vadEndTimeout": 700,
+    "noNlp": 0,
+    "noIntermediateAsr": 0,
+    "vadBegin": 0,
+    "voiceFragment": 1000
+  },
+  "tts": {
+    "codec": 2,
+    "declaimer": "zh",
+    "samplerate": 24000
+  }
+}

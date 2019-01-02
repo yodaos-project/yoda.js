@@ -7,6 +7,7 @@ var FloraComp = require('@yoda/flora/comp')
 
 var floraConfig = require('/etc/yoda/flora-config.json')
 var globalEnv = require('@yoda/env')()
+var ovsdkConfig = require('/etc/yoda/openvoice-sdk.json')
 
 var asr2nlpId = 'js-AppRuntime'
 var asr2nlpSeq = 0
@@ -147,13 +148,14 @@ function onAsr2NlpError (msg) {
 Flora.prototype.init = function init () {
   FloraComp.prototype.init.call(this, 'vui', floraConfig)
   this.post('rokid.speech.options', [
-    0,
-    0,
-    1, 500,
-    0,
-    0,
-    globalEnv.speechVadBegin,
-    globalEnv.speechVoiceFragment
+    ovsdkConfig.speech.lang,
+    ovsdkConfig.speech.codec,
+    ovsdkConfig.speech.vadMode,
+    ovsdkConfig.speech.vadEndTimeout,
+    ovsdkConfig.speech.noNlp,
+    ovsdkConfig.speech.noIntermediateAsr,
+    ovsdkConfig.speech.vadBegin,
+    ovsdkConfig.speech.voiceFragment
   ], floraFactory.MSGTYPE_PERSIST)
 }
 
@@ -176,9 +178,9 @@ Flora.prototype.updateSpeechPrepareOptions = function updateSpeechPrepareOptions
     speechAuthInfo.deviceTypeId,
     speechAuthInfo.secret,
     speechAuthInfo.deviceId,
-    globalEnv.speechReconnInterval,
-    globalEnv.speechPingInterval,
-    globalEnv.speechNoRespTimeout
+    ovsdkConfig.common.reconnInterval,
+    ovsdkConfig.common.pingInterval,
+    ovsdkConfig.common.noRespTimeout
   ], floraFactory.MSGTYPE_PERSIST)
 }
 
