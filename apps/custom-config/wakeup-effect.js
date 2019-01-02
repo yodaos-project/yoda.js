@@ -180,7 +180,7 @@ class WakeupEffect extends BaseConfig {
         if (awakeSound === AWAKE_EFFECT_CUSTOM) {
           files[i] = path + files[i]
         } else {
-          if (_.startsWith(files[i], "awake") && _.endsWith(files[i],".wav")) {
+          if (_.startsWith(files[i], 'awake') && _.endsWith(files[i], '.wav')) {
             files[i] = path + files[i]
             logger.info(`awake file: ${files[i]}`)
           }
