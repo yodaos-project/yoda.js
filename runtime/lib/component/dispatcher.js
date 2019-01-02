@@ -19,7 +19,13 @@ class Dispatcher {
    * @param {any} config
    */
   validateConfig (config) {
+    if (typeof config !== 'object') {
+      throw new Error('Invalid component-config.json')
+    }
     var ret = { interception: {} }
+    if (typeof config.interception !== 'object') {
+      throw new Error('config.interception is not an object.')
+    }
     Object.keys(config.interception).forEach(key => {
       var match = key.split('.', 2)
       var componentName = match[0]
