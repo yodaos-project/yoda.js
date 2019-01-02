@@ -79,7 +79,7 @@ void Activation::prepareForNextAwake() {
 void Activation::playAwake() {
   char propValue[PROP_VALUE_MAX];
   property_get("persist.dndmode.awakeswitch", (char *) propValue, "");
-  if (strcmp(propValue, "open") != 0) {
+  if (strcmp(propValue, "close") == 0) {
     fprintf(stdout, "dnd mode, just skip\n");
     return;
   } else {

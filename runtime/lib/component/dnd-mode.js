@@ -62,6 +62,7 @@ class DNDCommon {
     this.light.setDNDMode(false)
     DNDCommon.setStatus('off')
     DNDCommon.setAwakeSwitch('open')
+    logger.info('dnd mode turned off')
   }
 
   /**
@@ -73,10 +74,12 @@ class DNDCommon {
     if (DND_MODE_VOLUME < curVolume) {
       this.sound.setVolume(DND_MODE_VOLUME)
       DNDCommon.setSavedVolume(curVolume)
+      logger.info(`save volume [${curVolume}%]`)
     }
     this.light.setDNDMode(true)
     DNDCommon.setStatus('on')
     DNDCommon.setAwakeSwitch('close')
+    logger.info('dnd mode turned on')
   }
 
   /**
@@ -86,13 +89,16 @@ class DNDCommon {
    *                   - if result < 0, it's the millisecond to start time
    */
   static getDNDTime () {
+    function formatDate (dt) {
+      return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDay()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
+    }
     var now = new Date()
     var start = DNDCommon.formatTime(DNDCommon.getStartTime(), 22, 0)
     var end = DNDCommon.formatTime(DNDCommon.getEndTime(), 7, 0)
     if (start > end) {
       end.setDate(end.getDate() + 1)
     }
-    logger.info(`check time now:${Number(now)}   start:${Number(start)}   end:${Number(end)}`)
+    logger.info(`check utc time now:${formatDate(now)}   start:${formatDate(start)}   end:${formatDate(end)}`)
     if (now >= start && now < end) {
       return end - now
     } else if (now < start) {
@@ -295,7 +301,7 @@ class DNDMode {
     if (this.waitSleep && this.fsmStatus === FSM_WAITING) {
       this.waitSleep = false
       if (this.fsmWaitingBreaker) {
-        logger.info('fsm waiting break : device is idle')
+        logger.info('device is idle, recheck dnd mode')
         this.fsmWaitingBreaker()
       }
     } else if (this.fsmStatus === FSM_END) {
@@ -327,7 +333,7 @@ class DNDMode {
 
     DNDCommon.setStartTime(startTime)
     DNDCommon.setEndTime(endTime)
-    logger.info(`setOption in, fsm status is ${this.fsmStatus}`)
+    logger.info(`dnd mode config changed, recheck dnd mode`)
     this.isOptionBreaker = true
     if (this.fsmStatus === FSM_WAITING) {
       if (this.fsmWaitingBreaker) {
@@ -343,10 +349,10 @@ class DNDMode {
   }
 
   /**
-   * recheck dnd mode
+   * recheck dnd mode because of date synchronization
    */
   recheck () {
-    logger.info(`recheck dnd mode, fsm status is ${this.fsmStatus}`)
+    logger.info(`time synchronized, recheck dnd mode`)
     if (this.fsmStatus === FSM_WAITING) {
       if (this.fsmWaitingBreaker) {
         logger.info('fsm waiting break')
@@ -553,6 +559,13 @@ class DNDMode {
       waitMs = -waitMs
     }
     this.waitSleep = (code === FSMCode.CheckActivityTrue || code === FSMCode.CheckActivityTrueX)
+    if (!this.waitSleep) {
+      if (waitMs >= 0) {
+        logger.info(`waiting to exit night mode, timeout:[${waitMs / 1000}s]`)
+      } else {
+        logger.info(`waiting to enter night mode, timeout:[${-waitMs / 1000}s]`)
+      }
+    }
     this.fsmTimer = setTimeout(() => {
       this.start(FSMCode.CheckAgain)
     }, waitMs)
