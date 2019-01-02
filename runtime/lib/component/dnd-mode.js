@@ -90,7 +90,7 @@ class DNDCommon {
    */
   static getDNDTime () {
     function formatDate (dt) {
-      return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDay()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
+      return `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDay()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
     }
     var now = new Date()
     var start = DNDCommon.formatTime(DNDCommon.getStartTime(), 22, 0)
@@ -564,6 +564,12 @@ class DNDMode {
         logger.info(`waiting to exit night mode, timeout:[${waitMs / 1000}s]`)
       } else {
         logger.info(`waiting to enter night mode, timeout:[${-waitMs / 1000}s]`)
+      }
+    } else {
+      if (waitMs < 0) {
+        logger.info(`wait for sleeping to turn on`)
+      } else {
+        logger.info(`wait for sleeping to turn off`)
       }
     }
     this.fsmTimer = setTimeout(() => {
