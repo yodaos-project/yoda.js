@@ -235,7 +235,7 @@ class DNDCommon {
    */
   static formatTime (timeStr, defaultHour, defaultMinute) {
     var d = new Date()
-    var curTimeZone = d.getTimezoneOffset() / 60
+    var curTimeZone = -(d.getTimezoneOffset() / 60)
     d.setSeconds(0)
     d.setMilliseconds(0)
     var hour = defaultHour
