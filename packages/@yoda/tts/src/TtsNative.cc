@@ -1,7 +1,7 @@
 #include "TtsNative.h"
 
 void TtsNative::SendEvent(void* self, TtsResultType type, int id, int code) {
-  TtsNative* native = (TtsNative*)self;
+  TtsNative* native = static_cast<TtsNative*>(self);
   uv_async_t* async_handle = new uv_async_t;
   iotjs_tts_event_t* event = new iotjs_tts_event_t;
 
@@ -81,6 +81,7 @@ JS_FUNCTION(TTS) {
   DJS_CHECK_THIS();
 
   const jerry_value_t jtts = JS_GET_THIS();
+  //cppcheck-suppress unreadVariable
   iotjs_tts_t* tts_instance = iotjs_tts_create(jtts);
   return jerry_create_undefined();
 }
@@ -96,16 +97,17 @@ JS_FUNCTION(Prepare) {
     return JS_CREATE_ERROR(COMMON, "instance has been prepared already");
   }
 
-  char* host;
+  char* host = NULL;
   int port;
-  char* branch;
+  char* branch = NULL;
   char* key;
   char* device_type;
   char* device_id;
   char* secret;
   char* declaimer;
-
+  bool holdconnect;
   port = (int)JS_GET_ARG(1, number);
+  holdconnect = JS_GET_ARG(8, boolean);
   for (int i = 0; i < 8; i++) {
     if (i == 1)
       continue;
@@ -141,11 +143,12 @@ JS_FUNCTION(Prepare) {
     }
   }
 
-  fprintf(stdout, "host: %s, port: %d, branch: %s\n", host, port, branch);
-
+  if (host != NULL && branch != NULL) {
+    fprintf(stdout, "host: %s, port: %d, branch: %s\n", host, port, branch);
+  }
   _this->prepared = true;
   _this->handle->prepare(host, port, branch, key, device_type, device_id,
-                         secret, declaimer);
+                         secret, declaimer, holdconnect);
 
   free(host);
   free(branch);
@@ -168,7 +171,7 @@ JS_FUNCTION(Speak) {
     return JS_CREATE_ERROR(COMMON, "first argument should be a string");
   }
 
-  char* text = NULL;
+  char* text;
   jerry_size_t size = jerry_get_utf8_string_size(jargv[0]);
   jerry_char_t text_buf[size + 1];
   jerry_string_to_utf8_char_buffer(jargv[0], text_buf, size);
