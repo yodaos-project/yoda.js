@@ -176,17 +176,21 @@ class WakeupEffect extends BaseConfig {
     var awakeSound = property.get('sys.wakeupsound', 'persist')
     var path = awakeSound === AWAKE_EFFECT_CUSTOM ? ActivationConfig.customPath : ActivationConfig.defaultPath
     return readDirAsync(path).then((files) => {
+      var result = [];
       for (var i = 0; i < files.length; ++i) {
         if (awakeSound === AWAKE_EFFECT_CUSTOM) {
-          files[i] = path + files[i]
+          if (_.endsWith(files[i], '.wav')) {
+            result.push(path + files[i])
+            logger.info(`custom awake file: ${files[i]}`)
+          }
         } else {
           if (_.startsWith(files[i], 'awake') && _.endsWith(files[i], '.wav')) {
-            files[i] = path + files[i]
-            logger.info(`awake file: ${files[i]}`)
+            result.push(path + files[i])
+            logger.info(`default awake file: ${files[i]}`)
           }
         }
       }
-      return files
+      return result
     })
   }
   /**
