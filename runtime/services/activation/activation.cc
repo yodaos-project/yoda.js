@@ -21,7 +21,8 @@ Activation::Activation() {
 }
 
 // cppcheck-suppress unusedFunction
-void Activation::recv_post(const char *name, uint32_t msgtype, shared_ptr <Caps> &msg) {
+void Activation::recv_post(const char* name, uint32_t msgtype,
+                           shared_ptr<Caps>& msg) {
   if (strcmp(VOICE_COMING, name) == 0) {
     playAwake();
   } else if (strcmp(WAKEUP_SOUND, name) == 0) {
@@ -44,8 +45,8 @@ void Activation::flora_disconnected() {
 }
 
 void Activation::start() {
-  shared_ptr <Client> cli;
-  unique_lock <mutex> locker(reconn_mutex);
+  shared_ptr<Client> cli;
+  unique_lock<mutex> locker(reconn_mutex);
   prepareForNextAwake();
   while (true) {
     int32_t r = Client::connect("unix:/var/run/flora.sock", this, 0, cli);
@@ -64,10 +65,16 @@ void Activation::start() {
 void Activation::prepareForNextAwake() {
   if (is_open) {
     int id = rand() % files_from_flora.size();
-    prepareWavPlayer(files_from_flora[id].c_str(), "system", true);
+    char propValue[PROP_VALUE_MAX];
+    bool keepAlive = true;
+    property_get("persist.awake.audio.holdcon", (char*)propValue, "");
+    if (strcmp(propValue, '0') == 0) {
+      keepAlive = false;
+    }
+    prepareWavPlayer(files_from_flora[id].c_str(), "system", keepAlive);
     if (!volume_set) {
       char val[PROP_VALUE_MAX];
-      property_get("persist.audio.volume.system", (char *) &val, "");
+      property_get("persist.audio.volume.system", (char*)&val, "");
       int vol = atoi(val);
       fprintf(stdout, "init activation volume to %d\n", vol);
       rk_set_stream_volume(STREAM_SYSTEM, vol);
@@ -78,12 +85,12 @@ void Activation::prepareForNextAwake() {
 
 void Activation::playAwake() {
   char propValue[PROP_VALUE_MAX];
-  property_get("persist.dndmode.awakeswitch", (char *) propValue, "");
+  property_get("persist.dndmode.awakeswitch", (char*)propValue, "");
   if (strcmp(propValue, "open") != 0) {
     fprintf(stdout, "dnd mode, just skip\n");
     return;
   } else {
-    property_get("state.network.connected", (char *) propValue, "");
+    property_get("state.network.connected", (char*)propValue, "");
     if (strcmp(propValue, "true") != 0) {
       fprintf(stdout, "current network is not available, just skip\n");
       return;
@@ -95,8 +102,10 @@ void Activation::playAwake() {
   }
 }
 
-void Activation::applyAwakeSound(shared_ptr <Caps> &msg) {
-#define CAPS_READ(action) if (action != CAPS_SUCCESS) goto ERROR
+void Activation::applyAwakeSound(shared_ptr<Caps>& msg) {
+#define CAPS_READ(action)     \
+  if (action != CAPS_SUCCESS) \
+  goto ERROR
   if (!msg)
     goto ERROR;
   int32_t fCount;
@@ -104,8 +113,8 @@ void Activation::applyAwakeSound(shared_ptr <Caps> &msg) {
   files_from_flora.clear();
   if (fCount > MAX_PLAY_LIST)
     fCount = MAX_PLAY_LIST;
-  const char *filename_list[MAX_PLAY_LIST];
-  for(int i = 0; i < fCount; ++i) {
+  const char* filename_list[MAX_PLAY_LIST];
+  for (int i = 0; i < fCount; ++i) {
     files_from_flora.emplace_back();
     CAPS_READ(msg->read_string(files_from_flora.back()));
     filename_list[i] = files_from_flora[i].c_str();

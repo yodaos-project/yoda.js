@@ -19,15 +19,20 @@ class TtsNative;
 
 typedef struct {
   iotjs_jobjectwrap_t jobjectwrap;
+  // cppcheck-suppress unusedStructMember
   bool prepared;
+  // cppcheck-suppress unusedStructMember
   TtsNative* handle;
   uv_async_t close_handle;
 } IOTJS_VALIDATED_STRUCT(iotjs_tts_t);
 
 typedef struct {
+  // cppcheck-suppress unusedStructMember
   iotjs_tts_t* ttswrap;
   TtsResultType type;
+  // cppcheck-suppress unusedStructMember
   int code;
+  // cppcheck-suppress unusedStructMember
   int id;
 } iotjs_tts_event_t;
 
@@ -38,7 +43,7 @@ typedef struct {
 class TtsNative : public TtsService {
  public:
   TtsNative(){};
-  TtsNative(iotjs_tts_t* ttswrap_) {
+  explicit TtsNative(iotjs_tts_t* ttswrap_) {
     ttswrap = ttswrap_;
     send_event = &TtsNative::SendEvent;
   };

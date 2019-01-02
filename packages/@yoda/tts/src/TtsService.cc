@@ -25,7 +25,7 @@ int TtsService::cancel(int id) {
   tts_handle->cancel(id);
   _player.resetOpusPlayer();
 }
-
+// cppcheck-suppress unusedFunction
 int TtsService::disconnect() {
   if (!prepared) {
     return 0;
@@ -38,8 +38,7 @@ int TtsService::disconnect() {
 
 void* TtsService::PollEvent(void* params) {
   TtsResult res;
-  TtsService* self = (TtsService*)params;
-
+  TtsService* self = static_cast<TtsService*>(params);
   while (true) {
     if (self->need_destroy_ == true) {
       break;
@@ -64,17 +63,17 @@ void* TtsService::PollEvent(void* params) {
         break;
       }
       case TTS_RES_END: {
-        _player.drain();
+        _player.drain(self->holdconnect);
         self->send_event(self, TTS_RES_END, res.id, 0);
         break;
       }
       case TTS_RES_CANCELLED: {
-        _player.drain();
+        _player.drain(self->holdconnect);
         self->send_event(self, TTS_RES_CANCELLED, res.id, 0);
         break;
       }
       case TTS_RES_ERROR: {
-        _player.drain();
+        _player.drain(self->holdconnect);
         self->send_event(self, TTS_RES_ERROR, res.id, res.err);
         break;
       }
@@ -88,7 +87,7 @@ void* TtsService::PollEvent(void* params) {
 bool TtsService::prepare(const char* host, int port, const char* branch,
                          const char* auth_key, const char* device_type,
                          const char* device_id, const char* secret,
-                         const char* declaimer) {
+                         const char* declaimer, bool holdcon) {
   if (prepared) {
     return true;
   }
@@ -103,7 +102,7 @@ bool TtsService::prepare(const char* host, int port, const char* branch,
   // options.reconn_interval = 3000;
   // options.ping_interval = 5000;
   // options.no_resp_timeout = 3000;
-
+  holdconnect = holdcon;
   tts_handle = Tts::new_instance();
   tts_options = TtsOptions::new_instance();
   if (declaimer) {
@@ -129,7 +128,7 @@ terminate:
     tts_handle->release();
   return false;
 }
-
+// cppcheck-suppress unusedFunction
 void TtsService::reconnect() {
   if (tts_handle.get())
     tts_handle->reconn();
