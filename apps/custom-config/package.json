@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "metadata": {
+  "manifest": {
     "skills": [
       "@custom-config",
       "RF68BD0FD30340ECBB926023072A8179"
@@ -17,10 +17,7 @@
       "INTERRUPT"
     ],
     "hosts": [
-      {
-        "name": "custom-config",
-        "skillId": "RF68BD0FD30340ECBB926023072A8179"
-      }
+      [ "custom-config", { "skillId": "RF68BD0FD30340ECBB926023072A8179" } ]
     ]
   },
   "keywords": [
