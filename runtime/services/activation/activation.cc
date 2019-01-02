@@ -1,111 +1,122 @@
-#include <utility>
-#include <list>
-#include <mutex>
-#include <thread>
-#include <chrono>
-#include <condition_variable>
-#include <memory>
-#include <string>
-#include <string.h>
-#include <iostream>
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
-#include <librplayer/WavPlayer.h>
-#include <cutils/properties.h>
-#include <vol_ctrl/volumecontrol.h>
-#include "flora-cli.h"
+#include "activation.h"
+#include <cjson/cJSON.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 using namespace flora;
 
-const char* filenames[] = {
-  "/opt/media/awake_01.wav",
-  "/opt/media/awake_02.wav",
-  "/opt/media/awake_03.wav",
-  "/opt/media/awake_04.wav",
-  "/opt/media/awake_05.wav"
-};
+const char* VOICE_COMING = "rokid.turen.voice_coming";
+const char* WAKEUP_SOUND = "rokid.custom_config.wakeup_sound";
 
-class Activation : public ClientCallback {
- public:
-  // cppcheck-suppress unusedFunction
-  void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg) {
-    char is_awakeswitch_open[PROP_VALUE_MAX];
-    property_get("persist.dndmode.awakeswitch", (char*)is_awakeswitch_open, "");
-    if (strcmp(is_awakeswitch_open, "close") == 0) {
-      fprintf(stdout, "dndmode.awakeswitch is closed, just skip\n");
-      return;
+const int32_t FILE_MAX_SIZE = 20 * 1024;
+const int32_t MAX_PLAY_LIST = 10;
+
+Activation::Activation() {
+  srand(time(NULL));
+}
+
+// cppcheck-suppress unusedFunction
+void Activation::recv_post(const char *name, uint32_t msgtype, shared_ptr <Caps> &msg) {
+  if (strcmp(VOICE_COMING, name) == 0) {
+    playAwake();
+  } else if (strcmp(WAKEUP_SOUND, name) == 0) {
+    applyAwakeSound(msg);
+  } else
+    fprintf(stderr, "unexpected message from [%s]\n", name);
+}
+
+// cppcheck-suppress unusedFunction
+void Activation::disconnected() {
+  thread tmp([this]() { this->flora_disconnected(); });
+  tmp.detach();
+}
+
+void Activation::flora_disconnected() {
+  flora_cli.reset();
+  reconn_mutex.lock();
+  reconn_cond.notify_one();
+  reconn_mutex.unlock();
+}
+
+void Activation::start() {
+  shared_ptr <Client> cli;
+  unique_lock <mutex> locker(reconn_mutex);
+  prepareForNextAwake();
+  while (true) {
+    int32_t r = Client::connect("unix:/var/run/flora.sock", this, 0, cli);
+    if (r != FLORA_CLI_SUCCESS) {
+      fprintf(stderr, "init flora client failed, please retry\n");
+      reconn_cond.wait_for(locker, chrono::seconds(5));
     } else {
-      property_get("persist.sys.awakeswitch", (char*)is_awakeswitch_open, "");
-      if (strcmp(is_awakeswitch_open, "close") == 0) {
-        fprintf(stdout, "awakeswitch is closed, just skip\n");
-        return;
-      }
+      cli->subscribe(VOICE_COMING);
+      cli->subscribe(WAKEUP_SOUND);
+      flora_cli = cli;
+      reconn_cond.wait(locker);
     }
+  }
+}
 
-    char network_is_available[PROP_VALUE_MAX];
-    property_get("state.network.connected", (char*)network_is_available, "");
-    if (strcmp(network_is_available, "true") != 0) {
-      fprintf(stdout, "current network is not available, just skip\n");
-      return;
-    }
-
-    int id = rand() % 4;
-    prepareWavPlayer(filenames[id], "system", true);
-    if (volume_set != true) {
+void Activation::prepareForNextAwake() {
+  if (is_open) {
+    int id = rand() % files_from_flora.size();
+    prepareWavPlayer(files_from_flora[id].c_str(), "system", true);
+    if (!volume_set) {
       char val[PROP_VALUE_MAX];
-      property_get("persist.audio.volume.system", (char*)&val, "");
+      property_get("persist.audio.volume.system", (char *) &val, "");
       int vol = atoi(val);
       fprintf(stdout, "init activation volume to %d\n", vol);
       rk_set_stream_volume(STREAM_SYSTEM, vol);
       volume_set = true;
     }
-
-    startWavPlayer();
   }
-  // cppcheck-suppress unusedFunction
-  void disconnected() {
-    thread tmp([this]() { this->flora_disconnected(); });
-    tmp.detach();
-  }
-  void flora_disconnected() {
-    flora_cli.reset();
-    reconn_mutex.lock();
-    reconn_cond.notify_one();
-    reconn_mutex.unlock();
-  }
-  void start() {
-    shared_ptr<Client> cli;
-    unique_lock<mutex> locker(reconn_mutex);
-
-    while (true) {
-      int32_t r = Client::connect("unix:/var/run/flora.sock", this, 0, cli);
-      if (r != FLORA_CLI_SUCCESS) {
-        fprintf(stderr, "init flora client failed, please retry\n");
-        reconn_cond.wait_for(locker, chrono::seconds(5));
-      } else {
-        cli->subscribe("rokid.turen.voice_coming");
-        flora_cli = cli;
-        reconn_cond.wait(locker);
-      }
-    }
-  }
-
- private:
-  bool volume_set = false;
-  shared_ptr<Client> flora_cli;
-  mutex reconn_mutex;
-  condition_variable reconn_cond;
-};
-
-int main(int argc, char** argv) {
-  srand(time(NULL));
-  prePrepareWavPlayer(filenames, 4);
-  fprintf(stdout, "wav player has been preloaded all activation files\n");
-
-  Activation activation;
-  activation.start();
-  return 1;
 }
 
+void Activation::playAwake() {
+  char propValue[PROP_VALUE_MAX];
+  property_get("persist.dndmode.awakeswitch", (char *) propValue, "");
+  if (strcmp(propValue, "open") != 0) {
+    fprintf(stdout, "dnd mode, just skip\n");
+    return;
+  } else {
+    property_get("state.network.connected", (char *) propValue, "");
+    if (strcmp(propValue, "true") != 0) {
+      fprintf(stdout, "current network is not available, just skip\n");
+      return;
+    }
+  }
+  if (is_open) {
+    startWavPlayer();
+    prepareForNextAwake();
+  }
+}
+
+void Activation::applyAwakeSound(shared_ptr <Caps> &msg) {
+#define CAPS_READ(action) if (action != CAPS_SUCCESS) goto ERROR
+  if (!msg)
+    goto ERROR;
+  int32_t fCount;
+  CAPS_READ(msg->read(fCount));
+  files_from_flora.clear();
+  if (fCount > MAX_PLAY_LIST)
+    fCount = MAX_PLAY_LIST;
+  const char *filename_list[MAX_PLAY_LIST];
+  for(int i = 0; i < fCount; ++i) {
+    files_from_flora.emplace_back();
+    CAPS_READ(msg->read_string(files_from_flora.back()));
+    filename_list[i] = files_from_flora[i].c_str();
+  }
+  is_open = fCount > 0;
+  if (is_open) {
+    prePrepareWavPlayer(filename_list, files_from_flora.size());
+    fprintf(stdout, "wav player has been preloaded all activation files\n");
+    prepareForNextAwake();
+  }
+  return;
+ERROR:
+  fprintf(stdout, "apply wakeup sound error\n");
+}

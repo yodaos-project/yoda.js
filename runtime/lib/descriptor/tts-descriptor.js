@@ -84,7 +84,7 @@ Object.assign(TtsDescriptor.prototype,
         var self = this
         var impatient = _.get(options, 'impatient', false)
 
-        if (!self._runtime.permission.check(self._appId, 'ACCESS_TTS')) {
+        if (!self._runtime.component.permission.check(self._appId, 'ACCESS_TTS')) {
           return Promise.reject(new Error('Permission denied.'))
         }
 
@@ -101,13 +101,13 @@ Object.assign(TtsDescriptor.prototype,
               var terminationEvents = ['cancel', 'end', 'error']
               self._activityDescriptor._registeredDbusSignals.push(channel)
 
-              self._runtime.dbusRegistry.on(channel, function onDbusSignal (event) {
+              self._runtime.component.dbusRegistry.on(channel, function onDbusSignal (event) {
                 logger.info('tts signals', channel, event)
 
                 if (terminationEvents.indexOf(event) >= 0) {
                   /** stop listening upcoming events for channel */
                   // FIXME(Yorkie): `removeListener()` fails on check function causes a memory leak
-                  self._runtime.dbusRegistry.removeAllListeners(channel)
+                  self._runtime.component.dbusRegistry.removeAllListeners(channel)
                   var idx = self._activityDescriptor._registeredDbusSignals.indexOf(channel)
                   self._activityDescriptor._registeredDbusSignals.splice(idx, 1)
                 }

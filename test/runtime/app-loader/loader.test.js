@@ -56,7 +56,7 @@ test('should load app', t => {
       hosts.forEach(it => {
         t.strictEqual(loader.hostSkillIdMap[it.name], it.skillId)
       })
-      t.deepEqual(fakeRuntime.permission.map[appId], permissions)
+      t.deepEqual(fakeRuntime.component.permission.map[appId], permissions)
 
       t.end()
     })

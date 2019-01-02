@@ -9,7 +9,7 @@ test('set background recovers previous active app if target app is top of stack'
   mock.restore()
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
     .then(() => {

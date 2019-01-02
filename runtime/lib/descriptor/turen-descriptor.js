@@ -44,7 +44,7 @@ Object.assign(TurenDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function addVtWord (activationTxt, activationPy) {
-        return this._runtime.turen.addVtWord(activationTxt, activationPy)
+        return this._runtime.component.turen.addVtWord(activationTxt, activationPy)
       }
     },
 
@@ -60,7 +60,7 @@ Object.assign(TurenDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function deleteVtWord (activationTxt) {
-        return this._runtime.turen.deleteVtWord(activationTxt)
+        return this._runtime.component.turen.deleteVtWord(activationTxt)
       }
     }
   }

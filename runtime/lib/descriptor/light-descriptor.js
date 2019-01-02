@@ -55,7 +55,7 @@ Object.assign(LightDescriptor.prototype,
       fn: function play (uri, args, options) {
         var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, this._appHome + '/light')
         logger.log('playing light effect', absPath)
-        return this._runtime.light.play(this._appId, absPath, args || {}, options || {})
+        return this._runtime.component.light.play(this._appId, absPath, args || {}, options || {})
           .then((res) => {
             if (res && res[0] === true) {
               return
@@ -79,10 +79,10 @@ Object.assign(LightDescriptor.prototype,
         var future
         if (uri && typeof uri === 'string') {
           var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, this._appHome + '/light')
-          future = this._runtime.light.stop(this._appId, absPath)
+          future = this._runtime.component.light.stop(this._appId, absPath)
         } else {
           /** stop all light effects belonging to the app */
-          future = this._runtime.light.stopByAppId(this._appId)
+          future = this._runtime.component.light.stopByAppId(this._appId)
         }
         return future
           .then((res) => {

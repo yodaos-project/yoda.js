@@ -349,7 +349,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     return [notification]
   })
 
-  this.runtime.permission.load(appId, permissions)
+  this.runtime.component.permission.load(appId, permissions)
   this.appManifests[appId] = Object.assign(_.pick(manifest, 'daemon', 'objectPath', 'ifaceName'), {
     skills: skillIds,
     hosts: hosts,

@@ -9,9 +9,9 @@ var DbusApp = require('../app/dbus-app')
 var executableProc = require('../app/executable-proc')
 
 module.exports = AppScheduler
-function AppScheduler (loader, runtime) {
-  this.loader = loader
+function AppScheduler (runtime) {
   this.runtime = runtime
+  this.loader = runtime.component.appLoader
 
   this.appMap = {}
   this.appStatus = {}

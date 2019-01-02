@@ -8,7 +8,7 @@ var mock = require('./mock')
 test('app preemption', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -29,8 +29,8 @@ test('app preemption', t => {
       t.looseEqual(life.getAppDataById('0'), null, 'app data of apps that get out of stack app shall be removed')
       t.looseEqual(mock.scheduler.getAppById('0'), null, 'cut app shall be destroyed on preemption')
 
-      life.once('evict', appId => {
-        t.strictEqual(appId, '1', 'shall emit evict event of app 1')
+      life.once('preemption', appId => {
+        t.strictEqual(appId, '1', 'shall emit preemption event of app 1')
       })
       return life.activateAppById('2', 'scene')
     })
@@ -41,8 +41,8 @@ test('app preemption', t => {
       t.looseEqual(life.getAppDataById('1'), null, 'app data of apps that get out of stack app shall be removed')
       t.looseEqual(mock.scheduler.getAppById('1'), null, 'scene app shall be destroyed on preemption by a scene app')
 
-      life.once('evict', appId => {
-        t.strictEqual(appId, '2', 'shall emit evict event of app 2')
+      life.once('preemption', appId => {
+        t.strictEqual(appId, '2', 'shall emit preemption event of app 2')
       })
       return life.activateAppById('3', 'cut')
     })
@@ -55,8 +55,8 @@ test('app preemption', t => {
       t.notLooseEqual(mock.scheduler.getAppById('2'), null, 'scene app shall not be destroyed on preemption by a cut app')
       t.strictEqual(life.isAppInStack('2'), true, 'scene app shall remain in stack on preemption by a cut app')
 
-      life.once('evict', appId => {
-        t.strictEqual(appId, '3', 'shall emit evict event of app 3')
+      life.once('preemption', appId => {
+        t.strictEqual(appId, '3', 'shall emit preemption event of app 3')
       })
       return life.deactivateAppById('3')
     })
@@ -79,7 +79,7 @@ test('app preemption', t => {
 test('shall not deactivate app if app to be activated is in stack', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -148,7 +148,7 @@ test('shall not recover if app to be deactivated is paused', t => {
   t.plan(1)
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -175,7 +175,7 @@ test('shall not recover if app to be deactivated is paused', t => {
 test('shall not throw on activating if previous app is not alive', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(1).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -200,7 +200,7 @@ test('shall not throw on activating if previous app is not alive', t => {
 test('app form switch to scene by background/foreground', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -239,7 +239,7 @@ test('app form switch to scene by background/foreground', t => {
 test('in stack app form switch to scene', t => {
   mock.restore()
   mock.mockAppExecutors(5)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {

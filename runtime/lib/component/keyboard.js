@@ -10,6 +10,7 @@ function KeyboardHandler (runtime) {
   this.firstLongPressTime = null
   this.preventSubsequent = false
   this.runtime = runtime
+  this.component = runtime.component
   this.config = config
 
   this.longpressWindow = _.get(this.config, 'config.longpressWindow', 500)
@@ -29,7 +30,7 @@ KeyboardHandler.prototype.init = function init () {
   this.listen()
 }
 
-KeyboardHandler.prototype.destruct = function destruct () {
+KeyboardHandler.prototype.deinit = function deinit () {
   this.input.disconnect()
 }
 
@@ -68,8 +69,8 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
   var listener = _.get(this.listeners, `${type}.${event.keyCode}`)
-  if (listener != null && listener === this.runtime.life.getCurrentAppId()) {
-    var app = this.runtime.scheduler.getAppById(listener)
+  if (listener != null && listener === this.component.lifetime.getCurrentAppId()) {
+    var app = this.component.appScheduler.getAppById(listener)
     if (app) {
       logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
       app.keyboard.emit(type, event)

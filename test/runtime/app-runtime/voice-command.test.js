@@ -92,7 +92,7 @@ test.skip('test onVoiceCommand', (t) => {
   testSceneDestroy.on('resume', () => {
     t.pass('@testSceneDestroy should be resume')
     if (resumed) {
-      runtime.destruct()
+      runtime.deinit()
       t.end()
       return
     }

@@ -44,14 +44,14 @@ Object.assign(WormholeDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function sendToApp (topic, data) {
-        return this._runtime.wormhole.sendToApp(topic, data)
+        return this._runtime.component.wormhole.sendToApp(topic, data)
       }
     },
     updateVolume: {
       type: 'method',
       returns: 'promise',
       fn: function updateVolume () {
-        this._runtime.wormhole.updateVolume()
+        this._runtime.component.wormhole.updateVolume()
         return Promise.resolve()
       }
     }

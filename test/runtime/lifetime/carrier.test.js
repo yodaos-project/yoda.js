@@ -10,7 +10,7 @@ test('non-daemon inactive carrier shall be destroyed on preemption', t => {
   t.plan(2)
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     console.log('event destruct', appId)
@@ -43,7 +43,7 @@ test('non-daemon background carrier shall be destroyed on preemption', t => {
   t.plan(2)
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
@@ -78,7 +78,7 @@ test('carrier shall be re-activated on app deactivated proactively', t => {
   t.plan(1)
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
     .then(() => {
@@ -103,7 +103,7 @@ test('previous cut app shall be destroyed on activating cut carrier proactively'
   t.plan(2)
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '1') {
@@ -134,7 +134,7 @@ test('previous scene app shall not be destroyed on carrier starting a cut app', 
   t.plan(1)
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
@@ -168,7 +168,7 @@ test('carrier app shall not be destroyed on carrier starting a new app with prev
   t.plan(1)
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {
@@ -202,7 +202,7 @@ test('previous scene app shall not be destroyed on carrier starting it with cut 
   t.plan(1)
 
   mock.mockAppExecutors(3)
-  var life = new Lifetime(mock.scheduler)
+  var life = new Lifetime(mock.runtime)
 
   mock.eventBus.on('destruct', appId => {
     if (appId === '0') {

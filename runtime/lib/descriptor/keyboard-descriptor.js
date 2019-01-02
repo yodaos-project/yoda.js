@@ -76,7 +76,7 @@ Object.assign(KeyboardDescriptor.prototype,
         if (event != null && typeof event !== 'string') {
           return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))
         }
-        return this._runtime.keyboard.preventKeyDefaults(this._appId, keyCode, event)
+        return this._runtime.component.keyboard.preventKeyDefaults(this._appId, keyCode, event)
       }
     },
     /**
@@ -98,7 +98,7 @@ Object.assign(KeyboardDescriptor.prototype,
         if (event != null && typeof event !== 'string') {
           return Promise.reject(new Error('Expect a string on second argument of keyboard.restoreDefaults.'))
         }
-        return this._runtime.keyboard.restoreKeyDefaults(this._appId, keyCode, event)
+        return this._runtime.component.keyboard.restoreKeyDefaults(this._appId, keyCode, event)
       }
     }
   })

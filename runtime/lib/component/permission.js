@@ -8,7 +8,7 @@ var _ = require('@yoda/util')._
 
 function Permission (runtime) {
   EventEmitter.call(this)
-  this.app_runtime = runtime
+  this.component = runtime.component
   // { appId: permission }
   this.permission = {}
 }
@@ -47,9 +47,9 @@ Permission.prototype.check = function (appId, name, options) {
       return true
     }
     /** no permission other than `INTERRUPT` shall be allow if app is not top of stack */
-    var isActiveApp = appId === this.app_runtime.life.getCurrentAppId()
+    var isActiveApp = appId === this.component.lifetime.getCurrentAppId()
     if (!isActiveApp) {
-      logger.info(`app has permission ${name}, but is not currently active app, denying.`, appId, this.app_runtime.life.getCurrentAppId())
+      logger.info(`app has permission ${name}, but is not currently active app, denying.`, appId, this.component.lifetime.getCurrentAppId())
     }
     return isActiveApp
   }

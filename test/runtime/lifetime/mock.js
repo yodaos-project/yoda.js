@@ -6,7 +6,9 @@ var Scheduler = require(`${helper.paths.runtime}/lib/component/app-scheduler`)
 module.exports.eventBus = new EventEmitter()
 
 var runtime = new EventEmitter()
-var scheduler = module.exports.scheduler = new Scheduler({}, runtime)
+runtime.component = {}
+var scheduler = runtime.component.appScheduler = module.exports.scheduler = new Scheduler(runtime)
+module.exports.runtime = runtime
 
 var appMap = {}
 scheduler.createApp = function createApp (appId) {
