@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "to parse cloud nlp",
   "main": "app.js",
-  "metadata": {
-    "extapp": true,
+  "manifest": {
     "daemon": true,
     "skills": [
       "@cloud"

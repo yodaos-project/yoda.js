@@ -6,8 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "metadata": {
-    "extapp": true,
+  "manifest": {
     "skills": [
       "RFCBA81EECAC4E11BA0EBC1AEC397A93"
     ],
@@ -19,10 +18,7 @@
       "INTERRUPT"
     ],
     "hosts": [
-      {
-        "name": "timer",
-        "skillId": "RFCBA81EECAC4E11BA0EBC1AEC397A93"
-      }
+      [ "timer", { "skillId": "RFCBA81EECAC4E11BA0EBC1AEC397A93" } ]
     ]
   },
   "keywords": [

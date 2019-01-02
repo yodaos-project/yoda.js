@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "metadata": {
+  "manifest": {
     "skills": [
       "3C5AF934560C46CA968AA7AD067C8B9A"
     ],

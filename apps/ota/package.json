@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "OTA Apps for Rokid",
   "main": "app.js",
-  "metadata": {
+  "manifest": {
     "skills": [
       "@ota",
       "R07D6E0137294FFBBFEF623315220FD4",
@@ -14,10 +14,7 @@
       "ACCESS_MULTIMEDIA"
     ],
     "hosts": [
-      {
-        "name": "ota",
-        "skillId": "@ota"
-      }
+      [ "ota", { "skillId": "@ota" } ]
     ]
   },
   "scripts": {

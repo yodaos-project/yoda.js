@@ -6,8 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "metadata": {
-    "extapp": true,
+  "manifest": {
     "skills": [
       "@bluetooth",
       "73F9C00420AA472B914E5C051282945C",
@@ -20,14 +19,8 @@
       "ACCESS_MULTIMEDIA"
     ],
     "hosts": [
-      {
-        "name": "bluetooth",
-        "skillId": "73F9C00420AA472B914E5C051282945C"
-      },
-      {
-        "name": "bluetooth_music",
-        "skillId": "RDDE53259D334860BA9E98CB3AB6C001"
-      }
+      [ "bluetooth", { "skillId": "73F9C00420AA472B914E5C051282945C" } ],
+      [ "bluetooth_music", { "skillId": "RDDE53259D334860BA9E98CB3AB6C001" } ]
     ]
   },
   "keywords": [

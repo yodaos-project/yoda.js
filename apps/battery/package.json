@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Battery Apps for Rokid",
   "main": "app.js",
-  "metadata": {
+  "manifest": {
     "skills": [
       "9CA6C0CBB4994F6A8732EA0863784C0E"
     ],
