@@ -137,6 +137,7 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       if (this.matchState(msg, this.lastMsg)) {
         logger.warn(`Received ${mode} same msg!`)
       }
+      this.lastMsg = Object.assign(this.lastMsg, msg)
       var stateHit = false
       stateFilters.forEach((filter) => {
         if (this.matchState(msg, filter.inflowMsg)) {
@@ -155,7 +156,6 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       if (!stateHit) {
         logger.warn(`Mismatch state, please check state-mapping!`)
       }
-      this.lastMsg = Object.assign(this.lastMsg, msg)
     } else if (msg.action === 'volumechange') {
       var vol = msg.value
       if (vol === undefined) {
