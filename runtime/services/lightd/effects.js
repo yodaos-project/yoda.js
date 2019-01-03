@@ -52,11 +52,11 @@ var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
 var globalAlphaFactor = 1
 var keepSoundAlive = true
-if (property.get('sound.audio.holdcon', 'persist') === '0') {
+if (property.get('sound.audio.keepAlive', 'persist') === '0') {
   keepSoundAlive = false
 }
 var keepAwakeAlive = true
-if (property.get('lightd.audio.holdcon', 'persist') === '0') {
+if (property.get('lightd.audio.keepAlive', 'persist') === '0') {
   keepAwakeAlive = false
 }
 
