@@ -12,13 +12,13 @@ var EventEmitter = require('events').EventEmitter
 
 var MEDIA_SOURCE = '/opt/media'
 
+var HttpgwDescriptor = require('./httpgw-descriptor')
 var KeyboardDescriptor = require('./keyboard-descriptor')
 var LightDescriptor = require('./light-descriptor')
 var MultimediaDescriptor = require('./multimedia-descriptor')
 var TtsDescriptor = require('./tts-descriptor')
 var TurenDescriptor = require('./turen-descriptor')
 var WormholeDescriptor = require('./wormhole-descriptor')
-var HttpgwDescriptor = require('./httpgw-descriptor')
 
 module.exports = ActivityDescriptor
 
