@@ -1,6 +1,6 @@
 @yoda/audio/*.test.js
 @yoda/bolero/**/*.test.js
-@yoda/util/*.test.js
+@yoda/env/*.test.js
 @yoda/light/*.test.js
 @yoda/input/*.test.js
 @yoda/property/*.test.js
@@ -11,6 +11,7 @@
 @yoda/flora/*.test.js
 @yoda/ota/*.test.js
 @yoda/trace/*.test.js
+@yoda/util/*.test.js
 logger/*.test.js
 apps/cloudAppClient/*.test.js
 runtime/lifetime/*.test.js
