@@ -420,20 +420,19 @@ Object.assign(ActivityDescriptor.prototype,
         return this._runtime.setForegroundById(this._appId, Object.assign({ form: form }, options)).then(() => {})
       }
     },
-    /**
-     * sync cloudappclient appid stack
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @private
-     * @function syncCloudAppIdStack
-     * @param {string[]} stack cloud skills id
-     * @returns {Promise<void>}
-     */
-    syncCloudAppIdStack: {
+    setContextOptions: {
       type: 'method',
       returns: 'promise',
-      fn: function syncCloudAppIdStack (stack) {
-        return this._runtime.syncCloudAppIdStack(stack || [])
+      fn: function setContextOptions (options) {
+        options = _.pick(options, 'keepAlive')
+        return this._runtime.component.lifetime.setContextOptionsById(this._appId, options)
+      }
+    },
+    getContextOptions: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getContextOptions () {
+        return this._runtime.component.lifetime.getContextOptionsById(this._appId)
       }
     },
     /**

@@ -89,16 +89,16 @@ function LaVieEnPile (runtime) {
   EventEmitter.call(this)
   this.scheduler = runtime.component.appScheduler
   /**
-   * @typedef AppPreemptionData
+   * @typedef ContextOptionsData
    * @property {'cut' | 'scene'} form
+   * @property {boolean} keepAlive
    */
   /**
    * App stack preemption priority data, keyed by app id.
    *
-   * @see AppPreemptionData
-   * @type {object}
+   * @type {ContextOptionsData}
    */
-  this.appDataMap = {}
+  this.contextOptionsMap = {}
   /**
    * Apps' id running actively.
    * @type {AppSlots}
@@ -157,28 +157,23 @@ LaVieEnPile.prototype.getCurrentAppId = function getCurrentAppId () {
 }
 
 /**
- * Get app form of top app in stack.
- * @returns {'cut' | 'scene' | null} form, or null if no app was in stack.
+ * Get app preemption priority data by app id.
+ * @param {string} appId -
+ * @returns {ContextOptionsData | undefined} app preemption priority data, or undefined if data for the app doesn't exist.
  */
-LaVieEnPile.prototype.getCurrentAppForm = function getCurrentAppForm () {
-  var appId = this.activeSlots.cut
-  if (appId != null) {
-    return 'cut'
-  }
-  appId = this.activeSlots.scene
-  if (appId != null) {
-    return 'scene'
-  }
-  return null
+LaVieEnPile.prototype.setContextOptionsById = function setContextOptionsById (appId, options) {
+  var prevOptions = this.contextOptionsMap[appId]
+  this.contextOptionsMap[appId] = Object.assign({}, prevOptions, options)
+  return options
 }
 
 /**
  * Get app preemption priority data by app id.
  * @param {string} appId -
- * @returns {object | undefined} app preemption priority data, or undefined if data for the app doesn't exist.
+ * @returns {ContextOptionsData | undefined} app preemption priority data, or undefined if data for the app doesn't exist.
  */
-LaVieEnPile.prototype.getAppDataById = function getAppDataById (appId) {
-  return this.appDataMap[appId]
+LaVieEnPile.prototype.getContextOptionsById = function getContextOptionsById (appId) {
+  return this.contextOptionsMap[appId]
 }
 
 /**
@@ -285,8 +280,8 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     return Promise.reject(new Error(`App ${this.monopolist} monopolized top of stack.`))
   }
 
-  var wasScene = _.get(this.appDataMap, `${appId}.form`) === 'scene'
-  this.appDataMap[appId] = Object.assign({}, this.appDataMap[appId], { form: wasScene ? 'scene' : form })
+  var wasScene = _.get(this.getContextOptionsById(appId), 'form') === 'scene'
+  this.setContextOptionsById(appId, { form: wasScene ? 'scene' : form })
 
   var future = Promise.resolve()
 
@@ -334,12 +329,22 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
 
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
-  var lastAppForm = this.getCurrentAppForm()
+  var lastContext = this.getContextOptionsById(lastAppId)
+  if (lastAppId && lastAppId !== appId) {
+    if (lastContext) {
+      this.onPreemption(lastAppId, lastContext)
+      if (lastContext.keepAlive) {
+        future = Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
+        lastAppId = null
+        lastContext = null
+      }
+    } else {
+      /** no previously running app */
+      logger.warn('previously running app has no context options')
+    }
+  }
   var memoStack = this.activeSlots.copy()
   this.activeSlots.addApp(appId, isScene)
-  if (lastAppId !== appId) {
-    this.onPreemption(lastAppId, lastAppForm)
-  }
   var deferred = () => {
     return this.onLifeCycle(appId, 'active', activateParams)
   }
@@ -359,15 +364,14 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
       .then(deferred)
   }
 
-  var last = this.getAppDataById(lastAppId)
-  if (!last) {
+  if (lastContext == null) {
     /** no previously running app */
     logger.info('no previously running app, skip preempting')
     /** deferred shall be ran in current context to prevent possible simultaneous preemption */
     return Promise.all([ deferred(), future ])
   }
 
-  if (last.form === 'scene') {
+  if (lastContext.form === 'scene') {
     /**
      * currently running app is a scene app, pause it
      */
@@ -428,7 +432,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
     recover = false
   }
 
-  delete this.appDataMap[appId]
+  delete this.contextOptionsMap[appId]
   if (removedSlot) {
     this.onEviction(appId, removedSlot)
   }
@@ -523,7 +527,7 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   logger.info('set background', appId)
   var removedSlot = this.activeSlots.removeApp(appId)
   if (removedSlot) {
-    delete this.appDataMap[appId]
+    delete this.contextOptionsMap[appId]
     this.onEviction(appId, removedSlot)
   }
 
@@ -631,10 +635,13 @@ LaVieEnPile.prototype.onEviction = function onEvict (appId, form) {
 
 /**
  * Emit event `preemption` with the app id as first argument to listeners.
+ *
+ * @param {string} appId
+ * @param {ContextOptionsData} contextOptions
  */
-LaVieEnPile.prototype.onPreemption = function onPreemption (appId, form) {
+LaVieEnPile.prototype.onPreemption = function onPreemption (appId, contextOptions) {
   process.nextTick(() => {
-    this.emit('preemption', appId, form)
+    this.emit('preemption', appId, contextOptions.form)
   })
 }
 
@@ -663,7 +670,7 @@ LaVieEnPile.prototype.destroyAll = function (options) {
 
   logger.log(`destroying all apps${force ? ' by force' : ''}`)
   this.activeSlots.reset()
-  this.appDataMap = {}
+  this.contextOptionsMap = {}
   this.backgroundAppIds = []
 
   this.onStackReset()
@@ -704,7 +711,7 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
   if (this.backgroundAppIds >= 0) {
     this.backgroundAppIds.splice(backgroundIdx, 1)
   }
-  delete this.appDataMap[appId]
+  delete this.contextOptionsMap[appId]
 
   if (!this.scheduler.isAppRunning(appId)) {
     /**
