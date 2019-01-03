@@ -144,7 +144,11 @@ LightRenderingContext.prototype.playAwake = function playAwake () {
     return
   }
   var absPath = `/opt/media/awake_0${Math.floor(Math.random() * 5) + 1}.wav`
-  Sounder.play(absPath, AudioManager.STREAM_ALARM, true, (err) => {
+  var keepAlive = true
+  if (property.get('lightd.audio.holdcon', 'persist') === '0') {
+    keepAlive = false
+  }
+  Sounder.play(absPath, AudioManager.STREAM_ALARM, keepAlive, (err) => {
     if (err) {
       logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
     }
@@ -197,7 +201,11 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
   }
 
   if (path.extname(absPath) === '.wav') {
-    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, true, (err) => {
+    var keepAlive = true
+    if (property.get('sound.audio.holdcon', 'persist') === '0') {
+      keepAlive = false
+    }
+    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, keepAlive, (err) => {
       if (err) {
         logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
       }
