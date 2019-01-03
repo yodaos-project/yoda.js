@@ -6,8 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "metadata": {
-    "extapp": true,
+  "manifest": {
     "daemon": true,
     "skills": [
       "R507AD024F9A4E358B9493BBC11C852F",
@@ -21,10 +20,10 @@
       "INTERRUPT"
     ],
     "hosts": [
-      {
-        "name": "r507ad024f9a4e358b9493bbc11c852f",
+      [ "r507ad024f9a4e358b9493bbc11c852f", {
         "skillId": "R507AD024F9A4E358B9493BBC11C852F"
-      }
+        }
+      ]
     ]
   },
   "keywords": [

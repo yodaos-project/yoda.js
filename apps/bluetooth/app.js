@@ -19,10 +19,10 @@ module.exports = function (activity) {
 
   function getBluetoothMusicSkillId () {
     var pkg = require('./package.json')
-    var hosts = pkg.metadata.hosts
+    var hosts = pkg.manifest.hosts
     for (var i = 0; i < hosts.length; i++) {
-      if (hosts[i].name === 'bluetooth_music') {
-        return hosts[i].skillId
+      if (hosts[i][0] === 'bluetooth_music') {
+        return hosts[i][1].skillId
       }
     }
   }
