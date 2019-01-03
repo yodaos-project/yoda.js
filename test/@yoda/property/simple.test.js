@@ -84,6 +84,13 @@ test('module->property->set method: set long key ', t => {
   t.end()
 })
 
+test('invalid key assertions', t => {
+  t.throws(() => prop.get('', 'foobar'), /key must not be empty string/)
+  t.throws(() => prop.set('@', 'foobar'), /invalid key, it must be string with dot/)
+  t.throws(() => prop.set('test', null), TypeError)
+  t.end()
+})
+
 test.skip('module->property->set method: set long value', t => {
   var key = 'test_key.long.vaule'
   var value = 'aaaa.bbbb.cccc.dddd.eeee.ffff.mmmm.qqqq.wwww.eeee.rrrr.tttt.uuuu.tttt.yyyy.uuuu.iiii.oooo.pppp'
