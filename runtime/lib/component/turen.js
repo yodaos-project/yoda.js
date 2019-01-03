@@ -1,7 +1,6 @@
 var logger = require('logger')('turen')
 
 var _ = require('@yoda/util')._
-var wifi = require('@yoda/wifi')
 var bluetooth = require('@yoda/bluetooth')
 
 var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
@@ -215,57 +214,10 @@ Turen.prototype.resetPausedOnAwaken = function resetPausedOnAwaken () {
  * @private
  */
 Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
-  if (!this.component.custodian.isPrepared()) {
-    logger.warn('Network not connected, preparing to announce unavailability.')
-    this.pickup(false)
-
-    var currentAppId = this.component.lifetime.getCurrentAppId()
-    if (this.component.custodian.isConfiguringNetwork()) {
-      /**
-       * Configuring network, delegates event to network app.
-       */
-      logger.info('configuring network, renewing timer.')
-      return this.runtime.openUrl('yoda-skill://network/renew')
-    }
-
-    if (wifi.getNumOfHistory() === 0) {
-      if (currentAppId) {
-        /**
-         * although there is no WiFi history, yet some app is running out there,
-         * continuing currently app.
-         */
-        logger.info('no WiFi history exists, continuing currently running app.')
-        return this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
-          .then(() =>
-          /** awaken is not set for no network available, recover media directly */
-            this.recoverPausedOnAwaken()
-          )
-      }
-      /**
-       * No WiFi connection history found, introduce device setup procedure.
-       */
-      logger.info('no WiFi history exists, announcing guide to network configuration.')
-      return this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
-        .then(() =>
-          /** awaken is not set for no network available, recover media directly */
-          this.recoverPausedOnAwaken()
-        )
-    }
-
-    /**
-     * if runtime is logging in or network is unavailable,
-     * and there is WiFi history existing,
-     * announce WiFi is connecting.
-     */
-    logger.info('announcing network connecting on voice coming.')
-    wifi.enableScanPassively()
-    return this.component.light.ttsSound('@yoda', 'system://wifi_is_connecting.ogg')
-      .then(() =>
-        /** awaken is not set for no network available, recover media directly */
-        this.recoverPausedOnAwaken()
-      )
+  var delegation = this.component.dispatcher.delegate('turenDidWakeUp')
+  if (delegation) {
+    return
   }
-
   var future = this.setAwaken()
   clearTimeout(this.solitaryVoiceComingTimer)
   this.solitaryVoiceComingTimer = setTimeout(() => {

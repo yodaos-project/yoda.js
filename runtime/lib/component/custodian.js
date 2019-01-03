@@ -176,3 +176,60 @@ Custodian.prototype.prepareNetwork = function prepareNetwork () {
   }
   return this.onNetworkDisconnect()
 }
+
+// MARK: - Interception
+Custodian.prototype.turenDidWakeUp = function turenDidWakeUp () {
+  if (this.isPrepared()) {
+    return
+  }
+  logger.warn('Network not connected, preparing to announce unavailability.')
+  this.component.turen.pickup(false)
+
+  var currentAppId = this.component.lifetime.getCurrentAppId()
+  if (this.component.custodian.isConfiguringNetwork()) {
+    /**
+     * Configuring network, delegates event to network app.
+     */
+    logger.info('configuring network, renewing timer.')
+    return this.runtime.openUrl('yoda-skill://network/renew')
+  }
+
+  if (wifi.getNumOfHistory() === 0) {
+    if (currentAppId) {
+      /**
+       * although there is no WiFi history, yet some app is running out there,
+       * continuing currently app.
+       */
+      logger.info('no WiFi history exists, continuing currently running app.')
+      return this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
+        .then(() =>
+        /** awaken is not set for no network available, recover media directly */
+          this.component.turen.recoverPausedOnAwaken()
+        )
+    }
+    /**
+     * No WiFi connection history found, introduce device setup procedure.
+     */
+    logger.info('no WiFi history exists, announcing guide to network configuration.')
+    return this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg')
+      .then(() =>
+        /** awaken is not set for no network available, recover media directly */
+        this.component.turen.recoverPausedOnAwaken()
+      )
+  }
+
+  /**
+   * if runtime is logging in or network is unavailable,
+   * and there is WiFi history existing,
+   * announce WiFi is connecting.
+   */
+  logger.info('announcing network connecting on voice coming.')
+  wifi.enableScanPassively()
+  return this.component.light.ttsSound('@yoda', 'system://wifi_is_connecting.ogg')
+    .then(() =>
+      /** awaken is not set for no network available, recover media directly */
+      this.component.turen.recoverPausedOnAwaken()
+    )
+}
+
+// MARK: - END Interception
