@@ -11,19 +11,6 @@ test('should validate config', t => {
   }, 'Invalid component-config.json')
 })
 
-test('should throw on unknown component', t => {
-  t.plan(1)
-  var runtime = new AppRuntime()
-  var dispatcher = runtime.component.dispatcher
-  t.throws(() => {
-    dispatcher.validateConfig({
-      interception: {
-        'foobar.unknownMethod': []
-      }
-    })
-  }, 'Unknown component(foobar) on component-config')
-})
-
 test('should dispatch delegation', t => {
   t.plan(3)
   var runtime = new AppRuntime()
@@ -38,14 +25,29 @@ test('should dispatch delegation', t => {
   }
   dispatcher.config = {
     interception: {
-      'foobar.fn': [ { component: 'foobar', method: 'fn' } ]
+      'foobarFn': [ { component: 'foobar', method: 'fn' } ]
     }
   }
-  var ret = dispatcher.delegate('foobar.fn', [ 123 ])
+  var ret = dispatcher.delegate('foobarFn', [ 123 ])
   t.deepEqual(ret, { foo: 'bar' })
 })
 
-test('should throwing delegation shall be skipped', t => {
+test('not existing delegation shall be skipped', t => {
+  t.plan(1)
+  var runtime = new AppRuntime()
+  var dispatcher = runtime.component.dispatcher
+
+  runtime.component.foobar = {}
+  dispatcher.config = {
+    interception: {
+      'foobarFn': [ { component: 'foobar', method: 'fn' } ]
+    }
+  }
+  var ret = dispatcher.delegate('foobarFn', [ 123 ])
+  t.strictEqual(ret, false)
+})
+
+test('throwing delegation shall be skipped', t => {
   t.plan(1)
   var runtime = new AppRuntime()
   var dispatcher = runtime.component.dispatcher
@@ -57,9 +59,9 @@ test('should throwing delegation shall be skipped', t => {
   }
   dispatcher.config = {
     interception: {
-      'foobar.fn': [ { component: 'foobar', method: 'fn' } ]
+      'foobarFn': [ { component: 'foobar', method: 'fn' } ]
     }
   }
-  var ret = dispatcher.delegate('foobar.fn', [ 123 ])
+  var ret = dispatcher.delegate('foobarFn', [ 123 ])
   t.strictEqual(ret, false)
 })

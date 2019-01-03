@@ -214,7 +214,7 @@ Turen.prototype.resetPausedOnAwaken = function resetPausedOnAwaken () {
  * @private
  */
 Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
-  var delegation = this.component.dispatcher.delegate('turen.didWakeUp')
+  var delegation = this.component.dispatcher.delegate('turenDidWakeUp')
   if (delegation) {
     return
   }

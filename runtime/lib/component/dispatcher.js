@@ -26,19 +26,14 @@ class Dispatcher {
     if (typeof config.interception !== 'object') {
       throw new Error('config.interception is not an object.')
     }
-    Object.keys(config.interception).forEach(key => {
-      var match = key.split('.', 2)
-      var componentName = match[0]
-      if (this.runtime.componentLoader.registry[componentName] == null) {
-        throw new Error(`Unknown component(${componentName}) on component-config`)
-      }
-      var targets = config.interception[key]
+    Object.keys(config.interception).forEach(event => {
+      var targets = config.interception[event]
       if (!Array.isArray(targets)) {
-        throw new Error(`Unexpected value on component-config.interception.${key}`)
+        throw new Error(`Unexpected value on component-config.interception.${event}`)
       }
       var result = targets.map((it, idx) => {
         if (typeof it !== 'string') {
-          throw new Error(`Unexpected value on component-config.interception.${key}.${idx}`)
+          throw new Error(`Unexpected value on component-config.interception.${event}.${idx}`)
         }
         var match = it.split('.', 2)
         var componentName = match[0]
@@ -47,7 +42,7 @@ class Dispatcher {
         }
         return { component: componentName, method: match[1] }
       })
-      ret.interception[key] = result
+      ret.interception[event] = result
     })
 
     return ret
