@@ -416,7 +416,7 @@ module.exports = function (activity) {
 
   activity.on('destroy', () => {
     logger.log('activity.onDestroy()')
-    a2dp.removeAllListener()
+    a2dp.removeAllListeners()
     bluetooth.disconnect()
   })
 
