@@ -12,6 +12,7 @@ var EventEmitter = require('events').EventEmitter
 
 var MEDIA_SOURCE = '/opt/media'
 
+var HttpgwDescriptor = require('./httpgw-descriptor')
 var KeyboardDescriptor = require('./keyboard-descriptor')
 var LightDescriptor = require('./light-descriptor')
 var MultimediaDescriptor = require('./multimedia-descriptor')
@@ -96,6 +97,14 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.TurenClient} turen
    */
   this.turen = new TurenDescriptor(this, appId, appHome, runtime)
+
+  /**
+   * The `HttpgwClient` is used to work with Rokid HTTPGW service.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {yodaRT.activity.Activity.HttpgwClient} httpgw
+   */
+  this.httpgw = new HttpgwDescriptor(this, appId, appHome, runtime)
 
   /**
    * Get current `appId`.
@@ -255,6 +264,7 @@ Object.assign(ActivityDescriptor.prototype,
       returns: 'promise',
       fn: function get () {
         // TODO(Yorkie): check permission.
+        logger.warn('activity.get() is deprecated, please use @yoda/property instead.')
         return Promise.resolve(this._runtime.onGetPropAll())
       }
     },
