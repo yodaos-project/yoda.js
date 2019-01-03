@@ -18,6 +18,11 @@ const int32_t MAX_PLAY_LIST = 10;
 
 Activation::Activation() {
   srand(time(NULL));
+  char propValue[PROP_VALUE_MAX];
+  property_get("persist.awake.audio.holdcon", (char*)propValue, "");
+  if (strcmp(propValue, "0") == 0) {
+    keep_alive = false;
+  }
 }
 
 // cppcheck-suppress unusedFunction
@@ -90,13 +95,7 @@ void Activation::playAwake() {
   }
   if (is_open) {
     int id = rand() % files_from_flora.size();
-    char propValue[PROP_VALUE_MAX];
-    bool keepAlive = true;
-    property_get("persist.awake.audio.holdcon", (char*)propValue, "");
-    if (strcmp(propValue, "0") == 0) {
-      keepAlive = false;
-    }
-    prepareWavPlayer(files_from_flora[id].c_str(), "system", keepAlive);
+    prepareWavPlayer(files_from_flora[id].c_str(), "system", keep_alive);
     startWavPlayer();
     prepareForNextAwake();
   }

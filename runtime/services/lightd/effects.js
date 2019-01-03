@@ -51,6 +51,14 @@ var path = require('path')
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
 var globalAlphaFactor = 1
+var keepSoundAlive = true
+if (property.get('sound.audio.holdcon', 'persist') === '0') {
+  keepSoundAlive = false
+}
+var keepAwakeAlive = true
+if (property.get('lightd.audio.holdcon', 'persist') === '0') {
+  keepAwakeAlive = false
+}
 
 function applyAlphaFactor (alpha) {
   if (alpha !== undefined && typeof alpha === 'number' && alpha >= 0 && alpha <= 1) {
@@ -144,11 +152,7 @@ LightRenderingContext.prototype.playAwake = function playAwake () {
     return
   }
   var absPath = `/opt/media/awake_0${Math.floor(Math.random() * 5) + 1}.wav`
-  var keepAlive = true
-  if (property.get('lightd.audio.holdcon', 'persist') === '0') {
-    keepAlive = false
-  }
-  Sounder.play(absPath, AudioManager.STREAM_ALARM, keepAlive, (err) => {
+  Sounder.play(absPath, AudioManager.STREAM_ALARM, keepAwakeAlive, (err) => {
     if (err) {
       logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
     }
@@ -201,11 +205,7 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
   }
 
   if (path.extname(absPath) === '.wav') {
-    var keepAlive = true
-    if (property.get('sound.audio.holdcon', 'persist') === '0') {
-      keepAlive = false
-    }
-    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, keepAlive, (err) => {
+    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, keepSoundAlive, (err) => {
       if (err) {
         logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
       }
