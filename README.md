@@ -1,7 +1,7 @@
 # YodaRT
 
 [![Build Status](https://ci.rokid.com/buildStatus/icon?job=rokid-ci-yodart-unit-tests)](https://ci.rokid.com/job/rokid-ci-yodart-unit-tests)
-[![codecov](https://codecov.io/gh/Rokid/YodaRT/branch/master/graph/badge.svg)](https://codecov.io/gh/Rokid/YodaRT)
+[![codecov](https://codecov.io/gh/yodaos-project/yodart/branch/master/graph/badge.svg)](https://codecov.io/gh/yodaos-project/yodart)
 
 YodaRT is the JavaScript layer in YodaOS. It provides the main functionalities includes:
 
