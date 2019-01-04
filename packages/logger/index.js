@@ -22,6 +22,7 @@ if (process.platform !== 'darwin') {
 }
 
 var logLevels = {
+  'none' : 0,
   'verbose': 1,
   'debug': 2,
   'info': 3,
@@ -101,10 +102,6 @@ module.exports = function (name) {
   return new Logger(name)
 }
 
-var UPLOAD_DISABLE_LEVEL = 0
-var UPLOAD_MIN_LEVEL = 1
-var UPLOAD_MAX_LEVEL = 5
-
 /**
  * set upload level to cloud
  *
@@ -113,30 +110,28 @@ var UPLOAD_MAX_LEVEL = 5
  * // enable
  * setGlobalUploadLevel(level, "your gw token")
  * // disable
- * setGlobalUploadLevel(UPLOAD_DISABLE_LEVEL)
+ * setGlobalUploadLevel(logLevels.none)
  *
  * @function defaults
- * @param {number} level - set UPLOAD_DISABLE_LEVEL to disable;
+ * @param {number} level - set logLevels.none to disable;
  *                         set level between
- *                         [UPLOAD_MIN_LEVEL, UPLOAD_MAX_LEVEL] to enable
+ *                         [verbose, error] to enable
  * @param {string} token - cloudgw token
  * @throws {error} level out of range or missing authorization
  */
 module.exports.setGlobalUploadLevel = function (level, authorization) {
-  if (level === UPLOAD_DISABLE_LEVEL) {
-    native.enableCloud(UPLOAD_DISABLE_LEVEL, '')
-  } else if (UPLOAD_MIN_LEVEL <= level && level <= UPLOAD_MAX_LEVEL) {
+  if (level === logLevels.none) {
+    native.enableCloud(logLevels.none, '')
+  } else if (logLevels.verbose <= level && level <= logLevels.error) {
     if (!authorization) {
       throw new Error('missing cloudgw authorization')
     }
     native.enableCloud(level, authorization)
   } else {
     throw new Error(
-      `upload level should between ${UPLOAD_MIN_LEVEL},${UPLOAD_MAX_LEVEL}`
+      `upload level should between [${logLevels.verbose},${logLevels.error}]`
     )
   }
 }
 
-module.exports.UPLOAD_DISABLE_LEVEL = UPLOAD_DISABLE_LEVEL
-module.exports.UPLOAD_MIN_LEVEL = UPLOAD_MIN_LEVEL
-module.exports.UPLOAD_MAX_LEVEL = UPLOAD_MAX_LEVEL
+module.exports.levels = logLevels
