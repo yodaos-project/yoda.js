@@ -93,19 +93,28 @@ class DNDCommon {
       return `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDay()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
     }
     var now = new Date()
+    now.setHours(now.getHours() + now.getTimezoneOffset() / 60)
     var start = DNDCommon.formatTime(DNDCommon.getStartTime(), 22, 0)
     var end = DNDCommon.formatTime(DNDCommon.getEndTime(), 7, 0)
-    if (start > end) {
+    if (start >= end) {
       end.setDate(end.getDate() + 1)
     }
     logger.info(`check utc time now:${formatDate(now)}   start:${formatDate(start)}   end:${formatDate(end)}`)
     if (now >= start && now < end) {
       return end - now
-    } else if (now < start) {
-      return now - start
-    } else if (now >= end) {
-      start.setDate(start.getDate() + 1)
-      return now - start
+    } else {
+      var nowPlusDay = new Date()
+      nowPlusDay.setHours(nowPlusDay.getHours() + nowPlusDay.getTimezoneOffset() / 60)
+      nowPlusDay.setDate(nowPlusDay.getDate() + 1)
+      logger.info(`check utc time nowPlusDay:${formatDate(nowPlusDay)}   start:${formatDate(start)}   end:${formatDate(end)}`)
+      if (nowPlusDay >= start && nowPlusDay < end) {
+        return nowPlusDay - now
+      } else if (now < start) {
+        return now - start
+      } else {
+        start.setDate(start.getDate() + 1)
+        return now - start
+      }
     }
   }
 
@@ -241,7 +250,6 @@ class DNDCommon {
    */
   static formatTime (timeStr, defaultHour, defaultMinute) {
     var d = new Date()
-    var curTimeZone = -(d.getTimezoneOffset() / 60)
     d.setSeconds(0)
     d.setMilliseconds(0)
     var hour = defaultHour
@@ -259,7 +267,7 @@ class DNDCommon {
     }
     d.setHours(hour)
     // TODO custom-config should add timeZone
-    d.setHours(d.getHours() + curTimeZone - TIME_ZONE)
+    d.setHours(d.getHours() - TIME_ZONE)
     d.setMinutes(minute)
     return d
   }
@@ -555,9 +563,6 @@ class DNDMode {
    */
   setTimeout (code) {
     var waitMs = DNDCommon.getDNDTime()
-    if (waitMs < 0) {
-      waitMs = -waitMs
-    }
     this.waitSleep = (code === FSMCode.CheckActivityTrue || code === FSMCode.CheckActivityTrueX)
     if (!this.waitSleep) {
       if (waitMs >= 0) {
@@ -571,6 +576,9 @@ class DNDMode {
       } else {
         logger.info(`wait for sleeping to turn off`)
       }
+    }
+    if (waitMs < 0) {
+      waitMs = -waitMs
     }
     this.fsmTimer = setTimeout(() => {
       this.start(FSMCode.CheckAgain)
