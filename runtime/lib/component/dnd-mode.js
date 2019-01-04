@@ -104,13 +104,14 @@ class DNDCommon {
       return end - now
     } else {
       var nowPlusDay = new Date()
+      nowPlusDay.setHours(nowPlusDay.getHours() + nowPlusDay.getTimezoneOffset() / 60)
       nowPlusDay.setDate(nowPlusDay.getDate() + 1)
       logger.info(`check utc time nowPlusDay:${formatDate(nowPlusDay)}   start:${formatDate(start)}   end:${formatDate(end)}`)
       if (nowPlusDay >= start && nowPlusDay < end) {
         return nowPlusDay - now
       } else if (now < start) {
         return now - start
-      } else /*if (now >= end)*/ {
+      } else {
         start.setDate(start.getDate() + 1)
         return now - start
       }
@@ -249,7 +250,6 @@ class DNDCommon {
    */
   static formatTime (timeStr, defaultHour, defaultMinute) {
     var d = new Date()
-    var curTimeZone = -(d.getTimezoneOffset() / 60)
     d.setSeconds(0)
     d.setMilliseconds(0)
     var hour = defaultHour
@@ -267,7 +267,7 @@ class DNDCommon {
     }
     d.setHours(hour)
     // TODO custom-config should add timeZone
-    d.setHours(d.getHours() + curTimeZone - TIME_ZONE)
+    d.setHours(d.getHours() - TIME_ZONE)
     d.setMinutes(minute)
     return d
   }
