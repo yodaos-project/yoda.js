@@ -192,7 +192,8 @@ function createHandle (options) {
     options.deviceTypeId,
     options.deviceId,
     options.secret,
-    options.declaimer || 'zh')
+    options.declaimer || 'zh',
+    options.holdConnect)
   return handle
 }
 
