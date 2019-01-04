@@ -51,6 +51,14 @@ var path = require('path')
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
 var globalAlphaFactor = 1
+var holdSoundConnect = true
+if (property.get('player.sound.holdcon', 'persist') === '0') {
+  holdSoundConnect = false
+}
+var holdAwakeConnect = true
+if (property.get('player.lightd.holdcon', 'persist') === '0') {
+  holdAwakeConnect = false
+}
 
 function applyAlphaFactor (alpha) {
   if (alpha !== undefined && typeof alpha === 'number' && alpha >= 0 && alpha <= 1) {
@@ -144,7 +152,7 @@ LightRenderingContext.prototype.playAwake = function playAwake () {
     return
   }
   var absPath = `/opt/media/awake_0${Math.floor(Math.random() * 5) + 1}.wav`
-  Sounder.play(absPath, AudioManager.STREAM_ALARM, true, (err) => {
+  Sounder.play(absPath, AudioManager.STREAM_ALARM, holdAwakeConnect, (err) => {
     if (err) {
       logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
     }
@@ -197,7 +205,7 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
   }
 
   if (path.extname(absPath) === '.wav') {
-    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, true, (err) => {
+    Sounder.play(absPath, AudioManager.STREAM_SYSTEM, holdSoundConnect, (err) => {
       if (err) {
         logger.error(`playing ${absPath} occurs error ${err && err.stack}`)
       }
