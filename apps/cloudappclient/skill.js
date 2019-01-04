@@ -1,6 +1,7 @@
 var logger = require('logger')('cloudAppClient-skill')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
+var property = require('@yoda/property')
 
 function Skill (exe, nlp, action) {
   logger.log(action.appId + ' was create')
@@ -102,7 +103,10 @@ Skill.prototype.handleEvent = function () {
         return
       }
       this.directives = []
-      if (this.form === 'cut') {
+      // The continuous dialogue only needs to take effect for the cloud cut skill temporarily.
+      // notice: the subsequent planning of continuous dialogue is realized in the cloud.
+      var pickupSwitch = property.get('sys.pickupswitch')
+      if (this.form === 'cut' && pickupSwitch === 'open') {
         this.exe.execute([{
           type: 'pickup',
           action: '',
