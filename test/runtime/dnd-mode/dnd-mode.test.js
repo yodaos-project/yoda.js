@@ -215,7 +215,6 @@ test('dnd mode check', function (t) {
   t.ok(!tag1, 'light set: expired time error')
   t.ok(!tag2, 'sound set: expired time error')
 
-
   tag1 = false
   tag2 = false
   mock.restore()
@@ -241,7 +240,6 @@ test('dnd mode check', function (t) {
   nightMode.setOption(option)
   t.ok(tag1, 'light set: ok time error')
   t.ok(tag2, 'sound set: ok time error')
-
 
   tag1 = false
   tag2 = false
