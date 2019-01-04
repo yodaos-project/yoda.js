@@ -230,8 +230,10 @@ class WakeupEffect extends BaseConfig {
    * @param {string} queryObj - object from url,
    */
   onWakeupEffectStatusChangedFromUrl (queryObj) {
-    var realQueryObj = safeParse(queryObj.param)
-    this.applyWakeupEffect(realQueryObj, queryObj.isFirstLoad)
+    if (queryObj && queryObj.param) {
+      var realQueryObj = safeParse(queryObj.param)
+      this.applyWakeupEffect(realQueryObj, queryObj.isFirstLoad)
+    }
   }
 
   /**
