@@ -13,7 +13,7 @@ function getDateWithTimeZone (tz) {
   return dt
 }
 
-test('night mode check', function (t) {
+test('dnd mode check', function (t) {
   var light = {}
   var sound = {}
   var life = {}
@@ -56,14 +56,14 @@ test('night mode check', function (t) {
   tag1 = false
   tag2 = false
   mock.restore()
-  // night mode turn on
+  // dnd mode turn on
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
     tag1 = true
-    t.ok(isNightMode, 'light night mode')
+    t.ok(isNightMode, 'light dnd mode')
   })
   mock.mockReturns(sound, 'setVolume', (volume) => {
     tag2 = true
-    t.ok(volume === 10, 'sound night mode')
+    t.ok(volume === 10, 'sound dnd mode')
   })
   mock.mockReturns(sound, 'getVolume', 50)
   mock.mockReturns(life, 'getCurrentAppId', undefined)
@@ -83,7 +83,7 @@ test('night mode check', function (t) {
   tag1 = false
   tag2 = false
   mock.restore()
-  // wait for entering into night mode  because app stack is not empty
+  // wait for entering into dnd mode  because app stack is not empty
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
     t.fail('already enabled')
   })
@@ -100,14 +100,14 @@ test('night mode check', function (t) {
   tag1 = false
   tag2 = false
   mock.restore()
-  // night mode turn on
+  // dnd mode turn on
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
     tag1 = true
-    t.ok(isNightMode, 'light night mode')
+    t.ok(isNightMode, 'light dnd mode')
   })
   mock.mockReturns(sound, 'setVolume', (volume) => {
     tag2 = true
-    t.ok(volume === 10, 'sound night mode')
+    t.ok(volume === 10, 'sound dnd mode')
   })
   mock.mockReturns(sound, 'getVolume', 50)
   mock.mockReturns(life, 'getCurrentAppId', undefined)
@@ -163,11 +163,11 @@ test('night mode check', function (t) {
   // dnd mode cross-day time
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
     tag1 = true
-    t.ok(isNightMode, 'light night mode')
+    t.ok(isNightMode, 'light dnd mode')
   })
   mock.mockReturns(sound, 'setVolume', (volume) => {
     tag2 = true
-    t.ok(volume === 10, 'sound night mode')
+    t.ok(volume === 10, 'sound dnd mode')
   })
   mock.mockReturns(sound, 'getVolume', 50)
   mock.mockReturns(life, 'getCurrentAppId', undefined)
@@ -185,6 +185,64 @@ test('night mode check', function (t) {
   t.ok(tag1, 'light set: cross-day time error')
   t.ok(tag2, 'sound set: cross-day time error')
 
+  switchOff()
+
+  tag1 = false
+  tag2 = false
+  mock.restore()
+  // dnd mode is expired
+  mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
+    tag1 = true
+    t.ok(!isNightMode, 'light dnd mode')
+  })
+  mock.mockReturns(sound, 'setVolume', (volume) => {
+    tag2 = true
+    t.ok(volume > 10, 'sound dnd mode')
+  })
+  mock.mockReturns(sound, 'getVolume', 50)
+  mock.mockReturns(life, 'getCurrentAppId', undefined)
+  mock.mockReturns(life, 'on', undefined)
+  startTime = getDateWithTimeZone(8)
+  startTime.setHours(startTime.getHours() - 2)
+  endTime = getDateWithTimeZone(8)
+  endTime.setHours(endTime.getHours() - 1)
+  option = {}
+  option.action = 'open'
+  option.startTime = `${startTime.getHours()}:00`
+  option.endTime = `${endTime.getHours()}:00`
+  console.log(`dnd mode cross-day time check, now:${new Date()}, option: ${JSON.stringify(option)}`)
+  nightMode.setOption(option)
+  t.ok(!tag1, 'light set: expired time error')
+  t.ok(!tag2, 'sound set: expired time error')
+
+
+  tag1 = false
+  tag2 = false
+  mock.restore()
+  // dnd mode is ok
+  mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
+    tag1 = true
+    t.ok(isNightMode, 'light dnd mode')
+  })
+  mock.mockReturns(sound, 'setVolume', (volume) => {
+    tag2 = true
+    t.ok(volume === 10, 'sound dnd mode')
+  })
+  mock.mockReturns(sound, 'getVolume', 50)
+  mock.mockReturns(life, 'getCurrentAppId', undefined)
+  mock.mockReturns(life, 'on', undefined)
+  startTime = getDateWithTimeZone(8)
+  endTime = getDateWithTimeZone(8)
+  option = {}
+  option.action = 'open'
+  option.startTime = `${startTime.getHours()}:00`
+  option.endTime = `${endTime.getHours()}:00`
+  console.log(`dnd mode time check, now:${new Date()}, option: ${JSON.stringify(option)}`)
+  nightMode.setOption(option)
+  t.ok(tag1, 'light set: ok time error')
+  t.ok(tag2, 'sound set: ok time error')
+
+
   tag1 = false
   tag2 = false
   mock.restore()
@@ -192,11 +250,11 @@ test('night mode check', function (t) {
   console.log('switch off')
   mock.mockReturns(light, 'setDNDMode', (isNightMode) => {
     tag1 = true
-    t.ok(!isNightMode, 'light exit night mode')
+    t.ok(!isNightMode, 'light exit dnd mode')
   })
   mock.mockReturns(sound, 'setVolume', (volume) => {
     tag2 = true
-    t.ok(volume === 50, 'sound exit night mode')
+    t.ok(volume === 50, 'sound exit dnd mode')
   })
   mock.mockReturns(sound, 'getVolume', 10)
   mock.mockReturns(life, 'getCurrentAppId', undefined)
@@ -250,18 +308,18 @@ test('night mode check', function (t) {
     tag1 = true
     if (dt.getHours() - timeZone + 8 >= 23 ||
       dt.getHours() - timeZone + 8 <= 7) {
-      t.ok(isNightMode, 'light enter night mode')
+      t.ok(isNightMode, 'light enter dnd mode')
     } else {
-      t.ok(!isNightMode, 'light exit night mode')
+      t.ok(!isNightMode, 'light exit dnd mode')
     }
   })
   mock.mockReturns(sound, 'setVolume', (volume) => {
     var dt = new Date()
     tag2 = true
     if (dt.getHours() - timeZone + 8 >= 23 || dt.getHours() - timeZone + 8 <= 7) {
-      t.ok(volume === 50, 'sound enter night mode')
+      t.ok(volume === 50, 'sound enter dnd mode')
     } else {
-      t.ok(volume !== 50, 'sound exit night mode')
+      t.ok(volume !== 50, 'sound exit dnd mode')
     }
   })
   mock.mockReturns(sound, 'getVolume', 10)
