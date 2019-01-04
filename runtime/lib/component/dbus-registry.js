@@ -632,7 +632,7 @@ DBus.prototype.yodadebug = {
         ok: true,
         result: {
           activeSlots: this.component.lifetime.activeSlots,
-          appDataMap: this.component.lifetime.appDataMap,
+          contextOptionsMap: this.component.lifetime.contextOptionsMap,
           backgroundAppIds: this.component.lifetime.backgroundAppIds,
           carrierId: this.component.lifetime.carrierId,
           monopolist: this.component.lifetime.monopolist,

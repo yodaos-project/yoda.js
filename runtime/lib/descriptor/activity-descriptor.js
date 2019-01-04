@@ -421,19 +421,40 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * sync cloudappclient appid stack
+     * Set context options to current context.
+     *
+     * Options would be merged to current options so that it's not required
+     *  to provide a full set of options each time.
+     *
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @private
-     * @function syncCloudAppIdStack
-     * @param {string[]} stack cloud skills id
-     * @returns {Promise<void>}
+     * @function setContextOptions
+     * @param {object} options - context options to be set.
+     * @param {boolean} [options.keepAlive] - if app is preferring entering
+     * background instead of being destroyed on preemption
+     * @returns {Promise<object>}
      */
-    syncCloudAppIdStack: {
+    setContextOptions: {
       type: 'method',
       returns: 'promise',
-      fn: function syncCloudAppIdStack (stack) {
-        return this._runtime.syncCloudAppIdStack(stack || [])
+      fn: function setContextOptions (options) {
+        options = _.pick(options, 'keepAlive')
+        return this._runtime.component.lifetime.setContextOptionsById(this._appId, options)
+      }
+    },
+    /**
+     * Get current context options previously set.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function getContextOptions
+     * @returns {Promise<object>}
+     */
+    getContextOptions: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getContextOptions () {
+        return this._runtime.component.lifetime.getContextOptionsById(this._appId)
       }
     },
     /**
