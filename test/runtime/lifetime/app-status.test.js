@@ -93,7 +93,7 @@ test('non-daemon app status', t => {
       t.strictEqual(life.isAppInStack('1'), true, 'should be in stack on activated')
       t.strictEqual(life.isAppInactive('1'), false, 'should not be inactive on activated')
       t.strictEqual(life.isBackgroundApp('1'), false, 'should not be background app on activated')
-      t.deepEqual(life.getAppDataById('1'), { form: 'cut' })
+      t.deepEqual(life.getContextOptionsById('1'), { form: 'cut' })
       return life.deactivateAppById('1')
     })
     .then(() => {
@@ -141,7 +141,7 @@ test('should get app data by id', t => {
       return _.mapSeries(_.times(5), idx =>
         life.activateAppById(`${idx}`)
           .then(() => {
-            t.deepEqual(life.getAppDataById(`${idx}`), { form: 'cut' })
+            t.deepEqual(life.getContextOptionsById(`${idx}`), { form: 'cut' })
           })
       )
     })
