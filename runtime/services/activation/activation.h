@@ -41,6 +41,7 @@ private:
   void recv_post(const char* name, uint32_t msgtype, shared_ptr<Caps>& msg);
   void disconnected();
   void flora_disconnected();
+  bool keep_alive = true;
 };
 
 #endif //FRAMEWORKS_ACTIVATION_H
