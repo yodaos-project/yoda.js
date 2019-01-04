@@ -22,7 +22,7 @@ if (process.platform !== 'darwin') {
 }
 
 var logLevels = {
-  'none' : 0,
+  'none': 0,
   'verbose': 1,
   'debug': 2,
   'info': 3,
