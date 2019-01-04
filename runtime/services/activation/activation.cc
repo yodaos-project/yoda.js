@@ -19,7 +19,7 @@ const int32_t MAX_PLAY_LIST = 10;
 Activation::Activation() {
   srand(time(NULL));
   char propValue[PROP_VALUE_MAX];
-  property_get("persist.awake.audio.holdcon", (char*)propValue, "");
+  property_get("persist.player.awake.holdcon", (char*)propValue, "");
   if (strcmp(propValue, "0") == 0) {
     keep_alive = false;
   }

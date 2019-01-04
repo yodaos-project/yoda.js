@@ -81,9 +81,9 @@ function reConnect (CONFIG) {
   }
   // for detail, see https://developer.rokid.com/docs/3-ApiReference/openvoice-api.html#ttsrequest
   CONFIG.declaimer = property.get('rokid.tts.declaimer', 'persist')
-  CONFIG.keepAlive = true
-  if (property.get('ttsd.audio.keepAlive', 'persist') === '0') {
-    CONFIG.keepAlive = false
+  CONFIG.holdConnect = true
+  if (property.get('player.ttsd.holdcon', 'persist') === '0') {
+    CONFIG.holdConnect = false
   }
   if (_TTS) { _TTS.disconnect() }
 
