@@ -54,7 +54,6 @@ function AppRuntime () {
     notify: this.handleCloudEvent.bind(this)
   })
   this.shouldWelcome = true
-  this.forceUpdateAvailable = false
 
   this.componentLoader = new Loader(this, 'component')
   ComponentConfig.paths.forEach(it => {
@@ -261,35 +260,8 @@ AppRuntime.prototype.hibernate = function hibernate () {
 }
 
 /**
- * Starts a force update on voice coming etc.
- */
-AppRuntime.prototype.startForceUpdate = function startForceUpdate () {
-  /**
-   * Skip upcoming voice, announce available force update and start ota.
-   */
-  logger.info('pending force update, delegates activity to @ota.')
-  ota.getInfoOfPendingUpgrade((err, info) => {
-    if (err || info == null) {
-      logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
-      return
-    }
-    logger.info('got pending update info', info)
-    Promise.all([
-      /**
-       * prevent force update from being interrupted.
-       */
-      this.setMicMute(true, { silent: true }),
-      this.setPickup(false)
-    ]).then(() =>
-      this.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
-    ).then(() => this.startMonologue('@yoda/ota'))
-  })
-}
-
-/**
  * play longPressMic.js if long press mic is bigger than 2 second.
  */
-
 AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
   this.shouldStopLongPressMicLight = true
   if (this.component.sound.isMuted()) {

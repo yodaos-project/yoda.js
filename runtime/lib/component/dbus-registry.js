@@ -337,7 +337,7 @@ DBus.prototype.amsexport = {
     out: [],
     fn: function ForceUpdateAvailable (cb) {
       logger.info('force update available, waiting for incoming voice')
-      this.runtime.forceUpdateAvailable = true
+      this.component.ota.forceUpdateAvailable = true
       cb(null)
     }
   },
