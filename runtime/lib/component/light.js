@@ -165,6 +165,7 @@ Light.prototype.transformPathScheme = function (uri, prefix) {
   return uri
 }
 
+// TODO using flora instand of dbus
 /**
  * @private
  */
