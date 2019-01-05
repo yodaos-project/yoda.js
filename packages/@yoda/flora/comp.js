@@ -27,18 +27,8 @@ FloraComp.prototype.init = function (fid, config) {
         this.agent.subscribe(key, cb.bind(this))
       }
     })
+    this.agent.start()
   }
-
-  if (typeof this.remoteMethods === 'object') {
-    Object.keys(this.remoteMethods).forEach((key) => {
-      var cb = this.remoteMethods[key]
-      if (typeof cb === 'function') {
-        this.agent.declareMethod(key, cb.bind(this))
-      }
-    })
-  }
-
-  this.agent.start()
 }
 
 FloraComp.prototype.deinit = function () {
