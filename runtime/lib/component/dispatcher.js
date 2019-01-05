@@ -52,28 +52,30 @@ class Dispatcher {
    * Delegates runtime/component event to interceptors.
    * @param {string} event - event name to be handled
    * @param {any[]} args - arguments of the event
-   * @returns {false|any} return false if there is no interceptor responds. Anything truthy otherwise.
+   * @returns {Promise<false|any>} return a promise resolved by false if there
+   * is no interceptor responds. Resolved with anything truthy otherwise.
    */
   delegate (event, args) {
     var components = this.config.interception[event]
     if (!Array.isArray(components)) {
-      return false
+      return Promise.resolve(false)
     }
+    return Promise.resolve(step(0))
 
-    for (var idx in components) {
+    function step (idx) {
       var name = components[idx].component
       var method = components[idx].method
       if (typeof name !== 'string') {
-        continue
+        return false
       }
       var component = this.component[name]
       if (component == null) {
-        continue
+        return false
       }
       var handler = component[method]
       if (typeof handler !== 'function') {
         logger.warn(`delegation(${event}) target ${name}.${method} is not a function`)
-        continue
+        return false
       }
       logger.info(`dispatch delegation(${event}) to ${name}.${method}`)
       var ret
@@ -81,17 +83,18 @@ class Dispatcher {
         ret = handler.apply(component, args)
       } catch (err) {
         logger.error(`dispatch delegation(${event}) to ${name}.${method} failed with error`, err.stack)
-        continue
+        return false
       }
-      if (!ret) {
-        logger.info(`delegation(${event}) to ${name}.${method} skipped`)
-        continue
-      }
-      logger.info(`delegation(${event}) to ${name}.${method} accepted`)
-      return ret
+      return Promise.resolve(ret)
+        .then((val) => {
+          if (val) {
+            logger.info(`delegation(${event}) to ${name}.${method} accepted`)
+            return val
+          }
+          logger.info(`delegation(${event}) to ${name}.${method} skipped`)
+          return step(idx + 1)
+        })
     }
-
-    return false
   }
 }
 
