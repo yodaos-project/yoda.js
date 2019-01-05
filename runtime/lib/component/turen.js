@@ -214,37 +214,29 @@ Turen.prototype.resetPausedOnAwaken = function resetPausedOnAwaken () {
  * @private
  */
 Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
-  var delegation = this.component.dispatcher.delegate('turenDidWakeUp')
-  if (delegation) {
-    return
-  }
-  var future = this.setAwaken()
-  clearTimeout(this.solitaryVoiceComingTimer)
-  this.solitaryVoiceComingTimer = setTimeout(() => {
-    logger.warn('detected a solitary voice coming, resetting awaken')
-    this.pickup(false)
-
-    if (this.awaken) {
-      return this.announceNetworkLag()
-    }
-  }, this.solitaryVoiceComingTimeout)
-
-  if (this.runtime.forceUpdateAvailable) {
-    future.then(
-      () => this.runtime.startForceUpdate(),
-      err => {
-        logger.error('unexpected error on set awaken', err.stack)
-        return this.runtime.startForceUpdate()
+  return this.component.dispatcher.delegate('turenDidWakeUp')
+    .then(delegation => {
+      if (delegation) {
+        return
       }
-    )
-  }
+      var future = this.setAwaken()
+      clearTimeout(this.solitaryVoiceComingTimer)
+      this.solitaryVoiceComingTimer = setTimeout(() => {
+        logger.warn('detected a solitary voice coming, resetting awaken')
+        this.pickup(false)
 
-  /**
-   * reset picking up discarding state to enable next nlp process
-   */
-  this.pickingUpDiscardNext = false
+        if (this.awaken) {
+          return this.announceNetworkLag()
+        }
+      }, this.solitaryVoiceComingTimeout)
 
-  return future
+      /**
+       * reset picking up discarding state to enable next nlp process
+       */
+      this.pickingUpDiscardNext = false
+
+      return future
+    })
 }
 
 /**

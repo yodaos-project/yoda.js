@@ -12,7 +12,7 @@ test('should validate config', t => {
 })
 
 test('should dispatch delegation', t => {
-  t.plan(3)
+  t.plan(4)
   var runtime = new AppRuntime()
   var dispatcher = runtime.component.dispatcher
 
@@ -29,7 +29,14 @@ test('should dispatch delegation', t => {
     }
   }
   var ret = dispatcher.delegate('foobarFn', [ 123 ])
-  t.deepEqual(ret, { foo: 'bar' })
+  t.true(ret instanceof Promise)
+
+  ret.then(delegation => {
+    t.deepEqual(delegation, { foo: 'bar' })
+  }).catch(err => {
+    t.error(err)
+    t.end()
+  })
 })
 
 test('not existing delegation shall be skipped', t => {
@@ -43,8 +50,14 @@ test('not existing delegation shall be skipped', t => {
       'foobarFn': [ { component: 'foobar', method: 'fn' } ]
     }
   }
-  var ret = dispatcher.delegate('foobarFn', [ 123 ])
-  t.strictEqual(ret, false)
+  dispatcher.delegate('foobarFn', [ 123 ])
+    .then(ret => {
+      t.strictEqual(ret, false)
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
 })
 
 test('throwing delegation shall be skipped', t => {
@@ -62,6 +75,12 @@ test('throwing delegation shall be skipped', t => {
       'foobarFn': [ { component: 'foobar', method: 'fn' } ]
     }
   }
-  var ret = dispatcher.delegate('foobarFn', [ 123 ])
-  t.strictEqual(ret, false)
+  dispatcher.delegate('foobarFn', [ 123 ])
+    .then(ret => {
+      t.strictEqual(ret, false)
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
 })
