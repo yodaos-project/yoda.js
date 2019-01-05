@@ -91,7 +91,7 @@ Wormhole.prototype.handlers = {
    * @member asr
    */
   asr: function (asr) {
-    this.component.flora.getNlpResult(asr, (err, nlp, action) => {
+    this.runtime.component.flora.getNlpResult(asr, (err, nlp, action) => {
       if (err) {
         logger.error('occurrs some error in speechT', err)
       } else {
