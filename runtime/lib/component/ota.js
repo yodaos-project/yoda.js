@@ -1,6 +1,9 @@
+var promisify = require('util').promisify
+
 var logger = require('logger')('comp-ota')
 
 var ota = require('@yoda/ota')
+var getInfoIfFirstUpgradedBootAsync = promisify(ota.getInfoIfFirstUpgradedBoot)
 
 class OTA {
   constructor (runtime) {
@@ -42,6 +45,21 @@ class OTA {
     }
     this.startForceUpdate()
     return true
+  }
+
+  runtimeDidLogin () {
+    return getInfoIfFirstUpgradedBootAsync(
+      info => {
+        if (!info) {
+          return false
+        }
+        this.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
+        return true
+      }, err => {
+        logger.error('get upgrade info on first upgrade boot failed', err.stack)
+        return false
+      }
+    )
   }
   // MARK: - END Interceptions
 }
