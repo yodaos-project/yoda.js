@@ -1,6 +1,7 @@
 {
   "paths": ["/usr/yoda/lib/component"],
   "interception": {
+    "runtimeDidLogin": [ "ota.runtimeDidLogin" ],
     "turenDidWakeUp": ["custodian.turenDidWakeUp", "ota.turenDidWakeUp"]
   }
 }

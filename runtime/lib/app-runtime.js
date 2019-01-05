@@ -16,7 +16,6 @@ var logger = require('logger')('yoda')
 var ComponentConfig = require('/etc/yoda/component-config.json')
 
 var _ = require('@yoda/util')._
-var ota = require('@yoda/ota')
 var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
 var system = require('@yoda/system')
@@ -1051,26 +1050,27 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
 AppRuntime.prototype.onLoggedIn = function () {
   this.component.custodian.onLoggedIn()
 
-  var upgradeInfo
   var deferred = () => {
     perf.stub('started')
     if (this.shouldWelcome) {
-      logger.info('announcing welcome')
-      this.setMicMute(false, { silent: true })
-        .then(() => {
-          this.component.light.appSound('@yoda', 'system://startup0.ogg')
-          return this.component.light.play('@yoda', 'system://setWelcome.js')
-        })
-        .then(() => {
-          // not need to play startup music after relogin
-          this.component.light.stop('@yoda', 'system://boot.js')
+      this.component.dispatcher.delegate('runtimeDidLogin')
+        .then((delegation) => {
+          if (delegation) {
+            return
+          }
+          logger.info('announcing welcome')
+          this.setMicMute(false, { silent: true })
+            .then(() => {
+              this.component.light.appSound('@yoda', 'system://startup0.ogg')
+              return this.component.light.play('@yoda', 'system://setWelcome.js')
+            })
+            .then(() => {
+              // not need to play startup music after relogin
+              this.component.light.stop('@yoda', 'system://boot.js')
+            })
         })
     }
     this.shouldWelcome = false
-
-    if (upgradeInfo) {
-      this.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(upgradeInfo.changelog)}`)
-    }
 
     var config = JSON.stringify(this.onGetPropAll())
     return this.ttsMethod('connect', [config])
@@ -1100,13 +1100,6 @@ AppRuntime.prototype.onLoggedIn = function () {
     this.startDaemonApps(),
     this.setStartupFlag(),
     this.initiate()
-      .then(() => new Promise(resolve => ota.getInfoIfFirstUpgradedBoot((err, info) => {
-        if (err) {
-          logger.error('get upgrade info on first upgrade boot failed', err.stack)
-        }
-        upgradeInfo = info
-        resolve()
-      })))
       .then(deferred, err => {
         logger.error('Unexpected error on runtime.initiate', err.stack)
         return deferred()
