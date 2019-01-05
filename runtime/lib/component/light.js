@@ -2,7 +2,6 @@
 
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
-var Caps = require('@yoda/caps/caps.node').Caps
 var Flora = require('@yoda/flora')
 
 var LIGHT_SOURCE = '/opt/light'
@@ -182,13 +181,10 @@ Light.prototype.lightMethod = function (name, args) {
  * @param {boolean} dndMode true if opened
  */
 Light.prototype.setDNDMode = function (dndMode) {
-  var caps = new Caps()
   if (dndMode) {
-    caps.writeDouble(DND_MODE_ALPHA_FACTOR)
-    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor', caps, Flora.MSGTYPE_PERSIST)
+    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor', [DND_MODE_ALPHA_FACTOR], Flora.MSGTYPE_PERSIST)
   } else {
-    caps.writeDouble(NORMAL_MODE_ALPHA_FACTOR)
-    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor', caps, Flora.MSGTYPE_PERSIST)
+    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor', [NORMAL_MODE_ALPHA_FACTOR], Flora.MSGTYPE_PERSIST)
   }
 }
 
