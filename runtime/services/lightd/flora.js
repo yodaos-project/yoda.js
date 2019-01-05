@@ -2,7 +2,6 @@ var logger = require('logger')('light-flora')
 var inherits = require('util').inherits
 
 var FloraComp = require('@yoda/flora/comp')
-var Caps = require('@yoda/caps/caps.node').Caps
 var property = require('@yoda/property')
 
 var floraConfig = require('/etc/yoda/flora-config.json')
@@ -17,9 +16,7 @@ function Flora (light) {
   this.light = light
 }
 inherits(Flora, FloraComp)
-function isCaps (msg) {
-  return typeof Caps === 'function' && (msg instanceof Caps)
-}
+
 Flora.prototype.handlers = {
   'rokid.turen.voice_coming': function (msg) {
     logger.log('voice coming')
