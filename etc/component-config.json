@@ -1,6 +1,6 @@
 {
   "paths": ["/usr/yoda/lib/component"],
   "interception": {
-    "turenDidWakeUp": ["custodian.turenDidWakeUp"]
+    "turenDidWakeUp": ["custodian.turenDidWakeUp", "ota.turenDidWakeUp"]
   }
 }
