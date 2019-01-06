@@ -21,6 +21,21 @@ test('should load path', t => {
     })
 })
 
+test('should skip path if not exist', t => {
+  var fakeRuntime = mock.mockRuntime()
+  var loader = new AppLoader(fakeRuntime)
+
+  loader.loadPath(helper.paths.apps + 'foobar')
+    .then(() => {
+      t.pass()
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('should load paths', t => {
   var fakeRuntime = mock.mockRuntime()
   var loader = new AppLoader(fakeRuntime)
@@ -81,7 +96,7 @@ test('should load dbus app', t => {
   manifest.skills.forEach(it => {
     t.strictEqual(loader.skillIdAppIdMap[it], appId)
   })
-  t.deepEqual(fakeRuntime.permission.map[appId], manifest.permission)
+  t.deepEqual(fakeRuntime.component.permission.map[appId], manifest.permission)
 
   var loadedManifest = loader.appManifests[appId]
   t.strictEqual(loadedManifest.objectPath, 'foo', 'objectPath')
