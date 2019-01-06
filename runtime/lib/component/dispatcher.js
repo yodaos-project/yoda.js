@@ -56,7 +56,8 @@ class Dispatcher {
    * is no interceptor responds. Resolved with anything truthy otherwise.
    */
   delegate (event, args) {
-    var components = this.config.interception[event]
+    var self = this
+    var components = self.config.interception[event]
     if (!Array.isArray(components)) {
       return Promise.resolve(false)
     }
@@ -68,7 +69,7 @@ class Dispatcher {
       if (typeof name !== 'string') {
         return false
       }
-      var component = this.component[name]
+      var component = self.component[name]
       if (component == null) {
         return false
       }
