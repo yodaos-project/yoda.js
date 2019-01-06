@@ -64,6 +64,9 @@ class Dispatcher {
     return Promise.resolve(step(0))
 
     function step (idx) {
+      if (idx >= components.length) {
+        return false
+      }
       var name = components[idx].component
       var method = components[idx].method
       if (typeof name !== 'string') {

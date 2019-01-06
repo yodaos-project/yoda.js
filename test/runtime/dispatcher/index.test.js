@@ -39,6 +39,34 @@ test('should dispatch delegation', t => {
   })
 })
 
+test('should skip delegation if no component has interests', t => {
+  t.plan(4)
+  var runtime = new AppRuntime()
+  var dispatcher = runtime.component.dispatcher
+
+  runtime.component.foobar = {
+    fn: (arg) => {
+      t.strictEqual(arg, 123)
+      t.pass()
+      return false
+    }
+  }
+  dispatcher.config = {
+    interception: {
+      'foobarFn': [ { component: 'foobar', method: 'fn' } ]
+    }
+  }
+  var ret = dispatcher.delegate('foobarFn', [ 123 ])
+  t.true(ret instanceof Promise)
+
+  ret.then(delegation => {
+    t.deepEqual(delegation, false)
+  }).catch(err => {
+    t.error(err)
+    t.end()
+  })
+})
+
 test('not existing delegation shall be skipped', t => {
   t.plan(1)
   var runtime = new AppRuntime()

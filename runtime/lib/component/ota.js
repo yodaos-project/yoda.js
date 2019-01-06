@@ -48,8 +48,9 @@ class OTA {
   }
 
   runtimeDidLogin () {
-    return getInfoIfFirstUpgradedBootAsync(
-      info => {
+    return getInfoIfFirstUpgradedBootAsync()
+      .then(info => {
+        logger.info('got upgrade ota info', info)
         if (!info) {
           return false
         }
@@ -58,8 +59,7 @@ class OTA {
       }, err => {
         logger.error('get upgrade info on first upgrade boot failed', err.stack)
         return false
-      }
-    )
+      })
   }
   // MARK: - END Interceptions
 }
