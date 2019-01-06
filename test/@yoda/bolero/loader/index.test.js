@@ -40,7 +40,13 @@ test('should load path', t => {
   var runtime = {}
   var loader = new Loader(runtime, 'component')
   loader.load(path.join(__dirname, 'fixture'))
-    .then(() => {
-      t.strictEqual(runtime.component.bar.hello(), 'foobar')
-    })
+  t.strictEqual(runtime.component.bar.hello(), 'foobar')
+})
+
+test('should skip path if not exist', t => {
+  t.plan(1)
+  var runtime = {}
+  var loader = new Loader(runtime, 'component')
+  loader.load(path.join(__dirname, 'does-not-exist'))
+  t.pass()
 })
