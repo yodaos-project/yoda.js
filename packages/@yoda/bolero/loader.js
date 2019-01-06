@@ -5,6 +5,7 @@
 var fs = require('fs')
 var path = require('path')
 
+var logger = require('logger')('bolero/loader')
 var _ = require('@yoda/util')._
 
 /**
@@ -34,7 +35,16 @@ class Loader {
    * @param {string} compDir - components directory to be loaded.
    */
   load (compDir) {
-    var entities = fs.readdirSync(compDir)
+    var entities
+    try {
+      entities = fs.readdirSync(compDir)
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        throw err
+      }
+      entities = []
+      logger.error(`directory '${compDir}' doesn't exist, skipping...`)
+    }
     return entities
       .filter(it => _.endsWith(it, '.js'))
       .map(it => {

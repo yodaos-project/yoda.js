@@ -214,6 +214,12 @@ AppChargeur.prototype.loadPath = function loadPath (path) {
             .then(stat => [ it, stat ])
           )
       )
+    }, err => {
+      if (err.code !== 'ENOENT') {
+        throw err
+      }
+      logger.error(`directory '${path}' doesn't exist, skipping...`)
+      return []
     })
     .then(res => {
       return Promise.all(
