@@ -62,6 +62,7 @@ class Loader {
    */
   loadToTarget (name, Klass) {
     Object.defineProperty(this.target, name, {
+      configurable: true,
       get: () => {
         var instance = this.cache[name]
         if (!instance) {
@@ -82,7 +83,7 @@ class Loader {
   register (name, Klass) {
     name = _.camelCase(name)
     if (this.registry[name]) {
-      throw new Error(`Conflict registration on '${name}'.`)
+      logger.warn(`Overriding existing ${name}`)
     }
     this.registry[name] = Klass
     this.loadToTarget(name, Klass)
