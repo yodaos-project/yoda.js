@@ -41,6 +41,7 @@ Object.assign(HttpgwDescriptor.prototype,
      * @param {object} data - request data for httpgw.
      * @param {object} options - options of the httpgw
      * @param {string} options.service - httpgw service
+     * @param {number} options.timeout - a number specifying the request timeout in milliseconds
      * @returns {Promise<object>}
      */
     request: {
