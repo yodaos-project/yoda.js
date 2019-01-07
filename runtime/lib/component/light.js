@@ -2,12 +2,13 @@
 
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
+var Flora = require('@yoda/flora')
 
 var LIGHT_SOURCE = '/opt/light'
 var MEDIA_SOURCE = '/opt/media'
 
-var DND_MODE_ALPHA_FACTOR = '0.5'
-var NORMAL_MODE_ALPHA_FACTOR = '1'
+var DND_MODE_ALPHA_FACTOR = 0.5
+var NORMAL_MODE_ALPHA_FACTOR = 1
 
 /**
  * convinient tools for call lightd
@@ -15,6 +16,7 @@ var NORMAL_MODE_ALPHA_FACTOR = '1'
  */
 function Light (runtime) {
   EventEmitter.call(this)
+  this.runtime = runtime
   this.dbusRegistry = runtime.component.dbusRegistry
 }
 inherits(Light, EventEmitter)
@@ -163,6 +165,7 @@ Light.prototype.transformPathScheme = function (uri, prefix) {
   return uri
 }
 
+// TODO using flora instand of dbus
 /**
  * @private
  */
@@ -180,9 +183,11 @@ Light.prototype.lightMethod = function (name, args) {
  */
 Light.prototype.setDNDMode = function (dndMode) {
   if (dndMode) {
-    this.lightMethod('setGlobalAlphaFactor', [DND_MODE_ALPHA_FACTOR])
+    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor',
+      [DND_MODE_ALPHA_FACTOR], Flora.MSGTYPE_PERSIST)
   } else {
-    this.lightMethod('setGlobalAlphaFactor', [NORMAL_MODE_ALPHA_FACTOR])
+    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor',
+      [NORMAL_MODE_ALPHA_FACTOR], Flora.MSGTYPE_PERSIST)
   }
 }
 
