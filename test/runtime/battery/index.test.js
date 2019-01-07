@@ -18,7 +18,7 @@ var getRuntime = () => ({
 
 function sendInfo (battery, data) {
   var ret = Object.assign({
-    batSupported: true,
+    batPresent: true,
     batChargingOnline: false
   }, data)
   var str = JSON.stringify(ret)
