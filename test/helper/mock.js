@@ -40,6 +40,26 @@ function mockCallback (target, prop, err, res) {
   }
 }
 
+function mockPromise (target, prop, err, res) {
+  var orig = target[prop]
+  target[prop] = mocking
+  mockContext.push({
+    target: target,
+    prop: prop,
+    orig: orig
+  })
+
+  function mocking () {
+    if (typeof err === 'function') {
+      return Promise.resolve(err.apply(target, arguments))
+    }
+    if (err != null) {
+      return Promise.reject(err)
+    }
+    return Promise.resolve(res)
+  }
+}
+
 function restore () {
   mockContext.forEach(it => {
     it.target[it.prop] = it.orig
@@ -49,4 +69,5 @@ function restore () {
 
 module.exports.mockReturns = mockReturns
 module.exports.mockCallback = mockCallback
+module.exports.mockPromise = mockPromise
 module.exports.restore = restore

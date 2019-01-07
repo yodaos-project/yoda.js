@@ -101,6 +101,9 @@ Flora.prototype.handlers = {
     var speechId = msg[1]
     logger.error(`Unexpected speech error(${errCode}) for speech(${speechId}).`)
     return this.component.turen.handleEvent('speech error', errCode, speechId)
+  },
+  'battery.info': function (msg) {
+    return this.component.battery.handleFloraInfo(msg)
   }
 }
 Flora.prototype.handlers[`rokid.speech.nlp.${asr2nlpId}`] = onAsr2Nlp
