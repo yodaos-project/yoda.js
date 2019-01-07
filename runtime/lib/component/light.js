@@ -183,9 +183,11 @@ Light.prototype.lightMethod = function (name, args) {
  */
 Light.prototype.setDNDMode = function (dndMode) {
   if (dndMode) {
-    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor', [DND_MODE_ALPHA_FACTOR], Flora.MSGTYPE_PERSIST)
+    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor',
+      [DND_MODE_ALPHA_FACTOR], Flora.MSGTYPE_PERSIST)
   } else {
-    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor', [NORMAL_MODE_ALPHA_FACTOR], Flora.MSGTYPE_PERSIST)
+    this.runtime.component.flora.post('rokid.lightd.global_alpha_factor',
+      [NORMAL_MODE_ALPHA_FACTOR], Flora.MSGTYPE_PERSIST)
   }
 }
 
