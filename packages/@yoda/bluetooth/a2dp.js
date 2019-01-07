@@ -100,7 +100,7 @@ function BluetoothA2dp (deviceName) {
     'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
     'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
   }
-  this._flora.init('bluetooth-a2dp', {
+  this._flora.init(null, {
     'uri': 'unix:/var/run/flora.sock',
     'bufsize': 40960,
     'reconnInterval': 10000
