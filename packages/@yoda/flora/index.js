@@ -8,18 +8,30 @@
  * ```js
  * // create flora agent instance
  * var flora = require('@yoda/flora')
- * var agent = new flora.Agent('unix:/var/run/flora.sock')
+ * var agent = new flora.Agent('unix:/var/run/flora.sock#testAgent')
  *
  * // subscribe msg
  * agent.subscribe('test msg1', (msg, type) => {
  *   console.log('recv msg', msg)
  * })
  *
+ * agent.declareMethod('test method1', (msg) => {
+ *   console.log('method call params', msg)
+ *   return { retCode: 0, msg: [ 'hello', 'world' ] }
+ * });
+ *
  * // connect to unix domain socket '/var/run/flora.sock'
  * agent.start()
  *
  * // post msg
  * agent.post('test msg1', [ 1, 2, 'hello world', [ 'foo' ] ], flora.MSGTYPE_INSTANT)
+ *
+ * // remote call
+ * agent.call('test method1', [ 'foo' ], 'testAgent', 200).then((reply) => {
+ *   console.log('remote call return', msg)
+ * }, (err) => {
+ *   console.log('remote call failed:', err)
+ * })
  *
  * // close agent
  * // close agent after 1 second, for wait agent receive 'test msg1'
@@ -58,6 +70,13 @@
  */
 
 /**
+ * remove remote method
+ * @method removeMethod
+ * @memberof module:@yoda/flora~Agent
+ * @param {string} name - method name
+ */
+
+/**
  * @class module:@yoda/flora~Response
  * @classdesc Response of Agent.get returns
  */
@@ -81,7 +100,12 @@
  * @callback module:@yoda/flora~SubscribeMsgHandler
  * @param {any[]} - msg content
  * @param {number} - type of msg
- * @returns {module:@yoda/flora~Reply} reply message to sender of this REQUEST message
+ */
+
+/**
+ * @callback module:@yoda/flora~DeclareMethodHandler
+ * @param {any[]} - msg content
+ * @returns {module:@yoda/flora~Reply} reply message to caller
  */
 
 var Agent = require('./flora-cli.node').Agent
@@ -121,7 +145,33 @@ Agent.prototype.subscribe = function (name, handler, options) {
       cbmsg = this.nativeGenArray(msg)
     }
     try {
-      return handler(cbmsg, type)
+      handler(cbmsg, type)
+    } catch (e) {
+      process.nextTick(() => {
+        throw e
+      })
+    }
+  })
+}
+/**
+ * declare remote method
+ * @method declareMethod
+ * @memberof module:@yoda/flora~Agent
+ * @param {string} name - method name
+ * @param {module:@yoda/flora~DeclareMethodHandler} handler - handler of remote method call
+ * @param {object} options
+ * @param {string} options.format - specify format of received method params. format string values: 'array' | 'caps'
+ */
+Agent.prototype.declareMethod = function (name, handler, options) {
+  this.nativeDeclareMethod(name, (msg) => {
+    var cbmsg
+    if (isCapsFormat(options)) {
+      cbmsg = genCaps(msg)
+    } else {
+      cbmsg = this.nativeGenArray(msg)
+    }
+    try {
+      return handler(cbmsg)
     } catch (e) {
       process.nextTick(() => {
         throw e
@@ -173,33 +223,34 @@ Agent.prototype.post = function (name, msg, type) {
 }
 
 /**
- * post msg and get response
- * @method get
+ * remote method call
+ * @method call
  * @memberof module:@yoda/flora~Agent
  * @param {string} name - msg name
- * @param {any[]|module:@yoda/caps~Caps} [msg] - msg content
- * @param {object} options
- * @param {string} options.format - specify format of received message. format string values: 'array' | 'caps'
- * @returns {Promise} promise that resolves with an array of {module:@yoda/flora~Response}
+ * @param {any[]|module:@yoda/caps~Caps} [msg] - method params
+ * @param {string} target - target client id of remote method
+ * @param {number} [timeout] - remote call timeout
+ * @param {object} [options]
+ * @param {string} options.format - specify format of method params. format string values: 'array' | 'caps'
+ * @returns {Promise} promise that resolves with {number} rescode, {module:@yoda/flora~Response}
  */
-Agent.prototype.get = function (name, msg, options) {
-  if (typeof name !== 'string' || !isValidMsg(msg)) {
-    return Promise.reject(exports.ERROR_INVALID_PARAM)
+Agent.prototype.call = function (name, msg, target, timeout, options) {
+  if (typeof name !== 'string' || !isValidMsg(msg) || typeof target !== 'string') {
+    return Promise.resolve(exports.ERROR_INVALID_PARAM)
   }
   return new Promise((resolve, reject) => {
-    var r = this.nativeGet(name, msg, (replys) => {
-      if (Array.isArray(replys)) {
-        var i
-        for (i = 0; i < replys.length; ++i) {
-          if (isCapsFormat(options)) {
-            replys[i].msg = genCaps(replys[i].msg)
-          } else {
-            replys[i].msg = this.nativeGenArray(replys[i].msg)
-          }
+    var r = this.nativeCall(name, msg, target, (rescode, reply) => {
+      if (rescode === 0) {
+        if (isCapsFormat(options)) {
+          reply.msg = genCaps(reply.msg)
+        } else {
+          reply.msg = this.nativeGenArray(reply.msg)
         }
+        resolve(reply)
+      } else {
+        reject(rescode)
       }
-      resolve(replys)
-    }, isCaps(msg))
+    }, isCaps(msg), timeout)
     if (r !== 0) {
       reject(r)
     }
@@ -233,11 +284,6 @@ exports.MSGTYPE_INSTANT = 0
 exports.MSGTYPE_PERSIST = 1
 /**
  * @memberof module:@yoda/flora
- * @member {number} MSGTYPE_REQUEST
- */
-exports.MSGTYPE_REQUEST = 2
-/**
- * @memberof module:@yoda/flora
  * @member {number} ERROR_INVALID_URI
  */
 exports.ERROR_INVALID_URI = -1
@@ -251,3 +297,8 @@ exports.ERROR_INVALID_PARAM = -2
  * @member {number} ERROR_NOT_CONNECTED
  */
 exports.ERROR_NOT_CONNECTED = -3
+/**
+ * @memberof module:@yoda/flora
+ * @member {number} ERROR_TARGET_NOT_EXISTS
+ */
+exports.ERROR_TARGET_NOT_EXISTS = -5
