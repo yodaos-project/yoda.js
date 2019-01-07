@@ -37,18 +37,18 @@ Object.assign(HttpgwDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.HttpgwClient
      * @instance
      * @function request
-     * @param {string} path - the path for httpgw.
-     * @param {object} data - the data for httpgw.
-     * @param {string} data.namespace - the httpgw service namespace.
-     * @param {string} data.values - the data for the given namespace.
+     * @param {string} path - request path for httpgw.
+     * @param {object} data - request data for httpgw.
+     * @param {object} options - options of the httpgw
+     * @param {string} options.service - httpgw service
      * @returns {Promise<object>}
      */
     request: {
       type: 'method',
       returns: 'promise',
-      fn: function request (path, data) {
+      fn: function request (path, data, options) {
         return new Promise((resolve, reject) => {
-          this._runtime.cloudapi.cloudgw(path, data, (err, data) => {
+          this._runtime.cloudApi.cloudgw.request(path, data, options, (err, data) => {
             if (err) {
               return reject(err)
             }
@@ -63,14 +63,16 @@ Object.assign(HttpgwDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.HttpgwClient
      * @instance
      * @function getSignature
+     * @param {object} options -
+     * @param {string} options.service - httpgw service
      * @returns {Promise<string>}
      */
     getSignature: {
       type: 'method',
       returns: 'promise',
-      fn: function getSignature () {
+      fn: function getSignature (options) {
         return this._runtime.onGetPropAll().then((props) => {
-          return cloudgw.getAuth(props)
+          return cloudgw.getAuth(Object.assign({}, options, props))
         })
       }
     }
