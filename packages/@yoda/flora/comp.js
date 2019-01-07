@@ -12,13 +12,16 @@ function FloraComp () {
 }
 
 FloraComp.prototype.init = function (fid, config) {
-  if (typeof fid !== 'string') {
-    fid = ''
-  }
+  var furi
   if (typeof config !== 'object') {
     config = defaultConfig
   }
-  this.agent = new flora.Agent(config.uri + '#' + fid, config)
+  if (typeof fid !== 'string') {
+    furi = config.uri
+  } else {
+    furi = config.uri + '#' + fid
+  }
+  this.agent = new flora.Agent(furi, config)
 
   if (typeof this.handlers === 'object') {
     Object.keys(this.handlers).forEach((key) => {
