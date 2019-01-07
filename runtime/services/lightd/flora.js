@@ -32,6 +32,11 @@ Flora.prototype.handlers = {
     }
     var degree = msg[0]
     this.light.setDegree('@yoda', degree)
+  },
+  'rokid.lightd.global_alpha_factor': function (msg) {
+    var alphaFactor = msg[0]
+    logger.info(`global alpha factor ${alphaFactor}`)
+    this.light.manager.setGlobalAlphaFactor(alphaFactor)
   }
 }
 
