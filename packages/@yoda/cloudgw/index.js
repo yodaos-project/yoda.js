@@ -75,11 +75,12 @@ function Cloudgw (config) {
 
 /**
  *
- * @param {String} path
- * @param {Object} data
- * @param {Object} [options]
- * @param {String} [options.host]
- * @param {String} [options.service]
+ * @param {string} path
+ * @param {object} data
+ * @param {object} [options]
+ * @param {string} [options.host]
+ * @param {string} [options.service]
+ * @param {number} [options.timeout]
  * @param {Function} callback
  */
 Cloudgw.prototype.request = function request (path, data, options, callback) {
@@ -128,6 +129,13 @@ Cloudgw.prototype.request = function request (path, data, options, callback) {
       callback(null, body)
     }
   })
+  if (options.timeout) {
+    req.setTimeout(options.timeout, () => {
+      // FIXME: request is not automatically aborted in shadow-node
+      req.abort()
+      req.emit('error', new Error('Request Aborted.'))
+    })
+  }
 
   req.on('error', err => {
     callback(err)
