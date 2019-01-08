@@ -951,6 +951,7 @@ AppRuntime.prototype.onResetSettings = function () {
 }
 
 AppRuntime.prototype.shutdown = function shutdown () {
+  logger.info('shuting down')
   this.component.light.play('@yoda', 'system://shutdown.js')
     .then(() => {
       if (this.component.battery.isCharging()) {
