@@ -4,6 +4,7 @@ var logger = require('logger')('wormhole')
 var AudioManager = require('@yoda/audio').AudioManager
 var _ = require('@yoda/util')._
 var ChildProcess = require('child_process')
+var url = require('url')
 
 var config = require('/etc/yoda/wormhole.json')
 
@@ -35,7 +36,15 @@ Wormhole.prototype.messageHandler = function messageHandler (topic, text) {
         logger.error('Malformed descriptor, options is not an object.', descriptor)
         return
       }
-      return this.runtime.openUrl(descriptor.url, options)
+      var urlObject = url.parse(descriptor.url, true)
+      urlObject.search = null
+      urlObject.query.__topic = topic
+      urlObject.query.__text = text
+      /**
+       * urlObject is instance of UrlObject.
+       * Should be fine with parsing with `url.parse`.
+       */
+      return this.runtime.openUrl(urlObject, options)
         .catch(err => {
           logger.error(`Unexpected error on opening url '${descriptor.url}'`, err && err.message, err && err.stack)
         })
