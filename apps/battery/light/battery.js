@@ -3,7 +3,7 @@ var path = require('path')
 module.exports = function (light, data, callback) {
   var appMediaPath = path.join(__dirname, '..', 'media')
   if (data.isAcConnect) {
-    light.sound('self://res/battery_connecte.ogg', appMediaPath, { ignore: false })
+    light.sound('self://res/battery_connect.ogg', appMediaPath, { ignore: false })
   } else {
     light.sound('self://res/battery_disconnect.ogg', appMediaPath, { ignore: false })
   }
