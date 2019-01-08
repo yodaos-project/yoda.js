@@ -9,6 +9,18 @@
 #include <common.h>
 #include <errno.h>
 
+static napi_value PowerOff(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  napi_create_double(env, system("poweroff"), &returnVal);
+  return returnVal;
+}
+
+static napi_value RebootCharging(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  napi_create_double(env, system("reboot charging"), &returnVal);
+  return returnVal;
+}
+
 static napi_value Reboot(napi_env env, napi_callback_info info) {
   napi_value returnVal;
   napi_create_double(env, system("reboot"), &returnVal);
@@ -204,6 +216,8 @@ static napi_value Strptime(napi_env env, napi_callback_info info) {
 
 static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
+    DECLARE_NAPI_PROPERTY("powerOff", PowerOff),
+    DECLARE_NAPI_PROPERTY("rebootCharging", RebootCharging),
     DECLARE_NAPI_PROPERTY("reboot", Reboot),
     DECLARE_NAPI_PROPERTY("verifyOtaImage", VerifyOtaImage),
     DECLARE_NAPI_PROPERTY("prepareOta", PrepareOta),

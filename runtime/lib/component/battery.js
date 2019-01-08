@@ -120,6 +120,18 @@ class Battery {
     }
   }
 
+  isCharging () {
+    if (this.memoInfo == null) {
+      return false
+    }
+    if (!this.batSupported) {
+      return false
+    }
+    if (this.memoInfo.batChargingOnline) {
+      return false
+    }
+  }
+
   // MARK: - Interceptions
   delegateWakeUpIfDangerousStatus () {
     if (this.memoInfo == null) {

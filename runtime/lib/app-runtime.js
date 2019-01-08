@@ -950,6 +950,16 @@ AppRuntime.prototype.onResetSettings = function () {
   })
 }
 
+AppRuntime.prototype.shutdown = function shutdown () {
+  this.component.light.play('@yoda', 'system://shutdown.js')
+    .then(() => {
+      if (this.component.battery.isCharging()) {
+        return system.rebootCharging()
+      }
+      return system.powerOff()
+    })
+}
+
 /**
  * @private
  */
