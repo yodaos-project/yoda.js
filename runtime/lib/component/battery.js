@@ -108,6 +108,18 @@ class Battery {
     this.queryInterval = null
   }
 
+  getWormholeResponse () {
+    if (!this.batSupported) {
+      return { hasBattery: false }
+    }
+    return {
+      isAcConnected: this.memoInfo.batChargingOnline,
+      batteryTemperature: this.memoInfo.batTemp,
+      percent: this.memoInfo.batLevel,
+      hasBattery: true
+    }
+  }
+
   // MARK: - Interceptions
   delegateWakeUpIfDangerousStatus () {
     if (this.memoInfo == null) {
