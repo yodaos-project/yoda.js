@@ -1,7 +1,5 @@
 var logger = require('logger')('battery')
 
-var battery = require('@yoda/battery')
-
 /** ordered by priority */
 var lowPowerWaterMark = [ 8, 10, 20 ]
 
@@ -15,7 +13,6 @@ class Battery {
 
     this.lastDangerousAnnounceTimeStamp = null
     this.dangerousState = 'normal'
-    this.queryInterval = null
 
     this.shouldAnnounceLowPower = false
   }
@@ -36,15 +33,14 @@ class Battery {
     switch (true) {
       case data.batTemp >= 55:
         this.dangerousState = 'high'
-        this.setupBatteryTemperatureQueryInterval()
+        this.runtime.openUrl('yoda-skill://battery/temperature_light_55', { preemptive: false })
         break
       case data.batTemp <= 0:
         this.dangerousState = 'low'
-        this.setupBatteryTemperatureQueryInterval()
+        this.runtime.openUrl('yoda-skill://battery/temperature_light_0', { preemptive: false })
         break
       default:
         this.dangerousState = 'normal'
-        this.tearDownBatteryTemperatureQueryInterval()
     }
 
     if (this.memoInfo == null) {
@@ -57,9 +53,8 @@ class Battery {
     for (var markIdx in lowPowerWaterMark) {
       var mark = lowPowerWaterMark[markIdx]
       if (this.memoInfo.batLevel > mark && data.batLevel <= mark) {
-        this.shouldAnnounceLowPower = !idle /** announce next time if not idle */
-        logger.info(`low power level water mark ${mark} applied, should announce on wake up? ${this.shouldAnnounceLowPower}`)
-        this.runtime.openUrl(`yoda-skill://battery/low_power_${mark}?is_play=${!idle}`, { preemptive: idle })
+        this.shouldAnnounceLowPower = true
+        logger.info(`low power level water mark ${mark} applied`)
         break
       }
     }
@@ -72,40 +67,6 @@ class Battery {
       }
     }
     this.memoInfo = data
-  }
-
-  setupBatteryTemperatureQueryInterval () {
-    if (this.queryInterval) {
-      return
-    }
-    this.queryInterval = setInterval(() => {
-      if (this.dangerousState === 'normal') {
-        clearInterval(this.queryInterval)
-        return
-      }
-
-      battery.getBatteryInfo()
-        .then(data => {
-          switch (true) {
-            case data.batTemp >= 55:
-              this.dangerousState = 'high'
-              this.runtime.openUrl('yoda-skill://battery/temperature_light_55', { preemptive: false })
-              break
-            case data.batTemp <= 0:
-              this.dangerousState = 'low'
-              this.runtime.openUrl('yoda-skill://battery/temperature_light_0', { preemptive: false })
-              break
-            default:
-              this.dangerousState = 'normal'
-              break
-          }
-        })
-    }, 30 * 1000)
-  }
-
-  tearDownBatteryTemperatureQueryInterval () {
-    clearInterval(this.queryInterval)
-    this.queryInterval = null
   }
 
   getWormholeResponse () {
@@ -145,9 +106,10 @@ class Battery {
     }
     var now = Date.now()
     if (this.lastDangerousAnnounceTimeStamp && (now - this.lastDangerousAnnounceTimeStamp) < 10 * 60 * 1000) {
+      logger.info(`announced in 10 minutes, skip wakeup delegation`)
       return false
     }
-    this.component.turen.pickup(false)
+    this.runtime.setPickup(false)
     this.lastDangerousAnnounceTimeStamp = now
 
     var url
@@ -176,15 +138,17 @@ class Battery {
       return false
     }
     if (this.memoInfo.batChargingOnline) {
+      logger.info(`battery is charging, skip wakeup delegation`)
       return false
     }
-    this.component.turen.pickup(false)
+    this.runtime.setPickup(false)
     this.shouldAnnounceLowPower = false
+    var idle = this.component.lifetime.getCurrentAppId() == null
 
     for (var markIdx in lowPowerWaterMark) {
       var mark = lowPowerWaterMark[markIdx]
       if (this.memoInfo.batLevel <= mark) {
-        return this.runtime.openUrl(`yoda-skill://battery/low_power_${mark}`)
+        return this.runtime.openUrl(`yoda-skill://battery/low_power_${mark}?is_play=${!idle}`)
           .then(() => true)
       }
     }
