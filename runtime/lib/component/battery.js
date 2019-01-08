@@ -30,6 +30,10 @@ class Battery {
     }
     this.batSupported = true
 
+    if (!data.batChargingOnline && data.batLevel <= 5) {
+      return this.runtime.shutdown()
+    }
+
     switch (true) {
       case data.batTemp >= 55:
         this.dangerousState = 'high'
