@@ -256,11 +256,9 @@ class WakeupEffect extends BaseConfig {
           if (typeof queryObj.wakeupSoundEffects !== 'object') {
             return
           }
-          logger.error(ActivationConfig.customPath)
           mkdirpAsync(ActivationConfig.customPath).then(() => {
             return clearDir(ActivationConfig.customPath)
           }).then(() => {
-            logger.error('download')
             return downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath)
           }).then((fileList) => {
             this.notifyActivation(fileList)
