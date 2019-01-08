@@ -8,9 +8,31 @@ var native = require('./system.node')
 var property = require('@yoda/property')
 
 /**
+ * Power off the device.
+ * @function powerOff
+ * @returns {boolean}
+ * @private
+ */
+exports.powerOff = function powerOff () {
+  process.nextTick(() => native.powerOff())
+  return true
+}
+
+/**
+ * Reboot the system into charging mode.
+ * @function rebootCharging
+ * @returns {boolean}
+ * @private
+ */
+exports.rebootCharging = function rebootCharging () {
+  process.nextTick(() => native.rebootCharging())
+  return true
+}
+
+/**
  * Reboot the system.
  * @function reboot
- * @returns {Boolean}
+ * @returns {boolean}
  * @private
  */
 exports.reboot = function reboot () {
@@ -21,7 +43,7 @@ exports.reboot = function reboot () {
 /**
  * Verify the OTA image, including hash(md5) check, section check and header check.
  * @function verifyOtaImage
- * @returns {Boolean}
+ * @returns {boolean}
  * @private
  */
 exports.verifyOtaImage = native.verifyOtaImage
