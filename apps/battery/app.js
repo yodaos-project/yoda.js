@@ -2,7 +2,7 @@
 var logger = require('logger')('BATTERY')
 var util = require('util')
 var prop = require('@yoda/property')
-var PROP_KEY = 'me.battery10.times'
+var PROP_KEY = 'rokid.battery10.times'
 var TEMPERATURE_LIGHT_RES = 'temperatureBattery.js'
 var battery = require('@yoda/battery')
 var Const = require('./constant.json')
@@ -26,50 +26,78 @@ module.exports = function (activity) {
   function speakAndExit (text) {
     return activity.tts.speak(text)
       .then(() => {
+        logger.log('speakAndExit end will exit')
         activity.exit()
       })
   }
 
+  function parseTime (time) {
+    if (time < 0) {
+      return {
+        hour: 0,
+        minute: 0
+      }
+    }
+    var h = Math.floor(time / 60)
+    var m = time % 60
+    if (h < 0) {
+      h = 0
+    }
+    return {
+      hour: h,
+      minute: m
+    }
+  }
+
   function powerStatusChange (isOnline, isPlaying, testPercent) {
     logger.log('powerStatusChanged ', isOnline, isPlaying, testPercent)
-    notifyMedia(isOnline ? resourcePath.batteryConnect
-      : resourcePath.batteryDisconnect, () => {
-      if (!isOnline && isPlaying === 'false') {
-        queryBatteryStatus()
-          .then(data => {
-            var percent = data.batLevel
-            if (testPercent) {
-              percent = parseInt(testPercent)
-            }
-            var text
-            if (percent >= 20) {
-              text = constant.batteryDisconnect20
-            } else {
-              var times = prop.get(PROP_KEY, 'persist')
-              times = times ? parseInt(times) : 0
-              logger.log('powerStatusChanged percent < 20:', times, typeof (times))
-              var h, m
-              if (times < 3) {
-                h = Math.floor(data.batSleepTimetoEmpty / 60)
-                m = data.batSleepTimetoEmpty % 60
-                text = util.format(constant.batteryDisconnect19third, h, m)
-                logger.log('powerStatusChanged low than 20:', times)
-                prop.set(PROP_KEY, times + 1, 'persist')
-              } else {
-                h = Math.floor(data.batTimetoEmpty / 60)
-                m = data.batTimetoEmpty % 60
-                text = util.format(constant.batteryDisconnect19, h, m)
+    activity.light.play('self://battery.js', { isAcConnect: isOnline })
+      .then(() => {
+        if (!isOnline && isPlaying === 'false') {
+          queryBatteryStatus()
+            .then(data => {
+              logger.log('queryBatteryStatus end:', JSON.stringify(data))
+              var percent = data.batLevel
+              if (testPercent) {
+                percent = parseInt(testPercent)
               }
-            }
-            notifyTTS(text)
-          })
-      }
-    })
+              var text
+              var timeObj
+              if (percent >= 20) {
+                timeObj = parseTime(data.batTimetoEmpty)
+                text = util.format(constant.batteryDisconnect20, data.batLevel, timeObj.hour, timeObj.minute)
+              } else {
+                if (data.batSleepTimetoEmpty < 0 || data.batTimetoEmpty < 0) {
+                  logger.log('powerStatusChange invalid battery info will exit:')
+                  activity.exit()
+                  return
+                }
+                var times = prop.get(PROP_KEY, 'persist')
+                times = times ? parseInt(times) : 0
+                logger.log('powerStatusChanged percent < 20:', times, typeof (times))
+                if (times < 3) {
+                  timeObj = parseTime(data.batSleepTimetoEmpty)
+                  text = util.format(constant.batteryDisconnect19third, timeObj.hour, timeObj.minute)
+                  logger.log('powerStatusChanged low than 20:', times, timeObj.hour, timeObj.minute)
+                  prop.set(PROP_KEY, times + 1, 'persist')
+                } else {
+                  timeObj = parseTime(data.batTimetoEmpty)
+                  text = util.format(constant.batteryDisconnect19, timeObj.hour, timeObj.minute)
+                  logger.log('powerStatusChanged low than 20:', times, timeObj.hour, timeObj.minute)
+                }
+              }
+              notifyTTS(text)
+            })
+        } else {
+          logger.log('powerStatusChange will exit', isOnline, isPlaying)
+          activity.exit()
+        }
+      })
   }
 
   function notifyMedia (url, callback) {
     logger.log('notify media will setForeground:', url)
-    activity.media.start(url)
+    activity.media.start(url, { impatient: false })
       .then(() => {
         if (typeof (callback) === 'function') {
           callback()
@@ -179,9 +207,8 @@ module.exports = function (activity) {
           notifyTTS(constant.timeToEmptyConnect)
         } else {
           var useTime = data.batTimetoEmpty
-          var h = Math.floor(useTime / 60)
-          var m = useTime % 60
-          var text = util.format(constant.timeToEmptyDisconnect, data.batLevel || 100, h, m)
+          var timeObj = parseTime(useTime)
+          var text = util.format(constant.timeToEmptyDisconnect, data.batLevel || 100, timeObj.hour, timeObj.minute)
           notifyTTS(text)
         }
       })
@@ -220,9 +247,8 @@ module.exports = function (activity) {
             text = constant.timeToFull100
           } else {
             var timeToFull = batteryState.batTimetoFull || 0
-            var h = Math.floor(timeToFull / 60)
-            var m = timeToFull % 60
-            text = util.format(constant.timeToFull, h, m)
+            var timeObj = parseTime(timeToFull)
+            text = util.format(constant.timeToFull, timeObj.hour, timeObj.minute)
           }
         } else {
           if (batteryState.batChargingOnline && batteryState.batTimetoFull === -1) {
