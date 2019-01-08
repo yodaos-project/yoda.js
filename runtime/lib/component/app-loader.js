@@ -30,7 +30,8 @@ function AppChargeur (runtime) {
   this.appManifests = {}
 
   this.notifications = {
-    'on-ready': []
+    'on-ready': [],
+    'on-network-connected': []
   }
 }
 
@@ -64,7 +65,8 @@ AppChargeur.prototype.reload = function reload (appId) {
   this.appManifests = {}
 
   this.notifications = {
-    'on-ready': []
+    'on-ready': [],
+    'on-network-connected': []
   }
 
   return this.loadPaths(this.config.paths)

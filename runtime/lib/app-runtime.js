@@ -981,6 +981,7 @@ AppRuntime.prototype.onGetPropAll = function () {
  */
 AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
+  this.dispatchNotification('on-network-connected', [])
   logger.log('received the wifi is online, reset DNS config.')
 
   if (this.component.custodian.isConfiguringNetwork()) {
