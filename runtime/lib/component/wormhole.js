@@ -11,6 +11,7 @@ var config = require('/etc/yoda/wormhole.json')
 module.exports = Wormhole
 function Wormhole (runtime) {
   this.runtime = runtime
+  this.component = runtime.component
   this.config = config
   if (this.config.handlers == null) {
     this.config.handlers = {}
@@ -100,7 +101,7 @@ Wormhole.prototype.handlers = {
    * @member asr
    */
   asr: function (asr) {
-    this.runtime.component.flora.getNlpResult(asr, (err, nlp, action) => {
+    this.component.flora.getNlpResult(asr, (err, nlp, action) => {
       if (err) {
         logger.error('occurrs some error in speechT', err)
       } else {
@@ -142,6 +143,9 @@ Wormhole.prototype.handlers = {
       this.runtime.openUrl(`yoda-skill://volume/set_volume?value=${msg.music}`, { preemptive: false })
     }
   },
+  get_battery: function () {
+    this.sendToApp('get_battery', this.component.battery.getWormholeResponse())
+  },
   /**
    * @member sys_update_available
    */
@@ -159,13 +163,13 @@ Wormhole.prototype.handlers = {
    * @member custom_config
    */
   custom_config: function (data) {
-    this.runtime.component.customConfig.onCustomConfig(data)
+    this.component.customConfig.onCustomConfig(data)
   },
   /**
    * @member custom_config_v2
    */
   custom_config_v2: function (data) {
-    this.runtime.component.customConfig.onCustomConfig(data)
+    this.component.customConfig.onCustomConfig(data)
   },
   /**
    * @member event
