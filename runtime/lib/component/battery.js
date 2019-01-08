@@ -10,7 +10,7 @@ class Battery {
     this.runtime = runtime
     this.component = runtime.component
 
-    this.batPresent = false
+    this.batSupported = false
     this.memoInfo = null
 
     this.lastDangerousAnnounceTimeStamp = null
@@ -28,10 +28,10 @@ class Battery {
       logger.error('Invalid data received from "battery.info".')
       return
     }
-    if (!data.batPresent) {
+    if (!data.batSupported) {
       return
     }
-    this.batPresent = true
+    this.batSupported = true
 
     switch (true) {
       case data.batTemp >= 55:
@@ -113,7 +113,7 @@ class Battery {
     if (this.memoInfo == null) {
       return false
     }
-    if (!this.batPresent) {
+    if (!this.batSupported) {
       return false
     }
     if (this.dangerousState === 'normal') {
@@ -145,7 +145,7 @@ class Battery {
     if (this.memoInfo == null) {
       return false
     }
-    if (!this.batPresent) {
+    if (!this.batSupported) {
       return false
     }
     if (!this.shouldAnnounceLowPower) {
