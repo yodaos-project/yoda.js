@@ -39,7 +39,6 @@ class CustomConfig {
    * @returns {string} url for custom-config skill
    */
   appendUrl (pathname, params, stringify) {
-    logger.error(`${pathname}  ${params} ${stringify}`)
     var obj
     if (stringify) {
       obj = {param: JSON.stringify(params)}

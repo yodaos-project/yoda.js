@@ -9,6 +9,7 @@ var BaseConfig = require('./base-config')
 var Caps = require('@yoda/caps/caps.node').Caps
 var property = require('@yoda/property')
 var safeParse = require('@yoda/util').json.safeParse
+var mkdirp = require('@yoda/util').fs.mkdirp
 var logger = require('logger')('custom-config-wakeup')
 var flora = require('./singleton-flora')
 
@@ -254,11 +255,13 @@ class WakeupEffect extends BaseConfig {
           if (typeof queryObj.wakeupSoundEffects !== 'object') {
             return
           }
-          clearDir(ActivationConfig.customPath).then(() => {
-            downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath).then((fileList) => {
-              this.notifyActivation(fileList)
-            }).catch((err) => {
-              logger.warn(`download custom wakeup sound error: ${err}`)
+          mkdirp(ActivationConfig.customPath, () => {
+            clearDir(ActivationConfig.customPath).then(() => {
+              downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath).then((fileList) => {
+                this.notifyActivation(fileList)
+              }).catch((err) => {
+                logger.warn(`download custom wakeup sound error: ${err}`)
+              })
             })
           })
         } else {
