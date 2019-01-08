@@ -9,6 +9,7 @@ var BaseConfig = require('./base-config')
 var Caps = require('@yoda/caps/caps.node').Caps
 var property = require('@yoda/property')
 var safeParse = require('@yoda/util').json.safeParse
+var mkdirp = require('@yoda/util').fs.mkdirp
 var logger = require('logger')('custom-config-wakeup')
 var flora = require('./singleton-flora')
 
@@ -17,7 +18,7 @@ var AWAKE_EFFECT_CUSTOM = '1'
 var AWAKE_EFFECT = 'rokid.custom_config.wakeup_sound'
 
 var WAKE_SOUND_OPEN_DEFAULT = '唤醒应答已设置为默认声音'
-var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>>你录制的声音'
+var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>你录制的声音'
 var WAKE_SOUND_CLOSE = '已关闭唤醒应答'
 var CONFIG_FAILED = '设置失败'
 var SWITCH_OPEN = 'open'
@@ -26,6 +27,7 @@ var SWITCH_CLOSE = 'close'
 var readDirAsync = promisify(fs.readdir)
 var unlinkAsync = promisify(fs.unlink)
 var downloadAsync = promisify(doDownloadFile)
+var mkdirpAsync = promisify(mkdirp)
 
 /**
  * download file use `wget`
@@ -254,12 +256,14 @@ class WakeupEffect extends BaseConfig {
           if (typeof queryObj.wakeupSoundEffects !== 'object') {
             return
           }
-          clearDir(ActivationConfig.customPath).then(() => {
-            downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath).then((fileList) => {
-              this.notifyActivation(fileList)
-            }).catch((err) => {
-              logger.warn(`download custom wakeup sound error: ${err}`)
-            })
+          mkdirpAsync(ActivationConfig.customPath).then(() => {
+            return clearDir(ActivationConfig.customPath)
+          }).then(() => {
+            return downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath)
+          }).then((fileList) => {
+            this.notifyActivation(fileList)
+          }).catch((err) => {
+            logger.warn(`download custom wakeup sound error: ${err}`)
           })
         } else {
           this.getFileList().then((fileList) => {
