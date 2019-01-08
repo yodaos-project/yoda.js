@@ -12,19 +12,16 @@
       "ACCESS_MULTIMEDIA",
       "INTERRUPT"
     ],
-    "hosts": [
-        {
-        "name": "battery",
-        "skillId": "9CA6C0CBB4994F6A8732EA0863784C0E"
-        }
-    ]
+    "hosts": [{
+      "name": "battery",
+      "skillId": "9CA6C0CBB4994F6A8732EA0863784C0E"
+    }]
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint-js": "standard"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "battery1",
+    "battery",
     "rokid",
     "skill"
   ],
