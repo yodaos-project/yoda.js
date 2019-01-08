@@ -2,7 +2,7 @@
 var logger = require('logger')('BATTERY')
 var util = require('util')
 var prop = require('@yoda/property')
-var PROP_KEY = 'products.me.battery10.times'
+var PROP_KEY = 'persist.me.battery10.times'
 var TEMPERATURE_LIGHT_RES = 'temperatureBattery.js'
 var battery = require('@yoda/battery')
 
@@ -80,7 +80,7 @@ module.exports = function (activity) {
             if (percent >= 20) {
               text = constant.batteryDisconnect20
             } else {
-              var times = prop.get(PROP_KEY, 'persistent')
+              var times = prop.get(PROP_KEY, 'persist')
               times = times ? parseInt(times) : 0
               logger.log('powerStatusChanged percent < 20:', times, typeof (times))
               var h, m
@@ -89,7 +89,7 @@ module.exports = function (activity) {
                 m = data.batSleepTimetoEmpty % 60
                 text = util.format(constant.batteryDisconnect19third, h, m)
                 logger.log('powerStatusChanged low than 20:', times)
-                prop.set(PROP_KEY, times + 1, 'persistent')
+                prop.set(PROP_KEY, times + 1, 'persist')
               } else {
                 h = Math.floor(data.batTimetoEmpty / 60)
                 m = data.batTimetoEmpty % 60
