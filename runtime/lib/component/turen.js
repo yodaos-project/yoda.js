@@ -374,6 +374,14 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
     this.pickup(false)
     this.resetAwaken({ recover: false })
   }
+  if (this.pickingUpDiscardNext) {
+    /**
+     * current session of picking up has been manually discarded.
+     */
+    this.pickingUpDiscardNext = false
+    logger.warn(`discarding malicious nlp result for pick up discarded.`)
+    return
+  }
   if (!this.component.custodian.isPrepared()) {
     logger.warn('Network not connected, recovering players.')
     return this.recoverPausedOnAwaken()
@@ -399,6 +407,14 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
   if (this.awaken) {
     this.pickup(false)
     this.resetAwaken({ recover: false })
+  }
+  if (this.pickingUpDiscardNext) {
+    /**
+     * current session of picking up has been manually discarded.
+     */
+    this.pickingUpDiscardNext = false
+    logger.warn(`discarding speech error(${errCode}) for pick up discarded.`)
+    return
   }
   if (!this.component.custodian.isPrepared()) {
     logger.warn('Network not connected or not logged in, recovering players.')
