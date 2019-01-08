@@ -950,6 +950,17 @@ AppRuntime.prototype.onResetSettings = function () {
   })
 }
 
+AppRuntime.prototype.shutdown = function shutdown () {
+  logger.info('shuting down')
+  this.component.light.play('@yoda', 'system://shutdown.js')
+    .then(() => {
+      if (this.component.battery.isCharging()) {
+        return system.rebootCharging()
+      }
+      return system.powerOff()
+    })
+}
+
 /**
  * @private
  */
@@ -981,6 +992,7 @@ AppRuntime.prototype.onGetPropAll = function () {
  */
 AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
+  this.dispatchNotification('on-network-connected', [])
   logger.log('received the wifi is online, reset DNS config.')
 
   if (this.component.custodian.isConfiguringNetwork()) {

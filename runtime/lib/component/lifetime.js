@@ -797,6 +797,10 @@ LaVieEnPile.prototype.deactivateCutApp = function deactivateCutApp (options) {
     logger.info('no currently running cut app, skipping')
     return Promise.resolve()
   }
+  if (appId === this.monopolist) {
+    logger.info('current cut app is running as monologue, skipping')
+    return Promise.resolve()
+  }
   logger.info('deactivate cut app', appId)
   return this.deactivateAppById(appId, options)
 }
