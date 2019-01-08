@@ -3,17 +3,8 @@ var logger = require('logger')('BATTERY')
 var util = require('util')
 var prop = require('@yoda/property')
 var PROP_KEY = 'products.me.battery10.times'
-// var TEMPERATURE_LIGHT_RES = 'system://temperature-battery.js'
 var TEMPERATURE_LIGHT_RES = 'temperatureBattery.js'
 var battery = require('@yoda/battery')
-/* {
-    "batChargingOnline":true,
-    "batLevel":54,
-    "batVoltage":3771,
-    "batTemp":0,
-    "batTimetoEmpty":315,
-    "proto":"ROKID_BATTERY"
-} */
 
 var constant = {
   'temperature55': '电池温度过高，已停止充电。',
@@ -84,9 +75,9 @@ module.exports = function (activity) {
             percent = parseInt(testPercent)
           }
           var text
-          if (percent >= 20) { // 电量%d，还能使用%d小时%d分钟。batteryDisconnect20
+          if (percent >= 20) {
             text = constant.batteryDisconnect20
-          } else { // 前三次：电量不足，打开侧面的休眠开关，最高可待机%d小时%d分钟batteryDisconnect19 之后：电量不足，我最多只能在使用%d小时%d分钟。batteryDisconnect19third
+          } else {
             var times = prop.get(PROP_KEY, 'persistent')
             times = times ? parseInt(times) : 0
             logger.log('powerStatusChanged percent < 20:', times, typeof (times))
@@ -144,9 +135,9 @@ module.exports = function (activity) {
     var date = new Date()
     var h = date.getHours()
     var content
-    if (h >= 22 || h <= 7) { // push消息：电量量低于10%，帮我充上电就早点休息 吧，迎接元⽓气满满的⼀一天!
+    if (h >= 22 || h <= 7) {
       content = constant.notificationNight
-    } else { // push消息：“电量量低于10%，我不不想⾃自动关机⽽而断了了与你的联系，快去帮 我充电或者打开侧⾯面开关进⼊入休眠模式帮我省电吧” / “电量量低于10%，世界上最遥远的距离就是你 迟迟不不来找我，⽽而我却在痴痴地等着你为我“续命”。”(两句句随机出）
+    } else {
       var seed = Math.random()
       logger.error(seed, seed > 0.5 ? constant.notification1 : constant.notification2)
       content = seed > 0.5 ? constant.notification1 : constant.notification2
@@ -216,7 +207,7 @@ module.exports = function (activity) {
         withoutBattery()
         return
       }
-      if (data.batChargingOnline) { // 标识是否处在充电状态（连接电源且充电功率>输出功率
+      if (data.batChargingOnline) {
         notifyTTS(constant.timeToEmptyConnect)
       } else {
         var useTime = data.batTimetoEmpty
@@ -264,7 +255,7 @@ module.exports = function (activity) {
           text = util.format(constant.timeToFull, h, m)
         }
       } else {
-        if (batteryState.batChargingOnline && batteryState.batTimetoFull === -1) { // isAcconnect 标识电源是否连接
+        if (batteryState.batChargingOnline && batteryState.batTimetoFull === -1) {
           text = util.format(constant.timeToFullPowerLow, batteryState.batLevel || 0)
         } else {
           text = util.format(constant.timeToFullDisconnect, batteryState.batLevel || 0)
