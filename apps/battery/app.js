@@ -2,10 +2,10 @@
 var logger = require('logger')('BATTERY')
 var util = require('util')
 var prop = require('@yoda/property')
-var PROP_KEY = 'persist.me.battery10.times'
+var PROP_KEY = 'me.battery10.times'
 var TEMPERATURE_LIGHT_RES = 'temperatureBattery.js'
 var battery = require('@yoda/battery')
-var Const = require('./constants.json')
+var Const = require('./constant.json')
 var constant = Const.constant
 var resourcePath = Const.resource
 
