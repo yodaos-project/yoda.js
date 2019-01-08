@@ -8,9 +8,11 @@ var getRuntime = () => ({
   component: {
     lifetime: {
       getCurrentAppId: () => undefined
+    },
+    turen: {
+      pickup: () => undefined
     }
   },
-  setPickup: () => undefined,
   openUrl: () => Promise.resolve()
 })
 

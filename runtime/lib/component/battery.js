@@ -109,7 +109,7 @@ class Battery {
       logger.info(`announced in 10 minutes, skip wakeup delegation`)
       return false
     }
-    this.runtime.setPickup(false)
+    this.component.turen.pickup(false)
     this.lastDangerousAnnounceTimeStamp = now
 
     var url
@@ -141,7 +141,7 @@ class Battery {
       logger.info(`battery is charging, skip wakeup delegation`)
       return false
     }
-    this.runtime.setPickup(false)
+    this.component.turen.pickup(false)
     this.shouldAnnounceLowPower = false
     var idle = this.component.lifetime.getCurrentAppId() == null
 
