@@ -5,44 +5,9 @@ var prop = require('@yoda/property')
 var PROP_KEY = 'persist.me.battery10.times'
 var TEMPERATURE_LIGHT_RES = 'temperatureBattery.js'
 var battery = require('@yoda/battery')
-
-var constant = {
-  'temperature55': '电池温度过高，已停止充电。',
-  'temperature0': '电池温度过低，已停止充电。',
-  'lowPower20Free': '电量低于百分之二十，请充电，或打开侧面休眠开关省电。',
-  'lowPower20': '电量低于百分之二十，请充电。',
-  'lowPower10Free': '电量低于百分之十，即将关机，请充电。',
-  'lowerPower10': '电量低于百分之十，即将关机，请充电。',
-  'notificationNight': '电量量低于10%，帮我充上电就早点休息吧，迎接元⽓气满满的⼀一天!',
-  'notification1': '电量量低于10%，我不不想⾃自动关机⽽而断了了与你的联系，快去帮 我充电或者打开侧⾯面开关进⼊入休眠模式帮我省电吧。',
-  'notification2': '电量量低于10%，世界上最遥远的距离就是你 迟迟不不来找我，⽽而我却在痴痴地等着你为我“续命”。',
-  'batteryLevelFull': '我现在是满电状态，可以放心使用。',
-  'batteryLevel': '当前电量还有%d',
-  'timeToFull100': '电池已充满。',
-  'timeToFull': '充电完成还需要%d小时%d分钟。',
-  'timeToFullDisconnect': '我不在充电状态，当前电量是%d。',
-  'timeToFullPowerLow': '当前设备电量%d，充电功率太小，无法正常完成充电。',
-  'timeToEmptyConnect': '已连接电源，可以放心使用。',
-  'timeToEmptyDisconnect': '当前电量%d，可以使用%d小时%d分钟。',
-  'batteryDisconnect20': '电量%d，还能使用%d小时%d分钟。',
-  'batteryDisconnect19': '电量不足，我最多只能再使用%d小时%d分钟。',
-  'batteryDisconnect19third': '电量量不不⾜足，打开侧⾯面的休眠开关，最⾼高可待机%d小时%d分钟',
-  'urls': {
-    'PUSH_MOBILE_MSG': 'https://apigwrest.open.rokid.com/v1/device/deviceManager/pushNotificationToMaster'
-  }
-}
-var resourcePath = {
-  'powerDisconnect10': './res/lowpower_10.ogg',
-  'powerDisconnect20': './res/lower_than_20.ogg',
-  'temperature0': './res/battery_temp_low.ogg',
-  'temperature50': './res/battery_temp_high.ogg',
-  'lowPower20Idle': './res/lowpower_20_idle.ogg',
-  'lowPower20Play': './res/lowpower_20_play.ogg',
-  'lowPower10': './res/lowpower_10.ogg',
-  'lowPower10Media': './res/10BatteryTips.ogg',
-  'batteryConnect': './res/battery_connect.ogg',
-  'batteryDisconnect': './res/battery_disconnect.ogg'
-}
+var Const = require('./constants')
+var constant = Const.constant
+var resourcePath = Const.resource
 
 module.exports = function (activity) {
   var STRING_NOBATTERY = '当前产品没有电池，使用期间请连接电源'
