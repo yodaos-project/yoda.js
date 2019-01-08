@@ -18,7 +18,7 @@ var AWAKE_EFFECT_CUSTOM = '1'
 var AWAKE_EFFECT = 'rokid.custom_config.wakeup_sound'
 
 var WAKE_SOUND_OPEN_DEFAULT = '唤醒应答已设置为默认声音'
-var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>>你录制的声音'
+var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>你录制的声音'
 var WAKE_SOUND_CLOSE = '已关闭唤醒应答'
 var CONFIG_FAILED = '设置失败'
 var SWITCH_OPEN = 'open'
