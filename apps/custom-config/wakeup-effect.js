@@ -27,6 +27,7 @@ var SWITCH_CLOSE = 'close'
 var readDirAsync = promisify(fs.readdir)
 var unlinkAsync = promisify(fs.unlink)
 var downloadAsync = promisify(doDownloadFile)
+var mkdirpAsync = promisify(mkdirp)
 
 /**
  * download file use `wget`
@@ -255,14 +256,16 @@ class WakeupEffect extends BaseConfig {
           if (typeof queryObj.wakeupSoundEffects !== 'object') {
             return
           }
-          mkdirp(ActivationConfig.customPath, () => {
-            clearDir(ActivationConfig.customPath).then(() => {
-              downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath).then((fileList) => {
-                this.notifyActivation(fileList)
-              }).catch((err) => {
-                logger.warn(`download custom wakeup sound error: ${err}`)
-              })
-            })
+          logger.error(ActivationConfig.customPath)
+          mkdirpAsync(ActivationConfig.customPath).then(() => {
+            return clearDir(ActivationConfig.customPath)
+          }).then(() => {
+            logger.error('download')
+            return downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath)
+          }).then((fileList) => {
+            this.notifyActivation(fileList)
+          }).catch((err) => {
+            logger.warn(`download custom wakeup sound error: ${err}`)
           })
         } else {
           this.getFileList().then((fileList) => {
