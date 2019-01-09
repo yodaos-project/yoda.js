@@ -1,15 +1,21 @@
 {
-  "name": "@yoda/battery",
+  "name": "battery",
   "version": "1.0.0",
   "description": "Battery Apps for Rokid",
   "main": "app.js",
-  "manifest": {
+  "metadata": {
     "skills": [
       "9CA6C0CBB4994F6A8732EA0863784C0E"
     ],
     "permission": [
-      "ACCESS_TTS"
-    ]
+      "ACCESS_TTS",
+      "ACCESS_MULTIMEDIA",
+      "INTERRUPT"
+    ],
+    "hosts": [{
+      "name": "battery",
+      "skillId": "9CA6C0CBB4994F6A8732EA0863784C0E"
+    }]
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

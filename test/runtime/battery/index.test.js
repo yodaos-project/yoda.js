@@ -42,37 +42,6 @@ test('should skip malformed battery.info', t => {
   t.looseEqual(battery.memoInfo, null)
 })
 
-test('should handle low power on battery.info', t => {
-  t.plan(3)
-  var runtime = getRuntime()
-  var battery = new Battery(runtime)
-  mock.mockPromise(runtime, 'openUrl', (url) => {
-    t.fail(url)
-  })
-  sendInfo(battery, { batLevel: 15 })
-  sendInfo(battery, { batLevel: 21 })
-
-  mock.mockPromise(runtime, 'openUrl', (url) => {
-    t.strictEqual(url, 'yoda-skill://battery/low_power_20?is_play=false')
-  })
-  sendInfo(battery, { batLevel: 20 })
-
-  mock.mockPromise(runtime, 'openUrl', (url) => {
-    t.fail()
-  })
-  sendInfo(battery, { batLevel: 18 })
-
-  mock.mockPromise(runtime, 'openUrl', (url) => {
-    t.strictEqual(url, 'yoda-skill://battery/low_power_10?is_play=false')
-  })
-  sendInfo(battery, { batLevel: 10 })
-
-  mock.mockPromise(runtime, 'openUrl', (url) => {
-    t.strictEqual(url, 'yoda-skill://battery/low_power_8?is_play=false')
-  })
-  sendInfo(battery, { batLevel: 8 })
-})
-
 test('should announce low power on wake up', t => {
   var runtime = getRuntime()
   var battery = new Battery(runtime)
@@ -95,7 +64,7 @@ test('should announce low power on wake up', t => {
       partialRestore()
       sendInfo(battery, { batLevel: 20 })
       mock.mockPromise(runtime, 'openUrl', (url) => {
-        t.strictEqual(url, 'yoda-skill://battery/low_power_20')
+        t.strictEqual(url, 'yoda-skill://battery/low_power_20?is_play=true')
       })
       return Promise.resolve(battery.delegateWakeUpIfBatteryInsufficient())
         .then((it) => t.strictEqual(it, true, 'should delegate wake up if battery is lower than 20'))
@@ -113,7 +82,7 @@ test('should announce low power on wake up', t => {
       partialRestore()
       sendInfo(battery, { batLevel: 10 })
       mock.mockPromise(runtime, 'openUrl', (url) => {
-        t.strictEqual(url, 'yoda-skill://battery/low_power_10')
+        t.strictEqual(url, 'yoda-skill://battery/low_power_10?is_play=true')
       })
       return Promise.resolve(battery.delegateWakeUpIfBatteryInsufficient())
         .then((it) => t.strictEqual(it, true, 'should delegate wake up if battery is lower than 10'))
@@ -122,7 +91,7 @@ test('should announce low power on wake up', t => {
       partialRestore()
       sendInfo(battery, { batLevel: 8 })
       mock.mockPromise(runtime, 'openUrl', (url) => {
-        t.strictEqual(url, 'yoda-skill://battery/low_power_8')
+        t.strictEqual(url, 'yoda-skill://battery/low_power_8?is_play=true')
       })
       return Promise.resolve(battery.delegateWakeUpIfBatteryInsufficient())
         .then((it) => t.strictEqual(it, true, 'should delegate wake up if battery is lower than 8'))
@@ -164,21 +133,19 @@ test('should not announce low power repeatedly on same interval', t => {
 })
 
 test('should handle dangerous temperature on battery.info', t => {
-  t.plan(7)
+  t.plan(5)
   mock.restore()
   var runtime = getRuntime()
   var battery = new Battery(runtime)
   t.strictEqual(battery.dangerousState, 'normal')
   sendInfo(battery, { batTemp: 55 })
   t.strictEqual(battery.dangerousState, 'high')
-  t.notLooseEqual(battery.queryInterval, null)
 
   sendInfo(battery, { batTemp: 54 })
   t.strictEqual(battery.dangerousState, 'normal')
 
   sendInfo(battery, { batTemp: 0 })
   t.strictEqual(battery.dangerousState, 'low')
-  t.notLooseEqual(battery.queryInterval, null)
 
   sendInfo(battery, { batTemp: 1 })
   t.strictEqual(battery.dangerousState, 'normal')

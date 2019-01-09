@@ -50,7 +50,11 @@ module.exports = function CustomConfig (activity) {
       if (customConfig && typeof customConfig === 'object') {
         for (var field in customConfig) {
           if (customConfig.hasOwnProperty(field) && urlMap.hasOwnProperty(field)) {
-            urlMap[field](safeParse(customConfig[field]))
+            var configObj = safeParse(customConfig[field])
+            if (configObj && typeof configObj === 'object') {
+              configObj.isFirstLoad = true
+            }
+            urlMap[field](configObj)
           }
         }
       }
