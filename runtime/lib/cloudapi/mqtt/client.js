@@ -23,8 +23,7 @@ function MqttClient (store, options) {
     expireTime: null
   }
   this.options = Object.assign({
-    reconnectTimeout: 2000,
-    keepalive: 60
+    reconnectTimeout: 2000
   }, options || {})
 
   // internal members
@@ -122,7 +121,8 @@ MqttClient.prototype.start = function start (opts) {
       reconnectPeriod: -1,
       clientId: this.payload.username,
       username: this.payload.username,
-      password: this.payload.token
+      password: this.payload.token,
+      keepalive: 60
     }
     this._mqttHandle = mqtt.connect(env.mqtt.uri, connOpts)
     this._isConnecting = true
