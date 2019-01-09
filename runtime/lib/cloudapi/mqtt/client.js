@@ -23,7 +23,8 @@ function MqttClient (store, options) {
     expireTime: null
   }
   this.options = Object.assign({
-    reconnectTimeout: 2000
+    reconnectTimeout: 2000,
+    keepalive: 60
   }, options || {})
 
   // internal members
