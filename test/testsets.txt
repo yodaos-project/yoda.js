@@ -18,6 +18,7 @@ runtime/lifetime/*.test.js
 runtime/custodian/*.test.js
 runtime/battery/*.test.js
 runtime/dispatcher/*.test.js
+runtime/descriptor/*.test.js
 runtime/app-loader/*.test.js
 runtime/services/lightd/*.test.js
 runtime/services/lightd/effects/*.test.js
