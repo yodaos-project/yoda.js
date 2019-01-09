@@ -81,7 +81,7 @@ module.exports = function (activity) {
   })
 
   activity.on('httpgw-test', (method, params) => {
-    activity.httpgw[method](params)
+    activity.httpgw[method].apply(activity, params)
       .then(res => {
         console.log('response', res)
         process.send({
