@@ -80,6 +80,25 @@ module.exports = function (activity) {
       }))
   })
 
+  activity.on('httpgw-test', (method, params) => {
+    activity.httpgw[method].apply(activity, params)
+      .then(res => {
+        console.log('response', res)
+        process.send({
+          type: 'test',
+          event: 'httpgw-test',
+          result: res
+        })
+      }, err => {
+        console.log('rejection', err)
+        process.send({
+          type: 'test',
+          event: 'httpgw-test',
+          error: err && err.message
+        })
+      })
+  })
+
   activity.on('light-test', (method, params) => {
     console.log(activity.light[method])
     activity.light[method](params)

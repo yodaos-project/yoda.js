@@ -72,9 +72,8 @@ Object.assign(HttpgwDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function getSignature (options) {
-        return this._runtime.onGetPropAll().then((props) => {
-          return cloudgw.getAuth(Object.assign({}, options, props))
-        })
+        var props = this._runtime.onGetPropAll()
+        return cloudgw.getAuth(Object.assign({}, options, props))
       }
     }
   }
