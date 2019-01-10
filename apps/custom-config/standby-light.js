@@ -1,6 +1,7 @@
 'use strict'
 var property = require('@yoda/property')
 var BaseConfig = require('./base-config')
+var logger = require('logger')('custom-config-standby')
 
 var LIGHT_SWITCH_OPEN = '灯光已开启'
 var LIGHT_SWITCH_CLOSE = '灯光已关闭'
@@ -69,8 +70,10 @@ class StandbyLight extends BaseConfig {
     if (action) {
       property.set('sys.standbylightswitch', action, 'persist')
       if (action === SWITCH_OPEN) {
+        logger.info('standby light turned on')
         this.activity.light.play(STANDBY_LIGHT_JS, {}, {shouldResume: true})
       } else if (action === SWITCH_CLOSE) {
+        logger.info('standby light turned off')
         this.activity.light.stop(STANDBY_LIGHT_JS)
       }
       if (!isFirstLoad) {

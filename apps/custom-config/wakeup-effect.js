@@ -132,7 +132,7 @@ class WakeupEffect extends BaseConfig {
         ActivationConfig.defaultPath += '/'
       }
     }
-    this.init()
+    this.refresh()
   }
 
   /**
@@ -202,7 +202,16 @@ class WakeupEffect extends BaseConfig {
    */
   onWakeupEffectStatusChangedFromIntent (action) {
     property.set('sys.wakeupwitch', action, 'persist')
-    if (action === 'close') {
+    this.refresh()
+  }
+
+  /**
+   * refresh the activation sound
+   */
+  refresh () {
+    var action = property.get('sys.wakeupwitch', 'persist')
+    if (action === SWITCH_CLOSE) {
+      logger.info('wakeup effect turned off')
       this.notifyActivation([])
     } else {
       this.getFileList().then((fileList) => {
@@ -210,20 +219,11 @@ class WakeupEffect extends BaseConfig {
           fileList = []
         }
         this.notifyActivation(fileList)
-      })
-    }
-  }
-
-  /**
-   * init the activation status
-   */
-  init () {
-    var action = property.get('sys.wakeupwitch', 'persist')
-    if (action === SWITCH_CLOSE) {
-      this.notifyActivation([])
-    } else {
-      this.getFileList().then((fileList) => {
-        this.notifyActivation(fileList)
+        if (property.get('sys.wakeupsound', 'persist') === AWAKE_EFFECT_CUSTOM) {
+          logger.info('custom wakeup effect turned on')
+        } else {
+          logger.info('default wakeup effect turned on')
+        }
       })
     }
   }
