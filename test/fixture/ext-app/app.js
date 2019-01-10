@@ -114,7 +114,8 @@ module.exports = function (activity) {
         process.send({
           type: 'test',
           event: 'invoke',
-          error: err.message
+          error: err.message,
+          errCode: err.code
         })
       })
   })

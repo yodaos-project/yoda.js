@@ -54,7 +54,9 @@ Object.assign(LightDescriptor.prototype, {
         if (num >= 0) {
           resolve('true')
         } else {
-          reject(new Error('num < 0'))
+          var err = new Error('num < 0')
+          err.code = 'foobar'
+          reject(err)
         }
       })
     }
@@ -158,7 +160,7 @@ test('add test method, return resolve', t => {
 test('add test method, return reject', t => {
   var target = path.join(helper.paths.fixture, 'ext-app')
   var runtime = new EventEmitter()
-  t.plan(4)
+  t.plan(5)
   extApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       t.equal(typeof descriptor.light.lighttest, 'object')
@@ -170,6 +172,7 @@ test('add test method, return reject', t => {
           return
         }
         t.equal(message.error, 'num < 0', 'on reject')
+        t.equal(message.errCode, 'foobar', 'extra error properties')
         descriptor.destruct()
         t.end()
       })
