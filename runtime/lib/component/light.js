@@ -117,9 +117,11 @@ Light.prototype.stopSoundByAppId = function (appId) {
  */
 Light.prototype.setPickup = function (appId, duration, withAwaken) {
   var uri = this.transformPathScheme('system://setPickup.js', LIGHT_SOURCE)
+  if (withAwaken) {
+    this.runtime.floraAgent.post('rokid.vui.pickup', 0, this.runtime.floraAgent.MSGTYPE_INSTANT)
+  }
   return this.play(appId, uri, {
-    duration: duration || 6000,
-    withAwaken: withAwaken
+    duration: duration || 6000
   })
 }
 
