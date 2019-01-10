@@ -52,7 +52,7 @@ var MethodProxies = {
           return resolve(msg.result)
         }
         if (msg.action === 'reject') {
-          err.message = msg.error
+          Object.assign(err, msg.error)
           return reject(err)
         }
         err.message = 'Unknown response message type from VuiDaemon.'
