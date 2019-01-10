@@ -5,8 +5,8 @@ var BaseConfig = require('./base-config')
 var SWITCH_OPEN = 'open'
 var SWITCH_CLOSE = 'close'
 
-var PICKUP_SWITCH_OPEN = '当前不支持连续对话'
-var PICKUP_SWITCH_CLOSE = '当前不支持连续对话'
+var PICKUP_SWITCH_OPEN = '已开启连续对话'
+var PICKUP_SWITCH_CLOSE = '收到,已关闭'
 var CONFIG_FAILED = '设置失败'
 
 /**
