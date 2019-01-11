@@ -1,6 +1,7 @@
 'use strict'
 var property = require('@yoda/property')
 var BaseConfig = require('./base-config')
+var logger = require('logger')('custom-config-continuous-dialog')
 
 var SWITCH_OPEN = 'open'
 var SWITCH_CLOSE = 'close'
@@ -19,7 +20,7 @@ class ContinuousDialog extends BaseConfig {
    */
   getIntentMap () {
     return {
-      pickupswitch: this.applyPickupSwitch.bind(this)
+      pickupswitch: this.applyPickupSwitch.bind(this, true)
     }
   }
 
@@ -39,26 +40,44 @@ class ContinuousDialog extends BaseConfig {
    */
   onPickupSwitchStatusChanged (queryObj) {
     if (queryObj) {
-      this.applyPickupSwitch(queryObj.action, queryObj.isFirstLoad)
+      this.applyPickupSwitch(false, queryObj.action, queryObj.isFirstLoad)
     }
   }
 
   /**
    * handler of intent
-   * @param action
-   * @param isFirstLoad
+   * @param {boolean} isFromIntent
+   * @param {string} action
+   * @param {boolean} isFirstLoad
    */
-  applyPickupSwitch (action, isFirstLoad) {
+  applyPickupSwitch (isFromIntent, action, isFirstLoad) {
     if (action) {
       property.set('sys.pickupswitch', action, 'persist')
       if (!isFirstLoad) {
-        if (action === SWITCH_OPEN) {
-          this.activity.tts.speak(PICKUP_SWITCH_OPEN).then(() => this.activity.exit())
-        } else if (action === SWITCH_CLOSE) {
-          this.activity.tts.speak(PICKUP_SWITCH_CLOSE).then(() => this.activity.exit())
-        } else {
-          this.activity.tts.speak(CONFIG_FAILED).then(() => this.activity.exit())
+        var tts = ''
+        switch (action) {
+          case SWITCH_OPEN:
+            tts = PICKUP_SWITCH_OPEN
+            break
+          case SWITCH_CLOSE:
+            tts = PICKUP_SWITCH_CLOSE
+            break
+          default:
+            tts = CONFIG_FAILED
         }
+        this.activity.tts.speak(tts).then(() => {
+          if ((action === SWITCH_CLOSE || action === SWITCH_OPEN) && isFromIntent) {
+            this.activity.httpgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
+              {namespace: 'custom_config', values: {continuousDialog: `{"action":"${action}"}`}}, {}).then((data) => {
+              this.activity.exit()
+            }).catch((err) => {
+              logger.warn(`request cloud api error: ${err}`)
+              this.activity.exit()
+            })
+          } else {
+            this.activity.exit()
+          }
+        })
       }
     }
   }

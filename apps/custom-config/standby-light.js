@@ -25,7 +25,7 @@ class StandbyLight extends BaseConfig {
    */
   getIntentMap () {
     return {
-      lightswitch: this.applyStandbyLightSwitch.bind(this)
+      lightswitch: this.applyStandbyLightSwitch.bind(this, true)
     }
   }
 
@@ -57,16 +57,17 @@ class StandbyLight extends BaseConfig {
    */
   onStandbyLightSwitchStatusChanged (queryObj) {
     if (queryObj) {
-      this.applyStandbyLightSwitch(queryObj.action, queryObj.isFirstLoad)
+      this.applyStandbyLightSwitch(false, queryObj.action, queryObj.isFirstLoad)
     }
   }
 
   /**
    * handler of the intent
+   * @param {boolean} isFromIntent
    * @param {string} action
    * @param {boolean} isFirstLoad
    */
-  applyStandbyLightSwitch (action, isFirstLoad) {
+  applyStandbyLightSwitch (isFromIntent, action, isFirstLoad) {
     if (action) {
       property.set('sys.standbylightswitch', action, 'persist')
       if (action === SWITCH_OPEN) {
@@ -77,12 +78,29 @@ class StandbyLight extends BaseConfig {
         this.activity.light.stop(STANDBY_LIGHT_JS)
       }
       if (!isFirstLoad) {
-        if (action === SWITCH_OPEN) {
-          this.activity.tts.speak(LIGHT_SWITCH_OPEN).then(() => this.activity.exit())
-        } else if (action === SWITCH_CLOSE) {
-          this.activity.tts.speak(LIGHT_SWITCH_CLOSE).then(() => this.activity.exit())
+        var tts = ''
+        switch (action) {
+          case SWITCH_OPEN:
+            tts = LIGHT_SWITCH_OPEN
+            break
+          case SWITCH_CLOSE:
+            tts = LIGHT_SWITCH_CLOSE
+            break
+          default:
+            tts = CONFIG_FAILED
+        }
+        if ((action === SWITCH_CLOSE || action === SWITCH_OPEN) && isFromIntent) {
+          this.activity.tts.speak(tts).then(() => {
+            return this.activity.httpgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
+              {namespace: 'custom_config', values: {standbyLight: `{"action":"${action}"}`}}, {})
+          }).then((data) => {
+            this.activity.exit()
+          }).catch((err) => {
+            logger.warn(`request cloud api error: ${err}`)
+            this.activity.exit()
+          })
         } else {
-          this.activity.tts.speak(CONFIG_FAILED).then(() => this.activity.exit())
+          this.activity.tts.speak(tts).then(() => this.activity.exit())
         }
       }
     }
