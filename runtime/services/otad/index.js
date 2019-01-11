@@ -68,6 +68,10 @@ function main (done) {
   }
   ota.runInCurrentContext(function onOTA (err, info) {
     logger.info('ota ran')
+    /**
+     * prevent interruption during finalization.
+     */
+    disableSigInt()
     if (err) {
       logger.error(err.message, err.stack)
       if (err.code === 'EEXIST') {
@@ -90,4 +94,8 @@ function main (done) {
     }
     ifaceOpenvoice.ForceUpdateAvailable(done)
   })
+}
+
+function disableSigInt () {
+  process.on('SIGINT', () => {})
 }
