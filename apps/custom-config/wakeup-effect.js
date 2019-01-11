@@ -234,7 +234,7 @@ class WakeupEffect extends BaseConfig {
           config.wakeupSoundEffects = config.value
           this.applyWakeupEffect(config, true)
         } else {
-          logger.warn(`custom config error`)
+          logger.warn(`custom config error: ${JSON.stringify(data)}`)
         }
       }).catch((err) => {
         logger.error(`request custom config error: ${err}`)
