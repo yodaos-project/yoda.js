@@ -9,9 +9,9 @@ var property = require('@yoda/property')
 /**
  * handle all custom-config
  */
-class CustomConfig {
+class CustomConfig extends EventEmitter {
   constructor (runtime) {
-    EventEmitter.call(this)
+    super()
     this.runtime = runtime
     this.runtime.component.lifetime.on('eviction', (appId, form) => {
       if (form === 'cut' && property.get('persist.sys.pickupswitch') === 'open') {
