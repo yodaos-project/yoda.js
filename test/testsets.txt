@@ -6,11 +6,9 @@
 @yoda/property/*.test.js
 @yoda/system/*.test.js
 @yoda/cloudgw/*.test.js
-@yoda/httpsession/*.test.js
 @yoda/httpdns/*.test.js
 @yoda/flora/*.test.js
 @yoda/ota/*.test.js
-@yoda/trace/*.test.js
 @yoda/util/*.test.js
 logger/*.test.js
 apps/cloudAppClient/*.test.js

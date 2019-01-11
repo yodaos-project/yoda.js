@@ -28,6 +28,7 @@ function AlarmCore (activity) {
   this.activity = activity
   this.scheduleHandler = new Cron.Schedule()
   this.jobQueue = []
+  this.reminderTTS = []
   this.taskTimeout = null
   this.volumeInterval = null
   this.stopTimeout = null
@@ -132,7 +133,7 @@ AlarmCore.prototype._controlVolume = function (minVolume, tick, duration) {
  * @param {Object} Options formated alarm data
  * @param {String} Options mode
  */
-AlarmCore.prototype._setConfig = function (option, mode) {
+AlarmCore.prototype._setConfig = function (options) {
   fs.readFile(CONFIGFILEPATH, 'utf8', function readFileCallback (err, data) {
     if (err) {
       logger.error('alarm set config: get local data error', err.stack)
@@ -144,11 +145,13 @@ AlarmCore.prototype._setConfig = function (option, mode) {
     } catch (err) {
       logger.error('alarm parse local data error ', err.stack)
     }
-    if (mode === 'add') {
-      parseJson[option.id] = option
-    }
-    if (mode === 'remove') {
-      delete parseJson[option.id]
+    for (var i = 0; i < options.length; i++) {
+      if (options[i].mode === 'add') {
+        parseJson[options[i].command.id] = options[i].command
+      }
+      if (options[i].mode === 'remove') {
+        delete parseJson[options[i].command.id]
+      }
     }
     fs.unlink(CONFIGFILEPATH, (err) => {
       if (err) {
@@ -177,7 +180,7 @@ AlarmCore.prototype._clearTask = function (mode, option) {
   }
   if (mode === 'single') {
     this.scheduleHandler.clear(option.id)
-    this._setConfig(option, 'remove')
+    this._setConfig([{ command: option, mode: 'remove' }])
   }
 }
 
@@ -218,25 +221,12 @@ AlarmCore.prototype.restoreEventsDefaults = function () {
  * @param {String} Options alarm type
  */
 AlarmCore.prototype._taskCallback = function (option, mode) {
-  logger.log('alarm: ', option.id, ' start ')
-  if (this.jobQueue.indexOf(option.id) > -1) {
-    return
-  }
-
-  this.jobQueue.push(option.id)
-  var jobConf = this.scheduleHandler.getJobConfig(option.id)
-  if (!jobConf) {
-    logger.log('alarm' + option.id + ' can not run')
-    this._clearTask(mode, option)
-    return
-  }
-
-  var tts = option.tts
   var state = wifi.getNetworkState()
-
+  var tts = option.tts
   if (option.type === 'Remind') {
-    var sameReminder = this.scheduleHandler.combineReminderTts(this.activeOption.id)
-    tts = sameReminder.combinedTTS
+    tts = this.reminderTTS.join(',') + option.tts
+    this.reminderTTS = []
+    this.startTts = true
     this.activity.setForeground().then(() => {
       if (state === wifi.NETSERVER_CONNECTED) {
         return this._ttsSpeak(tts || option.tts)
@@ -249,13 +239,9 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
       return this.activity.media.setLoopMode(true)
     }).then(() => {
       this.stopTimeout = setTimeout(() => {
+        logger.log('alarm-reminder: ', option.id, ' stop after 5 minutes')
         this.restoreEventsDefaults()
         this.scheduleHandler.clearReminderQueue()
-        var reminderList = sameReminder.reminderList
-        var reminderLen = reminderList.length
-        for (var k = 0; k < reminderLen; k++) {
-          this._clearTask(mode, reminderList[k])
-        }
         this.activity.media.stop()
         this.activity.setBackground()
       }, 5 * 60 * 1000)
@@ -264,8 +250,7 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
     })
   } else {
     this.activity.setForeground().then(() => {
-      logger.log('media play')
-    }).then(() => {
+      this.startTts = true
       if (state === wifi.NETSERVER_CONNECTED) {
         return this._ttsSpeak(option.tts)
       }
@@ -276,6 +261,7 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
       return this.activity.media.setLoopMode(true)
     }).then(() => {
       this.stopTimeout = setTimeout(() => {
+        logger.log('alarm: ', option.id, ' stop after 5 minutes')
         this.activity.media.stop()
         this._clearTask(mode, option)
         this.restoreEventsDefaults()
@@ -296,6 +282,20 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
 AlarmCore.prototype._onTaskActive = function (option, mode) {
   this.clearAll()
   this.activity.setForeground().then(() => {
+    logger.log('alarm: ', option.id, ' start ')
+    if (this.jobQueue.indexOf(option.id) > -1) {
+      return
+    }
+    this.jobQueue.push(option.id)
+    var jobConf = this.scheduleHandler.getJobConfig(option.id)
+    if (!jobConf) {
+      logger.log('alarm: ' + option.id + ' can not run')
+      if (option.type === 'Remind') {
+        this.reminderTTS.push(option.tts)
+      }
+      this._clearTask(mode, option)
+      return
+    }
     this.activeOption = option
     this._preventEventsDefaults()
     this._controlVolume(10, 1000, 7)
@@ -314,6 +314,8 @@ AlarmCore.prototype._onTaskActive = function (option, mode) {
         alarmId: option.id
       }
     })
+
+    this.startTts = false
     this.activity.media.start(ringUrl, { streamType: 'alarm' }).then(() => {
       this.taskTimeout = setTimeout(() => {
         this.activity.media.stop()
@@ -344,13 +346,16 @@ AlarmCore.prototype.startTask = function (commandOpt, pattern) {
 AlarmCore.prototype.init = function (command, isUpdateNative) {
   logger.log('alarm init')
   var flag = false
+  var options = []
   for (var i in command) {
     flag = true
     var commandOpt = this._formatCommandData(command[i])
     var pattern = this._transferPattern(command[i].date, command[i].time, command[i].repeatType)
     this.startTask(commandOpt, pattern)
-    isUpdateNative && this._setConfig(command[i], 'add')
+    options.push({ command: command[i], mode: 'add' })
   }
+
+  isUpdateNative && flag && this._setConfig(options)
   // clear local data
   if (!flag) {
     fs.writeFile(CONFIGFILEPATH, '{}', function (err) {
@@ -409,22 +414,27 @@ AlarmCore.prototype.getTasksFromConfig = function (callback) {
  */
 AlarmCore.prototype.doTask = function (command) {
   if (command.length > 0) {
+    var options = []
     for (var i = 0; i < command.length; i++) {
       var commandItem = command[i]
       var commandOpt = this._formatCommandData(commandItem)
       if (commandItem.flag === 'add' || commandItem.flag === 'edit') {
         var pattern = this._transferPattern(commandItem.date, commandItem.time, commandItem.repeatType)
-        this._setConfig(commandItem, 'add')
+        options.push({ command: commandItem, mode: 'add' })
         this.startTask(commandOpt, pattern)
       }
 
       if (commandItem.flag === 'del') {
         this.scheduleHandler.clear(commandItem.id)
-        this._setConfig({
-          id: commandItem.id
-        }, 'remove')
+        options.push({
+          command: {
+            id: commandItem.id
+          },
+          mode: 'remove'
+        })
       }
     }
+    this._setConfig(options)
   }
 }
 
@@ -444,6 +454,10 @@ AlarmCore.prototype.clearAll = function () {
   this.stopTimeout && clearTimeout(this.stopTimeout)
   this.restoreEventsDefaults()
   this.activity.setBackground()
+}
+
+AlarmCore.prototype.clearReminderTts = function () {
+  this.reminderTTS = []
 }
 
 module.exports = AlarmCore

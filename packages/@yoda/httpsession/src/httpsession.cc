@@ -24,13 +24,6 @@ struct HttpSessionAsyncTask {
   }
 };
 
-static void ticketDeleter(HttpSession::Ticket* tic) {
-  auto task = static_cast<HttpSessionAsyncTask*>(tic->request.userdata);
-  if (task) {
-    delete task;
-  }
-}
-
 static uv_async_t async;
 static mutex taskMutex;
 static list<HttpSessionAsyncTask*> tasks;
@@ -167,6 +160,7 @@ static void handleFinishedTickets(uv_async_t* handle) {
     NAPI_CALL_RETURN_VOID(env, napi_close_handle_scope(env, scope));
 
     (*it)->callback = nullptr;
+    delete *it;
   }
 }
 
@@ -289,7 +283,7 @@ static napi_value request(napi_env env, napi_callback_info info) {
     task->env = env;
     req.userdata = task;
   }
-  session->request(req, &listener, ticketDeleter);
+  session->request(req, &listener);
 
   return nullptr;
 }
