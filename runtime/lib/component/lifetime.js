@@ -640,6 +640,9 @@ LaVieEnPile.prototype.onEviction = function onEvict (appId, form) {
  * @param {ContextOptionsData} contextOptions
  */
 LaVieEnPile.prototype.onPreemption = function onPreemption (appId, contextOptions) {
+  if (!appId) {
+    return
+  }
   process.nextTick(() => {
     this.emit('preemption', appId, contextOptions.form)
   })
