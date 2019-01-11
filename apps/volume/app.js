@@ -9,7 +9,8 @@ module.exports = function (activity) {
   var STRING_OUT_OF_RANGE = '音量调节超出范围'
   var STRING_SHOW_VOLUME = '当前音量为百分之'
   var STRING_SHOW_MUTED = '设备已静音，已帮你调回到百分之'
-  var STRING_VOLUME_ALTERED = '音量已调到百分之'
+  var STRING_VOLUME_ALTERED = '音量百分之'
+  var STRING_VOLUME_ADJUST_HELP = '音量百分之%d，如果想快速调节，你可以直接对我说，音量调到百分之%d'
 
   var mutedBy
   var defaultVolume = 30
@@ -44,6 +45,7 @@ module.exports = function (activity) {
    * @param {number} targetValue
    * @param {object} [options]
    * @param {'announce' | 'effect'} [options.type]
+   * @returns {Promise<number>}
    */
   function setVolume (targetValue, options) {
     var type = _.get(options, 'type')
@@ -87,7 +89,7 @@ module.exports = function (activity) {
       promises.push(activity.tts.speak(STRING_VOLUME_ALTERED + normalizedValue))
     }
     promises.push(activity.wormhole.updateVolume())
-    return Promise.all(promises)
+    return Promise.all(promises).then(() => normalizedValue)
   }
 
   /**
@@ -95,6 +97,7 @@ module.exports = function (activity) {
    * @param {number} value
    * @param {object} [options]
    * @param {'announce' | 'effect'} [options.type]
+   * @returns {Promise<number>}
    */
   function incVolume (value, options) {
     var type = _.get(options, 'type')
@@ -112,6 +115,7 @@ module.exports = function (activity) {
    * @param {number} value
    * @param {object} [options]
    * @param {'announce' | 'effect'} [options.type]
+   * @returns {Promise<number>}
    */
   function decVolume (value, options) {
     var type = _.get(options, 'type')
@@ -137,6 +141,40 @@ module.exports = function (activity) {
 
   function resetFastMuteTimer () {
     clearTimeout(fastMuteTimer)
+  }
+
+  var oneMinute = 60 * 1000
+  var slowlyAdjustTimestamp = 0
+  var slowlyAdjustCounter = 0
+  function adjustVolumeSlowly (partition, options) {
+    var shouldAnnounceHelp = false
+    var couldAnnounce = options.type === 'announce'
+    if ((Date.now() - slowlyAdjustTimestamp) < oneMinute) {
+      ++slowlyAdjustCounter
+      if (slowlyAdjustCounter >= 3) {
+        shouldAnnounceHelp = true
+      }
+    } else {
+      slowlyAdjustTimestamp = Date.now()
+      slowlyAdjustCounter = 0
+    }
+
+    var future
+    var overrideOpt = {}
+    if (shouldAnnounceHelp && couldAnnounce) {
+      overrideOpt.type = 'effect'
+    }
+    if (partition > 0) {
+      future = incVolume(100 / partition, Object.assign(options))
+    } else {
+      future = decVolume(100 / partition, Object.assign(options))
+    }
+    return future.then(newVolume => {
+      if (!shouldAnnounceHelp || !couldAnnounce) {
+        return
+      }
+      return activity.tts.speak(STRING_VOLUME_ADJUST_HELP.replace('%d', newVolume))
+    })
   }
 
   /**
@@ -243,12 +281,12 @@ module.exports = function (activity) {
         break
       case 'volumeup':
       case 'volume_too_low':
-        incVolume(100 / partition, { type: 'announce' })
+        adjustVolumeSlowly(partition, { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'volumedown':
       case 'volume_too_high':
-        decVolume(100 / partition, { type: 'announce' })
+        adjustVolumeSlowly(-partition, { type: 'announce' })
           .then(() => activity.exit())
         break
       case 'volumemin':
