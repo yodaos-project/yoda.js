@@ -58,7 +58,7 @@ module.exports = function CustomConfig (activity) {
           }
         }
       }
-      activity.setBackground()
+      activity.exit()
     } else {
       var func = urlMap[path]
       if (func) {
