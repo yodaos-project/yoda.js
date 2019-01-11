@@ -97,6 +97,19 @@ class Battery {
     }
   }
 
+  getBatteryLevel () {
+    if (this.memoInfo == null) {
+      return 0
+    }
+    if (!this.batSupported) {
+      return 0
+    }
+    if (typeof this.memoInfo.batLevel !== 'number') {
+      return 0
+    }
+    return this.memoInfo.batLevel
+  }
+
   // MARK: - Interceptions
   delegateWakeUpIfDangerousStatus () {
     if (this.memoInfo == null) {
