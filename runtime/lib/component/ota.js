@@ -4,6 +4,7 @@ var logger = require('logger')('comp-ota')
 
 var ota = require('@yoda/ota')
 var getInfoIfFirstUpgradedBootAsync = promisify(ota.getInfoIfFirstUpgradedBoot)
+var getInfoOfPendingUpgradeAsync = promisify(ota.getInfoOfPendingUpgrade)
 
 class OTA {
   constructor (runtime) {
@@ -15,27 +16,20 @@ class OTA {
   /**
    * Starts a force update on voice coming etc.
    */
-  startForceUpdate () {
+  startForceUpdate (info) {
     /**
      * Skip upcoming voice, announce available force update and start ota.
      */
     logger.info('pending force update, delegates activity to @ota.')
-    ota.getInfoOfPendingUpgrade((err, info) => {
-      if (err || info == null) {
-        logger.error('failed to fetch pending update info, skip force updates', err && err.stack)
-        return
-      }
-      logger.info('got pending update info', info)
-      Promise.all([
-        /**
-         * prevent force update from being interrupted.
-         */
-        this.runtime.setMicMute(true, { silent: true }),
-        this.runtime.setPickup(false)
-      ]).then(() =>
-        this.runtime.openUrl(`yoda-skill://ota/force_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
-      ).then(() => this.runtime.startMonologue('@yoda/ota'))
-    })
+    return Promise.all([
+      /**
+       * prevent force update from being interrupted.
+       */
+      this.runtime.setMicMute(true, { silent: true }),
+      this.runtime.setPickup(false)
+    ]).then(() =>
+      this.runtime.openUrl(`yoda-skill://ota/force_upgrade?image_path=${encodeURIComponent(info.imagePath)}`)
+    ).then(() => this.runtime.startMonologue('@yoda/ota'))
   }
 
   // MARK: - Interceptions
@@ -43,8 +37,34 @@ class OTA {
     if (!this.forceUpdateAvailable) {
       return false
     }
-    this.startForceUpdate()
-    return true
+    var nowHour = new Date().getHours()
+    if (nowHour >= 22/** 22pm */ || nowHour <= 7 /** 7am */) {
+      return Promise.resolve(false)
+    }
+    // TODO: move to ota.conditions
+    if (this.component.battery.batSupported) {
+      if (!this.component.battery.isCharging()) {
+        if (this.component.battery.getBatteryLevel() < 50) {
+          return false
+        }
+      }
+    }
+    this.forceUpdateAvailable = false
+
+    return getInfoOfPendingUpgradeAsync()
+      .then(upgradeInfo => {
+        if (upgradeInfo == null) {
+          return false
+        }
+        logger.info('got pending update info', upgradeInfo)
+        return ota.conditions.getAvailabilityOfOta(upgradeInfo)
+          .then(available => {
+            if (!available) {
+              return false
+            }
+            return this.startForceUpdate(upgradeInfo)
+          })
+      })
   }
 
   runtimeDidLogin () {
