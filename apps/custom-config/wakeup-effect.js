@@ -215,7 +215,7 @@ class WakeupEffect extends BaseConfig {
       this.notifyActivation([])
     } else {
       this.getFileList().then((fileList) => {
-        if (Array.isArray(fileList)) {
+        if (!Array.isArray(fileList)) {
           fileList = []
         }
         this.notifyActivation(fileList)
