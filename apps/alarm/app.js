@@ -22,6 +22,7 @@ module.exports = function (activity) {
     }
     activity.keyboard.on('click', (e) => {
       AlarmCore.clearAll()
+      AlarmCore.clearReminderTts()
     })
   })
 
@@ -42,9 +43,18 @@ module.exports = function (activity) {
     }
   })
 
+  // media canceled
+  activity.media.on('cancel', function () {
+    logger.log('alarm media cancel')
+    if (!AlarmCore.startTts) {
+      AlarmCore.clearReminderTts()
+    }
+  })
+
   // todo: weakup event
   activity.on('destroy', function () {
     AlarmCore.clearAll()
+    AlarmCore.clearReminderTts()
     logger.log(this.appId + ' destroyed')
   })
 }
