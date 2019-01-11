@@ -36,7 +36,7 @@ module.exports.isCapabilityEnabled = isCapabilityEnabled
  * @returns {boolean} - true if feature is enabled
  */
 function isCapabilityEnabled (feature) {
-  return !!_.get(capabilities, feature)
+  return !!capabilities[feature]
 }
 
 module.exports.getDefaultValue = getDefaultValue
@@ -46,5 +46,5 @@ module.exports.getDefaultValue = getDefaultValue
  * @returns {any} - default value
  */
 function getDefaultValue (key) {
-  return _.get(defaults, key)
+  return defaults[key]
 }
