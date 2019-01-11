@@ -98,14 +98,19 @@ AppRuntime.prototype.init = function init () {
     })
   }
   return future.then(() => {
+    return this.loadApps()
+  }).then(() => {
+    this.inited = true
+    return this.component.dispatcher.delegate('runtimeDidInit')
+  }).then(delegation => {
+    if (delegation) {
+      return
+    }
     if (this.shouldWelcome) {
       this.component.light.appSound('@yoda', 'system://boot.ogg')
       this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
     }
-    return this.loadApps()
-  }).then(() => {
     this.component.custodian.prepareNetwork()
-    this.inited = true
   })
 }
 
