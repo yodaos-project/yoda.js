@@ -312,8 +312,6 @@ class DNDMode {
         logger.info('device is idle, recheck dnd mode')
         this.fsmWaitingBreaker()
       }
-    } else if (this.fsmStatus === FSM_END) {
-      this.start(FSMCode.Start)
     }
   }
   /**
