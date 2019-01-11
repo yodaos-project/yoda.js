@@ -226,6 +226,20 @@ class WakeupEffect extends BaseConfig {
         this.notifyActivation(fileList)
       })
     }
+    this.activity.get().then(prop => {
+      this.activity.httpgw.request('/v1/rokidAccount/RokidAccount/getUserCustomConfigByDevice',
+        {userId: prop.masterId}, {}).then((data) => {
+        var config = safeParse(_.get(data, 'values.wakeupSoundEffects', ''))
+        if (typeof config === 'object') {
+          config.wakeupSoundEffects = config.value
+          this.applyWakeupEffect(config, true)
+        } else {
+          logger.warn(`custom config error`)
+        }
+      }).catch((err) => {
+        logger.error(`request custom config error: ${err}`)
+      })
+    })
   }
   /**
    * process request from url
@@ -244,7 +258,7 @@ class WakeupEffect extends BaseConfig {
    * @param isFirstLoad -
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
-    if (queryObj && queryObj.action) {
+    if (typeof queryObj === 'object' && queryObj.hasOwnProperty('action')) {
       property.set('sys.wakeupswitch', queryObj.action, 'persist')
       if (queryObj.type !== undefined) {
         property.set('sys.wakeupsound', queryObj.type, 'persist')
