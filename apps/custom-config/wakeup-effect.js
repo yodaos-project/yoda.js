@@ -118,17 +118,17 @@ class WakeupEffect extends BaseConfig {
       logger.warn(`Activation config is null`)
       ActivationConfig = {}
     }
-    if (!ActivationConfig.hasOwnProperty('customPath')) {
+    if (typeof ActivationConfig.customPath !== 'string') {
       ActivationConfig.customPath = '/data/activation/media/'
     } else {
-      if (!ActivationConfig.customPath[ActivationConfig.customPath.length - 1] === '/') {
+      if (ActivationConfig.customPath[ActivationConfig.customPath.length - 1] !== '/') {
         ActivationConfig.customPath += '/'
       }
     }
-    if (!ActivationConfig.hasOwnProperty('defaultPath')) {
+    if (typeof ActivationConfig.defaultPath !== 'string') {
       ActivationConfig.defaultPath = '/opt/media/activation/'
     } else {
-      if (!ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] === '/') {
+      if (ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] !== '/') {
         ActivationConfig.defaultPath += '/'
       }
     }
@@ -258,9 +258,9 @@ class WakeupEffect extends BaseConfig {
    * @param isFirstLoad -
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
-    if (typeof queryObj === 'object' && queryObj.hasOwnProperty('action')) {
+    if (typeof queryObj === 'object' && typeof queryObj.action === 'string') {
       property.set('sys.wakeupswitch', queryObj.action, 'persist')
-      if (queryObj.type !== undefined) {
+      if (typeof queryObj.type === 'string') {
         property.set('sys.wakeupsound', queryObj.type, 'persist')
       }
       if (queryObj.action === SWITCH_CLOSE) {
