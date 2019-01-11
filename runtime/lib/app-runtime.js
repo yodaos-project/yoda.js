@@ -313,10 +313,6 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
     return
   }
 
-  var deferred = () => {
-    this.component.light.stop('@yoda', '/opt/light/longPressMic.js')
-  }
-
   /**
    * reset should welcome so that welcome effect could be played on re-login
    */
@@ -325,9 +321,9 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
     this.component.lifetime.destroyAll(),
     this.setMicMute(false, { silent: true })
   ]).then(() => this.component.custodian.resetNetwork(options))
-    .then(deferred, err => {
+    .catch(err => {
       logger.error('Unexpected error on resetting network', err.stack)
-      deferred()
+      this.component.light.stop('@yoda', '/opt/light/longPressMic.js')
     })
 }
 
