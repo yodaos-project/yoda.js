@@ -1,5 +1,6 @@
 'use strict'
 var AudioManager = require('@yoda/audio').AudioManager
+var manifest = require('@yoda/manifest')
 var logger = require('logger')('@volume')
 var _ = require('@yoda/util')._
 
@@ -13,7 +14,10 @@ module.exports = function (activity) {
   var STRING_VOLUME_ADJUST_HELP = '音量百分之%d，如果想快速调节，你可以直接对我说，音量调到百分之%d'
 
   var mutedBy
-  var defaultVolume = 30
+  var defaultVolume = manifest.getDefaultValue('audio.volume.recover')
+  if (typeof defaultVolume !== 'number' || isNaN(defaultVolume)) {
+    defaultVolume = 30
+  }
 
   function speakAndExit (text) {
     var ismuted = AudioManager.isMuted()
