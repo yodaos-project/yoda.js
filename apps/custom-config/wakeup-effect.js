@@ -118,17 +118,17 @@ class WakeupEffect extends BaseConfig {
       logger.warn(`Activation config is null`)
       ActivationConfig = {}
     }
-    if (!ActivationConfig.hasOwnProperty('customPath')) {
+    if (typeof ActivationConfig.customPath !== 'string') {
       ActivationConfig.customPath = '/data/activation/media/'
     } else {
-      if (!ActivationConfig.customPath[ActivationConfig.customPath.length - 1] === '/') {
+      if (ActivationConfig.customPath[ActivationConfig.customPath.length - 1] !== '/') {
         ActivationConfig.customPath += '/'
       }
     }
-    if (!ActivationConfig.hasOwnProperty('defaultPath')) {
+    if (typeof ActivationConfig.defaultPath !== 'string') {
       ActivationConfig.defaultPath = '/opt/media/activation/'
     } else {
-      if (!ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] === '/') {
+      if (ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] !== '/') {
         ActivationConfig.defaultPath += '/'
       }
     }
@@ -226,6 +226,20 @@ class WakeupEffect extends BaseConfig {
         }
       })
     }
+    this.activity.get().then(prop => {
+      this.activity.httpgw.request('/v1/rokidAccount/RokidAccount/getUserCustomConfigByDevice',
+        {userId: prop.masterId}, {}).then((data) => {
+        var config = safeParse(_.get(data, 'values.wakeupSoundEffects', ''))
+        if (typeof config === 'object') {
+          config.wakeupSoundEffects = config.value
+          this.applyWakeupEffect(config, true)
+        } else {
+          logger.warn(`custom config error: ${JSON.stringify(data)}`)
+        }
+      }).catch((err) => {
+        logger.error(`request custom config error: ${err}`)
+      })
+    })
   }
   /**
    * process request from url
@@ -244,9 +258,9 @@ class WakeupEffect extends BaseConfig {
    * @param isFirstLoad -
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
-    if (queryObj && queryObj.action) {
+    if (typeof queryObj === 'object' && typeof queryObj.action === 'string') {
       property.set('sys.wakeupswitch', queryObj.action, 'persist')
-      if (queryObj.type !== undefined) {
+      if (typeof queryObj.type === 'string') {
         property.set('sys.wakeupsound', queryObj.type, 'persist')
       }
       if (queryObj.action === SWITCH_CLOSE) {
