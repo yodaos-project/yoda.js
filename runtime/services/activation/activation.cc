@@ -1,5 +1,4 @@
 #include "activation.h"
-#include <cjson/cJSON.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>
