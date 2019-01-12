@@ -30,6 +30,8 @@ var LIGHTD_INTERFACE = 'com.rokid.light.key'
 
 var _TTS = null
 var _CONFIG = null
+var _isTtsConnected = false
+var _fristRetryHandle = null
 
 var lightd = new Remote(dbusService._dbus, {
   dbusService: LIGHTD_SERVICE,
@@ -79,19 +81,29 @@ function reConnect (CONFIG) {
     _TTS.reconnect()
     return
   }
+
   // for detail, see https://developer.rokid.com/docs/3-ApiReference/openvoice-api.html#ttsrequest
   CONFIG.declaimer = property.get('rokid.tts.declaimer', 'persist')
   CONFIG.holdConnect = true
   if (property.get('player.ttsd.holdcon', 'persist') === '0') {
     CONFIG.holdConnect = false
   }
-  if (_TTS) { _TTS.disconnect() }
+  if (_TTS) {
+    _TTS.disconnect()
+  }
 
   process.nextTick(function () {
-    _TTS = TtsWrap.createTts(CONFIG)
-    _CONFIG = CONFIG
+    _CONFIG = Object.assign({}, CONFIG)
 
-    _TTS.on('start', function (id, errno) {
+    _TTS = TtsWrap.createTts(_CONFIG)
+    _TTS.on('start', function onstart (id, errno) {
+      if (_isTtsConnected === false) {
+        _isTtsConnected = true
+        logger.info('first time to start the tts job, set the tts connected.')
+      } else if (_fristRetryHandle) {
+        clearTimeout(_fristRetryHandle)
+      }
+
       logger.log('ttsd start', id, service.lastReqId, service.ignoreTtsEvent)
       AudioManager.setPlayingState(audioModuleName, true)
       lightd.invoke('play',
@@ -111,7 +123,7 @@ function reConnect (CONFIG) {
         ['' + id, 'start']
       )
     })
-    _TTS.on('end', function (id, errno) {
+    _TTS.on('end', function onend (id, errno) {
       logger.log('ttsd end', id)
       if (service.lastReqId === id) {
         service.lastReqId = -1
@@ -140,7 +152,7 @@ function reConnect (CONFIG) {
         )
       }, 2000 - delta/** it's ok to set a negative timeout */)
     })
-    _TTS.on('cancel', function (id, errno) {
+    _TTS.on('cancel', function oncancel (id, errno) {
       logger.log('ttsd cancel', id)
       AudioManager.setPlayingState(audioModuleName, false)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
@@ -164,8 +176,9 @@ function reConnect (CONFIG) {
         )
       }, 2000 - delta/** it's ok to set a negative timeout */)
     })
-    _TTS.on('error', function (id, errno) {
-      logger.error('ttsd error', id, errno)
+    _TTS.on('error', function onerror (id, errno) {
+      logger.error(`ttsd occurs error on ${id}, the error number is ${errno}`)
+
       AudioManager.setPlayingState(audioModuleName, false)
       lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
 
@@ -175,9 +188,16 @@ function reConnect (CONFIG) {
       }
       service.ignoreTtsEvent = false
 
+      // the error(101) means the connection not available.
+      if (errno === 101 && _isTtsConnected === false) {
+        _fristRetryHandle = setTimeout(() => service.resume(), 2000)
+        return
+      }
+
       var start = ttsRegistry[id]
       delete ttsRegistry[id]
       var delta = Date.now() - start
+
       /** delay to 2s to prevent event `error` been received before event `start` */
       setTimeout(() => {
         dbusService._dbus.emitSignal(
@@ -249,6 +269,7 @@ function stop (appId, cb) {
     cb(null)
   }
 }
+
 dbusApis.addMethod('stop', {
   in: ['s'],
   out: []

@@ -71,6 +71,9 @@ Tts.prototype.pause = function (appId) {
 }
 
 Tts.prototype.resume = function (appId) {
+  if (arguments.length === 0) {
+    appId = this.lastAppId
+  }
   if (this.handle[appId]) {
     return
   }
