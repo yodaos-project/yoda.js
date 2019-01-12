@@ -10,6 +10,7 @@ using namespace std;
 using namespace flora;
 
 const char* VOICE_COMING = "rokid.turen.voice_coming";
+const char* VUI_PICKUP = "rokid.vui.pickup";
 const char* WAKEUP_SOUND = "rokid.custom_config.wakeup_sound";
 
 const int32_t FILE_MAX_SIZE = 20 * 1024;
@@ -27,7 +28,7 @@ Activation::Activation() {
 // cppcheck-suppress unusedFunction
 void Activation::recv_post(const char* name, uint32_t msgtype,
                            shared_ptr<Caps>& msg) {
-  if (strcmp(VOICE_COMING, name) == 0) {
+  if (strcmp(VOICE_COMING, name) == 0 || strcmp(VUI_PICKUP, name) == 0) {
     playAwake();
   } else if (strcmp(WAKEUP_SOUND, name) == 0) {
     applyAwakeSound(msg);
