@@ -3,17 +3,18 @@ var property = require('@yoda/property')
 var BaseConfig = require('./base-config')
 var logger = require('logger')('custom-config-continuous-dialog')
 
-var SWITCH_OPEN = 'open'
-var SWITCH_CLOSE = 'close'
-
-var PICKUP_SWITCH_OPEN = '当前不支持连续对话'
-var PICKUP_SWITCH_CLOSE = '当前不支持连续对话'
-var CONFIG_FAILED = '设置失败'
-
 /**
  * continuous dialog handler
  */
 class ContinuousDialog extends BaseConfig {
+  constructor (activity) {
+    super(activity)
+    this.tts = {
+      'open': '已开启连续对话',
+      'close': '收到,已关闭',
+      'error': '设置失败'
+    }
+  }
   /**
    * get intent map
    * @returns {object} - intent map
@@ -54,30 +55,30 @@ class ContinuousDialog extends BaseConfig {
     if (action) {
       property.set('sys.pickupswitch', action, 'persist')
       if (!isFirstLoad) {
-        var tts = ''
-        switch (action) {
-          case SWITCH_OPEN:
-            tts = PICKUP_SWITCH_OPEN
-            break
-          case SWITCH_CLOSE:
-            tts = PICKUP_SWITCH_CLOSE
-            break
-          default:
-            tts = CONFIG_FAILED
-        }
-        this.activity.tts.speak(tts).then(() => {
-          if ((action === SWITCH_CLOSE || action === SWITCH_OPEN) && isFromIntent) {
-            this.activity.httpgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
-              {namespace: 'custom_config', values: {continuousDialog: `{"action":"${action}"}`}}, {}).then((data) => {
+        if (this.tts.hasOwnProperty(action)) {
+          if (isFromIntent) {
+            this.activity.tts.speak(this.tts[action]).then(() => {
+              return this.activity.httpgw.request(
+                '/v1/device/deviceManager/addOrUpdateDeviceInfo',
+                {
+                  namespace: 'custom_config',
+                  values: {
+                    continuousDialog: `{"action":"${action}"}`
+                  }
+                },
+                {})
+            }).then((data) => {
               this.activity.exit()
             }).catch((err) => {
               logger.warn(`request cloud api error: ${err}`)
               this.activity.exit()
             })
           } else {
-            this.activity.exit()
+            this.activity.tts.speak(this.tts[action]).then(() => this.activity.exit())
           }
-        })
+        } else {
+          this.activity.tts.speak(this.tts.error).then(() => this.activity.exit())
+        }
       }
     }
   }

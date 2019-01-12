@@ -3,9 +3,6 @@ var property = require('@yoda/property')
 var BaseConfig = require('./base-config')
 var logger = require('logger')('custom-config-standby')
 
-var LIGHT_SWITCH_OPEN = '灯光已开启'
-var LIGHT_SWITCH_CLOSE = '灯光已关闭'
-var CONFIG_FAILED = '设置失败'
 var STANDBY_LIGHT_JS = 'system://setSysStandby.js'
 var SWITCH_OPEN = 'open'
 var SWITCH_CLOSE = 'close'
@@ -17,6 +14,11 @@ class StandbyLight extends BaseConfig {
   constructor (activity) {
     super(activity)
     this.initStandbyLight()
+    this.tts = {
+      'open': '灯光已开启',
+      'close': '灯光已关闭',
+      'error': '设置失败'
+    }
   }
 
   /**
@@ -78,29 +80,28 @@ class StandbyLight extends BaseConfig {
         this.activity.light.stop(STANDBY_LIGHT_JS)
       }
       if (!isFirstLoad) {
-        var tts = ''
-        switch (action) {
-          case SWITCH_OPEN:
-            tts = LIGHT_SWITCH_OPEN
-            break
-          case SWITCH_CLOSE:
-            tts = LIGHT_SWITCH_CLOSE
-            break
-          default:
-            tts = CONFIG_FAILED
-        }
-        if ((action === SWITCH_CLOSE || action === SWITCH_OPEN) && isFromIntent) {
-          this.activity.tts.speak(tts).then(() => {
-            return this.activity.httpgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
-              {namespace: 'custom_config', values: {standbyLight: `{"action":"${action}"}`}}, {})
-          }).then((data) => {
-            this.activity.exit()
-          }).catch((err) => {
-            logger.warn(`request cloud api error: ${err}`)
-            this.activity.exit()
-          })
+        if (this.tts.hasOwnProperty(action)) {
+          if (isFromIntent) {
+            this.activity.tts.speak(this.tts[action]).then(() => {
+              return this.activity.httpgw.request(
+                '/v1/device/deviceManager/addOrUpdateDeviceInfo',
+                {
+                  namespace: 'custom_config',
+                  values: {
+                    standbyLight: `{"action":"${action}"}`
+                  }
+                }, {})
+            }).then((data) => {
+              this.activity.exit()
+            }).catch((err) => {
+              logger.warn(`request cloud api error: ${err}`)
+              this.activity.exit()
+            })
+          } else {
+            this.activity.tts.speak(this.tts[action]).then(() => this.activity.exit())
+          }
         } else {
-          this.activity.tts.speak(tts).then(() => this.activity.exit())
+          this.activity.tts.speak(this.tts.error).then(() => this.activity.exit())
         }
       }
     }
