@@ -1,6 +1,5 @@
 var promisify = require('util').promisify
-var property = require('property')
-
+var property = require('@yoda/property')
 var fetchOtaInfo = require('./network').fetchOtaInfo
 
 var fetchOtaInfoAsync = promisify(fetchOtaInfo)
