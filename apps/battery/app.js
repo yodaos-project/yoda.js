@@ -51,7 +51,7 @@ module.exports = function (activity) {
 
   function powerStatusChange (isOnline, isPlaying, testPercent) {
     logger.log('powerStatusChanged ', isOnline, isPlaying, testPercent)
-    activity.light.play('self://battery.js', { isAcConnect: isOnline })
+    activity.light.play('system://power.js', { plug: isOnline })
       .then(() => {
         if (!isOnline && isPlaying === 'false') {
           queryBatteryStatus()
