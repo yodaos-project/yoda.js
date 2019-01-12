@@ -13,6 +13,7 @@
  */
 
 var native = require('./audio.node')
+var manifest = require('@yoda/manifest')
 var property = require('@yoda/property')
 var logger = require('logger')('audio')
 /**
@@ -22,11 +23,11 @@ var AudioBase = {
   /**
    * default volume
    */
-  DEFAULT_VOLUME: _getNumber('audio.volume.default', 60)
+  DEFAULT_VOLUME: _getNumber('audio.volume.init', 60)
 }
 
 function _getNumber (key, defaults) {
-  var num = parseInt(property.get(key, 'persist'))
+  var num = parseInt(manifest.getDefaultValue(key))
   return isNaN(num) ? defaults : num
 }
 
