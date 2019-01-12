@@ -151,6 +151,22 @@ AppChargeur.prototype.isSkillIdExcludedFromStack = function isSkillIdExcludedFro
 }
 
 /**
+ * Register a notification channel so that apps could declare their interests on the notification.
+ *
+ * > NOTE: should be invoked on component's init or construction. Doesn't work on apps loaded before
+ * the registration.
+ *
+ * @param {string} name
+ */
+AppChargeur.prototype.registerNotificationChannel = function registerNotificationChannel (name) {
+  if (this.notifications[name] != null) {
+    return
+  }
+  logger.info(`registering notification channel '${name}'`)
+  this.notifications[name] = []
+}
+
+/**
  * Directly set manifest for appId and populate its skills and permissions.
  *
  * @param {string} appId
@@ -351,6 +367,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
       throw new Error(`manifest.notification '${notification}' by '${appId}' type mismatch, expecting a string or an array.`)
     }
     if (Object.keys(this.notifications).indexOf(notification) < 0) {
+      logger.debug(`Unknown notification chanel ${notification}`)
       return
     }
     this.notifications[notification].push(appId)
