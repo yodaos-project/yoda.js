@@ -644,8 +644,7 @@ module.exports.getAvailableInfo = getAvailableInfo
 module.exports.getInfoIfFirstUpgradedBoot = getInfoIfFirstUpgradedBoot
 module.exports.getInfoOfPendingUpgrade = getInfoOfPendingUpgrade
 module.exports.getMqttOtaReport = getMqttOtaReport
-module.exports.network = otaNetwork
-module.exports.condition = require('./condition')
+Object.assign(module.exports, otaNetwork)
 /**
  * Change ota working directory in unit tests
  * @private
