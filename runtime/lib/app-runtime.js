@@ -517,12 +517,13 @@ AppRuntime.prototype.dispatchNotification = function dispatchNotification (chann
       break
     case 'running':
       appIds = appIds.filter(it => this.component.appScheduler.isAppRunning(it))
+      break
   }
 
   if (params == null) {
     params = []
   }
-  logger.info(`on system notification(${channel}):`, appIds, `with filter option '${filterOption}'`)
+  logger.info(`on system notification(${channel}): ${appIds} with filter option '${filterOption}'`)
 
   var self = this
   return step(0)
