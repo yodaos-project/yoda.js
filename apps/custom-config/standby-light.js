@@ -3,9 +3,6 @@ var property = require('@yoda/property')
 var BaseConfig = require('./base-config')
 var logger = require('logger')('custom-config-standby')
 
-var LIGHT_SWITCH_OPEN = '灯光已开启'
-var LIGHT_SWITCH_CLOSE = '灯光已关闭'
-var CONFIG_FAILED = '设置失败'
 var STANDBY_LIGHT_JS = 'system://setSysStandby.js'
 var SWITCH_OPEN = 'open'
 var SWITCH_CLOSE = 'close'
@@ -17,6 +14,11 @@ class StandbyLight extends BaseConfig {
   constructor (activity) {
     super(activity)
     this.initStandbyLight()
+    this.tts = {
+      'open': '灯光已开启',
+      'close': '灯光已关闭',
+      'error': '设置失败'
+    }
   }
 
   /**
@@ -25,7 +27,7 @@ class StandbyLight extends BaseConfig {
    */
   getIntentMap () {
     return {
-      lightswitch: this.applyStandbyLightSwitch.bind(this)
+      lightswitch: this.applyStandbyLightSwitch.bind(this, true)
     }
   }
 
@@ -57,16 +59,17 @@ class StandbyLight extends BaseConfig {
    */
   onStandbyLightSwitchStatusChanged (queryObj) {
     if (queryObj) {
-      this.applyStandbyLightSwitch(queryObj.action, queryObj.isFirstLoad)
+      this.applyStandbyLightSwitch(false, queryObj.action, queryObj.isFirstLoad)
     }
   }
 
   /**
    * handler of the intent
+   * @param {boolean} isFromIntent
    * @param {string} action
    * @param {boolean} isFirstLoad
    */
-  applyStandbyLightSwitch (action, isFirstLoad) {
+  applyStandbyLightSwitch (isFromIntent, action, isFirstLoad) {
     if (action) {
       property.set('sys.standbylightswitch', action, 'persist')
       if (action === SWITCH_OPEN) {
@@ -77,12 +80,28 @@ class StandbyLight extends BaseConfig {
         this.activity.light.stop(STANDBY_LIGHT_JS)
       }
       if (!isFirstLoad) {
-        if (action === SWITCH_OPEN) {
-          this.activity.tts.speak(LIGHT_SWITCH_OPEN).then(() => this.activity.exit())
-        } else if (action === SWITCH_CLOSE) {
-          this.activity.tts.speak(LIGHT_SWITCH_CLOSE).then(() => this.activity.exit())
+        if (this.tts.hasOwnProperty(action)) {
+          if (isFromIntent) {
+            this.activity.tts.speak(this.tts[action]).then(() => {
+              return this.activity.httpgw.request(
+                '/v1/device/deviceManager/addOrUpdateDeviceInfo',
+                {
+                  namespace: 'custom_config',
+                  values: {
+                    standbyLight: `{"action":"${action}"}`
+                  }
+                }, {})
+            }).then((data) => {
+              this.activity.exit()
+            }).catch((err) => {
+              logger.warn(`request cloud api error: ${err}`)
+              this.activity.exit()
+            })
+          } else {
+            this.activity.tts.speak(this.tts[action]).then(() => this.activity.exit())
+          }
         } else {
-          this.activity.tts.speak(CONFIG_FAILED).then(() => this.activity.exit())
+          this.activity.tts.speak(this.tts.error).then(() => this.activity.exit())
         }
       }
     }
