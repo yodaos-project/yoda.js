@@ -8,7 +8,7 @@ module.exports = function (activity) {
   var STRING_OUT_OF_RANGE_MAX = '已经是最大的音量了'
   var STRING_OUT_OF_RANGE = '音量调节超出范围'
   var STRING_SHOW_VOLUME = '当前音量为百分之'
-  var STRING_SHOW_MUTED = '设备已静音，已帮你调回到百分之'
+  var STRING_SHOW_MUTED = '设备静音了，已帮你调回到百分之'
   var STRING_VOLUME_ALTERED = '音量百分之'
   var STRING_VOLUME_ADJUST_HELP = '音量百分之%d，如果想快速调节，你可以直接对我说，音量调到百分之%d'
 
@@ -156,7 +156,7 @@ module.exports = function (activity) {
       }
     } else {
       slowlyAdjustTimestamp = Date.now()
-      slowlyAdjustCounter = 0
+      slowlyAdjustCounter = 1
     }
 
     var future
@@ -165,15 +165,15 @@ module.exports = function (activity) {
       overrideOpt.type = 'effect'
     }
     if (partition > 0) {
-      future = incVolume(100 / partition, Object.assign(options))
+      future = incVolume(100 / partition, Object.assign({}, options, overrideOpt))
     } else {
-      future = decVolume(100 / partition, Object.assign(options))
+      future = decVolume(100 / -partition, Object.assign({}, options, overrideOpt))
     }
     return future.then(newVolume => {
       if (!shouldAnnounceHelp || !couldAnnounce) {
         return
       }
-      return activity.tts.speak(STRING_VOLUME_ADJUST_HELP.replace('%d', newVolume))
+      return activity.tts.speak(STRING_VOLUME_ADJUST_HELP.replace(/%d/g, newVolume))
     })
   }
 
@@ -293,10 +293,15 @@ module.exports = function (activity) {
         setVolume(10, { type: 'announce' })
           .then(() => activity.exit())
         break
-      case 'volumemax':
+      case 'volumemax': {
+        vol = getVolume()
+        if (vol >= 100) {
+          return activity.tts.speak(STRING_OUT_OF_RANGE_MAX)
+        }
         setVolume(100, { type: 'announce' })
           .then(() => activity.exit())
         break
+      }
       case 'volumemute':
         setMute()
           .then(() => activity.exit())
