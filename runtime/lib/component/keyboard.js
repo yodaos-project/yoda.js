@@ -31,7 +31,8 @@ KeyboardHandler.prototype.init = function init () {
 }
 
 KeyboardHandler.prototype.deinit = function deinit () {
-  this.input.disconnect()
+  this.input && this.input.disconnect()
+  this.input = null
 }
 
 KeyboardHandler.prototype.execute = function execute (descriptor) {
