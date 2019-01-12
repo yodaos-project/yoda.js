@@ -3,6 +3,8 @@ var logger = require('logger')('custom-config-runtime')
 var config = require('/etc/yoda/custom-config.json')
 var querystring = require('querystring')
 var safeParse = require('@yoda/util').json.safeParse
+var EventEmitter = require('events')
+var property = require('@yoda/property')
 
 /**
  * handle all custom-config
