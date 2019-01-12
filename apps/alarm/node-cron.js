@@ -49,53 +49,7 @@ module.exports = (function () {
       }
       return false
     }
-    /**
-     * get combined reminders tts
-     *
-     * @returns {string} combined tts.
-     */
-    this.combineReminderTts = function (activeId) {
-      if (self.reminderQueue.length === 0) {
-        return ''
-      }
-      var sortQueue = self.reminderQueue.sort()
 
-      // same reminder compare
-      var combinedTTS = ''
-      var reminderList = []
-      for (var i = 0; i < sortQueue.length; i++) {
-        var jobObj = self.jobs[sortQueue[i]]
-        if (jobObj) {
-          var currentObj = {
-            type: self.jobs[activeId].type,
-            expression: self.jobs[activeId].expression,
-            createTime: self.jobs[activeId].createTime
-          }
-          var referedObj = {
-            type: jobObj.type,
-            expression: jobObj.expression,
-            createTime: jobObj.createTime
-          }
-          if (isSameReminders(currentObj, referedObj)) {
-            combinedTTS += jobObj.tts
-            reminderList.push({
-              id: jobObj.id,
-              createTime: jobObj.createTime,
-              type: jobObj.type,
-              tts: jobObj.tts,
-              url: jobObj.url,
-              mode: jobObj.mode,
-              time: jobObj.time,
-              date: jobObj.date
-            })
-          }
-        }
-      }
-      return {
-        combinedTTS: combinedTTS,
-        reminderList: reminderList
-      }
-    }
     /**
      * clear reminders tts queue
      */
@@ -115,18 +69,6 @@ module.exports = (function () {
       return false
     }
 
-    function isSameReminders (current, refered) {
-      var currentInterval = CronExpression.parseSync(current.expression)
-      var referedInterval = CronExpression.parseSync(refered.expression)
-      var currentTime = Math.floor(currentInterval.next().getTime() / 1000)
-      var referedTime = Math.floor(referedInterval.next().getTime() / 1000)
-      // no concurrency alarm or reminder
-      if (currentTime > referedTime + 1 || currentTime < referedTime - 1) {
-        return false
-      }
-      return true
-    }
-
     this.getJobConfig = function (id) {
       var isRunnable = false
       if (self.jobs[id].type === 'Remind') {
@@ -139,7 +81,8 @@ module.exports = (function () {
           var currentObj = {
             type: self.jobs[id].type,
             expression: self.jobs[id].expression,
-            createTime: self.jobs[id].createTime
+            createTime: self.jobs[id].createTime,
+            tts: self.jobs[id].tts
           }
           var referedObj = {
             type: self.jobs[key].type,
@@ -151,10 +94,11 @@ module.exports = (function () {
             if (clearPrevReminders(currentObj, referedObj)) {
               self.reminderQueue.splice(key, 1)
             }
-            isRunnable = true
-            break
+            isRunnable = compareResult
           } else {
             isRunnable = compareResult
+          }
+          if (!compareResult) {
             break
           }
         } else {
