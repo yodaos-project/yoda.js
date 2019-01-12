@@ -5,12 +5,7 @@ var exodus = require('@yoda/exodus')
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/yodart-err.log')
-require('./watchdog').startFeeding((err) => {
-  if (err) {
-    logger.error(`watchdog failed to create(${err && err.message}), just exits`)
-    process.exit(1)
-  }
-})
+
 var AppRuntime = require('../../lib/app-runtime')
 
 ;(function init () {
@@ -34,5 +29,13 @@ function entry () {
 
     var runtime = new AppRuntime()
     runtime.init()
+
+    // starts the watchdog when the runtime is initialized.
+    require('./watchdog').startFeeding((err) => {
+      if (err) {
+        logger.error(`watchdog failed to create(${err && err.message}), just exits`)
+        process.exit(1)
+      }
+    })
   })
 }
