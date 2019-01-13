@@ -95,16 +95,16 @@ function BluetoothA2dp (deviceName) {
   this.lastMode = protocol.A2DP_MODE.SINK // last used a2dp mode
   this.localName = deviceName // local bluetooth device name
 
-  this._flora = new FloraComp(logger)
-  this._flora.handlers = {
-    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
-    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
-  }
-  this._flora.init(null, {
+  this._flora = new FloraComp(null, {
     'uri': 'unix:/var/run/flora.sock',
     'bufsize': 40960,
     'reconnInterval': 10000
   })
+  this._flora.handlers = {
+    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
+    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
+  }
+  this._flora.init()
 }
 inherits(BluetoothA2dp, EventEmitter)
 
