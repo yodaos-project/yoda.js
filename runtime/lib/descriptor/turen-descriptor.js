@@ -20,6 +20,13 @@ function TurenDescriptor (activityDescriptor, appId, appHome, runtime) {
   this._appId = appId
   this._appHome = appHome
   this._runtime = runtime
+  this._shouldRecoverTuren = false
+
+  this._activityDescriptor.on('destruct', () => {
+    if (this._shouldRecoverTuren) {
+      this._runtime.component.turen.toggleWakeUpEngine(true)
+    }
+  })
 }
 inherits(TurenDescriptor, EventEmitter)
 TurenDescriptor.prototype.toJSON = function toJSON () {
@@ -61,6 +68,42 @@ Object.assign(TurenDescriptor.prototype,
       returns: 'promise',
       fn: function deleteVtWord (activationTxt) {
         return this._runtime.component.turen.deleteVtWord(activationTxt)
+      }
+    },
+    /**
+     * Disable wake up processing engine if `enabled` is false, or enable the process if `enabled` is true.
+     * Switch enabled state if `enabled` is not set.
+     *
+     * Turen would be re-enabled on app exits if app did not recover the states.
+     *
+     * @memberof yodaRT.activity.Activity.TurenClient
+     * @instance
+     * @function setTurenEnabled
+     * @param {boolean} [enabled] - set turen wake up engine as disabled, switch if not given.
+     * @returns {Promise<boolean>}
+     */
+    setTurenEnabled: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setTurenEnabled (enabled) {
+        var ret = this._runtime.component.turen.toggleWakeUpEngine(enabled)
+        this._shouldRecoverTuren = !ret
+        return ret
+      }
+    },
+    /**
+     * Get if turen wake up engine is disabled.
+     *
+     * @memberof yodaRT.activity.Activity.TurenClient
+     * @instance
+     * @function getTurenEnabled
+     * @returns {Promise<boolean>}
+     */
+    getTurenEnabled: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getTurenEnabled () {
+        return Promise.resolve(this._runtime.component.turen.enabled)
       }
     }
   }

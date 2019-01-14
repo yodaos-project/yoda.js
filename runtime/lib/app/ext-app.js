@@ -50,6 +50,11 @@ function createExtApp (appId, metadata, runtime, mode) {
 
   var eventBus = new EventBus(descriptor, cp, appId)
   var onMessage = eventBus.onMessage.bind(eventBus)
+  var onDestruct = () => {
+    logger.info(`${appId}(${cp.pid}) Activity end of life, killing process.`)
+    cp.kill()
+  }
+  descriptor.once('destruct', onDestruct)
   cp.on('message', onMessage)
   cp.once('disconnect', function onDisconnected () {
     logger.info(`${appId}(${cp.pid}) Child process disconnected from VuiDaemon.`)
@@ -61,13 +66,10 @@ function createExtApp (appId, metadata, runtime, mode) {
   })
   cp.once('exit', (code, signal) => {
     logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
+    descriptor.removeListener('destruct', onDestruct)
     descriptor.emit('exit', code, signal)
     eventBus.emit('status-report:exit')
     eventBus.removeAllListeners()
-  })
-  descriptor.once('destruct', () => {
-    logger.info(`${appId}(${cp.pid}) Activity end of life, killing process.`)
-    cp.kill()
   })
   eventBus.once('application-not-responding', () => {
     logger.error(`${appId}(${cp.pid}) application not responding`)
