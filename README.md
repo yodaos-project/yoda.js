@@ -2,8 +2,9 @@
 
 [![Build Status](https://ci.rokid.com/buildStatus/icon?job=rokid-ci-yodart-unit-tests)](https://ci.rokid.com/job/rokid-ci-yodart-unit-tests)
 [![codecov](https://codecov.io/gh/yodaos-project/yodart/branch/master/graph/badge.svg)](https://codecov.io/gh/yodaos-project/yodart)
+[![License](https://img.shields.io/badge/licence-apache%202.0-green.svg)](LICENSE.md)
 
-YodaRT is the JavaScript layer in YodaOS. It provides the main functionalities includes:
+YODAOS runtime is the JavaScript layer in [YODAOS][]. It provides the main functionalities includes:
 
 - Getting and handling NLP request
 - Playing music and TTS
@@ -62,21 +63,11 @@ situation with ease:
 $ npm restart
 ```
 
-## Tools
-
-Generate the API references:
-
-```shell
-$ npm run website
-$ open website/docs/index.html
-```
-
-How to configure to a device:
-
-```shell
-$ ./tools/configure-network -s <ssid> -p <psk> -m <masterId>
-```
+For more useful development tools, see [tools](./tools#yodaos-core-tools).
 
 ## License
 
-Apache v2.0
+[Apache-2.0](LICENSE.md)
+
+[YODAOS]: https://github.com/yodaos-project/yodaos
+
