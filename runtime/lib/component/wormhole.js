@@ -230,7 +230,7 @@ Wormhole.prototype.setOnline = function setOnline () {
     return
   }
   logger.info('connecting mqtt proactively')
-  this.mqtt.start()
+  this.mqtt.start({ forceRefresh: true, forceReconnect: true })
 }
 
 Wormhole.prototype.updateVolume = function updateVolume () {
