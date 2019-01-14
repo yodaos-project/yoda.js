@@ -63,7 +63,11 @@ module.exports = {
 function NetworkListener () {
   EventEmitter.call(this)
   this._online = null
-  this._flora = new FloraComp(logger)
+  this._flora = new FloraComp('wifi', {
+    'uri': 'unix:/var/run/flora.sock',
+    'bufsize': 40960,
+    'reconnInterval': 10000
+  })
   this._flora.handlers = {
     'network': this._onevent.bind(this)
   }
@@ -77,11 +81,7 @@ inherits(NetworkListener, EventEmitter)
  * @fires module:@yoda/wifi.NetworkListener#error
  */
 NetworkListener.prototype.start = function start () {
-  this._flora.init('wifi', {
-    'uri': 'unix:/var/run/flora.sock',
-    'bufsize': 40960,
-    'reconnInterval': 10000
-  })
+  this._flora.init()
 }
 
 /**

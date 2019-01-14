@@ -95,16 +95,16 @@ function BluetoothA2dp (deviceName) {
   this.lastMode = protocol.A2DP_MODE.SINK // last used a2dp mode
   this.localName = deviceName // local bluetooth device name
 
-  this._flora = new FloraComp(logger)
-  this._flora.handlers = {
-    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
-    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
-  }
-  this._flora.init(null, {
+  this._flora = new FloraComp(null, {
     'uri': 'unix:/var/run/flora.sock',
     'bufsize': 40960,
     'reconnInterval': 10000
   })
+  this._flora.handlers = {
+    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
+    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
+  }
+  this._flora.init()
 }
 inherits(BluetoothA2dp, EventEmitter)
 
@@ -137,6 +137,7 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       if (this.matchState(msg, this.lastMsg)) {
         logger.warn(`Received ${mode} same msg!`)
       }
+      this.lastMsg = Object.assign(this.lastMsg, msg)
       var stateHit = false
       stateFilters.forEach((filter) => {
         if (this.matchState(msg, filter.inflowMsg)) {
@@ -155,7 +156,6 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       if (!stateHit) {
         logger.warn(`Mismatch state, please check state-mapping!`)
       }
-      this.lastMsg = Object.assign(this.lastMsg, msg)
     } else if (msg.action === 'volumechange') {
       var vol = msg.value
       if (vol === undefined) {
