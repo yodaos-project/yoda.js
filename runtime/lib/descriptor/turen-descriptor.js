@@ -78,14 +78,14 @@ Object.assign(TurenDescriptor.prototype,
      *
      * @memberof yodaRT.activity.Activity.TurenClient
      * @instance
-     * @function setTurenEnabled
+     * @function setEnabled
      * @param {boolean} [enabled] - set turen wake up engine as disabled, switch if not given.
      * @returns {Promise<boolean>}
      */
-    setTurenEnabled: {
+    setEnabled: {
       type: 'method',
       returns: 'promise',
-      fn: function setTurenEnabled (enabled) {
+      fn: function setEnabled (enabled) {
         var ret = this._runtime.component.turen.toggleWakeUpEngine(enabled)
         this._shouldRecoverTuren = !ret
         return ret
@@ -96,13 +96,13 @@ Object.assign(TurenDescriptor.prototype,
      *
      * @memberof yodaRT.activity.Activity.TurenClient
      * @instance
-     * @function getTurenEnabled
+     * @function getEnabled
      * @returns {Promise<boolean>}
      */
-    getTurenEnabled: {
+    getEnabled: {
       type: 'method',
       returns: 'promise',
-      fn: function getTurenEnabled () {
+      fn: function getEnabled () {
         return Promise.resolve(this._runtime.component.turen.enabled)
       }
     }
