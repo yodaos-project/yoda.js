@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/yodaos-project/yodart/branch/master/graph/badge.svg)](https://codecov.io/gh/yodaos-project/yodart)
 [![License](https://img.shields.io/badge/licence-apache%202.0-green.svg)](LICENSE.md)
 
-YODAOS runtime is the JavaScript layer in [YodaOS][]. It provides the main functionalities includes:
+YODAOS runtime is the JavaScript layer in [YODAOS][]. It provides the main functionalities includes:
 
 - Getting and handling NLP request
 - Playing music and TTS
