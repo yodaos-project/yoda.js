@@ -108,7 +108,7 @@ module.exports = function (name) {
  * @example
  * var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
  * // enable
- * setGlobalUploadLevel(level, "your gw token")
+ * setGlobalUploadLevel(level, "your gw authorization")
  * // disable
  * setGlobalUploadLevel(logLevels.none)
  *
@@ -116,7 +116,7 @@ module.exports = function (name) {
  * @param {number} level - set logLevels.none to disable;
  *                         set level between
  *                         [verbose, error] to enable
- * @param {string} token - cloudgw token
+ * @param {string} authorization - cloudgw authorization
  * @throws {error} level out of range or missing authorization
  */
 module.exports.setGlobalUploadLevel = function (level, authorization) {
