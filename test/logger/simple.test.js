@@ -7,14 +7,6 @@ var logger = require('logger')('log')
 var levels = require('logger').levels
 var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
 
-var levels = [
-  'verbose',
-  'debug',
-  'info',
-  'warn',
-  'error'
-]
-
 test('simple ', (t) => {
   t.plan(levels.length)
   var text = 'foobar'
