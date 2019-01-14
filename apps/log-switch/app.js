@@ -4,6 +4,7 @@ var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
 var logger = require('logger')('log-switch')
 var cloudgw = require('@yoda/cloudgw')
 var property = require('@yoda/property')
+var _ = require('@yoda/util')._
 var persistKey = 'log.cloud.level'
 var expireKey = 'log.cloud.expire'
 var switchDefaultTimeout = 60 * 1000
@@ -30,8 +31,8 @@ module.exports = function (activity) {
   })
   activity.on('request', (nlp, action) => {
     if (nlp.intent === 'RokidAppChannelForward') {
-      var level = parseInt(nlp.forwardContent.intent)
-      var timeout = parseInt(nlp.forwardContent.slots.timeout)
+      var level = _.get(nlp, 'forwardContent.intent', 0)
+      var timeout = _.get(nlp, 'forwardContent.slots.timeout', 0)
       onCloudLogLevelSwitch(activity, level, timeout)
     }
   })
