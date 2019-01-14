@@ -1134,11 +1134,10 @@ AppRuntime.prototype.onLoggedIn = function () {
     this.startDaemonApps(),
     this.setStartupFlag(),
     this.initiate()
-      .then(deferred, err => {
-        logger.error('Unexpected error on runtime.initiate', err.stack)
-        return deferred()
-      })
-  ]).then(onDone, err => {
+  ]).then(deferred, err => {
+    logger.error('Unexpected error on bootstrap', err.stack)
+    return deferred()
+  }).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()
   })
