@@ -46,5 +46,13 @@
       "preemptive": true,
       "form": "cut"
     }
+  },
+  "gsensor": {
+    "dataType": "object",
+    "stringify": false,
+    "appOption": {
+      "preemptive": true,
+      "form": "cut"
+    }
   }
 }

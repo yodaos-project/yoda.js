@@ -5,6 +5,7 @@ var WakeupEffect = require('./wakeup-effect')
 var StandbyLight = require('./standby-light')
 var ContinuousDialog = require('./continuous-dialog')
 var VtWord = require('./vt-word')
+var GSensor = require('./g-sensor')
 
 module.exports = function CustomConfig (activity) {
   var intentMap = {}
@@ -14,6 +15,7 @@ module.exports = function CustomConfig (activity) {
   processorList.push(new WakeupEffect(activity))
   processorList.push(new ContinuousDialog(activity))
   processorList.push(new VtWord(activity))
+  processorList.push(new GSensor(activity))
   for (var i = 0; i < processorList.length; ++i) {
     var tmpIntentMap = processorList[i].getIntentMap()
     for (var intentKey in tmpIntentMap) {
