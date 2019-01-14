@@ -16,6 +16,11 @@ function Turen (runtime) {
    */
   this.muted = false
 
+  /**
+   * indicates if turen is enabled to processing wake ups.
+   */
+  this.enabled = true
+
   /** if device is awaken */
   this.awaken = false
   /**
@@ -462,6 +467,20 @@ Turen.prototype.pickup = function pickup (isPickup) {
     clearTimeout(this.solitaryVoiceComingTimer)
     clearTimeout(this.noVoiceInputTimer)
   }
+}
+
+/**
+ * Set whether or not turenproc should processing wake ups. By default toggles the switch.
+ *
+ * @param {boolean} [enabled]
+ */
+Turen.prototype.toggleWakeUpEngine = function toggleWakeUpEngine (enabled) {
+  if (enabled == null) {
+    enabled = !this.enabled
+  }
+  this.enabled = enabled
+  this.component.flora.post('rokid.turen.disable.wakeupEngine', [ enabled ? 0 : 1 ])
+  return this.enabled
 }
 
 /**
