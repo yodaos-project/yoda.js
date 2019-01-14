@@ -205,12 +205,32 @@ Wormhole.prototype.sendToApp = function sendToApp (topic, data) {
   return Promise.resolve()
 }
 
+/**
+ * Abort MQTT connection if possible.
+ *
+ * > Possible next step: Wormhole.prototype.setOnline
+ */
 Wormhole.prototype.setOffline = function setOffline () {
   if (this.mqtt == null) {
+    logger.info('mqtt client not initialized, skip setOffline')
     return
   }
   logger.info('disconnecting mqtt proactively')
   this.mqtt.suspend()
+}
+
+/**
+ * Establish MQTT connection if possible.
+ *
+ * > Possible next step: Wormhole.prototype.setOffline
+ */
+Wormhole.prototype.setOnline = function setOnline () {
+  if (this.mqtt == null) {
+    logger.info('mqtt client not initialized, skip setOnline')
+    return
+  }
+  logger.info('connecting mqtt proactively')
+  this.mqtt.start()
 }
 
 Wormhole.prototype.updateVolume = function updateVolume () {
