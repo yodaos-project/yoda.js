@@ -30,7 +30,7 @@ var LIGHTD_INTERFACE = 'com.rokid.light.key'
 
 var _TTS = null
 var _CONFIG = null
-var _isTtsConnected = false
+var _isTtsStartup = false
 var _fristRetryHandle = null
 
 var lightd = new Remote(dbusService._dbus, {
@@ -97,8 +97,8 @@ function reConnect (CONFIG) {
 
     _TTS = TtsWrap.createTts(_CONFIG)
     _TTS.on('start', function onstart (id, errno) {
-      if (_isTtsConnected === false) {
-        _isTtsConnected = true
+      if (_isTtsStartup === false) {
+        _isTtsStartup = true
         logger.info('first time to start the tts job, set the tts connected.')
       } else if (_fristRetryHandle) {
         clearTimeout(_fristRetryHandle)
@@ -189,7 +189,7 @@ function reConnect (CONFIG) {
       service.ignoreTtsEvent = false
 
       // the error(101) means the connection not available.
-      if (errno === 101 && _isTtsConnected === false) {
+      if (errno === 101 && _isTtsStartup === false) {
         _fristRetryHandle = setTimeout(() => service.resume(), 2000)
         return
       }
