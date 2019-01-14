@@ -41,14 +41,6 @@ class OTA {
     if (nowHour >= 22/** 22pm */ || nowHour <= 7 /** 7am */) {
       return Promise.resolve(false)
     }
-    // TODO: move to ota.conditions
-    if (this.component.battery.batSupported) {
-      if (!this.component.battery.isCharging()) {
-        if (this.component.battery.getBatteryLevel() < 50) {
-          return false
-        }
-      }
-    }
     this.forceUpdateAvailable = false
 
     return getInfoOfPendingUpgradeAsync()
@@ -60,6 +52,7 @@ class OTA {
         return ota.conditions.getAvailabilityOfOta(upgradeInfo)
           .then(available => {
             if (!available) {
+              this.forceUpdateAvailable = true
               return false
             }
             return this.startForceUpdate(upgradeInfo)
