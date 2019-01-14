@@ -103,8 +103,9 @@ ExternalProject_Add(activation
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
-file(GLOB YODA_CONFIG_FILES ./etc/*.json)
+file(GLOB YODA_CONFIG_FILES ./etc/yoda/*.json)
 install(FILES ${YODA_CONFIG_FILES} DESTINATION /etc/yoda)
+install(FILES ./etc/manifest.json DESTINATION /etc)
 install(DIRECTORY ./runtime/ DESTINATION /usr/yoda
         PATTERN "**/OWNERS" EXCLUDE
         PATTERN "**/*.md" EXCLUDE
