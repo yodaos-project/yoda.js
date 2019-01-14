@@ -64,10 +64,9 @@ AppChargeur.prototype.reload = function reload (appId) {
   /** appId -> manifest */
   this.appManifests = {}
 
-  this.notifications = {
-    'on-ready': [],
-    'on-network-connected': []
-  }
+  Object.keys(this.notifications).forEach(it => {
+    this.notifications[it] = []
+  })
 
   return this.loadPaths(this.config.paths)
 }
