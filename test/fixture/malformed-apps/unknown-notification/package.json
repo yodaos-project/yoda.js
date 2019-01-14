@@ -1,0 +1,8 @@
+{
+  "name": "unknown-notification",
+  "metadata": {
+    "skills": [
+      "skill-id-foobar"
+    ]
+  }
+}

@@ -367,11 +367,11 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     }
     if (Object.keys(this.notifications).indexOf(notification) < 0) {
       logger.debug(`Unknown notification chanel ${notification}`)
-      return
+      return /** error tolerance */
     }
     this.notifications[notification].push(appId)
     return [notification]
-  })
+  }).filter(it => it != null)
 
   this.runtime.component.permission.load(appId, permissions)
   this.appManifests[appId] = Object.assign(_.pick(manifest, 'daemon', 'objectPath', 'ifaceName'), {
