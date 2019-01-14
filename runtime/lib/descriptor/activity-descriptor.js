@@ -49,6 +49,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
   this._runtime = runtime
 
   this._registeredDbusSignals = []
+  this._destructed = false
 
   /**
    * The `LightClient` is used to control LED APIs.
@@ -139,6 +140,11 @@ ActivityDescriptor.prototype.toString = function toString () {
   return `ActivityDescriptor(appId=>${this._appId}, appHome=>${this._appHome})`
 }
 ActivityDescriptor.prototype.destruct = function destruct () {
+  if (this._destructed) {
+    return
+  }
+  this._destructed = true
+
   this._registeredDbusSignals.forEach(it => {
     this._runtime.component.dbusRegistry.removeAllListeners(it)
   })

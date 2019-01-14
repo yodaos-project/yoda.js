@@ -77,6 +77,7 @@ AppRuntime.prototype.init = function init () {
   this.componentsInvoke('init')
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
+  this.component.turen.toggleWakeUpEngine(true)
 
   this.component.lifetime.on('stack-reset', () => {
     this.resetCloudStack()
