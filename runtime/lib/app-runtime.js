@@ -55,7 +55,6 @@ function AppRuntime () {
   this.shouldWelcome = true
 
   this.componentLoader = new Loader(this, 'component')
-  logger.error(ComponentConfig.stages)
   this.componentLoader.load(ComponentConfig.paths, ComponentConfig.stages)
 
   // identify load app complete
@@ -74,6 +73,11 @@ AppRuntime.prototype.init = function init () {
     return Promise.resolve()
   }
   this.componentsInvoke('init')
+  if (this.shouldWelcome) {
+    this.component.light.appSound('@yoda', 'system://boot.ogg')
+    this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+    logger.error('xxxx    played')
+  }
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
   this.component.turen.toggleWakeUpEngine(true)
@@ -106,10 +110,6 @@ AppRuntime.prototype.init = function init () {
     if (delegation) {
       return
     }
-    if (this.shouldWelcome) {
-      this.component.light.appSound('@yoda', 'system://boot.ogg')
-      this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
-    }
     this.component.custodian.prepareNetwork()
   })
 }
@@ -133,7 +133,6 @@ AppRuntime.prototype.componentsInvoke = function componentsInvoke (method, args)
   }
   Object.keys(this.componentLoader.registry).forEach(it => {
     var comp = this.component[it]
-    logger.error(`12 ${method}`)
     var fn = comp[method]
     if (typeof fn === 'function') {
       fn.apply(comp, args)

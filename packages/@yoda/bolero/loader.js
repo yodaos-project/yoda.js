@@ -56,7 +56,12 @@ class Loader {
         stages.base_component.forEach(fileName => {
           if (fileName === it) {
             var comp = require(path.join(dirInfo.dir, it))
-            this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
+            try{
+              this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
+            } catch (err) {
+              //todo remove filename after first loading
+              logger.error(`stage 1: ${err}`)
+            }
           }
         })
       })
@@ -70,6 +75,7 @@ class Loader {
               this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
             } catch (err) {
               //todo remove filename after first loading
+              logger.error(err)
             }
           }))
       })
@@ -105,11 +111,15 @@ class Loader {
    */
   register (name, Klass) {
     name = _.camelCase(name)
-    if (this.registry[name]) {
-      throw new Error(`Conflict registration on '${name}'.`)
+    // if (this.registry[name]) {
+    //   throw new Error(`Conflict registration on '${name}'.`)
+    // }
+    // this.registry[name] = Klass
+    // this.loadToTarget(name, Klass)
+    if (!this.registry[name]) {
+      this.registry[name] = Klass
+      this.loadToTarget(name, Klass)
     }
-    this.registry[name] = Klass
-    this.loadToTarget(name, Klass)
   }
 }
 
