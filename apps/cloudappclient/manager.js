@@ -13,7 +13,7 @@ function Manager (exe, Skill) {
   this.Skill = Skill
   this.skills = []
   this.isAppActive = true
-  //for gsensor roll in back,like strongpause
+  // for gsensor roll in back,like strongpause
   this.manualPause = false
 }
 inherits(Manager, EventEmitter)
@@ -107,7 +107,7 @@ Manager.prototype.append = function (nlp, action) {
 
 Manager.prototype.next = function (skill) {
   logger.log(`next skill`)
-  //if this flag equls true,means strong pause,so we do not exec next
+  // if this flag equls true,means strong pause,so we do not exec next
   if (this.getManualPauseFLag() === true) {
     return
   }
@@ -147,7 +147,7 @@ Manager.prototype.pause = function () {
 Manager.prototype.resume = function () {
   this.isAppActive = true
   var cur = this.getCurrentSkill()
-  //if top app is not self,do not resume immediately
+  // if top app is not self,do not resume immediately
   if (cur.paused === false) {
     return
   }
