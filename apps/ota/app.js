@@ -4,11 +4,11 @@ var _ = require('@yoda/util')._
 var ota = require('@yoda/ota')
 var system = require('@yoda/system')
 var logger = require('logger')('otap')
-var promisify = require('util')
+var util = require('util')
 
 var strings = require('./strings.json')
 
-var getAvailableInfoAsync = promisify(ota.getAvailableInfo)
+var getAvailableInfoAsync = util.promisify(ota.getAvailableInfo)
 
 var intentHandler = {
   start_sys_upgrade: checkUpdateAvailability,
@@ -61,18 +61,38 @@ function checkUpdateAvailability (activity) {
       return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
         .then(() => activity.exit())
     }
+    if (info.status === 'downloading') {
+      return ota.getImageDownloadProgress(progress => {
+        var utterance
+        if (isNaN(progress) || progress < 0 || progress >= 100) {
+          utterance = strings.UPDATES_START_DOWNLOADING
+        } else {
+          utterance = util.format(strings.UPDATES_ON_DOWNLOADING, progress)
+        }
+        return activity.tts.speak(utterance)
+          .then(() => activity.exit())
+      })
+    }
     if (info.status !== 'downloaded') {
       ota.runInBackground()
-      return activity.tts.speak(strings.UPDATES_DOWNLOADING)
+      return activity.tts.speak(strings.UPDATES_START_DOWNLOADING)
         .then(() => activity.exit())
     }
     return ota.condition.getAvailabilityOfOta(info)
-      .then(available => {
-        if (available !== true) {
-          // TODO: device not available for upgrade
-          return
+      .then(availability => {
+        switch (availability) {
+          case true:
+            return startUpgrade(activity, info.imagePath)
+          case 'low_power':
+            return activity.tts.speak(strings.UPDATE_NOT_AVAILABLE_LOW_POWER)
+              .then(() => activity.exit())
+          case 'extremely_low_power':
+            return activity.tts.speak(strings.UPDATE_NOT_AVAILABLE_EXTREMELY_LOW_POWER)
+              .then(() => activity.exit())
+          default:
+            return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
+              .then(() => activity.exit())
         }
-        startUpgrade(activity, info.imagePath)
       })
   }, error => {
     logger.error('Unexpected error on check available updates', error.stack)
@@ -96,7 +116,7 @@ function whatsCurrentVersion (activity) {
  * @param {URL} url
  */
 function onFirstBootAfterUpgrade (activity, url) {
-  activity.tts.speak(url.query.changelog)
+  activity.tts.speak(url.query.changelog || strings.OTA_UPDATE_SUCCESS)
     .then(
       () => activity.exit(),
       err => {
