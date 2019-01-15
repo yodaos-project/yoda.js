@@ -89,11 +89,9 @@ module.exports = LightRenderingContextManager
 function LightRenderingContextManager () {
   this.id = 0
   this.ledsConfig = light.getProfile()
-  var ledsConfig = light.getProfile()
-  for (var i = 0; i < ledsConfig.leds; ++i) {
-    realTimeRGBData.push({r:0, g:0, b:0, realA: 0, inputA: 1})
+  for (var i = 0; i < this.ledsConfig.leds; ++i) {
+    realTimeRGBData.push({r: 0, g: 0, b: 0, realA: 0, inputA: 1})
   }
-
 }
 
 /**
