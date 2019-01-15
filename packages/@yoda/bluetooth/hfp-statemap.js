@@ -38,12 +38,12 @@ var stateFilters = [
   },
   // incoming call
   {
-    inflowMsg: {hfpstate: 'opened', connect_state: 'connected', call: 'inactive', setup: 'incoming'},
+    inflowMsg: {hfpstate: 'opened', connect_state: 'connected', call: 'inactive', setup: 'incoming', held: 'none', audio: 'off'},
     outflowEvent: {type: 'call_state_changed', state: protocol.CALL_STATE.INCOMING}
   },
   // call end
   {
-    inflowMsg: {hfpstate: 'opened', connect_state: 'connected', call: 'inactive', setup: 'none'},
+    inflowMsg: {hfpstate: 'opened', connect_state: 'connected', call: 'inactive', setup: 'none', held: 'none', audio: 'off'},
     outflowEvent: {type: 'call_state_changed', state: protocol.CALL_STATE.IDLE}
   },
   // call connected
