@@ -12,7 +12,7 @@ module.exports = Flora
  * @param {AppRuntime} runtime
  */
 function Flora (light) {
-  FloraComp.call(this, logger)
+  FloraComp.call(this, 'lightd', floraConfig)
   this.light = light
 }
 inherits(Flora, FloraComp)
@@ -44,5 +44,5 @@ Flora.prototype.handlers = {
  * Initialize flora client.
  */
 Flora.prototype.init = function init () {
-  FloraComp.prototype.init.call(this, 'lightd', floraConfig)
+  FloraComp.prototype.init.call(this)
 }

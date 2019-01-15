@@ -77,6 +77,7 @@ AppRuntime.prototype.init = function init () {
   this.componentsInvoke('init')
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
+  this.component.turen.toggleWakeUpEngine(true)
 
   this.component.lifetime.on('stack-reset', () => {
     this.resetCloudStack()
@@ -501,16 +502,29 @@ AppRuntime.prototype.openUrl = function (url, options) {
  *
  * @param {string} channel
  * @param {any[]} params
+ * @param {object} [options]
+ * @param {'active' | 'running' | 'all'} [options.filterOption='all']
  */
-AppRuntime.prototype.dispatchNotification = function dispatchNotification (channel, params) {
+AppRuntime.prototype.dispatchNotification = function dispatchNotification (channel, params, options) {
+  var filterOption = _.get(options, 'filterOption', 'all')
   var appIds = this.component.appLoader.notifications[channel]
   if (!Array.isArray(appIds)) {
     return Promise.reject(new Error(`Unknown notification channel '${channel}'`))
   }
+  switch (filterOption) {
+    case 'active':
+      appIds = this.component.lifetime.activeSlots.toArray()
+        .filter(it => appIds.indexOf(it) >= 0)
+      break
+    case 'running':
+      appIds = appIds.filter(it => this.component.appScheduler.isAppRunning(it))
+      break
+  }
+
   if (params == null) {
     params = []
   }
-  logger.info(`on system notification(${channel}):`, appIds)
+  logger.info(`on system notification(${channel}): ${appIds} with filter option '${filterOption}'`)
 
   var self = this
   return step(0)
@@ -520,13 +534,17 @@ AppRuntime.prototype.dispatchNotification = function dispatchNotification (chann
       return Promise.resolve()
     }
     var appId = appIds[idx]
-    self.component.lifetime.createApp(appId)
-      /** force quit app on create error */
-      .catch(err => {
-        logger.error(`create app ${appId} failed`, err.stack)
-        return self.component.lifetime.destroyAppById(appId, { force: true })
-          .then(() => { /** rethrow error to break following procedures */throw err })
-      })
+    var future = Promise.resolve()
+    if (filterOption !== 'all') {
+      future = self.component.lifetime.createApp(appId)
+        /** force quit app on create error */
+        .catch(err => {
+          logger.error(`create app ${appId} failed`, err.stack)
+          return self.component.lifetime.destroyAppById(appId, { force: true })
+            .then(() => { /** rethrow error to break following procedures */throw err })
+        })
+    }
+    return future
       .then(() => self.component.lifetime.onLifeCycle(appId, 'notification', [ channel ].concat(params)))
       .catch(err => {
         logger.error(`send notification(${channel}) failed with appId: ${appId}`, err.stack)
@@ -1117,11 +1135,10 @@ AppRuntime.prototype.onLoggedIn = function () {
     this.startDaemonApps(),
     this.setStartupFlag(),
     this.initiate()
-      .then(deferred, err => {
-        logger.error('Unexpected error on runtime.initiate', err.stack)
-        return deferred()
-      })
-  ]).then(onDone, err => {
+  ]).then(deferred, err => {
+    logger.error('Unexpected error on bootstrap', err.stack)
+    return deferred()
+  }).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()
   })

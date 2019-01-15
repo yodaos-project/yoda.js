@@ -1,25 +1,28 @@
 'use strict'
 var property = require('@yoda/property')
 var BaseConfig = require('./base-config')
-
-var SWITCH_OPEN = 'open'
-var SWITCH_CLOSE = 'close'
-
-var PICKUP_SWITCH_OPEN = '已开启连续对话'
-var PICKUP_SWITCH_CLOSE = '收到,已关闭'
-var CONFIG_FAILED = '设置失败'
+var logger = require('logger')('custom-config-continuous-dialog')
 
 /**
  * continuous dialog handler
+ * @extends BaseConfig
  */
 class ContinuousDialog extends BaseConfig {
+  constructor (activity) {
+    super(activity)
+    this.tts = {
+      'open': '已开启连续对话',
+      'close': '收到,已关闭',
+      'error': '设置失败'
+    }
+  }
   /**
    * get intent map
    * @returns {object} - intent map
    */
   getIntentMap () {
     return {
-      pickupswitch: this.applyPickupSwitch.bind(this)
+      pickupswitch: this.applyPickupSwitch.bind(this, true)
     }
   }
 
@@ -39,25 +42,43 @@ class ContinuousDialog extends BaseConfig {
    */
   onPickupSwitchStatusChanged (queryObj) {
     if (queryObj) {
-      this.applyPickupSwitch(queryObj.action, queryObj.isFirstLoad)
+      this.applyPickupSwitch(false, queryObj.action, queryObj.isFirstLoad)
     }
   }
 
   /**
    * handler of intent
-   * @param action
-   * @param isFirstLoad
+   * @param {boolean} isFromIntent
+   * @param {string} action
+   * @param {boolean} isFirstLoad
    */
-  applyPickupSwitch (action, isFirstLoad) {
+  applyPickupSwitch (isFromIntent, action, isFirstLoad) {
     if (action) {
       property.set('sys.pickupswitch', action, 'persist')
       if (!isFirstLoad) {
-        if (action === SWITCH_OPEN) {
-          this.activity.tts.speak(PICKUP_SWITCH_OPEN).then(() => this.activity.exit())
-        } else if (action === SWITCH_CLOSE) {
-          this.activity.tts.speak(PICKUP_SWITCH_CLOSE).then(() => this.activity.exit())
+        if (this.tts.hasOwnProperty(action)) {
+          if (isFromIntent) {
+            this.activity.tts.speak(this.tts[action]).then(() => {
+              return this.activity.httpgw.request(
+                '/v1/device/deviceManager/addOrUpdateDeviceInfo',
+                {
+                  namespace: 'custom_config',
+                  values: {
+                    continuousDialog: `{"action":"${action}"}`
+                  }
+                },
+                {})
+            }).then((data) => {
+              this.activity.exit()
+            }).catch((err) => {
+              logger.warn(`request cloud api error: ${err}`)
+              this.activity.exit()
+            })
+          } else {
+            this.activity.tts.speak(this.tts[action]).then(() => this.activity.exit())
+          }
         } else {
-          this.activity.tts.speak(CONFIG_FAILED).then(() => this.activity.exit())
+          this.activity.tts.speak(this.tts.error).then(() => this.activity.exit())
         }
       }
     }
