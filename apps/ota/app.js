@@ -135,6 +135,7 @@ function startUpgrade (activity, imagePath, isForce) {
   logger.info(`using ota image ${imagePath}`)
   var ret = system.prepareOta(imagePath)
   if (ret !== 0) {
+    logger.error(`OTA prepared with status code ${ret}, terminating.`)
     return activity.tts.speak(strings.OTA_PREPARATION_FAILED)
       .then(() => activity.exit())
   }
