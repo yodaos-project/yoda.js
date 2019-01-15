@@ -261,7 +261,7 @@ module.exports = activity => {
   activity.on('notification', (state) => {
     switch (state) {
       case 'on-start-shake':
-        logger.log('on-start-shake')
+        logger.log('on-start-shake ')
         break
       case 'on-stop-shake':
         logger.log('on-stop-shake')
