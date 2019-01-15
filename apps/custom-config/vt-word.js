@@ -9,6 +9,10 @@ var safeParse = require('@yoda/util').json.safeParse
 var logger = require('logger')('custom-config-vtwords')
 var CloudGW = require('@yoda/cloudgw')
 
+/**
+ * vt words handler
+ * @extends BaseConfig
+ */
 class VtWord extends BaseConfig {
   /**
    * get the url handler object
