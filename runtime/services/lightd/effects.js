@@ -51,6 +51,7 @@ var path = require('path')
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
 var globalAlphaFactor = 1
+var realTimeRGBData = []
 var holdSoundConnect = true
 if (property.get('player.sound.holdcon', 'persist') === '0') {
   holdSoundConnect = false
@@ -87,6 +88,12 @@ module.exports = LightRenderingContextManager
  */
 function LightRenderingContextManager () {
   this.id = 0
+  this.ledsConfig = light.getProfile()
+  var ledsConfig = light.getProfile()
+  for (var i = 0; i < ledsConfig.leds; ++i) {
+    realTimeRGBData.push({r:0, g:0, b:0, realA: 0, inputA: 1})
+  }
+
 }
 
 /**
@@ -111,6 +118,12 @@ LightRenderingContextManager.prototype.getContext = function getContext () {
 LightRenderingContextManager.prototype.setGlobalAlphaFactor = function (alphaFactor) {
   logger.info(`global alpha factor has been set ${alphaFactor}`)
   globalAlphaFactor = alphaFactor
+  var context = new LightRenderingContext()
+  for (var i = 0; i < this.ledsConfig.leds; ++i) {
+    realTimeRGBData[i].realA = applyAlphaFactor(realTimeRGBData[i].inputA)
+    context.pixel(i, realTimeRGBData[i].r, realTimeRGBData[i].g, realTimeRGBData[i].b, realTimeRGBData[i].realA)
+  }
+  context.render()
 }
 
 /**
@@ -293,8 +306,15 @@ LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
-  a = applyAlphaFactor(a)
-  return light.pixel(pos, r, g, b, a)
+  var realA = applyAlphaFactor(a)
+  if (pos > 0 && pos < this.ledsConfig.leds) {
+    realTimeRGBData[pos].r = r
+    realTimeRGBData[pos].g = g
+    realTimeRGBData[pos].b = b
+    realTimeRGBData[pos].inputA = a
+    realTimeRGBData[pos].realA = realA
+  }
+  return light.pixel(pos, r, g, b, realA)
 }
 
 /**
@@ -312,8 +332,15 @@ LightRenderingContext.prototype.fill = function (r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
-  a = applyAlphaFactor(a)
-  return light.fill(r, g, b, a)
+  var realA = applyAlphaFactor(a)
+  for (var i = 0; i < this.ledsConfig.leds; ++i) {
+    realTimeRGBData[i].r = r
+    realTimeRGBData[i].g = g
+    realTimeRGBData[i].b = b
+    realTimeRGBData[i].inputA = a
+    realTimeRGBData[i].realA = realA
+  }
+  return light.fill(r, g, b, realA)
 }
 
 /**
