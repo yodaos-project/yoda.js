@@ -110,6 +110,7 @@ function downloadWav (wakeupSoundEffects, path) {
 
 /**
  * Wakeup effect processor
+ * @extends BaseConfig
  */
 class WakeupEffect extends BaseConfig {
   constructor (activity) {

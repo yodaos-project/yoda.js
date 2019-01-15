@@ -5,6 +5,7 @@ var logger = require('logger')('custom-config-g-sensor')
 
 /**
  * g-sensor handler
+ * @extends BaseConfig
  */
 class GSensor extends BaseConfig {
   /**
