@@ -116,7 +116,7 @@ function whatsCurrentVersion (activity) {
  * @param {URL} url
  */
 function onFirstBootAfterUpgrade (activity, url) {
-  activity.tts.speak(url.query.changelog)
+  activity.tts.speak(url.query.changelog || strings.OTA_UPDATE_SUCCESS)
     .then(
       () => activity.exit(),
       err => {
