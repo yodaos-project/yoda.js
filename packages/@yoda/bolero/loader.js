@@ -32,25 +32,48 @@ class Loader {
   /**
    * Loads the directory and defines getters on target.
    *
-   * @param {string} compDir - components directory to be loaded.
+   * @param {array} compDirs - components directories to be loaded.
+   * @param {object} stages - components load stages.
    */
-  load (compDir) {
-    var entities
-    try {
-      entities = fs.readdirSync(compDir)
-    } catch (err) {
-      if (err.code !== 'ENOENT') {
-        throw err
+  load (compDirs, stages) {
+    var dirs = []
+    var rst = []
+    compDirs.forEach((dir) => {
+      var files = []
+      try {
+        files = fs.readdirSync(dir)
+        dirs.push({ dir: dir, files: files })
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          throw err
+        }
+        logger.error(`directory '${dir}' doesn't exist, skipping...`)
       }
-      entities = []
-      logger.error(`directory '${compDir}' doesn't exist, skipping...`)
-    }
-    return entities
-      .filter(it => _.endsWith(it, '.js'))
-      .map(it => {
-        var comp = require(path.join(compDir, it))
-        this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
+    })
+
+    logger.error(`adadsad ${stages.base_component}`)
+    dirs.forEach((dirInfo) => {
+      logger.error(`11`)
+      dirInfo.files.forEach(it => {
+        stages.base_component.forEach(fileName => {
+          if (fileName === it) {
+            logger.error(`first stage load : ${it}`)
+            var comp = require(path.join(dirInfo.dir, it))
+            this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
+          }
+        })
       })
+    })
+    process.nextTick(() => {
+      dirs.forEach((dirInfo) => {
+        rst = rst.concat(dirInfo.files.filter(it => _.endsWith(it, '.js'))
+          .map(it => {
+            var comp = require(path.join(dirInfo.dir, it))
+            this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
+          }))
+      })
+    })
+    return rst
   }
 
   /**

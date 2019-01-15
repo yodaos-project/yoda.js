@@ -55,9 +55,8 @@ function AppRuntime () {
   this.shouldWelcome = true
 
   this.componentLoader = new Loader(this, 'component')
-  ComponentConfig.paths.forEach(it => {
-    this.componentLoader.load(it)
-  })
+  logger.error(ComponentConfig.stages)
+  this.componentLoader.load(ComponentConfig.paths, ComponentConfig.stages)
 
   // identify load app complete
   this.loadAppComplete = false
@@ -134,6 +133,7 @@ AppRuntime.prototype.componentsInvoke = function componentsInvoke (method, args)
   }
   Object.keys(this.componentLoader.registry).forEach(it => {
     var comp = this.component[it]
+    logger.error(`12 ${method}`)
     var fn = comp[method]
     if (typeof fn === 'function') {
       fn.apply(comp, args)
