@@ -98,7 +98,8 @@ class CustomConfig extends EventEmitter {
     var configObj = safeParse(config)
     this.intercept(configObj)
     var sConfig = JSON.stringify(configObj)
-    this.runtime.openUrl(`yoda-skill://custom-config/firstLoad?config=${sConfig}`)
+    this.runtime.openUrl(`yoda-skill://custom-config/firstLoad?config=${sConfig}`,
+      { preemptive: false })
   }
 }
 
