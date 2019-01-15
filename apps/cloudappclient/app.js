@@ -265,7 +265,6 @@ module.exports = activity => {
         break
       case 'on-stop-shake':
         logger.log('on-stop-shake')
-        activity.voiceCommand('下一首')
         break
       case 'on-quite-back':
         logger.log('on-quite-back')
