@@ -77,6 +77,7 @@ AppRuntime.prototype.init = function init () {
   this.componentsInvoke('init')
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
+  this.component.turen.toggleWakeUpEngine(true)
 
   this.component.lifetime.on('stack-reset', () => {
     this.resetCloudStack()
@@ -1134,11 +1135,10 @@ AppRuntime.prototype.onLoggedIn = function () {
     this.startDaemonApps(),
     this.setStartupFlag(),
     this.initiate()
-      .then(deferred, err => {
-        logger.error('Unexpected error on runtime.initiate', err.stack)
-        return deferred()
-      })
-  ]).then(onDone, err => {
+  ]).then(deferred, err => {
+    logger.error('Unexpected error on bootstrap', err.stack)
+    return deferred()
+  }).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()
   })

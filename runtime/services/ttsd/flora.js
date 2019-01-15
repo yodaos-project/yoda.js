@@ -11,7 +11,7 @@ module.exports = Flora
  * @param {AppRuntime} runtime
  */
 function Flora (tts) {
-  FloraComp.call(this, logger)
+  FloraComp.call(this, 'ttsd', floraConfig)
   this.tts = tts
 }
 inherits(Flora, FloraComp)
@@ -42,5 +42,5 @@ Flora.prototype.handlers = {
  * Initialize flora client.
  */
 Flora.prototype.init = function init () {
-  FloraComp.prototype.init.call(this, 'ttsd', floraConfig)
+  FloraComp.prototype.init.call(this)
 }

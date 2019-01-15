@@ -95,16 +95,16 @@ function BluetoothA2dp (deviceName) {
   this.lastMode = protocol.A2DP_MODE.SINK // last used a2dp mode
   this.localName = deviceName // local bluetooth device name
 
-  this._flora = new FloraComp(logger)
-  this._flora.handlers = {
-    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
-    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
-  }
-  this._flora.init(null, {
+  this._flora = new FloraComp(null, {
     'uri': 'unix:/var/run/flora.sock',
     'bufsize': 40960,
     'reconnInterval': 10000
   })
+  this._flora.handlers = {
+    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
+    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
+  }
+  this._flora.init()
 }
 inherits(BluetoothA2dp, EventEmitter)
 
@@ -305,7 +305,7 @@ BluetoothA2dp.prototype.disconnect = function () {
   if (this.lastMsg.connect_state !== 'connected') {
     logger.warn('disconnect() while last state is not connected.')
   }
-  this._send(this.lastMode, 'DISCONNECT_PEER')
+  this._send(this.lastMode, 'DISCONNECT')
 }
 
 /**
@@ -528,13 +528,13 @@ BluetoothA2dp.prototype.isDiscoverable = function () {
  * Destroy bluetooth profile adapter, thus means bluetooth will always be turned `OFF` automatically.
  */
 BluetoothA2dp.prototype.destroy = function () {
-  var destroyFunc = function () {
+  logger.debug(`destroy()`)
+  setTimeout(() => {
+    this.close()
     this.removeAllListeners()
-    this._flora.destruct()
+    this._flora.deinit()
     this._end = true
-  }.bind(this)
-  this.close()
-  setTimeout(destroyFunc, 3000)
+  }, 2000)
 }
 
 exports.BluetoothA2dp = BluetoothA2dp
