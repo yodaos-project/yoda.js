@@ -9,6 +9,7 @@ var SWITCH_CLOSE = 'close'
 
 /**
  * standby light handler
+ * @extends BaseConfig
  */
 class StandbyLight extends BaseConfig {
   constructor (activity) {

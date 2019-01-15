@@ -3,12 +3,11 @@
     "dataType": "object",
     "stringify": false,
     "appOption": {
-      "preemptive": true,
+      "preemptive": false,
       "form": "cut"
     }
   },
   "vt_words": {
-    "configName": "",
     "stringify": true,
     "dataType": "array",
     "appOption": {
@@ -44,6 +43,14 @@
     "stringify": false,
     "appOption": {
       "preemptive": true,
+      "form": "cut"
+    }
+  },
+  "gsensor": {
+    "dataType": "object",
+    "stringify": false,
+    "appOption": {
+      "preemptive": false,
       "form": "cut"
     }
   }
