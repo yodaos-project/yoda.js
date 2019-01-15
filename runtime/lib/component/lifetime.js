@@ -87,7 +87,7 @@ module.exports = LaVieEnPile
  */
 function LaVieEnPile (runtime) {
   EventEmitter.call(this)
-  this.scheduler = runtime.component.appScheduler
+  this.runtime = runtime
   /**
    * @typedef ContextOptionsData
    * @property {'cut' | 'scene'} form
@@ -200,7 +200,7 @@ LaVieEnPile.prototype.isAppInStack = function isAppInStack (appId) {
  * @returns {boolean} true if inactive, false otherwise.
  */
 LaVieEnPile.prototype.isAppInactive = function isAppInactive (appId) {
-  return this.scheduler.isAppRunning(appId) &&
+  return this.runtime.component.appScheduler.isAppRunning(appId) &&
     !(this.isAppInStack(appId) || this.isBackgroundApp(appId))
 }
 
@@ -214,7 +214,7 @@ LaVieEnPile.prototype.isAppInactive = function isAppInactive (appId) {
 LaVieEnPile.prototype.isMonopolized = function isMonopolized () {
   if (typeof this.monopolist === 'string') {
     if (this.getCurrentAppId() === this.monopolist &&
-      this.scheduler.isAppRunning(this.monopolist)) {
+      this.runtime.component.appScheduler.isAppRunning(this.monopolist)) {
       return true
     }
     this.monopolist = null
@@ -239,7 +239,7 @@ LaVieEnPile.prototype.isMonopolized = function isMonopolized () {
  * @returns {Promise<AppDescriptor>}
  */
 LaVieEnPile.prototype.createApp = function createApp (appId) {
-  return this.scheduler.createApp(appId)
+  return this.runtime.component.appScheduler.createApp(appId)
 }
 
 /**
@@ -268,8 +268,8 @@ LaVieEnPile.prototype.createApp = function createApp (appId) {
 LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, carrierId, options) {
   var activateParams = _.get(options, 'activateParams', [])
 
-  if (!this.scheduler.isAppRunning(appId)) {
-    return Promise.reject(new Error(`App ${appId} is ${this.scheduler.getAppStatusById(appId)}, launch it first.`))
+  if (!this.runtime.component.appScheduler.isAppRunning(appId)) {
+    return Promise.reject(new Error(`App ${appId} is ${this.runtime.component.appScheduler.getAppStatusById(appId)}, launch it first.`))
   }
 
   if (form == null) {
@@ -299,7 +299,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
      * exit the carrier before next steps.
      */
     logger.info(`previous app ${lastSubordinate} started by a carrier`, cid)
-    if (cid !== appId && cid !== carrierId && this.scheduler.isAppRunning(cid)) {
+    if (cid !== appId && cid !== carrierId && this.runtime.component.appScheduler.isAppRunning(cid)) {
       logger.info(`carrier ${cid} is alive and not the app to be activated, destroying`)
       future = future.then(() => this.destroyAppById(cid))
     }
@@ -455,7 +455,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
     /**
      * If app is brought up by a carrier, re-activate the carrier on exit of app.
      */
-    if (this.scheduler.isAppRunning(carrierId)) {
+    if (this.runtime.component.appScheduler.isAppRunning(carrierId)) {
       logger.info(`app ${appId} is brought up by a carrier '${carrierId}', recovering.`)
       return deactivating.then(() => {
         return this.activateAppById(carrierId)
@@ -599,7 +599,7 @@ LaVieEnPile.prototype.setForegroundById = function (appId, form) {
  * @returns {Promise<ActivityDescriptor | undefined>} LifeCycle events are asynchronous.
  */
 LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) {
-  var app = this.scheduler.getAppById(appId)
+  var app = this.runtime.component.appScheduler.getAppById(appId)
   if (app == null) {
     return Promise.reject(new Error(`Trying to send life cycle '${event}' to app '${appId}', yet it's not created.`))
   }
@@ -637,7 +637,7 @@ LaVieEnPile.prototype.onEviction = function onEvict (appId, form) {
  * Emit event `preemption` with the app id as first argument to listeners.
  *
  * @param {string} appId
- * @param {ContextOptionsData} contextOptions
+ * @param {object} contextOptions
  */
 LaVieEnPile.prototype.onPreemption = function onPreemption (appId, contextOptions) {
   if (!appId) {
@@ -679,9 +679,9 @@ LaVieEnPile.prototype.destroyAll = function (options) {
   this.onStackReset()
   /** destroy apps in stack in a reversed order */
   // TODO: use event `suspend` instead of `destroy` in LaVieEnPile
-  return Promise.all(Object.keys(this.scheduler.appMap)
+  return Promise.all(Object.keys(this.runtime.component.appScheduler.appMap)
     .map(it => {
-      if (!this.scheduler.isAppRunning(it)) {
+      if (!this.runtime.component.appScheduler.isAppRunning(it)) {
         /**
          * App is already not running, skip destroying.
          */
@@ -690,7 +690,7 @@ LaVieEnPile.prototype.destroyAll = function (options) {
       return this.onLifeCycle(it, 'destroy')
         .catch(err => logger.error('Unexpected error on send destroy event to app', it, err.stack))
     }))
-    .then(() => this.scheduler.suspendAllApps({ force: force }))
+    .then(() => this.runtime.component.appScheduler.suspendAllApps({ force: force }))
 }
 
 /**
@@ -716,7 +716,7 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
   }
   delete this.contextOptionsMap[appId]
 
-  if (!this.scheduler.isAppRunning(appId)) {
+  if (!this.runtime.component.appScheduler.isAppRunning(appId)) {
     /**
      * App is already not running, skip destroying.
      */
@@ -727,10 +727,10 @@ LaVieEnPile.prototype.destroyAppById = function (appId, options) {
   // TODO: use event `suspend` instead of `destroy` in LaVieEnPile
   return this.onLifeCycle(appId, 'destroy')
     .then(
-      () => this.scheduler.suspendApp(appId, { force: force }),
+      () => this.runtime.component.appScheduler.suspendApp(appId, { force: force }),
       err => {
         logger.error('Unexpected error on send destroy event to app', appId, err.stack)
-        this.scheduler.suspendApp(appId, { force: force })
+        this.runtime.component.appScheduler.suspendApp(appId, { force: force })
       }
     )
 }

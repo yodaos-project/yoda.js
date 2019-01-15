@@ -51,13 +51,10 @@ class Loader {
       }
     })
 
-    logger.error(`adadsad ${stages.base_component}`)
     dirs.forEach((dirInfo) => {
-      logger.error(`11`)
       dirInfo.files.forEach(it => {
         stages.base_component.forEach(fileName => {
           if (fileName === it) {
-            logger.error(`first stage load : ${it}`)
             var comp = require(path.join(dirInfo.dir, it))
             this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
           }
@@ -69,7 +66,11 @@ class Loader {
         rst = rst.concat(dirInfo.files.filter(it => _.endsWith(it, '.js'))
           .map(it => {
             var comp = require(path.join(dirInfo.dir, it))
-            this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
+            try{
+              this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
+            } catch (err) {
+              //todo remove filename after first loading
+            }
           }))
       })
     })
