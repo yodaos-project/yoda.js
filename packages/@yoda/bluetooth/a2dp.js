@@ -174,6 +174,13 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
         })
       }
       this.emit('discovery_state_changed', protocol.A2DP_MODE.SOURCE, protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED, results)
+    } else if (msg.action === 'element_attrs') {
+      var song = {
+        title: msg.title,
+        artist: msg.artist,
+        album: msg.album
+      }
+      this.emit(`audio_state_changed`, protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.QUERY_RESULT, song)
     }
   } catch (err) {
     logger.error(`on ${mode} error(${JSON.stringify(err)})`)
@@ -420,6 +427,21 @@ BluetoothA2dp.prototype.next = function () {
 }
 
 /**
+ * Query playing song's information such as album, title, artist, etc.
+ *
+ * You can listen following changed state:
+ * - `protocol.AUDIO_STATE.QUERY_RESULT`.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
+ */
+BluetoothA2dp.prototype.query = function () {
+  logger.debug(`query song info`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    this._send(this.lastMode, 'GETSONG_ATTRS')
+  }
+}
+
+/**
  * Set local device discoverable.
  *
  * You can listen following changed state:
@@ -529,12 +551,9 @@ BluetoothA2dp.prototype.isDiscoverable = function () {
  */
 BluetoothA2dp.prototype.destroy = function () {
   logger.debug(`destroy()`)
-  setTimeout(() => {
-    this.close()
-    this.removeAllListeners()
-    this._flora.deinit()
-    this._end = true
-  }, 2000)
+  this.removeAllListeners()
+  this._flora.deinit()
+  this._end = true
 }
 
 exports.BluetoothA2dp = BluetoothA2dp
