@@ -258,4 +258,24 @@ module.exports = activity => {
     logger.log(this.appId + ' destroyed')
     sos.destroy()
   })
+  activity.on('notification', (state) => {
+    switch (state) {
+      case 'on-start-shake':
+        logger.log('on-start-shake')
+        break
+      case 'on-stop-shake':
+        logger.log('on-stop-shake')
+        break
+      case 'on-quite-back':
+        logger.log('on-quite-back')
+        sos.setManualPauseFLag(true)
+        sos.pause()
+        break
+      case 'on-quite-front':
+        logger.log('on-quite-front')
+        sos.setManualPauseFLag(false)
+        sos.resume()
+        break
+    }
+  })
 }

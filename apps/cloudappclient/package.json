@@ -12,7 +12,13 @@
       "ACCESS_TTS",
       "ACCESS_MULTIMEDIA",
       "INTERRUPT"
-    ]
+    ],
+    "notifications":[
+      "on-start-shake",
+      "on-stop-shake",
+      "on-quite-back",
+      "on-quite-front"
+      ]
   },
   "directories": {
     "test": "tests"
