@@ -5,12 +5,10 @@
     "ON_OPENED_FAILED": "system://openbluetootherror.ogg",
     "ON_CONNECTED": "system://connectbluetooth.ogg",
     "ON_CONNECTED_FAILED": "system://connectfailedbluetooth.ogg",
-    "ON_AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg"
+    "ON_AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg",
+    "RINGTONE": "system://phone_ring.ogg"
   },
-  "LIGHT": {
-    "ON_DISCOVERABLE": "system://bluetoothOpen.js",
-    "ON_UNDISCOVERABLE": "system://bluetoothOpen.js"
-  },
+  "LIGHT": "system://bluetoothOpen.js",
   "URL": {
     "BLUETOOTH_MUSIC": "yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music"
   }
