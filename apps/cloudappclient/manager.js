@@ -13,8 +13,18 @@ function Manager (exe, Skill) {
   this.Skill = Skill
   this.skills = []
   this.isAppActive = true
+  // for gsensor roll in back,like strongpause
+  this.manualPause = false
 }
 inherits(Manager, EventEmitter)
+
+Manager.prototype.setManualPauseFLag = function (flag) {
+  this.manualPause = flag
+}
+
+Manager.prototype.getManualPauseFLag = function () {
+  return this.manualPause
+}
 
 Manager.prototype.onrequest = function (nlp, action) {
   if (!action || !action.appId) {
@@ -97,6 +107,10 @@ Manager.prototype.append = function (nlp, action) {
 
 Manager.prototype.next = function (skill) {
   logger.log(`next skill`)
+  // if this flag equls true,means strong pause,so we do not exec next
+  if (this.getManualPauseFLag() === true) {
+    return
+  }
   var cur = this.getCurrentSkill()
   if (cur && cur.appId !== skill.appId) {
     return
@@ -125,6 +139,7 @@ Manager.prototype.pause = function () {
   // clear the form is not a scene type of skill
   if (cur.form !== 'scene') {
     this.skills.pop()
+    cur.emit('destroy')
     cur.emit('exit')
   }
 }
@@ -132,6 +147,10 @@ Manager.prototype.pause = function () {
 Manager.prototype.resume = function () {
   this.isAppActive = true
   var cur = this.getCurrentSkill()
+  // if top app is not self,do not resume immediately
+  if (cur.paused === false) {
+    return
+  }
   if (cur !== false) {
     cur.emit('resume')
   }
