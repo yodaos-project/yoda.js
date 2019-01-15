@@ -3,7 +3,7 @@
     "dataType": "object",
     "stringify": false,
     "appOption": {
-      "preemptive": true,
+      "preemptive": false,
       "form": "cut"
     }
   },
@@ -51,7 +51,7 @@
     "dataType": "object",
     "stringify": false,
     "appOption": {
-      "preemptive": true,
+      "preemptive": false,
       "form": "cut"
     }
   }
