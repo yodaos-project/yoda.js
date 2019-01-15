@@ -258,7 +258,7 @@ module.exports = activity => {
     logger.log(this.appId + ' destroyed')
     sos.destroy()
   })
-  activity.on('notification', (state) =>{
+  activity.on('notification', (state) => {
     switch (state) {
       case 'on-start-shake':
         logger.log('on-start-shake')
@@ -277,5 +277,5 @@ module.exports = activity => {
         sos.resume()
         break
     }
-   })
+  })
 }
