@@ -50,12 +50,17 @@ class OTA {
         }
         logger.info('got pending update info', upgradeInfo)
         return ota.conditions.getAvailabilityOfOta(upgradeInfo)
-          .then(available => {
-            if (!available) {
-              this.forceUpdateAvailable = true
-              return false
+          .then(availability => {
+            switch (availability) {
+              case true:
+                return this.startForceUpdate(upgradeInfo)
+              case 'low_power':
+              case 'extremely_low_power':
+                this.forceUpdateAvailable = true
+                return false
+              case 'new_version':
+                return false
             }
-            return this.startForceUpdate(upgradeInfo)
           })
       })
   }
