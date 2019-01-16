@@ -22,3 +22,4 @@ runtime/services/lightd/*.test.js
 runtime/services/lightd/effects/*.test.js
 runtime/cloudapi-util.*.js
 runtime/dnd-mode/*.test.js
+runtime/services/multimediad/*.test.js
