@@ -117,7 +117,7 @@ function install_apps {
 function install_configs() {
   # etc config
   shell "rm -rf /etc/yoda/*"
-  push "./etc/*" "/etc/yoda/"
+  push "./etc/yoda/*" "/etc/yoda/"
 }
 
 shell "mount -o remount,rw /"
