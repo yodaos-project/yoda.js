@@ -338,6 +338,51 @@ Object.assign(MultimediaDescriptor.prototype,
           })
       }
     },
+
+    /**
+     * return which EQ mode the player is.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function getEqMode
+     * @returns {Promise<number>}
+     */
+    getEqMode: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getLoopMode () {
+        return this._runtime.multimediaMethod('getEqMode', [this._appId])
+          .then((res) => {
+            if (res && res[0] !== undefined) {
+              return res[0]
+            }
+            throw new Error('multimediad error')
+          })
+      }
+    },
+    /**
+     * set player EQ mode.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function setEqMode
+     * @param {number} eqMode
+     * @returns {Promise<boolean>}
+     */
+    setEqMode: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setEqMode (eqMode) {
+        if (typeof eqMode !== 'number') {
+          return Promise.reject(new Error(`Expect a number on setLoopMode, but got ${typeof eqMode}`))
+        }
+        return this._runtime.multimediaMethod('setEqMode', [this._appId, '' + eqMode])
+          .then((res) => {
+            if (res && res[0] !== undefined) {
+              return res[0]
+            }
+            throw new Error('multimediad error')
+          })
+      }
+    },
     /**
      * Seek the given position.
      * @memberof yodaRT.activity.Activity.MediaClient
