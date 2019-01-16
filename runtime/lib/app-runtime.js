@@ -1085,6 +1085,25 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
 AppRuntime.prototype.onLoggedIn = function () {
   this.component.custodian.onLoggedIn()
 
+  var enableTtsService = () => {
+    var config = JSON.stringify(this.onGetPropAll())
+    return this.ttsMethod('connect', [config])
+      .then(res => {
+        if (!res) {
+          logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
+        } else {
+          logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
+        }
+      }, err => {
+        logger.error('send CONFIG to ttsd failed: call method failed', err && err.stack)
+      })
+  }
+
+  var sendReady = () => {
+    var ids = Object.keys(this.component.appScheduler.appMap)
+    return Promise.all(ids.map(it => this.component.lifetime.onLifeCycle(it, 'ready')))
+  }
+
   var deferred = () => {
     perf.stub('started')
     if (this.shouldWelcome) {
@@ -1094,36 +1113,18 @@ AppRuntime.prototype.onLoggedIn = function () {
             return
           }
           logger.info('announcing welcome')
-          this.setMicMute(false, { silent: true })
-            .then(() => {
-              this.component.light.appSound('@yoda', 'system://startup0.ogg')
-              return this.component.light.play('@yoda', 'system://setWelcome.js')
-            })
-            .then(() => {
-              // not need to play startup music after relogin
-              this.component.light.stop('@yoda', 'system://boot.js')
-            })
+          return this.setMicMute(false, { silent: true })
+        })
+        .then(() => {
+          this.component.light.appSound('@yoda', 'system://startup0.ogg')
+          return this.component.light.play('@yoda', 'system://setWelcome.js')
+        })
+        .then(() => {
+          // not need to play startup music after relogin
+          this.component.light.stop('@yoda', 'system://boot.js')
         })
     }
     this.shouldWelcome = false
-
-    var config = JSON.stringify(this.onGetPropAll())
-    return this.ttsMethod('connect', [config])
-      .then((res) => {
-        if (!res) {
-          logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
-        } else {
-          logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
-        }
-      })
-      .catch((error) => {
-        logger.log('send CONFIG to ttsd failed: call method failed', error)
-      })
-  }
-
-  var sendReady = () => {
-    var ids = Object.keys(this.component.appScheduler.appMap)
-    return Promise.all(ids.map(it => this.component.lifetime.onLifeCycle(it, 'ready')))
   }
 
   var onDone = () => {
@@ -1131,14 +1132,12 @@ AppRuntime.prototype.onLoggedIn = function () {
   }
 
   return Promise.all([
+    enableTtsService(),
     sendReady() /** only send ready to currently alive apps */,
     this.startDaemonApps(),
     this.setStartupFlag(),
-    this.initiate()
-  ]).then(deferred, err => {
-    logger.error('Unexpected error on bootstrap', err.stack)
-    return deferred()
-  }).then(onDone, err => {
+    this.initiate().then(() => setTimeout(deferred, 2000))
+  ]).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()
   })
