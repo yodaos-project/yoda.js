@@ -20,6 +20,6 @@ runtime/descriptor/*.test.js
 runtime/app-loader/*.test.js
 runtime/services/lightd/*.test.js
 runtime/services/lightd/effects/*.test.js
+runtime/services/multimediad/*.test.js
 runtime/cloudapi-util.*.js
 runtime/dnd-mode/*.test.js
-runtime/services/multimediad/*.test.js
