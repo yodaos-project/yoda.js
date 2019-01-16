@@ -12,14 +12,14 @@ Light.prototype.invoke = function () {
   })
 }
 
-function getServiceInstance (Light) {
+function getServiceInstance () {
   var light = new Light()
   return new Service(light)
 }
 
 test('test multimediad service: start and stop', function (t) {
   t.plan(2)
-  var service = getServiceInstance(Light)
+  var service = getServiceInstance()
   var playerId = service.start('@test', './firstguide.ogg', 'playback')
   service.on('prepared', function (id, dur, pos) {
     t.strictEqual(+id, playerId, 'player emit prepared event with a correct id')
@@ -32,7 +32,7 @@ test('test multimediad service: start and stop', function (t) {
 
 test('test multimediad service: pause and resume', function (t) {
   t.plan(2)
-  var service = getServiceInstance(Light)
+  var service = getServiceInstance()
   var playerId = service.start('@test', './firstguide.ogg', 'playback')
   service.on('prepared', function (id, dur, pos) {
     process.nextTick(() => {
