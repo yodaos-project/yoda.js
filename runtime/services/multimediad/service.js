@@ -166,18 +166,18 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
         logger.error(`try to stop player error with appId: ${appId}`, error.stack)
       }
     }
-    this.emit('playbackcomplete', '' + player.id)
+    this.emit('playbackcomplete', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, false)
   })
   player.on('bufferingupdate', () => {
-    this.emit('bufferingupdate', '' + player.id)
+    this.emit('bufferingupdate', '' + player.id, '' + player.duration, '' + player.position)
   })
   player.on('seekcomplete', () => {
-    this.emit('seekcomplete', '' + player.id)
+    this.emit('seekcomplete', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, true)
   })
   player.on('cancel', () => {
-    this.emit('cancel', '' + player.id)
+    this.emit('cancel', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, false)
   })
   player.on('error', () => {

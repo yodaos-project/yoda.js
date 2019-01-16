@@ -25,7 +25,7 @@ var flora = new Flora(service)
 flora.init()
 
 service.on('prepared', function (id, dur, pos) {
-  logger.log('multimediad-event prepared', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event prepared', arguments)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -35,7 +35,7 @@ service.on('prepared', function (id, dur, pos) {
   )
 })
 service.on('pause', function (id, dur, pos) {
-  logger.log('multimediad-event pause', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event pause', arguments)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -45,7 +45,7 @@ service.on('pause', function (id, dur, pos) {
   )
 })
 service.on('resume', function (id, dur, pos) {
-  logger.log('multimediad-event resume', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event resume', arguments)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -55,7 +55,7 @@ service.on('resume', function (id, dur, pos) {
   )
 })
 service.on('playbackcomplete', function (id) {
-  logger.log('multimediad-event playback complete', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event playback complete', arguments)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -65,7 +65,7 @@ service.on('playbackcomplete', function (id) {
   )
 })
 service.on('cancel', function (id) {
-  logger.log('multimediad-event canceled', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event canceled', arguments)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -75,7 +75,7 @@ service.on('cancel', function (id) {
   )
 })
 service.on('bufferingupdate', function (id) {
-  logger.log('multimediad-event buffering update', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event buffering update', arguments)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -85,7 +85,7 @@ service.on('bufferingupdate', function (id) {
   )
 })
 service.on('seekcomplete', function (id) {
-  logger.log('multimediad-event seek complete', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event seek complete', arguments)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -95,7 +95,7 @@ service.on('seekcomplete', function (id) {
   )
 })
 service.on('error', function (id) {
-  logger.log('multimediad-event error', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event error', arguments)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
