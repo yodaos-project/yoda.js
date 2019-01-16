@@ -1136,7 +1136,10 @@ AppRuntime.prototype.onLoggedIn = function () {
     sendReady() /** only send ready to currently alive apps */,
     this.startDaemonApps(),
     this.setStartupFlag(),
-    this.initiate().then(() => setTimeout(deferred, 2000))
+    this.initiate().then(deferred, err => {
+      logger.error('Unexpected error on bootstrap', err.stack)
+      return deferred()
+    })
   ]).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()
