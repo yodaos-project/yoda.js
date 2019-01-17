@@ -248,6 +248,10 @@ BluetoothA2dp.prototype.open = function (mode, options) {
   if (autoplay) {
     msg.subsequent = 'PLAY'
   }
+  if (mode === protocol.A2DP_MODE.SINK) {
+    // Bluetooth phone call is binded with bluetooth music.
+    msg.sec_pro = 'HFP'
+  }
   this._send(mode, 'ON', msg)
 }
 
@@ -265,7 +269,12 @@ BluetoothA2dp.prototype.close = function () {
   if (this.lastMsg.a2dpstate === 'closed') {
     logger.warn('close() while last state is already closed.')
   }
-  this._send(this.lastMode, 'OFF')
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    // Bluetooth phone call is binded with bluetooth music.
+    this._send(this.lastMode, 'OFF', {sec_pro: 'HFP'})
+  } else {
+    this._send(this.lastMode, 'OFF')
+  }
 }
 
 /**
@@ -341,6 +350,19 @@ BluetoothA2dp.prototype.unmute = function () {
 }
 
 /**
+ * Sync volume to remote device.
+ *
+ * @param {string} [vol] - the volume number to be synced.
+ * @returns {null}
+ */
+BluetoothA2dp.prototype.syncVol = function (vol) {
+  logger.debug(`sync volume(${vol})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    this._send(this.lastMode, 'VOLUME', { value: vol })
+  }
+}
+
+/**
  * Play a2dp-sink music stream.
  *
  * You can listen following changed state:
@@ -374,6 +396,7 @@ BluetoothA2dp.prototype.pause = function () {
       logger.warn('pause() while last state is already stopped.')
     }
     this.lastCmd = 'pause'
+    this._send(this.lastMode, 'MUTE')
     this._send(this.lastMode, 'PAUSE')
   }
 }
@@ -490,6 +513,54 @@ BluetoothA2dp.prototype.discovery = function () {
  */
 BluetoothA2dp.prototype.getMode = function () {
   return this.lastMode
+}
+
+/**
+ * Get a2dp radio state.
+ * @returns {RADIO_STATE} - The current radio state.
+ */
+BluetoothA2dp.prototype.getRadioState = function () {
+  if (this.lastMsg.a2dpstate === 'opened') {
+    return protocol.RADIO_STATE.ON
+  } else {
+    return protocol.RADIO_STATE.OFF
+  }
+}
+
+/**
+ * Get a2dp connection state.
+ * @return {CONNECTION_STATE} - The current connection state.
+ */
+BluetoothA2dp.prototype.getConnectionState = function () {
+  if (this.lastMsg.connect_state === 'connected') {
+    return protocol.CONNECTION_STATE.CONNECTED
+  } else {
+    return protocol.CONNECTION_STATE.DISCONNECTED
+  }
+}
+
+/**
+ * Get a2dp-sink audio state.
+ * @return {AUDIO_STATE} - The current audio state.
+ */
+BluetoothA2dp.prototype.getAudioState = function () {
+  if (this.lastMsg.play_state === 'played') {
+    return protocol.AUDIO_STATE.PLAYING
+  } else {
+    return protocol.AUDIO_STATE.STOPPED
+  }
+}
+
+/**
+ * Get a2dp discovery state.
+ * @return {DISCOVERY_STATE} - The currenct discovery state.
+ */
+BluetoothA2dp.prototype.getDiscoveryState = function () {
+  if (this.lastMsg.broadcast_state === 'opened') {
+    return protocol.DISCOVERY_STATE.ON
+  } else {
+    return protocol.DISCOVERY_STATE.OFF
+  }
 }
 
 /**
