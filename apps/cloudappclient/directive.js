@@ -2,6 +2,13 @@
 
 var logger = require('logger')('cloudAppClient-directive')
 
+function emptyfn () {
+  // empty function
+}
+
+/**
+ * @class Directive
+ */
 function Directive () {
   this.frontend = []
   this.background = []
@@ -20,7 +27,7 @@ function Directive () {
 Directive.prototype.execute = function execute (dt, type, cb) {
   this[type] = dt || []
   this.run(type, cb)
-  logger.info('start run dt')
+  logger.info('start running directive...')
 }
 
 Directive.prototype.resume = function resume (type, cb) {
@@ -39,7 +46,7 @@ Directive.prototype.run = function run (type, cb) {
   }
   var self = this
   var dt = this[type].shift()
-  cb = cb || () => false
+  cb = cb || emptyfn
 
   function handle (item) {
     // NOTICE: INTERNAL_EXIT is only used myself.
@@ -57,6 +64,9 @@ Directive.prototype.run = function run (type, cb) {
       }
     }
 
+    /**
+     * @param {boolean} canceled - if needs to cancel this job.
+     */
     function next (canceled) {
       if (canceled) {
         return cb()
@@ -69,12 +79,23 @@ Directive.prototype.run = function run (type, cb) {
       logger.info('all directive complete')
       cb()
     } else {
-      self.cb[type][item.type].apply(self, [item, next])
+      if (item.nowait === true) {
+        self.cb[type][item.type].apply(self, [item, emptyfn])
+        next()
+      } else {
+        self.cb[type][item.type].apply(self, [item, next])
+      }
     }
   }
   handle(dt)
 }
 
+/**
+ * @method do
+ * @param {string} type - frontend or background.
+ * @param {string} dt - the directive type.
+ * @param {function} cb - the cb function.
+ */
 Directive.prototype.do = function (type, dt, cb) {
   this.cb[type][dt] = cb
 }
