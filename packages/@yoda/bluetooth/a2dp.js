@@ -208,8 +208,7 @@ BluetoothA2dp.prototype._send = function (mode, cmdstr, props) {
   var data = Object.assign({ command: cmdstr }, props)
   var msg = [ JSON.stringify(data) ]
   var name = (mode === protocol.A2DP_MODE.SINK ? 'bluetooth.a2dpsink.command' : 'bluetooth.a2dpsource.command')
-  var type = (cmdstr === 'ON' ? floraFactory.MSGTYPE_PERSIST : floraFactory.MSGTYPE_INSTANT)
-  return this._flora.post(name, msg, type)
+  return this._flora.post(name, msg, floraFactory.MSGTYPE_INSTANT)
 }
 
 /**
