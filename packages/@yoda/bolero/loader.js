@@ -16,26 +16,70 @@ class Loader {
    *
    * @param {object} runtime - an object named runtime.
    * @param {string} property - target property name on runtime object.
+   * @param {array} stages - components load stage define.
    */
-  constructor (runtime, property) {
+  constructor (runtime, property, stages) {
     this.registry = {}
     this.cache = {}
     this.runtime = runtime
     this.property = property
-
     if (this.runtime[this.property] == null) {
       this.runtime[this.property] = {}
     }
     this.target = this.runtime[this.property]
+    this.stages = []
+    if (isInstanceofArray(stages)) {
+      stages.forEach(it => {
+        if (typeof it === 'object' && typeof it.name === 'string' && isInstanceofArray(it.comps)) {
+          if (it.comps.length > 0) {
+            it.callback = {
+              before: null,
+              after: null
+            }
+            this.stages.push(it)
+          }
+        } else {
+          logger.error(`component stages define error: ${JSON.stringify(it)}`)
+        }
+      })
+    }
   }
 
+  /**
+   * register before event handler
+   * @param {string} event - event name
+   * @param {function} callback -
+   */
+  before (event, callback) {
+    if (typeof callback === 'function' && typeof event === 'string') {
+      this.stages.filter(it => it.name === event).map((it) => {
+        it.callback.before = callback
+      })
+    } else {
+      logger.error('error param of loader.before')
+    }
+  }
+  /**
+   * register after event handler
+   * @param {string} event - event name
+   * @param {function} callback -
+   */
+  after (event, callback) {
+    if (typeof callback === 'function' && typeof event === 'string') {
+      this.stages.filter(it => it.name === event).map((it) => {
+        it.callback.after = callback
+      })
+    } else {
+      logger.error('error param of loader.after')
+    }
+  }
   /**
    * Loads the directory and defines getters on target.
    *
    * @param {array} compDirs - components directories to be loaded.
    * @param {object} stages - components load stages.
    */
-  load (compDirs, stages) {
+  load (compDirs) {
     var dirs = []
     var rst = []
     compDirs.forEach((dir) => {
@@ -50,7 +94,9 @@ class Loader {
         logger.error(`directory '${dir}' doesn't exist, skipping...`)
       }
     })
+    this.stages.forEach((stage) => {
 
+    })
     dirs.forEach((dirInfo) => {
       dirInfo.files.forEach(it => {
         stages.base_component.forEach(fileName => {

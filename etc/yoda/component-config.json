@@ -1,10 +1,24 @@
 {
   "paths": ["/usr/yoda/lib/component"],
-  "stages": {
-    "base_component": ["turen.js", "lifetime.js", "light.js", "flora.js",
-      "dbus-registry.js", "wormhole.js"],
-    "next_tick": []
-  },
+  "stages": [
+    {
+      "name": "prepare",
+      "comps": ["turen", "lifetime", "light", "flora",
+        "dbus-registry", "wormhole"]
+    },
+    {
+      "name": "connect",
+      "comps": []
+    },
+    {
+      "name": "login",
+      "comps": []
+    },
+    {
+      "name": "ready",
+      "comps": []
+    }
+  ],
   "interception": {
     "runtimeDidLogin": [ "ota.runtimeDidLogin" ],
     "turenDidWakeUp": [

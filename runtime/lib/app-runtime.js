@@ -54,8 +54,8 @@ function AppRuntime () {
   })
   this.shouldWelcome = true
 
-  this.componentLoader = new Loader(this, 'component')
-  this.componentLoader.load(ComponentConfig.paths, ComponentConfig.stages)
+  this.componentLoader = new Loader(this, 'component', ComponentConfig.stages)
+  this.componentLoader.load(ComponentConfig.paths)
 
   // identify load app complete
   this.loadAppComplete = false
