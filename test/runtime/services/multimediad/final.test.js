@@ -18,24 +18,70 @@ media.listen('com.service.multimedia', '/multimedia/service', 'multimedia.servic
   bus.emit(`${event.args[1]}-${event.args[0]}`, event.args.slice(2))
 })
 
-test('Integration Testing multimediad', (t) => {
-  t.plan(4)
+test('Integration Testing multimediad: start and stop', (t) => {
   media.invoke('start', ['@test', path.join(__dirname, './firstguide.ogg'), 'playback'])
     .then((res) => {
       t.pass('method call [start] success')
       bus.on(`prepared-${res[1]}`, (args) => {
         t.pass('multimediad emit prepared with correct id')
+        media.invoke('stop', ['@test'])
+          .then(() => {
+            t.pass('method call [stop] success')
+            t.end()
+          })
+          .catch(() => {
+            t.fail('method call [stop] failed')
+          })
       })
       bus.on(`cancel-${res[1]}`, (args) => {
         t.pass('multimediad emit cancel with correct id')
       })
-      media.invoke('stop', ['@test'])
-        .then(() => {
-          t.pass('method call [stop] success')
-        })
-        .catch(() => {
-          t.fail('method call [stop] failed')
-        })
+    })
+    .catch(() => {
+      t.fail('method call [start] failed')
+    })
+})
+
+test('Integration Testing multimediad: pause an resume', (t) => {
+  media.invoke('start', ['@test', path.join(__dirname, './firstguide.ogg'), 'playback'])
+    .then((res) => {
+      bus.on(`prepared-${res[1]}`, (args) => {
+        t.pass('multimediad emit prepared with correct id')
+        media.invoke('pause', ['@test'])
+          .then(() => {
+            t.pass('method call [pause] success')
+            return media.invoke('resume', ['@test'])
+              .then(() => {
+                t.pass('method call [resume] success')
+              })
+              .catch(() => {
+                t.fail('method call [resume] failed')
+              })
+          })
+          .then(() => {
+            return media.invoke('stop', ['@test'])
+              .then(() => {
+                t.pass('method call [stop] success')
+                t.end()
+              })
+              .catch(() => {
+                t.fail('method call [stop] failed')
+              })
+          })
+          .catch(() => {
+            t.fail('method call [pause] failed')
+          })
+      })
+      bus.on(`pause-${res[1]}`, (args) => {
+        t.pass('multimediad emit pause with correct id')
+      })
+      bus.on(`resume-${res[1]}`, (args) => {
+        t.pass('multimediad emit resume with correct id')
+      })
+      bus.on(`cancel-${res[1]}`, (args) => {
+        t.pass('multimediad emit cancel with correct id')
+      })
+      t.pass('method call [start] success')
     })
     .catch(() => {
       t.fail('method call [start] failed')
