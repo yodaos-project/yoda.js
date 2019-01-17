@@ -8,15 +8,15 @@
     },
     {
       "name": "connect",
-      "comps": []
+      "comps": ["dnd-mode"]
     },
     {
       "name": "login",
-      "comps": []
+      "comps": ["keyboard"]
     },
     {
       "name": "ready",
-      "comps": []
+      "comps": ["sound"]
     }
   ],
   "interception": {

@@ -7,7 +7,6 @@ var path = require('path')
 
 var logger = require('logger')('bolero/loader')
 var _ = require('@yoda/util')._
-
 /**
  * Module loader. Loads modules under a directory as a lazily instantiated getter to target.
  */
@@ -28,9 +27,9 @@ class Loader {
     }
     this.target = this.runtime[this.property]
     this.stages = []
-    if (isInstanceofArray(stages)) {
+    //if (stages instanceof Array) {
       stages.forEach(it => {
-        if (typeof it === 'object' && typeof it.name === 'string' && isInstanceofArray(it.comps)) {
+    //    if (typeof it === 'object' && typeof it.name === 'string' && it.comps instanceof Array) {
           if (it.comps.length > 0) {
             it.callback = {
               before: null,
@@ -38,11 +37,11 @@ class Loader {
             }
             this.stages.push(it)
           }
-        } else {
-          logger.error(`component stages define error: ${JSON.stringify(it)}`)
-        }
+    //    } else {
+    //      logger.error(`component stages define error: ${JSON.stringify(it)}`)
+    //    }
       })
-    }
+    //}
   }
 
   /**
@@ -66,7 +65,7 @@ class Loader {
    */
   after (event, callback) {
     if (typeof callback === 'function' && typeof event === 'string') {
-      this.stages.filter(it => it.name === event).map((it) => {
+      this.stages.filter(it => it.name === event).forEach((it) => {
         it.callback.after = callback
       })
     } else {
@@ -74,19 +73,26 @@ class Loader {
     }
   }
   /**
-   * Loads the directory and defines getters on target.
+   * Loads all component
    *
    * @param {array} compDirs - components directories to be loaded.
-   * @param {object} stages - components load stages.
    */
   load (compDirs) {
-    var dirs = []
+    var compList = {}
     var rst = []
     compDirs.forEach((dir) => {
       var files = []
       try {
         files = fs.readdirSync(dir)
-        dirs.push({ dir: dir, files: files })
+        files.filter(it => _.endsWith(it, '.js')).forEach((it) => {
+          var compName = path.basename(it, '.js')
+          if (compList.hasOwnProperty(compName)) {
+            logger.error(`component exists: ${compList[compName]} ${path.join(dir, it)}`)
+          } else {
+            compList[compName] = path.join(dir, it)
+            logger.error(`find component file: ${compName}`)
+          }
+        })
       } catch (err) {
         if (err.code !== 'ENOENT') {
           throw err
@@ -94,37 +100,35 @@ class Loader {
         logger.error(`directory '${dir}' doesn't exist, skipping...`)
       }
     })
-    this.stages.forEach((stage) => {
-
-    })
-    dirs.forEach((dirInfo) => {
-      dirInfo.files.forEach(it => {
-        stages.base_component.forEach(fileName => {
-          if (fileName === it) {
-            var comp = require(path.join(dirInfo.dir, it))
-            try{
-              this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
-            } catch (err) {
-              //todo remove filename after first loading
-              logger.error(`stage 1: ${err}`)
-            }
+    this.stages.forEach((stage, index) => {
+      stage.callback.before()
+      stage.comps.forEach(it => {
+        if (compList.hasOwnProperty(it)) {
+          try {
+            var comp = require(compList[it])
+            this.register(it, comp, comp.dependencies || [])
+            logger.error(`component [${compName}] loaded`)
+          } catch (err) {
+            logger.error(`stage ${it}: ${err}`)
           }
-        })
+          delete compList[it]
+        } else {
+          logger.error(`component [${it}] in stage [${stage.name}] not exist.`)
+        }
       })
-    })
-    process.nextTick(() => {
-      dirs.forEach((dirInfo) => {
-        rst = rst.concat(dirInfo.files.filter(it => _.endsWith(it, '.js'))
-          .map(it => {
-            var comp = require(path.join(dirInfo.dir, it))
-            try{
-              this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
-            } catch (err) {
-              //todo remove filename after first loading
-              logger.error(err)
-            }
-          }))
-      })
+      // last stage, we need to load all left components
+      if (index !== this.stages.length - 1) {
+        for (var key in compList) {
+          try {
+            var comp = require(compList[key])
+            this.register(key, comp, comp.dependencies || [])
+            logger.error(`left component [${compName}] loaded`)
+          } catch (err) {
+            logger.error(`stage ${key}: ${err}`)
+          }
+        }
+      }
+      stage.callback.after()
     })
     return rst
   }
@@ -148,7 +152,6 @@ class Loader {
       }
     })
   }
-
   /**
    * Register the class.
    *
@@ -157,15 +160,11 @@ class Loader {
    */
   register (name, Klass) {
     name = _.camelCase(name)
-    // if (this.registry[name]) {
-    //   throw new Error(`Conflict registration on '${name}'.`)
-    // }
-    // this.registry[name] = Klass
-    // this.loadToTarget(name, Klass)
-    if (!this.registry[name]) {
-      this.registry[name] = Klass
-      this.loadToTarget(name, Klass)
+    if (this.registry[name]) {
+      throw new Error(`Conflict registration on '${name}'.`)
     }
+    this.registry[name] = Klass
+    this.loadToTarget(name, Klass)
   }
 }
 
