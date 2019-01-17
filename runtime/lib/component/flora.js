@@ -18,95 +18,20 @@ module.exports = Flora
  * @param {AppRuntime} runtime
  */
 function Flora (runtime) {
-  FloraComp.call(this, logger)
+  FloraComp.call(this, 'vui', floraConfig)
   this.runtime = runtime
   this.component = runtime.component
   this.speechAuthInfo = null
-  this.voiceCtx = { lastFaked: false }
 
   this.asr2nlpCallbacks = {}
 }
 inherits(Flora, FloraComp)
 
 Flora.prototype.handlers = {
-  'rokid.turen.voice_coming': function (msg) {
-    logger.log('voice coming')
-    this.voiceCtx.lastFaked = false
-    this.component.turen.handleEvent('voice coming', {})
-  },
-  'rokid.turen.local_awake': function (msg) {
-    logger.log('voice local awake')
-    var data = {}
-    data.sl = msg[0]
-    this.component.turen.handleEvent('voice local awake', data)
-  },
-  'rokid.speech.inter_asr': function (msg) {
-    var asr = msg[0]
-    logger.log('asr pending', asr)
-    this.component.turen.handleEvent('asr pending', asr)
-  },
-  'rokid.speech.final_asr': function (msg) {
-    var asr = msg[0]
-    logger.log('asr end', asr)
-    this.component.turen.handleEvent('asr end', { asr: asr })
-  },
-  'rokid.speech.extra': function (msg) {
-    var data = JSON.parse(msg[0])
-    switch (data.activation) {
-      case 'accept': {
-        this.component.turen.handleEvent('asr accept')
-        break
-      }
-      case 'fake': {
-        this.voiceCtx.lastFaked = true
-        this.component.turen.handleEvent('asr fake')
-        break
-      }
-      case 'reject': {
-        this.component.turen.handleEvent('asr reject')
-        break
-      }
-      default:
-        logger.info('Unhandled speech extra', data)
-        this.component.turen.handleEvent('asr extra', data)
-    }
-  },
-  'rokid.turen.start_voice': function (msg) {
-    this.component.turen.handleEvent('start voice')
-  },
-  'rokid.turen.end_voice': function (msg) {
-    this.component.turen.handleEvent('end voice')
-  },
-  'rokid.speech.nlp': function (msg) {
-    if (this.voiceCtx.lastFaked) {
-      logger.info('skip nlp, because last voice is fake')
-      this.voiceCtx.lastFaked = false
-      return
-    }
-
-    logger.log(`NLP(${msg[0]}), action(${msg[1]})`)
-    var data = {}
-    data.asr = ''
-    try {
-      data.nlp = JSON.parse(msg[0])
-      data.action = JSON.parse(msg[1])
-    } catch (err) {
-      logger.log('nlp/action parse failed, discarded.')
-      return this.component.turen.handleEvent('malicious nlp', data)
-    }
-    this.component.turen.handleEvent('nlp', data)
-  },
-  'rokid.speech.error': function (msg) {
-    var errCode = msg[0]
-    var speechId = msg[1]
-    logger.error(`Unexpected speech error(${errCode}) for speech(${speechId}).`)
-    return this.component.turen.handleEvent('speech error', errCode, speechId)
-  },
-  'battery.info': function (msg) {
-    return this.component.battery.handleFloraInfo(msg[0])
-  }
+  [`rokid.speech.nlp.${asr2nlpId}`]: onAsr2Nlp,
+  [`rokid.speech.error.${asr2nlpId}`]: onAsr2NlpError
 }
-Flora.prototype.handlers[`rokid.speech.nlp.${asr2nlpId}`] = onAsr2Nlp
+
 /**
  * @this Flora
  */
@@ -129,7 +54,7 @@ function onAsr2Nlp (msg) {
     delete this.asr2nlpCallbacks[seq]
   }
 }
-Flora.prototype.handlers[`rokid.speech.error.${asr2nlpId}`] = onAsr2NlpError
+
 /**
  * @this Flora
  */
@@ -149,7 +74,7 @@ function onAsr2NlpError (msg) {
  * Initialize flora client.
  */
 Flora.prototype.init = function init () {
-  FloraComp.prototype.init.call(this, 'vui', floraConfig)
+  FloraComp.prototype.init.call(this)
   this.post('rokid.speech.options', [
     ovsdkConfig.speech.lang,
     ovsdkConfig.speech.codec,

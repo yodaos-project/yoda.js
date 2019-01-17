@@ -617,7 +617,8 @@ DBus.prototype.amsexport = {
           })
       }
       future.catch(err => {
-        cb(null, JSON.stringify({ ok: true, error: err.message, stack: err.stack }))
+        logger.error('unexpected error on reload', err.stack)
+        cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
       })
     }
   }

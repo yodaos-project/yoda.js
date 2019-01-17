@@ -10,11 +10,17 @@ module.exports = Turen
 function Turen (runtime) {
   this.runtime = runtime
   this.component = runtime.component
+  this.voiceCtx = { lastFaked: false }
 
   /**
    * indicates microphone muted or not.
    */
   this.muted = false
+
+  /**
+   * indicates if turen is enabled to processing wake ups.
+   */
+  this.enabled = true
 
   /** if device is awaken */
   this.awaken = false
@@ -48,11 +54,92 @@ function Turen (runtime) {
   this.noVoiceInputTimer = null
 }
 
+Turen.prototype.handlers = {
+  'rokid.turen.voice_coming': function (msg) {
+    logger.log('voice coming')
+    this.voiceCtx.lastFaked = false
+    this.handleVoiceComing()
+  },
+  'rokid.turen.local_awake': function (msg) {
+    logger.log('voice local awake')
+    var data = {}
+    data.sl = msg[0]
+    this.handleVoiceLocalAwake(data)
+  },
+  'rokid.speech.inter_asr': function (msg) {
+    var asr = msg[0]
+    logger.log('asr pending', asr)
+    this.handleAsrProgress('pending', asr)
+  },
+  'rokid.speech.final_asr': function (msg) {
+    var asr = msg[0]
+    logger.log('asr end', asr)
+    this.handleAsrEnd({ asr: asr })
+  },
+  'rokid.speech.extra': function (msg) {
+    var data = JSON.parse(msg[0])
+    switch (data.activation) {
+      case 'accept': {
+        this.handleAsrProgress('accept')
+        break
+      }
+      case 'fake': {
+        this.voiceCtx.lastFaked = true
+        this.handleAsrFake()
+        break
+      }
+      case 'reject': {
+        this.handleAsrReject()
+        break
+      }
+      default:
+        logger.info('Unhandled speech extra', data)
+        this.handleAsrProgress('extra', data)
+    }
+  },
+  'rokid.turen.start_voice': function (msg) {
+    this.handleStartVoice()
+  },
+  'rokid.turen.end_voice': function (msg) {
+    this.handleEndVoice()
+  },
+  'rokid.speech.nlp': function (msg) {
+    if (this.voiceCtx.lastFaked) {
+      logger.info('skip nlp, because last voice is fake')
+      this.voiceCtx.lastFaked = false
+      return
+    }
+
+    logger.log(`NLP(${msg[0]}), action(${msg[1]})`)
+    var data = {}
+    data.asr = ''
+    try {
+      data.nlp = JSON.parse(msg[0])
+      data.action = JSON.parse(msg[1])
+    } catch (err) {
+      logger.log('nlp/action parse failed, discarded.')
+      return this.handleMaliciousNlpResult(data)
+    }
+    return this.handleNlpResult(data)
+  },
+  'rokid.speech.error': function (msg) {
+    var errCode = msg[0]
+    var speechId = msg[1]
+    logger.error(`Unexpected speech error(${errCode}) for speech(${speechId}).`)
+    return this.handleSpeechError(errCode, speechId)
+  }
+}
+
 Turen.prototype.init = function init () {
   if (this.bluetoothA2dp) {
     this.deinit()
   }
   this.bluetoothA2dp = bluetooth.getAdapter(bluetooth.protocol.PROFILE.A2DP)
+
+  Object.keys(this.handlers).forEach(name => {
+    var handler = this.listenerWrap(name, this.handlers[name])
+    this.component.flora.subscribe(name, handler)
+  })
 }
 
 Turen.prototype.deinit = function deinit () {
@@ -68,59 +155,15 @@ Turen.prototype.deinit = function deinit () {
  * @param {object} data -
  * @private
  */
-Turen.prototype.handleEvent = function (name, data) {
-  if (this.muted) {
-    logger.error('Mic muted, unexpected event from Turen:', name)
-    return
+Turen.prototype.listenerWrap = function (name, fn) {
+  return (msg, type) => {
+    if (this.muted) {
+      logger.warn('Mic muted, unexpected event from Turen:', name)
+      return
+    }
+    logger.debug(`handling turen event "${name}"`)
+    return fn.call(this, msg, type)
   }
-  var handler = null
-  switch (name) {
-    case 'voice coming':
-      handler = this.handleVoiceComing
-      break
-    case 'voice local awake':
-      handler = this.handleVoiceLocalAwake
-      break
-    case 'asr accept':
-      handler = this.handleAsrProgress.bind(this, 'accept')
-      break
-    case 'asr pending':
-      handler = this.handleAsrProgress.bind(this, 'pending')
-      break
-    case 'asr extra':
-      handler = this.handleAsrProgress.bind(this, 'extra')
-      break
-    case 'asr end':
-      handler = this.handleAsrEnd
-      break
-    case 'asr fake':
-      handler = this.handleAsrFake
-      break
-    case 'asr reject':
-      handler = this.handleAsrReject
-      break
-    case 'start voice':
-      handler = this.handleStartVoice
-      break
-    case 'end voice':
-      handler = this.handleEndVoice
-      break
-    case 'nlp':
-      handler = this.handleNlpResult
-      break
-    case 'malicious nlp':
-      handler = this.handleMaliciousNlpResult
-      break
-    case 'speech error':
-      handler = this.handleSpeechError
-      break
-  }
-  if (typeof handler !== 'function') {
-    logger.info(`skip turen event "${name}" for no handler existing`)
-    return
-  }
-  logger.debug(`handling turen event "${name}"`)
-  return handler.call(this, data)
 }
 
 /**
@@ -223,7 +266,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
       clearTimeout(this.solitaryVoiceComingTimer)
       this.solitaryVoiceComingTimer = setTimeout(() => {
         logger.warn('detected a solitary voice coming, resetting awaken')
-        this.pickup(false)
+        this.pickup(false, { discardNext: false })
 
         if (this.awaken) {
           return this.announceNetworkLag()
@@ -260,7 +303,7 @@ Turen.prototype.handleAsrProgress = function handleAsrProgress (state) {
   clearTimeout(this.noVoiceInputTimer)
   this.noVoiceInputTimer = setTimeout(() => {
     logger.warn('no more voice input detected, closing pickup')
-    this.pickup(false)
+    this.pickup(false, { discardNext: false })
   }, this.noVoiceInputTimeout)
 }
 
@@ -449,19 +492,36 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
 /**
  * Set whether or not turenproc is picked up.
  * @param {boolean} isPickup
+ * @param {object} [options]
+ * @param {boolean} [options.discardNext=true]
  */
-Turen.prototype.pickup = function pickup (isPickup) {
+Turen.prototype.pickup = function pickup (isPickup, options) {
+  var discardNext = _.get(options, 'discardNext', true)
   /**
    * if set not to picking up, discard next coming nlp,
    * otherwise reset picking up discarding state to enable next nlp process,
    */
-  this.pickingUpDiscardNext = !isPickup
+  this.pickingUpDiscardNext = discardNext && !isPickup
   this.component.flora.post('rokid.turen.pickup', [ isPickup ? 1 : 0 ])
 
   if (!isPickup) {
     clearTimeout(this.solitaryVoiceComingTimer)
     clearTimeout(this.noVoiceInputTimer)
   }
+}
+
+/**
+ * Set whether or not turenproc should processing wake ups. By default toggles the switch.
+ *
+ * @param {boolean} [enabled]
+ */
+Turen.prototype.toggleWakeUpEngine = function toggleWakeUpEngine (enabled) {
+  if (enabled == null) {
+    enabled = !this.enabled
+  }
+  this.enabled = enabled
+  this.component.flora.post('rokid.turen.disable.wakeupEngine', [ enabled ? 0 : 1 ])
+  return this.enabled
 }
 
 /**

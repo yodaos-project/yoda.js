@@ -37,7 +37,6 @@ module.exports = activity => {
   directive.do('frontend', 'tts', function (dt, next) {
     logger.log(`start dt: tts.${dt.action}`)
     if (dt.action === 'say') {
-      activity.media.pause()
       ttsClient.speak(dt.data.item.tts, function (name) {
         logger.log(`end dt: tts.${dt.action} ${name}`)
         if (name === 'start') {
@@ -258,5 +257,26 @@ module.exports = activity => {
   activity.on('destroy', function () {
     logger.log(this.appId + ' destroyed')
     sos.destroy()
+  })
+  activity.on('notification', (state) => {
+    switch (state) {
+      case 'on-start-shake':
+        logger.log('on-start-shake')
+        break
+      case 'on-stop-shake':
+        logger.log('on-stop-shake')
+        activity.voiceCommand('下一首')
+        break
+      case 'on-quite-back':
+        logger.log('on-quite-back')
+        sos.setManualPauseFLag(true)
+        sos.pause()
+        break
+      case 'on-quite-front':
+        logger.log('on-quite-front')
+        sos.setManualPauseFLag(false)
+        sos.resume()
+        break
+    }
   })
 }

@@ -77,6 +77,7 @@ AppRuntime.prototype.init = function init () {
   this.componentsInvoke('init')
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
+  this.component.turen.toggleWakeUpEngine(true)
 
   this.component.lifetime.on('stack-reset', () => {
     this.resetCloudStack()
@@ -501,16 +502,29 @@ AppRuntime.prototype.openUrl = function (url, options) {
  *
  * @param {string} channel
  * @param {any[]} params
+ * @param {object} [options]
+ * @param {'active' | 'running' | 'all'} [options.filterOption='all']
  */
-AppRuntime.prototype.dispatchNotification = function dispatchNotification (channel, params) {
+AppRuntime.prototype.dispatchNotification = function dispatchNotification (channel, params, options) {
+  var filterOption = _.get(options, 'filterOption', 'all')
   var appIds = this.component.appLoader.notifications[channel]
   if (!Array.isArray(appIds)) {
     return Promise.reject(new Error(`Unknown notification channel '${channel}'`))
   }
+  switch (filterOption) {
+    case 'active':
+      appIds = this.component.lifetime.activeSlots.toArray()
+        .filter(it => appIds.indexOf(it) >= 0)
+      break
+    case 'running':
+      appIds = appIds.filter(it => this.component.appScheduler.isAppRunning(it))
+      break
+  }
+
   if (params == null) {
     params = []
   }
-  logger.info(`on system notification(${channel}):`, appIds)
+  logger.info(`on system notification(${channel}): ${appIds} with filter option '${filterOption}'`)
 
   var self = this
   return step(0)
@@ -520,13 +534,17 @@ AppRuntime.prototype.dispatchNotification = function dispatchNotification (chann
       return Promise.resolve()
     }
     var appId = appIds[idx]
-    self.component.lifetime.createApp(appId)
-      /** force quit app on create error */
-      .catch(err => {
-        logger.error(`create app ${appId} failed`, err.stack)
-        return self.component.lifetime.destroyAppById(appId, { force: true })
-          .then(() => { /** rethrow error to break following procedures */throw err })
-      })
+    var future = Promise.resolve()
+    if (filterOption !== 'all') {
+      future = self.component.lifetime.createApp(appId)
+        /** force quit app on create error */
+        .catch(err => {
+          logger.error(`create app ${appId} failed`, err.stack)
+          return self.component.lifetime.destroyAppById(appId, { force: true })
+            .then(() => { /** rethrow error to break following procedures */throw err })
+        })
+    }
+    return future
       .then(() => self.component.lifetime.onLifeCycle(appId, 'notification', [ channel ].concat(params)))
       .catch(err => {
         logger.error(`send notification(${channel}) failed with appId: ${appId}`, err.stack)
@@ -1067,6 +1085,25 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
 AppRuntime.prototype.onLoggedIn = function () {
   this.component.custodian.onLoggedIn()
 
+  var enableTtsService = () => {
+    var config = JSON.stringify(this.onGetPropAll())
+    return this.ttsMethod('connect', [config])
+      .then(res => {
+        if (!res) {
+          logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
+        } else {
+          logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
+        }
+      }, err => {
+        logger.error('send CONFIG to ttsd failed: call method failed', err && err.stack)
+      })
+  }
+
+  var sendReady = () => {
+    var ids = Object.keys(this.component.appScheduler.appMap)
+    return Promise.all(ids.map(it => this.component.lifetime.onLifeCycle(it, 'ready')))
+  }
+
   var deferred = () => {
     perf.stub('started')
     if (this.shouldWelcome) {
@@ -1076,36 +1113,18 @@ AppRuntime.prototype.onLoggedIn = function () {
             return
           }
           logger.info('announcing welcome')
-          this.setMicMute(false, { silent: true })
-            .then(() => {
-              this.component.light.appSound('@yoda', 'system://startup0.ogg')
-              return this.component.light.play('@yoda', 'system://setWelcome.js')
-            })
-            .then(() => {
-              // not need to play startup music after relogin
-              this.component.light.stop('@yoda', 'system://boot.js')
-            })
+          return this.setMicMute(false, { silent: true })
+        })
+        .then(() => {
+          this.component.light.appSound('@yoda', 'system://startup0.ogg')
+          return this.component.light.play('@yoda', 'system://setWelcome.js')
+        })
+        .then(() => {
+          // not need to play startup music after relogin
+          this.component.light.stop('@yoda', 'system://boot.js')
         })
     }
     this.shouldWelcome = false
-
-    var config = JSON.stringify(this.onGetPropAll())
-    return this.ttsMethod('connect', [config])
-      .then((res) => {
-        if (!res) {
-          logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
-        } else {
-          logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
-        }
-      })
-      .catch((error) => {
-        logger.log('send CONFIG to ttsd failed: call method failed', error)
-      })
-  }
-
-  var sendReady = () => {
-    var ids = Object.keys(this.component.appScheduler.appMap)
-    return Promise.all(ids.map(it => this.component.lifetime.onLifeCycle(it, 'ready')))
   }
 
   var onDone = () => {
@@ -1113,14 +1132,14 @@ AppRuntime.prototype.onLoggedIn = function () {
   }
 
   return Promise.all([
+    enableTtsService(),
     sendReady() /** only send ready to currently alive apps */,
     this.startDaemonApps(),
     this.setStartupFlag(),
-    this.initiate()
-      .then(deferred, err => {
-        logger.error('Unexpected error on runtime.initiate', err.stack)
-        return deferred()
-      })
+    this.initiate().then(deferred, err => {
+      logger.error('Unexpected error on bootstrap', err.stack)
+      return deferred()
+    })
   ]).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()

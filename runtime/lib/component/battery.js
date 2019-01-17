@@ -17,7 +17,12 @@ class Battery {
     this.shouldAnnounceLowPower = false
   }
 
-  handleFloraInfo (msg) {
+  init () {
+    this.component.flora.subscribe('battery.info', this.handleFloraInfo.bind(this))
+  }
+
+  handleFloraInfo (caps) {
+    var msg = caps[0]
     var data
     try {
       data = JSON.parse(msg)
