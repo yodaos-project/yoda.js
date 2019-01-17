@@ -6,9 +6,7 @@ function Light () {
 }
 Light.prototype.invoke = function () {
   return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve()
-    }, 500)
+    setTimeout(resolve, 500)
   })
 }
 
