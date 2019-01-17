@@ -174,7 +174,6 @@ module.exports = function (activity) {
     // 1.5 disconnect from remote device
     'disconnect_devices': () => {
       a2dp.disconnect()
-      hfp.disconnect()
     },
 
     /**
@@ -188,7 +187,6 @@ module.exports = function (activity) {
     // 2.2 disconnect from remote phone
     'disconnect_phone': () => {
       a2dp.disconnect()
-      hfp.disconnect()
     },
     // 2.3 directly play music via sink mode
     'play_bluetoothmusic': () => {
