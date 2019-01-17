@@ -16,22 +16,11 @@ class MsgCallbackInfo {
       : msgtype(FLORA_MSGTYPE_INSTANT), env(e) {
   }
 
-  /**
-  MsgCallbackInfo(const MsgCallbackInfo& o)
-      : msgName(o.msgName),
-        msg(o.msg),
-        msgtype(o.msgtype),
-        env(o.env),
-        reply(o.reply) {
-  }
-  */
-
   std::string msgName;
   std::shared_ptr<Caps> msg;
   uint32_t msgtype;
   Napi::Env env;
-  flora::Reply* reply = nullptr;
-  bool handled = false;
+  std::shared_ptr<flora::Reply> reply;
 };
 
 class RespCallbackInfo {
@@ -80,7 +69,7 @@ class ClientNative {
 
  private:
   void msgCallback(const char* name, Napi::Env env, std::shared_ptr<Caps>& msg,
-                   uint32_t type, flora::Reply* reply);
+                   uint32_t type, std::shared_ptr<flora::Reply> reply);
 
   void respCallback(std::shared_ptr<Napi::FunctionReference> cbr,
                     int32_t rescode, flora::Response& response);
@@ -133,4 +122,49 @@ class NativeObjectWrap : public Napi::ObjectWrap<NativeObjectWrap> {
 
  private:
   ClientNative* thisClient = nullptr;
+};
+
+class NativeReply {
+ public:
+  static void init(napi_env env);
+
+  static napi_value newInstance(napi_env env, napi_callback_info cbinfo);
+
+  static napi_value createObject(napi_env env,
+                                 std::shared_ptr<flora::Reply>& reply);
+
+  static void objectFinalize(napi_env env, void* data, void* hint);
+
+  explicit NativeReply(std::shared_ptr<flora::Reply>& r) : reply(r) {
+  }
+
+ public:
+  napi_value writeCode(napi_env env, napi_value thisObj, size_t argc,
+                       napi_value* argv);
+
+  napi_value writeData(napi_env env, napi_value thisObj, size_t argc,
+                       napi_value* argv);
+
+  napi_value end(napi_env env, napi_value thisObj, size_t argc,
+                 napi_value* argv);
+
+ private:
+  static napi_value writeCodeStatic(napi_env env, napi_callback_info cbinfo);
+
+  static napi_value writeDataStatic(napi_env env, napi_callback_info cbinfo);
+
+  static napi_value endStatic(napi_env env, napi_callback_info cbinfo);
+
+  typedef napi_value (NativeReply::*NapiCallbackFunc)(napi_env env,
+                                                      napi_value thisObj,
+                                                      size_t argc,
+                                                      napi_value* argv);
+
+  static napi_value callNativeMethod(napi_env env, napi_callback_info cbinfo,
+                                     NapiCallbackFunc cb);
+
+ private:
+  static napi_ref replyConstructor;
+
+  std::shared_ptr<flora::Reply> reply;
 };
