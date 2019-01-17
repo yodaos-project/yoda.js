@@ -61,6 +61,7 @@ void Activation::start() {
     } else {
       cli->subscribe(VOICE_COMING);
       cli->subscribe(WAKEUP_SOUND);
+      cli->subscribe(VUI_PICKUP);
       flora_cli = cli;
       reconn_cond.wait(locker);
     }
