@@ -23,7 +23,7 @@ Directive.prototype.execute = function execute (dt, type, cb) {
   logger.info('start run dt')
 }
 
-Directive.prototype.resume = function (type, cb) {
+Directive.prototype.resume = function resume (type, cb) {
   this[type] = []
   var dt = [{
     type: 'media',
@@ -39,11 +39,12 @@ Directive.prototype.run = function run (type, cb) {
   }
   var self = this
   var dt = this[type].shift()
+  cb = cb || () => false
 
-  function handle (next) {
+  function handle (item) {
     // NOTICE: INTERNAL_EXIT is only used myself.
     // stop if current directive is INTERNAL_EXIT
-    if (next.type === 'INTERNAL_EXIT') {
+    if (item.type === 'INTERNAL_EXIT') {
       logger.info('all directive complete because current dt is: INTERNAL_EXIT')
       return cb && cb()
     }
@@ -55,45 +56,20 @@ Directive.prototype.run = function run (type, cb) {
         type: 'INTERNAL_EXIT'
       }
     }
-    logger.info(`run dt: ${type} ${next.type} ${next.action || ''}`)
-    if (next.type === 'tts') {
-      self.cb[type].tts.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else if (next.type === 'media') {
-      self.cb[type].media.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else if (next.type === 'confirm') {
-      self.cb[type].confirm.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else if (next.type === 'pickup') {
-      self.cb[type].pickup.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else if (next.type === 'native') {
-      self.cb[type].native.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else {
+
+    function next (canceled) {
+      if (canceled) {
+        return cb()
+      }
+      handle(dt)
+    }
+
+    logger.info(`run dt: ${type} ${item.type} ${item.action || ''}`)
+    if (typeof self.cb[type][item.type] !== 'function') {
       logger.info('all directive complete')
-      cb && cb()
+      cb()
+    } else {
+      self.cb[type][item.type].apply(self, [item, next])
     }
   }
   handle(dt)

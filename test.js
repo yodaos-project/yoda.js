@@ -1,0 +1,7 @@
+
+class Foo {
+  constructor() {
+    Number
+  }
+}
+
