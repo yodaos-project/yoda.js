@@ -210,6 +210,54 @@ class BluetoothHfp extends EventEmitter {
   }
 
   /**
+   * Get hfp radio state.
+   * @returns {RADIO_STATE} - The current radio state.
+   */
+  getRadioState () {
+    if (this.lastMsg.hfpstate === 'opened') {
+      return protocol.RADIO_STATE.ON
+    } else {
+      return protocol.RADIO_STATE.OFF
+    }
+  }
+
+  /**
+   * Get hfp connection state.
+   * @return {CONNECTION_STATE} - The current connection state.
+   */
+  getConnectionState () {
+    if (this.lastMsg.connect_state === 'connected') {
+      return protocol.CONNECTION_STATE.CONNECTED
+    } else {
+      return protocol.CONNECTION_STATE.DISCONNECTED
+    }
+  }
+
+  /**
+   * Get hfp call state.
+   * @return {CALL_STATE} - The current call state.
+   */
+  getCallState () {
+    if (this.lastMsg.call === 'active' ||
+      this.lastMsg.setup === 'outgoing' ||
+      this.lastMsg.setup === 'alerting') {
+      return protocol.CALL_STATE.OFFHOOK
+    } else if (this.lastMsg.setup === 'incoming') {
+      return protocol.CALL_STATE.INCOMING
+    } else {
+      return protocol.CALL_STATE.IDLE
+    }
+  }
+
+  /**
+   * Get hfp discovery state.
+   * @return {DISCOVERY_STATE} - The currenct discovery state.
+   */
+  getDiscoveryState () {
+    return protocol.DISCOVERY_STATE.OFF
+  }
+
+  /**
    * Get if bluetooth is opened.
    * @returns {boolean} - `true` if bluetooth is opened else `false`.
    */
