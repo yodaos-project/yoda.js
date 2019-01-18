@@ -4,7 +4,9 @@ var fs = require('fs')
 var util = require('util')
 var DATAPATH = '/data/AppData/playercontrol/config.json'
 var DIRPATH = '/data/AppData/playercontrol'
-
+var fsStat = util.promisify(fs.stat)
+var readFile = util.promisify(fs.readFile)
+var writeFile = util.promisify(fs.writeFile)
 module.exports = function (activity) {
   var STRING_NO_PLAYER_EXIST = '当前没在播放状态呢，如果你想听歌，请对我说，播放歌曲'
 
@@ -41,9 +43,7 @@ module.exports = function (activity) {
   })
 
   function readconfig (callback) {
-    var fsStat = util.promisify(fs.stat)
     fsStat(DATAPATH).then(() => {
-      var readFile = util.promisify(fs.readFile)
       readFile(DATAPATH, 'utf8').then((data) => {
         logger.log('data = ', data)
         callback(JSON.parse(data || '{}'), null)
@@ -60,9 +60,7 @@ module.exports = function (activity) {
   }
 
   function saveconfig (data) {
-    var fsStat = util.promisify(fs.stat)
     fsStat(DIRPATH).then(() => {
-      var writeFile = util.promisify(fs.writeFile)
       writeFile(DATAPATH, JSON.stringify(data)).then(() => {
         logger.log('writeFile file success', data)
       })
@@ -76,7 +74,6 @@ module.exports = function (activity) {
           var mkdir = util.promisify(fs.mkdir)
           mkdir(DIRPATH).then(() => {
             logger.log('create dir success')
-            var writeFile = util.promisify(fs.writeFile)
             writeFile(DATAPATH, JSON.stringify(data)).then(() => {
               logger.log('w', data)
               return true
@@ -101,10 +98,9 @@ module.exports = function (activity) {
     switch (urlObj.pathname) {
       case '/playercontrol':
         var saveObj = {}
-        var url = urlObj.href.split('&url=')[1]
-        logger.log('split url is', url)
         saveObj.name = urlObj.query.name
-        saveObj.url = url
+        saveObj.url = urlObj.query.url
+        logger.log('url is', saveObj.url)
         saveconfig(saveObj)
         break
       default:
