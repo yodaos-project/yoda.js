@@ -272,6 +272,9 @@ DBus.prototype.amsexport = {
         // waiting for the app load complete
         return cb(null, false)
       }
+      if (this.runtime.hibernated) {
+        return cb(null, false)
+      }
       try {
         var data = JSON.parse(status)
         cb(null, true)
@@ -362,7 +365,8 @@ DBus.prototype.amsexport = {
     in: [],
     out: ['s'],
     fn: function Hibernate (cb) {
-      this.runtime.hibernate()
+      // TODO: `Hibernate` is a published API. Should be updated on next major version.
+      this.runtime.idle()
         .then(
           () => cb(null, '{"ok": true}'),
           err => {

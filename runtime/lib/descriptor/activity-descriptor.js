@@ -291,20 +291,20 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Put device into hibernation. Terminates apps in stack (i.e. apps in active and paused).
+     * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
      *
      * Also clears apps' contexts.
      *
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @function hibernate
+     * @function idle
      * @returns {Promise<void>}
      */
-    hibernate: {
+    idle: {
       type: 'method',
       returns: 'promise',
-      fn: function hibernate () {
-        return this._runtime.hibernate()
+      fn: function idle () {
+        return this._runtime.idle()
       }
     },
     /**
