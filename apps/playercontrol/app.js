@@ -16,7 +16,8 @@ module.exports = function (activity) {
   activity.on('request', function (nlp, action) {
     logger.log('player control event: request', nlp)
     if (nlp.intent === 'ROKID.INTENT.RESUME') {
-      readconfig(function (playerInfo) {
+      readconfig(function (playerInfo, error) {
+        logger.log('have error ', error)
         if (playerInfo === null || playerInfo === undefined || playerInfo === '') {
           speakAndExit(STRING_NO_PLAYER_EXIST)
           return
@@ -49,20 +50,20 @@ module.exports = function (activity) {
           fs.readFile(DATAPATH, 'utf8', function readFileCallback (err, data) {
             if (err) {
               logger.error('read data error', err.stack)
-              callback(null)
+              callback(null, err)
             }
             logger.log('data = ', data)
-            callback(JSON.parse(data || '{}'))
+            callback(JSON.parse(data || '{}'), null)
           })
         } catch (e) {
           // 捕获异常
           logger.error('read data error1', e)
-          callback(null)
+          callback(null, e)
         }
       }
     } catch (err) {
       logger.error('read dir error', err)
-      callback(null)
+      callback(null, err)
     }
   }
 
