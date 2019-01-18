@@ -64,9 +64,6 @@ module.exports = function (activity) {
       .then(() => {
         return writeFile(DATAPATH, JSON.stringify(data))
       })
-      .then(() => {
-        return {}
-      })
       .catch((err) => {
         if (err.code === 'ENOENT') {
           return mkdir(DIRPATH)
