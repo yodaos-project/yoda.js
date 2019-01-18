@@ -236,6 +236,34 @@ dbusApis.addMethod('setLoopMode', {
   }
 })
 
+dbusApis.addMethod('getEqMode', {
+  in: ['s', 's'],
+  out: ['d']
+}, function (appId, cb) {
+  logger.log(`appId: ${appId} getEqMode`)
+  if (appId) {
+    var mode = service.getEqMode(appId)
+    logger.log(`response: ${mode}`)
+    cb(null, mode)
+  } else {
+    cb(null, 0)
+  }
+})
+
+dbusApis.addMethod('setEqMode', {
+  in: ['s', 's'],
+  out: ['b']
+}, function (appId, mode, cb) {
+  mode = parseInt(mode)
+  logger.log(`appId: ${appId} setEqMode: ${mode}, ${typeof mode}`)
+  if (appId && !isNaN(mode)) {
+    service.setEqMode(appId, mode)
+    cb(null, true)
+  } else {
+    cb(null, false)
+  }
+})
+
 dbusApis.addMethod('reset', {
   in: [],
   out: ['b']

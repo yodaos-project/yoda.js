@@ -136,6 +136,20 @@ MultiMedia.prototype.setLoopMode = function (appId, mode) {
   }
 }
 
+MultiMedia.prototype.getEqMode = function getEqMode (appId) {
+  if (this.handle[appId]) {
+    return this.handle[appId].eqMode
+  }
+  logger.info(`no handle for app ${appId}, returning default eq mode`)
+  return 0
+}
+
+MultiMedia.prototype.setEqMode = function setEqMode (appId, mode) {
+  if (this.handle[appId]) {
+    this.handle[appId].eqMode = mode
+  }
+}
+
 MultiMedia.prototype.seek = function (appId, position, callback) {
   if (this.handle[appId]) {
     try {
