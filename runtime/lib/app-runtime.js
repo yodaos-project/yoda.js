@@ -59,6 +59,8 @@ function AppRuntime () {
     this.componentLoader.load(it)
   })
 
+  this.inited = false
+  this.hibernated = false
   // identify load app complete
   this.loadAppComplete = false
   this.shouldStopLongPressMicLight = false
@@ -90,26 +92,26 @@ AppRuntime.prototype.init = function init () {
   this.resetServices()
   this.shouldWelcome = !this.isStartupFlagExists()
 
-  var future = Promise.resolve()
-  if (property.get('sys.firstboot.init', 'persist') !== '1') {
-    // initializing play tts status
-    property.set('sys.firstboot.init', '1', 'persist')
-    future = future.then(() => {
-      return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
-    })
-  }
-  return future.then(() => {
-    return this.loadApps()
-  }).then(() => {
+  return this.loadApps().then(() => {
     this.inited = true
     return this.component.dispatcher.delegate('runtimeDidInit')
   }).then(delegation => {
     if (delegation) {
       return
     }
+    var future = Promise.resolve()
+    if (property.get('sys.firstboot.init', 'persist') !== '1') {
+      // initializing play tts status
+      property.set('sys.firstboot.init', '1', 'persist')
+      future = future.then(() => {
+        return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
+      })
+    }
     if (this.shouldWelcome) {
-      this.component.light.appSound('@yoda', 'system://boot.ogg')
-      this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+      future.then(() => {
+        this.component.light.appSound('@yoda', 'system://boot.ogg')
+        this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+      })
     }
     this.component.custodian.prepareNetwork()
   })
@@ -231,7 +233,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
     return future.then(() => this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg'))
   }
 
-  future = Promise.all([ future, this.hibernate() ])
+  future = Promise.all([ future, this.idle() ])
 
   if (currentAppId) {
     /**
@@ -252,16 +254,45 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
 }
 
 /**
- * Put device into hibernation. Terminates apps in stack (i.e. apps in active and paused).
+ * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
  *
  * Also clears apps' contexts.
  */
-AppRuntime.prototype.hibernate = function hibernate () {
+AppRuntime.prototype.idle = function idle () {
+  logger.info('set runtime to idling')
   /**
    * Clear apps and its contexts
    */
   this.resetCloudStack()
   return this.component.lifetime.deactivateAppsInStack()
+}
+
+/**
+ * Put device into hibernation state.
+ */
+AppRuntime.prototype.hibernate = function hibernate () {
+  if (this.hibernate !== false) {
+    logger.info('runtime already hibernated, skipping')
+    return Promise.resolve()
+  }
+  logger.info('hibernating runtime')
+  this.hibernated = true
+  /**
+   * Clear apps and its contexts
+   */
+  this.resetCloudStack()
+  return this.component.lifetime.destroyAll({ force: true })
+}
+
+AppRuntime.prototype.wakeup = function wakeup () {
+  if (this.hibernate !== true) {
+    logger.info('runtime already woken up, skipping')
+    return Promise.resolve()
+  }
+  logger.info('waking up runtime')
+  this.hibernated = false
+  this.component.custodian.prepareNetwork()
+  return this.startDaemonApps()
 }
 
 /**
