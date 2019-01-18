@@ -36,7 +36,7 @@ module.exports = function (activity) {
             speakAndExit(STRING_NO_PLAYER_EXIST)
             return
           }
-          activity.openUrl(playerInfo.url, { preemptive: false })
+          activity.openUrl(playerInfo.url, { preemptive: true })
         }
       })
     }
