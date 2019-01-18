@@ -14,8 +14,8 @@ Proxy.prototype.invoke = function (name, args) {
       this.options.dbusService,
       this.options.dbusObjectPath,
       this.options.dbusInterface,
-      name, sig, args || [], function (res) {
-        resolve(res)
+      name, sig, args || [], function () {
+        resolve(Array.prototype.slice.call(arguments, 0))
       })
   })
 }

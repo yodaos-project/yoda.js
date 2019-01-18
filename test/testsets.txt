@@ -24,5 +24,8 @@ runtime/lifetime/*.test.js
 runtime/ota/*.test.js
 runtime/services/lightd/*.test.js
 runtime/services/lightd/effects/*.test.js
+runtime/services/multimediad/*.test.js
+runtime/cloudapi-util.*.js
+runtime/dnd-mode/*.test.js
 runtime/turen/*.test.js
 runtime/cloudapi-*.test.js
