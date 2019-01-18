@@ -36,12 +36,15 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
     return Promise.resolve(this.getAppById(appId))
   }
   var future
-  if (this.appStatus[appId] === Constants.status.creating) {
-    future = this.appCreationFutures[appId]
-    if (future != null) {
-      return future
-    }
-    return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
+  switch (this.appStatus[appId]) {
+    case Constants.status.creating:
+      future = this.appCreationFutures[appId]
+      if (future != null) {
+        return future
+      }
+      return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
+    case Constants.status.destructing:
+      return Promise.reject(new Error(`Scheduler is destructing app ${appId}.`))
   }
   this.appStatus[appId] = Constants.status.creating
 
