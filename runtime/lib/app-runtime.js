@@ -54,86 +54,114 @@ function AppRuntime () {
   })
   this.shouldWelcome = true
   this.componentLoader = new Loader(this, 'component', ComponentConfig.stages)
-  this.componentLoader.loadComponentFile(ComponentConfig.paths)
-  var stageList = new StageList()
 
-  var doStage = (name) => {
-    this.componentLoader.loadStage(`${name}:before`).then(() => {
-      var comps = []
-      if (typeof ComponentConfig[name] === 'object') {
-        comps = ComponentConfig[name]
-      }
-      return this.componentLoader.loadStage(comps)
-        }).then(() => {
-          var funcName = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1, name.length - 1);
-          if (this.hasOwnProperty(funcName)) {
-            return this[funcName].apply(this)
-          }
-        }).then(() => {
-          return this.componentLoader.loadStage(`${name}:after`)
-        })
-  }
-
-  stageList.add('prepare', doStage)
-  stageList.add('connect', doStage)
-  stageList.add('login', doStage)
-  stageList.add('ready', doStage)
-
-  stageList.run()
   // identify load app complete
   this.loadAppComplete = false
   this.shouldStopLongPressMicLight = false
 }
 inherits(AppRuntime, EventEmitter)
 
+
+AppRuntime.prototype.onPrepare = function () {
+  logger.error('onPrepare')
+  return Promise.resolve()
+}
+
+AppRuntime.prototype.onConnect = function () {
+  logger.error('onConnect')
+  return Promise.resolve()
+}
+
+AppRuntime.prototype.onLogin = function () {
+  logger.error('onLogin')
+  return Promise.resolve()
+}
+
+AppRuntime.prototype.onReady = function () {
+  logger.error('onReady')
+  return Promise.resolve()
+}
 /**
  * Start AppRuntime
  *
  * @returns {Promise<void>}
  */
 AppRuntime.prototype.init = function init () {
+  this.componentLoader.loadComponentFile(ComponentConfig.paths)
+  var stageList = new StageList()
+
+  var doLoad = (stageName) => {
+    var comps = []
+    if (typeof ComponentConfig.stages[stageName] === 'object') {
+      comps = ComponentConfig.stages[stageName]
+      return this.componentLoader.loadStage(comps)
+    } else {
+      return Promise.resolve()
+    }
+  }
+  var doStage = (name) => {
+    return doLoad(`${name}:before`).then(() => {
+      return doLoad(name)
+    }).then(() => {
+      var funcName = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1, name.length - 1);
+      if (this.hasOwnProperty(funcName)) {
+        return this[funcName].apply(this)
+      } else {
+        return Promise.resolve()
+      }
+    }).then(() => {
+      return doLoad(`${name}:after`)
+    })
+  }
+
+  stageList.add('prepare', doStage)
+  stageList.add('connect', doStage)
+  stageList.add('login', doStage)
+  stageList.add('ready', doStage)
   if (this.inited) {
     return Promise.resolve()
   }
-  this.componentsInvoke('init', 'prepare')
-  if (this.shouldWelcome) {
-    this.component.light.appSound('@yoda', 'system://boot.ogg')
-    this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
-    logger.error('xxxx    played')
-  }
-  /** set turen to not muted */
-  this.component.turen.toggleMute(false)
-  this.component.turen.toggleWakeUpEngine(true)
-
-  this.component.lifetime.on('stack-reset', () => {
-    this.resetCloudStack()
-  })
-  this.component.lifetime.on('preemption', appId => {
-    this.appPause(appId)
-  })
-  // initializing the whole process...
-  this.resetCloudStack()
-  this.resetServices()
-  this.shouldWelcome = !this.isStartupFlagExists()
-
-  var future = Promise.resolve()
-  if (property.get('sys.firstboot.init', 'persist') !== '1') {
-    // initializing play tts status
-    property.set('sys.firstboot.init', '1', 'persist')
-    future = future.then(() => {
-      return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
-    })
-  }
-  return future.then(() => {
-    return this.loadApps()
-  }).then(() => {
-    this.inited = true
-    return this.component.dispatcher.delegate('runtimeDidInit')
-  }).then(delegation => {
-    if (delegation) {
-      return
+  stageList.run().then(() => {
+    this.componentsInvoke('init')
+    if (this.shouldWelcome) {
+      this.component.light.appSound('@yoda', 'system://boot.ogg')
+      this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+      logger.error('xxxx    played')
     }
-    this.component.custodian.prepareNetwork()
+    /** set turen to not muted */
+    this.component.turen.toggleMute(false)
+    this.component.turen.toggleWakeUpEngine(true)
+
+    this.component.lifetime.on('stack-reset', () => {
+      this.resetCloudStack()
+    })
+    this.component.lifetime.on('preemption', appId => {
+      this.appPause(appId)
+    })
+    // initializing the whole process...
+    this.resetCloudStack()
+    this.resetServices()
+    this.shouldWelcome = !this.isStartupFlagExists()
+
+    var future = Promise.resolve()
+    if (property.get('sys.firstboot.init', 'persist') !== '1') {
+      // initializing play tts status
+      property.set('sys.firstboot.init', '1', 'persist')
+      future = future.then(() => {
+        return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
+      })
+    }
+    return future.then(() => {
+      return this.loadApps()
+    }).then(() => {
+      this.inited = true
+      return this.component.dispatcher.delegate('runtimeDidInit')
+    }).then(delegation => {
+      if (delegation) {
+        return
+      }
+      this.component.custodian.prepareNetwork()
+    })
   })
 }
 

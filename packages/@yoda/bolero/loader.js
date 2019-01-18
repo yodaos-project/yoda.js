@@ -58,23 +58,22 @@ class Loader {
   /**
    * Loads component in stage
    *
-   * @param {array} comps - components
+   * @param {array} comps - all components in this stage
    */
   loadStage (comps) {
     comps.forEach(it => {
-        if (this.compList.hasOwnProperty(it)) {
-          try {
-            var comp = require(this.compList[it])
-            this.register(it, comp, comp.dependencies || [])
-            logger.error(`component [${it}] loaded`)
-          } catch (err) {
-            logger.error(`stage ${it}: ${err}`)
-          }
-          delete this.compList[it]
-        } else {
-          logger.error(`component [${it}] not exist.`)
+      if (this.compList.hasOwnProperty(it)) {
+        try {
+          var comp = require(this.compList[it])
+          this.register(it, comp, comp.dependencies || [])
+        } catch (err) {
+          logger.error(`stage ${it}: ${err}`)
         }
-      })
+        delete this.compList[it]
+      } else {
+        logger.error(`component [${it}] not exist.`)
+      }
+    })
     return Promise.resolve()
   }
 

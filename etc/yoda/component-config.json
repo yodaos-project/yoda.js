@@ -5,7 +5,11 @@
       "turen", "lifetime", "light", "flora",
       "dbus-registry", "wormhole"
     ],
-    "connect:before": [ "dnd-mode" ],
+    "connect:before": [
+      "dispatcher", "permission", "app-loader",
+      "app-scheduler", "custom-config", "custodian", "ota", "battery"
+    ],
+    "login:before":[ "dnd-mode" ],
     "login:after": [ "keyboard" ],
     "ready:before": [ "sound" ]
   },
