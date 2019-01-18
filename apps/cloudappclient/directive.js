@@ -1,5 +1,6 @@
 'use strict'
 
+var _ = require('@yoda/util')._
 var logger = require('logger')('cloudAppClient-directive')
 
 function emptyfn () {
@@ -48,10 +49,10 @@ Directive.prototype.run = function run (type, cb) {
   var dt = this[type].shift()
   cb = cb || emptyfn
 
-  function handle (item) {
+  function handle (directive) {
     // NOTICE: INTERNAL_EXIT is only used myself.
     // stop if current directive is INTERNAL_EXIT
-    if (item.type === 'INTERNAL_EXIT') {
+    if (directive.type === 'INTERNAL_EXIT') {
       logger.info('all directive complete because current dt is: INTERNAL_EXIT')
       return cb && cb()
     }
@@ -74,16 +75,16 @@ Directive.prototype.run = function run (type, cb) {
       handle(dt)
     }
 
-    logger.info(`run dt: ${type} ${item.type} ${item.action || ''}`)
-    if (typeof self.cb[type][item.type] !== 'function') {
+    logger.info(`run dt: ${type} ${directive.type} ${directive.action || ''}`)
+    if (typeof self.cb[type][directive.type] !== 'function') {
       logger.info('all directive complete')
       cb()
     } else {
-      if (item.nowait === true) {
-        self.cb[type][item.type].apply(self, [item, emptyfn])
+      if (_.get(directive, 'data.noWait', false) === true) {
+        self.cb[type][directive.type].apply(self, [directive, emptyfn])
         next()
       } else {
-        self.cb[type][item.type].apply(self, [item, next])
+        self.cb[type][directive.type].apply(self, [directive, next])
       }
     }
   }

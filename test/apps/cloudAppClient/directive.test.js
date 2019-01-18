@@ -120,7 +120,9 @@ test('directive3: test nowait property', (t) => {
     id: 30,
     type: 'tts',
     action: 'speak',
-    nowait: true
+    data: {
+      noWait: true
+    }
   }, {
     id: 31,
     type: 'media',
