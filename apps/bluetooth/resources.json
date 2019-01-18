@@ -10,6 +10,8 @@
   },
   "LIGHT": "system://bluetoothOpen.js",
   "URL": {
-    "BLUETOOTH_MUSIC": "yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music"
+    "BLUETOOTH_MUSIC": "yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music",
+    "PLAYER_CONTROLLER": "yoda-skill://playercontrol/playercontrol?name=%s",
+    "MUSIC_LIKE": "https://qqmusic-mobile-pro.rokid.com/rokid-cas-qqmusic/uniformEntry"
   }
 }
