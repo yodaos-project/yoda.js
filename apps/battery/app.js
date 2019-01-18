@@ -3,7 +3,7 @@ var logger = require('logger')('BATTERY')
 var util = require('util')
 var prop = require('@yoda/property')
 var PROP_KEY = 'rokid.battery10.times'
-var TEMPERATURE_LIGHT_RES = 'temperatureBattery.js'
+var TEMPERATURE_LIGHT_RES = 'system://temperatureBattery.js'
 var battery = require('@yoda/battery')
 var Const = require('./constant.json')
 var constant = Const.constant
@@ -51,7 +51,7 @@ module.exports = function (activity) {
 
   function powerStatusChange (isOnline, isPlaying, testPercent) {
     logger.log('powerStatusChanged ', isOnline, isPlaying, testPercent)
-    activity.light.play('self://battery.js', { isAcConnect: isOnline })
+    activity.light.play('system://power.js', { plug: isOnline })
       .then(() => {
         if (!isOnline && isPlaying === 'false') {
           queryBatteryStatus()

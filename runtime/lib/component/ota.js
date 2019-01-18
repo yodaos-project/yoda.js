@@ -49,11 +49,12 @@ class OTA {
           return false
         }
         logger.info('got pending update info', upgradeInfo)
-        return ota.conditions.getAvailabilityOfOta(upgradeInfo)
+        return ota.condition.getAvailabilityOfOta(upgradeInfo)
           .then(availability => {
             switch (availability) {
               case true:
                 return this.startForceUpdate(upgradeInfo)
+                  .then(() => true)
               case 'low_power':
               case 'extremely_low_power':
                 this.forceUpdateAvailable = true
@@ -72,7 +73,7 @@ class OTA {
         if (!info) {
           return false
         }
-        this.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
+        this.runtime.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
         return true
       }, err => {
         logger.error('get upgrade info on first upgrade boot failed', err.stack)

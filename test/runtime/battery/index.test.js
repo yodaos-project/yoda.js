@@ -22,7 +22,7 @@ function sendInfo (battery, data) {
     batChargingOnline: false
   }, data)
   var str = JSON.stringify(ret)
-  battery.handleFloraInfo(str)
+  battery.handleFloraInfo([str])
   return ret
 }
 

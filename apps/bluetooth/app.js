@@ -13,25 +13,60 @@ var protocol = bluetooth.protocol
  */
 module.exports = function (activity) {
   var a2dp = null
+  var hfp = null
   var deviceName = system.getDeviceName()
   logger.debug(`deviceName = ${deviceName}`)
   var res = require('./resources.json')
   var strings = require('./strings.json')
   var config = require('./config.json')
-  var BLUETOOTH_MUSIC_SKILL_ID = getBluetoothMusicSkillId()
   var needResume = false
   var lastIntent = null
   var timer = null
+  var onTopStack = false
+  var onQuietMode = false
+  var callState = protocol.CALL_STATE.IDLE
+
+  function setAppType (hosts, afterFunc) {
+    var id = getSkillId(hosts)
+    logger.debug(`setAppType(${hosts}: ${id})`)
+    switch (hosts) {
+      case 'bluetooth_music':
+      case 'bluetooth_call':
+        if (afterFunc !== null) {
+          activity.setForeground({form: 'scene', skillId: id}).then(afterFunc)
+        } else {
+          activity.setForeground({form: 'scene', skillId: id})
+        }
+        break
+      case 'bluetooth':
+        if (afterFunc !== null) {
+          activity.setBackground({form: 'cut', skillId: id}).then(afterFunc)
+        } else {
+          activity.setBackground({form: 'cut', skillId: id})
+        }
+        break
+      default:
+        break
+    }
+  }
+
+  function playIncomingRingtone () {
+    activity.media.start(res.AUDIO.RINGTONE, {streamType: 'ring'})
+  }
+
+  function stopIncomingRingtone () {
+    activity.media.stop()
+  }
 
   function textIsEmpty (text) {
     return text === undefined || text === null || text.length === 0
   }
 
-  function getBluetoothMusicSkillId () {
+  function getSkillId (skillName) {
     var pkg = require('./package.json')
     var hosts = pkg.manifest.hosts
     for (var i = 0; i < hosts.length; i++) {
-      if (hosts[i][0] === 'bluetooth_music') {
+      if (hosts[i][0] === skillName) {
         return hosts[i][1].skillId
       }
     }
@@ -53,6 +88,8 @@ module.exports = function (activity) {
     var mode = a2dp.getMode()
     logger.debug(`after speak(mode = ${mode}, opened = ${a2dp.isOpened()}, playing = ${a2dp.isPlaying()})`)
     if (!a2dp.isOpened()) {
+      a2dp.destroy()
+      hfp.destroy()
       activity.exit()
     } else if (!a2dp.isPlaying()) {
       activity.setBackground()
@@ -91,6 +128,10 @@ module.exports = function (activity) {
     }
   }
 
+  function addToFavorite () {
+    // TODO: add song to favorite.
+  }
+
   function sendMsgToApp (event, data) {
     var msg = {
       'type': 'Bluetooth',
@@ -102,7 +143,7 @@ module.exports = function (activity) {
     return activity.wormhole.sendToApp('event', JSON.stringify(msg))
   }
 
-  var a2dpIntentHandlers = {
+  var intentHandlers = {
     /**
      * 1. common intents
      */
@@ -112,7 +153,7 @@ module.exports = function (activity) {
     },
     // 1.2 add to favorites
     'like': () => {
-      speak(getText('LIKE'))
+      a2dp.query()
     },
     // 1.3 open bluetooth
     'bluetooth_broadcast': (nlp) => {
@@ -121,10 +162,14 @@ module.exports = function (activity) {
         mode = protocol.A2DP_MODE.SOURCE
       }
       a2dp.open(mode)
+      if (mode === protocol.A2DP_MODE.SINK) {
+        hfp.open() // Bluetooth phone call is binded with bluetooth music.
+      }
     },
     // 1.4 close bluetooth
     'bluetooth_disconnect': () => {
       a2dp.close()
+      hfp.close()
     },
     // 1.5 disconnect from remote device
     'disconnect_devices': () => {
@@ -137,6 +182,7 @@ module.exports = function (activity) {
     // 2.1 open and auto connect to history phone via sink mode
     'connect_phone': () => {
       a2dp.open(protocol.A2DP_MODE.SINK)
+      hfp.open() // Bluetooth phone call is binded with bluetooth music.
     },
     // 2.2 disconnect from remote phone
     'disconnect_phone': () => {
@@ -149,11 +195,12 @@ module.exports = function (activity) {
     // 2.4 start bluetooth music play via cloud command
     'bluetooth_start_bluetooth_music': () => {
       var mode = a2dp.getMode()
-      logger.debug(`${mode} opened:${a2dp.isOpened()}`)
+      logger.debug(`Start play bt music, mode=${mode}, isOpened=${a2dp.isOpened()}`)
       if (mode === protocol.A2DP_MODE.SINK && a2dp.isConnected() && !a2dp.isPlaying()) {
         a2dp.play()
       } else {
         a2dp.open(protocol.A2DP_MODE.SINK, {autoplay: true})
+        hfp.open()
       }
     },
     // 2.5 play music
@@ -188,6 +235,7 @@ module.exports = function (activity) {
         template = {'currentDevice': a2dp.getConnectedDevice()}
       }
       sendMsgToApp(status, template)
+      activity.setBackground()
     },
     // 3.2 open and auto connect to history bluetooth speaker via source mode
     'connect_speaker': () => {
@@ -210,12 +258,44 @@ module.exports = function (activity) {
     // 3.5 begin scan around bluetooth devices
     'bluetooth_discovery': () => {
       a2dp.discovery()
+      activity.setBackground()
+    },
+
+    /**
+     * 4. hands-free intents
+     */
+    // 4.1 accept or reject call
+    'answerOperation': (nlp) => {
+      if (nlp.slots.confirm.value === 'YES') {
+        hfp.answer()
+      } else {
+        hfp.hangup()
+      }
+    },
+    // 4.2 call number
+    'call_number': (nlp) => {
+      var value = JSON.parse(nlp.slots.number.value)
+      var number = value.number
+      var dotIndex = number.indexOf('.')
+      if (dotIndex !== -1) {
+        number = number.substring(0, dotIndex)
+      }
+      logger.debug(`call number = ${number}`)
+      if (hfp.isConnected()) {
+        hfp.dial(number)
+      } else {
+        activity.setBackground()
+      }
+    },
+    // 4.4 hang up
+    'hang_up': (nlp) => {
+      hfp.hangup()
     }
   }
 
-  function handleA2dpEvents (intent, nlp) {
+  function handleIntents (intent, nlp) {
     cancelTimer()
-    var intentHandler = a2dpIntentHandlers[intent]
+    var intentHandler = intentHandlers[intent]
     if (typeof intentHandler === 'function') {
       intentHandler(nlp)
     } else {
@@ -226,6 +306,7 @@ module.exports = function (activity) {
   function handleSinkRadioOn (autoConn) {
     switch (lastIntent) {
       case 'bluetooth_broadcast':
+      case 'callName':
         if (autoConn) {
           speak(getText('SINK_OPENED'), res.AUDIO['ON_OPENED'])
         } else {
@@ -239,7 +320,7 @@ module.exports = function (activity) {
             if (!a2dp.isConnected()) {
               speak(getText('SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S', deviceName), res.AUDIO['ON_AUTOCONNECT_FAILED'])
             }
-          }, config.DELAY_BEFORE_AUTOCONNECT_FAILED)
+          }, config.TIMER.DELAY_BEFORE_AUTOCONNECT_FAILED)
         } else {
           speak(getText('SINK_FIRST_OPENED_BY_CONNECT_ARG1S', deviceName), res.AUDIO['ON_OPENED'])
         }
@@ -315,7 +396,7 @@ module.exports = function (activity) {
                 speak(getText('PLAY_FAILED_ARG1S', dev.name))
               }
             }
-          }, config.DELAY_BEFORE_PLAY_FAILED)
+          }, config.TIMER.DELAY_BEFORE_PLAY_FAILED)
           speak(getText('PLEASE_WAIT'), res.AUDIO[state])
         } else {
           speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
@@ -349,8 +430,11 @@ module.exports = function (activity) {
     logger.debug(`${mode} onAudioStateChanged(${state})`)
     switch (state) {
       case protocol.AUDIO_STATE.PLAYING:
-        activity.setForeground({ form: 'scene', skillId: BLUETOOTH_MUSIC_SKILL_ID })
+        setAppType('bluetooth_music')
         cancelTimer()
+        setTimer(() => { // To ensure unmute because turen may mute music by itself.
+          a2dp.unmute()
+        }, 100)
         break
       case protocol.AUDIO_STATE.PAUSED:
       case protocol.AUDIO_STATE.STOPPED:
@@ -358,6 +442,14 @@ module.exports = function (activity) {
         break
       case protocol.AUDIO_STATE.VOLUMN_CHANGED:
         // NOP while volumn changed according PRD.
+        break
+      case protocol.AUDIO_STATE.QUERY_RESULT:
+        logger.debug(`  title: ${extra.title}`)
+        logger.debug(`  artist: ${extra.artist}`)
+        logger.debug(`  album: ${extra.album}`)
+        if (lastIntent === 'like') {
+          addToFavorite()
+        }
         break
       default:
         break
@@ -372,13 +464,13 @@ module.exports = function (activity) {
     }
     switch (state) {
       case protocol.DISCOVERY_STATE.ON:
-        activity.light.play(res.LIGHT[state], {}, { shouldResume: true })
+        activity.light.play(res.LIGHT, {}, { shouldResume: true })
           .catch((err) => {
             logger.error('bluetooth play light error: ', err)
           })
         break
       case protocol.DISCOVERY_STATE.OFF:
-        activity.light.stop(res.LIGHT[state])
+        activity.light.stop(res.LIGHT)
         break
       case protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED:
         sendMsgToApp(state, extra)
@@ -388,34 +480,124 @@ module.exports = function (activity) {
     }
   }
 
-  activity.on('create', () => {
-    a2dp = bluetooth.getAdapter(protocol.PROFILE.A2DP)
-    logger.log(`activity.onCreate(adapter = ${a2dp})`)
-    a2dp.on('radio_state_changed', onRadioStateChangedListener)
-    a2dp.on('connection_state_changed', onConnectionStateChangedListener)
-    a2dp.on('audio_state_changed', onAudioStateChangedListener)
-    a2dp.on('discovery_state_changed', onDiscoveryStateChangedListener)
-  })
-
-  activity.on('pause', () => {
+  function pauseMusic () {
     var isPlaying = a2dp.isPlaying()
-    logger.log(`activity.onPause(isPlaying: ${isPlaying})`)
+    logger.debug(`pauseMusic(isPlaying: ${isPlaying})`)
     if (isPlaying) {
       needResume = true
       a2dp.pause()
     }
+  }
+
+  function resumeMusic () {
+    logger.debug(`resumeMusic(top:${onTopStack} quiet:${onQuietMode} res:${needResume})`)
+    if (onTopStack && !onQuietMode && needResume) {
+      needResume = false
+      a2dp.play()
+    }
+  }
+
+  function onCallStateChangedListener (state) {
+    logger.debug(`onCallStateChanged(${state}), lastStete=${callState}`)
+    switch (state) {
+      case protocol.CALL_STATE.IDLE:
+        if (callState !== protocol.CALL_STATE.IDLE) {
+          if (callState === protocol.CALL_STATE.INCOMING || callState === protocol.CALL_STATE.RING) {
+            stopIncomingRingtone()
+          }
+          activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
+          activity.stopMonologue()
+          if (needResume) {
+            resumeMusic()
+          } else {
+            setAppType('bluetooth')
+          }
+        }
+        break
+      case protocol.CALL_STATE.INCOMING:
+        pauseMusic()
+        setAppType('bluetooth_call', () => {
+          activity.startMonologue()
+          activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
+          activity.setConfirm('answerOperation', 'confirm')
+        })
+        break
+      case protocol.CALL_STATE.OFFHOOK:
+        pauseMusic()
+        if (callState === protocol.CALL_STATE.IDLE) {
+          setAppType('bluetooth_call', () => {
+            activity.startMonologue()
+            activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
+          })
+        } else if (callState === protocol.CALL_STATE.INCOMING || callState === protocol.CALL_STATE.RING) {
+          stopIncomingRingtone()
+        }
+        break
+      case protocol.CALL_STATE.RING:
+        playIncomingRingtone()
+        break
+      default:
+        break
+    }
+    callState = state
+  }
+
+  function onKeyEvent (keyEvent) {
+    logger.debug(`onKeyEvent(${keyEvent.keyCode}, isCalling: ${hfp.isCalling()})`)
+    if (hfp.isIncoming()) {
+      stopIncomingRingtone()
+      hfp.answer()
+    } else if (hfp.isCalling() || hfp.isOutgoing()) {
+      hfp.hangup()
+    }
+  }
+
+  activity.on('create', () => {
+    logger.log(`activity.onCreate()`)
+    a2dp = bluetooth.getAdapter(protocol.PROFILE.A2DP)
+    hfp = bluetooth.getAdapter(protocol.PROFILE.HFP)
+    a2dp.on('radio_state_changed', onRadioStateChangedListener)
+    a2dp.on('connection_state_changed', onConnectionStateChangedListener)
+    a2dp.on('audio_state_changed', onAudioStateChangedListener)
+    a2dp.on('discovery_state_changed', onDiscoveryStateChangedListener)
+    hfp.on('call_state_changed', onCallStateChangedListener)
+    activity.keyboard.on('click', onKeyEvent)
+    activity.setContextOptions({ keepAlive: true })
   })
 
   activity.on('resume', () => {
-    logger.log(`activity.onResume(needResume: ${needResume})`)
-    if (needResume) {
-      needResume = false
-      a2dp.play()
+    logger.log(`activity.onResume()`)
+    onTopStack = true
+    if (hfp.isCalling() || hfp.isIncoming() || hfp.isOutgoing()) {
+      // Do nothing while in call state.
+    } else {
+      resumeMusic()
+    }
+  })
+
+  activity.on('active', () => {
+    logger.log(`activity.onActive()`)
+    onTopStack = true
+  })
+
+  activity.on('background', () => {
+    logger.log(`activity.onBackground()`)
+    onTopStack = false
+  })
+
+  activity.on('pause', () => {
+    logger.log(`activity.onPause()`)
+    onTopStack = false
+    if (hfp.isCalling() || hfp.isIncoming() || hfp.isOutgoing()) {
+      // Do nothing while in call state.
+    } else {
+      pauseMusic()
     }
   })
 
   activity.on('destroy', () => {
     logger.log('activity.onDestroy()')
+    hfp.removeAllListeners()
     a2dp.removeAllListeners()
     if (a2dp.isConnected()) {
       a2dp.disconnect()
@@ -425,12 +607,34 @@ module.exports = function (activity) {
   activity.on('request', function (nlp, action) {
     lastIntent = nlp.intent
     logger.log(`activity.onNlpRequest(intent: ${nlp.intent})`)
-    handleA2dpEvents(nlp.intent, nlp)
+    handleIntents(nlp.intent, nlp)
   })
 
   activity.on('url', url => {
     lastIntent = url.pathname.substr(1)
     logger.log(`activity.onUrl(${lastIntent})`)
-    handleA2dpEvents(lastIntent)
+    handleIntents(lastIntent)
+  })
+
+  activity.on('notification', (state) => {
+    logger.debug(`activity.onNotification(${state})`)
+    switch (state) {
+      case 'on-quite-front':
+        onQuietMode = false
+        resumeMusic()
+        break
+      case 'on-quite-back':
+        onQuietMode = true
+        pauseMusic()
+        if (hfp.isCalling() || hfp.isIncoming()) {
+          hfp.hangup()
+        }
+        break
+      case 'on-stop-shake':
+        if (a2dp.isPlaying()) {
+          a2dp.next()
+        }
+        break
+    }
   })
 }

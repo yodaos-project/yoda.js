@@ -266,7 +266,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
       clearTimeout(this.solitaryVoiceComingTimer)
       this.solitaryVoiceComingTimer = setTimeout(() => {
         logger.warn('detected a solitary voice coming, resetting awaken')
-        this.pickup(false)
+        this.pickup(false, { discardNext: false })
 
         if (this.awaken) {
           return this.announceNetworkLag()
@@ -303,7 +303,7 @@ Turen.prototype.handleAsrProgress = function handleAsrProgress (state) {
   clearTimeout(this.noVoiceInputTimer)
   this.noVoiceInputTimer = setTimeout(() => {
     logger.warn('no more voice input detected, closing pickup')
-    this.pickup(false)
+    this.pickup(false, { discardNext: false })
   }, this.noVoiceInputTimeout)
 }
 
@@ -492,13 +492,16 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
 /**
  * Set whether or not turenproc is picked up.
  * @param {boolean} isPickup
+ * @param {object} [options]
+ * @param {boolean} [options.discardNext=true]
  */
-Turen.prototype.pickup = function pickup (isPickup) {
+Turen.prototype.pickup = function pickup (isPickup, options) {
+  var discardNext = _.get(options, 'discardNext', true)
   /**
    * if set not to picking up, discard next coming nlp,
    * otherwise reset picking up discarding state to enable next nlp process,
    */
-  this.pickingUpDiscardNext = !isPickup
+  this.pickingUpDiscardNext = discardNext && !isPickup
   this.component.flora.post('rokid.turen.pickup', [ isPickup ? 1 : 0 ])
 
   if (!isPickup) {

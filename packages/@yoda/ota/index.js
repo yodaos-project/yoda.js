@@ -398,6 +398,8 @@ function runInCurrentContext (callback) {
           /** no available updates */
           return compose.Break(false)
         }
+        destPath = getImagePath(info)
+        info.imagePath = destPath
         /** check if local pending update exists */
         readInfo(cb)
       },
@@ -425,8 +427,6 @@ function runInCurrentContext (callback) {
         writeInfo(info, cb)
       },
       cb => {
-        destPath = getImagePath(info)
-        info.imagePath = destPath
         /** check if target path exists */
         fs.stat(destPath, function onStat (err, stat) {
           logger.info('check if target path exists', stat != null)
