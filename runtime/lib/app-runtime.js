@@ -61,6 +61,7 @@ function AppRuntime () {
 
   this.inited = false
   this.hibernated = false
+  this.welcoming = false
   // identify load app complete
   this.loadAppComplete = false
   this.shouldStopLongPressMicLight = false
@@ -77,6 +78,7 @@ AppRuntime.prototype.init = function init () {
     return Promise.resolve()
   }
   this.componentsInvoke('init')
+  this.initiate()
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
   this.component.turen.toggleWakeUpEngine(true)
@@ -99,6 +101,8 @@ AppRuntime.prototype.init = function init () {
     if (delegation) {
       return
     }
+    this.welcoming = true
+
     var future = Promise.resolve()
     if (property.get('sys.firstboot.init', 'persist') !== '1') {
       // initializing play tts status
@@ -108,12 +112,18 @@ AppRuntime.prototype.init = function init () {
       })
     }
     if (this.shouldWelcome) {
-      future.then(() => {
-        this.component.light.appSound('@yoda', 'system://boot.ogg')
+      future = future.then(() => {
         this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+        return this.component.light.appSound('@yoda', 'system://boot.ogg')
       })
     }
-    this.component.custodian.prepareNetwork()
+    return future.then(() => {
+      this.welcoming = false
+      this.component.custodian.prepareNetwork()
+    }).catch(err => {
+      logger.error('unexpected error on boot welcoming', err.stack)
+      this.welcoming = false
+    })
   })
 }
 
@@ -152,7 +162,6 @@ AppRuntime.prototype.loadApps = function loadApps () {
     .then(() => {
       this.loadAppComplete = true
       logger.log('load app complete')
-      return this.initiate()
     })
 }
 
@@ -160,9 +169,6 @@ AppRuntime.prototype.loadApps = function loadApps () {
  * Initiate/Re-initiate runtime configs
  */
 AppRuntime.prototype.initiate = function initiate () {
-  if (!this.loadAppComplete) {
-    return Promise.reject(new Error('Apps not loaded yet, try again later.'))
-  }
   this.component.sound.initVolume()
   return Promise.resolve()
 }
@@ -1156,17 +1162,24 @@ AppRuntime.prototype.onLoggedIn = function () {
         .then((delegation) => {
           if (delegation) {
             return
+            /** delegation should break all actions below */
           }
+          this.welcoming = true
           logger.info('announcing welcome')
           return this.setMicMute(false, { silent: true })
-        })
-        .then(() => {
-          this.component.light.appSound('@yoda', 'system://startup0.ogg')
-          return this.component.light.play('@yoda', 'system://setWelcome.js')
-        })
-        .then(() => {
-          // not need to play startup music after relogin
-          this.component.light.stop('@yoda', 'system://boot.js')
+            .then(() => {
+              this.component.light.appSound('@yoda', 'system://startup0.ogg')
+              return this.component.light.play('@yoda', 'system://setWelcome.js')
+            })
+            .then(() => {
+              // not need to play startup music after relogin
+              this.component.light.stop('@yoda', 'system://boot.js')
+              this.welcoming = false
+            })
+            .catch(err => {
+              this.welcoming = false
+              logger.error('unexpected error on welcoming', err.stack)
+            })
         })
     }
     this.shouldWelcome = false
