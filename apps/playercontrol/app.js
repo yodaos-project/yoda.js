@@ -48,47 +48,53 @@ module.exports = function (activity) {
         logger.log('data = ', data)
         callback(JSON.parse(data || '{}'), null)
       })
-      .catch((error) => {
-        logger.error('read data error', error.stack)
-        callback(null, error)
-      })   
+        .catch((error) => {
+          logger.error('read data error', error.stack)
+          callback(null, error)
+        })
     })
-    .catch((err) => {
-      logger.error('read dir error', err)
-      callback(null, err)
-    })
+      .catch((err) => {
+        logger.error('read dir error', err)
+        callback(null, err)
+      })
   }
 
   function saveconfig (data) {
     var fsStat = util.promisify(fs.stat)
     fsStat(DIRPATH).then(() => {
-      var writeFile = util.promisify(fs.writeFile);
-        writeFile(DATAPATH, JSON.stringify(data)).then(() => {
-          logger.log('writeFile file success',data)
-        })
+      var writeFile = util.promisify(fs.writeFile)
+      writeFile(DATAPATH, JSON.stringify(data)).then(() => {
+        logger.log('writeFile file success', data)
+      })
         .catch((excp) => {
           logger.error('playercontrol set config: update local data error', excp && excp.stack)
           return false
         })
     })
-    .catch((err) => {
-      var mkdir = util.promisify(fs.mkdir);
-      mkdir(DIRPATH).then(() => {
-        logger.log('create dir success')
-        var writeFile = util.promisify(fs.writeFile);
-        writeFile(DATAPATH, JSON.stringify(data)).then(() => {
-          logger.log('writeFile file success',data)
-        })
-        .catch((excp) => {
-          logger.error('playercontrol set config: update local data error', excp && excp.stack)
+      .catch((err) => {
+        if (err.code === 'ENOENT') {
+          var mkdir = util.promisify(fs.mkdir)
+          mkdir(DIRPATH).then(() => {
+            logger.log('create dir success')
+            var writeFile = util.promisify(fs.writeFile)
+            writeFile(DATAPATH, JSON.stringify(data)).then(() => {
+              logger.log('w', data)
+              return true
+            })
+              .catch((excp) => {
+                logger.error('playercontrol set config: update local data error', excp && excp.stack)
+                return false
+              })
+          })
+            .catch((error) => {
+              logger.error(error)
+              return false
+            })
+        } else {
+          logger.error(err)
           return false
-        })
+        }
       })
-      .catch((error) => {
-        logger.error(error)
-        return false
-      })
-    })
   }
   activity.on('url', urlObj => {
     logger.log('url is', typeof (urlObj), urlObj)
