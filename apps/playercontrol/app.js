@@ -1,6 +1,7 @@
 'use strict'
 var logger = require('logger')('@playercontrol')
 var fs = require('fs')
+var util = require('util')
 var DATAPATH = '/data/AppData/playercontrol/config.json'
 var DIRPATH = '/data/AppData/playercontrol'
 
@@ -40,63 +41,54 @@ module.exports = function (activity) {
   })
 
   function readconfig (callback) {
-    try {
-      var stat = fs.statSync(DIRPATH)
-      // 为true的话那么存在，如果为false不存在
-      if (stat.isDirectory()) {
-        try {
-          fs.statSync(DATAPATH)
-          // 如果可以执行到这里那么就表示存在了
-          fs.readFile(DATAPATH, 'utf8', function readFileCallback (err, data) {
-            if (err) {
-              logger.error('read data error', err.stack)
-              callback(null, err)
-            }
-            logger.log('data = ', data)
-            callback(JSON.parse(data || '{}'), null)
-          })
-        } catch (e) {
-          // 捕获异常
-          logger.error('read data error1', e)
-          callback(null, e)
-        }
-      }
-    } catch (err) {
+    var fsStat = util.promisify(fs.stat)
+    fsStat(DATAPATH).then(() => {
+      var readFile = util.promisify(fs.readFile)
+      readFile(DATAPATH, 'utf8').then((data) => {
+        logger.log('data = ', data)
+        callback(JSON.parse(data || '{}'), null)
+      })
+      .catch((error) => {
+        logger.error('read data error', error.stack)
+        callback(null, error)
+      })   
+    })
+    .catch((err) => {
       logger.error('read dir error', err)
       callback(null, err)
-    }
+    })
   }
 
   function saveconfig (data) {
-    try {
-      var stat = fs.statSync(DIRPATH)
-      // 为true的话那么存在，如果为false不存在
-      if (stat.isDirectory()) {
-        try {
-          fs.writeFile(DATAPATH, JSON.stringify(data), function (err) {
-            if (err) {
-              logger.error('playercontrol set config: update local data error', err && err.stack)
-            }
-          })
-        } catch (e) {
-          // 捕获异常
-          logger.error('writeFile data error', e)
-        }
-      }
-    } catch (e) {
-      fs.mkdir(DIRPATH, function (error) {
-        if (error) {
-          logger.error(error)
+    var fsStat = util.promisify(fs.stat)
+    fsStat(DIRPATH).then(() => {
+      var writeFile = util.promisify(fs.writeFile);
+        writeFile(DATAPATH, JSON.stringify(data)).then(() => {
+          logger.log('writeFile file success',data)
+        })
+        .catch((excp) => {
+          logger.error('playercontrol set config: update local data error', excp && excp.stack)
           return false
-        }
-        logger.log('创建目录成功')
-        fs.writeFile(DATAPATH, JSON.stringify(data), function (err) {
-          if (err) {
-            logger.error('playercontrol set config: update local data error', err && err.stack)
-          }
+        })
+    })
+    .catch((err) => {
+      var mkdir = util.promisify(fs.mkdir);
+      mkdir(DIRPATH).then(() => {
+        logger.log('create dir success')
+        var writeFile = util.promisify(fs.writeFile);
+        writeFile(DATAPATH, JSON.stringify(data)).then(() => {
+          logger.log('writeFile file success',data)
+        })
+        .catch((excp) => {
+          logger.error('playercontrol set config: update local data error', excp && excp.stack)
+          return false
         })
       })
-    }
+      .catch((error) => {
+        logger.error(error)
+        return false
+      })
+    })
   }
   activity.on('url', urlObj => {
     logger.log('url is', typeof (urlObj), urlObj)
