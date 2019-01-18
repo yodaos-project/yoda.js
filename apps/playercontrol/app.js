@@ -29,7 +29,7 @@ module.exports = function (activity) {
         if (playerInfo.name === null || playerInfo.name === undefined || playerInfo.name === '') {
           speakAndExit(STRING_NO_PLAYER_EXIST)
         } else if (playerInfo.name === '@yoda/bluetooth') {
-          activity.voiceCommand('播放蓝牙音乐')
+          activity.openUrl('yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music', { preemptive: true })
         } else {
           logger.log('url = ', playerInfo.url)
           if (playerInfo.url === null || playerInfo.url === undefined || playerInfo.url === '') {
