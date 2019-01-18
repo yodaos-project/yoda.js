@@ -284,15 +284,24 @@ AppRuntime.prototype.hibernate = function hibernate () {
   return this.component.lifetime.destroyAll({ force: true })
 }
 
-AppRuntime.prototype.wakeup = function wakeup () {
+/**
+ * Wake up device from hibernation.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.shouldWelcome=false] - if welcoming is needed after re-logged in
+ */
+AppRuntime.prototype.wakeup = function wakeup (options) {
+  var shouldWelcome = _.get(options, 'shouldWelcome', false)
   if (this.hibernate !== true) {
     logger.info('runtime already woken up, skipping')
     return Promise.resolve()
   }
   logger.info('waking up runtime')
   this.hibernated = false
+  if (shouldWelcome) {
+    this.shouldWelcome = true
+  }
   this.component.custodian.prepareNetwork()
-  return this.startDaemonApps()
 }
 
 /**
