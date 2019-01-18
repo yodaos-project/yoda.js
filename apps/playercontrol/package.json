@@ -1,0 +1,31 @@
+{
+  "name": "@yoda/playercontrol",
+  "version": "1.0.0",
+  "description": "player control for rokid",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "manifest": {
+    "daemon": true,
+    "skills": [
+      "@playercontrol",
+      "RC3CA6A6C04C4513B1F54191F9E749A9"
+    ],
+    "permission": [
+      "ACCESS_TTS",
+      "ACCESS_VOICE_COMMAND",
+      "INTERRUPT"
+    ],
+    "hosts": [
+      [ "playercontrol", { "skillId": "@playercontrol" } ]
+    ]
+  },
+  "keywords": [
+    "player",
+    "rokid",
+    "skill"
+  ],
+  "author": "Lin Gang <gang.lin@rokid.com>",
+  "license": "MIT"
+}
