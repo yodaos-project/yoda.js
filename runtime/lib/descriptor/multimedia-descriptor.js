@@ -66,6 +66,26 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'event'
     },
     /**
+     * When the media resource is paused.
+     * @event yodaRT.activity.Activity.MediaClient#pause
+     * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
+     */
+    pause: {
+      type: 'event'
+    },
+    /**
+     * When the media resource is resumed.
+     * @event yodaRT.activity.Activity.MediaClient#resume
+     * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
+     */
+    resume: {
+      type: 'event'
+    },
+    /**
      * When the media playback is complete.
      * @event yodaRT.activity.Activity.MediaClient#playbackcomplete
      * @param {string} id - multimedia player id
@@ -207,6 +227,7 @@ Object.assign(MultimediaDescriptor.prototype,
               }
               self._listenMediaEvent(multimediaId, function (event) {
                 if (impatient || event !== 'error') {
+                  logger.log('listen event', event)
                   EventEmitter.prototype.emit.apply(self,
                     [event, multimediaId].concat(Array.prototype.slice.call(arguments, 1)))
                 }

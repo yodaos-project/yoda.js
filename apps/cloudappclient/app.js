@@ -19,7 +19,7 @@ module.exports = activity => {
   var sos = new Manager(directive, Skill)
   // tts, media event handle
   var ttsClient = new TtsEventHandle(activity.tts)
-  var mediaClient = new MediaEventHandle(activity.media)
+  var mediaClient = new MediaEventHandle(activity.media, logger)
 
   // report app status for OS in nextTick
   var taskTimerHandle = null
@@ -67,8 +67,21 @@ module.exports = activity => {
     logger.log(`exe dt: media.${dt.action}`)
     if (dt.action === 'play') {
       mediaClient.start(dt.data.item.url, function (name, args) {
+        logger.log('[cac-event]', name)
         if (name === 'prepared') {
           sos.sendEventRequest('media', 'prepared', dt.data, {
+            itemId: _.get(dt, 'data.item.itemId'),
+            duration: args[0],
+            progress: args[1]
+          })
+        } else if (name === 'pause') {
+          sos.sendEventRequest('media', 'pause', dt.data, {
+            itemId: _.get(dt, 'data.item.itemId'),
+            duration: args[0],
+            progress: args[1]
+          })
+        } else if (name === 'resume') {
+          sos.sendEventRequest('media', 'resume', dt.data, {
             itemId: _.get(dt, 'data.item.itemId'),
             duration: args[0],
             progress: args[1]
