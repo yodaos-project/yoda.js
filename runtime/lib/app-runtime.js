@@ -271,12 +271,14 @@ AppRuntime.prototype.idle = function idle () {
  * Put device into hibernation state.
  */
 AppRuntime.prototype.hibernate = function hibernate () {
-  if (this.hibernate !== false) {
+  if (this.hibernated === true) {
     logger.info('runtime already hibernated, skipping')
     return Promise.resolve()
   }
   logger.info('hibernating runtime')
   this.hibernated = true
+  this.component.turen.pickup(false)
+  this.setMicMute(true, { silent: true })
   /**
    * Clear apps and its contexts
    */
@@ -292,7 +294,7 @@ AppRuntime.prototype.hibernate = function hibernate () {
  */
 AppRuntime.prototype.wakeup = function wakeup (options) {
   var shouldWelcome = _.get(options, 'shouldWelcome', false)
-  if (this.hibernate !== true) {
+  if (this.hibernated === false) {
     logger.info('runtime already woken up, skipping')
     return Promise.resolve()
   }
@@ -301,6 +303,9 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
   if (shouldWelcome) {
     this.shouldWelcome = true
   }
+  /** set turen to not muted */
+  this.component.turen.toggleMute(false)
+  this.component.turen.toggleWakeUpEngine(true)
   this.component.custodian.prepareNetwork()
 }
 
