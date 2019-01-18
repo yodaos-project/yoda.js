@@ -21,6 +21,7 @@ var property = require('@yoda/property')
 var system = require('@yoda/system')
 var env = require('@yoda/env')()
 var Loader = require('@yoda/bolero').Loader
+var StageList = require('@yoda/bolero').StageList
 var CloudStore = require('./cloudapi')
 var perf = require('./performance')
 
@@ -52,34 +53,33 @@ function AppRuntime () {
     notify: this.handleCloudEvent.bind(this)
   })
   this.shouldWelcome = true
-  logger.error(JSON.stringify(ComponentConfig.stages))
   this.componentLoader = new Loader(this, 'component', ComponentConfig.stages)
-  this.componentLoader.before('prepare', () => {
-    logger.error('before prepare')
-  })
-  this.componentLoader.after('prepare', () => {
-    logger.error('after prepare')
-  })
-  this.componentLoader.before('connect', () => {
-    logger.error('before connect')
-  })
-  this.componentLoader.after('connect', () => {
-    logger.error('after connect')
-  })
-  this.componentLoader.before('login', () => {
-    logger.error('before login')
-  })
-  this.componentLoader.after('login', () => {
-    logger.error('after login')
-  })
-  this.componentLoader.before('ready', () => {
-    logger.error('before ready')
-  })
-  this.componentLoader.after('ready', () => {
-    logger.error('after ready')
-  })
-  this.componentLoader.load(ComponentConfig.paths)
+  this.componentLoader.loadComponentFile(ComponentConfig.paths)
+  var stageList = new StageList()
 
+  var doStage = (name) => {
+    this.componentLoader.loadStage(`${name}:before`).then(() => {
+      var comps = []
+      if (typeof ComponentConfig[name] === 'object') {
+        comps = ComponentConfig[name]
+      }
+      return this.componentLoader.loadStage(comps)
+        }).then(() => {
+          var funcName = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1, name.length - 1);
+          if (this.hasOwnProperty(funcName)) {
+            return this[funcName].apply(this)
+          }
+        }).then(() => {
+          return this.componentLoader.loadStage(`${name}:after`)
+        })
+  }
+
+  stageList.add('prepare', doStage)
+  stageList.add('connect', doStage)
+  stageList.add('login', doStage)
+  stageList.add('ready', doStage)
+
+  stageList.run()
   // identify load app complete
   this.loadAppComplete = false
   this.shouldStopLongPressMicLight = false
@@ -95,7 +95,7 @@ AppRuntime.prototype.init = function init () {
   if (this.inited) {
     return Promise.resolve()
   }
-  this.componentsInvoke('init')
+  this.componentsInvoke('init', 'prepare')
   if (this.shouldWelcome) {
     this.component.light.appSound('@yoda', 'system://boot.ogg')
     this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })

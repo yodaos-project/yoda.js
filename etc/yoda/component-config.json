@@ -1,24 +1,14 @@
 {
-  "paths": ["/usr/yoda/lib/component"],
-  "stages": [
-    {
-      "name": "prepare",
-      "comps": ["turen", "lifetime", "light", "flora",
-        "dbus-registry", "wormhole"]
-    },
-    {
-      "name": "connect",
-      "comps": ["dnd-mode"]
-    },
-    {
-      "name": "login",
-      "comps": ["keyboard"]
-    },
-    {
-      "name": "ready",
-      "comps": ["sound"]
-    }
-  ],
+  "paths": [ "/usr/yoda/lib/component" ],
+  "stages":{
+    "prepare": [
+      "turen", "lifetime", "light", "flora",
+      "dbus-registry", "wormhole"
+    ],
+    "connect:before": [ "dnd-mode" ],
+    "login:after": [ "keyboard" ],
+    "ready:before": [ "sound" ]
+  },
   "interception": {
     "runtimeDidLogin": [ "ota.runtimeDidLogin" ],
     "turenDidWakeUp": [
