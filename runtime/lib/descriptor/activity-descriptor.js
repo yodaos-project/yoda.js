@@ -196,6 +196,13 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'event'
     },
     /**
+     * When an activity is put into background.
+     * @event yodaRT.activity.Activity#background
+     */
+    background: {
+      type: 'event'
+    },
+    /**
      * Fires on nlp requests.
      * @event yodaRT.activity.Activity#request
      * @param {object} data
