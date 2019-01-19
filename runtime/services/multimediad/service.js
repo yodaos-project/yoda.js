@@ -91,7 +91,7 @@ MultiMedia.prototype.pause = function (appId) {
     // need to send events only when the state is switched
     if (playing === true) {
       process.nextTick(() => {
-        this.handle[appId].emit('pause')
+        this.handle[appId].emit('paused')
       })
     }
   } catch (error) {
@@ -108,7 +108,7 @@ MultiMedia.prototype.resume = function (appId) {
 
       // need to send events only when the state is switched
       process.nextTick(() => {
-        this.handle[appId].emit('resume')
+        this.handle[appId].emit('resumed')
       })
     }
   } catch (error) {
@@ -245,14 +245,14 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
     }, 5000) /** stage 1 timer */
   })
 
-  player.on('pause', () => {
+  player.on('paused', () => {
     AudioManager.setPlayingState(audioModuleName, false)
-    this.emit('pause', '' + player.id, '' + player.duration, '' + player.position)
+    this.emit('paused', '' + player.id, '' + player.duration, '' + player.position)
   })
 
-  player.on('resume', () => {
+  player.on('resumed', () => {
     AudioManager.setPlayingState(audioModuleName, true)
-    this.emit('resume', '' + player.id, '' + player.duration, '' + player.position)
+    this.emit('resumed', '' + player.id, '' + player.duration, '' + player.position)
   })
 }
 

@@ -194,6 +194,7 @@ Manager.prototype.getCurrentSkill = function () {
 }
 
 Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
+  logger.log(`[sendReq] type(${type}) name(${name}) data(${JSON.stringify(data)}) args(${JSON.stringify(args)})`)
   if (!data.appId) {
     logger.log('ignored eventRequest, because it is no appId given')
     return cb && cb()
@@ -212,7 +213,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
   }
   if (type === 'tts') {
     eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
-      logger.log(`====> tts eventRequest response: ${response}`)
+      logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
       }
@@ -222,7 +223,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     })
   } else if (type === 'media') {
     eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
-      logger.log(`====> media eventRequest response: ${response}`)
+      logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
       }

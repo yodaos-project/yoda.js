@@ -92,7 +92,7 @@ DBus.prototype.listenSignals = function listenSignals () {
   var multimediaEvents = {
     'multimediadevent': function onMultimediaEvent (msg) {
       var channel = `callback:multimedia:${_.get(msg, 'args.0')}`
-      logger.info(`VuiDaemon received multimediad event on channel(${channel})`)
+      logger.info(`VuiDaemon received multimediad event on channel(${channel}) msg(${JSON.stringify(msg)})`)
       EventEmitter.prototype.emit.apply(
         self,
         [ channel ].concat(msg.args.slice(1))

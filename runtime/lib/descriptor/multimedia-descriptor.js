@@ -66,6 +66,26 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'event'
     },
     /**
+     * When the media resource is paused.
+     * @event yodaRT.activity.Activity.MediaClient#paused
+     * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
+     */
+    paused: {
+      type: 'event'
+    },
+    /**
+     * When the media resource is resumed.
+     * @event yodaRT.activity.Activity.MediaClient#resumed
+     * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
+     */
+    resumed: {
+      type: 'event'
+    },
+    /**
      * When the media playback is complete.
      * @event yodaRT.activity.Activity.MediaClient#playbackcomplete
      * @param {string} id - multimedia player id
