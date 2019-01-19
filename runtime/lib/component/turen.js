@@ -58,50 +58,47 @@ Turen.prototype.handlers = {
   'rokid.turen.voice_coming': function (msg) {
     logger.log('voice coming')
     this.voiceCtx.lastFaked = false
-    this.handleVoiceComing()
+    return this.handleVoiceComing()
   },
   'rokid.turen.local_awake': function (msg) {
     logger.log('voice local awake')
     var data = {}
     data.sl = msg[0]
-    this.handleVoiceLocalAwake(data)
+    return this.handleVoiceLocalAwake(data)
   },
   'rokid.speech.inter_asr': function (msg) {
     var asr = msg[0]
     logger.log('asr pending', asr)
-    this.handleAsrProgress('pending', asr)
+    return this.handleAsrProgress('pending', asr)
   },
   'rokid.speech.final_asr': function (msg) {
     var asr = msg[0]
     logger.log('asr end', asr)
-    this.handleAsrEnd({ asr: asr })
+    return this.handleAsrEnd({ asr: asr })
   },
   'rokid.speech.extra': function (msg) {
     var data = JSON.parse(msg[0])
     switch (data.activation) {
       case 'accept': {
-        this.handleAsrProgress('accept')
-        break
+        return this.handleAsrProgress('accept')
       }
       case 'fake': {
         this.voiceCtx.lastFaked = true
-        this.handleAsrFake()
-        break
+        return this.handleAsrFake()
       }
       case 'reject': {
-        this.handleAsrReject()
-        break
+        return this.handleAsrReject()
       }
       default:
         logger.info('Unhandled speech extra', data)
-        this.handleAsrProgress('extra', data)
+        return this.handleAsrProgress('extra', data)
     }
   },
   'rokid.turen.start_voice': function (msg) {
-    this.handleStartVoice()
+    return this.handleStartVoice()
   },
   'rokid.turen.end_voice': function (msg) {
-    this.handleEndVoice()
+    return this.handleEndVoice()
   },
   'rokid.speech.nlp': function (msg) {
     if (this.voiceCtx.lastFaked) {
@@ -413,10 +410,6 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
  * Handle the "nlp" event, which are emitted on incoming unexpected malicious nlp.
  */
 Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () {
-  if (this.awaken) {
-    this.pickup(false)
-    this.resetAwaken({ recover: false })
-  }
   if (this.pickingUpDiscardNext) {
     /**
      * current session of picking up has been manually discarded.
@@ -424,6 +417,10 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
     this.pickingUpDiscardNext = false
     logger.warn(`discarding malicious nlp result for pick up discarded.`)
     return
+  }
+  if (this.awaken) {
+    this.pickup(false)
+    this.resetAwaken({ recover: false })
   }
   if (!this.component.custodian.isPrepared()) {
     logger.warn('Network not connected, recovering players.')
@@ -447,10 +444,6 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
  * Handle 'speech error' events, which are emitted on unexpected speech faults.
  */
 Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
-  if (this.awaken) {
-    this.pickup(false)
-    this.resetAwaken({ recover: false })
-  }
   if (this.pickingUpDiscardNext) {
     /**
      * current session of picking up has been manually discarded.
@@ -458,6 +451,10 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
     this.pickingUpDiscardNext = false
     logger.warn(`discarding speech error(${errCode}) for pick up discarded.`)
     return
+  }
+  if (this.awaken) {
+    this.pickup(false)
+    this.resetAwaken({ recover: false })
   }
   if (!this.component.custodian.isPrepared()) {
     logger.warn('Network not connected or not logged in, recovering players.')
