@@ -693,6 +693,35 @@ DBus.prototype.yodadebug = {
       }))
     }
   },
+  InspectComponent: {
+    in: ['s'],
+    out: ['s'],
+    fn: function (name, cb) {
+      if (typeof name === 'function') {
+        cb = name
+        name = null
+        return cb(null, JSON.stringify({ ok: true, result: Object.keys(this.component) }))
+      }
+      var component = this.component[name]
+      if (component == null) {
+        return cb(null, JSON.stringify({ ok: false, message: `Component not found: '${name}'.` }))
+      }
+      var result = {}
+      Object.getOwnPropertyNames(component).forEach(key => {
+        var val = component[key]
+        if (val === this.runtime || val === this.component) {
+          return
+        }
+        try {
+          JSON.stringify(val)
+          result[key] = val
+        } catch (e) {
+          result[key] = '[Circular]'
+        }
+      })
+      cb(null, JSON.stringify({ ok: true, result: result }))
+    }
+  },
   mockAsr: {
     in: ['s'],
     out: ['s'],
