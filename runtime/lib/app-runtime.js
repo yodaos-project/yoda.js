@@ -426,9 +426,6 @@ AppRuntime.prototype.stopMonologue = function (appId) {
  * @param {boolean} [options.carrierId]
  */
 AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
-  var preemptive = _.get(options, 'preemptive', true)
-  var carrierId = _.get(options, 'carrierId')
-
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
     return Promise.resolve(false)
@@ -455,38 +452,14 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve(false)
   }
 
-  if (this.component.lifetime.isMonopolized() && preemptive && appId !== this.component.lifetime.monopolist) {
-    logger.warn(`LaVieEnPile has ben monopolized, skip voice command to app(${appId}).`)
-    return this.component.lifetime.onLifeCycle(this.component.lifetime.monopolist, 'oppressing', 'request')
-      .then(() => /** prevent tts/media from recovering */true)
-  }
-
-  return this.component.lifetime.createApp(appId)
-    .catch(err => {
-      logger.error(`create app ${appId} failed`, err.stack)
-      /** force quit app on create error */
-      return this.component.lifetime.destroyAppById(appId, { force: true })
-        .then(() => { /** rethrow error to break following procedures */throw err })
+  return this.component.dispatcher.dispatchAppEvent(
+    appId,
+    'request', [ nlp, action ],
+    Object.assign({}, options, {
+      form: form,
+      skillId: nlp.appId
     })
-    .then(() => {
-      if (!preemptive) {
-        logger.info(`app is not preemptive, skip activating app ${appId}`)
-        return
-      }
-
-      logger.info(`app is preemptive, activating app ${appId}`)
-      return this.component.lifetime.activateAppById(appId, form, carrierId)
-        .then(() => {
-          this.updateCloudStack(nlp.appId, form)
-          this.component.sound.unmuteIfNecessary(nlp.appId)
-        })
-    })
-    .then(() => this.component.lifetime.onLifeCycle(appId, 'request', [ nlp, action ]))
-    .then(() => true)
-    .catch(err => {
-      logger.error(`Unexpected error on app ${appId} handling voice command`, err.stack)
-      return false
-    })
+  )
 }
 
 /**
@@ -501,10 +474,6 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
  * @returns {Promise<boolean>}
  */
 AppRuntime.prototype.openUrl = function (url, options) {
-  var form = _.get(options, 'form', 'cut')
-  var preemptive = _.get(options, 'preemptive', true)
-  var carrierId = _.get(options, 'carrierId')
-
   var urlObj = Url.parse(url, true)
   if (urlObj.protocol !== 'yoda-skill:') {
     logger.info('Url protocol other than yoda-skill is not supported now.')
@@ -517,35 +486,13 @@ AppRuntime.prototype.openUrl = function (url, options) {
   }
   var appId = this.component.appLoader.getAppIdBySkillId(skillId)
 
-  if (this.component.lifetime.isMonopolized() && preemptive && appId !== this.component.lifetime.monopolist) {
-    logger.warn(`LaVieEnPile has ben monopolized, skip url request to app(${appId}).`)
-    return this.component.lifetime.onLifeCycle(this.component.lifetime.monopolist, 'oppressing', 'url')
-      .then(() => /** prevent tts/media from recovering */true)
-  }
-
-  return this.component.lifetime.createApp(appId)
-    /** force quit app on create error */
-    .catch(err => {
-      logger.error(`create app ${appId} failed`, err.stack)
-      return this.component.lifetime.destroyAppById(appId, { force: true })
-        .then(() => { /** rethrow error to break following procedures */throw err })
+  return this.component.dispatcher.dispatchAppEvent(
+    appId,
+    'url', [ urlObj ],
+    Object.assign({}, options, {
+      skillId: skillId
     })
-    .then(() => {
-      if (!preemptive) {
-        logger.info(`app is not preemptive, skip activating app ${appId}`)
-        return Promise.resolve()
-      }
-
-      logger.info(`app is preemptive, activating app ${appId}`)
-      return this.component.lifetime.activateAppById(appId, form, carrierId)
-        .then(() => this.updateCloudStack(skillId, form))
-    })
-    .then(() => this.component.lifetime.onLifeCycle(appId, 'url', [ urlObj ]))
-    .then(() => true)
-    .catch(err => {
-      logger.error(`open url(${url}) error with appId: ${appId}`, err.stack)
-      return false
-    })
+  )
 }
 
 /**
