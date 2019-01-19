@@ -72,11 +72,11 @@ test('Integration Testing multimediad: pause an resume', (t) => {
             t.fail('method call [pause] failed')
           })
       })
-      bus.on(`pause-${res[1]}`, (args) => {
-        t.pass('multimediad emit pause with correct id')
+      bus.on(`paused-${res[1]}`, (args) => {
+        t.pass('multimediad emit paused with correct id')
       })
-      bus.on(`resume-${res[1]}`, (args) => {
-        t.pass('multimediad emit resume with correct id')
+      bus.on(`resumed-${res[1]}`, (args) => {
+        t.pass('multimediad emit resumed with correct id')
       })
       bus.on(`cancel-${res[1]}`, (args) => {
         t.pass('multimediad emit cancel with correct id')

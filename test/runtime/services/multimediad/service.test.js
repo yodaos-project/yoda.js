@@ -37,12 +37,12 @@ test('test multimediad service: pause and resume', function (t) {
       service.pause('@test')
     })
   })
-  service.on('pause', function (id, dur, pos) {
-    t.strictEqual(+id, playerId, 'player emit pause event with a correct id')
+  service.on('paused', function (id, dur, pos) {
+    t.strictEqual(+id, playerId, 'player emit paused event with a correct id')
     service.resume('@test')
   })
-  service.on('resume', function (id, dur, pos) {
-    t.strictEqual(+id, playerId, 'player emit resume event with a correct id')
+  service.on('resumed', function (id, dur, pos) {
+    t.strictEqual(+id, playerId, 'player emit resumed event with a correct id')
     service.stop('@test')
   })
 })

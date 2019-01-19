@@ -67,21 +67,21 @@ module.exports = activity => {
     logger.log(`exe dt: media.${dt.action}`)
     if (dt.action === 'play') {
       mediaClient.start(dt.data.item.url, function (name, args) {
-        logger.log('[cac-event]', name)
+        logger.log(`[cac-event](${name}) args(${JSON.stringify(args)}) `)
         if (name === 'prepared') {
           sos.sendEventRequest('media', 'prepared', dt.data, {
             itemId: _.get(dt, 'data.item.itemId'),
             duration: args[0],
             progress: args[1]
           })
-        } else if (name === 'pause') {
-          sos.sendEventRequest('media', 'pause', dt.data, {
+        } else if (name === 'paused') {
+          sos.sendEventRequest('media', 'paused', dt.data, {
             itemId: _.get(dt, 'data.item.itemId'),
             duration: args[0],
             progress: args[1]
           })
-        } else if (name === 'resume') {
-          sos.sendEventRequest('media', 'resume', dt.data, {
+        } else if (name === 'resumed') {
+          sos.sendEventRequest('media', 'resumed', dt.data, {
             itemId: _.get(dt, 'data.item.itemId'),
             duration: args[0],
             progress: args[1]
@@ -103,28 +103,11 @@ module.exports = activity => {
         }
       })
     } else if (dt.action === 'pause') {
-      activity.media.pause()
-        .then(() => {
-          sos.sendEventRequest('media', 'pause', dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            token: _.get(dt, 'data.item.token')
-          })
-        })
-        .catch((err) => {
-          logger.log('media pause failed', err)
-        })
+      // no need to send events here because player will emit paused event
       next()
     } else if (dt.action === 'resume') {
-      activity.media.resume()
-        .then(() => {
-          sos.sendEventRequest('media', 'resume', dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            token: _.get(dt, 'data.item.token')
-          }, next)
-        })
-        .catch((err) => {
-          logger.log('media resume failed', err)
-        })
+      // no need to send events here because player will emit resumed event
+      next()
     } else if (dt.action === 'cancel') {
       activity.media.stop()
         .then(() => {

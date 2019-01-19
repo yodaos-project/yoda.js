@@ -34,24 +34,24 @@ service.on('prepared', function (id, dur, pos) {
     [id, 'prepared', dur, pos]
   )
 })
-service.on('pause', function (id, dur, pos) {
+service.on('paused', function (id, dur, pos) {
   logger.log('multimediad-event pause', id, dur, pos)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
     'ssss',
-    [id, 'pause', dur, pos]
+    [id, 'paused', dur, pos]
   )
 })
-service.on('resume', function (id, dur, pos) {
+service.on('resumed', function (id, dur, pos) {
   logger.log('multimediad-event resume', id, dur, pos)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
     'ssss',
-    [id, 'resume', dur, pos]
+    [id, 'resumed', dur, pos]
   )
 })
 service.on('playbackcomplete', function (id, dur, pos) {

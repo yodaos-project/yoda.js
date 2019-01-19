@@ -14,7 +14,7 @@ function Convergence (mediaClient, logger) {
   this.eventQueue = {}
 }
 
-Convergence.events = [ 'prepared', 'pause', 'resume', 'playbackcomplete', 'bufferingupdate',
+Convergence.events = [ 'prepared', 'paused', 'resumed', 'playbackcomplete', 'bufferingupdate',
   'seekcomplete', 'cancel', 'error' ]
 Convergence.terminationEvents = [ 'playbackcomplete', 'cancel', 'error' ]
 
