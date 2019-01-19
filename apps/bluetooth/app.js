@@ -140,19 +140,14 @@ module.exports = function (activity) {
     })
   }
 
-  function addToFavorite (song, callback) {
+  function addToFavorite (song) {
     var songData = {
       songName: song.title,
       singerName: song.artist
     }
     var reqParams = httpUtil.getRequestInfo('blue_like', deviceProps, songData)
     logger.log('addToFavorite.sendRequest:', reqParams)
-    httpUtil.sendRequest(res.URL.MUSIC_LIKE, reqParams, config.TIMER.HTTP_TIMEOUT).then((data) => {
-      return callback(data)
-    }).catch((err) => {
-      logger.error(err)
-      return callback()
-    })
+    return httpUtil.sendRequest(res.URL.MUSIC_LIKE, reqParams, config.TIMER.HTTP_TIMEOUT)
   }
 
   function sendMsgToApp (event, data) {
@@ -473,13 +468,16 @@ module.exports = function (activity) {
         logger.debug(`  title: ${extra.title}`)
         logger.debug(`  artist: ${extra.artist}`)
         logger.debug(`  album: ${extra.album}`)
-        addToFavorite(extra, (ret) => {
+        addToFavorite(extra).then((ret) => {
           logger.debug('http result: ', ret)
           if (ret !== null && ret.success) {
             speak(ret.data.RKMusicResponse.result.tts)
           } else {
             speak(getText('ADD_TO_FAVORITE_FAILED'))
           }
+        }).catch((err) => {
+          logger.error('Send request failed: ', err)
+          speak(getText('ADD_TO_FAVORITE_FAILED'))
         })
         break
       default:
