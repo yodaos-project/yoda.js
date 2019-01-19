@@ -58,6 +58,7 @@ module.exports = function (activity) {
       default:
         break
     }
+    activity.setContextOptions({ keepAlive: true })
   }
 
   function playIncomingRingtone () {
@@ -627,6 +628,12 @@ module.exports = function (activity) {
   activity.on('background', () => {
     logger.log(`activity.onBackground()`)
     onTopStack = false
+    if (hfp.getCallState() !== protocol.CALL_STATE.IDLE) {
+      // Do nothing while in call.
+    } else if (a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
+      a2dp.disconnect()
+      setAppType('bluetooth')
+    }
   })
 
   activity.on('pause', () => {
