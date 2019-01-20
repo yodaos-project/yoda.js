@@ -382,6 +382,11 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
     this.component.lifetime.destroyAll(),
     this.setMicMute(false, { silent: true })
   ]).then(() => this.component.custodian.resetNetwork(options))
+    .then(() => {
+      setTimeout(() => {
+        deferred()
+      }, 2000)
+    })
     .catch(err => {
       logger.error('Unexpected error on resetting network', err.stack)
       deferred()
