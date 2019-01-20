@@ -117,6 +117,7 @@ RKDownTimer.prototype.speakAndExit = function (text) {
 }
 
 RKDownTimer.prototype.timeParseToSecond = function (nlp) {
+  this.time.reset()
   try {
     if (nlp.slots.timesecond) {
       var second = parseInt(_.get(JSON.parse(nlp.slots.timesecond.value), 'number', 0))
@@ -138,6 +139,7 @@ RKDownTimer.prototype.timeParseToSecond = function (nlp) {
       this.helpme = helpme
     }
   } catch (err) {
+    logger.error('parse time error: ', err)
     return this.speakAndExit(STRING_COMMON_ERROR)
   }
 

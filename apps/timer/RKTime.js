@@ -22,4 +22,11 @@ RKTime.prototype.toString = function () {
   return 'RKTime'
 }
 
+RKTime.prototype.reset = function () {
+  this.day = 0
+  this.hour = 0
+  this.minute = 0
+  this.second = 0
+}
+
 exports.RKTime = RKTime
