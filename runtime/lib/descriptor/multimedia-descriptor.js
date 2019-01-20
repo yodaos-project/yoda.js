@@ -66,6 +66,26 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'event'
     },
     /**
+     * When the media resource is paused.
+     * @event yodaRT.activity.Activity.MediaClient#paused
+     * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
+     */
+    paused: {
+      type: 'event'
+    },
+    /**
+     * When the media resource is resumed.
+     * @event yodaRT.activity.Activity.MediaClient#resumed
+     * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
+     */
+    resumed: {
+      type: 'event'
+    },
+    /**
      * When the media playback is complete.
      * @event yodaRT.activity.Activity.MediaClient#playbackcomplete
      * @param {string} id - multimedia player id
@@ -330,6 +350,51 @@ Object.assign(MultimediaDescriptor.prototype,
       fn: function setLoopMode (loop) {
         loop = loop === true ? 'true' : 'false'
         return this._runtime.multimediaMethod('setLoopMode', [this._appId, loop])
+          .then((res) => {
+            if (res && res[0] !== undefined) {
+              return res[0]
+            }
+            throw new Error('multimediad error')
+          })
+      }
+    },
+
+    /**
+     * return which EQ mode the player is.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function getEqMode
+     * @returns {Promise<number>}
+     */
+    getEqMode: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getLoopMode () {
+        return this._runtime.multimediaMethod('getEqMode', [this._appId])
+          .then((res) => {
+            if (res && res[0] !== undefined) {
+              return res[0]
+            }
+            throw new Error('multimediad error')
+          })
+      }
+    },
+    /**
+     * set player EQ mode.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function setEqMode
+     * @param {number} eqMode
+     * @returns {Promise<boolean>}
+     */
+    setEqMode: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setEqMode (eqMode) {
+        if (typeof eqMode !== 'number') {
+          return Promise.reject(new Error(`Expect a number on setLoopMode, but got ${typeof eqMode}`))
+        }
+        return this._runtime.multimediaMethod('setEqMode', [this._appId, '' + eqMode])
           .then((res) => {
             if (res && res[0] !== undefined) {
               return res[0]

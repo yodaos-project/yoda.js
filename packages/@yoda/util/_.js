@@ -100,6 +100,11 @@ function times (number) {
   return ret
 }
 
+module.exports.delay = delay
+function delay (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 module.exports.mapSeries = mapSeries
 function mapSeries (iterable, mapper) {
   var ret = []

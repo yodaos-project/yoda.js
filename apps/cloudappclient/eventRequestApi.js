@@ -19,7 +19,7 @@ function gensigh (data) {
 
 function getAuth () {
   if (CONFIG === null) {
-    logger.error('CONFIG not set yet, please set CONFIG first. in: eventRequest')
+    logger.error('CONFIG not set yet, please set CONFIG first. in: eventRequestApi.js')
     return ''
   }
   var data = {
@@ -52,9 +52,9 @@ function request (event, appId, options, onaction) {
     appId: appId,
     extra: JSON.stringify(options)
   }
-  logger.log('event:', data)
 
   data = JSON.stringify(data)
+  logger.log(`[eventReq-raw](${appId}, ${event}) body(${data})`)
   var req = https.request({
     method: 'POST',
     host: DEFAULT_HOST,
@@ -72,8 +72,8 @@ function request (event, appId, options, onaction) {
       if (res.statusCode !== 200) {
         logger.error(`Error: failed upload ${event} ${data} with ${msg}`)
       } else {
+        logger.log(`[eventRes-raw](${appId}, ${event}) raw(${msg})`)
         msg = JSON.parse(msg)
-        logger.log(`got ${event} successfully response`, msg)
         if (typeof onaction === 'function') {
           onaction(msg.response)
         }

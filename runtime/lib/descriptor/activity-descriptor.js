@@ -49,6 +49,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
   this._runtime = runtime
 
   this._registeredDbusSignals = []
+  this._destructed = false
 
   /**
    * The `LightClient` is used to control LED APIs.
@@ -139,6 +140,11 @@ ActivityDescriptor.prototype.toString = function toString () {
   return `ActivityDescriptor(appId=>${this._appId}, appHome=>${this._appHome})`
 }
 ActivityDescriptor.prototype.destruct = function destruct () {
+  if (this._destructed) {
+    return
+  }
+  this._destructed = true
+
   this._registeredDbusSignals.forEach(it => {
     this._runtime.component.dbusRegistry.removeAllListeners(it)
   })
@@ -187,6 +193,13 @@ Object.assign(ActivityDescriptor.prototype,
      * @event yodaRT.activity.Activity#destroy
      */
     destroy: {
+      type: 'event'
+    },
+    /**
+     * When an activity is put into background.
+     * @event yodaRT.activity.Activity#background
+     */
+    background: {
       type: 'event'
     },
     /**
@@ -285,20 +298,20 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Put device into hibernation. Terminates apps in stack (i.e. apps in active and paused).
+     * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
      *
      * Also clears apps' contexts.
      *
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @function hibernate
+     * @function idle
      * @returns {Promise<void>}
      */
-    hibernate: {
+    idle: {
       type: 'method',
       returns: 'promise',
-      fn: function hibernate () {
-        return this._runtime.hibernate()
+      fn: function idle () {
+        return this._runtime.idle()
       }
     },
     /**

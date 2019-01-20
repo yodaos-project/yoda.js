@@ -398,6 +398,8 @@ function runInCurrentContext (callback) {
           /** no available updates */
           return compose.Break(false)
         }
+        destPath = getImagePath(info)
+        info.imagePath = destPath
         /** check if local pending update exists */
         readInfo(cb)
       },
@@ -425,8 +427,6 @@ function runInCurrentContext (callback) {
         writeInfo(info, cb)
       },
       cb => {
-        destPath = getImagePath(info)
-        info.imagePath = destPath
         /** check if target path exists */
         fs.stat(destPath, function onStat (err, stat) {
           logger.info('check if target path exists', stat != null)
@@ -572,6 +572,23 @@ function getInfoOfPendingUpgrade (callback) {
 }
 
 /**
+ * Get download progress of given info.
+ * @param {module:@yoda/ota~OtaInfo} info
+ * @returns {Promise<number>} percentage of download progress.
+ */
+function getImageDownloadProgress (info) {
+  var imgPath = getImagePath(info)
+  return new Promise((resolve, reject) => {
+    fs.stat(imgPath, (err, stat) => {
+      if (err) {
+        return reject(err)
+      }
+      resolve(stat.size / info.totalSize)
+    })
+  })
+}
+
+/**
  * Get a report for apps presenting current OTA informations.
  *
  * @param {Function} callback
@@ -643,8 +660,10 @@ module.exports.runInBackground = runInBackground
 module.exports.getAvailableInfo = getAvailableInfo
 module.exports.getInfoIfFirstUpgradedBoot = getInfoIfFirstUpgradedBoot
 module.exports.getInfoOfPendingUpgrade = getInfoOfPendingUpgrade
+module.exports.getImageDownloadProgress = getImageDownloadProgress
 module.exports.getMqttOtaReport = getMqttOtaReport
-Object.assign(module.exports, otaNetwork)
+module.exports.network = otaNetwork
+module.exports.condition = require('./condition')
 /**
  * Change ota working directory in unit tests
  * @private

@@ -4,11 +4,11 @@ var _ = require('@yoda/util')._
 var ota = require('@yoda/ota')
 var system = require('@yoda/system')
 var logger = require('logger')('otap')
-var promisify = require('util')
+var util = require('util')
 
 var strings = require('./strings.json')
 
-var getAvailableInfoAsync = promisify(ota.getAvailableInfo)
+var getAvailableInfoAsync = util.promisify(ota.getAvailableInfo)
 
 var intentHandler = {
   start_sys_upgrade: checkUpdateAvailability,
@@ -44,7 +44,7 @@ module.exports = function (activity) {
         onFirstBootAfterUpgrade(activity, url)
         break
       case '/force_upgrade':
-        forceUpgrade(activity, url)
+        startUpgrade(activity, url.query.image_path, true)
         break
     }
   })
@@ -61,26 +61,38 @@ function checkUpdateAvailability (activity) {
       return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
         .then(() => activity.exit())
     }
+    if (info.status === 'downloading') {
+      return ota.getImageDownloadProgress(progress => {
+        var utterance
+        if (isNaN(progress) || progress < 0 || progress >= 100) {
+          utterance = strings.UPDATES_START_DOWNLOADING
+        } else {
+          utterance = util.format(strings.UPDATES_ON_DOWNLOADING, progress)
+        }
+        return activity.tts.speak(utterance)
+          .then(() => activity.exit())
+      })
+    }
     if (info.status !== 'downloaded') {
       ota.runInBackground()
-      return activity.tts.speak(strings.UPDATES_DOWNLOADING)
+      return activity.tts.speak(strings.UPDATES_START_DOWNLOADING)
         .then(() => activity.exit())
     }
-    var result = isUpgradeSuitableNow()
-    if (result !== true) {
-      // TODO: device not available for upgrade
-      return
-    }
-    logger.info(`using ota image ${info.imagePath}`)
-    var ret = system.prepareOta(info.imagePath)
-    if (ret !== 0) {
-      return activity.tts.speak(strings.OTA_PREPARATION_FAILED)
-        .then(() => activity.exit())
-    }
-    return activity.media.start('system://ota_start_update.ogg', { impatient: false })
-      .then(() => system.reboot(), err => {
-        logger.error('Unexpected error on announcing start update', err.stack)
-        system.reboot()
+    return ota.condition.getAvailabilityOfOta(info)
+      .then(availability => {
+        switch (availability) {
+          case true:
+            return startUpgrade(activity, info.imagePath)
+          case 'low_power':
+            return activity.tts.speak(strings.UPDATE_NOT_AVAILABLE_LOW_POWER)
+              .then(() => activity.exit())
+          case 'extremely_low_power':
+            return activity.tts.speak(strings.UPDATE_NOT_AVAILABLE_EXTREMELY_LOW_POWER)
+              .then(() => activity.exit())
+          default:
+            return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
+              .then(() => activity.exit())
+        }
       })
   }, error => {
     logger.error('Unexpected error on check available updates', error.stack)
@@ -98,17 +110,20 @@ function whatsCurrentVersion (activity) {
     .then(() => activity.exit())
 }
 
-function isUpgradeSuitableNow () {
-  // TODO: check battery availability
-  return true
-}
-
 /**
  *
  * @param {YodaRT.Activity} activity
  * @param {URL} url
  */
 function onFirstBootAfterUpgrade (activity, url) {
+  activity.tts.speak(url.query.changelog || strings.OTA_UPDATE_SUCCESS)
+    .then(
+      () => activity.exit(),
+      err => {
+        logger.error('unexpected error on announcing changelog', err.stack)
+        activity.exit()
+      }
+    )
   ota.resetOta(function onReset (err) {
     if (err) {
       logger.error('Unexpected error on reset ota', err.stack)
@@ -116,15 +131,21 @@ function onFirstBootAfterUpgrade (activity, url) {
   })
 }
 
-/**
- *
- * @param {YodaRT.Activity} activity
- * @param {URL} url
- */
-function forceUpgrade (activity, url) {
-  return activity.media.start('system://ota_force_update.ogg', { impatient: false })
+function startUpgrade (activity, imagePath, isForce) {
+  logger.info(`using ota image ${imagePath}`)
+  var ret = system.prepareOta(imagePath)
+  if (ret !== 0) {
+    logger.error(`OTA prepared with status code ${ret}, terminating.`)
+    return activity.tts.speak(strings.OTA_PREPARATION_FAILED)
+      .then(() => activity.exit())
+  }
+  var media = 'system://ota_start_update.ogg'
+  if (isForce) {
+    media = 'system://ota_force_update.ogg'
+  }
+  return activity.media.start(media, { impatient: false })
     .then(() => system.reboot(), err => {
-      logger.error('Unexpected error on announcing force update', err.stack)
+      logger.error('Unexpected error on announcing start update', err.stack)
       system.reboot()
     })
 }

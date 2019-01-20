@@ -87,6 +87,13 @@ MultiMedia.prototype.pause = function (appId) {
   try {
     this.handle[appId].pause()
     AudioManager.setPlayingState(audioModuleName, false)
+
+    // need to send events only when the state is switched
+    if (playing === true) {
+      process.nextTick(() => {
+        this.handle[appId].emit('paused')
+      })
+    }
   } catch (error) {
     logger.error('try to pause player error with appId: ', appId, error.stack)
   }
@@ -98,6 +105,11 @@ MultiMedia.prototype.resume = function (appId) {
     if (this.handle[appId] && !this.handle[appId].playing) {
       this.handle[appId].resume()
       AudioManager.setPlayingState(audioModuleName, true)
+
+      // need to send events only when the state is switched
+      process.nextTick(() => {
+        this.handle[appId].emit('resumed')
+      })
     }
   } catch (error) {
     logger.error('try to resume player errer with appId: ', appId, error.stack)
@@ -121,6 +133,20 @@ MultiMedia.prototype.getLoopMode = function (appId) {
 MultiMedia.prototype.setLoopMode = function (appId, mode) {
   if (this.handle[appId]) {
     this.handle[appId].loopMode = mode === 'true'
+  }
+}
+
+MultiMedia.prototype.getEqMode = function getEqMode (appId) {
+  if (this.handle[appId]) {
+    return this.handle[appId].eqMode
+  }
+  logger.info(`no handle for app ${appId}, returning default eq mode`)
+  return 0
+}
+
+MultiMedia.prototype.setEqMode = function setEqMode (appId, mode) {
+  if (this.handle[appId]) {
+    this.handle[appId].eqMode = mode
   }
 }
 
@@ -154,18 +180,18 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
         logger.error(`try to stop player error with appId: ${appId}`, error.stack)
       }
     }
-    this.emit('playbackcomplete', '' + player.id)
+    this.emit('playbackcomplete', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, false)
   })
   player.on('bufferingupdate', () => {
-    this.emit('bufferingupdate', '' + player.id)
+    this.emit('bufferingupdate', '' + player.id, '' + player.duration, '' + player.position)
   })
   player.on('seekcomplete', () => {
-    this.emit('seekcomplete', '' + player.id)
+    this.emit('seekcomplete', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, true)
   })
   player.on('cancel', () => {
-    this.emit('cancel', '' + player.id)
+    this.emit('cancel', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, false)
   })
   player.on('error', () => {
@@ -217,6 +243,16 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
           }, 7000) /** stage 2 timer */
         })
     }, 5000) /** stage 1 timer */
+  })
+
+  player.on('paused', () => {
+    AudioManager.setPlayingState(audioModuleName, false)
+    this.emit('paused', '' + player.id, '' + player.duration, '' + player.position)
+  })
+
+  player.on('resumed', () => {
+    AudioManager.setPlayingState(audioModuleName, true)
+    this.emit('resumed', '' + player.id, '' + player.duration, '' + player.position)
   })
 }
 

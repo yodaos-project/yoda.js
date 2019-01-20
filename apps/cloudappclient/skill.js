@@ -1,6 +1,7 @@
 var logger = require('logger')('cloudAppClient-skill')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
+var _ = require('@yoda/util')._
 
 function Skill (exe, nlp, action) {
   logger.log(action.appId + ' was create')
@@ -24,7 +25,7 @@ function Skill (exe, nlp, action) {
 inherits(Skill, EventEmitter)
 
 Skill.prototype.onrequest = function (action, append) {
-  var directives = action.response.action.directives || []
+  var directives = _.get(action, 'response.action.directives', [])
   if (directives === undefined || directives.length <= 0) {
     return
   }
