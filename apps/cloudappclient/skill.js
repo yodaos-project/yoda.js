@@ -197,7 +197,7 @@ Skill.prototype.handleEvent = function () {
 }
 
 Skill.prototype.transform = function (directives, append) {
-  logger.log(`transform start: ${this.appId} append: ${append} ${directives}`)
+  logger.log(`transform start: ${this.appId} append: ${JSON.stringify(append)} ${JSON.stringify(directives)}`)
   if (append !== true) {
     logger.log('cover directives')
     this.directives.splice(0, this.directives.length)
@@ -216,6 +216,12 @@ Skill.prototype.transform = function (directives, append) {
     'RESUME': 'resume',
     'STOP': 'stop'
   }
+  // FIXME remove this when skillOption is ready
+  var forwardbackwardActMap = {
+    'BACKWARD': 'backward',
+    'FORWARD': 'forward'
+  }
+  // FIXME END
   directives.forEach((ele) => {
     var tdt = {}
     if (ele.type === 'voice') {
@@ -271,6 +277,16 @@ Skill.prototype.transform = function (directives, append) {
       }
       tdt.data.appId = this.appId
       this.directives.push(tdt)
+    // FIXME remove this when skillOption is ready
+    } else if (ele.type === 'forwardbackward') {
+      tdt = {
+        type: 'forwardbackward',
+        action: forwardbackwardActMap[ele.action],
+        data: ele
+      }
+      tdt.data.appId = this.appId
+      this.directives.push(tdt)
+    // FIXME END
     }
   })
 }

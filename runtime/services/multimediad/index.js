@@ -286,4 +286,13 @@ dbusApis.addMethod('resetAwaken', {
   cb(null, true)
 })
 
+dbusApis.addMethod('setSpeed', {
+  in: ['s', 's'],
+  out: ['b']
+}, function (appId, speed, cb) {
+  logger.log(`set play speed, ${appId} ${speed}`)
+  service.setSpeed(appId, speed)
+  cb(null, true)
+})
+
 logger.log('service multimedia started')

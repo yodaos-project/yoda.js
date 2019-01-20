@@ -423,6 +423,30 @@ Object.assign(MultimediaDescriptor.prototype,
             throw new Error('player instance not found')
           })
       }
+    },
+    /**
+     * set play speed.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function setSpeed
+     * @param {number} speed
+     * @returns {Promise<void>}
+     */
+    setSpeed: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setSpeed (speed) {
+        if (typeof speed !== 'number') {
+          return Promise.reject(new Error(`Expect a number on setSpeed, but got ${typeof speed}`))
+        }
+        return this._runtime.multimediaMethod('setSpeed', [this._appId, String(speed)])
+          .then((res) => {
+            if (res && res[0] === true) {
+              return
+            }
+            throw new Error('player instance not found')
+          })
+      }
     }
   }
 )

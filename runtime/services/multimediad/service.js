@@ -164,6 +164,12 @@ MultiMedia.prototype.seek = function (appId, position, callback) {
   }
 }
 
+MultiMedia.prototype.setSpeed = function (appId, speed) {
+  if (this.handle[appId]) {
+    this.handle[appId].setSpeed(speed)
+  }
+}
+
 MultiMedia.prototype.listenEvent = function (player, appId) {
   player.on('prepared', () => {
     this.emit('prepared', '' + player.id, '' + player.duration, '' + player.position)
