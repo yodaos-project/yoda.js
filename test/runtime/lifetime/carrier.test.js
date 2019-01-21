@@ -98,6 +98,31 @@ test('carrier shall be re-activated on app deactivated proactively', t => {
     })
 })
 
+test('carrier shall be re-activated on app set background proactively', t => {
+  mock.restore()
+  t.plan(1)
+
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.runtime)
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('1', 'cut', '0')
+    })
+    .then(() => {
+      return life.setBackgroundById('1')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '0')
+
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('previous cut app shall be destroyed on activating cut carrier proactively', t => {
   mock.restore()
   t.plan(2)
