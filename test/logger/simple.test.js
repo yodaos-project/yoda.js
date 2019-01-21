@@ -3,9 +3,9 @@
 // process.env.LOG_PORT = 8081
 
 var test = require('tape')
-var logger = require('../../packages/logger')('log')
-var levels = require('../../packages/logger').levels
-var setGlobalUploadLevel = require('../../packages/logger').setGlobalUploadLevel
+var logger = require('logger')('log')
+var levels = require('logger').levels
+var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
 
 test('simple ', (t) => {
   t.plan(levels.length)
