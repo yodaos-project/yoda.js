@@ -85,9 +85,6 @@ function main (done) {
       logger.info('No updates found, exiting.')
       return ota.resetOta(done)
     }
-    var ret = system.prepareOta(imagePath)
-    logger.info(
-      `OTA prepared with status code ${ret}, terminating.`)
 
     if (!info.isForceUpdate) {
       return done()

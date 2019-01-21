@@ -92,7 +92,7 @@ DBus.prototype.listenSignals = function listenSignals () {
   var multimediaEvents = {
     'multimediadevent': function onMultimediaEvent (msg) {
       var channel = `callback:multimedia:${_.get(msg, 'args.0')}`
-      logger.info(`VuiDaemon received multimediad event on channel(${channel})`)
+      logger.info(`VuiDaemon received multimediad event on channel(${channel}) msg(${JSON.stringify(msg)})`)
       EventEmitter.prototype.emit.apply(
         self,
         [ channel ].concat(msg.args.slice(1))
@@ -268,8 +268,16 @@ DBus.prototype.amsexport = {
     in: ['s'],
     out: ['b'],
     fn: function ReportSysStatus (status, cb) {
-      if (this.runtime.loadAppComplete === false) {
-        // waiting for the app load complete
+      if (!this.runtime.inited) {
+        logger.debug('system initing, ignoring sys status report')
+        return cb(null, false)
+      }
+      if (this.runtime.welcoming) {
+        logger.debug('system welcoming, ignoring sys status report')
+        return cb(null, false)
+      }
+      if (this.runtime.hibernated) {
+        logger.debug('system hibernated, ignoring sys status report')
         return cb(null, false)
       }
       try {
@@ -362,7 +370,8 @@ DBus.prototype.amsexport = {
     in: [],
     out: ['s'],
     fn: function Hibernate (cb) {
-      this.runtime.hibernate()
+      // TODO: `Hibernate` is a published API. Should be updated on next major version.
+      this.runtime.idle()
         .then(
           () => cb(null, '{"ok": true}'),
           err => {
@@ -617,7 +626,8 @@ DBus.prototype.amsexport = {
           })
       }
       future.catch(err => {
-        cb(null, JSON.stringify({ ok: true, error: err.message, stack: err.stack }))
+        logger.error('unexpected error on reload', err.stack)
+        cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
       })
     }
   }
@@ -681,6 +691,35 @@ DBus.prototype.yodadebug = {
           notifications: this.component.appLoader.notifications
         }
       }))
+    }
+  },
+  InspectComponent: {
+    in: ['s'],
+    out: ['s'],
+    fn: function (name, cb) {
+      if (typeof name === 'function') {
+        cb = name
+        name = null
+        return cb(null, JSON.stringify({ ok: true, result: Object.keys(this.component) }))
+      }
+      var component = this.component[name]
+      if (component == null) {
+        return cb(null, JSON.stringify({ ok: false, message: `Component not found: '${name}'.` }))
+      }
+      var result = {}
+      Object.getOwnPropertyNames(component).forEach(key => {
+        var val = component[key]
+        if (val === this.runtime || val === this.component) {
+          return
+        }
+        try {
+          JSON.stringify(val)
+          result[key] = val
+        } catch (e) {
+          result[key] = '[Circular]'
+        }
+      })
+      cb(null, JSON.stringify({ ok: true, result: result }))
     }
   },
   mockAsr: {

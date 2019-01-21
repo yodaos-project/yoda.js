@@ -19,7 +19,7 @@ module.exports = activity => {
   var sos = new Manager(directive, Skill)
   // tts, media event handle
   var ttsClient = new TtsEventHandle(activity.tts)
-  var mediaClient = new MediaEventHandle(activity.media)
+  var mediaClient = new MediaEventHandle(activity.media, logger)
 
   // report app status for OS in nextTick
   var taskTimerHandle = null
@@ -37,7 +37,6 @@ module.exports = activity => {
   directive.do('frontend', 'tts', function (dt, next) {
     logger.log(`start dt: tts.${dt.action}`)
     if (dt.action === 'say') {
-      activity.media.pause()
       ttsClient.speak(dt.data.item.tts, function (name) {
         logger.log(`end dt: tts.${dt.action} ${name}`)
         if (name === 'start') {
@@ -68,8 +67,21 @@ module.exports = activity => {
     logger.log(`exe dt: media.${dt.action}`)
     if (dt.action === 'play') {
       mediaClient.start(dt.data.item.url, function (name, args) {
+        logger.log(`[cac-event](${name}) args(${JSON.stringify(args)}) `)
         if (name === 'prepared') {
           sos.sendEventRequest('media', 'prepared', dt.data, {
+            itemId: _.get(dt, 'data.item.itemId'),
+            duration: args[0],
+            progress: args[1]
+          })
+        } else if (name === 'paused') {
+          sos.sendEventRequest('media', 'paused', dt.data, {
+            itemId: _.get(dt, 'data.item.itemId'),
+            duration: args[0],
+            progress: args[1]
+          })
+        } else if (name === 'resumed') {
+          sos.sendEventRequest('media', 'resumed', dt.data, {
             itemId: _.get(dt, 'data.item.itemId'),
             duration: args[0],
             progress: args[1]
@@ -91,28 +103,11 @@ module.exports = activity => {
         }
       })
     } else if (dt.action === 'pause') {
-      activity.media.pause()
-        .then(() => {
-          sos.sendEventRequest('media', 'pause', dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            token: _.get(dt, 'data.item.token')
-          })
-        })
-        .catch((err) => {
-          logger.log('media pause failed', err)
-        })
+      // no need to send events here because player will emit paused event
       next()
     } else if (dt.action === 'resume') {
-      activity.media.resume()
-        .then(() => {
-          sos.sendEventRequest('media', 'resume', dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            token: _.get(dt, 'data.item.token')
-          }, next)
-        })
-        .catch((err) => {
-          logger.log('media resume failed', err)
-        })
+      // no need to send events here because player will emit resumed event
+      next()
     } else if (dt.action === 'cancel') {
       activity.media.stop()
         .then(() => {
@@ -258,5 +253,26 @@ module.exports = activity => {
   activity.on('destroy', function () {
     logger.log(this.appId + ' destroyed')
     sos.destroy()
+  })
+  activity.on('notification', (state) => {
+    switch (state) {
+      case 'on-start-shake':
+        logger.log('on-start-shake')
+        break
+      case 'on-stop-shake':
+        logger.log('on-stop-shake')
+        activity.voiceCommand('下一首')
+        break
+      case 'on-quite-back':
+        logger.log('on-quite-back')
+        sos.setManualPauseFLag(true)
+        sos.pause()
+        break
+      case 'on-quite-front':
+        logger.log('on-quite-front')
+        sos.setManualPauseFLag(false)
+        sos.resume()
+        break
+    }
   })
 }

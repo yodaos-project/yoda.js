@@ -95,16 +95,16 @@ function BluetoothA2dp (deviceName) {
   this.lastMode = protocol.A2DP_MODE.SINK // last used a2dp mode
   this.localName = deviceName // local bluetooth device name
 
-  this._flora = new FloraComp(logger)
-  this._flora.handlers = {
-    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
-    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
-  }
-  this._flora.init(null, {
+  this._flora = new FloraComp(null, {
     'uri': 'unix:/var/run/flora.sock',
     'bufsize': 40960,
     'reconnInterval': 10000
   })
+  this._flora.handlers = {
+    'bluetooth.a2dpsink.event': this._onSinkEvent.bind(this),
+    'bluetooth.a2dpsource.event': this._onSourceEvent.bind(this)
+  }
+  this._flora.init()
 }
 inherits(BluetoothA2dp, EventEmitter)
 
@@ -174,6 +174,13 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
         })
       }
       this.emit('discovery_state_changed', protocol.A2DP_MODE.SOURCE, protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED, results)
+    } else if (msg.action === 'element_attrs') {
+      var song = {
+        title: msg.title,
+        artist: msg.artist,
+        album: msg.album
+      }
+      this.emit(`audio_state_changed`, protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.QUERY_RESULT, song)
     }
   } catch (err) {
     logger.error(`on ${mode} error(${JSON.stringify(err)})`)
@@ -201,8 +208,7 @@ BluetoothA2dp.prototype._send = function (mode, cmdstr, props) {
   var data = Object.assign({ command: cmdstr }, props)
   var msg = [ JSON.stringify(data) ]
   var name = (mode === protocol.A2DP_MODE.SINK ? 'bluetooth.a2dpsink.command' : 'bluetooth.a2dpsource.command')
-  var type = (cmdstr === 'ON' ? floraFactory.MSGTYPE_PERSIST : floraFactory.MSGTYPE_INSTANT)
-  return this._flora.post(name, msg, type)
+  return this._flora.post(name, msg, floraFactory.MSGTYPE_INSTANT)
 }
 
 /**
@@ -242,6 +248,10 @@ BluetoothA2dp.prototype.open = function (mode, options) {
   if (autoplay) {
     msg.subsequent = 'PLAY'
   }
+  if (mode === protocol.A2DP_MODE.SINK) {
+    // Bluetooth phone call is binded with bluetooth music.
+    msg.sec_pro = 'HFP'
+  }
   this._send(mode, 'ON', msg)
 }
 
@@ -259,7 +269,12 @@ BluetoothA2dp.prototype.close = function () {
   if (this.lastMsg.a2dpstate === 'closed') {
     logger.warn('close() while last state is already closed.')
   }
-  this._send(this.lastMode, 'OFF')
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    // Bluetooth phone call is binded with bluetooth music.
+    this._send(this.lastMode, 'OFF', {sec_pro: 'HFP'})
+  } else {
+    this._send(this.lastMode, 'OFF')
+  }
 }
 
 /**
@@ -305,7 +320,7 @@ BluetoothA2dp.prototype.disconnect = function () {
   if (this.lastMsg.connect_state !== 'connected') {
     logger.warn('disconnect() while last state is not connected.')
   }
-  this._send(this.lastMode, 'DISCONNECT_PEER')
+  this._send(this.lastMode, 'DISCONNECT')
 }
 
 /**
@@ -331,6 +346,19 @@ BluetoothA2dp.prototype.unmute = function () {
   logger.debug(`unmute(${this.lastMode})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
     this._send(this.lastMode, 'UNMUTE')
+  }
+}
+
+/**
+ * Sync volume to remote device.
+ *
+ * @param {string} [vol] - the volume number to be synced.
+ * @returns {null}
+ */
+BluetoothA2dp.prototype.syncVol = function (vol) {
+  logger.debug(`sync volume(${vol})`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    this._send(this.lastMode, 'VOLUME', { value: vol })
   }
 }
 
@@ -368,6 +396,7 @@ BluetoothA2dp.prototype.pause = function () {
       logger.warn('pause() while last state is already stopped.')
     }
     this.lastCmd = 'pause'
+    this._send(this.lastMode, 'MUTE')
     this._send(this.lastMode, 'PAUSE')
   }
 }
@@ -416,6 +445,21 @@ BluetoothA2dp.prototype.next = function () {
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
     this._send(this.lastMode, 'UNMUTE')
     this._send(this.lastMode, 'NEXT')
+  }
+}
+
+/**
+ * Query playing song's information such as album, title, artist, etc.
+ *
+ * You can listen following changed state:
+ * - `protocol.AUDIO_STATE.QUERY_RESULT`.
+ * @returns {null}
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
+ */
+BluetoothA2dp.prototype.query = function () {
+  logger.debug(`query song info`)
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    this._send(this.lastMode, 'GETSONG_ATTRS')
   }
 }
 
@@ -469,6 +513,54 @@ BluetoothA2dp.prototype.discovery = function () {
  */
 BluetoothA2dp.prototype.getMode = function () {
   return this.lastMode
+}
+
+/**
+ * Get a2dp radio state.
+ * @returns {RADIO_STATE} - The current radio state.
+ */
+BluetoothA2dp.prototype.getRadioState = function () {
+  if (this.lastMsg.a2dpstate === 'opened') {
+    return protocol.RADIO_STATE.ON
+  } else {
+    return protocol.RADIO_STATE.OFF
+  }
+}
+
+/**
+ * Get a2dp connection state.
+ * @return {CONNECTION_STATE} - The current connection state.
+ */
+BluetoothA2dp.prototype.getConnectionState = function () {
+  if (this.lastMsg.connect_state === 'connected') {
+    return protocol.CONNECTION_STATE.CONNECTED
+  } else {
+    return protocol.CONNECTION_STATE.DISCONNECTED
+  }
+}
+
+/**
+ * Get a2dp-sink audio state.
+ * @return {AUDIO_STATE} - The current audio state.
+ */
+BluetoothA2dp.prototype.getAudioState = function () {
+  if (this.lastMsg.play_state === 'played') {
+    return protocol.AUDIO_STATE.PLAYING
+  } else {
+    return protocol.AUDIO_STATE.STOPPED
+  }
+}
+
+/**
+ * Get a2dp discovery state.
+ * @return {DISCOVERY_STATE} - The currenct discovery state.
+ */
+BluetoothA2dp.prototype.getDiscoveryState = function () {
+  if (this.lastMsg.broadcast_state === 'opened') {
+    return protocol.DISCOVERY_STATE.ON
+  } else {
+    return protocol.DISCOVERY_STATE.OFF
+  }
 }
 
 /**
@@ -528,13 +620,10 @@ BluetoothA2dp.prototype.isDiscoverable = function () {
  * Destroy bluetooth profile adapter, thus means bluetooth will always be turned `OFF` automatically.
  */
 BluetoothA2dp.prototype.destroy = function () {
-  var destroyFunc = function () {
-    this.removeAllListeners()
-    this._flora.destruct()
-    this._end = true
-  }.bind(this)
-  this.close()
-  setTimeout(destroyFunc, 3000)
+  logger.debug(`destroy()`)
+  this.removeAllListeners()
+  this._flora.deinit()
+  this._end = true
 }
 
 exports.BluetoothA2dp = BluetoothA2dp

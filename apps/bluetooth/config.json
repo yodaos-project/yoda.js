@@ -1,4 +1,17 @@
 {
-  "DELAY_BEFORE_PLAY_FAILED": 9000,
-  "DELAY_BEFORE_AUTOCONNECT_FAILED": 6000
+  "TIMER": {
+    "DELAY_BEFORE_PLAY_FAILED": 9000,
+    "DELAY_BEFORE_AUTOCONNECT_FAILED": 6000,
+    "HTTP_TIMEOUT": 10
+  },
+  "KEY_CODE": {
+    "POWER": 116
+  },
+  "REQUEST_INFO": {
+    "locale": "zh_cn",
+    "domain": "com.rokid.cas.qqmusic",
+    "appVersion": "2.0.0",
+    "signMethod": "MD5",
+    "appId": "RBA66C902A6347DD86CA8D419B0BB974"
+  }
 }

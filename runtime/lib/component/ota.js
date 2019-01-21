@@ -41,14 +41,6 @@ class OTA {
     if (nowHour >= 22/** 22pm */ || nowHour <= 7 /** 7am */) {
       return Promise.resolve(false)
     }
-    // TODO: move to ota.conditions
-    if (this.component.battery.batSupported) {
-      if (!this.component.battery.isCharging()) {
-        if (this.component.battery.getBatteryLevel() < 50) {
-          return false
-        }
-      }
-    }
     this.forceUpdateAvailable = false
 
     return getInfoOfPendingUpgradeAsync()
@@ -57,12 +49,19 @@ class OTA {
           return false
         }
         logger.info('got pending update info', upgradeInfo)
-        return ota.conditions.getAvailabilityOfOta(upgradeInfo)
-          .then(available => {
-            if (!available) {
-              return false
+        return ota.condition.getAvailabilityOfOta(upgradeInfo)
+          .then(availability => {
+            switch (availability) {
+              case true:
+                return this.startForceUpdate(upgradeInfo)
+                  .then(() => true)
+              case 'low_power':
+              case 'extremely_low_power':
+                this.forceUpdateAvailable = true
+                return false
+              case 'new_version':
+                return false
             }
-            return this.startForceUpdate(upgradeInfo)
           })
       })
   }
@@ -74,7 +73,7 @@ class OTA {
         if (!info) {
           return false
         }
-        this.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
+        this.runtime.openUrl(`yoda-skill://ota/on_first_boot_after_upgrade?changelog=${encodeURIComponent(info.changelog)}`)
         return true
       }, err => {
         logger.error('get upgrade info on first upgrade boot failed', err.stack)

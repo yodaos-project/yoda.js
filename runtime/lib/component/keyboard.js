@@ -31,7 +31,8 @@ KeyboardHandler.prototype.init = function init () {
 }
 
 KeyboardHandler.prototype.deinit = function deinit () {
-  this.input.disconnect()
+  this.input && this.input.disconnect()
+  this.input = null
 }
 
 KeyboardHandler.prototype.execute = function execute (descriptor) {
@@ -295,13 +296,14 @@ KeyboardHandler.prototype.restoreKeyDefaults = function restoreKeyDefaults (appI
 KeyboardHandler.prototype.listenerWrap = function listenerWrap (eventName, fn, args) {
   var self = this
   return function (event) {
+    var fnArgs = arguments
     self.component.dispatcher.delegate('keyboardWillRespond', [ event.keyCode, eventName ])
       .then(delegation => {
         if (delegation) {
           return
         }
         try {
-          fn.apply(self, (args || []).concat(Array.prototype.slice.call(arguments, 0)))
+          fn.apply(self, (args || []).concat(Array.prototype.slice.call(fnArgs, 0)))
         } catch (err) {
           logger.error('Unexpected error on handling key events', err && err.message, err && err.stack)
         }

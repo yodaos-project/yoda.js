@@ -243,6 +243,28 @@ JS_FUNCTION(Reset) {
   return jerry_create_undefined();
 }
 
+JS_FUNCTION(EqModeGetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  int mode = 0;
+  if (_this->handle) {
+    _this->handle->getCurEqMode((rk_eq_type_t*)&mode);
+  }
+  return jerry_create_number(mode);
+}
+
+JS_FUNCTION(EqModeSetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  int type = JS_GET_ARG(0, number);
+  if (_this->handle) {
+    _this->handle->setEqMode((rk_eq_type_t)type);
+  }
+  return jerry_create_undefined();
+}
+
 JS_FUNCTION(IdGetter) {
   JS_DECLARE_THIS_PTR(player, player);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
@@ -351,6 +373,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "loopModeSetter", LoopModeSetter);
   iotjs_jval_set_method(proto, "sessionIdGetter", SessionIdGetter);
   iotjs_jval_set_method(proto, "sessionIdSetter", SessionIdSetter);
+  iotjs_jval_set_method(proto, "eqModeGetter", EqModeGetter);
+  iotjs_jval_set_method(proto, "eqModeSetter", EqModeSetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
   jerry_release_value(proto);
