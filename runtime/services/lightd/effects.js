@@ -50,8 +50,6 @@ var path = require('path')
 
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
-var globalAlphaFactor = 1
-var realTimeRGBData = []
 var holdSoundConnect = true
 if (property.get('player.sound.holdcon', 'persist') === '0') {
   holdSoundConnect = false
@@ -61,21 +59,80 @@ if (property.get('player.lightd.holdcon', 'persist') === '0') {
   holdAwakeConnect = false
 }
 
-function applyAlphaFactor (alpha) {
-  if (alpha !== undefined && typeof alpha === 'number' && alpha >= 0 && alpha <= 1) {
-    alpha *= globalAlphaFactor
-  } else {
-    alpha = globalAlphaFactor
+/**
+ * common for context
+ */
+class Common {
+  /**
+   * apply alpha factor
+   * @param {number} alpha - alpha input
+   * @returns {number} - alpha output
+   */
+  static ApplyAlphaFactor (alpha) {
+    if (typeof alpha === 'number' && alpha >= 0 && alpha <= 1) {
+      return Common.alphaFactor * alpha
+    } else {
+      return Common.alphaFactor
+    }
   }
-  return alpha
+
+  /**
+   * set alpha factor
+   * @param {number} alpha - alpha factor
+   */
+  static setAlphaFactor (alpha) {
+    Common.alphaFactor = alpha
+  }
+
+  /**
+   * save the pixel result
+   * @param {number} pos - index of led
+   * @param {number} r - color.r
+   * @param {number} g - color.g
+   * @param {number} b - color.b
+   * @param {number} a - color.a
+   */
+  static setPixel (pos, r, g, b, a) {
+    if (pos < Common.ledStatus.length - 1) {
+      Common.ledStatus[pos].setRGBA(r, g, b, a)
+    }
+  }
+
+  /**
+   * save the fill result
+   * @param {number} r - color.r
+   * @param {number} g - color.g
+   * @param {number} b - color.b
+   * @param {number} a - color.a
+   */
+  static setFill (r, g, b, a) {
+    for (var i = 0; i < Common.ledStatus.length; ++i) {
+      Common.ledStatus[i].setRGBA(r, g, b, a)
+    }
+  }
+
+  /**
+   * init the led config
+   * @param config
+   */
+  static initLedStatus (config) {
+    Common.ledStatus = []
+    for (var i = 0; i < config.leds; ++i) {
+      Common.ledStatus.push(new Color(0, 0, 0, 1))
+    }
+  }
 }
+Common.alphaFactor = 1
+Common.ledStatus = []
 
 /**
  * Color class for light
  */
 class Color {
-  constructor (r, g, b, a) {
-    this.setRGBA(r, g, b, a)
+  constructor (colorObj) {
+    if (typeof colorObj.r === 'number') {
+      this.setRGBA(colorObj.r, colorObj.g, colorObj.b, colorObj.a)
+    }
   }
 
   /**
@@ -86,46 +143,10 @@ class Color {
    * @param {number} a
    */
   setRGBA (r, g, b, a) {
-    this._r = r
-    this._g = g
-    this._b = b
-    this._a = a
-  }
-  get r () {
-    return this._r
-  }
-  set r (val) {
-    this._r = val
-  }
-  get g () {
-    return this._g
-  }
-  set g (val) {
-    this._g = val
-  }
-  get b () {
-    return this._b
-  }
-  set b (val) {
-    this._b = val
-  }
-  get a () {
-    return this._a
-  }
-  set a (val) {
-    this._a = val
-  }
-
-  /**
-   * get alpha with factor
-   * @returns {number} alpha for render
-   */
-  get alphaWithFactor () {
-    if (this._a !== undefined && typeof this._a === 'number' && this._a >= 0 && this._a <= 1) {
-      return this._a * globalAlphaFactor
-    } else {
-      return globalAlphaFactor
-    }
+    this.r = r
+    this.g = g
+    this.b = b
+    this.a = a
   }
 }
 
@@ -148,9 +169,7 @@ module.exports = LightRenderingContextManager
 function LightRenderingContextManager () {
   this.id = 0
   this.ledsConfig = light.getProfile()
-  for (var i = 0; i < this.ledsConfig.leds; ++i) {
-    realTimeRGBData.push(new Color(0, 0, 0, 1))
-  }
+  Common.initLedStatus(this.ledsConfig)
 }
 
 /**
@@ -174,10 +193,10 @@ LightRenderingContextManager.prototype.getContext = function getContext () {
  */
 LightRenderingContextManager.prototype.setGlobalAlphaFactor = function (alphaFactor) {
   logger.info(`global alpha factor has been set ${alphaFactor}`)
-  globalAlphaFactor = alphaFactor
+  Common.setAlphaFactor(alphaFactor)
   var context = new LightRenderingContext()
-  for (var i = 0; i < this.ledsConfig.leds; ++i) {
-    context.pixel(i, realTimeRGBData[i].r, realTimeRGBData[i].g, realTimeRGBData[i].b, realTimeRGBData[i].a)
+  for (var i = 0; i < Common.ledStatus.length; ++i) {
+    context.pixel(i, Common.ledStatus[i].r, Common.ledStatus[i].g, Common.ledStatus[i].b, Common.ledStatus[i].a)
   }
   context.render()
 }
@@ -362,11 +381,8 @@ LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
-  var led = realTimeRGBData[pos]
-  if (pos > 0 && pos < this.ledsConfig.leds && led) {
-    led.setRGBA(r, g, b, a)
-  }
-  return light.pixel(pos, led.r, led.g, led.b, led.alphaWithFactor)
+  Common.setPixel(pos, r, g, b, a)
+  return light.pixel(pos, r, g, b, Common.ApplyAlphaFactor(a))
 }
 
 /**
@@ -384,11 +400,8 @@ LightRenderingContext.prototype.fill = function (r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
-  var alphaWithFactor = applyAlphaFactor(a)
-  for (var i = 0; i < this.ledsConfig.leds; ++i) {
-    realTimeRGBData[i].setRGBA(r, g, b, a)
-  }
-  return light.fill(r, g, b, alphaWithFactor)
+  Common.setFill(r, g, b, a)
+  return light.fill(r, g, b, Common.ApplyAlphaFactor(a))
 }
 
 /**
