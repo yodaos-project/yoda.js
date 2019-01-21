@@ -383,6 +383,8 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
     this.setMicMute(false, { silent: true })
   ]).then(() => this.component.custodian.resetNetwork(options))
     .then(() => {
+      // todo lightd will not display setupNetwork.js sometime, so we need to stop longPressMic in timeout.
+      // we need to refactor it
       setTimeout(() => {
         deferred()
       }, 2000)
