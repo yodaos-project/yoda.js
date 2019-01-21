@@ -70,6 +70,65 @@ function applyAlphaFactor (alpha) {
   return alpha
 }
 
+/**
+ * Color class for light
+ */
+class Color {
+  constructor (r, g, b, a) {
+    this.setRGBA(r, g, b, a)
+  }
+
+  /**
+   * set rgba
+   * @param {number} r
+   * @param {number} g
+   * @param {number} b
+   * @param {number} a
+   */
+  setRGBA (r, g, b, a) {
+    this._r = r
+    this._g = g
+    this._b = b
+    this._a = a
+  }
+  get r () {
+    return this._r
+  }
+  set r (val) {
+    this._r = val
+  }
+  get g () {
+    return this._g
+  }
+  set g (val) {
+    this._g = val
+  }
+  get b () {
+    return this._b
+  }
+  set b (val) {
+    this._b = val
+  }
+  get a () {
+    return this._a
+  }
+  set a (val) {
+    this._a = val
+  }
+
+  /**
+   * get alpha with factor
+   * @returns {number} alpha for render
+   */
+  get alphaWithFactor () {
+    if (this._a !== undefined && typeof this._a === 'number' && this._a >= 0 && this._a <= 1) {
+      return this._a * globalAlphaFactor
+    } else {
+      return globalAlphaFactor
+    }
+  }
+}
+
 module.exports = LightRenderingContextManager
 
 /**
@@ -90,7 +149,7 @@ function LightRenderingContextManager () {
   this.id = 0
   this.ledsConfig = light.getProfile()
   for (var i = 0; i < this.ledsConfig.leds; ++i) {
-    realTimeRGBData.push({r: 0, g: 0, b: 0, realA: 0, inputA: 1})
+    realTimeRGBData.push(new Color(0, 0, 0, 1))
   }
 }
 
@@ -118,8 +177,7 @@ LightRenderingContextManager.prototype.setGlobalAlphaFactor = function (alphaFac
   globalAlphaFactor = alphaFactor
   var context = new LightRenderingContext()
   for (var i = 0; i < this.ledsConfig.leds; ++i) {
-    realTimeRGBData[i].realA = applyAlphaFactor(realTimeRGBData[i].inputA)
-    context.pixel(i, realTimeRGBData[i].r, realTimeRGBData[i].g, realTimeRGBData[i].b, realTimeRGBData[i].realA)
+    context.pixel(i, realTimeRGBData[i].r, realTimeRGBData[i].g, realTimeRGBData[i].b, realTimeRGBData[i].a)
   }
   context.render()
 }
@@ -304,15 +362,11 @@ LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
-  var realA = applyAlphaFactor(a)
-  if (pos > 0 && pos < this.ledsConfig.leds) {
-    realTimeRGBData[pos].r = r
-    realTimeRGBData[pos].g = g
-    realTimeRGBData[pos].b = b
-    realTimeRGBData[pos].inputA = a
-    realTimeRGBData[pos].realA = realA
+  var led = realTimeRGBData[pos]
+  if (pos > 0 && pos < this.ledsConfig.leds && led) {
+    led.setRGBA(r, g, b, a)
   }
-  return light.pixel(pos, r, g, b, realA)
+  return light.pixel(pos, led.r, led.g, led.b, led.alphaWithFactor)
 }
 
 /**
@@ -330,15 +384,11 @@ LightRenderingContext.prototype.fill = function (r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
-  var realA = applyAlphaFactor(a)
+  var alphaWithFactor = applyAlphaFactor(a)
   for (var i = 0; i < this.ledsConfig.leds; ++i) {
-    realTimeRGBData[i].r = r
-    realTimeRGBData[i].g = g
-    realTimeRGBData[i].b = b
-    realTimeRGBData[i].inputA = a
-    realTimeRGBData[i].realA = realA
+    realTimeRGBData[i].setRGBA(r, g, b, a)
   }
-  return light.fill(r, g, b, realA)
+  return light.fill(r, g, b, alphaWithFactor)
 }
 
 /**
