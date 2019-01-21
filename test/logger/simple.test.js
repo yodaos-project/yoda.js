@@ -3,28 +3,32 @@
 // process.env.LOG_PORT = 8081
 
 var test = require('tape')
-var logger = require('logger')('log')
-var levels = require('logger').levels
-var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
+var logger = require('../../packages/logger')('log')
+var levels = require('../../packages/logger').levels
+var setGlobalUploadLevel = require('../../packages/logger').setGlobalUploadLevel
 
 test('simple ', (t) => {
   t.plan(levels.length)
   var text = 'foobar'
-  levels.forEach(it =>
-    t.doesNotThrow(() =>
-      logger[it](text)
-    )
-  )
+  t.doesNotThrow(() => {
+    for (var i in levels) {
+      if (i !== 'none') {
+        logger[i](text)
+      }
+    }
+  })
 })
 
 test('multiple arguments ', (t) => {
   t.plan(levels.length)
   var args = [ 'foobar', 123, { obj: 'foobar' } ]
-  levels.forEach(it =>
-    t.doesNotThrow(() =>
-      logger[it].apply(logger, args)
-    )
-  )
+  t.doesNotThrow(() => {
+    for (var i in levels) {
+      if (i !== 'none') {
+        logger[i].apply(logger, args)
+      }
+    }
+  })
 })
 
 test('log content has format print ', (t) => {
