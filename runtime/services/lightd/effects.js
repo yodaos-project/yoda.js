@@ -47,6 +47,9 @@ var property = require('@yoda/property')
 var light = require('@yoda/light')
 var logger = require('logger')('effects')
 var path = require('path')
+var EventEmitter = require('events')
+
+var helper = require('./helper')
 
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
@@ -174,11 +177,8 @@ LightRenderingContext.prototype.playAwake = function playAwake () {
  */
 LightRenderingContext.prototype.sound = function sound (uri, self, options) {
   options = Object.assign({ ignore: false }, options)
-  var mockPlayer = {
-    stop: function () {
-      // nothing to do
-    }
-  }
+  var mockPlayer = new EventEmitter()
+  mockPlayer.stop = function noop () { /** nothing to do */ }
 
   if (options.ignore && (AudioManager.getPlayingState('tts') ||
     AudioManager.getPlayingState('bluetooth') ||
@@ -220,6 +220,7 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
 
   var sounder = new MediaPlayer(AudioManager.STREAM_SYSTEM)
   sounder.start(absPath)
+  helper.delegateEvents(sounder, mockPlayer)
 
   mockPlayer.stop = function () {
     try {
