@@ -70,16 +70,18 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
   var listener = _.get(this.listeners, `${type}.${event.keyCode}`)
-  if (listener != null && listener === this.component.lifetime.getCurrentAppId()) {
-    var app = this.component.appScheduler.getAppById(listener)
-    if (app) {
-      logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
-      app.keyboard.emit(type, event)
-      return true
-    }
-    logger.info(`App ${listener} is not active, skip ${type} '${event.keyCode}' delegation.`)
+  if (listener == null) {
+    logger.info(`No app registered for ${type}.${event.keyCode}, skipping`)
+    return false
   }
-  return false
+  var app = this.component.appScheduler.getAppById(listener)
+  if (listener !== this.component.lifetime.getCurrentAppId() || app == null) {
+    logger.info(`App ${listener} is not active, skip ${type} '${event.keyCode}' delegation.`)
+    return false
+  }
+  logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
+  app.keyboard.emit(type, event)
+  return true
 }
 
 KeyboardHandler.prototype.listen = function listen () {
