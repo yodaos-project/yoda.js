@@ -330,18 +330,8 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
   var lastContext = this.getContextOptionsById(lastAppId)
-  if (lastAppId && lastAppId !== appId) {
-    if (lastContext) {
-      this.onPreemption(lastAppId, lastContext)
-      if (lastContext.keepAlive) {
-        future = Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
-        lastAppId = null
-        lastContext = null
-      }
-    } else {
-      /** no previously running app */
-      logger.warn('previously running app has no context options')
-    }
+  if (lastAppId && lastContext && lastAppId !== appId) {
+    this.onPreemption(lastAppId, lastContext)
   }
   var memoStack = this.activeSlots.copy()
   this.activeSlots.addApp(appId, isScene)
@@ -358,10 +348,14 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     if (memoStack.scene !== appId) {
       this.onEviction(memoStack.scene, 'scene')
     }
+    var memoIds = memoStack.toArray().filter(it => it !== appId)
+    if (lastContext && lastContext.keepAlive) {
+      memoIds = memoIds.filter(it => it !== lastAppId)
+      future = Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
+    }
     return future.then(() =>
-      Promise.all(memoStack.toArray().filter(it => it !== appId)
-        .map(it => this.deactivateAppById(it, { recover: false, force: true }))))
-      .then(deferred)
+      Promise.all(memoIds.map(it => this.deactivateAppById(it, { recover: false, force: true })))
+    ).then(deferred)
   }
 
   if (lastContext == null) {
@@ -386,6 +380,12 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
    */
   logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
   this.onEviction(lastAppId, 'cut')
+
+  if (lastAppId && lastAppId !== appId && lastContext.keepAlive) {
+    logger.info(`app '${lastAppId}' was kept alive`)
+    return Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
+      .then(deferred)
+  }
   /** no need to recover previously paused scene app if exists */
   return future.then(() => this.deactivateAppById(lastAppId, { recover: false, force: true }))
     .then(deferred)

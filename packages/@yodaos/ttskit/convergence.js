@@ -1,33 +1,36 @@
 'use strict'
 
-var logger = require('logger')('cloudAppClient-tts-handle')
+var logger = require('logger')('tts-kit')
 
-function TtsEventHandle (ttsClient) {
+function TtsConvergence (ttsClient) {
   this.ttsClient = ttsClient
   this.callbackHandle = {}
+  this.isPlaying = false
   this.handleEvent()
 }
 
-TtsEventHandle.prototype.handleEvent = function () {
+TtsConvergence.terminationEvents = [
+  'end',
+  'cancel',
+  'error'
+]
+
+TtsConvergence.prototype.handleEvent = function () {
   this.ttsClient.on('start', (ttsId) => {
     logger.info(`id:${ttsId} start`)
+    this.isPlaying = true
     this.handle(ttsId, 'start')
   })
-  this.ttsClient.on('end', (ttsId) => {
-    logger.info(`id:${ttsId} end`)
-    this.handle(ttsId, 'end')
-  })
-  this.ttsClient.on('cancel', (ttsId) => {
-    logger.info(`id:${ttsId} cancel`)
-    this.handle(ttsId, 'cancel')
-  })
-  this.ttsClient.on('error', (ttsId) => {
-    logger.info(`id:${ttsId} error`)
-    this.handle(ttsId, 'error')
+  TtsConvergence.terminationEvents.forEach(it => {
+    this.ttsClient.on(it, (ttsId) => {
+      logger.info(`id:${ttsId} ${it}`)
+      this.isPlaying = false
+      this.handle(ttsId, it)
+    })
   })
 }
 
-TtsEventHandle.prototype.handle = function (ttsId, name) {
+TtsConvergence.prototype.handle = function (ttsId, name) {
   if (typeof this.callbackHandle[`ttscb:${ttsId}`] === 'function') {
     this.callbackHandle[`ttscb:${ttsId}`](name)
     if (name === 'end' || name === 'cancel' || name === 'error') {
@@ -36,7 +39,7 @@ TtsEventHandle.prototype.handle = function (ttsId, name) {
   }
 }
 
-TtsEventHandle.prototype.speak = function (tts, eventHandle) {
+TtsConvergence.prototype.speak = function (tts, eventHandle) {
   this.ttsClient.speak(tts, {
     impatient: true
   }).then((ttsId) => {
@@ -48,4 +51,4 @@ TtsEventHandle.prototype.speak = function (tts, eventHandle) {
   })
 }
 
-module.exports = TtsEventHandle
+module.exports = TtsConvergence
