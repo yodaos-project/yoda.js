@@ -71,7 +71,7 @@ function checkUpdateAvailability (activity) {
         if (isNaN(progress) || progress < 0 || progress >= 100) {
           utterance = strings.UPDATES_START_DOWNLOADING
         } else {
-          progress = Math.round(process * 100)
+          progress = Math.round(progress * 100)
           utterance = util.format(strings.UPDATES_ON_DOWNLOADING, progress)
         }
         return activity.tts.speak(utterance)
