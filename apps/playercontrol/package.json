@@ -4,7 +4,7 @@
   "description": "player control for rokid",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified for playercontrol\" && exit 1"
   },
   "manifest": {
     "daemon": true,
