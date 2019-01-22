@@ -2,13 +2,10 @@
  * @module @yoda/ota/condition
  */
 
-var promisify = require('util').promisify
 var property = require('@yoda/property')
 var manifest = require('@yoda/manifest')
 var battery = require('@yoda/battery')
-var fetchOtaInfo = require('./network').fetchOtaInfo
-
-var fetchOtaInfoAsync = promisify(fetchOtaInfo)
+var otaNetwork = require('./network')
 
 module.exports.getAvailabilityOfOta = getAvailabilityOfOta
 /**
@@ -38,15 +35,19 @@ function getAvailabilityOfOta (upgradeInfo) {
     if (check !== true) {
       return check
     }
-    return fetchOtaInfoAsync(localVersion)
-      .then(info => {
+    return new Promise((resolve, reject) => {
+      otaNetwork.fetchOtaInfo(localVersion, (err, info) => {
+        if (err) {
+          return reject(err)
+        }
         if (info == null) {
-          return 'new_version'
+          return resolve('new_version')
         }
         if (info.version !== upgradeInfo.version) {
-          return 'new_version'
+          return resolve('new_version')
         }
-        return true
+        return resolve(true)
       })
+    })
   })
 }

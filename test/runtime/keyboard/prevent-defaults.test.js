@@ -24,6 +24,7 @@ test('shall prevent default', t => {
 
   app.keyboard.on('click', event => {
     t.strictEqual(event.keyCode, 233)
+    later()
   })
   app.keyboard.on('dbclick', () => {
     t.fail('shall not receive un-listened events')
@@ -32,10 +33,12 @@ test('shall prevent default', t => {
   keyboard.preventKeyDefaults('@test/simple-app', '233', 'click')
   keyboard.input.emit('click', { keyCode: 233 })
   keyboard.input.emit('dbclick', { keyCode: 233 })
-  keyboard.restoreKeyDefaults('@test/simple-app', '233', 'click')
-  keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.deinit()
+  function later () {
+    keyboard.restoreKeyDefaults('@test/simple-app', '233', 'click')
+    keyboard.input.emit('click', { keyCode: 233 })
+    runtime.deinit()
+  }
 })
 
 test('shall listen all type events of one key code', t => {
@@ -62,14 +65,18 @@ test('shall listen all type events of one key code', t => {
   })
   app.keyboard.on('longpress', event => {
     t.strictEqual(event.keyCode, 233, 'longpress')
+    later()
   })
 
   keyboard.preventKeyDefaults('@test/simple-app', '233')
   keyboard.input.emit('dbclick', { keyCode: 233 })
   keyboard.input.emit('keydown', { keyCode: 233, keyTime: 2333 })
   keyboard.input.emit('longpress', { keyCode: 233 })
-  keyboard.restoreKeyDefaults('@test/simple-app', '233')
-  keyboard.input.emit('click', { keyCode: 233 })
 
-  runtime.deinit()
+  function later () {
+    keyboard.restoreKeyDefaults('@test/simple-app', '233')
+    keyboard.input.emit('click', { keyCode: 233 })
+
+    runtime.deinit()
+  }
 })

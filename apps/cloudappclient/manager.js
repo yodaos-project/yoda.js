@@ -6,7 +6,6 @@ var logger = require('logger')('cloudAppClient-manager')
 var eventRequest = require('./eventRequestApi')
 var eventRequestMap = require('./eventRequestMap.json')
 var _ = require('@yoda/util')._
-var safeParse = require('@yoda/util').json.safeParse
 
 function Manager (exe, Skill) {
   EventEmitter.call(this)
@@ -38,39 +37,6 @@ Manager.prototype.onrequest = function (nlp, action) {
     }
     return
   }
-  // FIXME remove this when skillOption is ready
-  if (nlp.intent === 'play_backward_relatively' || nlp.intent === 'play_forward_relatively') {
-    action.directives = []
-    var template = {
-      type: 'forwardbackward',
-      action: '',
-      disableEvent: false,
-      noWait: false,
-      disableSuppress: false,
-      item: {
-      }
-    }
-    var getOffset = function (key, coe) {
-      var offset = safeParse(_.get(nlp, key, '{}')).number
-      if (!offset) {
-        offset = 0
-      }
-      return offset * coe
-    }
-    if (nlp.intent === 'play_backward_relatively') {
-      template.action = 'BACKWARD'
-    } else if (nlp.intent === 'play_forward_relatively') {
-      template.action = 'FORWARD'
-    }
-    template.item.type = 'relatively'
-    if (nlp.slots.minute) {
-      template.item.offsetInMilliseconds = getOffset('slots.episodenum.value', 60000)
-    } else if (nlp.slots.second) {
-      template.item.offsetInMilliseconds = getOffset('slots.episodenum2.value', 1000)
-    }
-    action.response.action.directives.push(template)
-  }
-  // FIXME END
   var directives = _.get(action, 'response.action.directives', [])
   if (directives.length <= 0) {
     logger.warn(`directive is empty! The action value is: [${JSON.stringify(action)}]`)
@@ -141,6 +107,7 @@ Manager.prototype.append = function (nlp, action) {
 
 Manager.prototype.next = function (skill) {
   logger.log(`next skill`)
+  this.emit('exit', skill)
   // if this flag equls true,means strong pause,so we do not exec next
   if (this.getManualPauseFLag() === true) {
     return

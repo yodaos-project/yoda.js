@@ -62,11 +62,16 @@ function checkUpdateAvailability (activity) {
         .then(() => activity.exit())
     }
     if (info.status === 'downloading') {
-      return ota.getImageDownloadProgress(progress => {
+      return ota.getImageDownloadProgress(info, (err, progress) => {
+        if (err) {
+          return activity.tts.speak(strings.UPDATES_START_DOWNLOADING)
+            .then(() => activity.exit())
+        }
         var utterance
         if (isNaN(progress) || progress < 0 || progress >= 100) {
           utterance = strings.UPDATES_START_DOWNLOADING
         } else {
+          progress = Math.round(progress * 100)
           utterance = util.format(strings.UPDATES_ON_DOWNLOADING, progress)
         }
         return activity.tts.speak(utterance)

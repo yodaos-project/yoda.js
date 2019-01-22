@@ -156,3 +156,63 @@ function singleton (fn) {
     return ret
   }
 }
+
+module.exports.format = format
+function format (s) {
+  if (typeof s !== 'string') {
+    throw new Error('Expect a string on first argument of _.format')
+  }
+
+  var i = 1
+  var args = arguments
+  var argString
+  var str = ''
+  var start = 0
+  var end = 0
+
+  while (end < s.length) {
+    if (s.charAt(end) !== '%') {
+      end++
+      continue
+    }
+
+    str += s.slice(start, end)
+
+    switch (s.charAt(end + 1)) {
+      case 's':
+        argString = String(args[i])
+        break
+      case 'd':
+        argString = Number(args[i])
+        break
+      case 'j':
+        try {
+          argString = JSON.stringify(args[i])
+        } catch (_) {
+          argString = '[Circular]'
+        }
+        break
+      case '%':
+        str += '%'
+        start = end = end + 2
+        continue
+      default:
+        str = str + '%' + s.charAt(end + 1)
+        start = end = end + 2
+        continue
+    }
+
+    if (i >= args.length) {
+      str = str + '%' + s.charAt(end + 1)
+    } else {
+      i++
+      str += argString
+    }
+
+    start = end = end + 2
+  }
+
+  str += s.slice(start, end)
+
+  return str
+}
