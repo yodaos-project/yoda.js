@@ -1,0 +1,18 @@
+{
+  "KEY_CODE": {
+    "MIKE": 113,
+    "VOLDOWN": 114,
+    "VOLUP": 115,
+    "POWER": 116
+  },
+  "TIME": {
+    "SHORTEST": 10,
+    "LONGEST": 43200
+  },
+  "RINGTONE": {
+    "URL": "system://alarm_default_ringtone.mp3",
+    "RING_SECONDS": 8,
+    "IDLE_SECONDS": 4,
+    "RING_TIMES": 2
+  }
+}
