@@ -266,6 +266,20 @@ MediaPlayer.prototype.reset = function () {
 }
 
 /**
+ * set play speed.
+ * @param {number} speed - the speed.
+ * @private
+ */
+MediaPlayer.prototype.setSpeed = function (speed) {
+  if (speed <= 2 && speed > 0) {
+    speed = (speed - 1) * 100
+  } else {
+    speed = 0
+  }
+  return this._handle.setTempoDelta(speed)
+}
+
+/**
  * disconnect the player.
  * @private
  */

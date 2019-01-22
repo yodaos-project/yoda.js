@@ -456,6 +456,32 @@ Object.assign(MultimediaDescriptor.prototype,
             throw new Error('multimediad error')
           })
       }
+    },
+    /**
+     * set play speed.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function setSpeed
+     * @param {number} speed
+     * @param {string} playerId
+     * @returns {Promise<void>}
+     */
+    setSpeed: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setSpeed (speed, playerId) {
+        if (typeof speed !== 'number') {
+          return Promise.reject(new Error(`Expect a number on setSpeed, but got ${typeof speed}`))
+        }
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('setSpeed', [this._appId, String(speed), pid])
+          .then((res) => {
+            if (res && res[0] === true) {
+              return
+            }
+            throw new Error('player instance not found')
+          })
+      }
     }
   }
 )
