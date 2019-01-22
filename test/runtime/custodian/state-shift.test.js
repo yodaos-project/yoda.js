@@ -20,6 +20,9 @@ test('custodian state shall shifts', t => {
       t.fail('runtime#startApp shall not be called since logged in')
     },
     component: {
+      appScheduler: {
+        appMap: {}
+      },
       lifetime: {
         getCurrentAppId: () => undefined
       },
@@ -65,6 +68,9 @@ test('custodian shall start network app on network disconnect if not logged in',
       t.pass('onNetworkDisconnect shall trigger runtime#resetNetwork')
     },
     component: {
+      appScheduler: {
+        appMap: {}
+      },
       lifetime: {
         getCurrentAppId: () => undefined
       },
@@ -98,6 +104,9 @@ test('custodian shall reset network', t => {
       return { foobar: 10 }
     },
     component: {
+      appScheduler: {
+        appMap: {}
+      },
       lifetime: {
         getCurrentAppId: () => undefined
       },
