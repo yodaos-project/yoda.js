@@ -583,21 +583,28 @@ AppRuntime.prototype.setForegroundById = function setForegroundById (appId, opti
  */
 AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
   var silent = _.get(options, 'silent', false)
+
+  var future = Promise.resolve()
+  if (silent) {
+    future = this.component.light.stop('@yoda', 'system://setMuted.js')
+  }
+
   if (mute === this.component.turen.muted) {
-    return Promise.resolve()
+    return future
   }
   /** mute */
   var muted = this.component.turen.toggleMute()
 
   if (silent) {
-    return this.component.light.stop('@yoda', 'system://setMuted.js')
+    return future
   }
 
-  return this.component.light.play(
-    '@yoda',
-    'system://setMuted.js',
-    { muted: muted },
-    { shouldResume: muted })
+  return future
+    .then(() => this.component.light.play(
+      '@yoda',
+      'system://setMuted.js',
+      { muted: muted },
+      { shouldResume: muted }))
 }
 
 /**

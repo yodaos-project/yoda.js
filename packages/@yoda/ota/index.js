@@ -574,18 +574,16 @@ function getInfoOfPendingUpgrade (callback) {
 /**
  * Get download progress of given info.
  * @param {module:@yoda/ota~OtaInfo} info
- * @returns {Promise<number>} percentage of download progress.
+ * @param {Function} callback
  */
-function getImageDownloadProgress (info) {
+function getImageDownloadProgress (info, callback) {
   var imgPath = getImagePath(info)
-  return new Promise((resolve, reject) => {
-    fs.stat(imgPath, (err, stat) => {
-      if (err) {
-        return reject(err)
-      }
-      resolve(stat.size / info.totalSize)
-    })
-  })
+  fs.stat(imgPath, (err, stat) => {
+    if (err) {
+      return callback(err)
+    }
+    callback(null, stat.size / info.totalSize)
+  }) /** fs.stat */
 }
 
 /**

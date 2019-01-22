@@ -29,7 +29,7 @@ test('setContextOptionsById shall merge options', t => {
     })
 })
 
-test('kept alive app shall be put in background on preemption', t => {
+test('kept alive cut app shall be put in background on preemption', t => {
   mock.restore()
   t.plan(1)
 
@@ -46,6 +46,31 @@ test('kept alive app shall be put in background on preemption', t => {
     })
     .then(() => {
       t.strictEqual(life.isBackgroundApp('0'), true)
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
+test('kept alive scene app shall not be put in background on cut preemption', t => {
+  mock.restore()
+  t.plan(2)
+
+  mock.mockAppExecutors(2)
+  var life = new Lifetime(mock.runtime)
+
+  Promise.all(_.times(2).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0', 'scene')
+    })
+    .then(() => {
+      life.setContextOptionsById('0', { keepAlive: true })
+      return life.activateAppById('1')
+    })
+    .then(() => {
+      t.strictEqual(life.isBackgroundApp('0'), false)
+      t.strictEqual(life.activeSlots.scene, '0')
     })
     .catch(err => {
       t.error(err)

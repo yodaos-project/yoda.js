@@ -8,6 +8,7 @@ var _ = require('@yoda/util')._
 var system = require('@yoda/system')
 var protocol = bluetooth.protocol
 var httpUtil = require('./http-util.js')
+var flora = require('@yoda/flora')
 
 /**
  * Implement bluetooth PRD v1.3
@@ -27,6 +28,7 @@ module.exports = function (activity) {
   var onQuietMode = false
   var callState = protocol.CALL_STATE.IDLE
   var deviceProps = null
+  var agent = null
 
   function setAppType (hosts, afterFunc) {
     var id = getSkillId(hosts)
@@ -592,6 +594,18 @@ module.exports = function (activity) {
     }
   }
 
+  function onDeviceVolumeChanged (data) {
+    var audioPath = data[0]
+    var vol = data[1]
+    logger.log(`audio path: ${audioPath}, vol: ${vol}`)
+    if (audioPath === 'playback' && onTopStack &&
+      a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
+      process.nextTick(() => {
+        a2dp.syncVol(vol)
+      })
+    }
+  }
+
   activity.on('create', () => {
     logger.log(`activity.onCreate()`)
     a2dp = bluetooth.getAdapter(protocol.PROFILE.A2DP)
@@ -603,6 +617,9 @@ module.exports = function (activity) {
     hfp.on('call_state_changed', onCallStateChangedListener)
     activity.keyboard.on('click', onKeyEvent)
     activity.setContextOptions({ keepAlive: true })
+    agent = new flora.Agent('unix:/var/run/flora.sock')
+    agent.subscribe('yodart.audio.on-volume-change', onDeviceVolumeChanged)
+    agent.start()
   })
 
   activity.on('ready', () => {
@@ -648,6 +665,8 @@ module.exports = function (activity) {
 
   activity.on('destroy', () => {
     logger.log('activity.onDestroy()')
+    agent.close()
+    agent.unsubscribe('yodart.audio.on-volume-change')
     if (a2dp !== null) {
       if (a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED) {
         a2dp.disconnect()

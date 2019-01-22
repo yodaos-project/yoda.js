@@ -5,6 +5,7 @@ var RKTime = require('./RKTime').RKTime
 var AudioManager = require('@yoda/audio').AudioManager
 var logger = require('logger')('rktimer')
 var _ = require('@yoda/util')._
+var trace = require('@yoda/trace')
 
 var STRING_COMMON_ERROR = '我没有听清，请重新对我说一次'
 
@@ -15,6 +16,14 @@ function Ring (rkDownTimer) {
   this.mIsRing = false
   this.mCount = 0
   this.rkDownTimer = rkDownTimer
+}
+
+function sendCardToApp (activity, content) {
+  activity.wormhole.sendToApp('card', {
+    appid: 'ROKID.TIMER',
+    template: JSON.stringify({ tts: content.text }),
+    type: 'Chat'
+  }).catch(err => logger.error('Unexpected error on send card to app', err.stack))
 }
 
 Ring.prototype.setActivity = function (activity) {
@@ -89,12 +98,13 @@ RKDownTimer.prototype.setActivity = function (activity) {
 
 RKDownTimer.prototype.speak = function (text) {
   this.interrupted()
-
+  sendCardToApp(this.activity, {text: text})
   return this.activity.tts.speak(text)
     .then(() => this.activity.setBackground())
 }
 RKDownTimer.prototype.setForegroundSpeak = function (text) {
   this.interrupted()
+  sendCardToApp(this.activity, {text: text})
   return this.activity.setForeground().then(() => {
     this.activity.tts.speak(text)
   })
@@ -105,7 +115,7 @@ RKDownTimer.prototype.speakAndExit = function (text) {
   var ismuted = AudioManager.isMuted()
 
   this.interrupted()
-
+  sendCardToApp(this.activity, {text: text})
   if (ismuted) {
     AudioManager.setMute(false)
   }
@@ -263,6 +273,10 @@ RKDownTimer.prototype.close = function () {
     // this.moveToTop()
     this.activity.setForeground()
     this.clear()
+    trace([{
+      event: 'timer',
+      action: 'triggered'
+    }])
     var ret = this.setForegroundSpeak('你的倒计时时间到了')
       .then(() => {
         // TODO: the resource address
