@@ -111,9 +111,7 @@ dbusApis.addMethod('prepare', {
 }, function (appId, url, streamType, options, cb) {
   if (typeof options === 'function') {
     cb = options
-    options = JSON.stringify({
-      multiple: false
-    })
+    options = '{}'
   }
   logger.log('multimedia prepare', appId, url, streamType, options)
   if (appId && url) {
@@ -138,9 +136,7 @@ dbusApis.addMethod('start', {
 }, function (appId, url, streamType, options, cb) {
   if (typeof options === 'function') {
     cb = options
-    options = JSON.stringify({
-      multiple: false
-    })
+    options = '{}'
   }
   logger.log('multimedia play', appId, url, streamType, options)
   if (appId && url) {
