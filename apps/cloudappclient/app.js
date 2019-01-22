@@ -9,6 +9,7 @@ var Skill = require('./skill')
 var _ = require('@yoda/util')._
 
 var Manager = require('./manager')
+var Service = require('./service')
 
 // identify if the skill should be to restored
 var needResume = false
@@ -23,6 +24,15 @@ module.exports = activity => {
   // tts, media event handle
   var ttsClient = new TtsEventHandle(activity.tts)
   var mediaClient = new MediaEventHandle(activity.media, logger)
+
+  // service
+  var service = new Service({
+    activity: activity,
+    skillMgr: sos,
+    playerMgr: pm,
+    ttsClient: ttsClient
+  })
+  service.start()
 
   // report app status for OS in nextTick
   var taskTimerHandle = null
