@@ -1,5 +1,5 @@
-#!/usr/bin/env bash -i
-set -e
+#!/usr/bin/env bash
+set -e -o pipefail
 
 help="
 Usage:
@@ -68,7 +68,8 @@ if test "$local" = "YES"; then
   cmd='iotjs ./node_modules/tape/bin/tape.js '
 else
   scripts="
-export BLUETOOTH_CHANNEL_PREFIX=/tmp > /dev/null;
+export BLUETOOTH_CHANNEL_PREFIX=/tmp;
+export NODE_ENV=unittest;
 iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
 "
   if test "$sn" != ""; then

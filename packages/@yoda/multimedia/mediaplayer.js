@@ -351,4 +351,17 @@ Object.defineProperty(MediaPlayer.prototype, 'sessionId', {
   }
 })
 
+/**
+ * @member {number} eqMode
+ * @memberof @yoda/multimedia~MediaPlayer
+ */
+Object.defineProperty(MediaPlayer.prototype, 'eqMode', {
+  get: function () {
+    return this._handle.eqModeGetter()
+  },
+  set: function (mode) {
+    return this._handle.eqModeSetter(mode)
+  }
+})
+
 module.exports = MediaPlayer

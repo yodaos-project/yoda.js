@@ -7,18 +7,27 @@ var util = require('util')
  *
  * The above command would starts a tcp server on the port 8000 for logs.
  */
-
 var native
-if (process.platform !== 'darwin') {
-  native = require('./logger.node')
-} else {
+if (process.platform === 'darwin' || process.env.NODE_ENV === 'unittest') {
+  console.log('/** using stdout as @yoda/logger output target. */')
+  var consoleLevels = [
+    () => {}, /** none */
+    console.info, /** verbose */
+    console.debug, /** debug */
+    console.info, /** info */
+    console.warn, /** warn */
+    console.error /** error */
+  ]
   native = {
     enableCloud: function () {},
     print: function native (lvl, tag, line) {
+      var fn = consoleLevels[lvl]
       var level = Object.keys(logLevels)[lvl - 1]
-      console[level](`${new Date().toISOString()} [${level.toUpperCase()}] <${tag}>`, line)
+      fn(`${new Date().toISOString()} [${level.toUpperCase()}] <${tag}>`, line)
     }
   }
+} else {
+  native = require('./logger.node')
 }
 
 var logLevels = {
