@@ -158,6 +158,21 @@ MultiMedia.prototype.getPosition = function (appId, playerId) {
   return handle[0].position
 }
 
+MultiMedia.prototype.getDuration = function (appId, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return -1
+  }
+
+  if (handle.length !== 1) {
+    return -1
+  }
+
+  return handle[0].duration
+}
+
 MultiMedia.prototype.getLoopMode = function (appId, playerId) {
   var handle = this.playerManager.find(appId, playerId)
 

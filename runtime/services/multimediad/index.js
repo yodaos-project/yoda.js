@@ -280,7 +280,14 @@ dbusApis.addMethod('getState', {
   out: ['s']
 }, function (appId, playerId, cb) {
   var state = service.getState(appId, +playerId)
-  cb(null, state)
+  var position = service.getPosition(appId, +playerId)
+  var duration = service.getDuration(appId, +playerId)
+  var result = {
+    state: state,
+    position: position,
+    duration: duration
+  }
+  cb(null, JSON.parse(result))
 })
 
 dbusApis.addMethod('resetAwaken', {
