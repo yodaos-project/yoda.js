@@ -5,7 +5,7 @@ var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var inherits = require('util').inherits
 var logger = require('logger')('multimediaService')
-var InstanceManager = require('./instanceManager')
+var Manager = require('./manager')
 
 var audioModuleName = 'multimedia'
 AudioManager.setPlayingState(audioModuleName, false)
@@ -13,7 +13,7 @@ AudioManager.setPlayingState(audioModuleName, false)
 function MultiMedia (lightd) {
   EventEmitter.call(this)
   this.handle = {}
-  this.playerManager = new InstanceManager()
+  this.playerManager = new Manager()
   this.pausedAppIdOnAwaken = null
   this.lightd = lightd
 }

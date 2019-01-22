@@ -1,6 +1,6 @@
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
-var logger = require('logger')('pm')
+var logger = require('logger')('playerManager')
 
 function PlayerManager () {
   EventEmitter.call(this)
