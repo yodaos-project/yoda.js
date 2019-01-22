@@ -91,7 +91,9 @@ Skill.prototype.handleEvent = function () {
           this.exe.execute([{
             type: 'media',
             action: 'resume',
-            data: {}
+            data: {
+              appId: this.appId
+            }
           }], 'frontend')
         }
         return
@@ -117,7 +119,9 @@ Skill.prototype.handleEvent = function () {
       dts.push({
         type: 'tts',
         action: 'cancel',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     // need pause player if this skill has player
@@ -125,7 +129,9 @@ Skill.prototype.handleEvent = function () {
       dts.push({
         type: 'media',
         action: 'pause',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     // nothing to do if dts is empty
@@ -141,7 +147,9 @@ Skill.prototype.handleEvent = function () {
       this.exe.execute([{
         type: 'media',
         action: 'resume',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       }], 'frontend')
       if (this.directives.length > 0) {
         // In order to identify how many tasks are currently running
@@ -182,14 +190,18 @@ Skill.prototype.handleEvent = function () {
     var dts = [{
       type: 'tts',
       action: 'cancel',
-      data: {}
+      data: {
+        appId: this.appId
+      }
     }]
     // need stop player if this skill has player
     if (this.hasPlayer) {
       dts.push({
         type: 'media',
         action: 'cancel',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     this.exe.execute(dts, 'frontend')

@@ -107,6 +107,7 @@ Manager.prototype.append = function (nlp, action) {
 
 Manager.prototype.next = function (skill) {
   logger.log(`next skill`)
+  this.emit('exit', skill)
   // if this flag equls true,means strong pause,so we do not exec next
   if (this.getManualPauseFLag() === true) {
     return
