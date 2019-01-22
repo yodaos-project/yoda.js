@@ -22,10 +22,10 @@ class CloudAppService {
         var future = Promise.resolve()
         var mediaId = this.ctx.playerMgr.getByAppId(skill.appId)
         var opts = {
-          voice: {
+          media: {
             state: 'IDLE'
           },
-          media: {
+          voice: {
             state: 'IDLE'
           }
         }
