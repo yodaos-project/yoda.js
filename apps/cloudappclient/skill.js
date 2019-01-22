@@ -10,6 +10,7 @@ function Skill (exe, nlp, action) {
   this.form = action.response.action.form
   this.shouldEndSession = action.response.action.shouldEndSession
   this.directives = []
+  this.lastDirectives = []
   // skill life cycle is paused
   this.paused = false
   // indicates the user has paused
@@ -233,6 +234,7 @@ Skill.prototype.transform = function (directives, append) {
     logger.log('empty directives, nothong to do')
     return
   }
+
   var ttsActMap = {
     'PLAY': 'say',
     'STOP': 'cancel'
@@ -302,6 +304,7 @@ Skill.prototype.transform = function (directives, append) {
       this.directives.push(tdt)
     }
   })
+  this.lastDirectives = Object.assign([], this.directives)
 }
 
 module.exports = Skill

@@ -287,7 +287,7 @@ dbusApis.addMethod('getState', {
     position: position,
     duration: duration
   }
-  cb(null, JSON.parse(result))
+  cb(null, JSON.stringify(result))
 })
 
 dbusApis.addMethod('resetAwaken', {
