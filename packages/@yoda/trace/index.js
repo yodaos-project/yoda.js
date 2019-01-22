@@ -42,10 +42,10 @@ function _createMd5 (id, nonce) {
   */
 function upload (traces) {
   if (!Array.isArray(traces)) {
-    throw new TypeError('Expect a object Array on traces.')
+    throw new TypeError('expect an array on traces.')
   }
   if (traces.length === 0) {
-    throw new Error('Expect traces length greater than 0.')
+    throw new Error('expect traces length greater than 0.')
   }
   var deviceTypeId = _.get(traces, '0.rokidDtId')
   if (typeof deviceTypeId !== 'string' || deviceTypeId.trim() === '') {
@@ -84,7 +84,8 @@ function upload (traces) {
       'Content-Type': 'text/plain;charset=utf-8'
     }
   }
-  var req = httpsession.request(DEFAULT_HOST + DEFAULT_URI, options, (err, res) => {
+  httpsession.request(DEFAULT_HOST + DEFAULT_URI, options, (err, res) => {
+    console.log(res)
     if (err) {
       throw new Error(`Error: request failed ${err}`)
     }
@@ -92,7 +93,6 @@ function upload (traces) {
       throw new Error(`Error: failed get data with ${res}`)
     }
   })
-  req.end()
 }
 
 module.exports = upload

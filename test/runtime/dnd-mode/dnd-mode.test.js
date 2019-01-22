@@ -17,6 +17,8 @@ test('dnd mode check', function (t) {
   var light = {}
   var sound = {}
   var life = {}
+  var flora = {}
+  var volumeCb = null
   // init
   mock.restore()
   mock.mockReturns(light, 'setDNDMode', undefined)
@@ -24,8 +26,11 @@ test('dnd mode check', function (t) {
   mock.mockReturns(sound, 'getVolume', 50)
   mock.mockReturns(life, 'getCurrentAppId', undefined)
   mock.mockReturns(life, 'on', undefined)
+  mock.mockReturns(flora, 'subscribe', (name, cb) => {
+    volumeCb = cb
+  })
 
-  var nightMode = new NightMode({ component: { lifetime: life, light: light, sound: sound } })
+  var nightMode = new NightMode({ component: {lifetime: life, light: light, sound: sound, flora: flora} })
   nightMode.init()
   var startTime
   var endTime
@@ -68,6 +73,10 @@ test('dnd mode check', function (t) {
   mock.mockReturns(sound, 'getVolume', 50)
   mock.mockReturns(life, 'getCurrentAppId', undefined)
   mock.mockReturns(life, 'on', undefined)
+  mock.mockReturns(flora, 'subscribe', (name, cb) => {
+    volumeCb = cb
+  })
+
   startTime = getDateWithTimeZone(8)
   endTime = getDateWithTimeZone(8)
   option = {}
@@ -79,6 +88,7 @@ test('dnd mode check', function (t) {
   console.log(tag1)
   t.ok(tag1, 'light not set 1 hour')
   t.ok(tag2, 'sound not set 1 hour')
+  volumeCb('system', 50)
 
   tag1 = false
   tag2 = false

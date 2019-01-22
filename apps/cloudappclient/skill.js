@@ -21,6 +21,7 @@ function Skill (exe, nlp, action) {
   this.exe = exe
   this.handleEvent()
   this.transform(action.response.action.directives || [])
+  this.playerCtlData = {}
 }
 inherits(Skill, EventEmitter)
 
@@ -91,7 +92,9 @@ Skill.prototype.handleEvent = function () {
           this.exe.execute([{
             type: 'media',
             action: 'resume',
-            data: {}
+            data: {
+              appId: this.appId
+            }
           }], 'frontend')
         }
         return
@@ -117,7 +120,9 @@ Skill.prototype.handleEvent = function () {
       dts.push({
         type: 'tts',
         action: 'cancel',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     // need pause player if this skill has player
@@ -125,7 +130,9 @@ Skill.prototype.handleEvent = function () {
       dts.push({
         type: 'media',
         action: 'pause',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     // nothing to do if dts is empty
@@ -141,7 +148,9 @@ Skill.prototype.handleEvent = function () {
       this.exe.execute([{
         type: 'media',
         action: 'resume',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       }], 'frontend')
       if (this.directives.length > 0) {
         // In order to identify how many tasks are currently running
@@ -178,24 +187,42 @@ Skill.prototype.handleEvent = function () {
     }
   })
   this.on('destroy', () => {
-    logger.log(this.appId + ' emit destroy')
+    logger.log(this.appId + ' emit destroy', this.hasPlayer)
     var dts = [{
       type: 'tts',
       action: 'cancel',
-      data: {}
+      data: {
+        appId: this.appId
+      }
     }]
     // need stop player if this skill has player
     if (this.hasPlayer) {
       dts.push({
         type: 'media',
         action: 'cancel',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     this.exe.execute(dts, 'frontend')
   })
 }
-
+Skill.prototype.saveRecoverData = function (activity) {
+  logger.log('saveRecoverData start:')
+  logger.log('data = ', this.playerCtlData)
+  var str = JSON.stringify(this.playerCtlData)
+  logger.log('str = ', str)
+  var url = 'yoda-skill://playercontrol/playercontrol?name=' + this.appId + '&url=' + encodeURIComponent('yoda-skill://cloudappclient/resume?data=' + str)
+  logger.log('url = ', url)
+  activity.openUrl(url, { preemptive: false })
+}
+Skill.prototype.setplayerCtlData = function (data) {
+  this.playerCtlData = data
+}
+Skill.prototype.setProgress = function (data) {
+  this.playerCtlData.item.offsetInMilliseconds = data
+}
 Skill.prototype.transform = function (directives, append) {
   logger.log(`transform start: ${this.appId} append: ${append} ${directives}`)
   if (append !== true) {
@@ -247,6 +274,8 @@ Skill.prototype.transform = function (directives, append) {
         logger.log('skill active set true')
         this.isSkillActive = true
       }
+      this.playerCtlData = ele
+      logger.log('playerCtlData === ', this.playerCtlData)
     } else if (ele.type === 'confirm') {
       tdt = {
         type: 'confirm',

@@ -53,7 +53,6 @@ class DNDCommon {
    * @function disable
    */
   disable () {
-    // TODO volume changed event
     var volume = DNDCommon.getSavedVolume()
     if (volume !== 0) {
       this.sound.setVolume(volume)

@@ -64,4 +64,8 @@ FloraComp.prototype.declareMethod = function declareMethod (name, handler) {
   return this.agent.declareMethod(name, handler)
 }
 
+FloraComp.prototype.call = function call () {
+  return this.agent.call.apply(this.agent, arguments)
+}
+
 module.exports = FloraComp

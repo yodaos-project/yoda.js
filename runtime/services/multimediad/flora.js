@@ -35,7 +35,7 @@ Flora.prototype.handlers = {
       return
     }
     logger.info('pausing media of app', appId)
-    this.multimedia.pause(appId)
+    this.multimedia.pause(appId, -1)
   }
 }
 

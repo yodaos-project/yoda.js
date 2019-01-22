@@ -46,6 +46,10 @@ module.exports = function compositionDeVoix (activity) {
     logger.info('app destroyed')
   })
 
+  activity.on('active', () => {
+    fastResolveDelay()
+  })
+
   var execMap = {
     tts: text => {
       logger.info('executing tts:', text)
@@ -73,10 +77,9 @@ module.exports = function compositionDeVoix (activity) {
         }
         return handler(exec.text)
           .then(() => {
-            if (exec.delay) {
-              logger.info('delaying', exec.delay)
-              return delay(exec.delay)
-            }
+            var timeout = exec.delay || 5000
+            logger.info(`delaying ${timeout}ms, actual setting ${exec.delay}ms`)
+            return delay(timeout)
           })
           .then(() => {
             if (idx < executions.length - 1) {
@@ -89,9 +92,34 @@ module.exports = function compositionDeVoix (activity) {
       })
   }
 
+  var timer
+  var resolver
+  var rejector
   function delay (ms) {
-    return new Promise(resolve => {
-      setTimeout(resolve, ms)
+    if (rejector) {
+      rejector(new Error('delay canceled'))
+    }
+    return new Promise((resolve, reject) => {
+      resolver = resolve
+      rejector = reject
+      timer = setTimeout(() => {
+        timer = undefined
+        resolver = undefined
+        resolve()
+      }, ms)
     })
+  }
+
+  function fastResolveDelay () {
+    if (timer == null) {
+      logger.info('no timer found, skipping fast resolving.')
+      return
+    }
+    logger.info('fast resolving, continue work queue.')
+    clearTimeout(timer)
+    resolver()
+    timer = undefined
+    resolver = undefined
+    rejector = undefined
   }
 }
