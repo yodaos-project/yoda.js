@@ -161,6 +161,7 @@ Object.assign(MultimediaDescriptor.prototype,
           allowedScheme: [ 'http', 'https', 'file', 'icecast', 'rtp', 'tcp', 'udp' ]
         })
         logger.log('preparing multimedia', url)
+        options = options || { multiple: false }
         return self._runtime.multimediaMethod('prepare', [self._appId, url, streamType, JSON.stringify(options)])
           .then((result) => {
             var multimediaId = _.get(result, '0', '-1')
@@ -212,6 +213,7 @@ Object.assign(MultimediaDescriptor.prototype,
           allowedScheme: [ 'http', 'https', 'file', 'icecast', 'rtp', 'tcp', 'udp' ]
         })
         logger.log('playing multimedia', url)
+        options = options || { multiple: false }
         return self._runtime.multimediaMethod('start', [self._appId, url, streamType, JSON.stringify(options)])
           .then((result) => {
             var multimediaId = _.get(result, '0', '-1')
