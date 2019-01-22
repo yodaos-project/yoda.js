@@ -21,6 +21,7 @@ function Skill (exe, nlp, action) {
   this.exe = exe
   this.handleEvent()
   this.transform(action.response.action.directives || [])
+  this.playerCtlData = {}
 }
 inherits(Skill, EventEmitter)
 
@@ -178,7 +179,7 @@ Skill.prototype.handleEvent = function () {
     }
   })
   this.on('destroy', () => {
-    logger.log(this.appId + ' emit destroy')
+    logger.log(this.appId + ' emit destroy', this.hasPlayer)
     var dts = [{
       type: 'tts',
       action: 'cancel',
@@ -195,7 +196,21 @@ Skill.prototype.handleEvent = function () {
     this.exe.execute(dts, 'frontend')
   })
 }
-
+Skill.prototype.saveRecoverData = function (activity) {
+  logger.log('saveRecoverData start:')
+  logger.log('data = ', this.playerCtlData)
+  var str = JSON.stringify(this.playerCtlData)
+  logger.log('str = ', str)
+  var url = 'yoda-skill://playercontrol/playercontrol?name=' + this.appId + '&url=' + encodeURIComponent('yoda-skill://cloudappclient/resume?data=' + str)
+  logger.log('url = ', url)
+  activity.openUrl(url, { preemptive: false })
+}
+Skill.prototype.setplayerCtlData = function (data) {
+  this.playerCtlData = data
+}
+Skill.prototype.setProgress = function (data) {
+  this.playerCtlData.item.offsetInMilliseconds = data
+}
 Skill.prototype.transform = function (directives, append) {
   logger.log(`transform start: ${this.appId} append: ${append} ${directives}`)
   if (append !== true) {
@@ -247,6 +262,8 @@ Skill.prototype.transform = function (directives, append) {
         logger.log('skill active set true')
         this.isSkillActive = true
       }
+      this.playerCtlData = ele
+      logger.log('playerCtlData === ', this.playerCtlData)
     } else if (ele.type === 'confirm') {
       tdt = {
         type: 'confirm',
