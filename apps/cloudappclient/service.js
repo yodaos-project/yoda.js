@@ -41,9 +41,11 @@ class CloudAppService {
           future = future.then(() => {
             return this.ctx.activity.media.getState(mediaId)
           }).then((mediaState) => {
+            mediaState = JSON.parse(mediaState)
             opts.media = Object.assign({
-              itemId: _.get(mediaDirective, 'data.item.itemId', undefined)
-            }, JSON.parse(mediaState))
+              itemId: _.get(mediaDirective, 'data.item.itemId', undefined),
+              progress: mediaState.position
+            }, mediaState)
           })
         }
         return future.then(() => {
