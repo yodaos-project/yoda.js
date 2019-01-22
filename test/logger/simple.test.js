@@ -10,25 +10,25 @@ var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
 test('simple ', (t) => {
   t.plan(levels.length)
   var text = 'foobar'
-  t.doesNotThrow(() => {
-    for (var i in levels) {
+  for (var i in levels) {
+    t.doesNotThrow((i) => {
       if (i !== 'none') {
         logger[i](text)
       }
-    }
-  })
+    })(i)
+  }
 })
 
 test('multiple arguments ', (t) => {
   t.plan(levels.length)
   var args = [ 'foobar', 123, { obj: 'foobar' } ]
-  t.doesNotThrow(() => {
-    for (var i in levels) {
+  for (var i in levels) {
+    t.doesNotThrow((i) => {
       if (i !== 'none') {
         logger[i].apply(logger, args)
       }
-    }
-  })
+    })(i)
+  }
 })
 
 test('log content has format print ', (t) => {
