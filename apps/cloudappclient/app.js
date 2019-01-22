@@ -152,15 +152,6 @@ module.exports = activity => {
           logger.log(`[cac-dt](media, resume) err: ${err}`)
         })
     } else if (dt.action === 'cancel') {
-      activity.media.stop()
-        .then(() => {
-          logger.log(`[cac-dt](media, resume) res(success)`)
-          next()
-        })
-        .catch((err) => {
-          logger.log(`[cac-dt](media, resume) err: ${err}`)
-        })
-    } else if (dt.action === 'cancel') {
       playerId = pm.getByAppId(dt.data.appId)
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
