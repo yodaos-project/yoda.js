@@ -73,11 +73,17 @@ Convergence.prototype.processQueuedEvents = function processQueuedEvents (handle
   }
 }
 
-Convergence.prototype.start = function (url, handler) {
+Convergence.prototype.start = function (url, options, handler) {
+  if (typeof options === 'function') {
+    handler = options
+    options = {
+      multiple: false
+    }
+  }
   if (typeof handler !== 'function') {
     throw new TypeError('Expect a function on second argument of Convergence#start')
   }
-  this.mediaClient.start(url)
+  this.mediaClient.start(url, options)
     .then(playerId => {
       this.logger.info('[convergence] resolved Convergence.start with playerId', playerId)
       this.registry[playerId] = handler
@@ -88,11 +94,17 @@ Convergence.prototype.start = function (url, handler) {
     })
 }
 
-Convergence.prototype.prepare = function (url, handler) {
+Convergence.prototype.prepare = function (url, options, handler) {
+  if (typeof options === 'function') {
+    handler = options
+    options = {
+      multiple: false
+    }
+  }
   if (typeof handler !== 'function') {
     throw new TypeError('Expect a function on second argument of Convergence#prepare')
   }
-  this.mediaClient.prepare(url)
+  this.mediaClient.prepare(url, options)
     .then(playerId => {
       this.logger.info('[convergence] resolved Convergence.prepare with playerId', playerId)
       this.registry[playerId] = handler
