@@ -30,7 +30,7 @@ module.exports = function (activity) {
           logger.log('name = ', playerInfo.name)
           if (playerInfo.name === null || playerInfo.name === undefined || playerInfo.name === '') {
             speakAndExit(STRING_NO_PLAYER_EXIST)
-          } else if (playerInfo.name === '@yoda/bluetooth') {
+          } else if (playerInfo.name === 'RDDE53259D334860BA9E98CB3AB6C001') {
             activity.openUrl('yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music', { preemptive: true })
           } else {
             logger.log('url = ', playerInfo.url)
