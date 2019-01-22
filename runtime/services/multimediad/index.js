@@ -176,7 +176,7 @@ dbusApis.addMethod('resume', {
 }, function (appId, playerId, cb) {
   logger.log('multimedia resume', appId, playerId)
   if (appId) {
-    service.resume(appId, playerId)
+    service.resume(appId, +playerId)
   }
   cb(null)
 })
