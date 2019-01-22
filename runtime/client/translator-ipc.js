@@ -179,7 +179,6 @@ function translate (descriptor) {
 
 var internalListenMap = {
   'network-connected': () => {
-    logger.info('network connected')
     wifi.resetDns()
   }
 }
@@ -218,7 +217,7 @@ var listenMap = {
       logger.info(`Unhandled Internal Ipc message type '${message.type}'.`)
       return
     }
-
+    logger.debug(`Received VuiDaemon internal:${message.topic}`)
     handle(message)
   }
 }
