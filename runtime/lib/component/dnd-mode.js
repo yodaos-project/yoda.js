@@ -53,7 +53,6 @@ class DNDCommon {
    * @function disable
    */
   disable () {
-    // TODO volume changed event
     var volume = DNDCommon.getSavedVolume()
     if (volume !== 0) {
       this.sound.setVolume(volume)
@@ -292,6 +291,7 @@ class DNDMode {
     var light = runtime.component.light
     var life = runtime.component.lifetime
     var sound = runtime.component.sound
+    runtime.component.flora.subscribe('yodart.audio.on-volume-change', this.onVolumeChanged.bind(this))
     this.common = new DNDCommon(light, sound, life)
     this.fsmStatus = FSM_READY
     this.fsmTimer = undefined
@@ -301,6 +301,19 @@ class DNDMode {
     life.on('idle', this.onDeviceIdle.bind(this))
   }
 
+  /**
+   * volume changed event handler
+   * @param {array} msg -
+   */
+  onVolumeChanged (msg) {
+    if (DNDCommon.getStatus() === 'on') {
+      var stream = msg[0]
+      var volume = msg[1]
+      if (stream === 'system') {
+        DNDCommon.setSavedVolume(volume)
+      }
+    }
+  }
   /**
    * when the device changes from active to idle, this function will be triggered
    * @function onDeviceIdle

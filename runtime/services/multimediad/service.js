@@ -257,6 +257,22 @@ MultiMedia.prototype.seek = function (appId, position, playerId, callback) {
   callback()
 }
 
+MultiMedia.prototype.setSpeed = function (appId, speed, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return
+  }
+
+  if (handle.length !== 1) {
+    logger.info(`multiple handle for app ${appId}, playerId is required`)
+    return
+  }
+
+  handle[0].setSpeed(speed)
+}
+
 MultiMedia.prototype.listenEvent = function (player, appId) {
   player.on('prepared', () => {
     this.emit('prepared', '' + player.id, '' + player.duration, '' + player.position)

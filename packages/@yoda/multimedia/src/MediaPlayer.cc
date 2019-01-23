@@ -265,6 +265,17 @@ JS_FUNCTION(EqModeSetter) {
   return jerry_create_undefined();
 }
 
+JS_FUNCTION(SetTempoDelta) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  float delta = JS_GET_ARG(0, number);
+  if (_this->handle) {
+    _this->handle->setTempoDelta(delta);
+  }
+  return jerry_create_undefined();
+}
+
 JS_FUNCTION(IdGetter) {
   JS_DECLARE_THIS_PTR(player, player);
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
@@ -363,6 +374,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "resume", Resume);
   iotjs_jval_set_method(proto, "seek", Seek);
   iotjs_jval_set_method(proto, "reset", Reset);
+  iotjs_jval_set_method(proto, "setTempoDelta", SetTempoDelta);
 
   // the following methods are for getters and setters internally
   iotjs_jval_set_method(proto, "idGetter", IdGetter);

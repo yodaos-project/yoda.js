@@ -109,6 +109,10 @@ dbusApis.addMethod('prepare', {
   in: ['s', 's', 's', 's'],
   out: ['s']
 }, function (appId, url, streamType, options, cb) {
+  if (typeof options === 'function') {
+    cb = options
+    options = '{}'
+  }
   logger.log('multimedia prepare', appId, url, streamType, options)
   if (appId && url) {
     var player
@@ -130,6 +134,10 @@ dbusApis.addMethod('start', {
   in: ['s', 's', 's', 's'],
   out: ['s']
 }, function (appId, url, streamType, options, cb) {
+  if (typeof options === 'function') {
+    cb = options
+    options = '{}'
+  }
   logger.log('multimedia play', appId, url, streamType, options)
   if (appId && url) {
     var id
@@ -151,6 +159,10 @@ dbusApis.addMethod('stop', {
   in: ['s', 's'],
   out: []
 }, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   logger.log('multimedia cancel', appId, playerId)
   if (appId) {
     service.stop(appId, +playerId)
@@ -162,6 +174,10 @@ dbusApis.addMethod('pause', {
   in: ['s', 's'],
   out: ['b']
 }, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   logger.log('multimedia pause', appId, playerId)
   if (appId) {
     var playing = service.pause(appId, +playerId)
@@ -174,9 +190,13 @@ dbusApis.addMethod('resume', {
   in: ['s', 's'],
   out: []
 }, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   logger.log('multimedia resume', appId, playerId)
   if (appId) {
-    service.resume(appId, playerId)
+    service.resume(appId, +playerId)
   }
   cb(null)
 })
@@ -185,6 +205,10 @@ dbusApis.addMethod('getPosition', {
   in: ['s', 's'],
   out: ['d']
 }, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   if (appId) {
     var pos = service.getPosition(appId, +playerId)
     cb(null, pos)
@@ -197,6 +221,10 @@ dbusApis.addMethod('seek', {
   in: ['s', 's', 's'],
   out: ['b']
 }, function (appId, position, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   logger.log('seek', position, typeof position, playerId)
   if (appId && position !== '' && +position >= 0) {
     service.seek(appId, +position, +playerId, _.once((error) => {
@@ -215,6 +243,10 @@ dbusApis.addMethod('getLoopMode', {
   in: ['s', 's'],
   out: ['b']
 }, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   logger.log(`appId: ${appId} getLoopMode ${playerId}`)
   if (appId) {
     var mode = service.getLoopMode(appId, +playerId)
@@ -229,6 +261,10 @@ dbusApis.addMethod('setLoopMode', {
   in: ['s', 's', 's'],
   out: ['b']
 }, function (appId, mode, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   logger.log(`appId: ${appId} setLoopMode: ${mode} ${playerId}`)
   if (appId) {
     service.setLoopMode(appId, mode, +playerId)
@@ -242,6 +278,10 @@ dbusApis.addMethod('getEqMode', {
   in: ['s', 's'],
   out: ['d']
 }, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   logger.log(`appId: ${appId} getEqMode ${playerId}`)
   if (appId) {
     var mode = service.getEqMode(appId, +playerId)
@@ -256,6 +296,10 @@ dbusApis.addMethod('setEqMode', {
   in: ['s', 's', 's'],
   out: ['b']
 }, function (appId, mode, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   mode = parseInt(mode)
   logger.log(`appId: ${appId} setEqMode: ${mode}, ${typeof mode} ${playerId}`)
   if (appId && !isNaN(mode)) {
@@ -279,6 +323,10 @@ dbusApis.addMethod('getState', {
   in: ['s', 's'],
   out: ['s']
 }, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   var state = service.getState(appId, +playerId)
   var position = service.getPosition(appId, +playerId)
   var duration = service.getDuration(appId, +playerId)
@@ -300,6 +348,15 @@ dbusApis.addMethod('resetAwaken', {
   if (pausedAppIdOnAwaken && appId === pausedAppIdOnAwaken) {
     service.resume(pausedAppIdOnAwaken)
   }
+  cb(null, true)
+})
+
+dbusApis.addMethod('setSpeed', {
+  in: ['s', 's', 's'],
+  out: ['b']
+}, function (appId, speed, playerId, cb) {
+  logger.log(`set play speed, ${appId} ${speed}`)
+  service.setSpeed(appId, speed, +playerId)
   cb(null, true)
 })
 

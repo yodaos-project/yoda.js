@@ -161,6 +161,7 @@ Object.assign(MultimediaDescriptor.prototype,
           allowedScheme: [ 'http', 'https', 'file', 'icecast', 'rtp', 'tcp', 'udp' ]
         })
         logger.log('preparing multimedia', url)
+        options = options || { multiple: false }
         return self._runtime.multimediaMethod('prepare', [self._appId, url, streamType, JSON.stringify(options)])
           .then((result) => {
             var multimediaId = _.get(result, '0', '-1')
@@ -212,6 +213,7 @@ Object.assign(MultimediaDescriptor.prototype,
           allowedScheme: [ 'http', 'https', 'file', 'icecast', 'rtp', 'tcp', 'udp' ]
         })
         logger.log('playing multimedia', url)
+        options = options || { multiple: false }
         return self._runtime.multimediaMethod('start', [self._appId, url, streamType, JSON.stringify(options)])
           .then((result) => {
             var multimediaId = _.get(result, '0', '-1')
@@ -452,6 +454,32 @@ Object.assign(MultimediaDescriptor.prototype,
               return res[0]
             }
             throw new Error('multimediad error')
+          })
+      }
+    },
+    /**
+     * set play speed.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function setSpeed
+     * @param {number} speed
+     * @param {string} playerId
+     * @returns {Promise<void>}
+     */
+    setSpeed: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setSpeed (speed, playerId) {
+        if (typeof speed !== 'number') {
+          return Promise.reject(new Error(`Expect a number on setSpeed, but got ${typeof speed}`))
+        }
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('setSpeed', [this._appId, String(speed), pid])
+          .then((res) => {
+            if (res && res[0] === true) {
+              return
+            }
+            throw new Error('player instance not found')
           })
       }
     }

@@ -102,45 +102,66 @@ module.exports = activity => {
   directive.do('frontend', 'media', function (dt, next) {
     var playerId
     logger.log(`exe dt: media.${dt.action}`)
+    function setSpeed (speed) {
+      if (typeof speed === 'number') {
+        activity.media.setSpeed(speed, pm.getByAppId(dt.data.appId))
+      }
+    }
+    function setOffset (offset) {
+      if (typeof offset === 'number' && offset >= 0) {
+        activity.media.seek(offset, pm.getByAppId(dt.data.appId))
+      }
+    }
     if (dt.action === 'play') {
-      mediaClient.start(dt.data.item.url, { multiple: true }, function (name, args) {
-        logger.log(`[cac-event](${name}) args(${JSON.stringify(args)}) `)
-        if (name === 'resolved') {
-          pm.setByAppId(dt.data.appId, args)
-        } else if (name === 'prepared') {
-          sos.sendEventRequest('media', 'prepared', dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            duration: args[0],
-            progress: args[1]
-          })
-        } else if (name === 'paused') {
-          sos.sendEventRequest('media', 'paused', dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            duration: args[0],
-            progress: args[1]
-          })
-        } else if (name === 'resumed') {
-          sos.sendEventRequest('media', 'resumed', dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            duration: args[0],
-            progress: args[1]
-          })
-        } else if (name === 'playbackcomplete') {
-          sos.sendEventRequest('media', 'playbackcomplete', dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            token: _.get(dt, 'data.item.token')
-          }, next)
-        } else if (name === 'cancel' || name === 'error') {
-          sos.sendEventRequest('media', name, dt.data, {
-            itemId: _.get(dt, 'data.item.itemId'),
-            token: _.get(dt, 'data.item.token')
-          }, function cancel () {
-            logger.info(`end task early because meida.${name} event emit`)
-            // end task early, no longer perform the following tasks
-            next(true)
-          })
+      if (mediaClient.getUrl() === dt.data.item.url) {
+        logger.log(`play forward offset: ${dt.data.item.offsetInMilliseconds} mutiple: ${dt.data.item.playMultiple}`)
+        setSpeed(dt.data.item.playMultiple)
+        if (dt.data.item.offsetInMilliseconds > 0) {
+          setOffset(dt.data.item.offsetInMilliseconds)
         }
-      })
+        activity.media.resume(pm.getByAppId(dt.data.appId))
+      } else {
+        mediaClient.start(dt.data.item.url, { multiple: true }, function (name, args) {
+          logger.log(`[cac-event](${name}) args(${JSON.stringify(args)}) `)
+          if (name === 'resolved') {
+            pm.setByAppId(dt.data.appId, args)
+          } else if (name === 'prepared') {
+            setSpeed(dt.data.item.playMultiple)
+            setOffset(dt.data.item.offsetInMilliseconds)
+            sos.sendEventRequest('media', 'prepared', dt.data, {
+              itemId: _.get(dt, 'data.item.itemId'),
+              duration: args[0],
+              progress: args[1]
+            })
+          } else if (name === 'paused') {
+            sos.sendEventRequest('media', 'paused', dt.data, {
+              itemId: _.get(dt, 'data.item.itemId'),
+              duration: args[0],
+              progress: args[1]
+            })
+          } else if (name === 'resumed') {
+            sos.sendEventRequest('media', 'resumed', dt.data, {
+              itemId: _.get(dt, 'data.item.itemId'),
+              duration: args[0],
+              progress: args[1]
+            })
+          } else if (name === 'playbackcomplete') {
+            sos.sendEventRequest('media', 'playbackcomplete', dt.data, {
+              itemId: _.get(dt, 'data.item.itemId'),
+              token: _.get(dt, 'data.item.token')
+            }, next)
+          } else if (name === 'cancel' || name === 'error') {
+            sos.sendEventRequest('media', name, dt.data, {
+              itemId: _.get(dt, 'data.item.itemId'),
+              token: _.get(dt, 'data.item.token')
+            }, function cancel () {
+              logger.info(`end task early because meida.${name} event emit`)
+              // end task early, no longer perform the following tasks
+              next(true)
+            })
+          }
+        })
+      }
     } else if (dt.action === 'pause') {
       // no need to send events here because player will emit paused event
       activity.media.pause(pm.getByAppId(dt.data.appId))

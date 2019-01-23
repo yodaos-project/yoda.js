@@ -22,10 +22,10 @@ class CloudAppService {
         var future = Promise.resolve()
         var mediaId = this.ctx.playerMgr.getByAppId(skill.appId)
         var opts = {
-          voice: {
+          media: {
             state: 'IDLE'
           },
-          media: {
+          voice: {
             state: 'IDLE'
           }
         }
@@ -41,9 +41,11 @@ class CloudAppService {
           future = future.then(() => {
             return this.ctx.activity.media.getState(mediaId)
           }).then((mediaState) => {
+            mediaState = JSON.parse(mediaState)
             opts.media = Object.assign({
-              itemId: _.get(mediaDirective, 'data.item.itemId', undefined)
-            }, JSON.parse(mediaState))
+              itemId: _.get(mediaDirective, 'data.item.itemId', undefined),
+              progress: mediaState.position
+            }, mediaState)
           })
         }
         return future.then(() => {
