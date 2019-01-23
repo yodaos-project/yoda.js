@@ -53,13 +53,11 @@ Custodian.prototype.onNetworkConnect = function onNetworkConnect () {
     this.runtime.reconnect()
   })
 
-  if (this.component.scheduler) {
-    var appMap = this.component.scheduler.appMap
-    Object.keys(appMap).forEach(key => {
-      var activity = appMap[key]
-      activity.emit('internal:network-connected')
-    })
-  }
+  var appMap = this.component.appScheduler.appMap
+  Object.keys(appMap).forEach(key => {
+    var activity = appMap[key]
+    activity.emit('internal:network-connected')
+  })
 }
 
 /**

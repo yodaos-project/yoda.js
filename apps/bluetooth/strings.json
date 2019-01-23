@@ -14,6 +14,6 @@
   "CONNECTED_ARG1S": "已连接上你的%s。",
   "DISCONNECTED": "蓝牙已断开。",
   "ASK": "你可以对我说，若琪，打开蓝牙。",
-  "LIKE": "蓝牙音乐暂不支持收藏功能。",
+  "ADD_TO_FAVORITE_FAILED": "⽆法收藏这⾸歌，换首歌试一下吧!",
   "FALLBACK": "蓝牙音乐暂不支持此功能。"
 }

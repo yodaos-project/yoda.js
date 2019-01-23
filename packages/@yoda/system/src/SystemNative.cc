@@ -17,7 +17,7 @@ static napi_value PowerOff(napi_env env, napi_callback_info info) {
 
 static napi_value RebootCharging(napi_env env, napi_callback_info info) {
   napi_value returnVal;
-  napi_create_double(env, system("reboot charging"), &returnVal);
+  napi_create_double(env, system("rokid_reboot charging"), &returnVal);
   return returnVal;
 }
 
