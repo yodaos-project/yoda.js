@@ -335,9 +335,11 @@ module.exports = activity => {
     if (index >= 0) {
       activity.media.getPosition().then(progress => {
         logger.log('progress =', progress)
-        sos.skills[index].setProgress(progress)
-        sos.skills[index].saveRecoverData(activity)
-        sos.destroy()
+        if (sos && sos.skills[index]) {
+          sos.skills[index].setProgress(progress)
+          sos.skills[index].saveRecoverData(activity)
+          sos.destroy()
+        }
       })
     } else {
       sos.destroy()
