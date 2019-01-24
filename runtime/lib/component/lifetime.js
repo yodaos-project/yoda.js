@@ -349,10 +349,6 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
       this.onEviction(memoStack.scene, 'scene')
     }
     var memoIds = memoStack.toArray().filter(it => it !== appId)
-    if (lastContext && lastContext.keepAlive) {
-      memoIds = memoIds.filter(it => it !== lastAppId)
-      future = Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
-    }
     return future.then(() =>
       Promise.all(memoIds.map(it => this.deactivateAppById(it, { recover: false, force: true })))
     ).then(deferred)
@@ -381,11 +377,6 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
   this.onEviction(lastAppId, 'cut')
 
-  if (lastAppId && lastAppId !== appId && lastContext.keepAlive) {
-    logger.info(`app '${lastAppId}' was kept alive`)
-    return Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
-      .then(deferred)
-  }
   /** no need to recover previously paused scene app if exists */
   return future.then(() => this.deactivateAppById(lastAppId, { recover: false, force: true }))
     .then(deferred)
@@ -432,12 +423,19 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
     recover = false
   }
 
+  var contextOptions = this.contextOptionsMap[appId]
   delete this.contextOptionsMap[appId]
   if (removedSlot) {
     this.onEviction(appId, removedSlot)
   }
 
-  var future = this.destroyAppById(appId)
+  var future
+  if (contextOptions && contextOptions.keepAlive) {
+    logger.info(`app '${appId}' was kept alive`)
+    future = this.setBackgroundById(appId, { recover: false })
+  } else {
+    future = this.destroyAppById(appId)
+  }
 
   return this.recoverIfPossibleAfter(future, appId, recover && removedSlot)
 }
@@ -523,6 +521,8 @@ LaVieEnPile.prototype.deactivateAppsInStack = function deactivateAppsInStack (op
  *   - LaVieEnPile#setForegroundById
  *
  * @param {string} appId
+ * @param {object} [options]
+ * @param {boolean} [options.recover]
  * @returns {Promise<ActivityDescriptor>}
  */
 LaVieEnPile.prototype.setBackgroundById = function (appId, options) {

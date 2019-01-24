@@ -29,6 +29,30 @@ test('setContextOptionsById shall merge options', t => {
     })
 })
 
+test('kept alive app shall be put in background on deactivating', t => {
+  mock.restore()
+  t.plan(1)
+
+  mock.mockAppExecutors(2)
+  var life = new Lifetime(mock.runtime)
+
+  Promise.all(_.times(2).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0')
+    })
+    .then(() => {
+      life.setContextOptionsById('0', { keepAlive: true })
+      return life.deactivateAppById('0')
+    })
+    .then(() => {
+      t.strictEqual(life.isBackgroundApp('0'), true)
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('kept alive cut app shall be put in background on preemption', t => {
   mock.restore()
   t.plan(1)
