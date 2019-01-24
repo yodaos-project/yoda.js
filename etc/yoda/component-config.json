@@ -2,16 +2,18 @@
   "paths": [ "/usr/yoda/lib/component" ],
   "stages":{
     "prepare": [
-      "turen", "lifetime", "light", "flora",
-      "dbus-registry", "wormhole"
+      "turen", "lifetime", "light", "flora", "sound",
+      "dbus-registry", "wormhole", "keyboard"
     ],
     "connect:before": [
-      "dispatcher", "permission", "app-loader",
-      "app-scheduler", "custom-config", "custodian", "ota", "battery"
+       "permission", "app-loader",
+      "app-scheduler",  "ota", "battery", "dnd-mode"
     ],
-    "login:before":[ "dnd-mode" ],
-    "login:after": [ "keyboard" ],
-    "ready:before": [ "sound" ]
+    "login:before":[
+      "custodian", "dispatcher", "custom-config"
+    ],
+    "login:after": [],
+    "ready:before": []
   },
   "interception": {
     "runtimeDidLogin": [ "ota.runtimeDidLogin" ],

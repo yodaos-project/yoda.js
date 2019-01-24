@@ -288,11 +288,9 @@ class DNDMode {
    * @param {object} runtime - app runtime
    */
   constructor (runtime) {
-    var light = runtime.component.light
-    var life = runtime.component.lifetime
-    var sound = runtime.component.sound
-    runtime.component.flora.subscribe('yodart.audio.on-volume-change', this.onVolumeChanged.bind(this))
-    this.common = new DNDCommon(light, sound, life)
+    this.runtime = runtime
+    this.common = new DNDCommon(runtime.component.light,
+      runtime.component.lifetime, runtime.component.sound)
     this.fsmStatus = FSM_READY
     this.fsmTimer = undefined
     this.waitSleep = false
@@ -390,6 +388,7 @@ class DNDMode {
    */
   init () {
     logger.info('dnd mode init')
+    this.runtime.component.flora.subscribe('yodart.audio.on-volume-change', this.onVolumeChanged.bind(this))
     this.start(FSMCode.Start)
   }
 

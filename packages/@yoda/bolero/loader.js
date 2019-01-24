@@ -63,6 +63,7 @@ class Loader {
   loadStage (comps) {
     comps.forEach(it => {
       if (this.compList.hasOwnProperty(it)) {
+        logger.info(`load component ${it}`)
         try {
           var comp = require(this.compList[it])
           this.register(it, comp, comp.dependencies || [])

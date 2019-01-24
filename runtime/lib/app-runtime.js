@@ -97,6 +97,7 @@ AppRuntime.prototype.init = function init () {
     var comps = []
     if (typeof ComponentConfig.stages[stageName] === 'object') {
       comps = ComponentConfig.stages[stageName]
+      logger.info(`component stage: ${stageName}`)
       return this.componentLoader.loadStage(comps)
     } else {
       return Promise.resolve()
@@ -107,7 +108,7 @@ AppRuntime.prototype.init = function init () {
       return doLoad(name)
     }).then(() => {
       var funcName = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1, name.length - 1);
-      if (this.hasOwnProperty(funcName)) {
+      if (typeof this[funcName] === 'function') {
         return this[funcName].apply(this)
       } else {
         return Promise.resolve()
@@ -124,13 +125,13 @@ AppRuntime.prototype.init = function init () {
   if (this.inited) {
     return Promise.resolve()
   }
-  stageList.run().then(() => {
+  return stageList.run().then(() => {
+    logger.info(`component load completed`)
     this.componentsInvoke('init')
     this.initiate()
     if (this.shouldWelcome) {
       this.component.light.appSound('@yoda', 'system://boot.ogg')
-      this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
-      logger.error('xxxx    played')
+      this.component.light.play('@yoda', 'system://boot.js', {fps: 200})
     }
     /** set turen to not muted */
     this.component.turen.toggleMute(false)
@@ -147,35 +148,36 @@ AppRuntime.prototype.init = function init () {
     this.resetServices()
     this.shouldWelcome = !this.isStartupFlagExists()
 
-  return this.loadApps().then(() => {
-    this.inited = true
-    return this.component.dispatcher.delegate('runtimeDidInit')
-  }).then(delegation => {
-    if (delegation) {
-      return
-    }
-    this.welcoming = true
+    return this.loadApps().then(() => {
+      this.inited = true
+      return this.component.dispatcher.delegate('runtimeDidInit')
+    }).then(delegation => {
+      if (delegation) {
+        return
+      }
+      this.welcoming = true
 
-    var future = Promise.resolve()
-    if (property.get('sys.firstboot.init', 'persist') !== '1') {
-      // initializing play tts status
-      property.set('sys.firstboot.init', '1', 'persist')
-      future = future.then(() => {
-        return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
+      var future = Promise.resolve()
+      if (property.get('sys.firstboot.init', 'persist') !== '1') {
+        // initializing play tts status
+        property.set('sys.firstboot.init', '1', 'persist')
+        future = future.then(() => {
+          return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
+        })
+      }
+      if (this.shouldWelcome) {
+        future = future.then(() => {
+          this.component.light.play('@yoda', 'system://boot.js', {fps: 200})
+          return this.component.light.appSound('@yoda', 'system://boot.ogg')
+        })
+      }
+      return future.then(() => {
+        this.welcoming = false
+        this.component.custodian.prepareNetwork()
+      }).catch(err => {
+        logger.error('unexpected error on boot welcoming', err.stack)
+        this.welcoming = false
       })
-    }
-    if (this.shouldWelcome) {
-      future = future.then(() => {
-        this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
-        return this.component.light.appSound('@yoda', 'system://boot.ogg')
-      })
-    }
-    return future.then(() => {
-      this.welcoming = false
-      this.component.custodian.prepareNetwork()
-    }).catch(err => {
-      logger.error('unexpected error on boot welcoming', err.stack)
-      this.welcoming = false
     })
   })
 }
