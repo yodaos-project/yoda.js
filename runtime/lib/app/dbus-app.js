@@ -15,12 +15,20 @@ function DbusApp (appId, manifest, runtime) {
   this.on('pause', this._onEvent.bind(this, 'pause', appId))
   this.on('destroy', this._onEvent.bind(this, 'destroy', appId))
   this.on('request', this._onEvent.bind(this, 'request', appId))
+  this.tts = new EventEmitter()
+  ;[
+    'end',
+    'cancel',
+    'error'
+  ].forEach(it => {
+    this.tts.on(it, this._onEvent.bind(this, 'onTtsComplete', appId))
+  })
 }
 inherits(DbusApp, EventEmitter)
 
 DbusApp.prototype._onEvent = function (name) {
   var params = Array.prototype.slice.call(arguments, 1)
-  var eventName
+  var eventName = name
   switch (name) {
     case 'ready':
       eventName = 'onReady'
@@ -52,6 +60,11 @@ DbusApp.prototype._onEvent = function (name) {
         params[0],
         JSON.stringify(params[1]),
         JSON.stringify(params[2])
+      ]
+      break
+    case 'onTtsComplete':
+      params = [
+        params[0]
       ]
       break
     default:
