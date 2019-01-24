@@ -64,25 +64,74 @@ function AppRuntime () {
 }
 inherits(AppRuntime, EventEmitter)
 
-
 AppRuntime.prototype.onPrepare = function () {
-  logger.error('onPrepare')
+  logger.info('onPrepare')
+  this.component.sound.initVolume()
+
+  if (this.shouldWelcome) {
+    this.component.light.appSound('@yoda', 'system://boot.ogg')
+    this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+  }
   return Promise.resolve()
 }
 
 AppRuntime.prototype.onConnect = function () {
-  logger.error('onConnect')
+  logger.info('onConnect')
   return Promise.resolve()
 }
 
 AppRuntime.prototype.onLogin = function () {
-  logger.error('onLogin')
+  logger.info('onLogin')
   return Promise.resolve()
 }
 
 AppRuntime.prototype.onReady = function () {
-  logger.error('onReady')
-  return Promise.resolve()
+  logger.info('onReady')
+  /** set turen to not muted */
+  this.component.turen.toggleMute(false)
+  this.component.turen.toggleWakeUpEngine(true)
+  this.component.lifetime.on('stack-reset', () => {
+    this.resetCloudStack()
+  })
+  this.component.lifetime.on('preemption', appId => {
+    this.appPause(appId)
+  })
+  // initializing the whole process...
+  this.resetCloudStack()
+  this.resetServices()
+  this.shouldWelcome = !this.isStartupFlagExists()
+
+  return this.loadApps().then(() => {
+    this.inited = true
+    return this.component.dispatcher.delegate('runtimeDidInit')
+  }).then(delegation => {
+    if (delegation) {
+      return
+    }
+    this.welcoming = true
+
+    var future = Promise.resolve()
+    if (property.get('sys.firstboot.init', 'persist') !== '1') {
+      // initializing play tts status
+      property.set('sys.firstboot.init', '1', 'persist')
+      future = future.then(() => {
+        return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
+      })
+    }
+    if (this.shouldWelcome) {
+      future = future.then(() => {
+        this.component.light.play('@yoda', 'system://boot.js', {fps: 200})
+        return this.component.light.appSound('@yoda', 'system://boot.ogg')
+      })
+    }
+    return future.then(() => {
+      this.welcoming = false
+      this.component.custodian.prepareNetwork()
+    }).catch(err => {
+      logger.error('unexpected error on boot welcoming', err.stack)
+      this.welcoming = false
+    })
+  })
 }
 /**
  * Start AppRuntime
@@ -90,6 +139,9 @@ AppRuntime.prototype.onReady = function () {
  * @returns {Promise<void>}
  */
 AppRuntime.prototype.init = function init () {
+  if (this.inited) {
+    return Promise.resolve()
+  }
   this.componentLoader.loadComponentFile(ComponentConfig.paths)
   var stageList = new StageList()
 
@@ -103,18 +155,29 @@ AppRuntime.prototype.init = function init () {
       return Promise.resolve()
     }
   }
+  var initComponent = (stageName) => {
+    if (ComponentConfig.stages[stageName] && ComponentConfig.stages[stageName].length > 0) {
+      this.componentsInvoke('init', ComponentConfig.stages[stageName])
+    }
+  }
   var doStage = (name) => {
     return doLoad(`${name}:before`).then(() => {
-      return doLoad(name)
+      initComponent(`${name}:before`)
+      var promise = doLoad(name)
+      // todo promise?
+      initComponent(name)
+      return promise
     }).then(() => {
-      var funcName = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1, name.length - 1);
+      var funcName = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1, name.length - 1)
       if (typeof this[funcName] === 'function') {
         return this[funcName].apply(this)
       } else {
         return Promise.resolve()
       }
     }).then(() => {
-      return doLoad(`${name}:after`)
+      var promise = doLoad(`${name}:after`)
+      initComponent(`${name}:after`)
+      return promise
     })
   }
 
@@ -122,63 +185,9 @@ AppRuntime.prototype.init = function init () {
   stageList.add('connect', doStage)
   stageList.add('login', doStage)
   stageList.add('ready', doStage)
-  if (this.inited) {
-    return Promise.resolve()
-  }
+
   return stageList.run().then(() => {
     logger.info(`component load completed`)
-    this.componentsInvoke('init')
-    this.initiate()
-    if (this.shouldWelcome) {
-      this.component.light.appSound('@yoda', 'system://boot.ogg')
-      this.component.light.play('@yoda', 'system://boot.js', {fps: 200})
-    }
-    /** set turen to not muted */
-    this.component.turen.toggleMute(false)
-    this.component.turen.toggleWakeUpEngine(true)
-
-    this.component.lifetime.on('stack-reset', () => {
-      this.resetCloudStack()
-    })
-    this.component.lifetime.on('preemption', appId => {
-      this.appPause(appId)
-    })
-    // initializing the whole process...
-    this.resetCloudStack()
-    this.resetServices()
-    this.shouldWelcome = !this.isStartupFlagExists()
-
-    return this.loadApps().then(() => {
-      this.inited = true
-      return this.component.dispatcher.delegate('runtimeDidInit')
-    }).then(delegation => {
-      if (delegation) {
-        return
-      }
-      this.welcoming = true
-
-      var future = Promise.resolve()
-      if (property.get('sys.firstboot.init', 'persist') !== '1') {
-        // initializing play tts status
-        property.set('sys.firstboot.init', '1', 'persist')
-        future = future.then(() => {
-          return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
-        })
-      }
-      if (this.shouldWelcome) {
-        future = future.then(() => {
-          this.component.light.play('@yoda', 'system://boot.js', {fps: 200})
-          return this.component.light.appSound('@yoda', 'system://boot.ogg')
-        })
-      }
-      return future.then(() => {
-        this.welcoming = false
-        this.component.custodian.prepareNetwork()
-      }).catch(err => {
-        logger.error('unexpected error on boot welcoming', err.stack)
-        this.welcoming = false
-      })
-    })
   })
 }
 
@@ -186,24 +195,31 @@ AppRuntime.prototype.init = function init () {
  * Deinit runtime.
  */
 AppRuntime.prototype.deinit = function deinit () {
-  this.componentsInvoke('deinit')
+  this.componentsInvoke('deinit', null)
 }
 
 /**
  * Invokes method on each component if exists with args.
  *
  * @param {string} method - method name to be invoked.
+ * @param {array} compNames - array of component name.
  * @param {any[]} args - arguments on invocation.
  */
-AppRuntime.prototype.componentsInvoke = function componentsInvoke (method, args) {
+AppRuntime.prototype.componentsInvoke = function componentsInvoke (method, compNames, args) {
   if (args == null) {
     args = []
   }
-  Object.keys(this.componentLoader.registry).forEach(it => {
-    var comp = this.component[it]
-    var fn = comp[method]
-    if (typeof fn === 'function') {
-      fn.apply(comp, args)
+  if (!compNames) {
+    compNames = Object.keys(this.componentLoader.registry)
+  }
+  compNames.forEach(it => {
+    var n = _.camelCase(it)
+    var comp = this.component[n]
+    if (comp) {
+      var fn = comp[method]
+      if (typeof fn === 'function') {
+        fn.apply(comp, args)
+      }
     }
   })
 }
@@ -218,14 +234,6 @@ AppRuntime.prototype.loadApps = function loadApps () {
       this.loadAppComplete = true
       logger.log('load app complete')
     })
-}
-
-/**
- * Initiate/Re-initiate runtime configs
- */
-AppRuntime.prototype.initiate = function initiate () {
-  this.component.sound.initVolume()
-  return Promise.resolve()
 }
 
 /**

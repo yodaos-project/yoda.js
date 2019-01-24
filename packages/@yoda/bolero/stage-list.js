@@ -12,16 +12,16 @@ class StageList {
       cb: callback
     })
   }
-
+  cb (index) {
+    this.stages[index].cb(this.stages[index].name)
+  }
   run () {
     var p
     if (this.stages.length > 0) {
       p = this.stages[0].cb(this.stages[0].name)
       var tmp = p
-      for(var i = 1; i < this.stages.length; ++i) {
-        tmp = tmp.then((function (index) {
-          this.stages[index].cb(this.stages[index].name)
-        }).bind(this, i))
+      for (var i = 1; i < this.stages.length; ++i) {
+        tmp = tmp.then(this.cb.bind(this, i))
       }
       return p
     } else {

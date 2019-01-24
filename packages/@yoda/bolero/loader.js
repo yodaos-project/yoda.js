@@ -33,7 +33,7 @@ class Loader {
    * find all component file
    * @param {array} paths - paths of component
    */
-  loadComponentFile(paths) {
+  loadComponentFile (paths) {
     // get all files
     paths.forEach((dir) => {
       try {
@@ -41,10 +41,9 @@ class Loader {
         files.filter(it => _.endsWith(it, '.js')).forEach((it) => {
           var compName = path.basename(it, '.js')
           if (this.compList.hasOwnProperty(compName)) {
-            logger.error(`component exists: ${this.compList[compName]} ${path.join(dir, it)}`)
+            logger.error(`component already exists: ${this.compList[compName]} ${path.join(dir, it)}`)
           } else {
             this.compList[compName] = path.join(dir, it)
-            logger.error(`find component file: ${compName}`)
           }
         })
       } catch (err) {
@@ -68,7 +67,6 @@ class Loader {
           var comp = require(this.compList[it])
           this.register(it, comp, comp.dependencies || [])
         } catch (err) {
-          logger.error(`stage ${it}: ${err}`)
         }
         delete this.compList[it]
       } else {

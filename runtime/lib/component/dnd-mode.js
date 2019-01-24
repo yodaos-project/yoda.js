@@ -296,7 +296,7 @@ class DNDMode {
     this.waitSleep = false
     this.fsmWaitingBreaker = undefined
     this.isOptionBreaker = false
-    life.on('idle', this.onDeviceIdle.bind(this))
+    runtime.component.lifetime.on('idle', this.onDeviceIdle.bind(this))
   }
 
   /**
