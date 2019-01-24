@@ -238,5 +238,34 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
 Manager.prototype.setEventRequestConfig = function (config) {
   eventRequest.setConfig(config || {})
 }
+Manager.prototype.generateAction = function (data) {
+  var dts = [
+  ]
+  dts.push(data)
+  var actionobj = {
+    form: 'scene',
+    shouldEndSession: false,
+    directives: dts
+  }
+  var resobj = {
+    action: actionobj
+  }
+  var action = {
+    startWithActiveWord: false,
+    appId: data.appId,
+    response: resobj
 
+  }
+  return action
+}
+Manager.prototype.getSceneSkillIndex = function () {
+  var index = -1
+  for (var i = 0; i < this.skills.length; i++) {
+    logger.log('skills = ', this.skills[i].hasPlayer, this.skills[i].form, this.skills[i].saveRecoverData, i)
+    if (this.skills[i].hasPlayer && this.skills[i].form === 'scene') {
+      index = i
+    }
+  }
+  return index
+}
 module.exports = Manager
