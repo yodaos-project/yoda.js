@@ -152,7 +152,9 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       if (option.shouldResume === true) {
         this.setResume(appId, isSystemUri, zIndex, uri, data)
       }
-      return callback()
+      if (callback) {
+        callback()
+      }
     }
 
     // FIXME: delete handlers that are not used for a long time
@@ -172,7 +174,9 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       this.prevCallback = function noop () {
         logger.warn(`light ${uri} should not call callback because it will resume`)
       }
-      callback()
+      if (callback) {
+        callback()
+      }
     } else {
       // this function can only be called once
       this.prevCallback = dedup(() => {
@@ -181,7 +185,9 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
           // this.clearPrev()
           this.resume()
         }, 0)
-        callback()
+        if (callback) {
+          callback()
+        }
       })
     }
     if (option.shouldResume === true) {
@@ -197,7 +203,9 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
     this.prevAppId = appId
   } catch (error) {
     logger.error(`load effect file error from path: ${uri}`, error)
-    callback(error)
+    if (callback) {
+      callback(error)
+    }
   }
 }
 
@@ -453,33 +461,6 @@ Light.prototype.stopFile = function (appId, uri) {
   }
 }
 
-Light.prototype.setAwake = function (appId) {
-  var uri = '/opt/light/awake.js'
-  this.loadfile(appId, uri, {}, {}, function noop (error) {
-    if (error) {
-      logger.error('setAwake error', error)
-    } else {
-      logger.log('setAwake complete')
-    }
-  })
-}
-
-Light.prototype.setDegree = function (appId, degree) {
-  var uri = '/opt/light/awake.js'
-  if (this.prevUri && this.prevUri === uri) {
-    this.degree = +degree
-    this.loadfile(appId, uri, {
-      degree: this.degree
-    }, {}, function noop (error) {
-      if (error) {
-        logger.error('setDegree error', error)
-      } else {
-        logger.log('setDegree complete')
-      }
-    })
-  }
-}
-
 Light.prototype.setHide = function () {
   logger.log('set hide')
   this.stopPrev(false)
@@ -557,21 +538,6 @@ Light.prototype.stopPrevSound = function () {
     }
   }
   return true
-}
-
-Light.prototype.setPickup = function (appId, duration, withAwaken) {
-  var uri = `${LIGHT_SOURCE}setPickup.js`
-  this.loadfile(appId, uri, {
-    degree: this.degree,
-    duration: +duration,
-    withAwaken: withAwaken
-  }, {}, function complete (err) {
-    if (err) {
-      logger.error(`setPickup error: ${err.message}`)
-    } else {
-      logger.log('setPickup complete')
-    }
-  })
 }
 
 module.exports = Light
