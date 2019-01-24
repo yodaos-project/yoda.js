@@ -815,7 +815,7 @@ AppRuntime.prototype.voiceCommand = function (text, options) {
       future = this.component.lifetime.setBackgroundById(appId)
     }
     return future.then(() => this.onVoiceCommand(text, nlp, action, {
-      carrierId: appId
+      carrierId: isTriggered ? appId : undefined
     }))
   })
 }
