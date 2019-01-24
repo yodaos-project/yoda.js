@@ -239,9 +239,7 @@ Manager.prototype.setEventRequestConfig = function (config) {
   eventRequest.setConfig(config || {})
 }
 Manager.prototype.generateAction = function (data) {
-  var dts = [
-  ]
-  dts.push(data)
+  var dts = [data]
   var actionobj = {
     form: 'scene',
     shouldEndSession: false,
