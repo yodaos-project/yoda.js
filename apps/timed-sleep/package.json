@@ -1,0 +1,34 @@
+{
+  "name": "@yoda/timed-sleep",
+  "version": "1.0.0",
+  "description": "Timed sleep to manage power.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "manifest": {
+    "skills": [
+      "R644E7A3E5BB4244A61F7A381B7C0557"
+    ],
+    "permission": [
+      "ACCESS_NETWORK_STATE",
+      "ACCESS_TTS",
+      "ACCESS_MULTIMEDIA",
+      "ACCESS_SOUND",
+      "INTERRUPT"
+    ],
+    "hosts": [
+      [ "timed-sleep", { "skillId": "R644E7A3E5BB4244A61F7A381B7C0557" } ]
+    ]
+  },
+  "keywords": [
+    "timed",
+    "sleep",
+    "rokid",
+    "skill",
+    "power",
+    "manager"
+  ],
+  "author": "Morrowind Xie <morrowindxie@gmail.com>",
+  "license": "MIT"
+}

@@ -110,6 +110,7 @@ function downloadWav (wakeupSoundEffects, path) {
 
 /**
  * Wakeup effect processor
+ * @extends BaseConfig
  */
 class WakeupEffect extends BaseConfig {
   constructor (activity) {
@@ -118,21 +119,21 @@ class WakeupEffect extends BaseConfig {
       logger.warn(`Activation config is null`)
       ActivationConfig = {}
     }
-    if (!ActivationConfig.hasOwnProperty('customPath')) {
+    if (typeof ActivationConfig.customPath !== 'string') {
       ActivationConfig.customPath = '/data/activation/media/'
     } else {
-      if (!ActivationConfig.customPath[ActivationConfig.customPath.length - 1] === '/') {
+      if (ActivationConfig.customPath[ActivationConfig.customPath.length - 1] !== '/') {
         ActivationConfig.customPath += '/'
       }
     }
-    if (!ActivationConfig.hasOwnProperty('defaultPath')) {
+    if (typeof ActivationConfig.defaultPath !== 'string') {
       ActivationConfig.defaultPath = '/opt/media/activation/'
     } else {
-      if (!ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] === '/') {
+      if (ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] !== '/') {
         ActivationConfig.defaultPath += '/'
       }
     }
-    this.init()
+    this.refresh()
   }
 
   /**
@@ -202,37 +203,51 @@ class WakeupEffect extends BaseConfig {
    */
   onWakeupEffectStatusChangedFromIntent (action) {
     property.set('sys.wakeupwitch', action, 'persist')
-    if (action === 'close') {
-      this.notifyActivation([])
-    } else {
-      this.getFileList().then((fileList) => {
-        if (!fileList || !(fileList instanceof Array)) {
-          fileList = []
-        }
-        this.notifyActivation(fileList)
-      })
-    }
+    this.refresh()
   }
 
   /**
-   * init the activation status
+   * refresh the activation sound
    */
-  init () {
+  refresh () {
     var action = property.get('sys.wakeupwitch', 'persist')
     if (action === SWITCH_CLOSE) {
+      logger.info('wakeup effect turned off')
       this.notifyActivation([])
     } else {
       this.getFileList().then((fileList) => {
+        if (!Array.isArray(fileList)) {
+          fileList = []
+        }
         this.notifyActivation(fileList)
+        if (property.get('sys.wakeupsound', 'persist') === AWAKE_EFFECT_CUSTOM) {
+          logger.info('custom wakeup effect turned on')
+        } else {
+          logger.info('default wakeup effect turned on')
+        }
       })
     }
+    this.activity.get().then(prop => {
+      this.activity.httpgw.request('/v1/rokidAccount/RokidAccount/getUserCustomConfigByDevice',
+        {userId: prop.masterId}, {}).then((data) => {
+        var config = safeParse(_.get(data, 'values.wakeupSoundEffects', ''))
+        if (typeof config === 'object') {
+          config.wakeupSoundEffects = config.value
+          this.applyWakeupEffect(config, true)
+        } else {
+          logger.warn(`custom config error: ${JSON.stringify(data)}`)
+        }
+      }).catch((err) => {
+        logger.error(`request custom config error: ${err}`)
+      })
+    })
   }
   /**
    * process request from url
-   * @param {string} queryObj - object from url,
+   * @param {object} queryObj - object from url,
    */
   onWakeupEffectStatusChangedFromUrl (queryObj) {
-    if (queryObj && queryObj.param) {
+    if (typeof queryObj === 'object' && typeof queryObj.param === 'string') {
       var realQueryObj = safeParse(queryObj.param)
       this.applyWakeupEffect(realQueryObj, queryObj.isFirstLoad)
     }
@@ -244,9 +259,9 @@ class WakeupEffect extends BaseConfig {
    * @param isFirstLoad -
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
-    if (queryObj && queryObj.action) {
+    if (typeof queryObj === 'object' && typeof queryObj.action === 'string') {
       property.set('sys.wakeupswitch', queryObj.action, 'persist')
-      if (queryObj.type !== undefined) {
+      if (typeof queryObj.type === 'string') {
         property.set('sys.wakeupsound', queryObj.type, 'persist')
       }
       if (queryObj.action === SWITCH_CLOSE) {
@@ -274,7 +289,7 @@ class WakeupEffect extends BaseConfig {
 
       if (!isFirstLoad) {
         if (queryObj.action === SWITCH_OPEN) {
-          if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
+          if (typeof queryObj.type === 'string' && queryObj.type === AWAKE_EFFECT_CUSTOM) {
             this.activity.tts.speak(WAKE_SOUND_OPEN_CUSTOM).then(() => this.activity.exit())
           } else {
             this.activity.tts.speak(WAKE_SOUND_OPEN_DEFAULT).then(() => this.activity.exit())

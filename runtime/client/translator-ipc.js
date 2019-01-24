@@ -52,7 +52,7 @@ var MethodProxies = {
           return resolve(msg.result)
         }
         if (msg.action === 'reject') {
-          err.message = msg.error
+          Object.assign(err, msg.error)
           return reject(err)
         }
         err.message = 'Unknown response message type from VuiDaemon.'
@@ -179,7 +179,6 @@ function translate (descriptor) {
 
 var internalListenMap = {
   'network-connected': () => {
-    logger.info('network connected')
     wifi.resetDns()
   }
 }
@@ -218,7 +217,7 @@ var listenMap = {
       logger.info(`Unhandled Internal Ipc message type '${message.type}'.`)
       return
     }
-
+    logger.debug(`Received VuiDaemon internal:${message.topic}`)
     handle(message)
   }
 }

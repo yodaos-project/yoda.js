@@ -31,7 +31,8 @@ KeyboardHandler.prototype.init = function init () {
 }
 
 KeyboardHandler.prototype.deinit = function deinit () {
-  this.input.disconnect()
+  this.input && this.input.disconnect()
+  this.input = null
 }
 
 KeyboardHandler.prototype.execute = function execute (descriptor) {
@@ -69,25 +70,27 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
   var listener = _.get(this.listeners, `${type}.${event.keyCode}`)
-  if (listener != null && listener === this.component.lifetime.getCurrentAppId()) {
-    var app = this.component.appScheduler.getAppById(listener)
-    if (app) {
-      logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
-      app.keyboard.emit(type, event)
-      return true
-    }
-    logger.info(`App ${listener} is not active, skip ${type} '${event.keyCode}' delegation.`)
+  if (listener == null) {
+    logger.info(`No app registered for ${type}.${event.keyCode}, skipping`)
+    return false
   }
-  return false
+  var app = this.component.appScheduler.getAppById(listener)
+  if (listener !== this.component.lifetime.getCurrentAppId() || app == null) {
+    logger.info(`App ${listener} is not active, skip ${type} '${event.keyCode}' delegation.`)
+    return false
+  }
+  logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
+  app.keyboard.emit(type, event)
+  return true
 }
 
 KeyboardHandler.prototype.listen = function listen () {
-  this.input.on('keydown', listenerWrap(this.onKeydown, this))
-  this.input.on('keyup', listenerWrap(this.onKeyup, this))
-  this.input.on('longpress', listenerWrap(this.onLongpress, this))
+  this.input.on('keydown', this.listenerWrap('keydown', this.onKeydown))
+  this.input.on('keyup', this.listenerWrap('keyup', this.onKeyup))
+  this.input.on('longpress', this.listenerWrap('longpress', this.onLongpress))
 
   ;['click', 'dbclick', 'slide-clockwise', 'slide-counter-clockwise'].forEach(gesture => {
-    this.input.on(gesture, listenerWrap(this.onGesture, this, [ gesture ]))
+    this.input.on(gesture, this.listenerWrap(gesture, this.onGesture, [ gesture ]))
   })
 }
 
@@ -292,12 +295,20 @@ KeyboardHandler.prototype.restoreKeyDefaults = function restoreKeyDefaults (appI
   return Promise.resolve()
 }
 
-function listenerWrap (fn, receiver, args) {
-  return function () {
-    try {
-      fn.apply(receiver, (args || []).concat(Array.prototype.slice.call(arguments, 0)))
-    } catch (err) {
-      logger.error('Unexpected error on handling key events', err && err.message, err && err.stack)
-    }
+KeyboardHandler.prototype.listenerWrap = function listenerWrap (eventName, fn, args) {
+  var self = this
+  return function (event) {
+    var fnArgs = arguments
+    self.component.dispatcher.delegate('keyboardWillRespond', [ event.keyCode, eventName ])
+      .then(delegation => {
+        if (delegation) {
+          return
+        }
+        try {
+          fn.apply(self, (args || []).concat(Array.prototype.slice.call(fnArgs, 0)))
+        } catch (err) {
+          logger.error('Unexpected error on handling key events', err && err.message, err && err.stack)
+        }
+      })
   }
 }

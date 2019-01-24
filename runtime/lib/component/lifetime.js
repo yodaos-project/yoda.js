@@ -330,18 +330,8 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   /** push app to top of stack */
   var lastAppId = this.getCurrentAppId()
   var lastContext = this.getContextOptionsById(lastAppId)
-  if (lastAppId && lastAppId !== appId) {
-    if (lastContext) {
-      this.onPreemption(lastAppId, lastContext)
-      if (lastContext.keepAlive) {
-        future = Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
-        lastAppId = null
-        lastContext = null
-      }
-    } else {
-      /** no previously running app */
-      logger.warn('previously running app has no context options')
-    }
+  if (lastAppId && lastContext && lastAppId !== appId) {
+    this.onPreemption(lastAppId, lastContext)
   }
   var memoStack = this.activeSlots.copy()
   this.activeSlots.addApp(appId, isScene)
@@ -358,10 +348,14 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     if (memoStack.scene !== appId) {
       this.onEviction(memoStack.scene, 'scene')
     }
+    var memoIds = memoStack.toArray().filter(it => it !== appId)
+    if (lastContext && lastContext.keepAlive) {
+      memoIds = memoIds.filter(it => it !== lastAppId)
+      future = Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
+    }
     return future.then(() =>
-      Promise.all(memoStack.toArray().filter(it => it !== appId)
-        .map(it => this.deactivateAppById(it, { recover: false, force: true }))))
-      .then(deferred)
+      Promise.all(memoIds.map(it => this.deactivateAppById(it, { recover: false, force: true })))
+    ).then(deferred)
   }
 
   if (lastContext == null) {
@@ -386,6 +380,12 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
    */
   logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
   this.onEviction(lastAppId, 'cut')
+
+  if (lastAppId && lastAppId !== appId && lastContext.keepAlive) {
+    logger.info(`app '${lastAppId}' was kept alive`)
+    return Promise.all([ future, this.setBackgroundById(lastAppId, { recover: false }) ])
+      .then(deferred)
+  }
   /** no need to recover previously paused scene app if exists */
   return future.then(() => this.deactivateAppById(lastAppId, { recover: false, force: true }))
     .then(deferred)
@@ -437,8 +437,12 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
     this.onEviction(appId, removedSlot)
   }
 
-  var deactivating = this.destroyAppById(appId)
+  var future = this.destroyAppById(appId)
 
+  return this.recoverIfPossibleAfter(future, appId, recover && removedSlot)
+}
+
+LaVieEnPile.prototype.recoverIfPossibleAfter = function recoverIfPossibleAfter (future, appId, recover) {
   var carrierId
   if (appId === this.lastSubordinate) {
     this.lastSubordinate = null
@@ -448,7 +452,12 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   }
 
   if (!recover) {
-    return deactivating
+    return future
+  }
+
+  if (this.appIdOnPause != null) {
+    logger.info('LaVieEnPile is paused, skip resuming on setBackground.')
+    return future
   }
 
   if (carrierId) {
@@ -457,7 +466,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
      */
     if (this.scheduler.isAppRunning(carrierId)) {
       logger.info(`app ${appId} is brought up by a carrier '${carrierId}', recovering.`)
-      return deactivating.then(() => {
+      return future.then(() => {
         return this.activateAppById(carrierId)
       })
     }
@@ -465,12 +474,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   }
 
   logger.info('recovering previous app on deactivating.')
-  return deactivating.then(() => {
-    if (this.appIdOnPause != null) {
-      logger.info('LaVieEnPile is paused, skip resuming on deactivation.')
-      return
-    }
-
+  return future.then(() => {
     var lastAppId = this.getCurrentAppId()
     if (lastAppId) {
       /**
@@ -542,28 +546,10 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
 
   var future = this.onLifeCycle(appId, 'background')
 
-  if (!recover || !removedSlot) {
-    /**
-     * No recover shall be taken if app is not active.
-     */
-    return Promise.resolve()
-  }
-
-  if (this.appIdOnPause != null) {
-    logger.info('LaVieEnPile is paused, skip resuming on setBackground.')
-    return future
-  }
-
   /**
-   * Try to resume previous app only when app is active too.
+   * No recover shall be taken if app is not active.
    */
-  var lastAppId = this.getCurrentAppId()
-  if (lastAppId == null) {
-    return future
-  }
-  return future.then(() =>
-    this.onLifeCycle(lastAppId, 'resume')
-      .catch(err => logger.error('Unexpected error on resuming previous app', err.stack)))
+  return this.recoverIfPossibleAfter(future, appId, recover && removedSlot)
 }
 
 /**
@@ -640,6 +626,9 @@ LaVieEnPile.prototype.onEviction = function onEvict (appId, form) {
  * @param {ContextOptionsData} contextOptions
  */
 LaVieEnPile.prototype.onPreemption = function onPreemption (appId, contextOptions) {
+  if (!appId) {
+    return
+  }
   process.nextTick(() => {
     this.emit('preemption', appId, contextOptions.form)
   })

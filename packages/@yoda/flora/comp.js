@@ -8,10 +8,7 @@ var defaultConfig = {
   'reconnInterval': 10000
 }
 
-function FloraComp () {
-}
-
-FloraComp.prototype.init = function (fid, config) {
+function FloraComp (fid, config) {
   var furi
   if (typeof config !== 'object') {
     config = defaultConfig
@@ -22,7 +19,9 @@ FloraComp.prototype.init = function (fid, config) {
     furi = config.uri + '#' + fid
   }
   this.agent = new flora.Agent(furi, config)
+}
 
+FloraComp.prototype.init = function () {
   if (typeof this.handlers === 'object') {
     Object.keys(this.handlers).forEach((key) => {
       var cb = this.handlers[key]
@@ -55,6 +54,18 @@ FloraComp.prototype.post = function (name, msg, type, opts) {
     return this.agent.post(name, msg, type, opts)
   }
   return flora.ERROR_NOT_CONNECTED
+}
+
+FloraComp.prototype.subscribe = function subscribe (name, handler) {
+  return this.agent.subscribe(name, handler)
+}
+
+FloraComp.prototype.declareMethod = function declareMethod (name, handler) {
+  return this.agent.declareMethod(name, handler)
+}
+
+FloraComp.prototype.call = function call () {
+  return this.agent.call.apply(this.agent, arguments)
 }
 
 module.exports = FloraComp

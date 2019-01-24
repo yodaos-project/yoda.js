@@ -27,6 +27,11 @@ test('type check', function (t) {
   t.end()
 })
 
+test('wifi constants', (t) => {
+  t.equal(wifi.WPA_ALL_NETWORK, -1)
+  t.end()
+})
+
 // State Check
 test('scaning', (t) => {
   wifi.disableAll()

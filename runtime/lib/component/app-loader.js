@@ -64,10 +64,9 @@ AppChargeur.prototype.reload = function reload (appId) {
   /** appId -> manifest */
   this.appManifests = {}
 
-  this.notifications = {
-    'on-ready': [],
-    'on-network-connected': []
-  }
+  Object.keys(this.notifications).forEach(it => {
+    this.notifications[it] = []
+  })
 
   return this.loadPaths(this.config.paths)
 }
@@ -148,6 +147,22 @@ AppChargeur.prototype.isSkillIdExcludedFromStack = function isSkillIdExcludedFro
     return true
   }
   return false
+}
+
+/**
+ * Register a notification channel so that apps could declare their interests on the notification.
+ *
+ * > NOTE: should be invoked on component's init or construction. Doesn't work on apps loaded before
+ * the registration.
+ *
+ * @param {string} name
+ */
+AppChargeur.prototype.registerNotificationChannel = function registerNotificationChannel (name) {
+  if (this.notifications[name] != null) {
+    return
+  }
+  logger.info(`registering notification channel '${name}'`)
+  this.notifications[name] = []
 }
 
 /**
@@ -351,11 +366,12 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
       throw new Error(`manifest.notification '${notification}' by '${appId}' type mismatch, expecting a string or an array.`)
     }
     if (Object.keys(this.notifications).indexOf(notification) < 0) {
-      return
+      logger.debug(`Unknown notification chanel ${notification}`)
+      return /** error tolerance */
     }
     this.notifications[notification].push(appId)
     return [notification]
-  })
+  }).filter(it => it != null)
 
   this.runtime.component.permission.load(appId, permissions)
   this.appManifests[appId] = Object.assign(_.pick(manifest, 'daemon', 'objectPath', 'ifaceName'), {

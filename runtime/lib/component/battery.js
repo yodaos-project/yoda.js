@@ -17,7 +17,17 @@ class Battery {
     this.shouldAnnounceLowPower = false
   }
 
-  handleFloraInfo (msg) {
+  init () {
+    this.component.flora.subscribe('battery.info', this.handleFloraInfo.bind(this))
+  }
+
+  handleFloraInfo (caps) {
+    if (this.runtime.hibernated) {
+      logger.info('runtime hibernated, ignoring battery events.')
+      return
+    }
+
+    var msg = caps[0]
     var data
     try {
       data = JSON.parse(msg)
@@ -95,6 +105,19 @@ class Battery {
     if (this.memoInfo.batChargingOnline) {
       return false
     }
+  }
+
+  getBatteryLevel () {
+    if (this.memoInfo == null) {
+      return 0
+    }
+    if (!this.batSupported) {
+      return 0
+    }
+    if (typeof this.memoInfo.batLevel !== 'number') {
+      return 0
+    }
+    return this.memoInfo.batLevel
   }
 
   // MARK: - Interceptions

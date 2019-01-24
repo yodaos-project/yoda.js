@@ -25,7 +25,7 @@ var flora = new Flora(service)
 flora.init()
 
 service.on('prepared', function (id, dur, pos) {
-  logger.log('multimediad prepared', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event prepared', id, dur, pos)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -34,8 +34,28 @@ service.on('prepared', function (id, dur, pos) {
     [id, 'prepared', dur, pos]
   )
 })
-service.on('playbackcomplete', function (id) {
-  logger.log('multimediad playback complete', Array.prototype.slice.call(arguments, 0))
+service.on('paused', function (id, dur, pos) {
+  logger.log('multimediad-event pause', id, dur, pos)
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    'ssss',
+    [id, 'paused', dur, pos]
+  )
+})
+service.on('resumed', function (id, dur, pos) {
+  logger.log('multimediad-event resume', id, dur, pos)
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    'ssss',
+    [id, 'resumed', dur, pos]
+  )
+})
+service.on('playbackcomplete', function (id, dur, pos) {
+  logger.log('multimediad-event playback complete', id, dur, pos)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -44,8 +64,8 @@ service.on('playbackcomplete', function (id) {
     [id, 'playbackcomplete']
   )
 })
-service.on('cancel', function (id) {
-  logger.log('multimediad canceled', Array.prototype.slice.call(arguments, 0))
+service.on('cancel', function (id, dur, pos) {
+  logger.log('multimediad-event canceled', id, dur, pos)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -54,8 +74,8 @@ service.on('cancel', function (id) {
     [id, 'cancel']
   )
 })
-service.on('bufferingupdate', function (id) {
-  logger.log('multimediad buffering update', Array.prototype.slice.call(arguments, 0))
+service.on('bufferingupdate', function (id, dur, pos) {
+  logger.log('multimediad-event buffering update', id, dur, pos)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -64,8 +84,8 @@ service.on('bufferingupdate', function (id) {
     [id, 'bufferingupdate']
   )
 })
-service.on('seekcomplete', function (id) {
-  logger.log('multimediad seek complete', Array.prototype.slice.call(arguments, 0))
+service.on('seekcomplete', function (id, dur, pos) {
+  logger.log('multimediad-event seek complete', id, dur, pos)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -75,7 +95,7 @@ service.on('seekcomplete', function (id) {
   )
 })
 service.on('error', function (id) {
-  logger.log('multimediad error', Array.prototype.slice.call(arguments, 0))
+  logger.log('multimediad-event error', id)
   dbusService._dbus.emitSignal(
     '/multimedia/service',
     'multimedia.service',
@@ -86,14 +106,19 @@ service.on('error', function (id) {
 })
 
 dbusApis.addMethod('prepare', {
-  in: ['s', 's', 's'],
+  in: ['s', 's', 's', 's'],
   out: ['s']
-}, function (appId, url, streamType, cb) {
-  logger.log('multimedia prepare', appId, url, streamType)
+}, function (appId, url, streamType, options, cb) {
+  if (typeof options === 'function') {
+    cb = options
+    options = '{}'
+  }
+  logger.log('multimedia prepare', appId, url, streamType, options)
   if (appId && url) {
     var player
     try {
-      player = service.prepare(appId, url, streamType)
+      options = JSON.parse(options)
+      player = service.prepare(appId, url, streamType, options)
     } catch (err) {
       logger.error(`Unexpected error on start multimedia for app ${appId}`, err.stack)
       return cb(null, '-1')
@@ -106,14 +131,19 @@ dbusApis.addMethod('prepare', {
 })
 
 dbusApis.addMethod('start', {
-  in: ['s', 's', 's'],
+  in: ['s', 's', 's', 's'],
   out: ['s']
-}, function (appId, url, streamType, cb) {
-  logger.log('multimedia play', appId, url, streamType)
+}, function (appId, url, streamType, options, cb) {
+  if (typeof options === 'function') {
+    cb = options
+    options = '{}'
+  }
+  logger.log('multimedia play', appId, url, streamType, options)
   if (appId && url) {
     var id
     try {
-      id = service.start(appId, url, streamType)
+      options = JSON.parse(options)
+      id = service.start(appId, url, streamType, options)
     } catch (err) {
       logger.error(`Unexpected error on start multimedia for app ${appId}`, err.stack)
       return cb(null, '-1')
@@ -126,45 +156,61 @@ dbusApis.addMethod('start', {
 })
 
 dbusApis.addMethod('stop', {
-  in: ['s'],
+  in: ['s', 's'],
   out: []
-}, function (appId, cb) {
-  logger.log('multimedia cancel', appId)
+}, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  logger.log('multimedia cancel', appId, playerId)
   if (appId) {
-    service.stop(appId)
+    service.stop(appId, +playerId)
   }
   cb(null)
 })
 
 dbusApis.addMethod('pause', {
-  in: ['s'],
+  in: ['s', 's'],
   out: ['b']
-}, function (appId, cb) {
-  logger.log('multimedia pause', appId)
+}, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  logger.log('multimedia pause', appId, playerId)
   if (appId) {
-    var playing = service.pause(appId)
+    var playing = service.pause(appId, +playerId)
     return cb(null, playing)
   }
   cb(null, false)
 })
 
 dbusApis.addMethod('resume', {
-  in: ['s'],
+  in: ['s', 's'],
   out: []
-}, function (appId, cb) {
-  logger.log('multimedia resume', appId)
+}, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  logger.log('multimedia resume', appId, playerId)
   if (appId) {
-    service.resume(appId)
+    service.resume(appId, +playerId)
   }
   cb(null)
 })
 
 dbusApis.addMethod('getPosition', {
-  in: ['s'],
+  in: ['s', 's'],
   out: ['d']
-}, function (appId, cb) {
+}, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
   if (appId) {
-    var pos = service.getPosition(appId)
+    var pos = service.getPosition(appId, +playerId)
     cb(null, pos)
   } else {
     cb(null, -1)
@@ -172,12 +218,16 @@ dbusApis.addMethod('getPosition', {
 })
 
 dbusApis.addMethod('seek', {
-  in: ['s', 's'],
+  in: ['s', 's', 's'],
   out: ['b']
-}, function (appId, position, cb) {
-  logger.log('seek', position, typeof position)
+}, function (appId, position, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  logger.log('seek', position, typeof position, playerId)
   if (appId && position !== '' && +position >= 0) {
-    service.seek(appId, +position, _.once((error) => {
+    service.seek(appId, +position, +playerId, _.once((error) => {
       if (error) {
         cb(null, false)
       } else {
@@ -192,10 +242,14 @@ dbusApis.addMethod('seek', {
 dbusApis.addMethod('getLoopMode', {
   in: ['s', 's'],
   out: ['b']
-}, function (appId, cb) {
-  logger.log(`appId: ${appId} getLoopMode`)
+}, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  logger.log(`appId: ${appId} getLoopMode ${playerId}`)
   if (appId) {
-    var mode = service.getLoopMode(appId)
+    var mode = service.getLoopMode(appId, +playerId)
     logger.log(`response: ${mode}`)
     cb(null, mode)
   } else {
@@ -204,12 +258,52 @@ dbusApis.addMethod('getLoopMode', {
 })
 
 dbusApis.addMethod('setLoopMode', {
-  in: ['s', 's'],
+  in: ['s', 's', 's'],
   out: ['b']
-}, function (appId, mode, cb) {
-  logger.log(`appId: ${appId} setLoopMode: ${mode}`)
+}, function (appId, mode, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  logger.log(`appId: ${appId} setLoopMode: ${mode} ${playerId}`)
   if (appId) {
-    service.setLoopMode(appId, mode)
+    service.setLoopMode(appId, mode, +playerId)
+    cb(null, true)
+  } else {
+    cb(null, false)
+  }
+})
+
+dbusApis.addMethod('getEqMode', {
+  in: ['s', 's'],
+  out: ['d']
+}, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  logger.log(`appId: ${appId} getEqMode ${playerId}`)
+  if (appId) {
+    var mode = service.getEqMode(appId, +playerId)
+    logger.log(`response: ${mode}`)
+    cb(null, mode)
+  } else {
+    cb(null, 0)
+  }
+})
+
+dbusApis.addMethod('setEqMode', {
+  in: ['s', 's', 's'],
+  out: ['b']
+}, function (appId, mode, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  mode = parseInt(mode)
+  logger.log(`appId: ${appId} setEqMode: ${mode}, ${typeof mode} ${playerId}`)
+  if (appId && !isNaN(mode)) {
+    service.setEqMode(appId, mode, +playerId)
     cb(null, true)
   } else {
     cb(null, false)
@@ -225,6 +319,25 @@ dbusApis.addMethod('reset', {
   cb(null, true)
 })
 
+dbusApis.addMethod('getState', {
+  in: ['s', 's'],
+  out: ['s']
+}, function (appId, playerId, cb) {
+  if (typeof playerId === 'function') {
+    cb = playerId
+    playerId = -1
+  }
+  var state = service.getState(appId, +playerId)
+  var position = service.getPosition(appId, +playerId)
+  var duration = service.getDuration(appId, +playerId)
+  var result = {
+    state: state,
+    position: position,
+    duration: duration
+  }
+  cb(null, JSON.stringify(result))
+})
+
 dbusApis.addMethod('resetAwaken', {
   in: ['s'],
   out: ['b']
@@ -235,6 +348,15 @@ dbusApis.addMethod('resetAwaken', {
   if (pausedAppIdOnAwaken && appId === pausedAppIdOnAwaken) {
     service.resume(pausedAppIdOnAwaken)
   }
+  cb(null, true)
+})
+
+dbusApis.addMethod('setSpeed', {
+  in: ['s', 's', 's'],
+  out: ['b']
+}, function (appId, speed, playerId, cb) {
+  logger.log(`set play speed, ${appId} ${speed}`)
+  service.setSpeed(appId, speed, +playerId)
   cb(null, true)
 })
 

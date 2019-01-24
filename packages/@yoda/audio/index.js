@@ -13,8 +13,10 @@
  */
 
 var native = require('./audio.node')
+var manifest = require('@yoda/manifest')
 var property = require('@yoda/property')
 var logger = require('logger')('audio')
+var floraDisposable = require('@yoda/flora/disposable')
 /**
  * This define the streams config
  */
@@ -22,11 +24,11 @@ var AudioBase = {
   /**
    * default volume
    */
-  DEFAULT_VOLUME: _getNumber('audio.volume.default', 60)
+  DEFAULT_VOLUME: _getNumber('audio.volume.init', 60)
 }
 
 function _getNumber (key, defaults) {
-  var num = parseInt(property.get(key, 'persist'))
+  var num = parseInt(manifest.getDefaultValue(key))
   return isNaN(num) ? defaults : num
 }
 
@@ -160,7 +162,7 @@ AudioManager.setVolume = function (type, vol) {
     vol = 0
   }
 
-  if (type === null) {
+  if (type == null) {
     ;[
       AudioManager.STREAM_AUDIO,
       AudioManager.STREAM_ALARM,
@@ -173,6 +175,10 @@ AudioManager.setVolume = function (type, vol) {
   }
 
   var stream = AudioBase[type]
+
+  process.nextTick(() => {
+    floraDisposable.post(`yodart.audio.on-volume-change`, [ stream.name, vol ])
+  })
   return _storeVolume(stream, vol)
 }
 

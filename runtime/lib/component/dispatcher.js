@@ -1,4 +1,5 @@
 var logger = require('logger')('dispatcher')
+var _ = require('@yoda/util')._
 
 var config = require('/etc/yoda/component-config.json')
 
@@ -99,6 +100,63 @@ class Dispatcher {
           return step(idx + 1)
         })
     }
+  }
+
+  /**
+   * Dispatch an event to app. App would be created if app is not running.
+   *
+   * @param {string} appId
+   * @param {string} event
+   * @param {any[]} params
+   * @param {object} [options]
+   * @param {boolean} [options.preemptive=true] - if app is preemptive
+   * @param {'cut' | 'scene'} [options.form='cut']
+   * @param {string} [options.skillId] - cloud skill stack would be updated to given skill id.
+   * @param {string} [options.carrierId] - if app is brought to life by other app
+   */
+  dispatchAppEvent (appId, event, params, options) {
+    var preemptive = _.get(options, 'preemptive', true)
+    var form = _.get(options, 'form', 'cut')
+    var skillId = _.get(options, 'skillId')
+    var carrierId = _.get(options, 'carrierId')
+
+    if (this.runtime.hibernated) {
+      logger.warn(`Runtime has been hibernated, skip dispatching event(${event}) to app(${appId}.`)
+      return Promise.resolve(false)
+    }
+
+    if (this.component.lifetime.isMonopolized() && preemptive && appId !== this.component.lifetime.monopolist) {
+      logger.warn(`LaVieEnPile has ben monopolized, skip dispatching event(${event}) to app(${appId}.`)
+      return this.component.lifetime.onLifeCycle(this.component.lifetime.monopolist, 'oppressing', event)
+        .then(() => /** event has been handled, prevent tts/media from recovering */true)
+    }
+
+    return this.component.lifetime.createApp(appId)
+      .catch(err => {
+        logger.error(`create app ${appId} failed`, err.stack)
+        /** force quit app on create error */
+        return this.component.lifetime.destroyAppById(appId, { force: true })
+          .then(() => { /** rethrow error to break following procedures */throw err })
+      })
+      .then(() => {
+        if (!preemptive) {
+          logger.info(`app is not preemptive, skip activating app ${appId}`)
+          return
+        }
+
+        logger.info(`app is preemptive, activating app ${appId}`)
+        return this.component.lifetime.activateAppById(appId, form, carrierId)
+          .then(() => {
+            this.runtime.updateCloudStack(skillId, form)
+            this.component.sound.unmuteIfNecessary(skillId)
+          })
+      })
+      .then(() => this.component.lifetime.onLifeCycle(appId, event, params))
+      .then(() => true)
+      .catch(err => {
+        logger.error(`Unexpected error on sending event(${event}) to ${appId}`, err.stack)
+        return false
+      })
   }
 }
 

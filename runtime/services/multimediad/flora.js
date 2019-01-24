@@ -12,7 +12,7 @@ module.exports = Flora
  * @param {AppRuntime} runtime
  */
 function Flora (multimedia) {
-  FloraComp.call(this, logger)
+  FloraComp.call(this, 'multimediad', floraConfig)
   this.multimedia = multimedia
 }
 inherits(Flora, FloraComp)
@@ -35,7 +35,7 @@ Flora.prototype.handlers = {
       return
     }
     logger.info('pausing media of app', appId)
-    this.multimedia.pause(appId)
+    this.multimedia.pause(appId, -1)
   }
 }
 
@@ -43,5 +43,5 @@ Flora.prototype.handlers = {
  * Initialize flora client.
  */
 Flora.prototype.init = function init () {
-  FloraComp.prototype.init.call(this, 'multimediad', floraConfig)
+  FloraComp.prototype.init.call(this)
 }

@@ -11,7 +11,17 @@
     "permission": [
       "ACCESS_TTS",
       "ACCESS_MULTIMEDIA",
+      "ACCESS_VOICE_COMMAND",
       "INTERRUPT"
+    ],
+    "hosts": [
+      [ "cloudappclient", { "skillId": "@cloud" } ]
+    ],
+    "notifications": [
+      "on-start-shake",
+      "on-stop-shake",
+      "on-quite-back",
+      "on-quite-front"
     ]
   },
   "directories": {

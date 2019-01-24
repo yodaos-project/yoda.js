@@ -68,6 +68,10 @@ function main (done) {
   }
   ota.runInCurrentContext(function onOTA (err, info) {
     logger.info('ota ran')
+    /**
+     * prevent interruption during finalization.
+     */
+    disableSigInt()
     if (err) {
       logger.error(err.message, err.stack)
       if (err.code === 'EEXIST') {
@@ -81,13 +85,14 @@ function main (done) {
       logger.info('No updates found, exiting.')
       return ota.resetOta(done)
     }
-    var ret = system.prepareOta(imagePath)
-    logger.info(
-      `OTA prepared with status code ${ret}, terminating.`)
 
     if (!info.isForceUpdate) {
       return done()
     }
     ifaceOpenvoice.ForceUpdateAvailable(done)
   })
+}
+
+function disableSigInt () {
+  process.on('SIGINT', () => {})
 }
