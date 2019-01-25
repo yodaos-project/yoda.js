@@ -19,7 +19,7 @@
     "timeToEmptyDisconnect": "当前电量百分之%d，可以使用%d小时%d分钟。",
     "batteryDisconnect20": "电量百分之%d，还能使用%d小时%d分钟。",
     "batteryDisconnect19": "电量不足，我最多只能再使用%d小时%d分钟。",
-    "batteryDisconnect19third": "电量不⾜，打开侧⾯面的休眠开关，最⾼可待机%d小时%d分钟",
+    "batteryDisconnect19third": "电量不⾜，打开侧⾯的休眠开关，最⾼可待机%d小时%d分钟",
     "urls": {
       "PUSH_MOBILE_MSG": "https://apigwrest.open.rokid.com/v1/device/deviceManager/pushNotificationToMaster"
     }
