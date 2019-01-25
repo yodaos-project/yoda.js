@@ -640,11 +640,10 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
     promises.push(
       this.ttsMethod('reset', [])
         .then((res) => {
-          if (res && res[0] === true) {
-            logger.log('reset ttsd success')
-          } else {
-            logger.log('reset ttsd failed')
+          if (res.msg[0] !== true) {
+            return logger.log('reset ttsd failed')
           }
+          logger.log('reset ttsd success')
         })
         .catch((error) => {
           logger.log('reset ttsd error', error)

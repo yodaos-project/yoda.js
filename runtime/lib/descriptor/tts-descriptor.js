@@ -89,8 +89,8 @@ Object.assign(TtsDescriptor.prototype,
         }
 
         return self._runtime.ttsMethod('speak', [ self._appId, text ])
-          .then(msg => {
-            var ttsId = msg[0]
+          .then(res => {
+            var ttsId = res.msg[0]
             logger.log(`tts register ${ttsId}`)
             if (ttsId === '-1') {
               throw new Error('Unexpected ttsd error.')
@@ -100,15 +100,15 @@ Object.assign(TtsDescriptor.prototype,
                 self.on(event, function () {
                   logger.info('tts signals', event)
                   if (impatient || event !== 'error') {
-                  /**
-                   * impatient client cannot receive `error` event through Promise
-                   */
+                    /**
+                     * impatient client cannot receive `error` event through Promise
+                     */
                     EventEmitter.prototype.emit.apply(self,
                       Array.prototype.slice.call(arguments, 1))
                   }
 
                   if (impatient) {
-                  /** promise has been resolved early, shall not be resolve/reject again */
+                    /** promise has been resolved early, shall not be resolve/reject again */
                     return
                   }
 
@@ -143,6 +143,7 @@ Object.assign(TtsDescriptor.prototype,
       returns: 'promise',
       fn: function stop () {
         return this._runtime.ttsMethod('stop', [ this._appId ])
+          .then(() => { /** do not return flora response to app */ })
       }
     }
   }

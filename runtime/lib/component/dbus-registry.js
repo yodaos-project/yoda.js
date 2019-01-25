@@ -187,7 +187,7 @@ DBus.prototype.extapp = {
       }
       this.runtime.ttsMethod('speak', [appId, text])
         .then((res) => {
-          var ttsId = res[0]
+          var ttsId = res.msg[0]
           cb(null, ttsId)
         })
     }
