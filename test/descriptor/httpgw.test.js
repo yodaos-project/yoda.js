@@ -3,7 +3,7 @@
 var test = require('tape')
 var path = require('path')
 
-var helper = require('../../helper')
+var helper = require('../helper')
 var Descriptors = require(`${helper.paths.runtime}/lib/descriptor`)
 var extApp = require(`${helper.paths.runtime}/lib/app/ext-app`)
 
