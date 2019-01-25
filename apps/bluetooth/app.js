@@ -496,13 +496,17 @@ module.exports = function (activity) {
     }
     switch (state) {
       case protocol.DISCOVERY_STATE.ON:
-        activity.light.play(res.LIGHT, {}, { shouldResume: true })
-          .catch((err) => {
-            logger.error('bluetooth play light error: ', err)
-          })
+        if (lastIntent === 'bluetooth_disconnect') {
+          logger.debug('Suppress "discovery" light while close.')
+        } else {
+          activity.light.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true })
+            .catch((err) => {
+              logger.error('bluetooth play light error: ', err)
+            })
+        }
         break
       case protocol.DISCOVERY_STATE.OFF:
-        activity.light.stop(res.LIGHT)
+        activity.light.stop(res.LIGHT.DISCOVERY_ON)
         break
       case protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED:
         sendMsgToApp(state, extra)
@@ -550,14 +554,26 @@ module.exports = function (activity) {
           } else {
             setAppType('bluetooth')
           }
+          if (callState !== protocol.CALL_STATE.IDLE) {
+            activity.light.play(res.LIGHT.CALL[state])
+            activity.light.stop(res.LIGHT.CALL[callState])
+          }
         }
+        callState = state
         break
       case protocol.CALL_STATE.INCOMING:
-        pauseMusic()
-        setAppType('bluetooth_call', () => {
-          activity.startMonologue()
-          activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
-        })
+        if (callState === protocol.CALL_STATE.IDLE) {
+          pauseMusic()
+          setAppType('bluetooth_call', () => {
+            activity.startMonologue()
+            activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
+          })
+          activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true })
+            .catch((err) => {
+              logger.error(`play ${state} light error: `, err)
+            })
+        }
+        callState = state
         break
       case protocol.CALL_STATE.OFFHOOK:
         pauseMusic()
@@ -569,6 +585,14 @@ module.exports = function (activity) {
         } else if (callState === protocol.CALL_STATE.INCOMING || callState === protocol.CALL_STATE.RING) {
           stopIncomingRingtone()
         }
+        activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true })
+          .catch((err) => {
+            logger.error(`play ${state} light error: `, err)
+          })
+        if (callState !== state) {
+          activity.light.stop(res.LIGHT.CALL[callState])
+        }
+        callState = state
         break
       case protocol.CALL_STATE.RING:
         playIncomingRingtone()
@@ -576,7 +600,6 @@ module.exports = function (activity) {
       default:
         break
     }
-    callState = state
   }
 
   function onKeyEvent (keyEvent) {
