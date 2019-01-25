@@ -34,9 +34,8 @@ perf.stub('init')
  */
 function AppRuntime () {
   EventEmitter.call(this)
-  this.config = {
-    host: env.cloudgw.wss,
-    port: 443,
+  this.credential = {
+    masterId: null,
     deviceId: null,
     deviceTypeId: null,
     key: null,
@@ -1015,13 +1014,6 @@ AppRuntime.prototype.multimediaMethod = function (name, args) {
 /**
  * @private
  */
-AppRuntime.prototype.onGetPropAll = function () {
-  return {}
-}
-
-/**
- * @private
- */
 AppRuntime.prototype.reconnect = function () {
   wifi.resetDns()
   this.dispatchNotification('on-network-connected', [])
@@ -1055,29 +1047,7 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
     // login -> mqtt
     this.component.custodian.onLogout()
     return this.cloudApi.connect(masterId)
-      .then((config) => {
-        var opts = Object.assign({ uri: env.speechUri }, config)
-        // TODO: move to use cloudapi?
-        require('@yoda/ota/network').cloudgw = this.cloudApi.cloudgw
-        // FIXME: schedule this update later?
-        this.cloudApi.updateBasicInfo().catch((err) => {
-          logger.error('Unexpected error on updating basic info', err.stack)
-        })
-
-        this.component.flora.updateSpeechPrepareOptions(opts)
-
-        // overwrite `onGetPropAll`.
-        this.onGetPropAll = function onGetPropAll () {
-          return Object.assign({}, config)
-        }
-        this.component.wormhole.setClient(this.cloudApi.mqttcli)
-        var customConfig = _.get(config, 'extraInfo.custom_config')
-        if (customConfig && typeof customConfig === 'string') {
-          this.component.customConfig.onLoadCustomConfig(customConfig)
-        }
-        this.onLoggedIn()
-        this.component.dndMode.recheck()
-      }, (err) => {
+      .then(this.onLoggedIn.bind(this), (err) => {
         if (err && err.code === 'BIND_MASTER_REQUIRED') {
           logger.error('bind master is required, just clear the local and enter network')
           this.component.custodian.resetNetwork()
@@ -1088,16 +1058,26 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
   })
 })
 
+AppRuntime.prototype.getCopyOfCredential = function () {
+  return Object.assign({}, this.credential)
+}
+
 /**
  * @private
  */
-AppRuntime.prototype.onLoggedIn = function () {
-  this.component.custodian.onLoggedIn()
+AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
+  this.credential = _.pick(config, 'masterId', 'deviceId', 'deviceTypeId', 'key', 'secret')
+  this.component.flora.updateSpeechPrepareOptions(Object.assign({ uri: env.speechUri }, config))
+  this.component.flora.post('yodart.vui.logged-in', [JSON.stringify(this.credential)], 1 /** persist message */)
 
-  var enableTtsService = () => {
-    var config = JSON.stringify(this.onGetPropAll())
-    return this.component.flora.post('yodart.vui.logged-in', [config], 1 /** persist message */)
+  this.component.wormhole.setClient(this.cloudApi.mqttcli)
+  var customConfig = _.get(config, 'extraInfo.custom_config')
+  if (customConfig && typeof customConfig === 'string') {
+    this.component.customConfig.onLoadCustomConfig(customConfig)
   }
+
+  this.component.dndMode.recheck()
+  this.component.custodian.onLoggedIn()
 
   var sendReady = () => {
     var ids = Object.keys(this.component.appScheduler.appMap)
@@ -1139,7 +1119,6 @@ AppRuntime.prototype.onLoggedIn = function () {
   }
 
   return Promise.all([
-    enableTtsService(),
     sendReady() /** only send ready to currently alive apps */,
     this.startDaemonApps(),
     this.setStartupFlag(),

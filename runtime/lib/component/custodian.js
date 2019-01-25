@@ -101,11 +101,8 @@ Custodian.prototype.onLogout = function onLogout () {
   this._loggedIn = false
   this.component.wormhole.setOffline()
   property.set('state.rokid.logged', 'false')
-  // reset the onGetPropAll...
-  this.runtime.onGetPropAll = function () {
-    return {}
-  }
-  logger.info('on logged out and clear the onGetPropAll state')
+  this.runtime.credential = {}
+  logger.info('on logged out and clear the credential state')
 }
 
 /**

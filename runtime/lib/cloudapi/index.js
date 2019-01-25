@@ -85,6 +85,16 @@ CloudStore.prototype.connect = function connect (masterId) {
   }).then(() => {
     this.options.notify('101', STRINGS.LOGIN_DONE)
     this.options.notify('201', STRINGS.BIND_MASTER_DONE)
+
+    process.nextTick(() => {
+      /** doesn't care if updates are successful */
+      this.updateBasicInfo().catch((err) => {
+        logger.error('Unexpected error on updating basic info', err.stack)
+      })
+    })
+
+    require('@yoda/ota/network').cloudgw = this.cloudgw
+
     return this.config
   }).catch((err) => {
     if (err.code === 'BIND_MASTER_REQUIRED') {

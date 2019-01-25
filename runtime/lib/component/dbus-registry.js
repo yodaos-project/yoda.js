@@ -238,8 +238,8 @@ DBus.prototype.prop = {
     in: ['s'],
     out: ['s'],
     fn: function all (appId, cb) {
-      var config = this.runtime.onGetPropAll()
-      cb(null, JSON.stringify(config))
+      var credential = this.runtime.getCopyOfCredential()
+      cb(null, JSON.stringify(credential))
     }
   }
 }

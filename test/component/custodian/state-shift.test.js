@@ -100,7 +100,7 @@ test('custodian shall reset network', t => {
     openUrl: function () {
       t.pass('resetNetwork shall trigger runtime#startApp')
     },
-    onGetPropAll: function () {
+    getCopyOfCredential: function () {
       return { foobar: 10 }
     },
     component: {
@@ -130,10 +130,10 @@ test('custodian shall reset network', t => {
   custodian.resetNetwork()
   t.true(custodian.isNetworkUnavailable(), 'custodian shall be treated as network unavailable if reset network')
   t.true(custodian.isLoggedIn(), 'custodian shall be logged in only if reset network')
-  t.equal(runtime.onGetPropAll().foobar, 10, 'custodian shall be able to get prop')
+  t.equal(runtime.getCopyOfCredential().foobar, 10, 'custodian shall be able to get prop')
 
   custodian.onLogout()
   t.false(custodian.isRegistering())
   t.false(custodian.isPrepared())
-  t.deepEqual(runtime.onGetPropAll(), {}, 'custodian shall be getting the empty prop')
+  t.deepEqual(runtime.getCopyOfCredential(), {}, 'custodian shall be getting the empty prop')
 })

@@ -31,7 +31,7 @@ test('http.getSignature should return sign', t => {
     deviceTypeId: 'type_id'
   }
   var runtime = {
-    onGetPropAll: () => props
+    getCopyOfCredential: () => props
   }
   var opts = {
     service: 'example'
