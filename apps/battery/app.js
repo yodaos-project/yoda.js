@@ -51,7 +51,8 @@ module.exports = function (activity) {
 
   function powerStatusChange (isOnline, isPlaying, testPercent) {
     logger.log('powerStatusChanged ', isOnline, isPlaying, testPercent)
-    activity.light.play('system://power.js', { plug: isOnline })
+    var sound = isOnline ? 'system://power_plug.ogg' : 'system://power_pull.ogg'
+    activity.playSound(sound)
       .then(() => {
         if (!isOnline && isPlaying === 'false') {
           queryBatteryStatus()

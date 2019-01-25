@@ -8,7 +8,14 @@
     "ON_AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg",
     "RINGTONE": "system://phone_ring.ogg"
   },
-  "LIGHT": "system://bluetoothOpen.js",
+  "LIGHT": {
+    "DISCOVERY_ON": "system://bluetoothOpen.js",
+    "CALL": {
+      "IDLE": "system://disconnectedCall.js",
+      "INCOMING": "system://connectedCall.js", 
+      "OFFHOOK": "system://inCall.js"
+    }
+  },
   "URL": {
     "BLUETOOTH_MUSIC": "yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music",
     "PLAYER_CONTROLLER": "yoda-skill://playercontrol/playercontrol?name=%s",
