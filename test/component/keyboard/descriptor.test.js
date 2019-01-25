@@ -371,3 +371,41 @@ test('longpress: multiple endpoints for time delta', t => {
 
   runtime.deinit()
 })
+
+test('longpress: multiple endpoints for time delta on interrupting another keydown-keyup', t => {
+  t.plan(2)
+  var runtime = new AppRuntime()
+  var keyboard = new Keyboard(runtime)
+
+  keyboard.input = new EventEmitter()
+  keyboard.listen()
+
+  keyboard.config = {
+    '233': {
+      'longpress-2000': {
+        repeat: false,
+        timeDelta: 2000,
+        preventSubsequent: false,
+        runtimeMethod: 'foobar'
+      },
+      'longpress-5000': {
+        repeat: false,
+        timeDelta: 5000,
+        preventSubsequent: true,
+        runtimeMethod: 'foobar'
+      }
+    }
+  }
+
+  runtime.foobar = function () {
+    t.pass('invoked')
+  }
+
+  keyboard.input.emit('keydown', { keyCode: 222, keyTime: 0 })
+  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 2000 })
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 4000 })
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 7000 })
+  keyboard.input.emit('keyup', { keyCode: 233 })
+
+  runtime.deinit()
+})
