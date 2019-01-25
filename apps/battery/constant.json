@@ -6,7 +6,7 @@
     "lowPower20": "电量低于百分之二十，请充电。",
     "lowPower10Free": "电量低于百分之十，即将关机，请充电。",
     "lowerPower10": "电量低于百分之十，即将关机，请充电。",
-    "notificationNight": "电量量低于10%，帮我充上电就早点休息吧，迎接元⽓气满满的⼀一天!",
+    "notificationNight": "电量量低于10%，帮我充上电就早点休息吧，迎接元⽓气满满的一天!",
     "notification1": "电量量低于10%，我不不想⾃自动关机⽽而断了了与你的联系，快去帮 我充电或者打开侧⾯面开关进⼊入休眠模式帮我省电吧。",
     "notification2": "电量量低于10%，世界上最遥远的距离就是你 迟迟不不来找我，⽽而我却在痴痴地等着你为我“续命”。",
     "batteryLevelFull": "我现在是满电状态，可以放心使用。",
@@ -19,7 +19,7 @@
     "timeToEmptyDisconnect": "当前电量百分之%d，可以使用%d小时%d分钟。",
     "batteryDisconnect20": "电量百分之%d，还能使用%d小时%d分钟。",
     "batteryDisconnect19": "电量不足，我最多只能再使用%d小时%d分钟。",
-    "batteryDisconnect19third": "电量不⾜，打开侧⾯的休眠开关，最⾼可待机%d小时%d分钟",
+    "batteryDisconnect19third": "电量不足，打开侧面的休眠开关，最高可待机%d小时%d分钟",
     "urls": {
       "PUSH_MOBILE_MSG": "https://apigwrest.open.rokid.com/v1/device/deviceManager/pushNotificationToMaster"
     }
