@@ -498,6 +498,33 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
+     * Get skill id of current context.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function getContextSkillId
+     * @param {'cut' | 'scene'} [form] - derive from current app if not specified.
+     * @returns {Promise<string | undefined>}
+     */
+    getContextSkillId: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getContextSkillId (form) {
+        if (form == null) {
+          var contextOptions = this._runtime.component.lifetime.getContextOptionsById(this._appId)
+          form = _.get(contextOptions, 'form')
+        }
+        var skillId = this._runtime.domain[form]
+        if (this._appId !== '@yoda/cloudappclient') {
+          /** bypass @yoda/cloudappclient to allow arbitrary skill id queries */
+          if (this._runtime.component.appLoader.getAppIdBySkillId(skillId) !== this._appId) {
+            return undefined
+          }
+        }
+        return skillId
+      }
+    },
+    /**
      * Play the sound effect, support the following schemas: `system://` and `self://`.
      *
      * @memberof yodaRT.activity.Activity
