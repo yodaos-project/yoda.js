@@ -4,6 +4,7 @@ var inherits = require('util').inherits
 
 var floraFactory = require('@yoda/flora')
 var FloraComp = require('@yoda/flora/comp')
+var _ = require('@yoda/util')._
 
 var floraConfig = require('/etc/yoda/flora-config.json')
 var globalEnv = require('@yoda/env')()
@@ -28,6 +29,21 @@ function Flora (runtime) {
 inherits(Flora, FloraComp)
 
 Flora.prototype.handlers = {
+  'yodart.ttsd.event': function onTtsEvent (msg) {
+    /** msg: [ event, ttsId, appId, Optional(errno) ] */
+    var event = msg[0]
+    var ttsId = msg[1]
+    var appId = msg[2]
+    logger.info(`VuiDaemon received ttsd event(${event}) for app(${appId}), tts(${ttsId})`)
+    var descriptor = _.get(this.component.appScheduler.appMap, appId)
+    if (descriptor == null) {
+      logger.warn(`app is not alive, ignoring tts event(${event} for app(${appId})`)
+      return
+    }
+    msg.splice(2, 1)
+    /** emit: [ ttsId, Optional(errno) ] */
+    descriptor.tts.emit.apply(descriptor.tts, msg)
+  },
   [`rokid.speech.nlp.${asr2nlpId}`]: onAsr2Nlp,
   [`rokid.speech.error.${asr2nlpId}`]: onAsr2NlpError
 }

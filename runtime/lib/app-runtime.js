@@ -640,11 +640,10 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
     promises.push(
       this.ttsMethod('reset', [])
         .then((res) => {
-          if (res && res[0] === true) {
-            logger.log('reset ttsd success')
-          } else {
-            logger.log('reset ttsd failed')
+          if (res.msg[0] !== true) {
+            return logger.log('reset ttsd failed')
           }
+          logger.log('reset ttsd success')
         })
         .catch((error) => {
           logger.log('reset ttsd error', error)
@@ -1000,11 +999,7 @@ AppRuntime.prototype.shutdown = function shutdown () {
  * @private
  */
 AppRuntime.prototype.ttsMethod = function (name, args) {
-  return this.component.dbusRegistry.callMethod(
-    'com.service.tts',
-    '/tts/service',
-    'tts.service',
-    name, args)
+  return this.component.flora.call(`yodart.ttsd.${name}`, args, 'ttsd', 100)
 }
 
 AppRuntime.prototype.multimediaMethod = function (name, args) {
@@ -1099,16 +1094,7 @@ AppRuntime.prototype.onLoggedIn = function () {
 
   var enableTtsService = () => {
     var config = JSON.stringify(this.onGetPropAll())
-    return this.ttsMethod('connect', [config])
-      .then(res => {
-        if (!res) {
-          logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
-        } else {
-          logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
-        }
-      }, err => {
-        logger.error('send CONFIG to ttsd failed: call method failed', err && err.stack)
-      })
+    return this.component.flora.post('yodart.vui.logged-in', [config], 1 /** persist message */)
   }
 
   var sendReady = () => {

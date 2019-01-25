@@ -187,27 +187,8 @@ DBus.prototype.extapp = {
       }
       this.runtime.ttsMethod('speak', [appId, text])
         .then((res) => {
-          var ttsId = res[0]
+          var ttsId = res.msg[0]
           cb(null, ttsId)
-          if (ttsId === '-1') {
-            return
-          }
-
-          var channel = `callback:tts:${ttsId}`
-          var app = this.component.appScheduler.getAppById(appId)
-          this.on(channel, event => {
-            if (['end', 'cancel', 'error'].indexOf(event) < 0) {
-              return
-            }
-            this.removeAllListeners(channel)
-            this.service._dbus.emitSignal(
-              app.objectPath,
-              app.ifaceName,
-              'onTtsComplete',
-              's',
-              [ttsId]
-            )
-          })
         })
     }
   },
