@@ -238,5 +238,29 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
 Manager.prototype.setEventRequestConfig = function (config) {
   eventRequest.setConfig(config || {})
 }
+Manager.prototype.generateAction = function (data) {
+  var action = {
+    startWithActiveWord: false,
+    appId: data.appId,
+    response: {
+      action: {
+        form: 'scene',
+        shouldEndSession: false,
+        directives: [data]
+      }
+    }
 
+  }
+  return action
+}
+Manager.prototype.getSceneSkillIndex = function () {
+  var index = -1
+  this.skills.forEach((skill, idx) => {
+    logger.info(`skill = ${skill.hasPlayer} ${skill.form} ${skill.saveRecoverData} ${idx}`)
+    if (skill.hasPlayer && skill.form === 'scene') {
+      index = idx
+    }
+  })
+  return index
+}
 module.exports = Manager

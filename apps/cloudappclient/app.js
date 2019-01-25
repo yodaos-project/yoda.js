@@ -331,12 +331,14 @@ module.exports = activity => {
 
   activity.on('destroy', function () {
     logger.log(this.appId + ' destroyed')
-    var index = needSaveData()
+    var index = sos.getSceneSkillIndex()
     if (index >= 0) {
       activity.media.getPosition().then(progress => {
         logger.log('progress =', progress)
-        sos.skills[index].setProgress(progress)
-        sos.skills[index].saveRecoverData(activity)
+        if (sos.skills[index]) {
+          sos.skills[index].setProgress(progress)
+          sos.skills[index].saveRecoverData(activity)
+        }
         sos.destroy()
       })
     } else {
@@ -369,7 +371,7 @@ module.exports = activity => {
     switch (urlObj.pathname) {
       case '/resume':
         logger.log('action = ', urlObj.query.data)
-        var resObj = genAction(JSON.parse(urlObj.query.data))
+        var resObj = sos.generateAction(JSON.parse(urlObj.query.data))
         logger.log('resObj = ', resObj)
         activity.setContextSkillId(resObj.appId)
         sos.onrequest(null, resObj)
@@ -386,34 +388,4 @@ module.exports = activity => {
         break
     }
   })
-  function genAction (data) {
-    var dts = [
-    ]
-    dts.push(data)
-    var actionobj = {
-      form: 'scene',
-      shouldEndSession: false,
-      directives: dts
-    }
-    var resobj = {
-      action: actionobj
-    }
-    var action = {
-      startWithActiveWord: false,
-      appId: data.appId,
-      response: resobj
-
-    }
-    return action
-  }
-  function needSaveData () {
-    var index = -1
-    for (var i = 0; i < sos.skills.length; i++) {
-      logger.log('skills = ', sos.skills[i].hasPlayer, sos.skills[i].form, sos.skills[i].saveRecoverData, i)
-      if (sos.skills[i].hasPlayer && sos.skills[i].form === 'scene') {
-        index = i
-      }
-    }
-    return index
-  }
 }

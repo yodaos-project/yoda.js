@@ -109,8 +109,11 @@ function install_resources() {
 }
 
 function install_apps {
-  # apps
-  shell "rm -rf /opt/apps/*"
+  # install apps
+  appdir=./apps
+  for file in `ls ${appdir}`; do
+    shell "rm -rf /opt/apps/${file}"
+  done
   push "./apps/*" "/opt/apps/"
 }
 

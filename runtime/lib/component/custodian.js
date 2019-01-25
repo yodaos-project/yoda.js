@@ -175,6 +175,14 @@ Custodian.prototype.prepareNetwork = function prepareNetwork () {
   return this.onNetworkDisconnect()
 }
 
+Custodian.prototype.resetState = function resetState () {
+  /**
+   * set this._networkConnected = undefined at initial to
+   * prevent discarding of very first of network disconnect event.
+   */
+  this._networkConnected = undefined
+}
+
 // MARK: - Interception
 Custodian.prototype.turenDidWakeUp = function turenDidWakeUp () {
   if (this.isPrepared()) {
