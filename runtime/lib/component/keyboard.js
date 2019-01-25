@@ -96,10 +96,8 @@ KeyboardHandler.prototype.listen = function listen () {
 
 KeyboardHandler.prototype.onKeydown = function onKeydown (event) {
   this.currentKeyCode = event.keyCode
-  logger.info(`keydown: ${event.keyCode}`)
-  if (this.firstLongPressTime == null) {
-    this.firstLongPressTime = event.keyTime
-  }
+  logger.info(`keydown: ${event.keyCode}, keyTime: ${event.keyTime}`)
+  this.firstLongPressTime = event.keyTime
 
   if (this.handleAppListener('keydown', event)) {
     logger.info(`Delegated keydown to app.`)
@@ -126,7 +124,7 @@ KeyboardHandler.prototype.onKeydown = function onKeydown (event) {
 }
 
 KeyboardHandler.prototype.onKeyup = function onKeyup (event) {
-  logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
+  logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}, keyTime: ${event.keyTime}`)
   if (this.currentKeyCode !== event.keyCode) {
     logger.info(`Keyup a difference key '${event.keyCode}'.`)
     return
@@ -173,7 +171,7 @@ KeyboardHandler.prototype.onLongpress = function onLongpress (event) {
   }
   var timeDelta = event.keyTime - this.firstLongPressTime
   timeDelta = Math.round(timeDelta / this.longpressWindow) * this.longpressWindow
-  logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
+  logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, timeDelta: ${timeDelta}, rounded time delta: ${timeDelta}`)
 
   if (this.preventSubsequent) {
     logger.info(`Event longpress prevented '${event.keyCode}'.`)
@@ -209,7 +207,7 @@ KeyboardHandler.prototype.onLongpress = function onLongpress (event) {
 }
 
 KeyboardHandler.prototype.onSlide = function onSlide (event) {
-  logger.info(`slide: ${event.orientation}, currentKeyCode: ${this.currentKeyCode}`)
+  logger.info(`slide: ${event.orientation}, keyTime: ${event.keyTime}, currentKeyCode: ${this.currentKeyCode}`)
 
   if (this.handleAppListener('slide', event)) {
     logger.info(`Delegated slide to app.`)
@@ -239,7 +237,7 @@ KeyboardHandler.prototype.onSlide = function onSlide (event) {
 }
 
 KeyboardHandler.prototype.onGesture = function onGesture (gesture, event) {
-  logger.info(`gesture(${gesture}): ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
+  logger.info(`gesture(${gesture}): ${event.keyCode}, keyTime: ${event.keyTime}, currentKeyCode: ${this.currentKeyCode}`)
 
   if (this.handleAppListener(gesture, event)) {
     logger.info(`Delegated gesture(${gesture}) to app.`)
