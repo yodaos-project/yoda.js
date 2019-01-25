@@ -31,14 +31,14 @@ module.exports = function (activity) {
           if (playerInfo.name === null || playerInfo.name === undefined || playerInfo.name === '') {
             speakAndExit(STRING_NO_PLAYER_EXIST)
           } else if (playerInfo.name === 'RDDE53259D334860BA9E98CB3AB6C001') {
-            activity.openUrl('yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music', { preemptive: true })
+            activity.openUrl('yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music', { form: 'scene', preemptive: true })
           } else {
             logger.log('url = ', playerInfo.url)
             if (playerInfo.url === null || playerInfo.url === undefined || playerInfo.url === '') {
               speakAndExit(STRING_NO_PLAYER_EXIST)
               return
             }
-            activity.openUrl(playerInfo.url, { preemptive: true })
+            activity.openUrl(playerInfo.url, { form: 'scene', preemptive: true })
           }
         })
     }
