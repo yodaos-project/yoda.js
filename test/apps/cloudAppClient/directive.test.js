@@ -6,14 +6,15 @@ var Directive = require(`${helper.paths.apps}/cloudappclient/directive.js`).Dire
 var exe = new Directive()
 var eventBus = new EventEmitter()
 
-exe.do('frontend', 'tts', (dt, next) => {
-  eventBus.emit(`tts:${dt.id}:${dt.action}`)
-  if (dt.action === 'speak') {
-    eventBus.on(`tts:${dt.id}:end`, next)
+exe.do('frontend', 'tts', (item, next) => {
+  eventBus.emit(`tts:${item.id}:${item.action}`)
+  if (item.action === 'speak') {
+    eventBus.on(`tts:${item.id}:end`, next)
   } else {
     next()
   }
 })
+
 exe.do('frontend', 'media', (dt, next) => {
   eventBus.emit(`media:${dt.id}:${dt.action}`)
   if (dt.action === 'play') {
@@ -112,4 +113,33 @@ test('directive2: test end callback', (t) => {
 
   eventBus.emit('tts:5:end')
   eventBus.emit('media:6:end')
+})
+
+test('directive3: test nowait property', (t) => {
+  var directives = [{
+    id: 30,
+    type: 'tts',
+    action: 'speak',
+    data: {
+      noWait: true
+    }
+  }, {
+    id: 31,
+    type: 'media',
+    action: 'play'
+  }]
+
+  eventBus.on('tts:30:speak', () => {
+    t.pass('tts start speaking.')
+  })
+  eventBus.on('media:31:play', () => {
+    t.pass('media start playing.')
+  })
+  exe.execute(directives, 'frontend', () => {
+    t.end()
+  })
+  setTimeout(() => {
+    // no need to set tts:end
+    eventBus.emit('media:31:end')
+  }, 500)
 })

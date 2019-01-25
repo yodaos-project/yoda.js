@@ -15,9 +15,11 @@
  *   console.log('recv msg', msg)
  * })
  *
- * agent.declareMethod('test method1', (msg) => {
+ * agent.declareMethod('test method1', (msg, reply) => {
  *   console.log('method call params', msg)
- *   return { retCode: 0, msg: [ 'hello', 'world' ] }
+ *   reply.writeCode(0)
+ *   reply.writeData([ 'hello', 'world' ])
+ *   reply.end()
  * });
  *
  * // connect to unix domain socket '/var/run/flora.sock'
@@ -105,7 +107,34 @@
 /**
  * @callback module:@yoda/flora~DeclareMethodHandler
  * @param {any[]} - msg content
- * @returns {module:@yoda/flora~Reply} reply message to caller
+ * @param {module:@yoda/flora~Reply} - an object that provide methods to reply data to caller
+ */
+
+/**
+ * @class module:@yoda/flora~Reply
+ * @classdesc an object that provide methods to reply data to remote method caller
+ */
+
+/**
+ * set return code of remote method
+ * @method writeCode
+ * @memberof module:@yoda/flora~Reply
+ * @param {number} code - return code
+ */
+
+/**
+ * set return data of remote method
+ * @method writeData
+ * @memberof module:@yoda/flora~Reply
+ * @param {any[]} data - reply data content
+ */
+
+/**
+ * end Reply object, actually write return values to caller
+ * @method end
+ * @memberof module:@yoda/flora~Reply
+ * @param {number} [code] - return code
+ * @param {any[]} [data] - return data
  */
 
 var Agent = require('./flora-cli.node').Agent
@@ -163,7 +192,7 @@ Agent.prototype.subscribe = function (name, handler, options) {
  * @param {string} options.format - specify format of received method params. format string values: 'array' | 'caps'
  */
 Agent.prototype.declareMethod = function (name, handler, options) {
-  this.nativeDeclareMethod(name, (msg) => {
+  this.nativeDeclareMethod(name, (msg, reply) => {
     var cbmsg
     if (isCapsFormat(options)) {
       cbmsg = genCaps(msg)
@@ -171,7 +200,7 @@ Agent.prototype.declareMethod = function (name, handler, options) {
       cbmsg = this.nativeGenArray(msg)
     }
     try {
-      return handler(cbmsg)
+      return handler(cbmsg, reply)
     } catch (e) {
       process.nextTick(() => {
         throw e
@@ -236,7 +265,7 @@ Agent.prototype.post = function (name, msg, type) {
  */
 Agent.prototype.call = function (name, msg, target, timeout, options) {
   if (typeof name !== 'string' || !isValidMsg(msg) || typeof target !== 'string') {
-    return Promise.resolve(exports.ERROR_INVALID_PARAM)
+    return Promise.reject(exports.ERROR_INVALID_PARAM)
   }
   return new Promise((resolve, reject) => {
     var r = this.nativeCall(name, msg, target, (rescode, reply) => {
@@ -258,19 +287,6 @@ Agent.prototype.call = function (name, msg, target, timeout, options) {
 }
 
 exports.Agent = Agent
-
-/**
- * @class module:@yoda/flora~Reply
- * @classdesc reply message for REQUEST
- * @param {number} code - return code
- * @param {any[]} msg - reply message content
- */
-function Reply (code, msg) {
-  this.retCode = code
-  this.msg = msg
-}
-
-exports.Reply = Reply
 
 /**
  * @memberof module:@yoda/flora
@@ -297,6 +313,11 @@ exports.ERROR_INVALID_PARAM = -2
  * @member {number} ERROR_NOT_CONNECTED
  */
 exports.ERROR_NOT_CONNECTED = -3
+/**
+ * @memberof module:@yoda/flora
+ * @member {number} ERROR_TIMEOUT
+ */
+exports.ERROR_TIMEOUT = -4
 /**
  * @memberof module:@yoda/flora
  * @member {number} ERROR_TARGET_NOT_EXISTS

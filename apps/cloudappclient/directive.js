@@ -1,7 +1,15 @@
 'use strict'
 
+var _ = require('@yoda/util')._
 var logger = require('logger')('cloudAppClient-directive')
 
+function emptyfn () {
+  // empty function
+}
+
+/**
+ * @class Directive
+ */
 function Directive () {
   this.frontend = []
   this.background = []
@@ -20,10 +28,10 @@ function Directive () {
 Directive.prototype.execute = function execute (dt, type, cb) {
   this[type] = dt || []
   this.run(type, cb)
-  logger.info('start run dt')
+  logger.info('start running directive...')
 }
 
-Directive.prototype.resume = function (type, cb) {
+Directive.prototype.resume = function resume (type, cb) {
   this[type] = []
   var dt = [{
     type: 'media',
@@ -39,11 +47,12 @@ Directive.prototype.run = function run (type, cb) {
   }
   var self = this
   var dt = this[type].shift()
+  cb = cb || emptyfn
 
-  function handle (next) {
+  function handle (directive) {
     // NOTICE: INTERNAL_EXIT is only used myself.
     // stop if current directive is INTERNAL_EXIT
-    if (next.type === 'INTERNAL_EXIT') {
+    if (directive.type === 'INTERNAL_EXIT') {
       logger.info('all directive complete because current dt is: INTERNAL_EXIT')
       return cb && cb()
     }
@@ -55,50 +64,39 @@ Directive.prototype.run = function run (type, cb) {
         type: 'INTERNAL_EXIT'
       }
     }
-    logger.info(`run dt: ${type} ${next.type} ${next.action || ''}`)
-    if (next.type === 'tts') {
-      self.cb[type].tts.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else if (next.type === 'media') {
-      self.cb[type].media.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else if (next.type === 'confirm') {
-      self.cb[type].confirm.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else if (next.type === 'pickup') {
-      self.cb[type].pickup.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else if (next.type === 'native') {
-      self.cb[type].native.call(self, next, function (isCancel) {
-        if (isCancel) {
-          return cb && cb()
-        }
-        handle(dt)
-      })
-    } else {
+
+    /**
+     * @param {boolean} canceled - if needs to cancel this job.
+     */
+    function next (canceled) {
+      if (canceled) {
+        return cb()
+      }
+      handle(dt)
+    }
+
+    logger.info(`run dt: ${type} ${directive.type} ${directive.action || ''}`)
+    if (typeof self.cb[type][directive.type] !== 'function') {
       logger.info('all directive complete')
-      cb && cb()
+      cb()
+    } else {
+      if (_.get(directive, 'data.noWait', false) === true) {
+        self.cb[type][directive.type].apply(self, [directive, emptyfn])
+        next()
+      } else {
+        self.cb[type][directive.type].apply(self, [directive, next])
+      }
     }
   }
   handle(dt)
 }
 
+/**
+ * @method do
+ * @param {string} type - frontend or background.
+ * @param {string} dt - the directive type.
+ * @param {function} cb - the cb function.
+ */
 Directive.prototype.do = function (type, dt, cb) {
   this.cb[type][dt] = cb
 }

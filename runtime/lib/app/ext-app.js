@@ -51,8 +51,8 @@ function createExtApp (appId, metadata, runtime, mode) {
   var eventBus = new EventBus(descriptor, cp, appId)
   var onMessage = eventBus.onMessage.bind(eventBus)
   var onDestruct = () => {
-    logger.info(`${appId}(${cp.pid}) Activity end of life, killing process.`)
-    cp.kill()
+    logger.info(`${appId}(${cp.pid}) Activity end of life, killing process after 1s.`)
+    setTimeout(() => cp.kill(), 1000)
   }
   descriptor.once('destruct', onDestruct)
   cp.on('message', onMessage)

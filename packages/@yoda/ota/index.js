@@ -398,6 +398,8 @@ function runInCurrentContext (callback) {
           /** no available updates */
           return compose.Break(false)
         }
+        destPath = getImagePath(info)
+        info.imagePath = destPath
         /** check if local pending update exists */
         readInfo(cb)
       },
@@ -425,8 +427,6 @@ function runInCurrentContext (callback) {
         writeInfo(info, cb)
       },
       cb => {
-        destPath = getImagePath(info)
-        info.imagePath = destPath
         /** check if target path exists */
         fs.stat(destPath, function onStat (err, stat) {
           logger.info('check if target path exists', stat != null)
@@ -574,18 +574,16 @@ function getInfoOfPendingUpgrade (callback) {
 /**
  * Get download progress of given info.
  * @param {module:@yoda/ota~OtaInfo} info
- * @returns {Promise<number>} percentage of download progress.
+ * @param {Function} callback
  */
-function getImageDownloadProgress (info) {
+function getImageDownloadProgress (info, callback) {
   var imgPath = getImagePath(info)
-  return new Promise((resolve, reject) => {
-    fs.stat(imgPath, (err, stat) => {
-      if (err) {
-        return reject(err)
-      }
-      resolve(stat.size / info.totalSize)
-    })
-  })
+  fs.stat(imgPath, (err, stat) => {
+    if (err) {
+      return callback(err)
+    }
+    callback(null, stat.size / info.totalSize)
+  }) /** fs.stat */
 }
 
 /**

@@ -7,24 +7,30 @@ var logger = require('logger')('log')
 var levels = require('logger').levels
 var setGlobalUploadLevel = require('logger').setGlobalUploadLevel
 
+var levelNames = Object.keys(levels)
+
 test('simple ', (t) => {
-  t.plan(levels.length)
+  t.plan(levelNames.length)
   var text = 'foobar'
-  levels.forEach(it =>
-    t.doesNotThrow(() =>
-      logger[it](text)
-    )
-  )
+  levelNames.forEach(it => {
+    t.doesNotThrow(() => {
+      if (it !== 'none') {
+        logger[it](text)
+      }
+    })
+  })
 })
 
 test('multiple arguments ', (t) => {
-  t.plan(levels.length)
+  t.plan(levelNames.length)
   var args = [ 'foobar', 123, { obj: 'foobar' } ]
-  levels.forEach(it =>
-    t.doesNotThrow(() =>
-      logger[it].apply(logger, args)
-    )
-  )
+  levelNames.forEach(it => {
+    t.doesNotThrow(() => {
+      if (it !== 'none') {
+        logger[it].apply(logger, args)
+      }
+    })
+  })
 })
 
 test('log content has format print ', (t) => {
@@ -42,13 +48,13 @@ test('cloud log switch off', (t) => {
 })
 
 test('cloud log switch on', (t) => {
-  t.plan(Object.keys(levels).length - 1)
-  t.doesNotThrow(() => {
-    for (var i in levels) {
-      if (i !== 'none') {
-        setGlobalUploadLevel(levels[i], 'token')
+  t.plan(levelNames.length)
+  levelNames.forEach(it => {
+    t.doesNotThrow(() => {
+      if (it !== 'none') {
+        setGlobalUploadLevel(levels[it], 'token')
       }
-    }
+    })
   })
 })
 

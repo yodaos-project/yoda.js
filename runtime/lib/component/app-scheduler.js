@@ -16,6 +16,7 @@ function AppScheduler (runtime) {
   this.appMap = {}
   this.appStatus = {}
   this.appLaunchOptions = {}
+  this.appCreationFutures = {}
 }
 
 AppScheduler.prototype.isAppRunning = function isAppRunning (appId) {
@@ -34,8 +35,16 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   if (this.isAppRunning(appId)) {
     return Promise.resolve(this.getAppById(appId))
   }
-  if (this.appStatus[appId] === Constants.status.creating) {
-    return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
+  var future
+  switch (this.appStatus[appId]) {
+    case Constants.status.creating:
+      future = this.appCreationFutures[appId]
+      if (future != null) {
+        return future
+      }
+      return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
+    case Constants.status.destructing:
+      return Promise.reject(new Error(`Scheduler is destructing app ${appId}.`))
   }
   this.appStatus[appId] = Constants.status.creating
 
@@ -59,7 +68,6 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   }
 
   logger.info('app creating prev', appId, appType)
-  var future
   if (appType === 'exe') {
     future = executableProc(appId, metadata, this.runtime)
   } else {
@@ -68,7 +76,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   }
   logger.info('app creating', appId, typeof future.then)
 
-  return future
+  future = future
     .then(app => {
       logger.info(`App(${appId}) successfully started`)
       app.once('exit', (code, signal) => {
@@ -79,12 +87,18 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
         this.handleAppExit(appId, code, signal)
       })
 
+      delete this.appCreationFutures[appId]
       return this.handleAppCreate(appId, app)
     }, err => {
       logger.error(`Unexpected error on starting ext-app(${appId})`, err.stack)
+
+      delete this.appCreationFutures[appId]
       this.handleAppExit(appId)
       throw err
     })
+
+  this.appCreationFutures[appId] = future
+  return future
 }
 
 AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {

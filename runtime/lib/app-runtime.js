@@ -59,6 +59,9 @@ function AppRuntime () {
     this.componentLoader.load(it)
   })
 
+  this.inited = false
+  this.hibernated = false
+  this.welcoming = false
   // identify load app complete
   this.loadAppComplete = false
   this.shouldStopLongPressMicLight = false
@@ -75,6 +78,7 @@ AppRuntime.prototype.init = function init () {
     return Promise.resolve()
   }
   this.componentsInvoke('init')
+  this.initiate()
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
   this.component.turen.toggleWakeUpEngine(true)
@@ -90,28 +94,36 @@ AppRuntime.prototype.init = function init () {
   this.resetServices()
   this.shouldWelcome = !this.isStartupFlagExists()
 
-  var future = Promise.resolve()
-  if (property.get('sys.firstboot.init', 'persist') !== '1') {
-    // initializing play tts status
-    property.set('sys.firstboot.init', '1', 'persist')
-    future = future.then(() => {
-      return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
-    })
-  }
-  return future.then(() => {
-    return this.loadApps()
-  }).then(() => {
+  return this.loadApps().then(() => {
     this.inited = true
     return this.component.dispatcher.delegate('runtimeDidInit')
   }).then(delegation => {
     if (delegation) {
       return
     }
-    if (this.shouldWelcome) {
-      this.component.light.appSound('@yoda', 'system://boot.ogg')
-      this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+    this.welcoming = true
+
+    var future = Promise.resolve()
+    if (property.get('sys.firstboot.init', 'persist') !== '1') {
+      // initializing play tts status
+      property.set('sys.firstboot.init', '1', 'persist')
+      future = future.then(() => {
+        return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
+      })
     }
-    this.component.custodian.prepareNetwork()
+    if (this.shouldWelcome) {
+      future = future.then(() => {
+        this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+        return this.component.light.appSound('@yoda', 'system://boot.ogg')
+      })
+    }
+    return future.then(() => {
+      this.welcoming = false
+      this.component.custodian.prepareNetwork()
+    }).catch(err => {
+      logger.error('unexpected error on boot welcoming', err.stack)
+      this.welcoming = false
+    })
   })
 }
 
@@ -150,7 +162,6 @@ AppRuntime.prototype.loadApps = function loadApps () {
     .then(() => {
       this.loadAppComplete = true
       logger.log('load app complete')
-      return this.initiate()
     })
 }
 
@@ -158,9 +169,6 @@ AppRuntime.prototype.loadApps = function loadApps () {
  * Initiate/Re-initiate runtime configs
  */
 AppRuntime.prototype.initiate = function initiate () {
-  if (!this.loadAppComplete) {
-    return Promise.reject(new Error('Apps not loaded yet, try again later.'))
-  }
   this.component.sound.initVolume()
   return Promise.resolve()
 }
@@ -231,7 +239,7 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
     return future.then(() => this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg'))
   }
 
-  future = Promise.all([ future, this.hibernate() ])
+  future = Promise.all([ future, this.idle() ])
 
   if (currentAppId) {
     /**
@@ -252,16 +260,59 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
 }
 
 /**
- * Put device into hibernation. Terminates apps in stack (i.e. apps in active and paused).
+ * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
  *
  * Also clears apps' contexts.
  */
-AppRuntime.prototype.hibernate = function hibernate () {
+AppRuntime.prototype.idle = function idle () {
+  logger.info('set runtime to idling')
   /**
    * Clear apps and its contexts
    */
   this.resetCloudStack()
   return this.component.lifetime.deactivateAppsInStack()
+}
+
+/**
+ * Put device into hibernation state.
+ */
+AppRuntime.prototype.hibernate = function hibernate () {
+  if (this.hibernated === true) {
+    logger.info('runtime already hibernated, skipping')
+    return Promise.resolve()
+  }
+  logger.info('hibernating runtime')
+  this.hibernated = true
+  this.component.turen.pickup(false)
+  this.setMicMute(true, { silent: true })
+  /**
+   * Clear apps and its contexts
+   */
+  this.resetCloudStack()
+  return this.component.lifetime.destroyAll({ force: true })
+}
+
+/**
+ * Wake up device from hibernation.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.shouldWelcome=false] - if welcoming is needed after re-logged in
+ */
+AppRuntime.prototype.wakeup = function wakeup (options) {
+  var shouldWelcome = _.get(options, 'shouldWelcome', false)
+  if (this.hibernated === false) {
+    logger.info('runtime already woken up, skipping')
+    return Promise.resolve()
+  }
+  logger.info('waking up runtime')
+  this.hibernated = false
+  if (shouldWelcome) {
+    this.shouldWelcome = true
+  }
+  /** set turen to not muted */
+  this.component.turen.toggleMute(false)
+  this.component.turen.toggleWakeUpEngine(true)
+  this.component.custodian.prepareNetwork()
 }
 
 /**
@@ -331,7 +382,14 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
     this.component.lifetime.destroyAll(),
     this.setMicMute(false, { silent: true })
   ]).then(() => this.component.custodian.resetNetwork(options))
-    .then(deferred, err => {
+    .then(() => {
+      // todo lightd will not display setupNetwork.js sometime, so we need to stop longPressMic in timeout.
+      // we need to refactor it
+      setTimeout(() => {
+        deferred()
+      }, 2000)
+    })
+    .catch(err => {
       logger.error('Unexpected error on resetting network', err.stack)
       deferred()
     })
@@ -375,9 +433,6 @@ AppRuntime.prototype.stopMonologue = function (appId) {
  * @param {boolean} [options.carrierId]
  */
 AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
-  var preemptive = _.get(options, 'preemptive', true)
-  var carrierId = _.get(options, 'carrierId')
-
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
     return Promise.resolve(false)
@@ -404,38 +459,14 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve(false)
   }
 
-  if (this.component.lifetime.isMonopolized() && preemptive && appId !== this.component.lifetime.monopolist) {
-    logger.warn(`LaVieEnPile has ben monopolized, skip voice command to app(${appId}).`)
-    return this.component.lifetime.onLifeCycle(this.component.lifetime.monopolist, 'oppressing', 'request')
-      .then(() => /** prevent tts/media from recovering */true)
-  }
-
-  return this.component.lifetime.createApp(appId)
-    .catch(err => {
-      logger.error(`create app ${appId} failed`, err.stack)
-      /** force quit app on create error */
-      return this.component.lifetime.destroyAppById(appId, { force: true })
-        .then(() => { /** rethrow error to break following procedures */throw err })
+  return this.component.dispatcher.dispatchAppEvent(
+    appId,
+    'request', [ nlp, action ],
+    Object.assign({}, options, {
+      form: form,
+      skillId: nlp.appId
     })
-    .then(() => {
-      if (!preemptive) {
-        logger.info(`app is not preemptive, skip activating app ${appId}`)
-        return
-      }
-
-      logger.info(`app is preemptive, activating app ${appId}`)
-      return this.component.lifetime.activateAppById(appId, form, carrierId)
-        .then(() => {
-          this.updateCloudStack(nlp.appId, form)
-          this.component.sound.unmuteIfNecessary(nlp.appId)
-        })
-    })
-    .then(() => this.component.lifetime.onLifeCycle(appId, 'request', [ nlp, action ]))
-    .then(() => true)
-    .catch(err => {
-      logger.error(`Unexpected error on app ${appId} handling voice command`, err.stack)
-      return false
-    })
+  )
 }
 
 /**
@@ -450,10 +481,6 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
  * @returns {Promise<boolean>}
  */
 AppRuntime.prototype.openUrl = function (url, options) {
-  var form = _.get(options, 'form', 'cut')
-  var preemptive = _.get(options, 'preemptive', true)
-  var carrierId = _.get(options, 'carrierId')
-
   var urlObj = Url.parse(url, true)
   if (urlObj.protocol !== 'yoda-skill:') {
     logger.info('Url protocol other than yoda-skill is not supported now.')
@@ -466,35 +493,13 @@ AppRuntime.prototype.openUrl = function (url, options) {
   }
   var appId = this.component.appLoader.getAppIdBySkillId(skillId)
 
-  if (this.component.lifetime.isMonopolized() && preemptive && appId !== this.component.lifetime.monopolist) {
-    logger.warn(`LaVieEnPile has ben monopolized, skip url request to app(${appId}).`)
-    return this.component.lifetime.onLifeCycle(this.component.lifetime.monopolist, 'oppressing', 'url')
-      .then(() => /** prevent tts/media from recovering */true)
-  }
-
-  return this.component.lifetime.createApp(appId)
-    /** force quit app on create error */
-    .catch(err => {
-      logger.error(`create app ${appId} failed`, err.stack)
-      return this.component.lifetime.destroyAppById(appId, { force: true })
-        .then(() => { /** rethrow error to break following procedures */throw err })
+  return this.component.dispatcher.dispatchAppEvent(
+    appId,
+    'url', [ urlObj ],
+    Object.assign({}, options, {
+      skillId: skillId
     })
-    .then(() => {
-      if (!preemptive) {
-        logger.info(`app is not preemptive, skip activating app ${appId}`)
-        return Promise.resolve()
-      }
-
-      logger.info(`app is preemptive, activating app ${appId}`)
-      return this.component.lifetime.activateAppById(appId, form, carrierId)
-        .then(() => this.updateCloudStack(skillId, form))
-    })
-    .then(() => this.component.lifetime.onLifeCycle(appId, 'url', [ urlObj ]))
-    .then(() => true)
-    .catch(err => {
-      logger.error(`open url(${url}) error with appId: ${appId}`, err.stack)
-      return false
-    })
+  )
 }
 
 /**
@@ -578,21 +583,28 @@ AppRuntime.prototype.setForegroundById = function setForegroundById (appId, opti
  */
 AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
   var silent = _.get(options, 'silent', false)
+
+  var future = Promise.resolve()
+  if (silent) {
+    future = this.component.light.stop('@yoda', 'system://setMuted.js')
+  }
+
   if (mute === this.component.turen.muted) {
-    return Promise.resolve()
+    return future
   }
   /** mute */
   var muted = this.component.turen.toggleMute()
 
   if (silent) {
-    return this.component.light.stop('@yoda', 'system://setMuted.js')
+    return future
   }
 
-  return this.component.light.play(
-    '@yoda',
-    'system://setMuted.js',
-    { muted: muted },
-    { shouldResume: muted })
+  return future
+    .then(() => this.component.light.play(
+      '@yoda',
+      'system://setMuted.js',
+      { muted: muted },
+      { shouldResume: muted }))
 }
 
 /**
@@ -628,11 +640,10 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
     promises.push(
       this.ttsMethod('reset', [])
         .then((res) => {
-          if (res && res[0] === true) {
-            logger.log('reset ttsd success')
-          } else {
-            logger.log('reset ttsd failed')
+          if (res.msg[0] !== true) {
+            return logger.log('reset ttsd failed')
           }
+          logger.log('reset ttsd success')
         })
         .catch((error) => {
           logger.log('reset ttsd error', error)
@@ -803,7 +814,7 @@ AppRuntime.prototype.voiceCommand = function (text, options) {
       future = this.component.lifetime.setBackgroundById(appId)
     }
     return future.then(() => this.onVoiceCommand(text, nlp, action, {
-      carrierId: appId
+      carrierId: isTriggered ? appId : undefined
     }))
   })
 }
@@ -988,11 +999,7 @@ AppRuntime.prototype.shutdown = function shutdown () {
  * @private
  */
 AppRuntime.prototype.ttsMethod = function (name, args) {
-  return this.component.dbusRegistry.callMethod(
-    'com.service.tts',
-    '/tts/service',
-    'tts.service',
-    name, args)
+  return this.component.flora.call(`yodart.ttsd.${name}`, args, 'ttsd', 100)
 }
 
 AppRuntime.prototype.multimediaMethod = function (name, args) {
@@ -1085,40 +1092,9 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
 AppRuntime.prototype.onLoggedIn = function () {
   this.component.custodian.onLoggedIn()
 
-  var deferred = () => {
-    perf.stub('started')
-    if (this.shouldWelcome) {
-      this.component.dispatcher.delegate('runtimeDidLogin')
-        .then((delegation) => {
-          if (delegation) {
-            return
-          }
-          logger.info('announcing welcome')
-          this.setMicMute(false, { silent: true })
-            .then(() => {
-              this.component.light.appSound('@yoda', 'system://startup0.ogg')
-              return this.component.light.play('@yoda', 'system://setWelcome.js')
-            })
-            .then(() => {
-              // not need to play startup music after relogin
-              this.component.light.stop('@yoda', 'system://boot.js')
-            })
-        })
-    }
-    this.shouldWelcome = false
-
+  var enableTtsService = () => {
     var config = JSON.stringify(this.onGetPropAll())
-    return this.ttsMethod('connect', [config])
-      .then((res) => {
-        if (!res) {
-          logger.log('send CONFIG to ttsd ignore: ttsd service may not start')
-        } else {
-          logger.log(`send CONFIG to ttsd: ${res && res[0]}`)
-        }
-      })
-      .catch((error) => {
-        logger.log('send CONFIG to ttsd failed: call method failed', error)
-      })
+    return this.component.flora.post('yodart.vui.logged-in', [config], 1 /** persist message */)
   }
 
   var sendReady = () => {
@@ -1126,19 +1102,50 @@ AppRuntime.prototype.onLoggedIn = function () {
     return Promise.all(ids.map(it => this.component.lifetime.onLifeCycle(it, 'ready')))
   }
 
+  var deferred = () => {
+    perf.stub('started')
+    if (this.shouldWelcome) {
+      this.component.dispatcher.delegate('runtimeDidLogin')
+        .then((delegation) => {
+          if (delegation) {
+            return
+            /** delegation should break all actions below */
+          }
+          this.welcoming = true
+          logger.info('announcing welcome')
+          return this.setMicMute(false, { silent: true })
+            .then(() => {
+              this.component.light.appSound('@yoda', 'system://startup0.ogg')
+              return this.component.light.play('@yoda', 'system://setWelcome.js')
+            })
+            .then(() => {
+              // not need to play startup music after relogin
+              this.component.light.stop('@yoda', 'system://boot.js')
+              this.welcoming = false
+            })
+            .catch(err => {
+              this.welcoming = false
+              logger.error('unexpected error on welcoming', err.stack)
+            })
+        })
+    }
+    this.shouldWelcome = false
+  }
+
   var onDone = () => {
     this.dispatchNotification('on-ready', [])
   }
 
   return Promise.all([
+    enableTtsService(),
     sendReady() /** only send ready to currently alive apps */,
     this.startDaemonApps(),
     this.setStartupFlag(),
-    this.initiate()
-  ]).then(deferred, err => {
-    logger.error('Unexpected error on bootstrap', err.stack)
-    return deferred()
-  }).then(onDone, err => {
+    this.initiate().then(deferred, err => {
+      logger.error('Unexpected error on bootstrap', err.stack)
+      return deferred()
+    })
+  ]).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()
   })

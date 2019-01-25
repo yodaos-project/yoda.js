@@ -5,6 +5,7 @@ var logger = require('logger')('custom-config-continuous-dialog')
 
 /**
  * continuous dialog handler
+ * @extends BaseConfig
  */
 class ContinuousDialog extends BaseConfig {
   constructor (activity) {

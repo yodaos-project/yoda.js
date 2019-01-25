@@ -22,6 +22,11 @@ class Battery {
   }
 
   handleFloraInfo (caps) {
+    if (this.runtime.hibernated) {
+      logger.info('runtime hibernated, ignoring battery events.')
+      return
+    }
+
     var msg = caps[0]
     var data
     try {

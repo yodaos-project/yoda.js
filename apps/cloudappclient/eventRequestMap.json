@@ -8,8 +8,8 @@
   "media": {
     "prepared": "Media.STARTED",
     "playbackcomplete": "Media.FINISHED",
-    "pause": "Media.PAUSED",
-    "resume": "Media.STARTED",
+    "paused": "Media.PAUSED",
+    "resumed": "Media.STARTED",
     "cancel": "Media.PAUSED",
     "stop": "Media.PAUSED",
     "error": "Media.FAILED"

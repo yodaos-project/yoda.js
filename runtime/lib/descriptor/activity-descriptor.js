@@ -196,6 +196,13 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'event'
     },
     /**
+     * When an activity is put into background.
+     * @event yodaRT.activity.Activity#background
+     */
+    background: {
+      type: 'event'
+    },
+    /**
      * Fires on nlp requests.
      * @event yodaRT.activity.Activity#request
      * @param {object} data
@@ -291,20 +298,20 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Put device into hibernation. Terminates apps in stack (i.e. apps in active and paused).
+     * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
      *
      * Also clears apps' contexts.
      *
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @function hibernate
+     * @function idle
      * @returns {Promise<void>}
      */
-    hibernate: {
+    idle: {
       type: 'method',
       returns: 'promise',
-      fn: function hibernate () {
-        return this._runtime.hibernate()
+      fn: function idle () {
+        return this._runtime.idle()
       }
     },
     /**
@@ -461,6 +468,33 @@ Object.assign(ActivityDescriptor.prototype,
       returns: 'promise',
       fn: function getContextOptions () {
         return this._runtime.component.lifetime.getContextOptionsById(this._appId)
+      }
+    },
+    /**
+     * Set skill id of current context.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function setContextSkillId
+     * @param {string} skillId
+     * @param {'cut' | 'scene'} [form] - derive from current app if not specified.
+     * @returns {Promise<object>}
+     */
+    setContextSkillId: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setContextSkillId (skillId, form) {
+        if (this._appId !== '@yoda/cloudappclient') {
+          /** bypass @yoda/cloudappclient to allow arbitrary skill id updates */
+          if (this._runtime.component.appLoader.getAppIdBySkillId(skillId) !== this._appId) {
+            return Promise.reject(new Error(`skill id '${skillId}' not owned by app ${this._appId}.`))
+          }
+        }
+        if (form == null) {
+          var contextOptions = this._runtime.component.lifetime.getContextOptionsById(this._appId)
+          form = _.get(contextOptions, 'form')
+        }
+        return this._runtime.updateCloudStack(skillId, form)
       }
     },
     /**

@@ -107,6 +107,7 @@ Manager.prototype.append = function (nlp, action) {
 
 Manager.prototype.next = function (skill) {
   logger.log(`next skill`)
+  this.emit('exit', skill)
   // if this flag equls true,means strong pause,so we do not exec next
   if (this.getManualPauseFLag() === true) {
     return
@@ -194,6 +195,7 @@ Manager.prototype.getCurrentSkill = function () {
 }
 
 Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
+  logger.log(`[sendReq] type(${type}) name(${name}) data(${JSON.stringify(data)}) args(${JSON.stringify(args)})`)
   if (!data.appId) {
     logger.log('ignored eventRequest, because it is no appId given')
     return cb && cb()
@@ -212,7 +214,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
   }
   if (type === 'tts') {
     eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
-      logger.log(`====> tts eventRequest response: ${response}`)
+      logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
       }
@@ -222,7 +224,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     })
   } else if (type === 'media') {
     eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
-      logger.log(`====> media eventRequest response: ${response}`)
+      logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
       }
@@ -236,5 +238,29 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
 Manager.prototype.setEventRequestConfig = function (config) {
   eventRequest.setConfig(config || {})
 }
+Manager.prototype.generateAction = function (data) {
+  var action = {
+    startWithActiveWord: false,
+    appId: data.appId,
+    response: {
+      action: {
+        form: 'scene',
+        shouldEndSession: false,
+        directives: [data]
+      }
+    }
 
+  }
+  return action
+}
+Manager.prototype.getSceneSkillIndex = function () {
+  var index = -1
+  this.skills.forEach((skill, idx) => {
+    logger.info(`skill = ${skill.hasPlayer} ${skill.form} ${skill.saveRecoverData} ${idx}`)
+    if (skill.hasPlayer && skill.form === 'scene') {
+      index = idx
+    }
+  })
+  return index
+}
 module.exports = Manager

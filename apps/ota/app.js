@@ -62,11 +62,16 @@ function checkUpdateAvailability (activity) {
         .then(() => activity.exit())
     }
     if (info.status === 'downloading') {
-      return ota.getImageDownloadProgress(progress => {
+      return ota.getImageDownloadProgress(info, (err, progress) => {
+        if (err) {
+          return activity.tts.speak(strings.UPDATES_START_DOWNLOADING)
+            .then(() => activity.exit())
+        }
         var utterance
         if (isNaN(progress) || progress < 0 || progress >= 100) {
           utterance = strings.UPDATES_START_DOWNLOADING
         } else {
+          progress = Math.round(progress * 100)
           utterance = util.format(strings.UPDATES_ON_DOWNLOADING, progress)
         }
         return activity.tts.speak(utterance)
@@ -135,6 +140,7 @@ function startUpgrade (activity, imagePath, isForce) {
   logger.info(`using ota image ${imagePath}`)
   var ret = system.prepareOta(imagePath)
   if (ret !== 0) {
+    logger.error(`OTA prepared with status code ${ret}, terminating.`)
     return activity.tts.speak(strings.OTA_PREPARATION_FAILED)
       .then(() => activity.exit())
   }

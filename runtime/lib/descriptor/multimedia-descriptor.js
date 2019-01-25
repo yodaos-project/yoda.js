@@ -66,6 +66,26 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'event'
     },
     /**
+     * When the media resource is paused.
+     * @event yodaRT.activity.Activity.MediaClient#paused
+     * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
+     */
+    paused: {
+      type: 'event'
+    },
+    /**
+     * When the media resource is resumed.
+     * @event yodaRT.activity.Activity.MediaClient#resumed
+     * @param {string} id - multimedia player id
+     * @param {string} duration -
+     * @param {string} position -
+     */
+    resumed: {
+      type: 'event'
+    },
+    /**
      * When the media playback is complete.
      * @event yodaRT.activity.Activity.MediaClient#playbackcomplete
      * @param {string} id - multimedia player id
@@ -141,7 +161,8 @@ Object.assign(MultimediaDescriptor.prototype,
           allowedScheme: [ 'http', 'https', 'file', 'icecast', 'rtp', 'tcp', 'udp' ]
         })
         logger.log('preparing multimedia', url)
-        return self._runtime.multimediaMethod('prepare', [self._appId, url, streamType])
+        options = options || { multiple: false }
+        return self._runtime.multimediaMethod('prepare', [self._appId, url, streamType, JSON.stringify(options)])
           .then((result) => {
             var multimediaId = _.get(result, '0', '-1')
             logger.log('create media player', result)
@@ -192,7 +213,8 @@ Object.assign(MultimediaDescriptor.prototype,
           allowedScheme: [ 'http', 'https', 'file', 'icecast', 'rtp', 'tcp', 'udp' ]
         })
         logger.log('playing multimedia', url)
-        return self._runtime.multimediaMethod('start', [self._appId, url, streamType])
+        options = options || { multiple: false }
+        return self._runtime.multimediaMethod('start', [self._appId, url, streamType, JSON.stringify(options)])
           .then((result) => {
             var multimediaId = _.get(result, '0', '-1')
             logger.log('create media player', result)
@@ -234,13 +256,15 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function pause
+     * @param {string} [playerId]
      * @returns {Promise<void>}
      */
     pause: {
       type: 'method',
       returns: 'promise',
-      fn: function pause () {
-        return this._runtime.multimediaMethod('pause', [this._appId])
+      fn: function pause (playerId) {
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('pause', [this._appId, pid])
       }
     },
     /**
@@ -250,16 +274,18 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function resume
+     * @param {string} playerId
      * @returns {Promise<void>}
      */
     resume: {
       type: 'method',
       returns: 'promise',
-      fn: function resume () {
+      fn: function resume (playerId) {
+        var pid = playerId || '-1'
         if (!this._runtime.component.permission.check(this._appId, 'ACCESS_MULTIMEDIA')) {
           return Promise.reject(new Error('Permission denied.'))
         }
-        return this._runtime.multimediaMethod('resume', [this._appId])
+        return this._runtime.multimediaMethod('resume', [this._appId, pid])
       }
     },
     /**
@@ -267,13 +293,15 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function stop
+     * @param {string} playerId
      * @returns {Promise<void>}
      */
     stop: {
       type: 'method',
       returns: 'promise',
-      fn: function stop () {
-        return this._runtime.multimediaMethod('stop', [this._appId])
+      fn: function stop (playerId) {
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('stop', [this._appId, pid])
       }
     },
     /**
@@ -281,13 +309,15 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function getPosition
+     * @param {string} playerId
      * @returns {Promise<number>}
      */
     getPosition: {
       type: 'method',
       returns: 'promise',
-      fn: function getPosition () {
-        return this._runtime.multimediaMethod('getPosition', [this._appId])
+      fn: function getPosition (playerId) {
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('getPosition', [this._appId, pid])
           .then((res) => {
             if (res && res[0] >= -1) {
               return res[0]
@@ -301,13 +331,14 @@ Object.assign(MultimediaDescriptor.prototype,
      * @memberof yodaRT.activity.Activity.MediaClient
      * @instance
      * @function getLoopMode
+     * @param {string} playerId
      * @returns {Promise<number>}
      */
     getLoopMode: {
       type: 'method',
       returns: 'promise',
-      fn: function getLoopMode () {
-        return this._runtime.multimediaMethod('getLoopMode', [this._appId])
+      fn: function getLoopMode (playerId) {
+        return this._runtime.multimediaMethod('getLoopMode', [this._appId, playerId])
           .then((res) => {
             if (res && res[0] !== undefined) {
               return res[0]
@@ -322,14 +353,65 @@ Object.assign(MultimediaDescriptor.prototype,
      * @instance
      * @function setLoopMode
      * @param {boolean} loop
+     * @param {string} playerId
      * @returns {Promise<boolean>}
      */
     setLoopMode: {
       type: 'method',
       returns: 'promise',
-      fn: function setLoopMode (loop) {
+      fn: function setLoopMode (loop, playerId) {
         loop = loop === true ? 'true' : 'false'
-        return this._runtime.multimediaMethod('setLoopMode', [this._appId, loop])
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('setLoopMode', [this._appId, loop, pid])
+          .then((res) => {
+            if (res && res[0] !== undefined) {
+              return res[0]
+            }
+            throw new Error('multimediad error')
+          })
+      }
+    },
+
+    /**
+     * return which EQ mode the player is.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function getEqMode
+     * @param {string} playerId
+     * @returns {Promise<number>}
+     */
+    getEqMode: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getLoopMode (playerId) {
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('getEqMode', [this._appId, pid])
+          .then((res) => {
+            if (res && res[0] !== undefined) {
+              return res[0]
+            }
+            throw new Error('multimediad error')
+          })
+      }
+    },
+    /**
+     * set player EQ mode.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function setEqMode
+     * @param {number} eqMode
+     * @param {string} playerId
+     * @returns {Promise<boolean>}
+     */
+    setEqMode: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setEqMode (eqMode, playerId) {
+        if (typeof eqMode !== 'number') {
+          return Promise.reject(new Error(`Expect a number on setLoopMode, but got ${typeof eqMode}`))
+        }
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('setEqMode', [this._appId, '' + eqMode, pid])
           .then((res) => {
             if (res && res[0] !== undefined) {
               return res[0]
@@ -344,13 +426,55 @@ Object.assign(MultimediaDescriptor.prototype,
      * @instance
      * @function seek
      * @param {number} pos
+     * @param {string} playerId
      * @returns {Promise<void>}
      */
     seek: {
       type: 'method',
       returns: 'promise',
-      fn: function seek (pos) {
-        return this._runtime.multimediaMethod('seek', [this._appId, String(pos)])
+      fn: function seek (pos, playerId) {
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('seek', [this._appId, String(pos), pid])
+          .then((res) => {
+            if (res && res[0] === true) {
+              return
+            }
+            throw new Error('player instance not found')
+          })
+      }
+    },
+    getState: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getState (playerId) {
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('getState', [this._appId, pid])
+          .then((res) => {
+            if (res && res[0] !== undefined) {
+              return res[0]
+            }
+            throw new Error('multimediad error')
+          })
+      }
+    },
+    /**
+     * set play speed.
+     * @memberof yodaRT.activity.Activity.MediaClient
+     * @instance
+     * @function setSpeed
+     * @param {number} speed
+     * @param {string} playerId
+     * @returns {Promise<void>}
+     */
+    setSpeed: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setSpeed (speed, playerId) {
+        if (typeof speed !== 'number') {
+          return Promise.reject(new Error(`Expect a number on setSpeed, but got ${typeof speed}`))
+        }
+        var pid = playerId || '-1'
+        return this._runtime.multimediaMethod('setSpeed', [this._appId, String(speed), pid])
           .then((res) => {
             if (res && res[0] === true) {
               return

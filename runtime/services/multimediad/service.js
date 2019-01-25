@@ -5,27 +5,22 @@ var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var inherits = require('util').inherits
 var logger = require('logger')('multimediaService')
+var Manager = require('./manager')
+
 var audioModuleName = 'multimedia'
 AudioManager.setPlayingState(audioModuleName, false)
 
 function MultiMedia (lightd) {
   EventEmitter.call(this)
   this.handle = {}
+  this.playerManager = new Manager()
   this.pausedAppIdOnAwaken = null
   this.lightd = lightd
 }
 inherits(MultiMedia, EventEmitter)
 
 MultiMedia.prototype.getCurrentlyPlayingAppId = function getCurrentlyPlayingAppId () {
-  var keys = Object.keys(this.handle)
-  for (var idx = 0; idx < keys.length; ++idx) {
-    var appId = keys[idx]
-    var handle = this.handle[appId]
-    if (handle.playing) {
-      return appId
-    }
-  }
-  return null
+  return this.playerManager.getCurrentlyPlayingAppId()
 }
 
 /**
@@ -34,108 +29,248 @@ MultiMedia.prototype.getCurrentlyPlayingAppId = function getCurrentlyPlayingAppI
  * @param {string} streamType
  * @returns {Multimedia.Player}
  */
-MultiMedia.prototype.prepare = function prepare (appId, url, streamType) {
-  if (this.handle[appId]) {
-    try {
-      this.handle[appId].stop()
-      delete this.handle[appId]
-    } catch (error) {
-      logger.error(`try to stop prev player error, appId: ${appId}`, error.stack)
-      throw error
-    }
-  }
+MultiMedia.prototype.prepare = function prepare (appId, url, streamType, options) {
   var player
+  if (options && options.multiple !== true) {
+    this.playerManager.deleteAllByAppId(appId)
+  }
   if (streamType === 'alarm') {
     player = new MediaPlayer(AudioManager.STREAM_ALARM)
   } else {
     player = new MediaPlayer(AudioManager.STREAM_PLAYBACK)
   }
   this.listenEvent(player, appId)
-  this.handle[appId] = player
+  this.playerManager.appendByAppId(appId, player)
   player.prepare(url)
   return player
 }
 
-MultiMedia.prototype.start = function (appId, url, streamType) {
-  var player = this.prepare(appId, url, streamType)
+MultiMedia.prototype.start = function (appId, url, streamType, options) {
+  var player = this.prepare(appId, url, streamType, options)
   player.once('prepared', () => player.start())
   return player.id
 }
 
-MultiMedia.prototype.stop = function (appId) {
-  if (this.handle[appId]) {
-    try {
-      this.handle[appId].stop()
-      delete this.handle[appId]
-    } catch (error) {
-      logger.error('try to stop player errer with appId: ', appId, error.stack)
+MultiMedia.prototype.stop = function (appId, playerId) {
+  var handle = []
+  if (playerId > -1) {
+    handle = this.playerManager.find(appId, playerId)
+  } else {
+    handle = this.playerManager.find(appId)
+  }
+  if (handle.length > 0) {
+    for (var i = 0; i < handle.length; i++) {
+      try {
+        handle[i].stop()
+      } catch (error) {
+        logger.error('try to stop player errer with appId: ', appId, error.stack)
+      }
+      this.playerManager.deleteByAppId(appId, handle[i].id)
     }
-    delete this.handle[appId]
   }
 }
 
-MultiMedia.prototype.pause = function (appId) {
-  if (this.handle[appId] == null) {
+MultiMedia.prototype.pause = function (appId, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.log(`[404] handle not found for appId(${appId}) playerId(${playerId})`)
+    return true
+  }
+
+  if (handle.length > 1 && +playerId > -1) {
+    logger.log(`[400] multiple handle for appId(${appId}) playerId(${playerId})`)
     return false
   }
-  var playing = false
-  try {
-    playing = this.handle[appId].playing
-  } catch (error) {
-    logger.error('try to get playing state of player error with appId: ', appId, error.stack)
-  }
-  try {
-    this.handle[appId].pause()
-    AudioManager.setPlayingState(audioModuleName, false)
-  } catch (error) {
-    logger.error('try to pause player error with appId: ', appId, error.stack)
-  }
-  return playing
-}
 
-MultiMedia.prototype.resume = function (appId) {
-  try {
-    if (this.handle[appId] && !this.handle[appId].playing) {
-      this.handle[appId].resume()
-      AudioManager.setPlayingState(audioModuleName, true)
-    }
-  } catch (error) {
-    logger.error('try to resume player errer with appId: ', appId, error.stack)
-  }
-}
-
-MultiMedia.prototype.getPosition = function (appId) {
-  if (this.handle[appId]) {
-    return this.handle[appId].position
-  }
-  return -1
-}
-
-MultiMedia.prototype.getLoopMode = function (appId) {
-  if (this.handle[appId]) {
-    return this.handle[appId].loopMode
-  }
-  return false
-}
-
-MultiMedia.prototype.setLoopMode = function (appId, mode) {
-  if (this.handle[appId]) {
-    this.handle[appId].loopMode = mode === 'true'
-  }
-}
-
-MultiMedia.prototype.seek = function (appId, position, callback) {
-  if (this.handle[appId]) {
+  var ret = 0
+  handle.forEach((player) => {
+    var playing = false
     try {
-      this.handle[appId].seek(position, callback)
+      playing = player.playing
     } catch (error) {
-      logger.error('try to seek player errer with appId: ', appId, error.stack)
-      return callback(new Error('player error'))
+      logger.error('try to get playing state of player error with appId: ', appId, error.stack)
     }
-    callback()
-  } else {
-    callback(new Error('player instance not found'))
+
+    try {
+      player.pause()
+      ret++
+      AudioManager.setPlayingState(audioModuleName, false)
+
+      // need to send events only when the state is switched
+      if (playing === true) {
+        process.nextTick(() => {
+          player.emit('paused')
+        })
+      }
+    } catch (error) {
+      logger.error('try to pause player error with appId: ', appId, error.stack)
+    }
+  })
+
+  return ret === handle.length
+}
+
+MultiMedia.prototype.resume = function (appId, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.log(`[404] handle not found`)
+    return true
   }
+
+  if (handle.length > 1 && +playerId > -1) {
+    logger.log(`[400] multiple handle for appId(${appId}) playerId(${playerId})`)
+    return false
+  }
+
+  handle.forEach((player) => {
+    try {
+      if (!player.playing) {
+        player.resume()
+        logger.log(`[200] handle.resume(${player.id}) success`)
+        AudioManager.setPlayingState(audioModuleName, true)
+
+        // need to send events only when the state is switched
+        process.nextTick(() => {
+          player.emit('resumed')
+        })
+      }
+    } catch (error) {
+      logger.error('try to resume player errer with appId: ', appId, error.stack)
+    }
+  })
+  return true
+}
+
+MultiMedia.prototype.getPosition = function (appId, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return -1
+  }
+
+  if (handle.length !== 1) {
+    return -1
+  }
+
+  return handle[0].position
+}
+
+MultiMedia.prototype.getDuration = function (appId, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return -1
+  }
+
+  if (handle.length !== 1) {
+    return -1
+  }
+
+  return handle[0].duration
+}
+
+MultiMedia.prototype.getLoopMode = function (appId, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return false
+  }
+
+  if (handle.length !== 1) {
+    return false
+  }
+
+  return this.handle[appId].loopMode
+}
+
+MultiMedia.prototype.setLoopMode = function (appId, mode, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return false
+  }
+
+  if (handle.length !== 1) {
+    return false
+  }
+
+  handle[0].loopMode = mode === 'true'
+}
+
+MultiMedia.prototype.getEqMode = function getEqMode (appId, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return -1
+  }
+
+  if (handle.length !== 1) {
+    logger.info(`multiple handle for app ${appId}, returning default eq mode`)
+    return -1
+  }
+
+  return handle[0].eqMode
+}
+
+MultiMedia.prototype.setEqMode = function setEqMode (appId, mode, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return -1
+  }
+
+  if (handle.length !== 1) {
+    logger.info(`multiple handle for app ${appId}, playerId is required`)
+    return -1
+  }
+
+  handle[0].eqMode = mode
+}
+
+MultiMedia.prototype.seek = function (appId, position, playerId, callback) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return callback(new Error('handle not found'))
+  }
+
+  if (handle.length !== 1) {
+    logger.info(`multiple handle for app ${appId}, playerId is required`)
+    return callback(new Error('playerId is required'))
+  }
+
+  try {
+    handle[0].seek(position, callback)
+  } catch (error) {
+    logger.error('try to seek player errer with appId: ', appId, error.stack)
+    return callback(new Error('player error'))
+  }
+  callback()
+}
+
+MultiMedia.prototype.setSpeed = function (appId, speed, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    logger.error(`[404] handle not found`)
+    return
+  }
+
+  if (handle.length !== 1) {
+    logger.info(`multiple handle for app ${appId}, playerId is required`)
+    return
+  }
+
+  handle[0].setSpeed(speed)
 }
 
 MultiMedia.prototype.listenEvent = function (player, appId) {
@@ -145,40 +280,35 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
   })
   player.on('playbackcomplete', () => {
     // free handle after playbackcomplete
-    var handle = this.handle[appId]
-    if (handle) {
-      try {
-        handle.stop()
-        delete this.handle[appId]
-      } catch (error) {
-        logger.error(`try to stop player error with appId: ${appId}`, error.stack)
-      }
+    try {
+      player.stop()
+    } catch (error) {
+      logger.error(`try to stop player error with appId: ${appId}`, error.stack)
     }
-    this.emit('playbackcomplete', '' + player.id)
+    this.playerManager.deleteByAppId(appId, player.id)
+    this.emit('playbackcomplete', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, false)
   })
   player.on('bufferingupdate', () => {
-    this.emit('bufferingupdate', '' + player.id)
+    this.emit('bufferingupdate', '' + player.id, '' + player.duration, '' + player.position)
   })
   player.on('seekcomplete', () => {
-    this.emit('seekcomplete', '' + player.id)
+    this.emit('seekcomplete', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, true)
   })
   player.on('cancel', () => {
-    this.emit('cancel', '' + player.id)
+    this.emit('cancel', '' + player.id, '' + player.duration, '' + player.position)
     AudioManager.setPlayingState(audioModuleName, false)
   })
   player.on('error', () => {
     // free handle when something goes wrong
-    var handle = this.handle[appId]
-    if (handle) {
-      try {
-        handle.stop()
-        delete this.handle[appId]
-      } catch (error) {
-        logger.error(`try to stop player error with appId: ${appId}`, error.stack)
-      }
+    try {
+      player.stop()
+    } catch (error) {
+      logger.error(`try to stop player error with appId: ${appId}`, error.stack)
     }
+
+    this.playerManager.deleteByAppId(appId, player.id)
     this.emit('error', '' + player.id)
     AudioManager.setPlayingState(audioModuleName, false)
   })
@@ -218,18 +348,36 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
         })
     }, 5000) /** stage 1 timer */
   })
+
+  player.on('paused', () => {
+    AudioManager.setPlayingState(audioModuleName, false)
+    this.emit('paused', '' + player.id, '' + player.duration, '' + player.position)
+  })
+
+  player.on('resumed', () => {
+    AudioManager.setPlayingState(audioModuleName, true)
+    this.emit('resumed', '' + player.id, '' + player.duration, '' + player.position)
+  })
+}
+
+MultiMedia.prototype.getState = function (appId, playerId) {
+  var handle = this.playerManager.find(appId, playerId)
+
+  if (handle.length === 0) {
+    return 'IDLE'
+  }
+
+  var playing = handle[0].playing
+  return playing ? 'PLAYING' : 'PAUSED'
 }
 
 MultiMedia.prototype.reset = function () {
   try {
-    for (var index in this.handle) {
-      this.handle[index].stop()
-    }
+    this.playerManager.reset()
     AudioManager.setPlayingState(audioModuleName, false)
   } catch (error) {
     logger.error('error when try to stop all player', error.stack)
   }
-  this.handle = {}
 }
 
 module.exports = MultiMedia
