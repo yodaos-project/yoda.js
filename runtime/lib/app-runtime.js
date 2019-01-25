@@ -542,7 +542,7 @@ AppRuntime.prototype.dispatchNotification = function dispatchNotification (chann
     }
     var appId = appIds[idx]
     var future = Promise.resolve()
-    if (filterOption !== 'all') {
+    if (filterOption === 'all') {
       future = self.component.lifetime.createApp(appId)
         /** force quit app on create error */
         .catch(err => {
