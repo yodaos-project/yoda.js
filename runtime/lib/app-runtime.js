@@ -312,6 +312,8 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
   /** set turen to not muted */
   this.component.turen.toggleMute(false)
   this.component.turen.toggleWakeUpEngine(true)
+
+  this.component.custodian.resetState()
   this.component.custodian.prepareNetwork()
 }
 
