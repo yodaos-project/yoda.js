@@ -16,6 +16,7 @@ var logger = require('logger')('yoda')
 var ComponentConfig = require('/etc/yoda/component-config.json')
 
 var _ = require('@yoda/util')._
+var deprecate = require('@yoda/util/deprecate')
 var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
 var system = require('@yoda/system')
@@ -1057,6 +1058,13 @@ AppRuntime.prototype.login = _.singleton(function login (options) {
       })
   })
 })
+
+AppRuntime.prototype.onGetPropAll = deprecate(
+  function () {
+    return Object.assign({}, this.credential)
+  },
+  'AppRuntime.onGetPropAll is deprecated. Try AppRuntime.getCopyOfCredential instead.'
+)
 
 AppRuntime.prototype.getCopyOfCredential = function () {
   return Object.assign({}, this.credential)
