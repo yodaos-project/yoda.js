@@ -52,6 +52,10 @@ function Turen (runtime) {
    */
   this.noVoiceInputTimeout = process.env.YODA_NO_VOICE_INPUT_TIMEOUT || 6000
   this.noVoiceInputTimer = null
+  /**
+   * last wakeup degree
+   */
+  this.degree = 0
 }
 
 Turen.prototype.handlers = {
@@ -63,7 +67,7 @@ Turen.prototype.handlers = {
   'rokid.turen.local_awake': function (msg) {
     logger.log('voice local awake')
     var data = {}
-    data.sl = msg[0]
+    data.degree = msg[0]
     return this.handleVoiceLocalAwake(data)
   },
   'rokid.speech.inter_asr': function (msg) {
@@ -284,9 +288,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
  * @private
  */
 Turen.prototype.handleVoiceLocalAwake = function handleVoiceLocalAwake (data) {
-  /**
-   * Nothing to do in local_awake event.
-   */
+  this.degree = data.degree
 }
 
 /**

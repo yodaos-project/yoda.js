@@ -14,6 +14,7 @@ module.exports = Flora
 function Flora (light) {
   FloraComp.call(this, 'lightd', floraConfig)
   this.light = light
+  this.wakeUri = '/opt/light/awake.js'
 }
 inherits(Flora, FloraComp)
 
@@ -23,7 +24,7 @@ Flora.prototype.handlers = {
     if (property.get('state.network.connected') !== 'true') {
       return
     }
-    this.light.setAwake('@yoda')
+    this.light.loadfile('@yoda', this.wakeUri, {}, {})
   },
   'rokid.turen.local_awake': function (msg) {
     logger.log('voice local awake')
@@ -31,7 +32,7 @@ Flora.prototype.handlers = {
       return
     }
     var degree = msg[0]
-    this.light.setDegree('@yoda', degree)
+    this.light.loadfile('@yoda', this.wakeUri, { degree: degree }, {})
   },
   'rokid.lightd.global_alpha_factor': function (msg) {
     var alphaFactor = msg[0]
