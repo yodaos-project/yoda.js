@@ -27,20 +27,12 @@ module.exports = function (activity) {
   activity.on('url', urlObj => {
     switch (urlObj.pathname) {
       case '/no-local-app': {
-        var appName = _.get(urlObj, 'query.appName')
-        if (!appName) {
-          appName = '应用'
-        }
         var appId = _.get(urlObj, 'query.appId')
         if (!appId) {
           appId = 'UNKNOWN'
         }
-        activity.wormhole.sendToApp('card', {
-          appid: 'ROKID.SYSTEM',
-          template: JSON.stringify({ tts: `${appName}(${appId}) 没有安装` }),
-          type: 'Chat'
-        }).catch(err => logger.error('Unexpected error on send card to app', err.stack))
-        activity.tts.speak(`哎呀，${appName}好像没有安装，请到若琪 app 查看一下吧`)
+        logger.warn(`app(${appId}) not installed`)
+        activity.tts.speak(`我还不支持这个功能，等我学会了第一时间告诉你。`)
           .then(() => activity.exit())
         break
       }
