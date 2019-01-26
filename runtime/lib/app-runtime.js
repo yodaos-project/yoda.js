@@ -602,11 +602,14 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
   }
 
   return future
-    .then(() => this.component.light.play(
-      '@yoda',
-      'system://setMuted.js',
-      { muted: muted },
-      { shouldResume: muted }))
+    .then(() => {
+      var noTts = !!this.component.lifetime.getCurrentAppId()
+      this.component.light.play(
+        '@yoda',
+        'system://setMuted.js',
+        { muted: muted, noTts: noTts },
+        { shouldResume: muted })
+    })
 }
 
 /**
