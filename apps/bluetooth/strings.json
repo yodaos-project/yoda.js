@@ -1,6 +1,6 @@
 {
   "SINK_OPENED": "蓝牙已打开。",
-  "SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S": "当前没有可连接的设备，你可以在手机设置中找到%s，并进行连接。",
+  "SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S": "正在搜索你的蓝牙设备，你也可以在手机设置中找到%s，并进行连接。",
   "SINK_FIRST_OPENED_ARG1S": "蓝牙已打开，你可以在手机上找到%s来连接我的蓝牙。",
   "SINK_FIRST_OPENED_BY_CONNECT_ARG1S": "当前没有可连接的设备，你可以在手机设置中找到%s，并进行连接。",
   "SINK_OPEN_FAILED": "蓝牙暂时无法打开，稍候再试一次吧！",
