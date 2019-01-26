@@ -36,25 +36,25 @@ module.exports = function (activity) {
     switch (hosts) {
       case 'bluetooth_music':
         var url = util.format(res.URL.PLAYER_CONTROLLER, id)
-        activity.openUrl(url, {preemptive: false})
+        activity.openUrl(url, { preemptive: false })
         if (typeof afterFunc === 'function') {
-          activity.setForeground({form: 'scene', skillId: id}).then(afterFunc)
+          activity.setForeground({ form: 'scene', skillId: id }).then(afterFunc)
         } else {
-          activity.setForeground({form: 'scene', skillId: id})
+          activity.setForeground({ form: 'scene', skillId: id })
         }
         break
       case 'bluetooth_call':
         if (typeof afterFunc === 'function') {
-          activity.setForeground({form: 'scene', skillId: id}).then(afterFunc)
+          activity.setForeground({ form: 'scene', skillId: id }).then(afterFunc)
         } else {
-          activity.setForeground({form: 'scene', skillId: id})
+          activity.setForeground({ form: 'scene', skillId: id })
         }
         break
       case 'bluetooth':
         if (typeof afterFunc === 'function') {
-          activity.setBackground({form: 'cut', skillId: id}).then(afterFunc)
+          activity.setBackground({ form: 'cut', skillId: id }).then(afterFunc)
         } else {
-          activity.setBackground({form: 'cut', skillId: id})
+          activity.setBackground({ form: 'cut', skillId: id })
         }
         break
       default:
@@ -64,7 +64,7 @@ module.exports = function (activity) {
   }
 
   function playIncomingRingtone () {
-    activity.media.start(res.AUDIO.RINGTONE, {streamType: 'ring'})
+    activity.media.start(res.AUDIO.RINGTONE, { streamType: 'ring' })
   }
 
   function stopIncomingRingtone () {
@@ -219,7 +219,7 @@ module.exports = function (activity) {
       if (mode === protocol.A2DP_MODE.SINK && isConnected && !isPlaying) {
         a2dp.play()
       } else {
-        a2dp.open(protocol.A2DP_MODE.SINK, {autoplay: true})
+        a2dp.open(protocol.A2DP_MODE.SINK, { autoplay: true })
       }
     },
     // 2.5 play music
@@ -251,7 +251,7 @@ module.exports = function (activity) {
       logger.log(`radio: ${status}, conn: ${a2dp.getConnectionState()}`)
       var template = null
       if (status === protocol.RADIO_STATE.ON && a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED) {
-        template = {'currentDevice': a2dp.getConnectedDevice()}
+        template = { 'currentDevice': a2dp.getConnectedDevice() }
       }
       sendMsgToApp(status, template)
       activity.setBackground()
@@ -400,7 +400,7 @@ module.exports = function (activity) {
     logger.debug(`${mode} onConnectionStateChanged(${state})`)
     cancelTimer()
     if (mode === protocol.A2DP_MODE.SOURCE) {
-      var data = ((device != null) ? {'currentDevice': device} : null)
+      var data = ((device != null) ? { 'currentDevice': device } : null)
       sendMsgToApp(state, data)
     }
     if (mode !== a2dp.getMode()) {
@@ -729,7 +729,7 @@ module.exports = function (activity) {
         }
         pauseMusic()
         break
-      case 'on-stop-shake':
+      case 'on-start-shake':
         if (a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
           a2dp.next()
         }

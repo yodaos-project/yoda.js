@@ -28,7 +28,7 @@
     "notifications": [
       "on-quite-front",
       "on-quite-back",
-      "on-stop-shake"
+      "on-start-shake"
     ]
   },
   "keywords": [
