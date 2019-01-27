@@ -47,7 +47,7 @@ test('get should return properties', t => {
     secret: 'very-secret-secret'
   }
   var runtime = {
-    onGetPropAll: function onGetPropAll () {
+    getCopyOfCredential: function getCopyOfCredential () {
       return Promise.resolve(expected)
     }
   }
