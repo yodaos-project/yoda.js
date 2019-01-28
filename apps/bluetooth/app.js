@@ -24,16 +24,15 @@ module.exports = function (activity) {
   var needResume = false
   var lastIntent = null
   var timer = null
-  var onTopStack = false
-  var onQuietMode = false
   var callState = protocol.CALL_STATE.IDLE
   var deviceProps = null
   var agent = null
+  var currentSkillName = 'bluetooth'
 
-  function setAppType (hosts, afterFunc) {
-    var id = getSkillId(hosts)
-    logger.debug(`setAppType(${hosts}: ${id})`)
-    switch (hosts) {
+  function setAppType (skillName, afterFunc) {
+    var id = getSkillId(skillName)
+    logger.debug(`setAppType(${skillName}: ${id})`)
+    switch (skillName) {
       case 'bluetooth_music':
         var url = util.format(res.URL.PLAYER_CONTROLLER, id)
         activity.openUrl(url, {preemptive: false})
@@ -61,6 +60,7 @@ module.exports = function (activity) {
         break
     }
     activity.setContextOptions({ keepAlive: true })
+    currentSkillName = skillName
   }
 
   function playIncomingRingtone () {
@@ -455,9 +455,7 @@ module.exports = function (activity) {
         setAppType('bluetooth_music')
         cancelTimer()
         setTimer(() => { // To ensure unmute because turen may mute music by itself.
-          if (!onQuietMode) {
-            a2dp.unmute()
-          }
+          a2dp.unmute()
         }, 100)
         break
       case protocol.AUDIO_STATE.PAUSED:
@@ -528,8 +526,8 @@ module.exports = function (activity) {
   }
 
   function resumeMusic () {
-    logger.debug(`resumeMusic(top:${onTopStack} quiet:${onQuietMode} res:${needResume})`)
-    if (onTopStack && !onQuietMode && needResume) {
+    logger.debug(`needResume:${needResume})`)
+    if (needResume) {
       needResume = false
       a2dp.play()
       return true
@@ -547,23 +545,14 @@ module.exports = function (activity) {
           }
           activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
           activity.stopMonologue()
-          a2dp.mute()
-          var paused = pauseMusic()
-          if (paused) {
-            setAppType('bluetooth_music')
-          } else {
-            setAppType('bluetooth')
-          }
-          if (callState !== protocol.CALL_STATE.IDLE) {
-            activity.light.play(res.LIGHT.CALL[state])
-            activity.light.stop(res.LIGHT.CALL[callState])
-          }
+          setAppType('bluetooth')
+          activity.light.play(res.LIGHT.CALL[state])
+          activity.light.stop(res.LIGHT.CALL[callState])
         }
         callState = state
         break
       case protocol.CALL_STATE.INCOMING:
         if (callState === protocol.CALL_STATE.IDLE) {
-          pauseMusic()
           setAppType('bluetooth_call', () => {
             activity.startMonologue()
             activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
@@ -576,7 +565,6 @@ module.exports = function (activity) {
         callState = state
         break
       case protocol.CALL_STATE.OFFHOOK:
-        pauseMusic()
         if (callState === protocol.CALL_STATE.IDLE) {
           setAppType('bluetooth_call', () => {
             activity.startMonologue()
@@ -621,8 +609,7 @@ module.exports = function (activity) {
     var audioPath = data[0]
     var vol = data[1]
     logger.log(`audio path: ${audioPath}, vol: ${vol}`)
-    if (audioPath === 'playback' && onTopStack &&
-      a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
+    if (audioPath === 'playback' && a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
       process.nextTick(() => {
         a2dp.syncVol(vol)
       })
@@ -651,43 +638,45 @@ module.exports = function (activity) {
   })
 
   activity.on('resume', () => {
-    logger.log(`activity.onResume()`)
-    onTopStack = true
-    if (hfp.getCallState() !== protocol.CALL_STATE.IDLE) {
-      // Do nothing while in call.
-    } else {
-      resumeMusic()
+    logger.log(`activity.onResume(${currentSkillName})`)
+    switch (currentSkillName) {
+      case 'bluetooth_music':
+        resumeMusic()
+        break
+      default:
+        break
     }
   })
 
-  activity.on('active', () => {
-    logger.log(`activity.onActive()`)
-    onTopStack = true
-  })
-
   activity.on('background', () => {
-    logger.log(`activity.onBackground()`)
-    onTopStack = false
-    if (hfp.getCallState() !== protocol.CALL_STATE.IDLE) {
-      // Do nothing while in call.
-    } else if (a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
-      a2dp.disconnect()
-      setAppType('bluetooth')
+    logger.log(`activity.onBackground(${currentSkillName})`)
+    switch (currentSkillName) {
+      case 'bluetooth_music':
+      case 'bluetooth_call':
+        if (a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED) {
+          a2dp.disconnect()
+        }
+        setAppType('bluetooth')
+        callState = protocol.CALL_STATE.IDLE
+        break
+      default:
+        break
     }
   })
 
   activity.on('pause', () => {
-    logger.log(`activity.onPause()`)
-    onTopStack = false
-    if (hfp.getCallState() !== protocol.CALL_STATE.IDLE) {
-      // Do nothing while in call.
-    } else {
-      pauseMusic()
+    logger.log(`activity.onPause(${currentSkillName})`)
+    switch (currentSkillName) {
+      case 'bluetooth_music':
+        pauseMusic()
+        break
+      default:
+        break
     }
   })
 
   activity.on('destroy', () => {
-    logger.log('activity.onDestroy()')
+    logger.log(`activity.onDestroy(${currentSkillName})`)
     agent.close()
     agent.unsubscribe('yodart.audio.on-volume-change')
     if (a2dp !== null) {
@@ -705,7 +694,7 @@ module.exports = function (activity) {
 
   activity.on('request', function (nlp, action) {
     lastIntent = nlp.intent
-    logger.log(`activity.onNlpRequest(intent: ${nlp.intent})`)
+    logger.log(`activity.onNlpRequest(intent: ${nlp.intent}), ${currentSkillName}`)
     handleIntents(nlp.intent, nlp)
   })
 
@@ -716,14 +705,12 @@ module.exports = function (activity) {
   })
 
   activity.on('notification', (state) => {
-    logger.debug(`activity.onNotification(${state})`)
+    logger.debug(`activity.onNotification(${state}), ${currentSkillName}`)
     switch (state) {
       case 'on-quite-front':
-        onQuietMode = false
         resumeMusic()
         break
       case 'on-quite-back':
-        onQuietMode = true
         if (hfp.getCallState() !== protocol.CALL_STATE.IDLE) {
           hfp.hangup()
         }
