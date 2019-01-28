@@ -3,15 +3,15 @@
 var logger = require('logger')('timed-sleep')
 var util = require('util')
 var _ = require('@yoda/util')._
-var Time = require('./Time.js').Time
+var time = require('@yoda/util').time
+var math = require('@yoda/util').math
 var trace = require('@yoda/trace')
-var crypto = require('crypto')
 
 module.exports = function (activity) {
   var config = require('./config.json')
   var strings = require('./strings.json')
   var timer = null
-  var time = null
+  var totalSecs = 0
 
   activity.on('create', () => {
     logger.log('on create')
@@ -20,15 +20,11 @@ module.exports = function (activity) {
       activity.tts.stop()
       activity.setBackground()
     })
-  })
-
-  activity.on('active', () => {
-    logger.log('on active')
     activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
   })
 
-  activity.on('background', () => {
-    logger.log('on background')
+  activity.on('destroy', () => {
+    logger.log('on destroy')
     activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
   })
 
@@ -36,19 +32,18 @@ module.exports = function (activity) {
     logger.log('on request: ', nlp.intent, nlp.slots)
     switch (nlp.intent) {
       case 'timed_sleep':
-        time = parseTime(nlp.slots)
-        var secs = time.getSeconds()
-        logger.debug(`sleep after ${secs} seconds`)
-        if (secs < config.TIME_MIN) {
+        totalSecs = parseTimeToSeconds(nlp.slots)
+        logger.debug(`sleep after ${totalSecs} seconds`)
+        if (totalSecs < config.TIME.SHORTEST) {
           speak(strings.SET_FAIL.TOO_SHORT)
-        } else if (secs > config.TIME_MAX) {
+        } else if (totalSecs > config.TIME.LONGEST) {
           speak(strings.SET_FAIL.TOO_LONG)
         } else {
           if (timer !== null) {
             clearTimeout(timer)
           }
-          timer = setTimeout(doSleep, secs * 1000)
-          speak(strings.SET_SUCC, time.toString())
+          timer = setTimeout(doSleep, totalSecs * 1000)
+          speak(strings.SET_SUCC, time.toString(totalSecs))
         }
         break
       case 'cancel_timing':
@@ -76,62 +71,59 @@ module.exports = function (activity) {
   }
 
   function speak (text, args) {
+    var afterFunc = afterSpeak
     if (Array.isArray(text)) {
-      var n = text.length
-      var r = crypto.randomBytes(1).toString('hex')
-      r = parseInt(r, 16)
-      r = Math.floor(r * n / 256)
-      text = text[r]
+      var i = math.randInt(text.length)
+      text = text[i]
     }
-    if (args !== null && args !== undefined) {
+    if (typeof args === 'string') {
       text = util.format(text, args)
+    } else if (typeof args === 'function') {
+      afterFunc = args
     }
-    sendCardToApp({text: text})
+    sendCardToApp('ROKID.TIMED-SLEEP', {text: text})
+    activity.tts.stop()
     return activity.setForeground().then(() => {
       return activity.tts.speak(text, { impatient: false }).catch((err) => {
         logger.error('Speak error: ', err)
-        afterSpeak()
+        afterFunc()
       })
-    }).then(afterSpeak)
+    }).then(afterFunc)
   }
 
-  function parseTime (slots) {
+  function parseTimeToSeconds (slots) {
     var dateTime = {}
     try {
       dateTime = JSON.parse(slots.dateTime.value)
     } catch (err) {
       logger.error('Parse time error: ', err)
     }
-    var second = _.get(dateTime, 'RelSecond', 0)
-    var minute = _.get(dateTime, 'RelMinute', 0)
-    var hour = _.get(dateTime, 'RelHour', 0)
-    var day = _.get(dateTime, 'RelDay', 0)
-    var tm = new Time(second, minute, hour, day)
-    if (tm.getSeconds() !== 0) {
-      return tm
+    var second = parseInt(_.get(dateTime, 'RelSecond', 0))
+    var minute = parseInt(_.get(dateTime, 'RelMinute', 0))
+    var hour = parseInt(_.get(dateTime, 'RelHour', 0))
+    var day = parseInt(_.get(dateTime, 'RelDay', 0))
+    var totalSecs = time.toSeconds(second, minute, hour, day)
+    if (totalSecs !== 0) {
+      return totalSecs
     }
-    second = _.get(dateTime, 'AbsSecond', 0)
-    minute = _.get(dateTime, 'AbsMinute', 0)
-    hour = _.get(dateTime, 'AbsMinute', 0)
-    var zone = _.get(dateTime, 'DayZone', '')
+    second = parseInt(_.get(dateTime, 'AbsSecond', 0))
+    minute = parseInt(_.get(dateTime, 'AbsMinute', 0))
+    hour = parseInt(_.get(dateTime, 'AbsHour', 0))
+    var zone = _.get(dateTime, 'DayZone', 'MORNING')
     if (zone !== 'MORNING') {
       hour += 12
     }
-    var now = new Date()
-    logger.debug(`now: ${now.toString()}`)
     var date = new Date()
     date.setHours(hour)
     date.setMinutes(minute)
     date.setSeconds(second)
     logger.debug(`set: ${date.toString()}`)
-    var dt = date.getTime() - now.getTime()
-    tm.setSeconds(dt)
-    return tm
+    return Math.round((date.getTime() - Date.now()) / 1000)
   }
 
   function doSleep () {
     activity.idle().then(() => {
-      sendCardToApp({text: strings.GOOD_BYE})
+      sendCardToApp('ROKID.TIMED-SLEEP', {text: strings.GOOD_BYE})
       trace([{
         event: 'timed_sleep',
         action: 'idle'
@@ -143,9 +135,9 @@ module.exports = function (activity) {
     activity.exit()
   }
 
-  function sendCardToApp (content) {
+  function sendCardToApp (appId, content) {
     activity.wormhole.sendToApp('card', {
-      appid: 'ROKID.SYSTEM',
+      appid: appId,
       template: JSON.stringify({ tts: content.text }),
       type: 'Chat'
     }).catch(err => logger.error('Unexpected error on send card to app', err.stack))
