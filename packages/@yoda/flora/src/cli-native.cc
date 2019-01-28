@@ -447,6 +447,10 @@ static Napi::Value genJSArrayByCaps(Napi::Env& env,
         msg->read(cv);
         ret[idx++] = genJSArrayByCaps(env, cv);
         break;
+      case CAPS_MEMBER_TYPE_VOID:
+        msg->read();
+        ret[idx++] = env.Undefined();
+        break;
     }
   }
   return ret;
@@ -490,6 +494,8 @@ static bool genCapsByJSArray(napi_env env, napi_value jsmsg,
       if (!genCapsByJSArray(env, v, sub))
         return false;
       caps->write(sub);
+    } else if (tp == napi_undefined) {
+      caps->write();
     } else
       return false;
   }
