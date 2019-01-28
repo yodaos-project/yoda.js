@@ -22,6 +22,7 @@ function Flora (tts) {
   ].forEach(it => {
     var self = this
     self.tts.on(it, function () {
+      logger.debug('emitting tts event', it)
       /** msg: [ event, ttsId, appId, Optional(errno) ] */
       self.agent.post('yodart.ttsd.event', [it].concat(Array.prototype.slice.call(arguments, 0)))
     })

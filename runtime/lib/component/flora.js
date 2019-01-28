@@ -40,9 +40,9 @@ Flora.prototype.handlers = {
       logger.warn(`app is not alive, ignoring tts event(${event} for app(${appId})`)
       return
     }
+    /** [ event, ttsId, Optional(errno) ] */
     msg.splice(2, 1)
-    /** emit: [ ttsId, Optional(errno) ] */
-    descriptor.tts.emit.apply(descriptor.tts, msg)
+    descriptor.tts.handleEvent.apply(descriptor.tts, msg)
   },
   [`rokid.speech.nlp.${asr2nlpId}`]: onAsr2Nlp,
   [`rokid.speech.error.${asr2nlpId}`]: onAsr2NlpError

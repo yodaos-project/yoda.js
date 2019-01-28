@@ -42,12 +42,6 @@ function Tts () {
 inherits(Tts, EventEmitter)
 
 Tts.prototype.speak = function (appId, text) {
-  if (this.lastAppId === appId && this.lastReqId > -1) {
-    logger.info('emit simulated cancel event for app', this.lastReqId)
-    this.emit('cancel', this.lastAppId, this.lastReqId)
-    this.ignoreTtsEvent = false
-  }
-
   if (this.handle[appId]) {
     try {
       this.handle[appId].stop()
@@ -56,6 +50,10 @@ Tts.prototype.speak = function (appId, text) {
       logger.error(`try to stop prev tts failed with appId: ${appId}`, error.stack)
       return -1
     }
+  } else if (this.lastAppId === appId && this.lastReqId > -1) {
+    logger.info('emit simulated cancel event for app', this.lastAppId, this.lastReqId)
+    this.emit('cancel', this.lastReqId, this.lastAppId)
+    this.ignoreTtsEvent = false
   }
 
   var req
@@ -75,7 +73,7 @@ Tts.prototype.speak = function (appId, text) {
 Tts.prototype.stop = function (appId) {
   if (this.ignoreTtsEvent && this.lastAppId === appId && this.lastReqId > -1) {
     logger.info('emit simulated cancel event for app', this.lastReqId)
-    this.emit('cancel', this.lastAppId, this.lastReqId)
+    this.emit('cancel', this.lastReqId, this.lastAppId)
     this.lastAppId = ''
     this.lastText = ''
     this.lastReqId = -1
