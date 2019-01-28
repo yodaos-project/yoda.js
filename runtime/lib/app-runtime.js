@@ -1004,7 +1004,7 @@ AppRuntime.prototype.shutdown = function shutdown () {
  * @private
  */
 AppRuntime.prototype.ttsMethod = function (name, args) {
-  return this.component.flora.call(`yodart.ttsd.${name}`, args, 'ttsd', 100)
+  return this.component.flora.call(`yodart.ttsd.${name}`, args, 'ttsd', 1000)
 }
 
 AppRuntime.prototype.multimediaMethod = function (name, args) {

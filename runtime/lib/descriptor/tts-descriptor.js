@@ -22,10 +22,45 @@ function TtsDescriptor (activityDescriptor, appId, appHome, runtime) {
   this._appId = appId
   this._appHome = appHome
   this._runtime = runtime
+
+  this._requests = {}
 }
 inherits(TtsDescriptor, EventEmitter)
 TtsDescriptor.prototype.toJSON = function toJSON () {
   return TtsDescriptor.prototype
+}
+TtsDescriptor.prototype.handleEvent = function handleEvent (event, ttsId, errno) {
+  logger.info('tts signals', event, ttsId)
+  var request = this._requests[ttsId]
+  if (request == null) {
+    logger.warn(`unknown tts(${ttsId}) event(${event})`)
+    return
+  }
+  if (['error', 'end', 'cancel'].indexOf(event) >= 0) {
+    delete this._requests[ttsId]
+  }
+  if (request.impatient || event !== 'error') {
+    /**
+     * impatient client cannot receive `error` event through Promise
+     */
+    this.emit.apply(this,
+      Array.prototype.slice.call(arguments, 1))
+  }
+
+  if (request.impatient) {
+    /** promise has been resolved early, shall not be resolve/reject again */
+    return
+  }
+
+  if (['end', 'cancel'].indexOf(event) >= 0) {
+    return request.resolve()
+  }
+  if (event === 'error') {
+    var code = arguments[2]
+    var err = new Error(`Unexpected ttsd error(${code})`)
+    err.code = code
+    return request.reject(err)
+  }
 }
 
 Object.assign(TtsDescriptor.prototype,
@@ -96,34 +131,7 @@ Object.assign(TtsDescriptor.prototype,
               throw new Error('Unexpected ttsd error.')
             }
             return new Promise((resolve, reject) => {
-              ;['cancel', 'end', 'error'].forEach(event => {
-                self.on(event, function () {
-                  logger.info('tts signals', event)
-                  if (impatient || event !== 'error') {
-                    /**
-                     * impatient client cannot receive `error` event through Promise
-                     */
-                    EventEmitter.prototype.emit.apply(self,
-                      Array.prototype.slice.call(arguments, 1))
-                  }
-
-                  if (impatient) {
-                    /** promise has been resolved early, shall not be resolve/reject again */
-                    return
-                  }
-
-                  if (['end', 'cancel'].indexOf(event) >= 0) {
-                    return resolve()
-                  }
-                  if (event === 'error') {
-                    var code = arguments[2]
-                    var err = new Error(`Unexpected ttsd error(${code})`)
-                    err.code = code
-                    return reject(err)
-                  }
-                })
-              })
-
+              self._requests[ttsId] = { impatient: impatient, resolve: resolve, reject: reject }
               if (impatient) {
                 resolve(ttsId)
               }
