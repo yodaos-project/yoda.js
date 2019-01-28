@@ -8,6 +8,7 @@ var agentOptions = { reconnInterval: 10000, bufsize: 0 }
 // var errUri = 'unix:/data/flora-error'
 var okUri = 'unix:/var/run/flora.sock'
 var crypto = require('crypto')
+var Caps = flora.Caps
 
 test('module->flora->persist msg', t => {
   var recvClient = new Agent(okUri, agentOptions)
@@ -688,4 +689,46 @@ test('module->flora->client: rpc call target', { timeout: 10 * 1000 }, t => {
     agentInfo[2].agent.close()
     t.end()
   }, 3000)
+})
+
+test('module->flora->client: write/read undefined', { timeout: 10 * 1000 }, t => {
+  var clientId = 'rw-void'
+  var agent = new Agent(okUri + '#' + clientId, agentOptions)
+  var recvArrMsg = false
+  var recvCapsMsg = false
+  agent.subscribe('void-arr-msg', (msg) => {
+    recvArrMsg = true
+    t.equal(Array.isArray(msg), true)
+    t.equal(msg.length, 6)
+    t.equal(msg[0], undefined)
+    t.equal(msg[1], 'foo')
+    t.equal(msg[2], 1)
+    t.equal(msg[3], undefined)
+    t.equal(msg[4], undefined)
+    t.equal(msg[5], 2)
+  })
+  agent.subscribe('void-caps-msg', (msg) => {
+    recvCapsMsg = true
+    t.equal(msg instanceof Caps, true)
+    msg.readVoid()
+    t.equal(msg.readString(), 'foo')
+    t.equal(msg.readDouble(), 1)
+    msg.readVoid()
+    msg.readVoid()
+    t.equal(msg.readDouble(), 2)
+  }, { format: 'caps' })
+  agent.start()
+
+  var msg = [ undefined, 'foo', 1, undefined, undefined, 2 ]
+  var r = agent.post('void-arr-msg', msg)
+  console.log('post void-arr-msg:', r)
+  r = agent.post('void-caps-msg', msg)
+  console.log('post void-caps-msg:', r)
+
+  setTimeout(() => {
+    agent.close()
+    t.equal(recvArrMsg, true)
+    t.equal(recvCapsMsg, true)
+    t.end()
+  }, 1000)
 })
