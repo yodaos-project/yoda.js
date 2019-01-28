@@ -4,5 +4,6 @@ module.exports = {
   fs: require('./fs'),
   json: require('./json'),
   math: require('./math'),
-  path: require('./path')
+  path: require('./path'),
+  time: require('./time')
 }
