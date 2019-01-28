@@ -287,6 +287,7 @@ Agent.prototype.call = function (name, msg, target, timeout, options) {
 }
 
 exports.Agent = Agent
+exports.Caps = Caps
 
 /**
  * @memberof module:@yoda/flora
