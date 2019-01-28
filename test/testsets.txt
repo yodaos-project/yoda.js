@@ -10,6 +10,7 @@
 @yoda/flora/*.test.js
 @yoda/ota/*.test.js
 @yoda/util/*.test.js
+@yodaos/application/*.test.js
 logger/*.test.js
 apps/cloudAppClient/*.test.js
 activity/*.test.js
