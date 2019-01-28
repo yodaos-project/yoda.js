@@ -53,7 +53,7 @@ uv_async_t* yoda_async_init(napi_env env, napi_value fn) {
  */
 static void yoda_async_invoke(uv_async_t* handle, std::function<napi_value(napi_env)> init_fn) {
   yoda_async_info_t* async_info = (yoda_async_info_t*)handle->data;
-  uv_mutex_lock(async_info->mutex);
+  uv_mutex_lock(&async_info->mutex);
 
   async_info->init_fn = &init_fn;
   uv_thread_t this_thread = uv_thread_self();
