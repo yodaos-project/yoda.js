@@ -1,7 +1,7 @@
 {
   "name": "@yoda/timer",
-  "version": "1.0.0",
-  "description": "Timer for Rokid",
+  "version": "2.0.0",
+  "description": "Base countdown timer.",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,10 +22,10 @@
     ]
   },
   "keywords": [
-    "RKTimer",
+    "timer",
     "rokid",
     "skill"
   ],
-  "author": "medea",
+  "author": "Morrowind Xie <morrowindxie@gmail.com>",
   "license": "MIT"
 }
