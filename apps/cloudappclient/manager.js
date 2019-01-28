@@ -44,6 +44,7 @@ Manager.prototype.onrequest = function (nlp, action) {
       logger.log('there is no skill to run, emit [empty] event because directive is empty!')
       this.emit('empty')
     } else {
+      logger.log('try to resume current skill')
       this.resume()
     }
     return
@@ -148,12 +149,10 @@ Manager.prototype.pause = function () {
 Manager.prototype.resume = function () {
   this.isAppActive = true
   var cur = this.getCurrentSkill()
-  // if top app is not self,do not resume immediately
-  if (cur.paused === false) {
-    return
-  }
   if (cur !== false) {
     cur.emit('resume')
+  } else {
+    logger.log('not found skill, skipping resume skill')
   }
 }
 
