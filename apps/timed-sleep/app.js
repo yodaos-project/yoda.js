@@ -21,6 +21,7 @@ module.exports = function (activity) {
       activity.setBackground()
     })
     activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
+    activity.setContextOptions({ keepAlive: true })
   })
 
   activity.on('destroy', () => {
