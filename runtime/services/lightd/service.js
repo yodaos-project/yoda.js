@@ -155,6 +155,7 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       if (callback) {
         callback()
       }
+      return
     }
 
     // FIXME: delete handlers that are not used for a long time
