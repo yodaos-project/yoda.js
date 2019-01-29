@@ -6,6 +6,7 @@ var _ = require('@yoda/util')._
 var time = require('@yoda/util').time
 var math = require('@yoda/util').math
 var trace = require('@yoda/trace')
+var wifi = require('@yoda/wifi')
 
 module.exports = function (activity) {
   var config = require('./config.json')
@@ -181,10 +182,12 @@ module.exports = function (activity) {
     timer = null
     remainMilliSecs = 0
     speak(strings.TIMEUP, () => playRingtone(config.RINGTONE.RING_TIMES))
-    trace([{
-      event: 'timer',
-      action: 'triggered'
-    }])
+    if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
+      trace([{
+        event: 'timer',
+        action: 'triggered'
+      }])
+    }
     activity.keyboard.preventDefaults(config.KEY_CODE.MIKE)
     activity.keyboard.preventDefaults(config.KEY_CODE.VOLDOWN)
     activity.keyboard.preventDefaults(config.KEY_CODE.VOLUP)
