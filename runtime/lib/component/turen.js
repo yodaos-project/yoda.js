@@ -128,6 +128,9 @@ Turen.prototype.handlers = {
     var speechId = msg[1]
     logger.error(`Unexpected speech error(${errCode}) for speech(${speechId}).`)
     return this.handleSpeechError(errCode, speechId)
+  },
+  'rokid.speech.completed': function () {
+    return this.toggleWakeUpEngine(true)
   }
 }
 
@@ -506,6 +509,7 @@ Turen.prototype.pickup = function pickup (isPickup, options) {
    */
   this.pickingUpDiscardNext = discardNext && !isPickup
   this.component.flora.post('rokid.turen.pickup', [ isPickup ? 1 : 0 ])
+  this.toggleWakeUpEngine(!isPickup)
 
   if (!isPickup) {
     clearTimeout(this.solitaryVoiceComingTimer)
