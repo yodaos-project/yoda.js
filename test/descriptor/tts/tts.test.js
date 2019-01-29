@@ -3,7 +3,7 @@
 var test = require('tape')
 var path = require('path')
 
-var helper = require('../helper')
+var helper = require('../../helper')
 var Descriptors = require(`${helper.paths.runtime}/lib/descriptor`)
 var extApp = require(`${helper.paths.runtime}/lib/app/ext-app`)
 
@@ -14,7 +14,7 @@ Object.assign(ActivityDescriptor.prototype, {
   }
 })
 
-var target = path.join(helper.paths.fixture, 'ext-app')
+var target = path.join(__dirname, 'fixture', 'ext-app')
 
 test('descriptor should register request', t => {
   t.plan(3)
@@ -98,8 +98,8 @@ test('descriptor should clear request on spoken', t => {
         if (message.type !== 'test' || message.event !== 'invoke') {
           return
         }
-        t.strictEqual(message.error, 'Unexpected ttsd error(123)')
-        t.strictEqual(message.code, 123)
+        t.strictEqual(message.error.message, 'Unexpected ttsd error(123)')
+        t.strictEqual(message.error.code, 123)
         descriptor.destruct()
         t.end()
       })

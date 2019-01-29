@@ -1,0 +1,24 @@
+{
+  "name": "@test/tts-app",
+  "version": "1.0.0",
+  "description": "Test Apps for Rokid",
+  "main": "app.js",
+  "metadata": {
+    "skills": [
+      "@test/tts-app"
+    ],
+    "permission": [
+      "ACCESS_TTS"
+    ]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "test",
+    "rokid",
+    "skill"
+  ],
+  "author": "Chengzhong Wu <chengzhong.wu@rokid.com>",
+  "license": "UNLICENSED"
+}
