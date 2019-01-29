@@ -162,6 +162,10 @@ Turen.prototype.listenerWrap = function (name, fn) {
       logger.warn('Mic muted, unexpected event from Turen:', name)
       return
     }
+    if (this.runtime.hasBeenDisabled()) {
+      logger.warn('runtime disabled, unexpected event from Turen:', name)
+      return
+    }
     logger.debug(`handling turen event "${name}"`)
     return fn.call(this, msg, type)
   }

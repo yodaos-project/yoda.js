@@ -61,7 +61,7 @@ function AppRuntime () {
 
   this.inited = false
   this.hibernated = false
-  this.welcoming = false
+  this.__temporaryDisablingReasons = [ 'initiating' ]
   // identify load app complete
   this.loadAppComplete = false
   this.shouldStopLongPressMicLight = false
@@ -96,12 +96,14 @@ AppRuntime.prototype.init = function init () {
 
   return this.loadApps().then(() => {
     this.inited = true
+    this.enableRuntimeFor('initiating')
+
     return this.component.dispatcher.delegate('runtimeDidInit')
   }).then(delegation => {
     if (delegation) {
       return
     }
-    this.welcoming = true
+    this.disableRuntimeFor('welcoming')
 
     var future = Promise.resolve()
     if (property.get('sys.firstboot.init', 'persist') !== '1') {
@@ -118,11 +120,11 @@ AppRuntime.prototype.init = function init () {
       })
     }
     return future.then(() => {
-      this.welcoming = false
+      this.enableRuntimeFor('welcoming')
       this.component.custodian.prepareNetwork()
     }).catch(err => {
       logger.error('unexpected error on boot welcoming', err.stack)
-      this.welcoming = false
+      this.enableRuntimeFor('welcoming')
     })
   })
 }
@@ -260,6 +262,76 @@ AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
 }
 
 /**
+ * Determines if runtime has been disabled for specific reason or just has been disabled.
+ *
+ * @param {string} [reason]
+ * @returns {boolean}
+ */
+AppRuntime.prototype.hasBeenDisabled = function hasBeenDisabled (reason) {
+  if (reason) {
+    return this.__temporaryDisablingReasons.indexOf(reason) >= 0
+  }
+  return this.__temporaryDisablingReasons.length > 0
+}
+
+/**
+ * Get all reasons for disabling runtime.
+ *
+ * @returns {string[]}
+ */
+AppRuntime.prototype.getDisabledReasons = function getDisabledReasons () {
+  return this.__temporaryDisablingReasons
+}
+
+/**
+ * Disable runtime for reason.
+ *
+ * Effects:
+ * - Turen wake up engine would be disabled.
+ * - Network events would be ignored.
+ * - Battery events would be ignored.
+ * - Application could not be opened through dispatching.
+ *
+ * @param {string} reason
+ * @returns {boolean} if reason was successfully added to memo.
+ */
+AppRuntime.prototype.disableRuntimeFor = function disableRuntimeFor (reason) {
+  if (typeof reason !== 'string') {
+    throw new TypeError('Expect a string as reason for AppRuntime.prototype.disableRuntimeFor')
+  }
+  if (this.__temporaryDisablingReasons.indexOf(reason) >= 0) {
+    logger.warn(`runtime has already been disabled for reason(${reason}), possible duplicated operation.`)
+    return false
+  }
+  this.__temporaryDisablingReasons.push(reason)
+  logger.warn(`disabling runtime for reason: ${reason}, current reasons: ${this.__temporaryDisablingReasons}`)
+  this.component.turen.toggleWakeUpEngine(false)
+  return true
+}
+
+/**
+ * Remove previously disabling runtime reason. Would enable runtime if there is no reason remaining.
+ *
+ * @param {string} reason
+ * @returns {boolean} if reason was successfully removed from memo.
+ */
+AppRuntime.prototype.enableRuntimeFor = function enableRuntimeFor (reason) {
+  if (typeof reason !== 'string') {
+    throw new TypeError('Expect a string as reason for AppRuntime.prototype.enableRuntimeFor')
+  }
+  var idx = this.__temporaryDisablingReasons.indexOf(reason)
+  if (idx < 0) {
+    return false
+  }
+  this.__temporaryDisablingReasons.splice(idx, 1)
+  logger.warn(`enabling runtime for reason: ${reason}, current reasons: ${this.__temporaryDisablingReasons}`)
+  if (this.__temporaryDisablingReasons.length === 0) {
+    this.component.turen.toggleWakeUpEngine(true)
+  }
+  return true
+}
+
+/**
  * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
  *
  * Also clears apps' contexts.
@@ -283,6 +355,7 @@ AppRuntime.prototype.hibernate = function hibernate () {
   }
   logger.info('hibernating runtime')
   this.hibernated = true
+  this.disableRuntimeFor('hibernated')
   this.component.turen.pickup(false)
   this.setMicMute(true, { silent: true })
   /**
@@ -306,6 +379,7 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
   }
   logger.info('waking up runtime')
   this.hibernated = false
+  this.enableRuntimeFor('hibernated')
   if (shouldWelcome) {
     this.shouldWelcome = true
   }
@@ -581,7 +655,9 @@ AppRuntime.prototype.setForegroundById = function setForegroundById (appId, opti
 
 /**
  *
- * @param {boolean} [mute] - set mic to mute, switch mute if not given.
+ * @param {boolean} mute - set mic to mute, switch mute if not given.
+ * @param {object} [options]
+ * @param {boolean} [options.silent]
  */
 AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
   var silent = _.get(options, 'silent', false)
@@ -591,11 +667,8 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
     future = this.component.light.stop('@yoda', 'system://setMuted.js')
   }
 
-  if (mute === this.component.turen.muted) {
-    return future
-  }
   /** mute */
-  var muted = this.component.turen.toggleMute()
+  var muted = this.component.turen.toggleMute(mute)
 
   if (silent) {
     return future
@@ -1104,20 +1177,19 @@ AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
             return
             /** delegation should break all actions below */
           }
-          this.welcoming = true
+          this.disableRuntimeFor('welcoming')
           logger.info('announcing welcome')
           return this.setMicMute(false, { silent: true })
             .then(() => {
-              this.component.light.appSound('@yoda', 'system://startup0.ogg')
-              return this.component.light.play('@yoda', 'system://setWelcome.js')
+              this.component.light.play('@yoda', 'system://setWelcome.js')
+                .then(() => this.component.light.stop('@yoda', 'system://boot.js'))
+              return this.component.light.appSound('@yoda', 'system://startup0.ogg')
             })
             .then(() => {
-              // not need to play startup music after relogin
-              this.component.light.stop('@yoda', 'system://boot.js')
-              this.welcoming = false
+              this.enableRuntimeFor('welcoming')
             })
             .catch(err => {
-              this.welcoming = false
+              this.enableRuntimeFor('welcoming')
               logger.error('unexpected error on welcoming', err.stack)
             })
         })

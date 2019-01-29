@@ -249,16 +249,8 @@ DBus.prototype.amsexport = {
     in: ['s'],
     out: ['b'],
     fn: function ReportSysStatus (status, cb) {
-      if (!this.runtime.inited) {
-        logger.debug('system initing, ignoring sys status report')
-        return cb(null, false)
-      }
-      if (this.runtime.welcoming) {
-        logger.debug('system welcoming, ignoring sys status report')
-        return cb(null, false)
-      }
-      if (this.runtime.hibernated) {
-        logger.debug('system hibernated, ignoring sys status report')
+      if (this.runtime.hasBeenDisabled()) {
+        logger.debug(`system disabled ${this.runtime.getDisabledReasons()}, ignoring sys status report`)
         return cb(null, false)
       }
       try {

@@ -22,8 +22,8 @@ class Battery {
   }
 
   handleFloraInfo (caps) {
-    if (this.runtime.hibernated) {
-      logger.info('runtime hibernated, ignoring battery events.')
+    if (this.runtime.hasBeenDisabled()) {
+      logger.debug(`system disabled ${this.runtime.getDisabledReasons()}, ignoring battery events`)
       return
     }
 
