@@ -155,7 +155,7 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       if (callback) {
         callback()
       }
-      return
+      return false
     }
 
     // FIXME: delete handlers that are not used for a long time
@@ -202,11 +202,13 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
     this.prevUri = uri
     this.prevZIndex = zIndex
     this.prevAppId = appId
+    return true
   } catch (error) {
     logger.error(`load effect file error from path: ${uri}`, error)
     if (callback) {
       callback(error)
     }
+    return false
   }
 }
 
