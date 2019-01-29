@@ -294,7 +294,7 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function exit (options) {
-        return this._runtime.exitAppById(this._appId, Object.assign(options, { ignoreKeptAlive: true }))
+        return this._runtime.exitAppById(this._appId, Object.assign({}, options, { ignoreKeptAlive: true }))
       }
     },
     /**
