@@ -76,6 +76,7 @@ YodaLocalPackage(yoda-util @yoda/util)
 YodaLocalPackage(yoda-wifi @yoda/wifi)
 YodaLocalPackage(yoda-env @yoda/env)
 YodaLocalPackage(yoda-flora @yoda/flora)
+YodaLocalPackage(yodaos-application @yodaos/application)
 YodaLocalPackage(yodaos-mediakit @yodaos/mediakit)
 YodaLocalPackage(yodaos-ttskit @yodaos/ttskit)
 
