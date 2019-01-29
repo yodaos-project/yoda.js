@@ -401,11 +401,13 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
  * @param {object} [options] -
  * @param {boolean} [options.recover] - if recover previous app
  * @param {boolean} [options.force] - deactivate the app whether it is in stack or not
+ * @param {boolean} [options.ignoreKeptAlive] - ignore contextOptions.keepAlive
  * @returns {Promise<void>}
  */
 LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, options) {
   var recover = _.get(options, 'recover', true)
   var force = _.get(options, 'force', false)
+  var ignoreKeptAlive = _.get(options, 'ignoreKeptAlive', false)
 
   if (this.monopolist === appId) {
     this.monopolist = null
@@ -430,11 +432,11 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   }
 
   var future
-  if (contextOptions && contextOptions.keepAlive) {
+  if (ignoreKeptAlive || _.get(contextOptions, 'keepAlive') !== true) {
+    future = this.destroyAppById(appId)
+  } else {
     logger.info(`app '${appId}' was kept alive`)
     future = this.setBackgroundById(appId, { recover: false })
-  } else {
-    future = this.destroyAppById(appId)
   }
 
   return this.recoverIfPossibleAfter(future, appId, recover && removedSlot)

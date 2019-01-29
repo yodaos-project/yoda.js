@@ -829,9 +829,11 @@ AppRuntime.prototype.voiceCommand = function (text, options) {
  * @param {string} appId -
  * @param {object} [options] -
  * @param {boolean} [options.clearContext] - also clears contexts
+ * @param {boolean} [options.ignoreKeptAlive] - ignore contextOptions.keepAlive
  */
 AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
   var clearContext = _.get(options, 'clearContext', false)
+  var ignoreKeptAlive = _.get(options, 'ignoreKeptAlive', false)
   if (clearContext) {
     if (appId === this.component.appLoader.getAppIdBySkillId(this.domain.scene)) {
       this.updateCloudStack('', 'scene', { isActive: false })
@@ -840,7 +842,7 @@ AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
       this.updateCloudStack('', 'cut', { isActive: false })
     }
   }
-  return this.component.lifetime.deactivateAppById(appId)
+  return this.component.lifetime.deactivateAppById(appId, { force: ignoreKeptAlive })
 }
 
 /**
