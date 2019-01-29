@@ -44,7 +44,7 @@ TtsDescriptor.prototype.handleEvent = function handleEvent (event, ttsId, errno)
      * impatient client cannot receive `error` event through Promise
      */
     this.emit.apply(this,
-      Array.prototype.slice.call(arguments, 1))
+      Array.prototype.slice.call(arguments, 0))
   }
 
   if (request.impatient) {
