@@ -304,6 +304,16 @@ Skill.prototype.transform = function (directives, append) {
       this.directives.push(tdt)
     }
   })
+  // sort directives
+  var dtOrder = {
+    'native': 0,
+    'tts': 1,
+    'media': 2,
+    'pickup': 3
+  }
+  this.directives = this.directives.sort(function (a, b) {
+    return (dtOrder[a.type] || 100) - (dtOrder[b.type] || 100)
+  })
   this.lastDirectives = Object.assign([], this.directives)
 }
 
