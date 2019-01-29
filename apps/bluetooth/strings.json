@@ -15,5 +15,7 @@
   "DISCONNECTED": "蓝牙已断开。",
   "ASK": "你可以对我说，若琪，打开蓝牙。",
   "ADD_TO_FAVORITE_FAILED": "⽆法收藏这⾸歌，换首歌试一下吧!",
-  "FALLBACK": "蓝牙音乐暂不支持此功能。"
+  "FALLBACK": "蓝牙音乐暂不支持此功能。",
+  "MUSIC_INFO_SUCC": "这首歌是%s的%s，收录在%s专辑中，喜欢的话可以让我收藏。",
+  "MUSIC_INFO_FAIL": "无法查询到这首歌的信息，换首歌试一下吧!"
 }
