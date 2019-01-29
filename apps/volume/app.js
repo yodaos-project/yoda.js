@@ -271,11 +271,19 @@ module.exports = function (activity) {
         break
       }
       case 'add_volume_num':
-        incVolume(format(nlp.slots) * partition, { type: 'announce' })
+        vol = format(nlp.slots)
+        if (vol < 10) {
+          vol = vol * partition
+        }
+        incVolume(vol, { type: 'announce' })
           .then(() => ctx.exit())
         break
       case 'dec_volume_num':
-        decVolume(format(nlp.slots) * partition, { type: 'announce' })
+        vol = format(nlp.slots)
+        if (vol < 10) {
+          vol = vol * partition
+        }
+        decVolume(vol, { type: 'announce' })
           .then(() => ctx.exit())
         break
       case 'add_volume_percent':
