@@ -120,8 +120,8 @@ class Dispatcher {
     var skillId = _.get(options, 'skillId')
     var carrierId = _.get(options, 'carrierId')
 
-    if (this.runtime.hibernated) {
-      logger.warn(`Runtime has been hibernated, skip dispatching event(${event}) to app(${appId}.`)
+    if (this.runtime.hasBeenDisabled()) {
+      logger.warn(`runtime has been disabled ${this.runtime.getDisabledReasons()}, skip dispatching event(${event}) to app(${appId}.`)
       return Promise.resolve(false)
     }
 
