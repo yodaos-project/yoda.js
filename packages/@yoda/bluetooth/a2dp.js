@@ -115,7 +115,8 @@ BluetoothA2dp.prototype.matchState = function (msg, filter) {
   return (filter.a2dpstate === msg.a2dpstate || filter.a2dpstate === undefined) &&
     (filter.connect_state === msg.connect_state || filter.connect_state === undefined) &&
     (filter.play_state === msg.play_state || filter.play_state === undefined || msg.play_state === undefined) &&
-    (filter.broadcast_state === msg.broadcast_state || filter.broadcast_state === undefined)
+    (filter.broadcast_state === msg.broadcast_state || filter.broadcast_state === undefined) &&
+    (filter.mode === this.lastMode || filter.mode === undefined)
 }
 
 /**
