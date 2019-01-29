@@ -13,7 +13,6 @@
       "RF68BD0FD30340ECBB926023072A8179"
     ],
     "permission": [
-      "ACCESS_TTS",
       "ACCESS_VOICE_COMMAND",
       "INTERRUPT"
     ],

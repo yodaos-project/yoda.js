@@ -8,7 +8,6 @@
       "@test/simple-app"
     ],
     "permission": [
-      "ACCESS_TTS"
     ]
   },
   "scripts": {

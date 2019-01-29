@@ -11,10 +11,6 @@
       "R644E7A3E5BB4244A61F7A381B7C0557"
     ],
     "permission": [
-      "ACCESS_NETWORK_STATE",
-      "ACCESS_TTS",
-      "ACCESS_MULTIMEDIA",
-      "ACCESS_SOUND",
       "INTERRUPT"
     ],
     "hosts": [

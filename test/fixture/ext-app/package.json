@@ -8,7 +8,6 @@
       "@test/ext-app"
     ],
     "permission": [
-      "ACCESS_TTS"
     ]
   },
   "scripts": {

@@ -9,8 +9,6 @@
       "@cloud"
     ],
     "permission": [
-      "ACCESS_TTS",
-      "ACCESS_MULTIMEDIA",
       "ACCESS_VOICE_COMMAND",
       "INTERRUPT"
     ],

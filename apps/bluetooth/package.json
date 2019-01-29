@@ -14,16 +14,13 @@
       "R05BAB8A256940FD80A271EAC899B2AF"
     ],
     "permission": [
-      "ACCESS_TTS",
-      "ACCESS_NETWORK_STATE",
       "INTERRUPT",
-      "ACCESS_MULTIMEDIA",
       "ACCESS_MONOPOLIZATION"
     ],
     "hosts": [
       [ "bluetooth", { "skillId": "73F9C00420AA472B914E5C051282945C" } ],
       [ "bluetooth_music", { "skillId": "RDDE53259D334860BA9E98CB3AB6C001" } ],
-      [ "bluetooth_call", { "skillId": "R05BAB8A256940FD80A271EAC899B2AF" } ] 
+      [ "bluetooth_call", { "skillId": "R05BAB8A256940FD80A271EAC899B2AF" } ]
     ],
     "notifications": [
       "on-quite-front",

@@ -13,7 +13,6 @@
       "7D0F5E5D57CD496B940654D7C8963AE0"
     ],
     "permission": [
-      "ACCESS_TTS"
     ],
     "hosts": [
       [ "volume", { "skillId": "@volume" } ]
