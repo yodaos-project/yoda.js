@@ -34,8 +34,6 @@ module.exports = function (activity) {
     logger.debug(`setAppType(${skillName}: ${id})`)
     switch (skillName) {
       case 'bluetooth_music':
-        var url = util.format(res.URL.PLAYER_CONTROLLER, id)
-        activity.openUrl(url, {preemptive: false})
         if (typeof afterFunc === 'function') {
           activity.setForeground({form: 'scene', skillId: id}).then(afterFunc)
         } else {
@@ -665,17 +663,17 @@ module.exports = function (activity) {
 
   activity.on('background', () => {
     logger.log(`activity.onBackground(${currentSkillName})`)
-    switch (currentSkillName) {
-      case 'bluetooth_music':
-      case 'bluetooth_call':
-        if (a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED) {
-          a2dp.disconnect()
-        }
-        setAppType('bluetooth')
-        callState = protocol.CALL_STATE.IDLE
-        break
-      default:
-        break
+    if (currentSkillName === 'bluetooth_music') {
+      var skillId = getSkillId(currentSkillName)
+      var url = util.format(res.URL.PLAYER_CONTROLLER, skillId)
+      activity.openUrl(url, {preemptive: false})
+    }
+    if (currentSkillName !== 'bluetooth') {
+      if (a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED) {
+        a2dp.disconnect()
+      }
+      setAppType('bluetooth')
+      callState = protocol.CALL_STATE.IDLE
     }
   })
 
