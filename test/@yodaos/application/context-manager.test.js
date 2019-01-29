@@ -49,6 +49,20 @@ test('should exit activity while all contexts are exited', t => {
   _.times(10).forEach(() => activity.emit('request', nlp, action))
 })
 
+test('should clear contexts on activity destroy', t => {
+  t.plan(1)
+
+  var activity = new EventEmitter()
+
+  var cm = new ContextManager(activity)
+  var nlp = { intent: 'foo' }
+  var action = { foo: 'bar' }
+
+  _.times(10).forEach(() => activity.emit('request', nlp, action))
+  activity.emit('destroy')
+  t.strictEqual(cm.contexts.length, 0)
+})
+
 test('should memo life status', t => {
   t.plan(5)
 
