@@ -5,11 +5,16 @@ var effect = new Effect()
 var light = new Service(effect)
 
 test('loadfile should be ok if uri is exited--setStandby.js', t => {
-  light.loadfile('@yoda', '/opt/light/setStandby.js', {}, {'shouldResume': true}, err => {
-    t.ok(err !== null)
+  var rst = light.loadfile('@yoda', '/opt/light/setStandby.js', {}, {'shouldResume': true}, (err) => {
+    t.ok(err === undefined)
     setTimeout(() => {
       light.stopPrev(true)
     }, 5000)
     t.end()
   })
+  t.strictEqual(rst, true)
+  rst = light.loadfile('@yoda', '/opt/light/setSpeaking.js', {}, {}, (err) => {
+    t.ok(err === undefined)
+  })
+  t.strictEqual(rst, false)
 })
