@@ -7,7 +7,16 @@ var logger = require('logger')('ttsd')
 var Service = require('./service')
 var Flora = require('./flora')
 
-var service = new Service()
+var Dbus = require('dbus')
+var Remote = require('../../lib/dbus-remote-call.js')
+var dbusService = Dbus.registerService('session', 'com.service.tts')
+var lightd = new Remote(dbusService._dbus, {
+  dbusService: 'com.service.light',
+  dbusObjectPath: '/rokid/light',
+  dbusInterface: 'com.rokid.light.key'
+})
+
+var service = new Service(lightd)
 var flora = new Flora(service)
 flora.init()
 

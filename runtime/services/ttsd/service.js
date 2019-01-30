@@ -3,182 +3,224 @@
 var logger = require('logger')('ttsdService')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
-var Dbus = require('dbus')
 
 var property = require('@yoda/property')
 var TtsWrap = require('@yoda/tts')
 var AudioManager = require('@yoda/audio').AudioManager
 
-var Remote = require('../../lib/dbus-remote-call.js')
-var dbusService = Dbus.registerService('session', 'com.service.tts')
-var lightd = new Remote(dbusService._dbus, {
-  dbusService: 'com.service.light',
-  dbusObjectPath: '/rokid/light',
-  dbusInterface: 'com.rokid.light.key'
-})
-
 var audioModuleName = 'tts'
 
-function Tts () {
+function Tts (lightd) {
   EventEmitter.call(this)
+  this.lightd = lightd
+
   this.config = undefined
   this.nativeWrap = undefined
-  this.handle = {}
-  this.registry = {}
 
-  // the role of these codes is to simulate tts recovery.
-  this.lastText = ''
-  this.lastAppId = ''
-  this.lastReqId = -1
   /**
-   * the purpose of this variable is to declare whether to ignore the tts event.
+   * keyed by request id
+   * @type {{ [key: string]: { appId: string, req: TtsRequest, staredAt?: number, eventMasked?: boolean, masqueradeId? string } }}
    */
-  this.ignoreTtsEvent = false
+  this.requestMemo = {}
+  /**
+   * keyed by app id
+   * @type {{ [key: string]: { reqId?: string, text: string } }}
+   */
+  this.appRequestMemo = {}
 
-  this.pausedAppIdOnAwaken = null
+  this.playingReqId = null
+  this.pausedReqIdOnAwaken = null
 
   AudioManager.setPlayingState(audioModuleName, false)
 }
 inherits(Tts, EventEmitter)
 
 Tts.prototype.speak = function (appId, text) {
-  if (this.handle[appId]) {
+  var appMemo = this.appRequestMemo[appId]
+  var reqId = appMemo ? appMemo.reqId : undefined
+  var reqMemo = reqId == null ? undefined : this.requestMemo[reqId]
+  if (reqMemo) {
     try {
-      this.handle[appId].stop()
-      delete this.handle[appId]
-    } catch (error) {
-      logger.error(`try to stop prev tts failed with appId: ${appId}`, error.stack)
+      reqMemo.req.stop()
+    } catch (err) {
+      logger.error(`stop previous tts(appId:${appId}, reqId:${reqId}) failed for ${err.stack}`)
+      this.clearMemo(appId, reqId)
       return -1
     }
-  } else if (this.lastAppId === appId && this.lastReqId > -1) {
-    logger.info('emit simulated cancel event for app', this.lastAppId, this.lastReqId)
-    this.emit('cancel', this.lastReqId, this.lastAppId)
-    this.ignoreTtsEvent = false
+  } else if (reqId != null) {
+    logger.info(`req(${reqId}) was possibly been paused, emit masqueraded cancel event`)
+    this.emit('cancel', reqId, appId)
   }
 
   var req
   try {
     req = this.nativeWrap.speak(text)
   } catch (err) {
-    logger.error('registering tts failure', err.stack)
+    logger.error('requesting tts failed', err.stack)
     return -1
   }
-  this.handle[appId] = req
-  this.lastAppId = appId
-  this.lastText = text
-  this.lastReqId = req.id
-  return req.id
+  reqId = req.id
+  reqMemo = { appId: appId, req: req }
+  this.requestMemo[reqId] = reqMemo
+  this.appRequestMemo[appId] = { reqId: reqId, text: text }
+  return reqId
 }
 
 Tts.prototype.stop = function (appId) {
-  if (this.ignoreTtsEvent && this.lastAppId === appId && this.lastReqId > -1) {
-    logger.info('emit simulated cancel event for app', this.lastReqId)
-    this.emit('cancel', this.lastReqId, this.lastAppId)
-    this.lastAppId = ''
-    this.lastText = ''
-    this.lastReqId = -1
-    this.ignoreTtsEvent = false
+  var appMemo = this.appRequestMemo[appId]
+  if (appMemo == null) {
+    logger.info(`app(${appId}) doesn't own any active requests`)
+    return false
+  }
+  var reqId = appMemo.reqId
+  var reqMemo = reqId == null ? undefined : this.requestMemo[reqId]
+
+  var status = true
+  if (reqMemo == null) {
+    logger.info(`req(${reqId}) was possibly been paused, emit masqueraded cancel event`)
+    this.emit('cancel', reqId, appId)
     return
   }
 
-  if (this.lastAppId === appId) {
-    this.ignoreTtsEvent = false
+  try {
+    reqMemo.req.stop()
+  } catch (err) {
+    logger.error(`stop tts(appId:${appId}, reqId:${reqId}) failed for ${err.stack}`)
+    status = false
   }
 
-  if (this.handle[appId]) {
-    this.handle[appId].stop()
-    delete this.handle[appId]
-  }
-  if (appId === this.lastAppId) {
-    this.lastAppId = ''
-    this.lastText = ''
-    this.lastReqId = -1
-  }
+  delete this.appRequestMemo[appId]
+  return status
 }
 
 Tts.prototype.pause = function (appId) {
-  this.ignoreTtsEvent = true
-  if (this.handle[appId]) {
-    try {
-      this.handle[appId].stop()
-      delete this.handle[appId]
-    } catch (error) {
-      logger.error('try to stop tts failure', error)
-    }
+  var appMemo = this.appRequestMemo[appId]
+  if (appMemo == null) {
+    logger.info(`app(${appId}) doesn't own any active requests`)
+    return false
   }
+  var reqId = appMemo.reqId
+  var reqMemo = reqId == null ? undefined : this.requestMemo[reqId]
+
+  var status = true
+  if (reqMemo == null) {
+    return status
+  }
+  if (reqMemo.masqueradeId != null) {
+    appMemo.reqId = reqMemo.masqueradeId
+  }
+  reqMemo.eventMasked = true
+  try {
+    reqMemo.req.stop()
+  } catch (err) {
+    logger.error(`stop tts(appId:${appId}, reqId:${reqId}) failed for ${err.stack}`)
+    status = false
+  }
+  /** just cleaning request memo, leaving app memo for later resuming. */
+  return status
 }
 
 Tts.prototype.resume = function (appId) {
-  if (this.handle[appId]) {
+  var appMemo = this.appRequestMemo[appId]
+  if (appMemo == null) {
+    logger.info(`app(${appId}) doesn't own any active requests`)
+    return false
+  }
+  var reqId = appMemo.reqId
+  var reqMemo = reqId == null ? undefined : this.requestMemo[reqId]
+
+  if (reqMemo) {
+    logger.info(`app(${appId}) already have active request(${reqId}), skip resuming`)
     return
   }
+
   var req
-  if (appId === this.lastAppId && this.lastText && this.lastReqId > -1) {
-    logger.log(`tts resume by OS with appId: ${appId}`)
-    try {
-      req = this.nativeWrap.speak(this.lastText)
-      this.handle[appId] = req
-      // support multiple resume, not reset lastText and lastReqId
-      req.id = this.lastReqId
-      this.lastAppId = appId
-    } catch (error) {
-      logger.error('tts respeak error', error)
-    }
+  try {
+    req = this.nativeWrap.speak(appMemo.text)
+  } catch (err) {
+    logger.error('requesting tts failed', err.stack)
+    return -1
   }
+  reqMemo = { appId: appId, req: req, masqueradeId: reqId }
+  reqId = req.id
+  this.requestMemo[reqId] = reqMemo
+  this.appRequestMemo[appId].reqId = reqId
+  return reqId
+}
+
+Tts.prototype.clearMemo = function (appId, reqId) {
+  delete this.requestMemo[reqId]
+  delete this.appRequestMemo[appId]
 }
 
 Tts.prototype.reset = function () {
-  this.ignoreTtsEvent = false
-  try {
-    for (var index in this.handle) {
-      this.handle[index].stop()
+  Object.keys(this.requestMemo).forEach(reqId => {
+    var memo = this.requestMemo[reqId]
+    try {
+      memo.req.stop()
+    } catch (err) {
+      logger.error(`unexpected error on stopping tts(${reqId}, appId: ${memo.appId})`)
     }
-  } catch (error) {
-    logger.error('error when try to stop all tts', error.stack)
-  }
-  this.lastText = ''
-  this.lastAppId = ''
-  this.lastReqId = -1
-  this.handle = {}
+  })
+  this.requestMemo = {}
+  this.appRequestMemo = {}
 }
 
-Tts.prototype.onStart = function onStart (id, errno) {
-  logger.log('ttsd start', id, this.lastReqId, this.ignoreTtsEvent)
+Tts.prototype.onStart = function onStart (reqId) {
+  logger.log('ttsd start', reqId)
   AudioManager.setPlayingState(audioModuleName, true)
-  lightd.invoke('play',
+  this.lightd.invoke('play',
     ['@yoda/ttsd', '/opt/light/setSpeaking.js', '{}', '{"shouldResume":true}'])
+  this.playingReqId = reqId
 
-  if (this.ignoreTtsEvent && this.lastReqId === id) {
-    logger.log(`ignore tts start event with id: ${id}`)
-    this.ignoreTtsEvent = false
+  var memo = this.requestMemo[reqId]
+  if (memo == null) {
+    logger.error(`un-owned tts(${reqId}).`)
     return
   }
-  this.registry[id] = Date.now()
-  this.emit('start', +id, this.lastAppId)
+  memo.staredAt = Date.now()
+  if (memo.eventMasked === true) {
+    logger.log(`ignore tts start event with id: ${reqId}`)
+    return
+  }
+  var masqueradeId = memo.masqueradeId
+  if (masqueradeId != null) {
+    logger.info(`req(${reqId}) was masquerading req(${masqueradeId}), skip start event`)
+    return
+  }
+  this.emit('start', reqId, memo.appId)
 }
 
-Tts.prototype.onTtsTermination = function onTtsTermination (event, id, errno) {
-  logger.info(`ttsd ${event} ${id}`)
-  var appId = this.lastAppId
-  if (this.lastReqId === id) {
-    this.lastReqId = -1
-    this.lastAppId = ''
-    this.lastText = ''
-  }
+Tts.prototype.onTtsTermination = function onTtsTermination (event, reqId, errno) {
+  logger.info(`ttsd ${event} ${reqId}`)
   AudioManager.setPlayingState(audioModuleName, false)
-  lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
+  this.lightd.invoke('stop', ['@yoda/ttsd', '/opt/light/setSpeaking.js'])
+  if (this.playingReqId === reqId) {
+    this.playingReqId = null
+  }
 
-  if (this.ignoreTtsEvent && this.lastReqId === id) {
-    logger.info(`ignore tts ${event} event with id: ${id}`)
+  var memo = this.requestMemo[reqId]
+  delete this.requestMemo[reqId]
+  if (memo == null) {
+    logger.error(`un-owned tts(${reqId}).`)
     return
   }
-  this.ignoreTtsEvent = false
-  var start = this.registry[id] || 0
-  delete this.registry[id]
+
+  if (memo.eventMasked) {
+    logger.info(`ignore tts ${event} event with id: ${reqId}`)
+    return
+  }
+  var start = memo.staredAt || 0
+  var appId = memo.appId
   var delta = Date.now() - start
+
+  var masqueradeId = memo.masqueradeId
+  if (masqueradeId != null) {
+    reqId = masqueradeId
+  }
   /** delay to 2s to prevent event `end` been received before event `start` */
   setTimeout(() => {
-    this.emit(event, '' + id, appId, errno)
+    this.emit(event, reqId, appId, errno)
   }, 2000 - delta/** it's ok to set a negative timeout */)
 }
 
