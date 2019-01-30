@@ -10,9 +10,6 @@ var floraConfig = require('/etc/yoda/flora-config.json')
 var globalEnv = require('@yoda/env')()
 var ovsdkConfig = require('/etc/yoda/openvoice-sdk.json')
 
-var asr2nlpId = 'js-AppRuntime'
-var asr2nlpSeq = 0
-
 module.exports = Flora
 /**
  *
@@ -23,8 +20,6 @@ function Flora (runtime) {
   this.runtime = runtime
   this.component = runtime.component
   this.speechAuthInfo = null
-
-  this.asr2nlpCallbacks = {}
 }
 inherits(Flora, FloraComp)
 
@@ -43,46 +38,6 @@ Flora.prototype.handlers = {
     /** [ event, ttsId, Optional(errno) ] */
     msg.splice(2, 1)
     descriptor.tts.handleEvent.apply(descriptor.tts, msg)
-  },
-  [`rokid.speech.nlp.${asr2nlpId}`]: onAsr2Nlp,
-  [`rokid.speech.error.${asr2nlpId}`]: onAsr2NlpError
-}
-
-/**
- * @this Flora
- */
-function onAsr2Nlp (msg) {
-  var nlp
-  var action
-  var err
-  var seq
-  try {
-    nlp = JSON.parse(msg[0])
-    action = JSON.parse(msg[1])
-    seq = msg[2]
-  } catch (ex) {
-    logger.log('nlp/action parse failed, discarded')
-    err = ex
-  }
-
-  if (typeof this.asr2nlpCallbacks[seq] === 'function') {
-    this.asr2nlpCallbacks[seq](err, nlp, action)
-    delete this.asr2nlpCallbacks[seq]
-  }
-}
-
-/**
- * @this Flora
- */
-function onAsr2NlpError (msg) {
-  var err
-  var seq
-  err = new Error('speech put_text return error: ' + msg[0])
-  seq = msg[1]
-
-  if (typeof this.asr2nlpCallbacks[seq] === 'function') {
-    this.asr2nlpCallbacks[seq](err)
-    delete this.asr2nlpCallbacks[seq]
   }
 }
 
@@ -153,27 +108,22 @@ Flora.prototype.getNlpResult = function getNlpResult (asr, skillOptions, cb) {
     throw TypeError('Invalid argument of getNlpResult')
   }
   skillOptions = JSON.stringify(skillOptions)
-  ++asr2nlpSeq
-  this.asr2nlpCallbacks[asr2nlpSeq] = cb
-  this.post('rokid.speech.put_text', [
-    asr,
-    skillOptions,
-    asr2nlpId,
-    asr2nlpSeq
-  ], floraFactory.MSGTYPE_INSTANT)
+  this.call('asr2nlp', [ asr, skillOptions ], 'speech-service', 6000)
+    .then((resp) => {
+      if (resp.retCode !== 0) {
+        cb(new Error('speech service asr2nlp failed: ' + resp.retCode))
+      } else {
+        var nlp, action, err
+        try {
+          nlp = JSON.parse(resp.msg[0])
+          action = JSON.parse(resp.msg[1])
+        } catch (ex) {
+          err = ex
+          logger.log('nlp/action parse failed, discarded')
+        }
+        cb(err, nlp, action)
+      }
+    }).catch((err) => {
+      cb(new Error('invoke speech-service.asr2nlp failed: ' + err))
+    })
 }
-
-/**
- *
- * @param {object} cbs
- * @param {string} msg
- */
-/**
-function handleErrorCallbacks (cbs, msg) {
-  var err = new Error(msg)
-
-  Object.keys(cbs).forEach(key => {
-    cbs[key] && cbs[key](err)
-  })
-}
-*/
