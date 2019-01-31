@@ -32,7 +32,7 @@ Flora.prototype.handlers = {
       return
     }
     var degree = msg[0]
-    this.light.loadfile('@yoda', this.wakeUri, { degree: degree }, {})
+    this.light.loadfile('@yoda', this.wakeUri, { degree: degree }, { shouldResume: true })
   },
   'rokid.lightd.global_alpha_factor': function (msg) {
     var alphaFactor = msg[0]
