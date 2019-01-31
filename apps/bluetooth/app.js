@@ -507,13 +507,13 @@ module.exports = function (activity) {
     }
     switch (state) {
       case protocol.DISCOVERY_STATE.ON:
-        if (lastIntent === 'bluetooth_disconnect') {
-          logger.debug('Suppress "discovery" light while close.')
-        } else {
+        if (lastIntent === 'bluetooth_broadcast') {
           activity.light.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true })
             .catch((err) => {
               logger.error('bluetooth play light error: ', err)
             })
+        } else {
+          logger.debug('Suppress "discovery" light in any other conditions except user open it manually.')
         }
         break
       case protocol.DISCOVERY_STATE.OFF:
