@@ -74,6 +74,16 @@ module.exports = activity => {
   directive.do('frontend', 'tts', function (dt, next) {
     logger.log(`start dt: tts.${dt.action}`)
     if (dt.action === 'say') {
+      var playerId = pm.getByAppId(dt.data.appId)
+      if (playerId) {
+        activity.media.pause(playerId)
+          .then(() => {
+            logger.log(`[cac-dt](media, pause) res(success)`)
+          })
+          .catch((err) => {
+            logger.error(`[cac-dt](media, pause) err: ${err}`)
+          })
+      }
       ttsClient.speak(dt.data.item.tts, function (name) {
         logger.log(`end dt: tts.${dt.action} ${name}`)
         if (name === 'start') {
