@@ -32,6 +32,12 @@ class BaseConfig {
    */
   ready (cloudgwConfig) {
   }
+
+  /**
+   * reload
+   */
+  reload () {
+  }
 }
 
 module.exports = BaseConfig

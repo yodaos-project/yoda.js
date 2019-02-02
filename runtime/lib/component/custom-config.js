@@ -101,6 +101,14 @@ class CustomConfig extends EventEmitter {
     this.runtime.openUrl(`yoda-skill://custom-config/firstLoad?config=${sConfig}`,
       { preemptive: false })
   }
+
+  /**
+   * Interception system resume from sleep
+   */
+  runtimeDidResumeFromSleep () {
+    return this.runtime.openUrl('yoda-skill://custom-config/reload',
+      { preemptive: false })
+  }
 }
 
 module.exports = CustomConfig

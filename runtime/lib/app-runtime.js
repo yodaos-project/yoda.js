@@ -389,6 +389,7 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
 
   this.component.custodian.resetState()
   this.component.custodian.prepareNetwork()
+  this.component.dispatcher.delegate('runtimeDidResumeFromSleep')
 }
 
 /**
