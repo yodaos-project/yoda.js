@@ -639,7 +639,6 @@ module.exports = function (activity) {
     a2dp.on('discovery_state_changed', onDiscoveryStateChangedListener)
     hfp.on('call_state_changed', onCallStateChangedListener)
     activity.keyboard.on('click', onKeyEvent)
-    activity.setContextOptions({ keepAlive: true })
     agent = new flora.Agent('unix:/var/run/flora.sock')
     agent.subscribe('yodart.audio.on-volume-change', onDeviceVolumeChanged)
     agent.start()
@@ -659,6 +658,11 @@ module.exports = function (activity) {
       default:
         break
     }
+  })
+
+  activity.on('active', () => {
+    logger.log(`activity.onActive(${currentSkillName})`)
+    activity.setContextOptions({ keepAlive: true })
   })
 
   activity.on('background', () => {
