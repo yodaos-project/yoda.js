@@ -63,6 +63,7 @@ class Loader {
   loadToTarget (name, Klass) {
     Object.defineProperty(this.target, name, {
       enumerable: true,
+      configurable: true,
       get: () => {
         var instance = this.cache[name]
         if (!instance) {

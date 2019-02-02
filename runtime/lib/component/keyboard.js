@@ -51,21 +51,40 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
         logger.error(`Unexpected error on opening url '${descriptor.url}'`, err && err.message, err && err.stack)
       })
   }
+  var target
+  var method
+  var params
   if (descriptor.runtimeMethod) {
-    var method = this.runtime[descriptor.runtimeMethod]
-    var params = _.get(descriptor, 'params', [])
-    if (typeof method !== 'function') {
-      logger.error('Malformed descriptor, runtime method not found.', descriptor)
+    target = this.runtime
+    method = this.runtime[descriptor.runtimeMethod]
+    params = _.get(descriptor, 'params', [])
+  } else if (typeof descriptor.componentMethod === 'string') {
+    var match = descriptor.componentMethod.split('.', 2)
+    logger.info('match', match)
+    var componentName = match[0]
+    var methodName = match[1]
+    target = this.component[componentName]
+    if (target == null) {
+      logger.error('Malformed descriptor, component not found.', descriptor)
       return
     }
-    if (!Array.isArray(params)) {
-      logger.error('Malformed descriptor, params is not an array.', descriptor)
-      return
-    }
-
-    return method.apply(this.runtime, params)
+    method = target[methodName]
+    params = _.get(descriptor, 'params', [])
   }
-  logger.error('Unknown descriptor', descriptor)
+
+  if (target == null) {
+    logger.error('Unknown descriptor', descriptor)
+    return
+  }
+  if (typeof method !== 'function') {
+    logger.error('Malformed descriptor, method not found', descriptor)
+    return
+  }
+  if (!Array.isArray(params)) {
+    logger.error('Malformed descriptor, params is not an array.', descriptor)
+    return
+  }
+  return method.apply(target, params)
 }
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {

@@ -6,12 +6,25 @@ var AppRuntime = require('@yoda/mock/lib/mock-app-runtime')
 var helper = require('../../helper')
 var Keyboard = require(`${helper.paths.runtime}/lib/component/keyboard`)
 
-test('shall interpret descriptor: openUrl', t => {
-  t.plan(2)
+function setUp () {
   var runtime = new AppRuntime()
   var keyboard = new Keyboard(runtime)
+  Object.defineProperty(runtime.component, 'keyboard', {
+    value: keyboard
+  })
 
   keyboard.input = new EventEmitter()
+  keyboard.input.disconnect = function noop () {}
+
+  return { runtime: runtime, keyboard: keyboard }
+}
+
+test('shall interpret descriptor: openUrl', t => {
+  t.plan(2)
+  var pack = setUp()
+  var keyboard = pack.keyboard
+  var runtime = pack.runtime
+
   keyboard.listen()
 
   keyboard.config = {
@@ -40,10 +53,10 @@ test('shall interpret descriptor: openUrl', t => {
 
 test('shall interpret descriptor: runtimeMethod', t => {
   t.plan(2)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var pack = setUp()
+  var keyboard = pack.keyboard
+  var runtime = pack.runtime
 
-  keyboard.input = new EventEmitter()
   keyboard.listen()
 
   keyboard.config = {
@@ -59,6 +72,38 @@ test('shall interpret descriptor: runtimeMethod', t => {
   }
 
   runtime.foobar = function (args1, args2) {
+    t.strictEqual(args1, 'foobar://example.com')
+    t.deepEqual(args2, {
+      preemptive: false
+    })
+  }
+
+  keyboard.input.emit('click', { keyCode: 233 })
+
+  runtime.deinit()
+})
+
+test('shall interpret descriptor: componentMethod', t => {
+  t.plan(2)
+  var pack = setUp()
+  var keyboard = pack.keyboard
+  var runtime = pack.runtime
+
+  keyboard.listen()
+
+  keyboard.config = {
+    '233': {
+      click: {
+        componentMethod: 'keyboard.foobar',
+        params: [
+          'foobar://example.com',
+          { preemptive: false }
+        ]
+      }
+    }
+  }
+
+  keyboard.foobar = function (args1, args2) {
     t.strictEqual(args1, 'foobar://example.com')
     t.deepEqual(args2, {
       preemptive: false
