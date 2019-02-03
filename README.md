@@ -3,6 +3,8 @@
 [![Build Status](https://ci.rokid.com/buildStatus/icon?job=rokid-ci-yodart-unit-tests)](https://ci.rokid.com/job/rokid-ci-yodart-unit-tests)
 [![codecov](https://codecov.io/gh/yodaos-project/yodart/branch/master/graph/badge.svg)](https://codecov.io/gh/yodaos-project/yodart)
 [![License](https://img.shields.io/badge/licence-apache%202.0-green.svg)](LICENSE.md)
+[![Backers on Open Collective](https://opencollective.com/yodart/backers/badge.svg)](#backers) 
+[![Sponsors on Open Collective](https://opencollective.com/yodart/sponsors/badge.svg)](#sponsors)
 
 YODAOS runtime is the JavaScript layer in [YODAOS][]. It provides the main functionalities includes:
 
@@ -64,6 +66,36 @@ $ npm restart
 ```
 
 For more useful development tools, see [tools](./tools#yodaos-core-tools).
+
+## Contributors
+
+This project exists thanks to all the people who contribute. 
+<a href="https://github.com/yodaos-project/yodart/graphs/contributors"><img src="https://opencollective.com/yodart/contributors.svg?width=890&button=false" /></a>
+
+
+## Backers
+
+Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/yodart#backer)]
+
+<a href="https://opencollective.com/yodart#backers" target="_blank"><img src="https://opencollective.com/yodart/backers.svg?width=890"></a>
+
+
+## Sponsors
+
+Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/yodart#sponsor)]
+
+<a href="https://opencollective.com/yodart/sponsor/0/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/0/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/1/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/1/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/2/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/2/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/3/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/3/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/4/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/4/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/5/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/5/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/6/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/6/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/7/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/7/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/8/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/8/avatar.svg"></a>
+<a href="https://opencollective.com/yodart/sponsor/9/website" target="_blank"><img src="https://opencollective.com/yodart/sponsor/9/avatar.svg"></a>
+
+
 
 ## License
 
