@@ -11,7 +11,8 @@
     "website": "jsdoc -c jsdoc.config -R README.md -r . -d website/docs -u website/tutorials",
     "pretest": "tools/runtime-install -t",
     "bare-test": "tools/runtime-install -t --no-os && tools/test",
-    "test": "tools/test --reporter tap-nyan"
+    "test": "tools/test --reporter tap-nyan",
+    "postinstall": "opencollective-postinstall"
   },
   "config": {
     "unsafe-perm": true
@@ -37,5 +38,13 @@
     "ignore": [
       "node_modules"
     ]
+  },
+  "dependencies": {
+    "opencollective-postinstall": "^2.0.1",
+    "opencollective": "^1.0.3"
+  },
+  "collective": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/yodart"
   }
 }
