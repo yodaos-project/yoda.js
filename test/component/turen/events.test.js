@@ -147,7 +147,7 @@ test('speech error 8 on middle of asr processing', t => {
     })
 })
 
-test('speech error 8 on middle of asr processing', t => {
+test('speech error 8 on end of asr processing', t => {
   t.plan(2)
   var runtime = new AppRuntime()
   var turen = new Turen(runtime)
@@ -165,6 +165,51 @@ test('speech error 8 on middle of asr processing', t => {
       })
       mock.mockPromise(turen, 'recoverPausedOnAwaken', () => {
         t.pass('should recover paused media on awaken on speech error 8')
+      })
+    })
+    .then(() => postMessage(turen, 'rokid.speech.error', [ 8, 100 ]))
+    .then(() => {
+      t.strictEqual(turen.awaken, false, 'turen shall not be awaken on end of speech error')
+
+      runtime.deinit()
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+
+      runtime.deinit()
+      t.end()
+    })
+})
+
+test('speech error 8 should deactivate app memorized on voice coming', t => {
+  t.plan(3)
+  var runtime = new AppRuntime()
+  var turen = new Turen(runtime)
+
+  mock.mockReturns(runtime.component.lifetime, 'getCurrentAppId', () => {
+    return 'before_voice_coming'
+  })
+  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+  mockDaemonProxies(runtime)
+
+  postMessage(turen, 'rokid.turen.voice_coming')
+    .then(() => postMessage(turen, 'rokid.turen.local_awake', [ 0 ]))
+    .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
+    .then(() => postMessage(turen, 'rokid.speech.final_asr', [ 'asr' ]))
+    .then(() => {
+      mock.mockPromise(turen, 'announceNetworkLag', () => {
+        t.fail('should not announce network lag on speech error 8')
+      })
+      mock.mockPromise(turen, 'recoverPausedOnAwaken', () => {
+        t.pass('should recover paused media on awaken on speech error 8')
+      })
+
+      mock.mockReturns(runtime.component.lifetime, 'getCurrentAppId', () => {
+        return 'after_voice_coming'
+      })
+      mock.mockPromise(runtime.component.lifetime, 'deactivateCutApp', (options) => {
+        t.deepEqual(options, { appId: 'before_voice_coming' })
       })
     })
     .then(() => postMessage(turen, 'rokid.speech.error', [ 8, 100 ]))

@@ -783,9 +783,14 @@ LaVieEnPile.prototype.resumeLifetime = function resumeLifetime (options) {
  * Deactivate current cut app if exists.
  */
 LaVieEnPile.prototype.deactivateCutApp = function deactivateCutApp (options) {
+  var expectedAppId = _.get(options, 'appId')
   var appId = this.activeSlots.cut
   if (appId == null) {
     logger.info('no currently running cut app, skipping')
+    return Promise.resolve()
+  }
+  if (expectedAppId && appId !== expectedAppId) {
+    logger.info('currently active cut app is not the one been expected, skipping')
     return Promise.resolve()
   }
   if (appId === this.monopolist) {
