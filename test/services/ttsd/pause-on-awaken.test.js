@@ -1,4 +1,7 @@
 var test = require('tape')
+
+var property = require('@yoda/property')
+
 var ttsMock = require('./mock')
 var helper = require('../../helper')
 var TtsService = require(`${helper.paths.runtime}/services/ttsd/service`)
@@ -38,6 +41,7 @@ test('should pause currently playing on voice coming', t => {
   service.on('start', (id, appId) => {
     /** 2. voice coming */
     expectedPausingId = id
+    property.set('state.network.connected', 'true')
     postMessage(comp, 'rokid.turen.voice_coming', [])
       .then(() => {
         /** 3. playing tts has been paused */
@@ -69,6 +73,7 @@ test('should resume voice coming paused tts on reset awaken', t => {
     }
     /** 2. voice coming */
     expectedPausingId = id
+    property.set('state.network.connected', 'true')
     postMessage(comp, 'rokid.turen.voice_coming', [])
       .then(() => {
         /** 3. playing tts has been paused */
@@ -105,6 +110,7 @@ test('should not resume voice coming paused tts if app is not expected one', t =
       return
     }
     /** 2. voice coming */
+    property.set('state.network.connected', 'true')
     postMessage(comp, 'rokid.turen.voice_coming', [])
       .then(() => {
         /** 3. playing tts has been paused */
