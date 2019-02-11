@@ -1,4 +1,5 @@
 var test = require('tape')
+var _ = require('@yoda/util')._
 
 var helper = require('../../helper')
 var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
@@ -20,4 +21,44 @@ test('shall throw on life cycle if app is not alive', t => {
         t.throws(() => { throw err }, 'Trying to send life cycle')
       })
   })
+})
+
+test('deactivateCutApp should only deactivate cut app', t => {
+  mock.restore()
+  t.plan(2)
+
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.runtime)
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(() => life.activateAppById('1', 'scene'))
+    .then(() => life.deactivateCutApp())
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1')
+    })
+    .then(() => life.activateAppById('2', 'cut'))
+    .then(() => life.deactivateCutApp())
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1')
+    })
+})
+
+test('deactivateCutApp should only deactivate expected cut app', t => {
+  mock.restore()
+  t.plan(2)
+
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.runtime)
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(() => life.activateAppById('1', 'scene'))
+    .then(() => life.deactivateCutApp())
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '1')
+    })
+    .then(() => life.activateAppById('2', 'cut'))
+    .then(() => life.deactivateCutApp({ appId: '1' }))
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '2')
+    })
 })

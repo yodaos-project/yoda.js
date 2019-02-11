@@ -39,6 +39,7 @@ function Turen (runtime) {
    * if next nlp shall be discarded.
    */
   this.pickingUpDiscardNext = false
+  this.appIdOnVoiceComing = null
 
   /**
    * handle of timer to determines if current 'voice coming' session is alone,
@@ -281,6 +282,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
         }
       }, this.solitaryVoiceComingTimeout)
 
+      this.appIdOnVoiceComing = this.component.lifetime.getCurrentAppId()
       /**
        * reset picking up discarding state to enable next nlp process
        */
@@ -485,7 +487,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
    * Thus just closing cut app here works as expected, and shall be fixed
    * with a invocation queue in translator-ipc.
    */
-  this.component.lifetime.deactivateCutApp()
+  this.component.lifetime.deactivateCutApp({ appId: this.appIdOnVoiceComing })
     .then(() => {
       this.recoverPausedOnAwaken()
       return this.component.light.stop('@yoda', 'system://loading.js')
