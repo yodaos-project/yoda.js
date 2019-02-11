@@ -5,11 +5,14 @@
  */
 
 var crypto = require('crypto')
+var logger = require('logger')('@yoda/trace')
 var httpsession = require('@yoda/httpsession')
 var _ = require('@yoda/util')._
+var property = require('@yoda/property')
+
 var DEFAULT_HOST = require('@yoda/env')().trace.uploadUrl
 var DEFAULT_URI = '/das-tracing-collection/tracingUpload'
-var property = require('@yoda/property')
+
 var deviceId = property.get('ro.boot.serialno')
 var releaseVersion = property.get('ro.build.version.release')
 var defaultDeviceTypeId = property.get('ro.boot.devicetypeid')
@@ -84,14 +87,17 @@ function upload (traces) {
       'Content-Type': 'text/plain;charset=utf-8'
     }
   }
+  logger.verbose(`Uploading trace(${nonce})`)
   httpsession.request(DEFAULT_HOST + DEFAULT_URI, options, (err, res) => {
-    console.log(res)
     if (err) {
-      throw new Error(`Error: request failed ${err}`)
+      logger.error(`Uploading trace(${nonce}) failed for`, err.stack)
+      return
     }
     if (res.code !== 200) {
-      throw new Error(`Error: failed get data with ${res}`)
+      logger.error(`Uploading trace(${nonce}) got error response:`, res)
+      return
     }
+    logger.verbose(`Uploading trace(${nonce}) got success response:`, res)
   })
 }
 
