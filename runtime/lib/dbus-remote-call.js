@@ -34,18 +34,14 @@ Proxy.prototype.listen = function (serviceName, objectPath, ifaceName, listener)
   }
   service.listeners.push([ objectPath, ifaceName, listener ])
 
-  this.__listenSignal(serviceName, objectPath, ifaceName, (err, channel) => {
-    if (err) {
-      return
-    }
-    this.bus.on(channel, listener)
-  })
+  this.__listenSignal(serviceName, objectPath, ifaceName, listener)
 }
 
-Proxy.prototype.__listenSignal = function (serviceName, objectPath, ifaceName, callback) {
+Proxy.prototype.__listenSignal = function (serviceName, objectPath, ifaceName, listener) {
   this.bus.getUniqueServiceName(serviceName, (err, uniqueName) => {
     if (err) {
-      return callback(err)
+      logger.error(`Unable to fetch unique service name for service(${serviceName})`, err)
+      return
     }
     var service = this.serviceMap[serviceName]
     if (service == null) {
@@ -56,7 +52,7 @@ Proxy.prototype.__listenSignal = function (serviceName, objectPath, ifaceName, c
     this.bus.addSignalFilter(uniqueName, objectPath, ifaceName)
 
     var channel = `${uniqueName}:${objectPath}:${ifaceName}`
-    callback(null, channel)
+    this.bus.on(channel, listener)
   })
 }
 
@@ -105,12 +101,7 @@ Proxy.prototype.__dbusDaemonSignalHandler = {
       }
       if (target) {
         logger.info(`Re-listening dbus signal for ${serviceName}:${objectPath}:${ifaceName}`)
-        this.__listenSignal(serviceName, objectPath, ifaceName, (err, channel) => {
-          if (err) {
-            return
-          }
-          this.bus.on(channel, listener)
-        })
+        this.__listenSignal(serviceName, objectPath, ifaceName, listener)
       }
     })
   }
