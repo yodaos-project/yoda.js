@@ -63,11 +63,20 @@ Proxy.prototype.__listenDbusDaemonSignals = function () {
   var sender = 'org.freedesktop.DBus'
   var objectPath = '/org/freedesktop/DBus'
   var ifaceName = 'org.freedesktop.DBus'
+  Object.keys(this.__dbusDaemonSignalHandler).forEach(it => {
+    this.__addSignalFilter(sender, objectPath, ifaceName, it)
+  })
   var channel = `${sender}:${objectPath}:${ifaceName}`
-  var rule = `type='signal',sender='${sender}',interface='${ifaceName}',member='NameOwnerChanged'`
-  this.bus.dbus.addSignalFilter(rule)
   this.bus.on(channel, this.__onDbusDaemonSignals.bind(this))
   this.dbusDaemonSignalsListened = true
+}
+
+Proxy.prototype.__addSignalFilter = function (sender, objectPath, ifaceName, member) {
+  var rule = `type='signal',sender='${sender}',path=${objectPath},interface='${ifaceName}'`
+  if (member) {
+    rule += `,member='${member}'`
+  }
+  this.bus.dbus.addSignalFilter(rule)
 }
 
 Proxy.prototype.__onDbusDaemonSignals = function __onDbusDaemonSignals (msg) {
