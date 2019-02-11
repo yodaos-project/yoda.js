@@ -160,19 +160,27 @@ Turen.prototype.deinit = function deinit () {
  * @param {object} data -
  * @private
  */
-Turen.prototype.listenerWrap = function (name, fn) {
+Turen.prototype.listenerWrap = function listenerWrap (name, fn) {
   return (msg, type) => {
-    if (this.muted) {
-      logger.warn('Mic muted, unexpected event from Turen:', name)
-      return
-    }
-    if (this.runtime.hasBeenDisabled()) {
-      logger.warn('runtime disabled, unexpected event from Turen:', name)
-      return
-    }
     logger.debug(`handling turen event "${name}"`)
     return fn.call(this, msg, type)
   }
+}
+
+/**
+ * Determines if subsequent event from turenproc should be handled interactively
+ * @returns {boolean}
+ */
+Turen.prototype.shouldHandleEvent = function shouldHandleEvent () {
+  if (this.muted) {
+    logger.warn('Mic muted, unexpected event from turen')
+    return false
+  }
+  if (this.runtime.hasBeenDisabled()) {
+    logger.warn('runtime disabled, unexpected event from turen')
+    return false
+  }
+  return true
 }
 
 /**
@@ -266,6 +274,9 @@ Turen.prototype.resetPausedOnAwaken = function resetPausedOnAwaken () {
  * @private
  */
 Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
+  if (!this.shouldHandleEvent()) {
+    return
+  }
   return this.component.dispatcher.delegate('turenDidWakeUp')
     .then(delegation => {
       if (delegation) {
@@ -397,6 +408,14 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
   } else {
     future = Promise.resolve()
   }
+
+  if (!this.shouldHandleEvent()) {
+    return future.then(() => {
+      this.component.light.stop('@yoda', 'system://loading.js')
+      this.recoverPausedOnAwaken()
+    })
+  }
+
   return future.then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action))
     .then(success => {
       this.component.light.stop('@yoda', 'system://loading.js')
@@ -472,7 +491,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
     return this.recoverPausedOnAwaken()
   }
 
-  if (errCode >= 100) {
+  if (this.shouldHandleEvent() && errCode >= 100) {
     /** network error */
     return this.announceNetworkLag()
   }
