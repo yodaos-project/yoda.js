@@ -10,7 +10,7 @@ var floraConfig = require('/etc/yoda/flora-config.json')
 module.exports = Flora
 /**
  *
- * @param {SpeechSynthesisService} tts
+ * @param {Tts} tts
  */
 function Flora (tts) {
   FloraComp.call(this, 'ttsd', floraConfig)

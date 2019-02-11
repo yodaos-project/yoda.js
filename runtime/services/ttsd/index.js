@@ -9,8 +9,7 @@ var Flora = require('./flora')
 
 var Dbus = require('dbus')
 var Remote = require('../../lib/dbus-remote-call.js')
-var dbusService = Dbus.registerService('session', 'com.service.tts')
-var lightd = new Remote(dbusService._dbus, {
+var lightd = new Remote(Dbus.getBus('session'), {
   dbusService: 'com.service.light',
   dbusObjectPath: '/rokid/light',
   dbusInterface: 'com.rokid.light.key'
