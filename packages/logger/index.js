@@ -12,7 +12,7 @@ if (process.platform === 'darwin' || process.env.NODE_ENV === 'unittest') {
   console.log('/** using stdout as @yoda/logger output target. */')
   var consoleLevels = [
     () => {}, /** none */
-    console.info, /** verbose */
+    console.debug, /** verbose */
     console.debug, /** debug */
     console.info, /** info */
     console.warn, /** warn */
