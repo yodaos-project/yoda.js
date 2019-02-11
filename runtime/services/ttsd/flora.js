@@ -4,12 +4,13 @@ var inherits = require('util').inherits
 var FloraComp = require('@yoda/flora/comp')
 var property = require('@yoda/property')
 var env = require('@yoda/env')()
+var _ = require('@yoda/util')._
 var floraConfig = require('/etc/yoda/flora-config.json')
 
 module.exports = Flora
 /**
  *
- * @param {AppRuntime} runtime
+ * @param {Tts} tts
  */
 function Flora (tts) {
   FloraComp.call(this, 'ttsd', floraConfig)
@@ -36,19 +37,24 @@ Flora.prototype.handlers = {
     if (property.get('state.network.connected') !== 'true') {
       return
     }
-    var appId = this.tts.lastAppId
-    if (this.tts.pausedAppIdOnAwaken != null && appId == null) {
+    var reqId = this.tts.playingReqId
+    if (this.tts.pausedReqIdOnAwaken != null && reqId == null) {
       logger.info('previously paused tts not been resumed yet, ' +
         'skip voice coming for no currently playing.')
       return
     }
-    this.tts.pausedAppIdOnAwaken = appId
-    if (!appId) {
-      logger.info('no currently tts playing app, skipping.')
+    this.tts.pausedReqIdOnAwaken = reqId
+    if (reqId == null) {
+      logger.info('no currently tts playing requests, skipping.')
       return
     }
-    logger.info('pausing tts of app', appId)
-    this.tts.pause(appId)
+    var appId = _.get(this.tts.requestMemo[reqId], 'appId')
+    if (appId == null) {
+      logger.error(`Un-owned tts request(${reqId})`)
+      return
+    }
+    logger.info(`pausing tts(${reqId}, app:${appId})`)
+    return this.tts.pause(appId)
   },
   'yodart.vui.logged-in': function onVuiLoggedIn (msg) {
     var config = msg[0]
@@ -79,11 +85,10 @@ Flora.prototype.remoteMethods = {
     logger.log('tts cancel', appId)
 
     if (!appId) {
-      // TODO: error handler?
-      return res.end(0)
+      return res.end(0, [ false ])
     }
     this.tts.stop(appId)
-    res.end(0)
+    res.end(0, [ true ])
   },
   'yodart.ttsd.reset': function reset (reqMsg, res) {
     logger.log('reset ttsd requested by vui')
@@ -108,18 +113,30 @@ Flora.prototype.remoteMethods = {
   },
   'yodart.ttsd.resetAwaken': function resetAwaken (reqMsg, res) {
     var appId = reqMsg[0]
-    var pausedAppIdOnAwaken = this.tts.pausedAppIdOnAwaken
-    this.tts.pausedAppIdOnAwaken = null
-    if (!appId) {
-      logger.log('reset awaken requested by vui, stopping paused app', pausedAppIdOnAwaken)
-      this.tts.stop(pausedAppIdOnAwaken)
-      return res.end(0, [ true ])
+    var pausedReqIdOnAwaken = this.tts.pausedReqIdOnAwaken
+    this.tts.pausedReqIdOnAwaken = null
+
+    var appMemo = this.tts.appRequestMemo[appId]
+    if (appMemo == null) {
+      logger.info(`reset awaken requested by vui, yet doesn't have any memo of app(${appId})`)
+      return res.end(0, [ false ])
     }
-    logger.log('reset awaken requested by vui', appId, '; paused app', pausedAppIdOnAwaken)
-    if (pausedAppIdOnAwaken && appId === pausedAppIdOnAwaken) {
-      this.tts.resume(pausedAppIdOnAwaken)
+    if (appMemo.reqId !== pausedReqIdOnAwaken) {
+      logger.info(`reset awaken requested by vui, yet app(${appId}) may have requested new speak`)
+      return res.end(0, [ false ])
     }
+    logger.log(`reset awaken requested by vui, resuming app(${appId})`)
+    this.tts.resume(appId)
     res.end(0, [true])
+  },
+  'yodart.ttsd.debug.get-status': function getStatus (reqMsg, res) {
+    var obj = _.pick(this.tts,
+      'requestMemo',
+      'appRequestMemo',
+      'playingReqId',
+      'pausedReqIdOnAwaken'
+    )
+    res.end(0, [JSON.stringify(obj)])
   }
 }
 

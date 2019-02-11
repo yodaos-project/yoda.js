@@ -65,29 +65,6 @@ DBus.prototype.callMethod = function callMethod (
 DBus.prototype.listenSignals = function listenSignals () {
   var self = this
   var proxy = new DbusRemoteCall(this.service._bus)
-  var ttsEvents = {
-    'ttsdevent': function onTtsEvent (msg) {
-      var channel = `callback:tts:${_.get(msg, 'args.0')}`
-      logger.info(`VuiDaemon received ttsd event on channel(${channel})`)
-      EventEmitter.prototype.emit.apply(
-        self,
-        [ channel ].concat(msg.args.slice(1))
-      )
-    }
-  }
-  proxy.listen(
-    'com.service.tts',
-    '/tts/service',
-    'tts.service',
-    function onTtsEvent (msg) {
-      var handler = ttsEvents[msg && msg.name]
-      if (handler == null) {
-        logger.warn(`Unknown ttsd event type '${msg && msg.name}'.`)
-        return
-      }
-      handler(msg)
-    }
-  )
 
   var multimediaEvents = {
     'multimediadevent': function onMultimediaEvent (msg) {
