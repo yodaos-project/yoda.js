@@ -90,8 +90,8 @@ service.on('seekcomplete', function (id, dur, pos) {
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
-    'ss',
-    [id, 'seekcomplete']
+    'ssss',
+    [id, 'seekcomplete', dur, pos]
   )
 })
 service.on('error', function (id) {
