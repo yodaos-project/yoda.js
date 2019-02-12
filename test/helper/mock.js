@@ -1,4 +1,5 @@
 'use strict'
+var _ = require('@yoda/util')._
 
 var mockContext = []
 
@@ -60,6 +61,28 @@ function mockPromise (target, prop, err, res) {
   }
 }
 
+function proxyFunction (target, prop, proxy) {
+  var before = _.get(proxy, 'before')
+  var after = _.get(proxy, 'after')
+
+  if (typeof before !== 'function') {
+    before = noop
+  }
+
+  var orig = target[prop]
+  mockReturns(target, prop, function () {
+    var args = before(this, arguments)
+    if (args == null) {
+      args = arguments
+    }
+    var ret = orig.apply(this, args)
+    if (typeof after === 'function') {
+      ret = after(ret, this, arguments)
+    }
+    return ret
+  })
+}
+
 function restore () {
   mockContext.forEach(it => {
     it.target[it.prop] = it.orig
@@ -70,4 +93,7 @@ function restore () {
 module.exports.mockReturns = mockReturns
 module.exports.mockCallback = mockCallback
 module.exports.mockPromise = mockPromise
+module.exports.proxyFunction = proxyFunction
 module.exports.restore = restore
+
+function noop () {}
