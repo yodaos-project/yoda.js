@@ -496,24 +496,28 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
     return this.announceNetworkLag()
   }
 
-  /**
-   * FIXME: Raison d'etre
-   * cut app like alarm/timer shall be deactivated on awaken.
-   * Currently @yoda/system handles speech error in a such quick way, yet for
-   * some reason apps like cloud-app-client could not determines tts/media
-   * status in such a short time(events have to be transferred through
-   * 2/3 ipc).
-   * Thus just closing cut app here works as expected, and shall be fixed
-   * with a invocation queue in translator-ipc.
-   */
-  this.component.lifetime.deactivateCutApp({ appId: this.appIdOnVoiceComing })
-    .then(() => {
-      this.recoverPausedOnAwaken()
-      return this.component.light.stop('@yoda', 'system://loading.js')
-    }, err => {
-      this.component.light.stop('@yoda', 'system://loading.js')
-      logger.error('Unexpected error on deactivating cut app', err.stack)
-    })
+  var future = Promise.resolve()
+  if (this.appIdOnVoiceComing) {
+    /**
+     * FIXME: Raison d'etre
+     * cut app like alarm/timer shall be deactivated on awaken.
+     * Currently @yoda/system handles speech error in a such quick way, yet for
+     * some reason apps like cloud-app-client could not determines tts/media
+     * status in such a short time(events have to be transferred through
+     * 2/3 ipc).
+     * Thus just closing cut app here works as expected, and shall be fixed
+     * with a invocation queue in translator-ipc.
+     */
+    future = this.component.lifetime.deactivateCutApp({ appId: this.appIdOnVoiceComing })
+  }
+
+  future.then(() => {
+    this.recoverPausedOnAwaken()
+    return this.component.light.stop('@yoda', 'system://loading.js')
+  }, err => {
+    this.component.light.stop('@yoda', 'system://loading.js')
+    logger.error('Unexpected error on deactivating cut app', err.stack)
+  })
 }
 
 /**
@@ -529,12 +533,18 @@ Turen.prototype.pickup = function pickup (isPickup, options) {
    * otherwise reset picking up discarding state to enable next nlp process,
    */
   this.pickingUpDiscardNext = discardNext && !isPickup
+  /**
+   * manually pick up should not close cut app on speech error 8
+   */
+  this.appIdOnVoiceComing = isPickup ? null : this.appIdOnVoiceComing
   this.component.flora.post('rokid.turen.pickup', [ isPickup ? 1 : 0 ])
   this.toggleWakeUpEngine(!isPickup)
 
   if (!isPickup) {
     clearTimeout(this.solitaryVoiceComingTimer)
     clearTimeout(this.noVoiceInputTimer)
+    this.solitaryVoiceComingTimer = null
+    this.noVoiceInputTimer = null
   }
 }
 
