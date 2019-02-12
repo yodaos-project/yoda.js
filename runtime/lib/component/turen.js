@@ -506,7 +506,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
      * status in such a short time(events have to be transferred through
      * 2-3 ipc).
      * Thus just closing cut app here works as expected, and shall be fixed
-     * with a invocation queue in translator-ipc.
+     * with an invocation queue in translator-ipc.
      */
     future = this.component.lifetime.deactivateCutApp({ appId: this.appIdOnVoiceComing })
   }
