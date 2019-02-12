@@ -77,27 +77,46 @@ AppRuntime.prototype.init = function init () {
   if (this.inited) {
     return Promise.resolve()
   }
+  /** 1. init components. */
   this.componentsInvoke('init')
+  /** 2. init device properties, such as volume and cloud stack. */
   this.initiate()
-  /** set turen to not muted */
+  this.resetCloudStack()
+  /** 3. init services */
   this.component.turen.toggleMute(false)
   this.component.turen.toggleWakeUpEngine(true)
+  this.resetServices()
 
+  /** 4. listen on lifetime events */
   this.component.lifetime.on('stack-reset', () => {
     this.resetCloudStack()
   })
   this.component.lifetime.on('preemption', appId => {
     this.appPause(appId)
   })
-  // initializing the whole process...
-  this.resetCloudStack()
-  this.resetServices()
-  this.shouldWelcome = !this.isStartupFlagExists()
 
+  /** 5. determines if welcome announcements are needed */
+  this.shouldWelcome = !this.isStartupFlagExists()
+  var isFirstBoot = property.get('sys.firstboot.init', 'persist') !== '1'
+  property.set('sys.firstboot.init', '1', 'persist')
+
+  var shouldBreakInit = () => {
+    if (this.__temporaryDisablingReasons.indexOf('welcoming') >= 0 &&
+      this.__temporaryDisablingReasons.length > 1) {
+      return true
+    }
+    if (this.hasBeenDisabled()) {
+      return true
+    }
+    return false
+  }
+
+  /** 6. load app manifests */
   return this.loadApps().then(() => {
     this.inited = true
     this.enableRuntimeFor('initiating')
 
+    /** 7. questioning if any interests of delegation */
     return this.component.dispatcher.delegate('runtimeDidInit')
   }).then(delegation => {
     if (delegation) {
@@ -105,22 +124,33 @@ AppRuntime.prototype.init = function init () {
     }
     this.disableRuntimeFor('welcoming')
 
+    /** 8. announce welcoming */
     var future = Promise.resolve()
-    if (property.get('sys.firstboot.init', 'persist') !== '1') {
-      // initializing play tts status
-      property.set('sys.firstboot.init', '1', 'persist')
+    if (isFirstBoot) {
+      /** 8.1. announce first time welcoming */
       future = future.then(() => {
+        if (shouldBreakInit()) {
+          return
+        }
         return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
       })
     }
     if (this.shouldWelcome) {
+      /** 8.2. announce system loading */
       future = future.then(() => {
+        if (shouldBreakInit()) {
+          return
+        }
         this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
         return this.component.light.appSound('@yoda', 'system://boot.ogg')
       })
     }
     return future.then(() => {
       this.enableRuntimeFor('welcoming')
+      if (shouldBreakInit()) {
+        return
+      }
+      /** 9. force-enable and check network states */
       this.component.custodian.prepareNetwork()
     }).catch(err => {
       logger.error('unexpected error on boot welcoming', err.stack)
