@@ -502,7 +502,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
      * FIXME: Raison d'etre
      * cut app like alarm/timer shall be deactivated on awaken.
      * Currently @yoda/system handles speech error in a such quick way, yet for
-     * some reason apps like cloud-app-client could not determines tts/media
+     * some reason apps like cloud-app-client could not determine tts/media
      * status in such a short time(events have to be transferred through
      * 2/3 ipc).
      * Thus just closing cut app here works as expected, and shall be fixed
