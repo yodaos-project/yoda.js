@@ -82,8 +82,10 @@ test('speech network error on middle of asr processing', t => {
     .then(() => postMessage(turen, 'rokid.turen.local_awake', [ 0 ]))
     .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
     .then(() => {
-      mock.mockPromise(turen, 'announceNetworkLag', () => {
-        t.pass('should announce network lag on speech error > 100')
+      mock.proxyFunction(turen, 'announceNetworkLag', {
+        before: () => {
+          t.pass('should announce network lag on speech error > 100')
+        }
       })
     })
     .then(() => postMessage(turen, 'rokid.speech.error', [ 103, 100 ]))
@@ -114,8 +116,10 @@ test('speech network error on end of asr processing', t => {
     .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
     .then(() => postMessage(turen, 'rokid.speech.final_asr', [ 'asr' ]))
     .then(() => {
-      mock.mockPromise(turen, 'announceNetworkLag', () => {
-        t.pass('should announce network lag on speech error > 100')
+      mock.proxyFunction(turen, 'announceNetworkLag', {
+        before: () => {
+          t.pass('should announce network lag on speech error > 100')
+        }
       })
     })
     .then(() => postMessage(turen, 'rokid.speech.error', [ 103, 100 ]))
@@ -148,8 +152,10 @@ test('speech error 8 on middle of asr processing', t => {
       mock.mockPromise(turen, 'announceNetworkLag', () => {
         t.fail('should not announce network lag on speech error 8')
       })
-      mock.mockPromise(turen, 'recoverPausedOnAwaken', () => {
-        t.pass('should recover paused media on awaken on speech error 8')
+      mock.proxyFunction(turen, 'recoverPausedOnAwaken', {
+        before: () => {
+          t.pass('should recover paused media on awaken on speech error 8')
+        }
       })
     })
     .then(() => postMessage(turen, 'rokid.speech.error', [ 8, 100 ]))
@@ -183,8 +189,10 @@ test('speech error 8 on end of asr processing', t => {
       mock.mockPromise(turen, 'announceNetworkLag', () => {
         t.fail('should not announce network lag on speech error 8')
       })
-      mock.mockPromise(turen, 'recoverPausedOnAwaken', () => {
-        t.pass('should recover paused media on awaken on speech error 8')
+      mock.proxyFunction(turen, 'recoverPausedOnAwaken', {
+        before: () => {
+          t.pass('should recover paused media on awaken on speech error 8')
+        }
       })
     })
     .then(() => postMessage(turen, 'rokid.speech.error', [ 8, 100 ]))
@@ -221,8 +229,10 @@ test('speech error 8 should deactivate app memorized on voice coming', t => {
       mock.mockPromise(turen, 'announceNetworkLag', () => {
         t.fail('should not announce network lag on speech error 8')
       })
-      mock.mockPromise(turen, 'recoverPausedOnAwaken', () => {
-        t.pass('should recover paused media on awaken on speech error 8')
+      mock.proxyFunction(turen, 'recoverPausedOnAwaken', {
+        before: () => {
+          t.pass('should recover paused media on awaken on speech error 8')
+        }
       })
 
       mock.mockReturns(runtime.component.lifetime, 'getCurrentAppId', () => {
