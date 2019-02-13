@@ -18,6 +18,7 @@ function Light (runtime) {
   EventEmitter.call(this)
   this.runtime = runtime
   this.dbusRegistry = runtime.component.dbusRegistry
+  this.pickUpTimer = null
 }
 inherits(Light, EventEmitter)
 
@@ -123,6 +124,17 @@ Light.prototype.setPickup = function (appId, duration, withAwaken) {
   return this.play(appId, uri, {
     degree: this.runtime.component.turen.degree,
     duration: duration || 6000
+  }, {
+    shouldResume: true
+  }).then((res) => {
+    if (this.pickUpTimer) {
+      clearTimeout(this.pickUpTimer)
+    }
+    this.pickUpTimer = setTimeout(() => {
+      this.stop(appId, uri)
+      this.pickUpTimer = null
+    }, duration || 6000)
+    return res
   })
 }
 
