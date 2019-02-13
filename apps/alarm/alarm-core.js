@@ -134,7 +134,7 @@ AlarmCore.prototype._controlVolume = function (minVolume, tick, duration) {
  * @param {String} Options mode
  */
 AlarmCore.prototype._setConfig = function (options) {
-  fs.readFile(CONFIGFILEPATH, 'utf8', function readFileCallback (err, data) {
+  fs.readFile(CONFIGFILEPATH, 'utf8', (err, data) => {
     if (err) {
       logger.error('alarm set config: get local data error', err.stack)
       return
@@ -158,9 +158,15 @@ AlarmCore.prototype._setConfig = function (options) {
         logger.error('alarm set config: clear local data error', err.stack)
         return
       }
-      fs.writeFile(CONFIGFILEPATH, JSON.stringify(parseJson), function (err) {
+      fs.writeFile(CONFIGFILEPATH, JSON.stringify(parseJson), (err) => {
         if (err) {
           logger.error('alarm set config: update local data error', err && err.stack)
+        }
+        // parseJson is empty, kill alarm
+        if (Object.keys(parseJson).length === 0) {
+          // kill alarm
+          logger.log('kill alarm')
+          this.activity.exit()
         }
       })
     })
@@ -358,10 +364,13 @@ AlarmCore.prototype.init = function (command, isUpdateNative) {
   isUpdateNative && flag && this._setConfig(options)
   // clear local data
   if (!flag) {
-    fs.writeFile(CONFIGFILEPATH, '{}', function (err) {
+    fs.writeFile(CONFIGFILEPATH, '{}', (err) => {
       if (err) {
         logger.error('alarm init: clear local data error', err.stack)
       }
+      // kill alarm
+      logger.log('kill alarm')
+      this.activity.exit()
     })
   }
 }
