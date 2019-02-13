@@ -1123,7 +1123,9 @@ AppRuntime.prototype.reconnect = function () {
   if (this.component.custodian.isConfiguringNetwork()) {
     return this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
   }
-  return this.login()
+  if (!this.component.custodian.isNetworkUnavailable()) {
+    return this.login()
+  }
 }
 
 /**

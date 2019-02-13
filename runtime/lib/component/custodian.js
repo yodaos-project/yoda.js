@@ -95,6 +95,7 @@ Custodian.prototype.onLoggedIn = function onLoggedIn () {
   this._loggedIn = true
   property.set('state.rokid.logged', 'true')
   logger.info('on logged in')
+  wifi.save()
 }
 
 Custodian.prototype.onLogout = function onLogout () {
