@@ -59,8 +59,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * When the media resource is prepared.
      * @event yodaRT.activity.Activity.MediaClient#prepared
      * @param {string} id - multimedia player id
-     * @param {string} duration -
-     * @param {string} position -
+     * @param {number} duration -
+     * @param {number} position -
      */
     prepared: {
       type: 'event'
@@ -69,8 +69,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * When the media resource is paused.
      * @event yodaRT.activity.Activity.MediaClient#paused
      * @param {string} id - multimedia player id
-     * @param {string} duration -
-     * @param {string} position -
+     * @param {number} duration -
+     * @param {number} position -
      */
     paused: {
       type: 'event'
@@ -79,8 +79,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * When the media resource is resumed.
      * @event yodaRT.activity.Activity.MediaClient#resumed
      * @param {string} id - multimedia player id
-     * @param {string} duration -
-     * @param {string} position -
+     * @param {number} duration -
+     * @param {number} position -
      */
     resumed: {
       type: 'event'
@@ -89,6 +89,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * When the media playback is complete.
      * @event yodaRT.activity.Activity.MediaClient#playbackcomplete
      * @param {string} id - multimedia player id
+     * @param {number} duration -
+     * @param {number} position -
      */
     playbackcomplete: {
       type: 'event'
@@ -97,6 +99,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * When the media playback is canceled.
      * @event yodaRT.activity.Activity.MediaClient#cancel
      * @param {string} id - multimedia player id
+     * @param {number} duration -
+     * @param {number} position -
      */
     cancel: {
       type: 'event'
@@ -105,6 +109,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * When buffering progress is updates.
      * @event yodaRT.activity.Activity.MediaClient#bufferingupdate
      * @param {string} id - multimedia player id
+     * @param {number} duration -
+     * @param {number} position -
      */
     bufferingupdate: {
       type: 'event'
@@ -113,6 +119,8 @@ Object.assign(MultimediaDescriptor.prototype,
      * When the `seek()` operation is complete.
      * @event yodaRT.activity.Activity.MediaClient#seekcomplete
      * @param {string} id - multimedia player id
+     * @param {number} duration -
+     * @param {number} position -
      */
     seekcomplete: {
       type: 'event'
