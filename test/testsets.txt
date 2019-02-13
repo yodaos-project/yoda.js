@@ -25,7 +25,9 @@ component/lifetime/*.test.js
 component/ota/*.test.js
 component/turen/*.test.js
 descriptor/*.test.js
+descriptor/activity/*.test.js
 descriptor/tts/*.test.js
+runtime/init/*.test.js
 runtime/cloudapi-util.*.js
 runtime/cloudapi-*.test.js
 services/lightd/**/*.test.js

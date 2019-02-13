@@ -101,12 +101,13 @@ AppRuntime.prototype.init = function init () {
   property.set('sys.firstboot.init', '1', 'persist')
 
   var shouldBreakInit = () => {
-    if (this.__temporaryDisablingReasons.indexOf('welcoming') >= 0 &&
-      this.__temporaryDisablingReasons.length > 1) {
-      return true
-    }
     if (this.hasBeenDisabled()) {
-      return true
+      if (this.__temporaryDisablingReasons.length > 1) {
+        return true
+      }
+      if (this.__temporaryDisablingReasons[0] !== 'welcoming') {
+        return true
+      }
     }
     return false
   }
@@ -132,7 +133,7 @@ AppRuntime.prototype.init = function init () {
         if (shouldBreakInit()) {
           return
         }
-        return this.component.light.ttsSound('@system', 'system://firstboot.ogg')
+        return this.component.light.ttsSound('@yoda', 'system://firstboot.ogg')
       })
     }
     if (this.shouldWelcome) {

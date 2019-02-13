@@ -2,7 +2,7 @@
 
 var test = require('tape')
 var EventEmitter = require('events').EventEmitter
-var helper = require('../../helper')
+var helper = require('../helper')
 
 var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
 
