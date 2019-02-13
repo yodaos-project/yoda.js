@@ -121,11 +121,11 @@ class Dispatcher {
     var carrierId = _.get(options, 'carrierId')
 
     if (this.runtime.hasBeenDisabled()) {
-      logger.warn(`runtime has been disabled ${this.runtime.getDisabledReasons()}, skip dispatching event(${event}) to app(${appId}.`)
+      logger.warn(`runtime has been disabled ${this.runtime.getDisabledReasons()}, skip dispatching event(${event}) to app(${appId}).`)
       return Promise.resolve(false)
     }
 
-    if (this.component.lifetime.isMonopolized() && preemptive && appId !== this.component.lifetime.monopolist) {
+    if (this.component.lifetime.guardMonopolization(appId, { form: form, preemptive: preemptive })) {
       logger.warn(`LaVieEnPile has ben monopolized, skip dispatching event(${event}) to app(${appId}.`)
       return this.component.lifetime.onLifeCycle(this.component.lifetime.monopolist, 'oppressing', event)
         .then(() => /** event has been handled, prevent tts/media from recovering */true)
