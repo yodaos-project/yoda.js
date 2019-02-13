@@ -213,13 +213,40 @@ LaVieEnPile.prototype.isAppInactive = function isAppInactive (appId) {
  */
 LaVieEnPile.prototype.isMonopolized = function isMonopolized () {
   if (typeof this.monopolist === 'string') {
-    if (this.getCurrentAppId() === this.monopolist &&
+    if (this.isAppInStack(this.monopolist) &&
       this.scheduler.isAppRunning(this.monopolist)) {
       return true
     }
     this.monopolist = null
   }
   return false
+}
+
+/**
+ * Oppress the given event if monopolist is available.
+ *
+ * @param {string} appId
+ * @param {boolean} [options.preemptive=true]
+ * @param {string} [options.form='cut']
+ * @returns {Promise<boolean>} Promise of false if event doesn't been oppressed, true otherwise.
+ */
+LaVieEnPile.prototype.guardMonopolization = function guardMonopolization (appId, options) {
+  var preemptive = _.get(options, 'preemptive', true)
+  var form = _.get(options, 'form', 'cut')
+  if (!preemptive) {
+    return false
+  }
+  if (!this.isMonopolized()) {
+    return false
+  }
+  if (appId === this.monopolist) {
+    return false
+  }
+  if (form === 'cut' && this.activeSlots.scene === this.monopolist) {
+    logger.info(`current monopolist is a scene app, bypassing upcoming cut app(${appId})`)
+    return false
+  }
+  return true
 }
 
 // MARK: - END Getters
@@ -276,7 +303,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     form = 'cut'
   }
 
-  if (this.isMonopolized() && appId !== this.monopolist) {
+  if (this.guardMonopolization(appId, { form: form, preemptive: true })) {
     return Promise.reject(new Error(`App ${this.monopolist} monopolized top of stack.`))
   }
 
@@ -456,7 +483,7 @@ LaVieEnPile.prototype.recoverIfPossibleAfter = function recoverIfPossibleAfter (
   }
 
   if (this.appIdOnPause != null) {
-    logger.info('LaVieEnPile is paused, skip resuming on setBackground.')
+    logger.info('LaVieEnPile is paused, skip resuming on recover.')
     return future
   }
 
