@@ -159,6 +159,12 @@ module.exports = activity => {
               // end task early, no longer perform the following tasks
               next(true)
             })
+          } else if (name === 'seekcomplete') {
+            sos.sendEventRequest('media', 'seekcomplete', dt.data, {
+              itemId: _.get(dt, 'data.item.itemId'),
+              duration: args[0],
+              progress: args[1]
+            })
           }
         })
       }

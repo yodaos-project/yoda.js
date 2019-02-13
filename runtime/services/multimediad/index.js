@@ -30,7 +30,7 @@ service.on('prepared', function (id, dur, pos) {
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
-    'ssss',
+    'ssdd',
     [id, 'prepared', dur, pos]
   )
 })
@@ -40,7 +40,7 @@ service.on('paused', function (id, dur, pos) {
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
-    'ssss',
+    'ssdd',
     [id, 'paused', dur, pos]
   )
 })
@@ -50,7 +50,7 @@ service.on('resumed', function (id, dur, pos) {
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
-    'ssss',
+    'ssdd',
     [id, 'resumed', dur, pos]
   )
 })
@@ -60,8 +60,8 @@ service.on('playbackcomplete', function (id, dur, pos) {
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
-    'ss',
-    [id, 'playbackcomplete']
+    'ssdd',
+    [id, 'playbackcomplete', dur, pos]
   )
 })
 service.on('cancel', function (id, dur, pos) {
@@ -70,8 +70,8 @@ service.on('cancel', function (id, dur, pos) {
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
-    'ss',
-    [id, 'cancel']
+    'ssdd',
+    [id, 'cancel', dur, pos]
   )
 })
 service.on('bufferingupdate', function (id, dur, pos) {
@@ -80,8 +80,8 @@ service.on('bufferingupdate', function (id, dur, pos) {
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
-    'ss',
-    [id, 'bufferingupdate']
+    'ssdd',
+    [id, 'bufferingupdate', dur, pos]
   )
 })
 service.on('seekcomplete', function (id, dur, pos) {
@@ -90,8 +90,8 @@ service.on('seekcomplete', function (id, dur, pos) {
     '/multimedia/service',
     'multimedia.service',
     'multimediadevent',
-    'ss',
-    [id, 'seekcomplete']
+    'ssdd',
+    [id, 'seekcomplete', dur, pos]
   )
 })
 service.on('error', function (id) {
