@@ -8,18 +8,22 @@ var Core = require('./alarm-core')
 module.exports = function (activity) {
   logger.log('alarm load')
   var AlarmCore = new Core(activity)
-
+  activity.once('notification', (channel) => {
+    logger.log('alarm notification event')
+    if (channel === 'on-ready') {
+      AlarmCore.createConfigFile()
+      var state = wifi.getNetworkState()
+      if (state === wifi.NETSERVER_CONNECTED) {
+        getAlarms(activity, (command) => AlarmCore.init(command, true))
+      } else {
+        AlarmCore.getTasksFromConfig((command) => {
+          AlarmCore.init(command)
+        })
+      }
+    }
+  })
   activity.on('create', function () {
     logger.log('alarm create')
-    AlarmCore.createConfigFile()
-    var state = wifi.getNetworkState()
-    if (state === wifi.NETSERVER_CONNECTED) {
-      getAlarms(activity, (command) => AlarmCore.init(command, true))
-    } else {
-      AlarmCore.getTasksFromConfig((command) => {
-        AlarmCore.init(command)
-      })
-    }
     activity.keyboard.on('click', (e) => {
       AlarmCore.clearAll()
       AlarmCore.clearReminderTts()
