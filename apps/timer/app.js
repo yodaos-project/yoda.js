@@ -25,7 +25,7 @@ module.exports = function (activity) {
       if (timer !== null) {
         activity.setBackground()
       } else {
-        activity.exit()
+        activity.exit({ clearContext: true })
       }
     })
     activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
@@ -121,7 +121,7 @@ module.exports = function (activity) {
         speak(strings.CHECK, time.toString(Math.ceil(deltaTime / 1000)))
         break
       default:
-        activity.exit()
+        activity.exit({ clearContext: true })
         break
     }
   })
@@ -210,7 +210,7 @@ module.exports = function (activity) {
             playRingtone(count - 1)
           }, config.RINGTONE.IDLE_SECONDS * 1000)
         } else {
-          activity.exit()
+          activity.exit({ clearContext: true })
         }
       }, config.RINGTONE.RING_SECONDS * 1000)
     })
