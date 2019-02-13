@@ -160,7 +160,7 @@ module.exports = activity => {
               next(true)
             })
           } else if (name === 'seekcomplete') {
-            sos.sendEventRequest('media', 'prepared', dt.data, {
+            sos.sendEventRequest('media', 'seekcomplete', dt.data, {
               itemId: _.get(dt, 'data.item.itemId'),
               duration: args[0],
               progress: args[1]
