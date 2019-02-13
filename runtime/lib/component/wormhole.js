@@ -101,14 +101,18 @@ Wormhole.prototype.handlers = {
    * @member asr
    */
   asr: function (asr) {
-    this.component.flora.getNlpResult(asr, (err, nlp, action) => {
-      if (err) {
-        logger.error('occurrs some error in speechT', err)
-      } else {
-        logger.info('MQTT command: get nlp result for asr', asr, nlp, action)
-        this.runtime.onVoiceCommand(asr, nlp, action)
-      }
-    })
+    this.component.flora.getNlpResult(asr)
+      .then(
+        res => {
+          var nlp = res[0]
+          var action = res[1]
+          logger.info('MQTT command: get nlp result for asr', asr, nlp, action)
+          return this.runtime.onVoiceCommand(asr, nlp, action)
+        },
+        err => {
+          logger.error('occurrs some error in speechT', err)
+        }
+      )
   },
   /**
    * @member cloud_forward

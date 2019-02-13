@@ -96,34 +96,28 @@ Flora.prototype.updateStack = function updateStack (stack) {
 /**
  * Get NLP result of given asr text.
  * @param {string} asr
- * @param {object} skillOptions
- * @param {Function} cb
+ * @param {object} [deviceSkillOptions]
+ * @returns {Promise<[]>} Promise of an array, in which the first item is NLP object and the second item is action object
  */
-Flora.prototype.getNlpResult = function getNlpResult (asr, skillOptions, cb) {
-  if (typeof skillOptions === 'function') {
-    cb = skillOptions
-    skillOptions = {}
+Flora.prototype.getNlpResult = function getNlpResult (asr, deviceSkillOptions) {
+  if (typeof asr !== 'string') {
+    throw TypeError('Expect a string on first argument of Flora.getNlpResult')
   }
-  if (typeof asr !== 'string' || typeof skillOptions !== 'object' || typeof cb !== 'function') {
-    throw TypeError('Invalid argument of getNlpResult')
-  }
-  skillOptions = JSON.stringify(skillOptions)
-  this.call('asr2nlp', [ asr, skillOptions ], 'speech-service', 6000)
+  return this.component.skillHost.querySkillOptions(deviceSkillOptions)
+    .then(skillOptions => {
+      return this.call('asr2nlp', [ asr, JSON.stringify(skillOptions) ], 'speech-service', 6000)
+    })
     .then((resp) => {
       if (resp.retCode !== 0) {
-        cb(new Error('speech service asr2nlp failed: ' + resp.retCode))
-      } else {
-        var nlp, action, err
-        try {
-          nlp = JSON.parse(resp.msg[0])
-          action = JSON.parse(resp.msg[1])
-        } catch (ex) {
-          err = ex
-          logger.log('nlp/action parse failed, discarded')
-        }
-        cb(err, nlp, action)
+        throw new Error('speech service asr2nlp failed: ' + resp.retCode)
       }
-    }).catch((err) => {
-      cb(new Error('invoke speech-service.asr2nlp failed: ' + err))
+      var nlp, action
+      try {
+        nlp = JSON.parse(resp.msg[0])
+        action = JSON.parse(resp.msg[1])
+      } catch (ex) {
+        throw new Error('nlp/action parse failed')
+      }
+      return [ nlp, action ]
     })
 }
