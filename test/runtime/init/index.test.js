@@ -21,6 +21,8 @@ test('should not break if runtime has not been disabled', t => {
 
   property.set('sys.firstboot.init', '0', 'persist')
   mock.mockPromise(runtime.component.dispatcher, 'delegate', null, false)
+  mock.mockReturns(runtime, 'isStartupFlagExists', false)
+
   mock.mockPromise(runtime.component.light, 'ttsSound', (appId, name) => {
     t.strictEqual(appId, '@yoda')
     t.strictEqual(name, 'system://firstboot.ogg')
@@ -57,6 +59,8 @@ test('should not announce first boot guide if is not first boot', t => {
 
   property.set('sys.firstboot.init', '1', 'persist')
   mock.mockPromise(runtime.component.dispatcher, 'delegate', null, false)
+  mock.mockReturns(runtime, 'isStartupFlagExists', false)
+
   mock.mockPromise(runtime.component.light, 'ttsSound', (appId, name) => {
     if (name === 'system://firstboot.ogg') {
       t.fail('unreachable path')
@@ -96,6 +100,8 @@ test('should break announcements if runtime disabled', t => {
 
   property.set('sys.firstboot.init', '0', 'persist')
   mock.mockPromise(runtime.component.dispatcher, 'delegate', null, false)
+  mock.mockReturns(runtime, 'isStartupFlagExists', false)
+
   mock.mockPromise(runtime.component.light, 'ttsSound', (appId, name) => {
     if (name === 'system://firstboot.ogg') {
       t.fail('unreachable path')
@@ -138,6 +144,8 @@ test('should break in announcing if runtime disabled', t => {
 
   property.set('sys.firstboot.init', '0', 'persist')
   mock.mockPromise(runtime.component.dispatcher, 'delegate', null, false)
+  mock.mockReturns(runtime, 'isStartupFlagExists', false)
+
   mock.mockPromise(runtime.component.light, 'ttsSound', (appId, name) => {
     t.strictEqual(appId, '@yoda')
     t.strictEqual(name, 'system://firstboot.ogg')
