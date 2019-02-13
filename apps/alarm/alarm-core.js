@@ -153,7 +153,6 @@ AlarmCore.prototype._setConfig = function (options) {
         delete parseJson[options[i].command.id]
       }
     }
-  
     fs.unlink(CONFIGFILEPATH, (err) => {
       if (err) {
         logger.error('alarm set config: clear local data error', err.stack)
