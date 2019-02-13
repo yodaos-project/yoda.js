@@ -7,18 +7,18 @@ class SkillHost {
     this.runtime = runtime
     this.component = runtime.component
 
-    this.component.flora.declareMethod('rokid.skilloptions', this.querySkillOptions.bind(this))
+    this.component.flora.declareMethod('rokid.skilloptions', this.methodSkillOptions.bind(this))
   }
 
-  querySkillOptions (reqMsg, res) {
+  querySkillOptions (deviceOptions) {
     var options = {
-      device: {
+      device: Object.assign({
         version: property.get('ro.build.version.release'),
         power: {
           powerValue: _.get(this.component.battery.memoInfo, 'batLevel'),
           charging: _.get(this.component.battery.memoInfo, 'batChargingOnline')
         }
-      },
+      }, deviceOptions),
       application: {}
     }
 
@@ -26,12 +26,18 @@ class SkillHost {
       .then(reply => {
         var skillState = JSON.parse(reply.msg[0])
         options.application = skillState
-        res.end(0, [ JSON.stringify(options) ])
+        return options
       })
       .catch(err => {
         logger.error('unexpected error on call "rokid.skills.state":', err)
-        res.end(0, [ JSON.stringify(options) ])
+        return options
       })
+  }
+
+  methodSkillOptions (reqMsg, res) {
+    this.querySkillOptions().then(skillOptions => {
+      res.end(0, [ JSON.stringify(skillOptions) ])
+    })
   }
 }
 

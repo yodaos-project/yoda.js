@@ -895,36 +895,27 @@ AppRuntime.prototype.voiceCommand = function (text, options) {
   var isTriggered = _.get(options, 'isTriggered', false)
   var appId = _.get(options, 'appId')
 
-  var skillOption = {
-    device: {
-      linkage: {
-        trigger: isTriggered
-      }
+  var deviceSkillOption = {
+    linkage: {
+      trigger: isTriggered
     }
   }
-  return new Promise((resolve, reject) => {
-    this.component.flora.getNlpResult(text, skillOption, function (err, nlp, action) {
-      if (err) {
-        return reject(err)
+  return this.component.flora.getNlpResult(text, deviceSkillOption)
+    .then((result) => {
+      var nlp = result[0]
+      var action = result[1]
+      var future = Promise.resolve()
+      if (appId) {
+        /**
+         * retreat self-app into background, then promote the upcoming app
+         * to prevent self being destroy in stack preemption.
+         */
+        future = this.component.lifetime.setBackgroundById(appId)
       }
-      logger.info('get nlp result for asr', text, nlp, action)
-      resolve([ nlp, action ])
+      return future.then(() => this.onVoiceCommand(text, nlp, action, {
+        carrierId: isTriggered ? appId : undefined
+      }))
     })
-  }).then((result) => {
-    var nlp = result[0]
-    var action = result[1]
-    var future = Promise.resolve()
-    if (appId) {
-      /**
-       * retreat self-app into background, then promote the upcoming app
-       * to prevent self being destroy in stack preemption.
-       */
-      future = this.component.lifetime.setBackgroundById(appId)
-    }
-    return future.then(() => this.onVoiceCommand(text, nlp, action, {
-      carrierId: isTriggered ? appId : undefined
-    }))
-  })
 }
 
 /**
