@@ -18,7 +18,6 @@ function Light (runtime) {
   EventEmitter.call(this)
   this.runtime = runtime
   this.dbusRegistry = runtime.component.dbusRegistry
-  this.pickUpTimer = null
 }
 inherits(Light, EventEmitter)
 
@@ -121,20 +120,12 @@ Light.prototype.setPickup = function (appId, duration, withAwaken) {
   if (withAwaken) {
     this.runtime.component.flora.post('rokid.activation.play', [0], this.runtime.component.flora.MSGTYPE_INSTANT)
   }
+  // lightd will waiting for `rokid.turen.end_voice` event to stop lights, so don't have to close it manually.
   return this.play(appId, uri, {
     degree: this.runtime.component.turen.degree,
     duration: duration || 6000
   }, {
     shouldResume: true
-  }).then((res) => {
-    if (this.pickUpTimer) {
-      clearTimeout(this.pickUpTimer)
-    }
-    this.pickUpTimer = setTimeout(() => {
-      this.stop(appId, uri)
-      this.pickUpTimer = null
-    }, duration || 6000)
-    return res
   })
 }
 
