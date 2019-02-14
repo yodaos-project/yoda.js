@@ -13,7 +13,7 @@ var mkdirp = require('@yoda/util').fs.mkdirp
 var logger = require('logger')('custom-config-wakeup')
 var flora = require('./singleton-flora')
 
-// var AWAKE_EFFECT_DEFAULT = '0'
+var AWAKE_EFFECT_DEFAULT = '0'
 var AWAKE_EFFECT_CUSTOM = '1'
 var AWAKE_EFFECT = 'rokid.custom_config.wakeup_sound'
 
@@ -268,7 +268,16 @@ class WakeupEffect extends BaseConfig {
         this.notifyActivation([])
       } else {
         if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
-          if (typeof queryObj.wakeupSoundEffects !== 'object') {
+          if (Array.isArray(queryObj.wakeupSoundEffects) && queryObj.wakeupSoundEffects.length !== 0) {
+            for (var i = 0; i < queryObj.wakeupSoundEffects.length; ++i) {
+              if (typeof queryObj.wakeupSoundEffects[i].wakeupUrl !== 'string' ||
+                typeof queryObj.wakeupSoundEffects[i].wakeupId !== 'string') {
+                logger.warn('custom wakeupSoundEffects field type error: ', queryObj)
+                return
+              }
+            }
+          } else {
+            logger.warn('custom wakeupSoundEffects should be array : ', queryObj)
             return
           }
           mkdirpAsync(ActivationConfig.customPath).then(() => {
@@ -281,9 +290,16 @@ class WakeupEffect extends BaseConfig {
             logger.warn(`download custom wakeup sound error: ${err}`)
           })
         } else {
-          this.getFileList().then((fileList) => {
-            this.notifyActivation(fileList)
-          })
+          if (queryObj.type === AWAKE_EFFECT_DEFAULT &&
+            Array.isArray(queryObj.wakeupSoundEffects) &&
+            queryObj.wakeupSoundEffects.length === 0) {
+            this.getFileList().then((fileList) => {
+              this.notifyActivation(fileList)
+            })
+          } else {
+            logger.warn('default wakeupSoundEffects should be array with size 0: ', queryObj)
+            return
+          }
         }
       }
 
