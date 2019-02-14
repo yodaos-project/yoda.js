@@ -132,8 +132,9 @@ module.exports = function (activity) {
       logger.log('sleep OK!')
     }).catch((err) => {
       logger.error('sleep failed:', err)
+    }).finally(() => {
+      activity.exit()
     })
-    activity.exit()
   }
 
   function sendCardToApp (appId, content) {
