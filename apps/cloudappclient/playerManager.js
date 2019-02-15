@@ -15,9 +15,13 @@ PlayerManager.prototype.setByAppId = function (appId, playerId) {
   }
   if (this.handle[appId] && this.handle[appId] !== '') {
     var pid = this.handle[appId]
-    this.emit('change', appId, pid)
+    // The event 'change' emit when the playerId of given appId changes.
+    // pm.on('change', appId, old_pid, new_pid)
+    this.emit('change', appId, pid, playerId)
   }
   this.handle[appId] = playerId
+  // The event 'update' emit when handle was changed.
+  this.emit('update', this.handle)
   return true
 }
 
@@ -32,6 +36,7 @@ PlayerManager.prototype.deleteByAppId = function (appId) {
   if (this.handle[appId]) {
     delete this.handle[appId]
   }
+  this.emit('update', this.handle)
   return true
 }
 
@@ -43,6 +48,7 @@ PlayerManager.prototype.clear = function () {
     delete this.handle[appId]
   })
   this.handle = {}
+  this.emit('update', this.handle)
   return res
 }
 
