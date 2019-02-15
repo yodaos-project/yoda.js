@@ -61,4 +61,9 @@ module.exports = function (activity) {
     AlarmCore.clearReminderTts()
     logger.log(this.appId + ' destroyed')
   })
+
+  // unhandled rejection
+  process.on('unhandledRejection', err => {
+    logger.error('Alarm: Unhandled Rejection', err)
+  })
 }
