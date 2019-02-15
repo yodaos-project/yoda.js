@@ -11,7 +11,7 @@ var mockDaemonProxies = turenHelper.mockDaemonProxies
 var postMessage = turenHelper.postMessage
 
 test('shall handle voice coming', t => {
-  t.plan(3)
+  t.plan(4)
   var runtime = getAppRuntime()
   var turen = new Turen(runtime)
 
@@ -22,6 +22,7 @@ test('shall handle voice coming', t => {
     .then(() => {
       t.strictEqual(turen.awaken, true, 'turen shall be awaken on voice coming')
       t.strictEqual(turen.pickingUpDiscardNext, false, 'should reset pickingUpDiscardNext on voice coming')
+      t.looseEqual(turen.noVoiceInputTimeout, null, 'no voice input timer should be cleared')
       return _.delay(turen.solitaryVoiceComingTimeout)
     })
     .then(() => {
