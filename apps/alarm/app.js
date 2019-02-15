@@ -62,7 +62,11 @@ module.exports = function (activity) {
     logger.log(this.appId + ' destroyed')
   })
 
-  // unhandled rejection
+  /**
+   * add unhandled rejection
+   * reason: alarm will be crashed when some progress strip priority from alarm
+   * todo: just a temporary solution, will delete 'unhandledRejection' when support atomic process.
+   */
   process.on('unhandledRejection', err => {
     logger.error('Alarm: Unhandled Rejection', err)
   })
