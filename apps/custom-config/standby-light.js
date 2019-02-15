@@ -41,7 +41,9 @@ class StandbyLight extends BaseConfig {
       standbyLight: this.onStandbyLightSwitchStatusChanged.bind(this)
     }
   }
-
+  reload () {
+    this.initStandbyLight()
+  }
   /**
    * init the standby light
    */
