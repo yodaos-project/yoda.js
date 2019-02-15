@@ -60,6 +60,10 @@ module.exports = function CustomConfig (activity) {
           }
         }
       }
+    } else if (path === 'reload') {
+      processorList.forEach((processor) => {
+        processor.reload()
+      })
     } else {
       var func = urlMap[path]
       if (func) {
