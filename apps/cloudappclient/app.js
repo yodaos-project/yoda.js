@@ -153,7 +153,9 @@ module.exports = activity => {
           } else if (name === 'cancel' || name === 'error') {
             sos.sendEventRequest('media', name, dt.data, {
               itemId: _.get(dt, 'data.item.itemId'),
-              token: _.get(dt, 'data.item.token')
+              token: _.get(dt, 'data.item.token'),
+              duration: args[0],
+              progress: args[1]
             }, function cancel () {
               logger.info(`end task early because meida.${name} event emit`)
               // end task early, no longer perform the following tasks
