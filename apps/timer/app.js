@@ -22,13 +22,14 @@ module.exports = function (activity) {
       logger.log('on key event: ' + event.keyCode)
       activity.tts.stop()
       stopRingtone()
-      if (timer !== null) {
+      if (isTimerExist()) {
         activity.setBackground()
       } else {
         activity.exit({ clearContext: true })
       }
     })
     activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
+    activity.setContextOptions({ keepAlive: true })
   })
 
   activity.on('background', () => {
@@ -44,6 +45,7 @@ module.exports = function (activity) {
     activity.keyboard.restoreDefaults(config.KEY_CODE.VOLDOWN)
     activity.keyboard.restoreDefaults(config.KEY_CODE.VOLUP)
     activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
+    stopRingtone()
   })
 
   activity.on('request', (nlp, action) => {
@@ -60,57 +62,45 @@ module.exports = function (activity) {
         } else if (totalSecs > config.TIME.LONGEST) {
           speak(strings.SET_FAIL.TOO_LONG, time.toString(config.TIME.LONGEST))
         } else {
-          if (timer !== null) {
-            clearTimeout(timer)
+          if (isTimerExist()) {
+            cancelTimer()
           }
-          remainMilliSecs = totalSecs * 1000
-          timer = setTimeout(timeupHandler, remainMilliSecs)
-          lastStartTimestamp = Date.now()
+          setTimer(totalSecs * 1000)
           speak(strings.SET_SUCC, time.toString(totalSecs))
         }
         break
       case 'timer_close':
-        if (timer === null) {
-          speak(strings.CANCEL_FAIL)
-        } else {
-          clearTimeout(timer)
-          timer = null
+        if (isTimerExist()) {
+          cancelTimer()
           speak(strings.CANCEL_SUCC)
+        } else {
+          speak(strings.CANCEL_FAIL)
         }
         break
       case 'timer_pause':
-        if (timer !== null || remainMilliSecs > 0) {
-          clearTimeout(timer)
-          timer = null
-          var elapsed = Date.now() - lastStartTimestamp
-          remainMilliSecs -= elapsed
+        if (isTimerExist()) {
+          pauseTimer()
           speak(strings.PAUSE)
         } else {
           speak(strings.CANCEL_FAIL)
         }
         break
       case 'timer_keepon':
-        logger.debug(`ramain time: ${Math.round(remainMilliSecs / 1000)} secs`)
-        if (timer !== null) {
-          var realRemain = remainMilliSecs - (Date.now() - lastStartTimestamp)
+        var realRemain = resumeTimer()
+        logger.debug(`real ramain time: ${realRemain} ms`)
+        if (realRemain > 0) {
           speak(strings.RESUME, time.toString(Math.ceil(realRemain / 1000)))
-        } else if (remainMilliSecs > 0) {
-          timer = setTimeout(timeupHandler, remainMilliSecs)
-          lastStartTimestamp = Date.now()
-          speak(strings.RESUME, time.toString(Math.ceil(remainMilliSecs / 1000)))
         } else {
           speak(strings.CANCEL_FAIL)
         }
         break
       case 'timer_restart':
-        if (timer === null) {
-          speak(strings.CANCEL_FAIL)
-        } else {
-          clearTimeout(timer)
-          remainMilliSecs = totalSecs * 1000
-          timer = setTimeout(timeupHandler, remainMilliSecs)
-          lastStartTimestamp = Date.now()
+        if (isTimerExist()) {
+          cancelTimer()
+          setTimer(totalSecs * 1000)
           speak(strings.RESTART, time.toString(totalSecs))
+        } else {
+          speak(strings.CANCEL_FAIL)
         }
         break
       case 'howtouse_timer':
@@ -126,9 +116,54 @@ module.exports = function (activity) {
     }
   })
 
+  function pauseTimer () {
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+      var elapsed = Date.now() - lastStartTimestamp
+      remainMilliSecs -= elapsed
+    }
+  }
+
+  function resumeTimer () {
+    if (timer !== null) {
+      var realRemain = remainMilliSecs - (Date.now() - lastStartTimestamp)
+      return realRemain
+    } else if (remainMilliSecs > 0) {
+      timer = setTimeout(timeupHandler, remainMilliSecs)
+      lastStartTimestamp = Date.now()
+      return remainMilliSecs
+    } else {
+      return 0
+    }
+  }
+
+  function cancelTimer () {
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+    remainMilliSecs = 0
+  }
+
+  function setTimer (ms) {
+    remainMilliSecs = ms
+    timer = setTimeout(timeupHandler, remainMilliSecs)
+    lastStartTimestamp = Date.now()
+  }
+
+  function isTimerExist () {
+    return timer !== null || remainMilliSecs > 0
+  }
+
   function afterSpeak () {
-    logger.debug('default after speak, set background.')
-    activity.setBackground()
+    if (isTimerExist()) {
+      logger.debug('default after speak, set background.')
+      activity.setBackground()
+    } else {
+      logger.log('timer cancelled? exit app now.')
+      activity.exit({ clearContext: true })
+    }
   }
 
   function speak (text, args) {
