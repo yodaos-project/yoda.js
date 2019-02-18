@@ -68,6 +68,14 @@ Turen.solitaryVoiceComingTimeout = manifest.getDefaultValue('turen.solitary_voic
  */
 Turen.noVoiceInputTimeout = manifest.getDefaultValue('turen.no_voice_input_timeout') || 6000
 
+/**
+ * @private
+ * Determines if the errno returned from speech service was a network related error.
+ */
+Turen.isSpeechNetworkError = function isSpeechNetworkError (errno) {
+  return errno >= 100 || errno === 6
+}
+
 Turen.prototype.handlers = {
   'rokid.turen.voice_coming': function (msg) {
     logger.log('voice coming')
@@ -493,7 +501,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
 
   logger.debug('handling speech error', errCode)
   var future = Promise.resolve()
-  if (this.shouldHandleEvent() && errCode >= 100) {
+  if (this.shouldHandleEvent() && Turen.isSpeechNetworkError(errCode)) {
     /** network error */
     future = this.announceNetworkLag()
   }
