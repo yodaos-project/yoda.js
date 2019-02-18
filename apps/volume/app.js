@@ -156,7 +156,7 @@ module.exports = function (activity) {
     var couldAnnounce = options.type === 'announce'
     if ((Date.now() - slowlyAdjustTimestamp) < oneMinute) {
       ++slowlyAdjustCounter
-      if (slowlyAdjustCounter >= 3) {
+      if (slowlyAdjustCounter === 3) {
         shouldAnnounceHelp = true
       }
     } else {
