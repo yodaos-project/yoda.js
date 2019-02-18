@@ -62,11 +62,15 @@ module.exports = function (activity) {
   }
 
   function playIncomingRingtone () {
-    activity.media.start(res.AUDIO.RINGTONE, {streamType: 'ring'})
+    activity.media.start(res.AUDIO.RINGTONE, {streamType: 'ring'}).catch((err) => {
+      logger.warn('play ringtone error:', err)
+    })
   }
 
   function stopIncomingRingtone () {
-    activity.media.stop()
+    activity.media.stop().catch((err) => {
+      logger.warn('stop ringtone error:', err)
+    })
   }
 
   function textIsEmpty (text) {
