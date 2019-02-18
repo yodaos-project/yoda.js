@@ -61,4 +61,13 @@ module.exports = function (activity) {
     AlarmCore.clearReminderTts()
     logger.log(this.appId + ' destroyed')
   })
+
+  /**
+   * add unhandled rejection
+   * reason: alarm will be crashed when some process strip priority from alarm
+   * todo: just a temporary solution, will delete 'unhandledRejection' when support atomic process.
+   */
+  process.on('unhandledRejection', err => {
+    logger.error('Alarm: Unhandled Rejection', err)
+  })
 }
