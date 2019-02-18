@@ -22,11 +22,6 @@ class Battery {
   }
 
   handleFloraInfo (caps) {
-    if (this.runtime.hasBeenDisabled()) {
-      logger.debug(`system disabled ${this.runtime.getDisabledReasons()}, ignoring battery events`)
-      return
-    }
-
     var msg = caps[0]
     var data
     try {
