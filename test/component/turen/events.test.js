@@ -22,8 +22,8 @@ test('shall handle voice coming', t => {
     .then(() => {
       t.strictEqual(turen.awaken, true, 'turen shall be awaken on voice coming')
       t.strictEqual(turen.pickingUpDiscardNext, false, 'should reset pickingUpDiscardNext on voice coming')
-      t.looseEqual(turen.noVoiceInputTimeout, null, 'no voice input timer should be cleared')
-      return _.delay(turen.solitaryVoiceComingTimeout)
+      t.looseEqual(turen.noVoiceInputTimer, null, 'no voice input timer should be cleared')
+      return _.delay(Turen.solitaryVoiceComingTimeout)
     })
     .then(() => {
       t.strictEqual(turen.pickingUpDiscardNext, false, 'closing pick up on solitary voice coming shall not discard next')
