@@ -429,6 +429,9 @@ module.exports = function (activity) {
         }
         break
       case protocol.CONNECTION_STATE.DISCONNECTED:
+        if (currentSkillName !== 'bluetooth') {
+          setAppType('bluetooth')
+        }
         if (!_.startsWith(lastIntent, 'disconnect_')) {
           logger.debug('Suppress "disconnected" prompt while NOT explicit intent.')
         } else {
