@@ -22,7 +22,7 @@ module.exports = function (activity) {
   var strings = require('./strings.json')
   var config = require('./config.json')
   var needResume = false
-  var lastIntent = null
+  var lastIntent = 'derived_from_phone'
   var timer = null
   var callState = protocol.CALL_STATE.IDLE
   var deviceProps = null
@@ -341,6 +341,7 @@ module.exports = function (activity) {
         } else {
           speak(getText('SINK_FIRST_OPENED_ARG1S', deviceName), res.AUDIO['ON_OPENED'])
         }
+        lastIntent = 'derived_from_phone'
         break
       case 'connect_phone':
       case 'bluetooth_start_bluetooth_music':
@@ -365,6 +366,7 @@ module.exports = function (activity) {
     } else {
       speak(getText('SOURCE_FIRST_OPENED'), res.AUDIO['ON_OPENED'])
     }
+    lastIntent = 'derived_from_phone'
   }
 
   function onRadioStateChangedListener (mode, state, extra) {
@@ -430,16 +432,17 @@ module.exports = function (activity) {
           speak(getText('PLEASE_WAIT'), res.AUDIO[state])
         } else {
           speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
+          lastIntent = 'derived_from_phone'
         }
         break
       case protocol.CONNECTION_STATE.DISCONNECTED:
         if (currentSkillName !== 'bluetooth') {
           setAppType('bluetooth')
         }
-        if (!_.startsWith(lastIntent, 'disconnect_')) {
-          logger.debug('Suppress "disconnected" prompt while NOT explicit intent.')
-        } else {
+        if (lastIntent !== 'implicit_disconnect' && lastIntent !== 'bluetooth_disconnect') {
           speak(getText('DISCONNECTED'))
+        } else {
+          logger.debug('Suppress "disconnected" prompt while NOT user explicit intent.')
         }
         break
       case protocol.CONNECTION_STATE.CONNECT_FAILED:
@@ -468,6 +471,7 @@ module.exports = function (activity) {
         setTimer(() => { // To ensure unmute because turen may mute music by itself.
           a2dp.unmute()
         }, 100)
+        lastIntent = 'derived_from_phone'
         break
       case protocol.AUDIO_STATE.PAUSED:
       case protocol.AUDIO_STATE.STOPPED:
@@ -514,13 +518,13 @@ module.exports = function (activity) {
     }
     switch (state) {
       case protocol.DISCOVERY_STATE.ON:
-        if (lastIntent === 'bluetooth_broadcast') {
+        if (lastIntent !== 'implicit_disconnect' && lastIntent !== 'bluetooth_disconnect') {
           activity.light.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true })
             .catch((err) => {
               logger.error('bluetooth play light error: ', err)
             })
         } else {
-          logger.debug('Suppress "discovery" light in any other conditions except user open it manually.')
+          logger.debug('Suppress "discovery" light in conditions which is not user explicit intents.')
         }
         break
       case protocol.DISCOVERY_STATE.OFF:
@@ -681,6 +685,7 @@ module.exports = function (activity) {
     }
     if (currentSkillName !== 'bluetooth') {
       if (a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED) {
+        lastIntent = 'implicit_disconnect'
         a2dp.disconnect()
       }
       setAppType('bluetooth')
