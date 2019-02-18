@@ -24,7 +24,7 @@ class SkillHost {
 
     return this.component.flora.call('rokid.skills.state', [], 'cloudappclient', 200)
       .then(reply => {
-        var skillState = JSON.parse(reply.msg[0])
+        var skillState = JSON.parse(reply.msg[0]) 
         options.application = skillState
         return options
       })
