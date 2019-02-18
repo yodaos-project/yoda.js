@@ -13,7 +13,6 @@ var getRuntime = () => ({
       pickup: () => undefined
     }
   },
-  hasBeenDisabled: () => false,
   openUrl: () => Promise.resolve()
 })
 
