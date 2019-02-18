@@ -225,6 +225,16 @@ module.exports = function (activity) {
       var isPlaying = a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING
       logger.debug(`Start play bt music, mode=${mode}, radio=${a2dp.getRadioState()}`)
       if (mode === protocol.A2DP_MODE.SINK && isConnected && !isPlaying) {
+        setTimer(() => {
+          if (a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED &&
+            a2dp.getAudioState() !== protocol.AUDIO_STATE.PLAYING) {
+            var dev = a2dp.getConnectedDevice()
+            if (dev != null) {
+              speak(getText('PLAY_FAILED_ARG1S', dev.name))
+            }
+            lastIntent = 'derived_from_phone'
+          }
+        }, config.TIMER.DELAY_BEFORE_PLAY_FAILED)
         a2dp.play()
       } else {
         a2dp.open(protocol.A2DP_MODE.SINK, {autoplay: true})
