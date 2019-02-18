@@ -611,9 +611,7 @@ DBus.prototype.yodadebug = {
         'awaken',
         'asrState',
         'pickingUp',
-        'pickingUpDiscardNext',
-        'solitaryVoiceComingTimeout',
-        'noVoiceInputTimeout'
+        'pickingUpDiscardNext'
       ]
       keys.forEach(key => {
         ret.result[key] = this.component.turen[key]

@@ -2,6 +2,7 @@ var logger = require('logger')('turen')
 
 var _ = require('@yoda/util')._
 var bluetooth = require('@yoda/bluetooth')
+var manifest = require('@yoda/manifest')
 
 var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
 var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
@@ -45,19 +46,27 @@ function Turen (runtime) {
    * handle of timer to determines if current 'voice coming' session is alone,
    * no upcoming asr pending/end is sent in company with it.
    */
-  this.solitaryVoiceComingTimeout = process.env.YODA_SOLITARY_VOICE_COMING_TIMEOUT || 9000
   this.solitaryVoiceComingTimer = null
   /**
    * handle of timer to determines if current awaken session is no voice input available so far,
    * no upcoming asr pending would be sent any way.
    */
-  this.noVoiceInputTimeout = process.env.YODA_NO_VOICE_INPUT_TIMEOUT || 6000
   this.noVoiceInputTimer = null
   /**
    * last wakeup degree
    */
   this.degree = 0
 }
+
+/**
+ * @type {number}
+ */
+Turen.solitaryVoiceComingTimeout = manifest.getDefaultValue('turen.solitary_voice_coming_timeout') || 9000
+
+/**
+ * @type {number}
+ */
+Turen.noVoiceInputTimeout = manifest.getDefaultValue('turen.no_voice_input_timeout') || 6000
 
 Turen.prototype.handlers = {
   'rokid.turen.voice_coming': function (msg) {
@@ -285,7 +294,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
       var future = this.setAwaken()
       clearTimeout(this.solitaryVoiceComingTimer)
       clearTimeout(this.noVoiceInputTimer)
-      this.noVoiceInputTimeout = null
+      this.noVoiceInputTimer = null
       this.solitaryVoiceComingTimer = setTimeout(() => {
         logger.warn('detected a solitary voice coming, resetting awaken')
         this.pickup(false, { discardNext: false })
@@ -293,7 +302,7 @@ Turen.prototype.handleVoiceComing = function handleVoiceComing (data) {
         if (this.awaken) {
           return this.handleSpeechError(/** simulated speech network error */999)
         }
-      }, this.solitaryVoiceComingTimeout)
+      }, Turen.solitaryVoiceComingTimeout)
 
       this.appIdOnVoiceComing = this.component.lifetime.getCurrentAppId()
       /**
@@ -325,7 +334,7 @@ Turen.prototype.handleAsrProgress = function handleAsrProgress (state) {
   this.noVoiceInputTimer = setTimeout(() => {
     logger.warn('no more voice input detected, closing pickup')
     this.pickup(false, { discardNext: false })
-  }, this.noVoiceInputTimeout)
+  }, Turen.noVoiceInputTimeout)
 }
 
 /**
