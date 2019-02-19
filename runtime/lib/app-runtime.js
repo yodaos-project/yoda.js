@@ -1094,7 +1094,7 @@ AppRuntime.prototype.shutdown = function shutdown () {
       if (this.component.battery.isCharging()) {
         return system.rebootCharging()
       }
-      return system.powerOff()
+      return system.powerOff('power-key')
     })
 }
 
