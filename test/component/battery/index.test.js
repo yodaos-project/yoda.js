@@ -3,28 +3,10 @@ var test = require('tape')
 var helper = require('../../helper')
 var mock = require('../../helper/mock')
 var Battery = require(`${helper.paths.runtime}/lib/component/battery`)
+var batHelper = require('./helper')
 
-var getRuntime = () => ({
-  component: {
-    lifetime: {
-      getCurrentAppId: () => undefined
-    },
-    turen: {
-      pickup: () => undefined
-    }
-  },
-  openUrl: () => Promise.resolve()
-})
-
-function sendInfo (battery, data) {
-  var ret = Object.assign({
-    batSupported: true,
-    batChargingOnline: false
-  }, data)
-  var str = JSON.stringify(ret)
-  battery.handleFloraInfo([str])
-  return ret
-}
+var getRuntime = batHelper.getRuntime
+var sendInfo = batHelper.sendInfo
 
 test('should parse battery.info', t => {
   t.plan(1)
