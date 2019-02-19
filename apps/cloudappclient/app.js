@@ -61,11 +61,6 @@ module.exports = activity => {
     }
   })
 
-  // for debug and test: save playerId map to property
-  pm.on('update', (handle) => {
-    property.set('app.cloudappclient.player', JSON.stringify(handle))
-  })
-
   pm.on('change', (appId, playerId) => {
     logger.log(`playerId was changed from appId(${appId}) playerId(${playerId})`)
     activity.media.stop(playerId)
