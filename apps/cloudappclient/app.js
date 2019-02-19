@@ -74,13 +74,19 @@ module.exports = activity => {
   directive.do('frontend', 'tts', function (dt, next) {
     logger.log(`start dt: tts.${dt.action}`)
     if (dt.action === 'say') {
+      var playerId = pm.getByAppId(dt.data.appId)
+      if (playerId) {
+        activity.mixTtsBegin(playerId)
+      }
       ttsClient.speak(dt.data.item.tts, function (name) {
         logger.log(`end dt: tts.${dt.action} ${name}`)
         if (name === 'start') {
           sos.sendEventRequest('tts', 'start', dt.data, _.get(dt, 'data.item.itemId'))
         } else if (name === 'end') {
+          activity.mixTtsEnd()
           sos.sendEventRequest('tts', 'end', dt.data, _.get(dt, 'data.item.itemId'), next)
         } else if (name === 'cancel' || name === 'error') {
+          activity.mixTtsEnd()
           sos.sendEventRequest('tts', name, dt.data, _.get(dt, 'data.item.itemId'), function cancel () {
             logger.info(`end task early because tts.${name} event emit`)
             // end task early, no longer perform the following tasks

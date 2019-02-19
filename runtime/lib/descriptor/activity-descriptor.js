@@ -656,6 +656,34 @@ Object.assign(ActivityDescriptor.prototype,
       fn: function getMicMute () {
         return Promise.resolve(this._runtime.component.turen.muted)
       }
+    },
+    mixTtsBegin: {
+      type: 'method',
+      returns: 'promise',
+      fn: function mixTtsBegin (interrupt, playerId) {
+        // case: mixTtsBegin()
+        if (interrupt === undefined) {
+          playerId = -1
+        }
+        // case: mixTtsBegin(playerId)
+        if (typeof interrupt === 'number') {
+          playerId = interrupt
+          interrupt = undefined
+        }
+        // case: mixTtsBegin(interrupt)
+        if (playerId === undefined) {
+          playerId = -1
+        }
+        return this._runtime.component.audioMix.mixTtsBegin(this._appId, playerId)
+      }
+    },
+    mixTtsEnd: {
+      type: 'method',
+      returns: 'promise',
+      fn: function mixTtsEnd () {
+        this._runtime.component.audioMix.mixTtsEnd()
+        return Promise.resolve()
+      }
     }
   }
 )
