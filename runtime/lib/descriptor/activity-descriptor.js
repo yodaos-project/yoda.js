@@ -657,6 +657,16 @@ Object.assign(ActivityDescriptor.prototype,
         return Promise.resolve(this._runtime.component.turen.muted)
       }
     },
+    /**
+     * begin tts mix with audio.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function mixTtsBegin
+     * @param {interrupt} [interrupt] interrupt audio if true, otherwise suppress audio. Undefined will use system config.
+     * @param {playerId} [number] playerId is required if the value of interrupt is false.
+     * @returns {Promise} Promise of audio mixed
+     */
     mixTtsBegin: {
       type: 'method',
       returns: 'promise',
@@ -677,6 +687,14 @@ Object.assign(ActivityDescriptor.prototype,
         return this._runtime.component.audioMix.mixTtsBegin(this._appId, playerId)
       }
     },
+    /**
+     * end audio mix.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function mixTtsEnd
+     * @returns {Promise} Promise of audio mix end
+     */
     mixTtsEnd: {
       type: 'method',
       returns: 'promise',
