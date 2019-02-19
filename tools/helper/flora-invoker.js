@@ -20,7 +20,7 @@ function main () {
   }
 
   var startedOn = Date.now()
-  cli.call(name, msg, target, 1000)
+  cli.call(name, msg, target)
     .then(reply => {
       var duration = Date.now() - startedOn
       console.log(`invokation completed after ${duration}ms.`)

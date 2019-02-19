@@ -91,15 +91,17 @@ class Battery {
   }
 
   isCharging () {
+    logger.info('is charging?', this.batSupported, this.memoInfo)
     if (this.memoInfo == null) {
       return false
     }
     if (!this.batSupported) {
       return false
     }
-    if (this.memoInfo.batChargingOnline) {
+    if (!this.memoInfo.batChargingOnline) {
       return false
     }
+    return true
   }
 
   getBatteryLevel () {
