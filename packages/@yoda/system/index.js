@@ -10,10 +10,13 @@ var property = require('@yoda/property')
 /**
  * Power off the device.
  * @function powerOff
+ * @param {string} [reason] - persist power off reason for easy debugging.
  * @returns {boolean}
  * @private
  */
-exports.powerOff = function powerOff () {
+exports.powerOff = function powerOff (reason) {
+  property.set('sys.power_off.reason', reason || 'system', 'persist')
+  property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.powerOff())
   return true
 }
@@ -25,6 +28,8 @@ exports.powerOff = function powerOff () {
  * @private
  */
 exports.rebootCharging = function rebootCharging () {
+  property.set('sys.power_off.reason', 'charging', 'persist')
+  property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.rebootCharging())
   return true
 }
@@ -32,10 +37,13 @@ exports.rebootCharging = function rebootCharging () {
 /**
  * Reboot the system.
  * @function reboot
+ * @param {string} [reason] - persist power off reason for easy debugging.
  * @returns {boolean}
  * @private
  */
-exports.reboot = function reboot () {
+exports.reboot = function reboot (reason) {
+  property.set('sys.power_off.reason', reason || 'reboot', 'persist')
+  property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.reboot())
   return true
 }
