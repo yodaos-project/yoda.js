@@ -5,7 +5,6 @@ var PlayerManager = require('./playerManager')
 var TtsEventHandle = require('@yodaos/ttskit').Convergence
 var MediaEventHandle = require('@yodaos/mediakit').Convergence
 var logger = require('logger')('cloudAppClient')
-var property = require('@yoda/property')
 var Skill = require('./skill')
 var _ = require('@yoda/util')._
 
