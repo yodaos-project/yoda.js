@@ -291,5 +291,5 @@ Wormhole.prototype.handleAppEvent = function handleAppEvent (data) {
       }
     }
   }
-  this.runtime.onVoiceCommand('', mockNlp, mockAction)
+  this.runtime.onVoiceCommand('', mockNlp, mockAction, { preemptive: false })
 }
