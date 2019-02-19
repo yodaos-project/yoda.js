@@ -149,9 +149,9 @@ function startUpgrade (activity, imagePath, isForce) {
     media = 'system://ota_force_update.ogg'
   }
   return activity.media.start(media, { impatient: false })
-    .then(() => system.reboot(), err => {
+    .then(() => system.reboot('ota'), err => {
       logger.error('Unexpected error on announcing start update', err.stack)
-      system.reboot()
+      system.reboot('ota')
     })
 }
 

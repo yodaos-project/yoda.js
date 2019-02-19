@@ -22,11 +22,6 @@ class Battery {
   }
 
   handleFloraInfo (caps) {
-    if (this.runtime.hasBeenDisabled()) {
-      logger.debug(`system disabled ${this.runtime.getDisabledReasons()}, ignoring battery events`)
-      return
-    }
-
     var msg = caps[0]
     var data
     try {
@@ -96,15 +91,17 @@ class Battery {
   }
 
   isCharging () {
+    logger.info('is charging?', this.batSupported, this.memoInfo)
     if (this.memoInfo == null) {
       return false
     }
     if (!this.batSupported) {
       return false
     }
-    if (this.memoInfo.batChargingOnline) {
+    if (!this.memoInfo.batChargingOnline) {
       return false
     }
+    return true
   }
 
   getBatteryLevel () {

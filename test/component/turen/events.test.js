@@ -22,8 +22,8 @@ test('shall handle voice coming', t => {
     .then(() => {
       t.strictEqual(turen.awaken, true, 'turen shall be awaken on voice coming')
       t.strictEqual(turen.pickingUpDiscardNext, false, 'should reset pickingUpDiscardNext on voice coming')
-      t.looseEqual(turen.noVoiceInputTimeout, null, 'no voice input timer should be cleared')
-      return _.delay(turen.solitaryVoiceComingTimeout)
+      t.looseEqual(turen.noVoiceInputTimer, null, 'no voice input timer should be cleared')
+      return _.delay(Turen.solitaryVoiceComingTimeout)
     })
     .then(() => {
       t.strictEqual(turen.pickingUpDiscardNext, false, 'closing pick up on solitary voice coming shall not discard next')
@@ -39,104 +39,110 @@ test('shall handle voice coming', t => {
     })
 })
 
-test('speech network error should be ignored on muted', t => {
-  t.plan(1)
-  var runtime = getAppRuntime()
-  var turen = new Turen(runtime)
+function testSpeechNetworkErrorCode (code) {
+  test(`speech error ${code} should be ignored on muted`, t => {
+    t.plan(1)
+    var runtime = getAppRuntime()
+    var turen = new Turen(runtime)
 
-  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
-  mockDaemonProxies(runtime)
+    mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+    mockDaemonProxies(runtime)
 
-  postMessage(turen, 'rokid.turen.voice_coming')
-    .then(() => postMessage(turen, 'rokid.turen.local_awake', [ 0 ]))
-    .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
-    .then(() => {
-      mock.mockPromise(turen, 'announceNetworkLag', () => {
-        t.fail('should not announce network lag on muted')
+    postMessage(turen, 'rokid.turen.voice_coming')
+      .then(() => postMessage(turen, 'rokid.turen.local_awake', [ 0 ]))
+      .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
+      .then(() => {
+        mock.mockPromise(turen, 'announceNetworkLag', () => {
+          t.fail('should not announce network lag on muted')
+        })
+        turen.muted = true
       })
-      turen.muted = true
-    })
-    .then(() => postMessage(turen, 'rokid.speech.error', [ 103, 100 ]))
-    .then(() => {
-      t.strictEqual(turen.awaken, false, 'turen shall not be awaken on end of speech error')
+      .then(() => postMessage(turen, 'rokid.speech.error', [ code, 100 ]))
+      .then(() => {
+        t.strictEqual(turen.awaken, false, 'turen shall not be awaken on end of speech error')
 
-      runtime.deinit()
-      t.end()
-    })
-    .catch(err => {
-      t.error(err)
-
-      runtime.deinit()
-      t.end()
-    })
-})
-
-test('speech network error on middle of asr processing', t => {
-  t.plan(2)
-  var runtime = getAppRuntime()
-  var turen = new Turen(runtime)
-
-  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
-  mockDaemonProxies(runtime)
-
-  postMessage(turen, 'rokid.turen.voice_coming')
-    .then(() => postMessage(turen, 'rokid.turen.local_awake', [ 0 ]))
-    .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
-    .then(() => {
-      mock.proxyFunction(turen, 'announceNetworkLag', {
-        before: () => {
-          t.pass('should announce network lag on speech error > 100')
-        }
+        runtime.deinit()
+        t.end()
       })
-    })
-    .then(() => postMessage(turen, 'rokid.speech.error', [ 103, 100 ]))
-    .then(() => {
-      t.strictEqual(turen.awaken, false, 'turen shall not be awaken on end of speech error')
+      .catch(err => {
+        t.error(err)
 
-      runtime.deinit()
-      t.end()
-    })
-    .catch(err => {
-      t.error(err)
-
-      runtime.deinit()
-      t.end()
-    })
-})
-
-test('speech network error on end of asr processing', t => {
-  t.plan(2)
-  var runtime = getAppRuntime()
-  var turen = new Turen(runtime)
-
-  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
-  mockDaemonProxies(runtime)
-
-  postMessage(turen, 'rokid.turen.voice_coming')
-    .then(() => postMessage(turen, 'rokid.turen.local_awake', [ 0 ]))
-    .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
-    .then(() => postMessage(turen, 'rokid.speech.final_asr', [ 'asr' ]))
-    .then(() => {
-      mock.proxyFunction(turen, 'announceNetworkLag', {
-        before: () => {
-          t.pass('should announce network lag on speech error > 100')
-        }
+        runtime.deinit()
+        t.end()
       })
-    })
-    .then(() => postMessage(turen, 'rokid.speech.error', [ 103, 100 ]))
-    .then(() => {
-      t.strictEqual(turen.awaken, false, 'turen shall not be awaken on end of speech error')
+  })
 
-      runtime.deinit()
-      t.end()
-    })
-    .catch(err => {
-      t.error(err)
+  test(`speech error ${code} on middle of asr processing`, t => {
+    t.plan(2)
+    var runtime = getAppRuntime()
+    var turen = new Turen(runtime)
 
-      runtime.deinit()
-      t.end()
-    })
-})
+    mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+    mockDaemonProxies(runtime)
+
+    postMessage(turen, 'rokid.turen.voice_coming')
+      .then(() => postMessage(turen, 'rokid.turen.local_awake', [ 0 ]))
+      .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
+      .then(() => {
+        mock.proxyFunction(turen, 'announceNetworkLag', {
+          before: () => {
+            t.pass('should announce network lag on speech error > 100')
+          }
+        })
+      })
+      .then(() => postMessage(turen, 'rokid.speech.error', [ code, 100 ]))
+      .then(() => {
+        t.strictEqual(turen.awaken, false, 'turen shall not be awaken on end of speech error')
+
+        runtime.deinit()
+        t.end()
+      })
+      .catch(err => {
+        t.error(err)
+
+        runtime.deinit()
+        t.end()
+      })
+  })
+
+  test(`speech error ${code} on end of asr processing`, t => {
+    t.plan(2)
+    var runtime = getAppRuntime()
+    var turen = new Turen(runtime)
+
+    mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+    mockDaemonProxies(runtime)
+
+    postMessage(turen, 'rokid.turen.voice_coming')
+      .then(() => postMessage(turen, 'rokid.turen.local_awake', [ 0 ]))
+      .then(() => postMessage(turen, 'rokid.speech.inter_asr', [ 'asr' ]))
+      .then(() => postMessage(turen, 'rokid.speech.final_asr', [ 'asr' ]))
+      .then(() => {
+        mock.proxyFunction(turen, 'announceNetworkLag', {
+          before: () => {
+            t.pass('should announce network lag on speech error > 100')
+          }
+        })
+      })
+      .then(() => postMessage(turen, 'rokid.speech.error', [ code, 100 ]))
+      .then(() => {
+        t.strictEqual(turen.awaken, false, 'turen shall not be awaken on end of speech error')
+
+        runtime.deinit()
+        t.end()
+      })
+      .catch(err => {
+        t.error(err)
+
+        runtime.deinit()
+        t.end()
+      })
+  })
+}
+
+testSpeechNetworkErrorCode(6)
+testSpeechNetworkErrorCode(100)
+testSpeechNetworkErrorCode(999)
 
 test('speech error 8 on middle of asr processing', t => {
   t.plan(2)
