@@ -9,7 +9,8 @@ class CloudAppService {
     this.ctx = ctx
     this.flora = new FloraComp('cloudappclient')
     this.flora.remoteMethods = {
-      'rokid.skills.state': this.getState.bind(this)
+      'rokid.skills.state': this.getState.bind(this),
+      'rokid.skills.player': this.getPlayer.bind(this)
     }
   }
   start () {
@@ -59,6 +60,17 @@ class CloudAppService {
       logger.error('getstate failed with the error', err)
       res.end(0, [ '{}' ])
     })
+  }
+  /**
+   * for debug and test: get playerId map
+   *
+   * @param {*} req
+   * @param {*} res
+   * @memberof CloudAppService
+   */
+  getPlayer (req, res) {
+    var result = JSON.stringify(this.ctx.playerMgr.handle)
+    res.end(0, [ result ])
   }
 }
 
