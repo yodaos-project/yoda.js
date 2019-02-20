@@ -13,3 +13,20 @@ function delegateEvents (source, dest) {
     })
   })
 }
+
+module.exports.getMaxLayer = getMaxLayer
+function getMaxLayer (LayerDefine, maxSystemspaceLayers) {
+  var layers = 0
+  // find max layer from layerDefine
+  Object.keys(LayerDefine).forEach((key) => {
+    if (LayerDefine[key] > layers) {
+      layers = LayerDefine[key]
+    }
+  })
+  if (layers + 1 > maxSystemspaceLayers) {
+    layers = maxSystemspaceLayers
+  } else {
+    layers = layers + 1
+  }
+  return layers
+}
