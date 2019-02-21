@@ -1,6 +1,6 @@
 {
   "name": "yodart",
-  "version": "7.33.3",
+  "version": "7.33.4",
   "scripts": {
     "prerestart": "tools/runtime-install",
     "pre-push": "npm run lint",
