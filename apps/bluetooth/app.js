@@ -446,7 +446,9 @@ module.exports = function (activity) {
         }
         break
       case protocol.CONNECTION_STATE.DISCONNECTED:
-        if (currentSkillName !== 'bluetooth') {
+        if (currentSkillName === 'bluetooth_call') {
+          onCallStateChangedListener(protocol.CALL_STATE.IDLE)
+        } else if (currentSkillName === 'bluetooth_music') {
           setAppType('bluetooth')
         }
         if (lastIntent !== 'implicit_disconnect' && lastIntent !== 'bluetooth_disconnect') {
