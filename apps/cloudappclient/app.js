@@ -4,6 +4,7 @@ var Directive = require('./directive').Directive
 var PlayerManager = require('./playerManager')
 var TtsEventHandle = require('@yodaos/ttskit').Convergence
 var MediaEventHandle = require('@yodaos/mediakit').Convergence
+var AudioMix = require('@yodaos/mediakit').AudioMix
 var logger = require('logger')('cloudAppClient')
 var Skill = require('./skill')
 var _ = require('@yoda/util')._
@@ -24,6 +25,7 @@ module.exports = activity => {
   // tts, media event handle
   var ttsClient = new TtsEventHandle(activity.tts)
   var mediaClient = new MediaEventHandle(activity.media, logger)
+  var audioMix = new AudioMix(activity.media, logger)
 
   // service
   var service = new Service({
@@ -74,13 +76,27 @@ module.exports = activity => {
   directive.do('frontend', 'tts', function (dt, next) {
     logger.log(`start dt: tts.${dt.action}`)
     if (dt.action === 'say') {
+      // This is the sound mixing mechanism. AudioMix will use system config If no explicit `disableSuppress` is given.
+      var playerId = pm.getByAppId(dt.data.appId)
+      var playerMsg = pm.getDataByPlayerId(playerId) || {}
+      // The value of interrupt can be the following:
+      //   - true (interrupt)
+      //   - false (suppress)
+      //   - undefined (system config)
+      var interrupt = playerMsg.disableSuppress
+      if (playerId) {
+        audioMix.begin(interrupt, playerId)
+      }
       ttsClient.speak(dt.data.item.tts, function (name) {
         logger.log(`end dt: tts.${dt.action} ${name}`)
         if (name === 'start') {
           sos.sendEventRequest('tts', 'start', dt.data, _.get(dt, 'data.item.itemId'))
         } else if (name === 'end') {
+          // AudioMix end.
+          audioMix.end()
           sos.sendEventRequest('tts', 'end', dt.data, _.get(dt, 'data.item.itemId'), next)
         } else if (name === 'cancel' || name === 'error') {
+          audioMix.end()
           sos.sendEventRequest('tts', name, dt.data, _.get(dt, 'data.item.itemId'), function cancel () {
             logger.info(`end task early because tts.${name} event emit`)
             // end task early, no longer perform the following tasks
@@ -124,7 +140,7 @@ module.exports = activity => {
         mediaClient.start(dt.data.item.url, { multiple: true }, function (name, args) {
           logger.log(`[cac-event](${name}) args(${JSON.stringify(args)}) `)
           if (name === 'resolved') {
-            pm.setByAppId(dt.data.appId, args)
+            pm.setByAppId(dt.data.appId, args, dt.data)
           } else if (name === 'prepared') {
             setSpeed(dt.data.item.playMultiple)
             setOffset(dt.data.item.offsetInMilliseconds)
