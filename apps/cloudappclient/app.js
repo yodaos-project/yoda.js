@@ -4,6 +4,7 @@ var Directive = require('./directive').Directive
 var PlayerManager = require('./playerManager')
 var TtsEventHandle = require('@yodaos/ttskit').Convergence
 var MediaEventHandle = require('@yodaos/mediakit').Convergence
+var AudioMix = require('@yodaos/mediakit').AudioMix
 var logger = require('logger')('cloudAppClient')
 var Skill = require('./skill')
 var _ = require('@yoda/util')._
@@ -24,6 +25,7 @@ module.exports = activity => {
   // tts, media event handle
   var ttsClient = new TtsEventHandle(activity.tts)
   var mediaClient = new MediaEventHandle(activity.media, logger)
+  var audioMix = new AudioMix(activity.media, logger)
 
   // service
   var service = new Service({
@@ -83,7 +85,7 @@ module.exports = activity => {
       //   - undefined (system config)
       var interrupt = playerMsg.disableSuppress
       if (playerId) {
-        activity.mixTtsBegin(interrupt, playerId)
+        audioMix.begin(interrupt, playerId)
       }
       ttsClient.speak(dt.data.item.tts, function (name) {
         logger.log(`end dt: tts.${dt.action} ${name}`)
@@ -91,10 +93,10 @@ module.exports = activity => {
           sos.sendEventRequest('tts', 'start', dt.data, _.get(dt, 'data.item.itemId'))
         } else if (name === 'end') {
           // AudioMix end.
-          activity.mixTtsEnd()
+          audioMix.end()
           sos.sendEventRequest('tts', 'end', dt.data, _.get(dt, 'data.item.itemId'), next)
         } else if (name === 'cancel' || name === 'error') {
-          activity.mixTtsEnd()
+          audioMix.end()
           sos.sendEventRequest('tts', name, dt.data, _.get(dt, 'data.item.itemId'), function cancel () {
             logger.info(`end task early because tts.${name} event emit`)
             // end task early, no longer perform the following tasks
