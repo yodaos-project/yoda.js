@@ -544,7 +544,7 @@ module.exports = function (activity) {
     switch (state) {
       case protocol.DISCOVERY_STATE.ON:
         if (lastIntent !== 'implicit_disconnect' && lastIntent !== 'bluetooth_disconnect') {
-          activity.light.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true })
+          activity.light.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true, zIndex: 2 })
             .catch((err) => {
               logger.error('bluetooth play light error: ', err)
             })
@@ -595,7 +595,7 @@ module.exports = function (activity) {
           activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
           activity.stopMonologue()
           setAppType('bluetooth')
-          activity.light.play(res.LIGHT.CALL[state])
+          activity.light.play(res.LIGHT.CALL[state], {}, { zIndex: 2 })
           activity.light.stop(res.LIGHT.CALL[callState])
         }
         callState = state
@@ -606,7 +606,7 @@ module.exports = function (activity) {
             activity.startMonologue()
             activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
           })
-          activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true })
+          activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true, zIndex: 2 })
             .catch((err) => {
               logger.error(`play ${state} light error: `, err)
             })
@@ -622,7 +622,7 @@ module.exports = function (activity) {
         } else if (callState === protocol.CALL_STATE.INCOMING || callState === protocol.CALL_STATE.RING) {
           stopIncomingRingtone()
         }
-        activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true })
+        activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true, zIndex: 2 })
           .catch((err) => {
             logger.error(`play ${state} light error: `, err)
           })
