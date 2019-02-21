@@ -5,7 +5,7 @@ var GlobalConfig = {
 }
 
 try {
-  GlobalConfig = require('/etc/yoda/global-config.json')
+  GlobalConfig = require('/etc/yoda/system-config.json')
 } catch (error) {
   logger.warn(`require global-config.json error, use default. error: ${error}`)
 }
