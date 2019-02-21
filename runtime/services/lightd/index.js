@@ -133,7 +133,7 @@ dbusApis.addMethod('reset', {
   out: ['b']
 }, function (cb) {
   logger.log('reset lightd requested by vui')
-  service.setHide()
+  service.reset()
   cb(null, true)
 })
 
