@@ -149,7 +149,7 @@ Light.prototype.setDegree = function (appId, sl) {
 }
 
 /**
- * close currently light
+ * This action will reset service to initialization state and close currently light. Also will clear all lights that need to resume.
  * @return {Promise}
  */
 Light.prototype.reset = function () {
