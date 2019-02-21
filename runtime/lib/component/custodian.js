@@ -179,7 +179,7 @@ Custodian.prototype.prepareNetwork = function prepareNetwork () {
       clearTimeout(this.promptTimer)
     }
     this.promptTimer = setTimeout(player => {
-      player.ttsSound('@yoda', 'system://guide_config_network.ogg')
+      player.ttsSound('@yoda', 'system://guide_reconfig_network.ogg')
     }, WIFI_TIMEOUT_SECS * 1000, this.component.light)
     return
   }
