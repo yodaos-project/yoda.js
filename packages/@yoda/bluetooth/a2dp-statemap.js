@@ -56,11 +56,13 @@ var stateFilters = [
   },
   // discoverable
   {
+    lastInflowMsg: {broadcast_state: 'closed'},
     inflowMsg: {broadcast_state: 'opened'},
     outflowEvent: {type: 'discovery_state_changed', state: protocol.DISCOVERY_STATE.ON}
   },
   // undiscoverable
   {
+    lastInflowMsg: {broadcast_state: 'opened'},
     inflowMsg: {broadcast_state: 'closed'},
     outflowEvent: {type: 'discovery_state_changed', state: protocol.DISCOVERY_STATE.OFF}
   }
