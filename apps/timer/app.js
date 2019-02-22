@@ -32,6 +32,11 @@ module.exports = function (activity) {
     activity.setContextOptions({ keepAlive: true })
   })
 
+  activity.on('active', () => {
+    logger.log('on active')
+    activity.setContextOptions({ keepAlive: true })
+  })
+
   activity.on('background', () => {
     logger.log('on background')
     activity.keyboard.restoreDefaults(config.KEY_CODE.MIKE)
