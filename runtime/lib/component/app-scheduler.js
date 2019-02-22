@@ -113,7 +113,9 @@ AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
 AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, signal) {
   logger.info(`${appId} exited.`)
   /** incase descriptors has not been destructed */
-  this.appMap[appId].destruct()
+  if (this.appMap[appId] && typeof this.appMap[appId].destruct === 'function') {
+    this.appMap[appId].destruct()
+  }
   delete this.appMap[appId]
   delete this.appLaunchOptions[appId]
   this.appStatus[appId] = Constants.status.exited
