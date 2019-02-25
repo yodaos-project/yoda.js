@@ -30,6 +30,7 @@ function AppChargeur (runtime) {
   this.appManifests = {}
 
   this.notifications = {
+    'on-system-booted': [],
     'on-ready': [],
     'on-network-connected': []
   }

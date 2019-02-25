@@ -10,7 +10,7 @@ module.exports = function (activity) {
   var AlarmCore = new Core(activity)
   activity.once('notification', (channel) => {
     logger.log('alarm notification event: ', channel)
-    if (channel === 'on-ready' || channel === 'on-boot') {
+    if (channel === 'on-ready' || channel === 'on-system-booted') {
       AlarmCore.createConfigFile()
       var state = wifi.getNetworkState()
       if (state === wifi.NETSERVER_CONNECTED) {

@@ -27,7 +27,7 @@
     ],
     "notifications": [
       "on-ready",
-      "on-boot"
+      "on-system-booted"
     ]
   },
   "keywords": [
