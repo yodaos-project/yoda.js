@@ -584,7 +584,7 @@ module.exports = function (activity) {
     return false
   }
 
-  function onCallStateChangedListener (state) {
+  function onCallStateChangedListener (state, extra) {
     logger.debug(`onCallStateChanged(${state}), lastState=${callState}`)
     switch (state) {
       case protocol.CALL_STATE.IDLE:
@@ -632,7 +632,9 @@ module.exports = function (activity) {
         callState = state
         break
       case protocol.CALL_STATE.RING:
-        playIncomingRingtone()
+        if (extra.play) {
+          playIncomingRingtone()
+        }
         break
       default:
         break
