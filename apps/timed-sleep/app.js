@@ -24,6 +24,11 @@ module.exports = function (activity) {
     activity.setContextOptions({ keepAlive: true })
   })
 
+  activity.on('active', () => {
+    logger.log('on active')
+    activity.setContextOptions({ keepAlive: true })
+  })
+
   activity.on('destroy', () => {
     logger.log('on destroy')
     activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)

@@ -108,7 +108,7 @@ module.exports = function (activity) {
     }
   }
 
-  function speak (text, alternativeVoice) {
+  function speakThenDo (text, alternativeVoice, afterSpeakFunc) {
     logger.debug(`speak: ${text}`)
     if (!textIsEmpty(text)) {
       return activity.setForeground().then(() => {
@@ -120,8 +120,20 @@ module.exports = function (activity) {
           logger.debug('No wifi connection, play alternative voice.')
           return activity.playSound(alternativeVoice)
         }
-      }).then(afterSpeak)
+      }).then(() => {
+        if (afterSpeakFunc != null) {
+          afterSpeakFunc()
+        }
+      })
     }
+  }
+
+  function speak (text, alternativeVoice) {
+    return speakThenDo(text, alternativeVoice, afterSpeak)
+  }
+
+  function speakOnly (text, alternativeVoice) {
+    return speakThenDo(text, alternativeVoice)
   }
 
   function setTimer (callback, timeout) {
@@ -235,6 +247,7 @@ module.exports = function (activity) {
             lastIntent = 'derived_from_phone'
           }
         }, config.TIMER.DELAY_BEFORE_PLAY_FAILED)
+        speakOnly(getText('PLEASE_WAIT'))
         a2dp.play()
       } else {
         a2dp.open(protocol.A2DP_MODE.SINK, {autoplay: true})
@@ -439,14 +452,16 @@ module.exports = function (activity) {
               }
             }
           }, config.TIMER.DELAY_BEFORE_PLAY_FAILED)
-          speak(getText('PLEASE_WAIT'), res.AUDIO[state])
+          speakOnly(getText('PLEASE_WAIT'))
         } else {
           speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
           lastIntent = 'derived_from_phone'
         }
         break
       case protocol.CONNECTION_STATE.DISCONNECTED:
-        if (currentSkillName !== 'bluetooth') {
+        if (currentSkillName === 'bluetooth_call') {
+          onCallStateChangedListener(protocol.CALL_STATE.IDLE)
+        } else if (currentSkillName === 'bluetooth_music') {
           setAppType('bluetooth')
         }
         if (lastIntent !== 'implicit_disconnect' && lastIntent !== 'bluetooth_disconnect') {
@@ -529,7 +544,7 @@ module.exports = function (activity) {
     switch (state) {
       case protocol.DISCOVERY_STATE.ON:
         if (lastIntent !== 'implicit_disconnect' && lastIntent !== 'bluetooth_disconnect') {
-          activity.light.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true })
+          activity.light.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true, zIndex: 2 })
             .catch((err) => {
               logger.error('bluetooth play light error: ', err)
             })
@@ -580,7 +595,7 @@ module.exports = function (activity) {
           activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
           activity.stopMonologue()
           setAppType('bluetooth')
-          activity.light.play(res.LIGHT.CALL[state])
+          activity.light.play(res.LIGHT.CALL[state], {}, { zIndex: 2 })
           activity.light.stop(res.LIGHT.CALL[callState])
         }
         callState = state
@@ -591,7 +606,7 @@ module.exports = function (activity) {
             activity.startMonologue()
             activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
           })
-          activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true })
+          activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true, zIndex: 2 })
             .catch((err) => {
               logger.error(`play ${state} light error: `, err)
             })
@@ -607,7 +622,7 @@ module.exports = function (activity) {
         } else if (callState === protocol.CALL_STATE.INCOMING || callState === protocol.CALL_STATE.RING) {
           stopIncomingRingtone()
         }
-        activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true })
+        activity.light.play(res.LIGHT.CALL[state], {}, { shouldResume: true, zIndex: 2 })
           .catch((err) => {
             logger.error(`play ${state} light error: `, err)
           })

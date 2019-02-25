@@ -1,3 +1,4 @@
 module.exports = {
-  Convergence: require('./convergence')
+  Convergence: require('./convergence'),
+  AudioMix: require('./audio-mix')
 }

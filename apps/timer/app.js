@@ -32,6 +32,11 @@ module.exports = function (activity) {
     activity.setContextOptions({ keepAlive: true })
   })
 
+  activity.on('active', () => {
+    logger.log('on active')
+    activity.setContextOptions({ keepAlive: true })
+  })
+
   activity.on('background', () => {
     logger.log('on background')
     activity.keyboard.restoreDefaults(config.KEY_CODE.MIKE)
@@ -237,7 +242,9 @@ module.exports = function (activity) {
     logger.log(`playRingtone, count=${count}`)
     activity.setForeground().then(() => {
       activity.media.setLoopMode(true)
-      activity.media.start(config.RINGTONE.URL, { streamType: 'alarm' })
+      activity.media.start(config.RINGTONE.URL, { streamType: 'alarm' }).catch((err) => {
+        logger.warn('play ringtone error:', err)
+      })
       ringtoneTimer = setTimeout(() => {
         activity.media.stop()
         if (count - 1 > 0) {
@@ -248,6 +255,8 @@ module.exports = function (activity) {
           activity.exit({ clearContext: true })
         }
       }, config.RINGTONE.RING_SECONDS * 1000)
+    }).catch((err) => {
+      logger.warn('play ringtone failed:', err)
     })
   }
 
@@ -256,6 +265,8 @@ module.exports = function (activity) {
       clearTimeout(ringtoneTimer)
       ringtoneTimer = null
     }
-    activity.media.stop()
+    activity.media.stop().catch((err) => {
+      logger.warn('stop ringtone error:', err)
+    })
   }
 }

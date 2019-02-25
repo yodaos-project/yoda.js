@@ -2,12 +2,14 @@ var logger = require('logger')('custodian')
 var property = require('@yoda/property')
 var wifi = require('@yoda/wifi')
 var _ = require('@yoda/util')._
+var WIFI_TIMEOUT_SECS = 15
 
 module.exports = Custodian
 function Custodian (runtime) {
   wifi.enableScanPassively()
   this.runtime = runtime
   this.component = runtime.component
+  this.promptTimer = null
 
   /**
    * set this._networkConnected = undefined at initial to
@@ -35,6 +37,11 @@ Custodian.prototype.onNetworkConnect = function onNetworkConnect () {
   if (this._networkConnected || this._checkingNetwork) {
     return
   }
+  if (this.promptTimer !== null) {
+    clearTimeout(this.promptTimer)
+    this.promptTimer = null
+  }
+
   property.set('state.network.connected', 'true')
 
   this._networkConnected = true
@@ -168,6 +175,12 @@ Custodian.prototype.prepareNetwork = function prepareNetwork () {
   }
   if (wifi.getNumOfHistory() > 0) {
     logger.info('has histroy wifi, just skip')
+    if (this.promptTimer !== null) {
+      clearTimeout(this.promptTimer)
+    }
+    this.promptTimer = setTimeout(player => {
+      player.ttsSound('@yoda', 'system://guide_reconfig_network.ogg')
+    }, WIFI_TIMEOUT_SECS * 1000, this.component.light)
     return
   }
   return this.onNetworkDisconnect()
