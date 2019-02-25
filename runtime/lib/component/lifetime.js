@@ -494,7 +494,7 @@ LaVieEnPile.prototype.recoverIfPossibleAfter = function recoverIfPossibleAfter (
     if (this.scheduler.isAppRunning(carrierId)) {
       logger.info(`app ${appId} is brought up by a carrier '${carrierId}', recovering.`)
       return future.then(() => {
-        return this.activateAppById(carrierId)
+        return this.activateAppById(carrierId, undefined, undefined, { activateParams: [ { reason: 'carrier', carriageId: appId } ] })
       })
     }
     logger.info(`app ${appId} is brought up by a carrier '${carrierId}', yet carrier is already died, skip recovering carrier.`)
