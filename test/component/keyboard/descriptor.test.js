@@ -255,6 +255,33 @@ test('gesture: override fallbacks', t => {
   runtime.deinit()
 })
 
+test('keyup: keyup should always fire regardless of not matching keyCode', t => {
+  t.plan(1)
+  var runtime = new AppRuntime()
+  var keyboard = new Keyboard(runtime)
+
+  keyboard.input = new EventEmitter()
+  keyboard.listen()
+
+  keyboard.config = {
+    '233': {
+      keyup: {
+        runtimeMethod: 'foobar'
+      }
+    }
+  }
+
+  runtime.foobar = function () {
+    t.pass('invoked')
+  }
+
+  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 0 })
+  keyboard.input.emit('keydown', { keyCode: 244, keyTime: 0 })
+  keyboard.input.emit('keyup', { keyCode: 233, keyTime: 500 })
+
+  runtime.deinit()
+})
+
 test('longpress: repetitive longpress', t => {
   t.plan(3)
   var runtime = new AppRuntime()
@@ -451,6 +478,51 @@ test('longpress: multiple endpoints for time delta on interrupting another keydo
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 4000 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 7000 })
   keyboard.input.emit('keyup', { keyCode: 233 })
+
+  runtime.deinit()
+})
+
+test('longpress: interrupted with a new key code', t => {
+  t.plan(2)
+  var runtime = new AppRuntime()
+  var keyboard = new Keyboard(runtime)
+
+  keyboard.input = new EventEmitter()
+  keyboard.listen()
+
+  keyboard.config = {
+    '233': {
+      longpress: {
+        repeat: true,
+        runtimeMethod: 'foobar'
+      }
+    },
+    '244': {
+      longpress: {
+        timeDelta: 1000,
+        runtimeMethod: 'foobar'
+      }
+    }
+  }
+
+  runtime.foobar = function () {
+    t.pass('invoked')
+  }
+
+  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 0 })
+  /** 1. */
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 500 })
+
+  keyboard.input.emit('keydown', { keyCode: 244, keyTime: 0 })
+  /** keyCode should not match */
+  keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1000 })
+
+  /** longpress criteria should not match */
+  keyboard.input.emit('longpress', { keyCode: 244, keyTime: 500 })
+
+  keyboard.input.emit('keyup', { keyCode: 233, keyTime: 1500 })
+  /** 2. while previous key keyup during second key long pressing */
+  keyboard.input.emit('longpress', { keyCode: 244, keyTime: 1000 })
 
   runtime.deinit()
 })

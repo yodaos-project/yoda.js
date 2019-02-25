@@ -144,21 +144,21 @@ KeyboardHandler.prototype.onKeydown = function onKeydown (event) {
 
 KeyboardHandler.prototype.onKeyup = function onKeyup (event) {
   logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}, keyTime: ${event.keyTime}`)
-  if (this.currentKeyCode !== event.keyCode) {
+  if (this.currentKeyCode === event.keyCode) {
+    if (this.firstLongPressTime != null) {
+      this.firstLongPressTime = null
+      logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
+    }
+
+    if (this.preventSubsequent) {
+      this.preventSubsequent = false
+      logger.info(`Event keyup prevented '${event.keyCode}'.`)
+      return
+    }
+  } else {
     logger.info(`Keyup a difference key '${event.keyCode}'.`)
-    return
   }
 
-  if (this.firstLongPressTime != null) {
-    this.firstLongPressTime = null
-    logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
-  }
-
-  if (this.preventSubsequent) {
-    this.preventSubsequent = false
-    logger.info(`Event keyup prevented '${event.keyCode}'.`)
-    return
-  }
   if (this.handleAppListener('keyup', event)) {
     logger.info(`Delegated keyup to app.`)
     return
@@ -185,12 +185,12 @@ KeyboardHandler.prototype.onKeyup = function onKeyup (event) {
 
 KeyboardHandler.prototype.onLongpress = function onLongpress (event) {
   if (this.currentKeyCode !== event.keyCode) {
-    this.firstLongPressTime = null
+    logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, skipped for not matched keyCode.`)
     return
   }
   var timeDelta = event.keyTime - this.firstLongPressTime
   timeDelta = Math.round(timeDelta / this.longpressWindow) * this.longpressWindow
-  logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, timeDelta: ${timeDelta}, rounded time delta: ${timeDelta}`)
+  logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, timeDelta: ${timeDelta}`)
 
   if (this.preventSubsequent) {
     logger.info(`Event longpress prevented '${event.keyCode}'.`)
