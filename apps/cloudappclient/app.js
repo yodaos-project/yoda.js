@@ -11,6 +11,7 @@ var _ = require('@yoda/util')._
 
 var Manager = require('./manager')
 var Service = require('./service')
+var eventRequest = require('./eventRequestApi')
 
 // identify if the skill should be to restored
 var needResume = false
@@ -21,7 +22,7 @@ module.exports = activity => {
   // playerId manager version 1
   var pm = new PlayerManager()
   // skill os
-  var sos = new Manager(directive, Skill)
+  var sos = new Manager(directive, Skill, eventRequest)
   // tts, media event handle
   var ttsClient = new TtsEventHandle(activity.tts)
   var mediaClient = new MediaEventHandle(activity.media, logger)
@@ -210,29 +211,12 @@ module.exports = activity => {
       playerId = pm.getByAppId(dt.data.appId)
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
-        activity.media.stop(playerId)
-          .then(() => {
-            sos.sendEventRequest('media', 'cancel', dt.data, {
-              itemId: _.get(dt, 'data.item.itemId'),
-              token: _.get(dt, 'data.item.token')
-            })
-          })
-          .catch((err) => {
-            logger.log('media stop failed', err)
-          })
       }
       next()
     } else if (dt.action === 'stop') {
       playerId = pm.getByAppId(dt.data.appId)
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
-        activity.media.stop(playerId)
-          .then(() => {
-            logger.log('media stop success')
-          })
-          .catch((err) => {
-            logger.log('media stop failed', err)
-          })
       }
       next()
     }
@@ -345,7 +329,9 @@ module.exports = activity => {
     if (intentType === 'EXIT') {
       logger.warn(`${this.appId}: intent value is [EXIT]`)
       sos.destroy()
-      activity.setBackground()
+      pm.clear()
+      // clear domain on local and it will automatical update to cloud
+      activity.exit(true)
       return
     }
     logger.log(`${this.appId} app request`)

@@ -3,14 +3,14 @@
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var logger = require('logger')('cloudAppClient-manager')
-var eventRequest = require('./eventRequestApi')
 var eventRequestMap = require('./eventRequestMap.json')
 var _ = require('@yoda/util')._
 
-function Manager (exe, Skill) {
+function Manager (exe, Skill, eventRequestApi) {
   EventEmitter.call(this)
   this.exe = exe
   this.Skill = Skill
+  this.eventRequest = eventRequestApi
   this.skills = []
   this.isAppActive = true
   // for gsensor roll in back,like strongpause
@@ -199,7 +199,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     logger.log('ignored eventRequest, because it is no appId given')
     return cb && cb()
   }
-  if ((type === 'tts' || type === 'media') && name === 'cancel' && this.isAppActive) {
+  if (type === 'tts' && name === 'cancel' && this.isAppActive) {
     if (this.getCurrentSkill().appId === data.appId) {
       logger.info(`ignored ${type} cancel eventRequest, because currently skill cancel it self`)
       cb && cb()
@@ -212,7 +212,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     return
   }
   if (type === 'tts') {
-    eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
+    this.eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
       logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
@@ -222,7 +222,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
       cb && cb()
     })
   } else if (type === 'media') {
-    eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
+    this.eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
       logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
@@ -235,7 +235,7 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
 }
 
 Manager.prototype.setEventRequestConfig = function (config) {
-  eventRequest.setConfig(config || {})
+  this.eventRequest.setConfig(config || {})
 }
 Manager.prototype.generateAction = function (data) {
   var action = {
