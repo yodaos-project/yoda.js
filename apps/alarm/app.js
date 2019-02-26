@@ -9,8 +9,8 @@ module.exports = function (activity) {
   logger.log('alarm load')
   var AlarmCore = new Core(activity)
   activity.once('notification', (channel) => {
-    logger.log('alarm notification event')
-    if (channel === 'on-ready') {
+    logger.log('alarm notification event: ', channel)
+    if (channel === 'on-ready' || channel === 'on-boot') {
       AlarmCore.createConfigFile()
       var state = wifi.getNetworkState()
       if (state === wifi.NETSERVER_CONNECTED) {
@@ -55,7 +55,17 @@ module.exports = function (activity) {
     }
   })
 
-  // todo: weakup event
+  /**
+   * media paused event
+   * stop alarm when device was wakeuped
+   * todo: add timing API or queue
+   */
+  activity.media.on('paused', function () {
+    logger.log('alarm media paused')
+    AlarmCore.clearAll()
+    AlarmCore.clearReminderTts()
+  })
+
   activity.on('destroy', function () {
     AlarmCore.clearAll()
     AlarmCore.clearReminderTts()
