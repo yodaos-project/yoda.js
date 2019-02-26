@@ -31,9 +31,10 @@ module.exports = function (activity) {
 
   activity.on('background', () => {
     logger.log('on background')
-    activity.keyboard.restoreDefaults(config.KEY_CODE.MIKE)
-    activity.keyboard.restoreDefaults(config.KEY_CODE.VOLDOWN)
-    activity.keyboard.restoreDefaults(config.KEY_CODE.VOLUP)
+    shutup()
+    if (!isTimerExist()) {
+      activity.exit({ clearContext: true })
+    }
   })
 
   activity.on('destroy', () => {
@@ -42,12 +43,12 @@ module.exports = function (activity) {
     activity.keyboard.restoreDefaults(config.KEY_CODE.VOLDOWN)
     activity.keyboard.restoreDefaults(config.KEY_CODE.VOLUP)
     activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
-    stopRingtone()
+    shutup()
   })
 
   activity.on('request', (nlp, action) => {
     logger.log('on request: ', nlp.intent, nlp.slots)
-    stopRingtone()
+    shutup()
     switch (nlp.intent) {
       case 'timer_start':
         totalSecs = parseTimeToSeconds(nlp.slots)
@@ -118,8 +119,7 @@ module.exports = function (activity) {
     switch (action) {
       case 'click':
       case 'dbclick':
-        activity.tts.stop()
-        stopRingtone()
+        shutup()
         if (isTimerExist()) {
           activity.setBackground()
         } else {
@@ -193,13 +193,20 @@ module.exports = function (activity) {
       afterFunc = args
     }
     sendCardToApp('ROKID.TIMER', {text: text})
-    activity.tts.stop()
+    activity.tts.stop().catch((err) => { logger.warn('stop tts err:', err) })
     return activity.setForeground().then(() => {
       return activity.tts.speak(text, { impatient: false }).catch((err) => {
         logger.error('Speak error: ', err)
         afterFunc()
       })
     }).then(afterFunc)
+  }
+
+  function shutup () {
+    activity.tts.stop().catch((err) => {
+      logger.warn('stop tts err:', err)
+    })
+    stopRingtone()
   }
 
   function parseTimeToSeconds (slots) {
@@ -256,7 +263,7 @@ module.exports = function (activity) {
         logger.warn('play ringtone error:', err)
       })
       ringtoneTimer = setTimeout(() => {
-        activity.media.stop()
+        activity.media.stop().catch((err) => { logger.warn('stop ringtone error:', err) })
         if (count - 1 > 0) {
           ringtoneTimer = setTimeout(() => {
             playRingtone(count - 1)
