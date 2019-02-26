@@ -12,8 +12,11 @@ test('shall prevent default', t => {
   var keyboard = new Keyboard(runtime)
   var app = new EventEmitter()
   app.keyboard = new EventEmitter()
-  runtime.component.appScheduler.getAppById = function () {
-    return app
+  app.keyboard.interests = { click: { 233: true } }
+  runtime.component.appScheduler.getAppById = function (appId) {
+    if (appId === '@test/simple-app') {
+      return app
+    }
   }
   runtime.component.lifetime.getCurrentAppId = function () {
     return '@test/simple-app'
@@ -30,53 +33,12 @@ test('shall prevent default', t => {
     t.fail('shall not receive un-listened events')
   })
 
-  keyboard.preventKeyDefaults('@test/simple-app', '233', 'click')
   keyboard.input.emit('click', { keyCode: 233 })
   keyboard.input.emit('dbclick', { keyCode: 233 })
 
   function later () {
-    keyboard.restoreKeyDefaults('@test/simple-app', '233', 'click')
+    delete app.keyboard.interests.click[233]
     keyboard.input.emit('click', { keyCode: 233 })
-    runtime.deinit()
-  }
-})
-
-test('shall listen all type events of one key code', t => {
-  t.plan(2)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
-  var app = new EventEmitter()
-  app.keyboard = new EventEmitter()
-  runtime.component.appScheduler.getAppById = function () {
-    return app
-  }
-  runtime.component.lifetime.getCurrentAppId = function () {
-    return '@test/simple-app'
-  }
-
-  keyboard.input = new EventEmitter()
-  keyboard.listen()
-
-  app.keyboard.on('click', event => {
-    t.fail('shall receive events after restored')
-  })
-  app.keyboard.on('dbclick', event => {
-    t.strictEqual(event.keyCode, 233, 'dbclick')
-  })
-  app.keyboard.on('longpress', event => {
-    t.strictEqual(event.keyCode, 233, 'longpress')
-    later()
-  })
-
-  keyboard.preventKeyDefaults('@test/simple-app', '233')
-  keyboard.input.emit('dbclick', { keyCode: 233 })
-  keyboard.input.emit('keydown', { keyCode: 233, keyTime: 2333 })
-  keyboard.input.emit('longpress', { keyCode: 233 })
-
-  function later () {
-    keyboard.restoreKeyDefaults('@test/simple-app', '233')
-    keyboard.input.emit('click', { keyCode: 233 })
-
     runtime.deinit()
   }
 })
