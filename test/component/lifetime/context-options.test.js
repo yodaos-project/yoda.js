@@ -5,6 +5,30 @@ var helper = require('../../helper')
 var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 var mock = require('./mock')
 
+test('emit eviction with form in context options', t => {
+  mock.restore()
+  t.plan(2)
+
+  mock.mockAppExecutors(2)
+  var life = new Lifetime(mock.runtime)
+
+  Promise.all(_.times(2).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('0', 'service')
+    })
+    .then(() => {
+      life.on('eviction', (appId, form) => {
+        t.strictEqual(appId, '0')
+        t.strictEqual(form, 'service')
+      })
+      return life.activateAppById('1')
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('setContextOptionsById shall merge options', t => {
   mock.restore()
   t.plan(3)

@@ -124,7 +124,7 @@ class BluetoothHfp extends EventEmitter {
         logger.warn(`Mismatch state, please check state-mapping!`)
       }
     } else if (msg.action === 'ring') {
-      this.emit('call_state_changed', protocol.CALL_STATE.RING)
+      this.emit('call_state_changed', protocol.CALL_STATE.RING, {play: msg.audio !== 'on'})
     }
   }
 

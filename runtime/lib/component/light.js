@@ -18,6 +18,11 @@ function Light (runtime) {
   EventEmitter.call(this)
   this.runtime = runtime
   this.dbusRegistry = runtime.component.dbusRegistry
+
+  /**
+   * @type {{ [appId: string]: number }}
+   */
+  this.ttsSoundCountMap = {}
 }
 inherits(Light, EventEmitter)
 
@@ -85,12 +90,26 @@ Light.prototype.appSound = function (appId, uri) {
  * @return {Promise}
  */
 Light.prototype.ttsSound = function (appId, uri) {
+  if (this.ttsSoundCountMap[appId] == null) {
+    this.ttsSoundCountMap[appId] = 0
+  }
+  ++this.ttsSoundCountMap[appId]
   this.play(appId, 'system://setSpeaking.js', {}, { shouldResume: true })
   return this.appSound(appId, uri)
     .then(
-      () => this.stop(appId, 'system://setSpeaking.js'),
+      () => {
+        --this.ttsSoundCountMap[appId]
+        if (this.ttsSoundCountMap[appId] === 0) {
+          delete this.ttsSoundCountMap[appId]
+          return this.stop(appId, 'system://setSpeaking.js')
+        }
+      },
       err => {
-        this.stop(appId, 'system://setSpeaking.js')
+        --this.ttsSoundCountMap[appId]
+        if (this.ttsSoundCountMap[appId] === 0) {
+          delete this.ttsSoundCountMap[appId]
+          this.stop(appId, 'system://setSpeaking.js')
+        }
         throw err
       }
     )
@@ -149,7 +168,7 @@ Light.prototype.setDegree = function (appId, sl) {
 }
 
 /**
- * close currently light
+ * This action will reset service to initialization state and close currently light. Also will clear all lights that need to resume.
  * @return {Promise}
  */
 Light.prototype.reset = function () {

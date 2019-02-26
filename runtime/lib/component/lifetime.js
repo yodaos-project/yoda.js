@@ -370,10 +370,10 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
     // Exit all apps in stack on incoming scene nlp
     logger.info(`on scene app '${appId}' preempting, deactivating all apps in stack.`)
     if (memoStack.cut !== appId) {
-      this.onEviction(memoStack.cut, 'cut')
+      this.onEviction(memoStack.cut, _.get(this.getContextOptionsById(lastAppId), 'form'))
     }
     if (memoStack.scene !== appId) {
-      this.onEviction(memoStack.scene, 'scene')
+      this.onEviction(memoStack.scene, _.get(this.getContextOptionsById(lastAppId), 'form'))
     }
     var memoIds = memoStack.toArray().filter(it => it !== appId)
     return future.then(() =>
@@ -402,7 +402,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
    * currently running app is a normal app, deactivate it
    */
   logger.info(`on cut app '${appId}' preempting, deactivating previous cut app '${lastAppId}'`)
-  this.onEviction(lastAppId, 'cut')
+  this.onEviction(lastAppId, _.get(this.getContextOptionsById(lastAppId), 'form'))
 
   /** no need to recover previously paused scene app if exists */
   return future.then(() => this.deactivateAppById(lastAppId, { recover: false, force: true }))
@@ -455,7 +455,7 @@ LaVieEnPile.prototype.deactivateAppById = function deactivateAppById (appId, opt
   var contextOptions = this.contextOptionsMap[appId]
   delete this.contextOptionsMap[appId]
   if (removedSlot) {
-    this.onEviction(appId, removedSlot)
+    this.onEviction(appId, _.get(contextOptions, 'form'))
   }
 
   var future
@@ -494,7 +494,7 @@ LaVieEnPile.prototype.recoverIfPossibleAfter = function recoverIfPossibleAfter (
     if (this.scheduler.isAppRunning(carrierId)) {
       logger.info(`app ${appId} is brought up by a carrier '${carrierId}', recovering.`)
       return future.then(() => {
-        return this.activateAppById(carrierId)
+        return this.activateAppById(carrierId, undefined, undefined, { activateParams: [ { reason: 'carrier', carriageId: appId } ] })
       })
     }
     logger.info(`app ${appId} is brought up by a carrier '${carrierId}', yet carrier is already died, skip recovering carrier.`)
@@ -560,8 +560,9 @@ LaVieEnPile.prototype.setBackgroundById = function (appId, options) {
   logger.info('set background', appId)
   var removedSlot = this.activeSlots.removeApp(appId)
   if (removedSlot) {
+    var contextOptions = this.contextOptionsMap[appId]
     delete this.contextOptionsMap[appId]
-    this.onEviction(appId, removedSlot)
+    this.onEviction(appId, _.get(contextOptions, 'form'))
   }
 
   var idx = this.backgroundAppIds.indexOf(appId)

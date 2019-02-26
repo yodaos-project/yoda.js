@@ -112,6 +112,9 @@ inherits(BluetoothA2dp, EventEmitter)
  * @private
  */
 BluetoothA2dp.prototype.matchState = function (msg, filter) {
+  if (filter === undefined || filter === null) {
+    return true
+  }
   return (filter.a2dpstate === msg.a2dpstate || filter.a2dpstate === undefined) &&
     (filter.connect_state === msg.connect_state || filter.connect_state === undefined) &&
     (filter.play_state === msg.play_state || filter.play_state === undefined || msg.play_state === undefined) &&
@@ -138,10 +141,11 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       if (this.matchState(msg, this.lastMsg)) {
         logger.warn(`Received ${mode} same msg!`)
       }
+      var lastMessage = Object.assign({}, this.lastMsg)
       this.lastMsg = Object.assign(this.lastMsg, msg)
       var stateHit = false
       stateFilters.forEach((filter) => {
-        if (this.matchState(msg, filter.inflowMsg)) {
+        if (this.matchState(msg, filter.inflowMsg) && this.matchState(lastMessage, filter.lastInflowMsg)) {
           var event = filter.outflowEvent
           logger.debug(`Match ${event.type}.${event.state}`)
           var generator = filter.extraDataGenerator
