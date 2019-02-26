@@ -331,7 +331,7 @@ module.exports = activity => {
       sos.destroy()
       pm.clear()
       // clear domain on local and it will automatical update to cloud
-      activity.exit(true)
+      activity.exit({ clearContext: true })
       return
     }
     logger.log(`${this.appId} app request`)
