@@ -262,15 +262,24 @@ MultiMedia.prototype.setSpeed = function (appId, speed, playerId) {
 
   if (handle.length === 0) {
     logger.error(`[404] handle not found`)
-    return
+    return false
   }
 
   if (handle.length !== 1) {
     logger.info(`multiple handle for app ${appId}, playerId is required`)
-    return
+    return false
   }
 
-  handle[0].setSpeed(speed)
+  try {
+    handle[0].setSpeed(speed)
+    process.nextTick(() => {
+      handle[0].emit('speedchange')
+    })
+  } catch (error) {
+    logger.error(`[500] try to setSpeed error with appId(${appId}) speed(${speed}) playerId(${playerId})`)
+    return false
+  }
+  return true
 }
 
 MultiMedia.prototype.listenEvent = function (player, appId) {
@@ -357,6 +366,10 @@ MultiMedia.prototype.listenEvent = function (player, appId) {
   player.on('resumed', () => {
     AudioManager.setPlayingState(audioModuleName, true)
     this.emit('resumed', '' + player.id, player.duration, player.position)
+  })
+
+  player.on('speedchange', () => {
+    this.emit('speedchange', '' + player.id, player.duration, player.position)
   })
 }
 

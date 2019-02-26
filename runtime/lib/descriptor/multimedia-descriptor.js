@@ -126,6 +126,16 @@ Object.assign(MultimediaDescriptor.prototype,
       type: 'event'
     },
     /**
+     * When the `setSpeed()` operation is complete.
+     * @event yodaRT.activity.Activity.MediaClient#speedchange
+     * @param {string} id - multimedia player id
+     * @param {number} duration -
+     * @param {number} position -
+     */
+    speedchange: {
+      type: 'event'
+    },
+    /**
      * Something went wrong
      * @event yodaRT.activity.Activity.MediaClient#error
      * @param {string} id - multimedia player id

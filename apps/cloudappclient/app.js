@@ -119,19 +119,20 @@ module.exports = activity => {
     var playerId
     logger.log(`exe dt: media.${dt.action}`)
     function setSpeed (speed) {
-      if (typeof speed === 'number') {
-        activity.media.setSpeed(speed, pm.getByAppId(dt.data.appId))
-      }
+      return activity.media.setSpeed(speed, pm.getByAppId(dt.data.appId))
     }
     function setOffset (offset) {
-      if (typeof offset === 'number' && offset >= 0) {
-        activity.media.seek(offset, pm.getByAppId(dt.data.appId))
-      }
+      activity.media.seek(offset, pm.getByAppId(dt.data.appId))
     }
     if (dt.action === 'play') {
       if (mediaClient.getUrl() === dt.data.item.url) {
         logger.log(`play forward offset: ${dt.data.item.offsetInMilliseconds} mutiple: ${dt.data.item.playMultiple}`)
-        setSpeed(dt.data.item.playMultiple)
+        if (+dt.data.item.playMultiple > 0) {
+          setSpeed(+dt.data.item.playMultiple)
+            .catch((err) => {
+              logger.error(`[cac-dt] set speed failed with error: ${err}`)
+            })
+        }
         if (dt.data.item.offsetInMilliseconds > 0) {
           setOffset(dt.data.item.offsetInMilliseconds)
         }
@@ -142,8 +143,16 @@ module.exports = activity => {
           if (name === 'resolved') {
             pm.setByAppId(dt.data.appId, args, dt.data)
           } else if (name === 'prepared') {
-            setSpeed(dt.data.item.playMultiple)
-            setOffset(dt.data.item.offsetInMilliseconds)
+            if (+dt.data.item.playMultiple > 0) {
+              logger.log(`[cac-dt] setSpeed with speed(${dt.data.item.playMultiple})`)
+              setSpeed(+dt.data.item.playMultiple)
+                .catch((err) => {
+                  logger.error(`[cac-dt] set speed failed with error: ${err}`)
+                })
+            }
+            if (dt.data.item.offsetInMilliseconds > 0) {
+              setOffset(dt.data.item.offsetInMilliseconds)
+            }
             sos.sendEventRequest('media', 'prepared', dt.data, {
               itemId: _.get(dt, 'data.item.itemId'),
               duration: args[0],
@@ -182,6 +191,13 @@ module.exports = activity => {
               itemId: _.get(dt, 'data.item.itemId'),
               duration: args[0],
               progress: args[1]
+            })
+          } else if (name === 'speedchange') {
+            sos.sendEventRequest('media', 'setspeed', dt.data, {
+              itemId: _.get(dt, 'data.item.itemId'),
+              duration: args[0],
+              progress: args[1],
+              speed: +dt.data.item.playMultiple
             })
           }
         })
