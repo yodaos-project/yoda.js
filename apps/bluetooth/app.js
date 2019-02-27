@@ -115,6 +115,9 @@ module.exports = function (activity) {
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
           return activity.tts.speak(text, { impatient: false }).catch((err) => {
             logger.error('play tts error: ', err)
+            if (alternativeVoice != null) {
+              return activity.playSound(alternativeVoice)
+            }
           })
         } else if (alternativeVoice != null) {
           logger.debug('No wifi connection, play alternative voice.')
