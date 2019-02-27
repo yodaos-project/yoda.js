@@ -2,27 +2,23 @@
 
 var test = require('tape')
 var helper = require('../../helper')
-var inherits = require('util').inherits
-var EventEmitter = require('events').EventEmitter
+var EventEmitter = require('events')
 var Manager = require(`${helper.paths.apps}/cloudappclient/manager.js`)
 var Skill = require(`${helper.paths.apps}/cloudappclient/skill`)
 var eventRequestMap = require(`${helper.paths.apps}/cloudappclient/eventRequestMap.json`)
 
-function EventRequest () {
-  EventEmitter.call(this)
-}
-inherits(EventRequest, EventEmitter)
+class EventRequest extends EventEmitter {
+  ttsEvent (name, appId, itemId, cb) {
+    var res = '{}'
+    cb(res)
+    this.emit(`tts-${appId}-${name}`, itemId)
+  }
 
-EventRequest.prototype.ttsEvent = function (name, appId, itemId, cb) {
-  var res = '{}'
-  cb(res)
-  this.emit(`tts-${appId}-${name}`, itemId)
-}
-
-EventRequest.prototype.mediaEvent = function (name, appId, extra, cb) {
-  var res = '{}'
-  cb(res)
-  this.emit(`media-${appId}-${name}`, extra)
+  mediaEvent (name, appId, extra, cb) {
+    var res = '{}'
+    cb(res)
+    this.emit(`media-${appId}-${name}`, extra)
+  }
 }
 
 test('test manager-eventRequest: media cancel', (t) => {

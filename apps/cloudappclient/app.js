@@ -210,12 +210,26 @@ module.exports = activity => {
       playerId = pm.getByAppId(dt.data.appId)
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
+        activity.media.stop(playerId)
+          .then(() => {
+            logger.log(`exe dt: media.cancel success.`)
+          })
+          .catch((err) => {
+            logger.log('media cancel failed', err)
+          })
       }
       next()
     } else if (dt.action === 'stop') {
       playerId = pm.getByAppId(dt.data.appId)
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
+        activity.media.stop(playerId)
+          .then(() => {
+            logger.log(`exe dt: media.stop success.`)
+          })
+          .catch((err) => {
+            logger.log('media stop failed', err)
+          })
       }
       next()
     }
