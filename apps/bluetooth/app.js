@@ -310,7 +310,6 @@ module.exports = function (activity) {
     },
     // 3.5 begin scan around bluetooth devices
     'bluetooth_discovery': () => {
-      activity.setBackground()
       a2dp.discovery()
     },
 
