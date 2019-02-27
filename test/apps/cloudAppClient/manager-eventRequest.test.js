@@ -31,6 +31,7 @@ test('test manager-eventRequest: media cancel', (t) => {
   })
   var eventBus = new EventRequest()
   var pm = new Manager(null, Skill)
+  // In order to achieve the purpose of our testing, we need to intercept the real request.
   pm.eventRequest = eventBus
   pm.skills = [skill]
 
@@ -50,6 +51,7 @@ test('test manager-eventRequest: tts cancel', (t) => {
   })
   var eventBus = new EventRequest()
   var pm = new Manager(null, Skill)
+  // In order to achieve the purpose of our testing, we need to intercept the real request.
   pm.eventRequest = eventBus
   pm.skills = [skill]
 
