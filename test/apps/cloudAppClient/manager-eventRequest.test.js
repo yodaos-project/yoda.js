@@ -9,14 +9,12 @@ var eventRequestMap = require(`${helper.paths.apps}/cloudappclient/eventRequestM
 
 class EventRequest extends EventEmitter {
   ttsEvent (name, appId, itemId, cb) {
-    var res = '{}'
-    cb(res)
+    cb(null, '{}')
     this.emit(`tts-${appId}-${name}`, itemId)
   }
 
   mediaEvent (name, appId, extra, cb) {
-    var res = '{}'
-    cb(res)
+    cb(null, '{}')
     this.emit(`media-${appId}-${name}`, extra)
   }
 }

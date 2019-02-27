@@ -213,7 +213,11 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     return
   }
   if (type === 'tts') {
-    this.eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
+    this.eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (err, response) => {
+      if (err) {
+        logger.error(err)
+        return cb && cb(err)
+      }
       logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
@@ -223,7 +227,11 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
       cb && cb()
     })
   } else if (type === 'media') {
-    this.eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
+    this.eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (err, response) => {
+      if (err) {
+        logger.error(err)
+        return cb && cb(err)
+      }
       logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
