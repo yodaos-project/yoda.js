@@ -106,9 +106,6 @@ module.exports = activity => {
       })
     } else if (dt.action === 'cancel') {
       activity.tts.stop()
-        .then(() => {
-          logger.log(`end dt: tts.${dt.action}`)
-        })
         .catch((err) => {
           logger.log(`end dt: tts.${dt.action} ${err}`)
         })
@@ -189,9 +186,6 @@ module.exports = activity => {
     } else if (dt.action === 'pause') {
       // no need to send events here because player will emit paused event
       activity.media.pause(pm.getByAppId(dt.data.appId))
-        .then(() => {
-          logger.log(`[cac-dt](media, pause) res(success)`)
-        })
         .catch((err) => {
           logger.log(`[cac-dt](media, pause) err: ${err}`)
         })
@@ -199,10 +193,7 @@ module.exports = activity => {
     } else if (dt.action === 'resume') {
       // no need to send events here because player will emit resumed event
       activity.media.resume(pm.getByAppId(dt.data.appId))
-        .then(() => {
-          logger.log(`[cac-dt](media, resume) res(success)`)
-          next()
-        })
+        .then(next)
         .catch((err) => {
           logger.log(`[cac-dt](media, resume) err: ${err}`)
         })
@@ -211,9 +202,6 @@ module.exports = activity => {
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
         activity.media.stop(playerId)
-          .then(() => {
-            logger.log(`exe dt: media.cancel success.`)
-          })
           .catch((err) => {
             logger.log('media cancel failed', err)
           })
@@ -224,9 +212,6 @@ module.exports = activity => {
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
         activity.media.stop(playerId)
-          .then(() => {
-            logger.log(`exe dt: media.stop success.`)
-          })
           .catch((err) => {
             logger.log('media stop failed', err)
           })
