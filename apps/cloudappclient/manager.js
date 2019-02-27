@@ -3,15 +3,15 @@
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var logger = require('logger')('cloudAppClient-manager')
+var eventRequest = require('./eventRequestApi')
 var eventRequestMap = require('./eventRequestMap.json')
-var eventRequestApi = require('./eventRequestApi')
 var _ = require('@yoda/util')._
 
 function Manager (exe, Skill) {
   EventEmitter.call(this)
   this.exe = exe
   this.Skill = Skill
-  this.eventRequest = eventRequestApi
+  this.eventRequest = eventRequest
   this.skills = []
   this.isAppActive = true
   // for gsensor roll in back,like strongpause
