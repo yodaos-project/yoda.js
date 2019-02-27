@@ -118,8 +118,6 @@ static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
 }
 
 static void iotjs_player_onclose(uv_async_t* handle) {
-  iotjs_player_t* player_wrap = (iotjs_player_t*)handle->data;
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
   uv_close((uv_handle_t*)handle, iotjs_player_async_onclose);
 }
 
