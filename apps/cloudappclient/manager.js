@@ -4,9 +4,10 @@ var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var logger = require('logger')('cloudAppClient-manager')
 var eventRequestMap = require('./eventRequestMap.json')
+var eventRequestApi = require('./eventRequestApi')
 var _ = require('@yoda/util')._
 
-function Manager (exe, Skill, eventRequestApi) {
+function Manager (exe, Skill) {
   EventEmitter.call(this)
   this.exe = exe
   this.Skill = Skill

@@ -11,7 +11,6 @@ var _ = require('@yoda/util')._
 
 var Manager = require('./manager')
 var Service = require('./service')
-var eventRequest = require('./eventRequestApi')
 
 // identify if the skill should be to restored
 var needResume = false
@@ -22,7 +21,7 @@ module.exports = activity => {
   // playerId manager version 1
   var pm = new PlayerManager()
   // skill os
-  var sos = new Manager(directive, Skill, eventRequest)
+  var sos = new Manager(directive, Skill)
   // tts, media event handle
   var ttsClient = new TtsEventHandle(activity.tts)
   var mediaClient = new MediaEventHandle(activity.media, logger)

@@ -34,7 +34,8 @@ test('test manager-eventRequest: media cancel', (t) => {
     }
   })
   var eventBus = new EventRequest()
-  var pm = new Manager(null, Skill, eventBus)
+  var pm = new Manager(null, Skill)
+  pm.eventRequest = eventBus
   pm.skills = [skill]
 
   var name = eventRequestMap['media']['cancel']
@@ -52,7 +53,8 @@ test('test manager-eventRequest: tts cancel', (t) => {
     }
   })
   var eventBus = new EventRequest()
-  var pm = new Manager(null, Skill, eventBus)
+  var pm = new Manager(null, Skill)
+  pm.eventRequest = eventBus
   pm.skills = [skill]
 
   var name = eventRequestMap['tts']['cancel']
