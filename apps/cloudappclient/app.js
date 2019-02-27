@@ -343,7 +343,7 @@ module.exports = activity => {
       logger.warn(`${this.appId}: intent value is [EXIT]`)
       sos.destroy()
       pm.clear()
-      // clear domain on local and it will automatical update to cloud
+      // clear domain locally and it will automatically upload to cloud
       activity.exit({ clearContext: true })
       return
     }
