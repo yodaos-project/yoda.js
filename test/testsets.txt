@@ -27,6 +27,7 @@ component/ota/*.test.js
 component/turen/*.test.js
 descriptor/*.test.js
 descriptor/activity/*.test.js
+descriptor/keyboard/*.test.js
 descriptor/tts/*.test.js
 runtime/init/*.test.js
 runtime/cloudapi-util.*.js
