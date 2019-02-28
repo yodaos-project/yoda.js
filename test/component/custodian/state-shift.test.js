@@ -1,17 +1,9 @@
 var test = require('tape')
-var wifi = require('@yoda/wifi')
-
 var helper = require('../../helper')
-var mock = require('../../helper/mock')
 var Custodian = require(`${helper.paths.runtime}/lib/component/custodian`)
-
-mock.mockReturns(wifi, 'enableScanPassively', undefined)
-mock.mockReturns(wifi, 'resetWifi', undefined)
-mock.mockReturns(wifi, 'disableAll', undefined)
-mock.mockReturns(wifi, 'checkNetwork', undefined)
+var NetworkMock = require('../../@yoda/network/mock.js')
 
 test('custodian state shall shifts', t => {
-  t.plan(14)
   var runtime = {
     reconnect: function () {
       t.pass('onNetworkConnect shall trigger runtime#reconnect')
@@ -19,6 +11,8 @@ test('custodian state shall shifts', t => {
     startApp: function () {
       t.fail('runtime#startApp shall not be called since logged in')
     },
+    login: function () {},
+    dispatchNotification: function () {},
     component: {
       appScheduler: {
         appMap: {}
@@ -27,7 +21,8 @@ test('custodian state shall shifts', t => {
         getCurrentAppId: () => undefined
       },
       light: {
-        stop: function () {}
+        stop: function () {},
+        appSound: function () {}
       },
       wormhole: {
         setOffline: function () {
@@ -37,99 +32,43 @@ test('custodian state shall shifts', t => {
     }
   }
   var custodian = new Custodian(runtime)
-  t.false(custodian.isRegistering())
-  t.false(custodian.isPrepared())
-  t.true(custodian.isNetworkUnavailable())
+  custodian.networkAgent.deinit()
 
-  custodian.onNetworkConnect()
-  t.true(custodian.isRegistering(), 'custodian shall be network connected')
-  t.false(custodian.isPrepared())
-  t.false(custodian.isNetworkUnavailable())
+  /* Replace flora with NetworkMock */
+  custodian.networkAgent._flora = new NetworkMock()
 
-  custodian.onLoggedIn()
-  t.false(custodian.isRegistering())
-  t.true(custodian.isPrepared(), 'custodian shall be logged in')
-  t.true(custodian.isLoggedIn(), 'custodian shall be logged in')
-  t.false(custodian.isNetworkUnavailable())
+  /* Mock bluetooth */
+  custodian.initBluetooth()
+  custodian.bluetoothStream.disconnect()
+  custodian.openBluetooth = () => {}
+  custodian.closeBluetooth = () => {}
 
-  custodian.onNetworkDisconnect()
-  t.false(custodian.isRegistering())
-  t.false(custodian.isPrepared())
-  t.true(custodian.isLoggedIn(), 'custodian shall be still logged in')
-  t.true(custodian.isNetworkUnavailable(), 'custodian shall be network unavailable on network disconnected')
-})
+  /* test start */
+  t.true(custodian.isUnconfigured())
+  custodian.configureNetwork()
+  t.true(custodian.isConfiguringNetwork())
 
-test('custodian shall start network app on network disconnect if not logged in', t => {
-  t.plan(4)
-  mock.mockReturns(wifi, 'getNumOfHistory', 0)
-
-  var runtime = {
-    resetNetwork: function () {
-      t.pass('onNetworkDisconnect shall trigger runtime#resetNetwork')
-    },
-    component: {
-      appScheduler: {
-        appMap: {}
-      },
-      lifetime: {
-        getCurrentAppId: () => undefined
-      },
-      light: {
-        stop: function () {}
-      },
-      wormhole: {
-        setOffline: function () {
-          t.fail('onNetworkDisconnect shall not trigger runtime.wormhole#setOffline')
-        }
-      }
+  custodian.bluetoothStream.emit('data', {
+    topic: 'bind',
+    data: {
+      U: 'test_ssid',
+      P: 'passwd'
     }
-  }
-  var custodian = new Custodian(runtime)
-  custodian.onNetworkDisconnect()
-  t.false(custodian.isRegistering())
-  t.false(custodian.isPrepared())
-  t.true(custodian.isNetworkUnavailable())
-})
+  })
+  t.true(custodian.isConnecting())
+  custodian.networkAgent._flora.subscribe(
+    'network.status',
+    custodian.networkAgent._handleNetworkStatus.bind(custodian.networkAgent))
 
-test('custodian shall reset network', t => {
-  t.plan(10)
-  var runtime = {
-    reconnect: function () {
-      t.fail('onNetworkConnect shall not trigger runtime#reconnect')
-    },
-    openUrl: function () {
-      t.pass('resetNetwork shall trigger runtime#startApp')
-    },
-    component: {
-      appScheduler: {
-        appMap: {}
-      },
-      lifetime: {
-        getCurrentAppId: () => undefined
-      },
-      light: {
-        stop: function () {}
-      },
-      wormhole: {
-        setOffline: function () {
-          t.pass('resetNetwork shall trigger runtime.wormhole#setOffline')
-        }
-      }
-    }
-  }
-  var custodian = new Custodian(runtime)
-  custodian.onNetworkConnect()
-  custodian.onLoggedIn()
-  t.false(custodian.isRegistering())
-  t.true(custodian.isPrepared(), 'custodian shall be prepared')
-  t.false(custodian.isNetworkUnavailable())
+  setTimeout(() => {
+    t.true(custodian.isLoggingIn())
 
-  custodian.resetNetwork()
-  t.true(custodian.isNetworkUnavailable(), 'custodian shall be treated as network unavailable if reset network')
-  t.true(custodian.isLoggedIn(), 'custodian shall be logged in only if reset network')
+    custodian.onLoginStatus('-101', 'login failed')
+    t.false(custodian.isLoggedIn())
+    t.true(custodian.isUnconfigured())
 
-  custodian.onLogout()
-  t.false(custodian.isRegistering())
-  t.false(custodian.isPrepared())
-  t.deepEqual(runtime.credential, {}, 'custodian shall be getting the empty prop')
+    /* test end */
+    custodian.deinit()
+    t.end()
+  }, 1000)
 })

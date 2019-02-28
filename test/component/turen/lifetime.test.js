@@ -32,7 +32,7 @@ function testSpeechErrorCodeOnEndOfAsr (errCode) {
     var cutApp = createMockApp(runtime, '1')
     var sceneApp = createMockApp(runtime, '2')
 
-    mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+    mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
     mockDaemonProxies(runtime)
 
     Promise.resolve()
@@ -77,7 +77,7 @@ test(`scene app should be resumed if cut app exited on middle of asr processing`
   var cutApp = createMockApp(runtime, '1')
   var sceneApp = createMockApp(runtime, '2')
 
-  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+  mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
   mockDaemonProxies(runtime)
 
   var listener

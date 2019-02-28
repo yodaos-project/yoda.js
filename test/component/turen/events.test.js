@@ -15,7 +15,7 @@ test('shall handle voice coming', t => {
   var runtime = getAppRuntime()
   var turen = new Turen(runtime)
 
-  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+  mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
   mockDaemonProxies(runtime)
 
   postMessage(turen, 'rokid.turen.voice_coming')
@@ -45,7 +45,7 @@ function testSpeechNetworkErrorCode (code) {
     var runtime = getAppRuntime()
     var turen = new Turen(runtime)
 
-    mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+    mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
     mockDaemonProxies(runtime)
 
     postMessage(turen, 'rokid.turen.voice_coming')
@@ -77,7 +77,7 @@ function testSpeechNetworkErrorCode (code) {
     var runtime = getAppRuntime()
     var turen = new Turen(runtime)
 
-    mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+    mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
     mockDaemonProxies(runtime)
 
     postMessage(turen, 'rokid.turen.voice_coming')
@@ -110,7 +110,7 @@ function testSpeechNetworkErrorCode (code) {
     var runtime = getAppRuntime()
     var turen = new Turen(runtime)
 
-    mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+    mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
     mockDaemonProxies(runtime)
 
     postMessage(turen, 'rokid.turen.voice_coming')
@@ -149,7 +149,7 @@ test('speech error 8 on middle of asr processing', t => {
   var runtime = getAppRuntime()
   var turen = new Turen(runtime)
 
-  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+  mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
   mockDaemonProxies(runtime)
 
   postMessage(turen, 'rokid.turen.voice_coming')
@@ -185,7 +185,7 @@ test('speech error 8 on end of asr processing', t => {
   var runtime = getAppRuntime()
   var turen = new Turen(runtime)
 
-  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+  mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
   mockDaemonProxies(runtime)
 
   postMessage(turen, 'rokid.turen.voice_coming')
@@ -225,7 +225,7 @@ test('speech error 8 should deactivate app memorized on voice coming', t => {
   mock.mockReturns(runtime.component.lifetime, 'getCurrentAppId', () => {
     return 'before_voice_coming'
   })
-  mock.mockReturns(runtime.component.custodian, 'isPrepared', true)
+  mock.mockReturns(runtime.component.custodian, 'isLoggedIn', true)
   mockDaemonProxies(runtime)
 
   postMessage(turen, 'rokid.turen.voice_coming')

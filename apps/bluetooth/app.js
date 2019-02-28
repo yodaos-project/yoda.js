@@ -2,7 +2,7 @@
 
 var bluetooth = require('@yoda/bluetooth')
 var logger = require('logger')('bluetooth-app')
-var wifi = require('@yoda/wifi')
+var network = require('@yoda/network')
 var util = require('util')
 var _ = require('@yoda/util')._
 var system = require('@yoda/system')
@@ -27,6 +27,7 @@ module.exports = function (activity) {
   var callState = protocol.CALL_STATE.IDLE
   var deviceProps = null
   var agent = null
+  var networkAgent = null
   var currentSkillName = 'bluetooth'
 
   function setAppType (skillName, afterFunc) {
@@ -112,7 +113,9 @@ module.exports = function (activity) {
     logger.debug(`speak: ${text}`)
     if (!textIsEmpty(text)) {
       return activity.setForeground().then(() => {
-        if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
+        return networkAgent.getNetworkStatus()
+      }).then((reply) => {
+        if (reply.network.state === network.CONNECTED) {
           return activity.tts.speak(text, { impatient: false }).catch((err) => {
             logger.error('play tts error: ', err)
             if (alternativeVoice != null) {
@@ -683,6 +686,7 @@ module.exports = function (activity) {
     agent = new flora.Agent('unix:/var/run/flora.sock')
     agent.subscribe('yodart.audio.on-volume-change', onDeviceVolumeChanged)
     agent.start()
+    networkAgent = new network.NetworkAgent()
   })
 
   activity.on('ready', () => {

@@ -97,7 +97,7 @@ DBus.prototype.extapp = {
     out: ['b'],
     fn: function register (appId, objectPath, ifaceName, cb) {
       logger.info('dbus registering app', appId, objectPath, ifaceName)
-      if (!this.component.custodian.isPrepared()) {
+      if (!this.component.custodian.isLoggedIn()) {
         /** prevent app to invoke runtime methods if runtime is not logged in yet */
         return cb(null, false)
       }
@@ -236,24 +236,6 @@ DBus.prototype.amsexport = {
 
         if (data.upgrade === true) {
           this.runtime.startApp('@upgrade', {}, {})
-        } else if (this.component.custodian.isConfiguringNetwork()) {
-          logger.info('recevice message with data', data)
-          var filter = [
-            'CTRL-EVENT-SCAN-STARTED',
-            'CTRL-EVENT-SCAN-RESULTS',
-            'CTRL-EVENT-SUBNET-STATUS-UPDATE'
-          ]
-          if (data.msg && filter.indexOf(data.msg) === -1) {
-            this.runtime.openUrl(
-              `yoda-skill://network/wifi_status?status=${data.msg}&value=${data.data}`, {
-                preemptive: false
-              })
-          }
-        }
-        if (data['Network'] === true) {
-          this.component.custodian.onNetworkConnect()
-        } else if (data['Network'] === false || data['Wifi'] === false) {
-          this.component.custodian.onNetworkDisconnect()
         }
       } catch (err) {
         logger.error(err && err.stack)
@@ -303,7 +285,6 @@ DBus.prototype.amsexport = {
     in: [],
     out: [],
     fn: function Relogin (cb) {
-      this.component.custodian.onLogout()
       this.runtime.reconnect()
         .then(
           () => {

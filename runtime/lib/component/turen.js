@@ -457,7 +457,7 @@ Turen.prototype.handleMaliciousNlpResult = function handleMaliciousNlpResult () 
     return this.resetAwaken()
   }
 
-  if (!this.component.custodian.isPrepared()) {
+  if (!this.component.custodian.isLoggedIn()) {
     logger.warn('Network not connected, recovering players.')
     return this.resetAwaken()
   }
@@ -494,7 +494,7 @@ Turen.prototype.handleSpeechError = function handleSpeechError (errCode) {
   }
 
   logger.debug('handling speech error', errCode)
-  if (!this.component.custodian.isPrepared()) {
+  if (!this.component.custodian.isLoggedIn()) {
     logger.warn('Network not connected or not logged in, recovering players.')
     return this.resetAwaken()
   }
