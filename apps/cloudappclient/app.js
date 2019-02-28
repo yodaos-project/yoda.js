@@ -6,6 +6,7 @@ var TtsEventHandle = require('@yodaos/ttskit').Convergence
 var MediaEventHandle = require('@yodaos/mediakit').Convergence
 var AudioMix = require('@yodaos/mediakit').AudioMix
 var logger = require('logger')('cloudAppClient')
+var property = require('@yoda/property')
 var Skill = require('./skill')
 var _ = require('@yoda/util')._
 
@@ -60,6 +61,10 @@ module.exports = activity => {
           logger.log(`${skill.appId}: an error occur when destroy media ${err}`)
         })
     }
+  })
+  // for debug and test: save playerId map to property
+  pm.on('update', (handle) => {
+    property.set('app.cloudappclient.player', JSON.stringify(handle))
   })
 
   pm.on('change', (appId, playerId) => {
