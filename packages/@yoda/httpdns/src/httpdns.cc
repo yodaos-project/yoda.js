@@ -32,6 +32,11 @@ static int notifyFinishedNotify(int status, void* userdata) {
   uv_async_send(&task->async_handle);
 }
 
+static void onHandleFinishedServiceClose(uv_handle_t* handle) {
+  HttpdnsAsyncTask* task = reinterpret_cast<HttpdnsAsyncTask*>(handle->data);
+  delete task;
+}
+
 static void handleFinishedService(uv_async_t* handle) {
   HttpdnsAsyncTask* task = reinterpret_cast<HttpdnsAsyncTask*>(handle->data);
   if (nullptr == task) {
@@ -60,9 +65,7 @@ static void handleFinishedService(uv_async_t* handle) {
 
   napi_make_callback(env, nullptr, global, fun, 1, argv, nullptr);
   napi_close_handle_scope(env, scope);
-  uv_close((uv_handle_t*)handle, nullptr);
-
-  delete task;
+  uv_close((uv_handle_t*)handle, onHandleFinishedServiceClose);
 }
 
 static napi_value syncService(napi_env env, napi_callback_info info) {
