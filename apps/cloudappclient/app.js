@@ -122,7 +122,7 @@ module.exports = activity => {
       return activity.media.setSpeed(speed, pm.getByAppId(dt.data.appId))
     }
     function setOffset (offset) {
-      activity.media.seek(offset, pm.getByAppId(dt.data.appId))
+      return activity.media.seek(offset, pm.getByAppId(dt.data.appId))
     }
     if (dt.action === 'play') {
       if (mediaClient.getUrl() === dt.data.item.url) {
@@ -135,6 +135,9 @@ module.exports = activity => {
         }
         if (dt.data.item.offsetInMilliseconds > 0) {
           setOffset(dt.data.item.offsetInMilliseconds)
+            .catch((err) => {
+              logger.error(`[cac-dt] set offset failed with error: ${err}`)
+            })
         }
         activity.media.resume(pm.getByAppId(dt.data.appId))
       } else {
@@ -151,7 +154,11 @@ module.exports = activity => {
                 })
             }
             if (dt.data.item.offsetInMilliseconds > 0) {
+              logger.log(`[cac-dt] set offset with offset(${dt.data.item.offsetInMilliseconds}`)
               setOffset(dt.data.item.offsetInMilliseconds)
+                .catch((err) => {
+                  logger.error(`[cac-dt] set offset failed with error: ${err}`)
+                })
             }
             sos.sendEventRequest('media', 'prepared', dt.data, {
               itemId: _.get(dt, 'data.item.itemId'),
