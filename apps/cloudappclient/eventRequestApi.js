@@ -70,18 +70,18 @@ function request (event, appId, options, onaction) {
     res.on('end', () => {
       var msg = Buffer.concat(list).toString()
       if (res.statusCode !== 200) {
-        logger.error(`Error: failed upload ${event} ${data} with ${msg}`)
+        onaction(new Error(`Error: failed upload ${event} ${data} with ${msg}`))
       } else {
         logger.log(`[eventRes-raw](${appId}, ${event}) raw(${msg})`)
         msg = JSON.parse(msg)
         if (typeof onaction === 'function') {
-          onaction(msg.response)
+          onaction(null, msg.response)
         }
       }
     })
   })
   req.on('error', (err) => {
-    logger.error(err && err.stack)
+    onaction(err)
   })
   req.write(data)
   req.end()
