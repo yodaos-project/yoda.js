@@ -15,7 +15,7 @@ function Convergence (mediaClient, logger) {
 }
 
 Convergence.events = [ 'prepared', 'paused', 'resumed', 'playbackcomplete', 'bufferingupdate',
-  'seekcomplete', 'cancel', 'error' ]
+  'seekcomplete', 'cancel', 'error', 'speedchange' ]
 Convergence.terminationEvents = [ 'playbackcomplete', 'cancel', 'error' ]
 
 Convergence.prototype.listen = function () {

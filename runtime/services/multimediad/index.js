@@ -94,6 +94,16 @@ service.on('seekcomplete', function (id, dur, pos) {
     [id, 'seekcomplete', dur, pos]
   )
 })
+service.on('speedchange', function (id, dur, pos) {
+  logger.log('multimediad-event speedchange', id, dur, pos)
+  dbusService._dbus.emitSignal(
+    '/multimedia/service',
+    'multimedia.service',
+    'multimediadevent',
+    'ssdd',
+    [id, 'speedchange', dur, pos]
+  )
+})
 service.on('error', function (id) {
   logger.log('multimediad-event error', id)
   dbusService._dbus.emitSignal(
@@ -356,8 +366,8 @@ dbusApis.addMethod('setSpeed', {
   out: ['b']
 }, function (appId, speed, playerId, cb) {
   logger.log(`set play speed, ${appId} ${speed}`)
-  service.setSpeed(appId, speed, +playerId)
-  cb(null, true)
+  var res = service.setSpeed(appId, speed, +playerId)
+  cb(null, res)
 })
 
 logger.log('service multimedia started')
