@@ -35,6 +35,9 @@ Convergence.prototype.converge = function (name, playerId, args) {
     delete this.registry[playerId]
     delete this.url[playerId]
   }
+  if(name === 'resumed') {
+    this.curPlayerId = playerId
+  }
   if (handler == null) {
     this.logger.info(`[convergence] no handler listening on ${name}(${playerId}), enqueueing.`)
     if (this.eventQueue[playerId] == null) {
