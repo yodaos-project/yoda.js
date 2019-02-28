@@ -312,6 +312,15 @@ Skill.prototype.transform = function (directives, append) {
     'pickup': 4
   }
   this.directives = this.directives.sort(function (a, b) {
+    // This is the business optimization code.
+    // purpose: exchange media.pause/stop and tts order. media.pause -> tts.say
+    if (a.type === 'media' && b.type === 'tts') {
+      return a.action === 'stop' || a.action === 'pause' ? -1 : 1
+    }
+    if (b.type === 'media' && a.type === 'tts') {
+      return b.action === 'stop' || b.action === 'pause' ? 1 : -1
+    }
+
     return (dtOrder[a.type] || 100) - (dtOrder[b.type] || 100)
   })
   this.lastDirectives = Object.assign([], this.directives)
