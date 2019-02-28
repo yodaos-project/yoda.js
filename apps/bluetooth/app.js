@@ -103,7 +103,8 @@ module.exports = function (activity) {
     logger.debug(`after speak(mode = ${a2dp.getMode()}, radio = ${a2dp.getRadioState()}, audio = ${a2dp.getAudioState()})`)
     if (a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
       a2dp.unmute()
-    } else {
+    }
+    if (currentSkillName === 'bluetooth') {
       activity.setBackground()
     }
   }
