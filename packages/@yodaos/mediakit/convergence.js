@@ -35,7 +35,7 @@ Convergence.prototype.converge = function (name, playerId, args) {
     delete this.registry[playerId]
     delete this.url[playerId]
   }
-  if(name === 'resumed') {
+  if (name === 'resumed') {
     this.curPlayerId = playerId
   }
   if (handler == null) {
