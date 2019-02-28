@@ -8,6 +8,7 @@
   "media": {
     "prepared": "Media.STARTED",
     "seekcomplete": "Media.STARTED",
+    "setspeed": "Media.SPEED_MODIFIED",
     "playbackcomplete": "Media.FINISHED",
     "paused": "Media.PAUSED",
     "resumed": "Media.STARTED",
