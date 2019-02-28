@@ -58,10 +58,6 @@ class TtsNative : public TtsService {
   iotjs_tts_t* ttswrap;
 };
 
-static iotjs_tts_t* iotjs_tts_create(const jerry_value_t jtts);
-static void iotjs_tts_destroy(iotjs_tts_t* tts);
-static void iotjs_tts_onclose(uv_async_t* handle);
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
