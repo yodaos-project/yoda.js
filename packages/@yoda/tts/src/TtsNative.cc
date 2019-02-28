@@ -40,6 +40,16 @@ void TtsNative::AfterEvent(uv_handle_t* handle) {
   delete handle;
 }
 
+static void iotjs_tts_destroy(iotjs_tts_t* tts) {
+  IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_tts_t, tts);
+  if (_this->handle) {
+    delete _this->handle;
+    _this->prepared = false;
+  }
+  iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
+  IOTJS_RELEASE(tts);
+}
+
 static JNativeInfoType this_module_native_info = {
   .free_cb = (jerry_object_native_free_callback_t)iotjs_tts_destroy
 };
@@ -51,7 +61,7 @@ static void iotjs_tts_async_onclose(uv_handle_t* handle) {
   jerry_release_value(jval);
 }
 
-static void iotjs_tts_onclose(uv_handle_t* handle) {
+static void iotjs_tts_onclose(uv_async_t* handle) {
   uv_close((uv_handle_t*)handle, iotjs_tts_async_onclose);
 }
 
@@ -67,16 +77,6 @@ static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
   _this->close_handle.data = (void*)ttswrap;
   uv_async_init(uv_default_loop(), &_this->close_handle, iotjs_tts_onclose);
   return ttswrap;
-}
-
-static void iotjs_tts_destroy(iotjs_tts_t* tts) {
-  IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_tts_t, tts);
-  if (_this->handle) {
-    delete _this->handle;
-    _this->prepared = false;
-  }
-  iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
-  IOTJS_RELEASE(tts);
 }
 
 JS_FUNCTION(TTS) {
