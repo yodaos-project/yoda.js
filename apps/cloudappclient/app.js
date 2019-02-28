@@ -6,6 +6,7 @@ var TtsEventHandle = require('@yodaos/ttskit').Convergence
 var MediaEventHandle = require('@yodaos/mediakit').Convergence
 var AudioMix = require('@yodaos/mediakit').AudioMix
 var logger = require('logger')('cloudAppClient')
+var property = require('@yoda/property')
 var Skill = require('./skill')
 var _ = require('@yoda/util')._
 
@@ -61,6 +62,10 @@ module.exports = activity => {
         })
     }
   })
+  // for debug and test: save playerId map to property
+  pm.on('update', (handle) => {
+    property.set('app.cloudappclient.player', JSON.stringify(handle))
+  })
 
   pm.on('change', (appId, playerId) => {
     logger.log(`playerId was changed from appId(${appId}) playerId(${playerId})`)
@@ -106,9 +111,6 @@ module.exports = activity => {
       })
     } else if (dt.action === 'cancel') {
       activity.tts.stop()
-        .then(() => {
-          logger.log(`end dt: tts.${dt.action}`)
-        })
         .catch((err) => {
           logger.log(`end dt: tts.${dt.action} ${err}`)
         })
@@ -140,6 +142,7 @@ module.exports = activity => {
             })
         }
         activity.media.resume(pm.getByAppId(dt.data.appId))
+        next()
       } else {
         mediaClient.start(dt.data.item.url, { multiple: true }, function (name, args) {
           logger.log(`[cac-event](${name}) args(${JSON.stringify(args)}) `)
@@ -212,9 +215,6 @@ module.exports = activity => {
     } else if (dt.action === 'pause') {
       // no need to send events here because player will emit paused event
       activity.media.pause(pm.getByAppId(dt.data.appId))
-        .then(() => {
-          logger.log(`[cac-dt](media, pause) res(success)`)
-        })
         .catch((err) => {
           logger.log(`[cac-dt](media, pause) err: ${err}`)
         })
@@ -222,10 +222,7 @@ module.exports = activity => {
     } else if (dt.action === 'resume') {
       // no need to send events here because player will emit resumed event
       activity.media.resume(pm.getByAppId(dt.data.appId))
-        .then(() => {
-          logger.log(`[cac-dt](media, resume) res(success)`)
-          next()
-        })
+        .then(next)
         .catch((err) => {
           logger.log(`[cac-dt](media, resume) err: ${err}`)
         })
@@ -234,14 +231,8 @@ module.exports = activity => {
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
         activity.media.stop(playerId)
-          .then(() => {
-            sos.sendEventRequest('media', 'cancel', dt.data, {
-              itemId: _.get(dt, 'data.item.itemId'),
-              token: _.get(dt, 'data.item.token')
-            })
-          })
           .catch((err) => {
-            logger.log('media stop failed', err)
+            logger.log('media cancel failed', err)
           })
       }
       next()
@@ -250,9 +241,6 @@ module.exports = activity => {
       if (playerId) {
         pm.deleteByAppId(dt.data.appId)
         activity.media.stop(playerId)
-          .then(() => {
-            logger.log('media stop success')
-          })
           .catch((err) => {
             logger.log('media stop failed', err)
           })
@@ -368,7 +356,9 @@ module.exports = activity => {
     if (intentType === 'EXIT') {
       logger.warn(`${this.appId}: intent value is [EXIT]`)
       sos.destroy()
-      activity.setBackground()
+      pm.clear()
+      // clear domain locally and it will automatically upload to cloud
+      activity.exit({ clearContext: true })
       return
     }
     logger.log(`${this.appId} app request`)

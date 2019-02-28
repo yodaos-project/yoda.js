@@ -103,7 +103,8 @@ module.exports = function (activity) {
     logger.debug(`after speak(mode = ${a2dp.getMode()}, radio = ${a2dp.getRadioState()}, audio = ${a2dp.getAudioState()})`)
     if (a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
       a2dp.unmute()
-    } else {
+    }
+    if (currentSkillName === 'bluetooth') {
       activity.setBackground()
     }
   }
@@ -115,6 +116,9 @@ module.exports = function (activity) {
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
           return activity.tts.speak(text, { impatient: false }).catch((err) => {
             logger.error('play tts error: ', err)
+            if (alternativeVoice != null) {
+              return activity.playSound(alternativeVoice)
+            }
           })
         } else if (alternativeVoice != null) {
           logger.debug('No wifi connection, play alternative voice.')
@@ -307,7 +311,6 @@ module.exports = function (activity) {
     },
     // 3.5 begin scan around bluetooth devices
     'bluetooth_discovery': () => {
-      activity.setBackground()
       a2dp.discovery()
     },
 
@@ -509,22 +512,34 @@ module.exports = function (activity) {
         logger.debug(`  title: ${extra.title}`)
         logger.debug(`  artist: ${extra.artist}`)
         logger.debug(`  album: ${extra.album}`)
+        var fail = textIsEmpty(extra.title) || textIsEmpty(extra.artist)
         switch (lastIntent) {
           case 'like':
-            addToFavorite(extra).then((ret) => {
-              logger.debug('http result: ', ret)
-              if (ret !== null && ret.success) {
-                speak(ret.data.RKMusicResponse.result.tts)
-              } else {
-                speak(getText('ADD_TO_FAVORITE_FAILED'))
-              }
-            }).catch((err) => {
-              logger.error('Send request failed: ', err)
+            if (fail) {
               speak(getText('ADD_TO_FAVORITE_FAILED'))
-            })
+            } else {
+              addToFavorite(extra).then((ret) => {
+                logger.debug('http result: ', ret)
+                if (ret !== null && ret.success) {
+                  speak(ret.data.RKMusicResponse.result.tts)
+                } else {
+                  speak(getText('ADD_TO_FAVORITE_FAILED'))
+                }
+              }).catch((err) => {
+                logger.error('Send request failed: ', err)
+                speak(getText('ADD_TO_FAVORITE_FAILED'))
+              })
+            }
             break
           case 'bluetooth_info':
-            speak(util.format(strings.MUSIC_INFO_SUCC, extra.artist, extra.title, extra.album))
+            if (fail) {
+              speak(getText('MUSIC_INFO_FAIL'))
+            } else {
+              if (textIsEmpty(extra.album)) {
+                extra.album = extra.title
+              }
+              speak(util.format(strings.MUSIC_INFO_SUCC, extra.artist, extra.title, extra.album))
+            }
             break
           default:
             break

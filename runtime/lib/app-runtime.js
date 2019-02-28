@@ -153,6 +153,7 @@ AppRuntime.prototype.init = function init () {
       }
       /** 9. force-enable and check network states */
       this.component.custodian.prepareNetwork()
+      this.dispatchNotification('on-system-booted', [])
     }).catch(err => {
       logger.error('unexpected error on boot welcoming', err.stack)
       this.enableRuntimeFor('welcoming')
@@ -421,6 +422,7 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
   this.component.custodian.resetState()
   this.component.custodian.prepareNetwork()
   this.component.dispatcher.delegate('runtimeDidResumeFromSleep')
+  this.dispatchNotification('on-system-booted', [])
 }
 
 /**

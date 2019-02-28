@@ -20,6 +20,12 @@ function KeyboardDescriptor (activityDescriptor, appId, appHome, runtime) {
   this._appId = appId
   this._appHome = appHome
   this._runtime = runtime
+
+  this.interests = {
+    click: {},
+    dbclick: {},
+    longpress: {}
+  }
 }
 inherits(KeyboardDescriptor, EventEmitter)
 KeyboardDescriptor.prototype.toJSON = function toJSON () {
@@ -76,7 +82,13 @@ Object.assign(KeyboardDescriptor.prototype,
         if (event != null && typeof event !== 'string') {
           return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))
         }
-        return this._runtime.component.keyboard.preventKeyDefaults(this._appId, keyCode, event)
+        var events = Object.keys(this.interests)
+        if (event != null && events.indexOf(event) >= 0) {
+          events = [ event ]
+        }
+        events.forEach(it => {
+          this.interests[it][keyCode] = true
+        })
       }
     },
     /**
@@ -98,7 +110,13 @@ Object.assign(KeyboardDescriptor.prototype,
         if (event != null && typeof event !== 'string') {
           return Promise.reject(new Error('Expect a string on second argument of keyboard.restoreDefaults.'))
         }
-        return this._runtime.component.keyboard.restoreKeyDefaults(this._appId, keyCode, event)
+        var events = Object.keys(this.interests)
+        if (event != null && events.indexOf(event) >= 0) {
+          events = [ event ]
+        }
+        events.forEach(it => {
+          delete this.interests[it][keyCode]
+        })
       }
     }
   })

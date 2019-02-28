@@ -155,3 +155,22 @@ test('should delegate turenDidWakeUp if ota is available', t => {
       t.end()
     })
 })
+
+test('should not delegate turenDidWakeUp if lifetime is been monopolized', t => {
+  mock.restore()
+  t.plan(1)
+  var fakeRuntime = mockRuntime()
+  var otaComp = new OtaComponent(fakeRuntime)
+  otaComp.forceUpdateAvailable = true
+
+  mock.mockReturns(fakeRuntime.component.lifetime, 'isMonopolized', true)
+
+  Promise.resolve(otaComp.turenDidWakeUp())
+    .then(delegation => {
+      t.strictEqual(delegation, false)
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
