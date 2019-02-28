@@ -37,6 +37,10 @@ class OTA {
     if (!this.forceUpdateAvailable) {
       return false
     }
+    if (this.component.lifetime.isMonopolized()) {
+      logger.info('lifetime is been monopolized, skip ota on woken up.')
+      return false
+    }
     var nowHour = new Date().getHours()
     if (nowHour >= 22/** 22pm */ || nowHour <= 7 /** 7am */) {
       return Promise.resolve(false)

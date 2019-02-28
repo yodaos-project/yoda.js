@@ -15,14 +15,6 @@ function KeyboardHandler (runtime) {
 
   this.longpressWindow = _.get(this.config, 'config.longpressWindow', 500)
   this.debounce = _.get(this.config, 'config.debounce', 0)
-
-  this.listeners = {
-    keydown: {},
-    keyup: {},
-    click: {},
-    dbclick: {},
-    longpress: {}
-  }
 }
 
 KeyboardHandler.prototype.init = function init () {
@@ -88,17 +80,18 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
 }
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
-  var listener = _.get(this.listeners, `${type}.${event.keyCode}`)
-  if (listener == null) {
-    logger.info(`No app registered for ${type}.${event.keyCode}, skipping`)
+  var currentApp = this.component.lifetime.getCurrentAppId()
+  var app = this.component.appScheduler.getAppById(currentApp)
+  if (app == null) {
+    logger.info(`No active app, skip ${type} '${event.keyCode}' delegation.`)
     return false
   }
-  var app = this.component.appScheduler.getAppById(listener)
-  if (listener !== this.component.lifetime.getCurrentAppId() || app == null) {
-    logger.info(`App ${listener} is not active, skip ${type} '${event.keyCode}' delegation.`)
+  var interest = _.get(app, `keyboard.interests.${type}.${event.keyCode}`)
+  if (interest !== true) {
+    logger.info(`Current app(${currentApp}) has no interest, skip ${type} '${event.keyCode}' delegation.`)
     return false
   }
-  logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
+  logger.info(`Delegating ${type} '${event.keyCode}' to app ${currentApp}.`)
   app.keyboard.emit(type, event)
   return true
 }
@@ -144,21 +137,21 @@ KeyboardHandler.prototype.onKeydown = function onKeydown (event) {
 
 KeyboardHandler.prototype.onKeyup = function onKeyup (event) {
   logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}, keyTime: ${event.keyTime}`)
-  if (this.currentKeyCode !== event.keyCode) {
+  if (this.currentKeyCode === event.keyCode) {
+    if (this.firstLongPressTime != null) {
+      this.firstLongPressTime = null
+      logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
+    }
+
+    if (this.preventSubsequent) {
+      this.preventSubsequent = false
+      logger.info(`Event keyup prevented '${event.keyCode}'.`)
+      return
+    }
+  } else {
     logger.info(`Keyup a difference key '${event.keyCode}'.`)
-    return
   }
 
-  if (this.firstLongPressTime != null) {
-    this.firstLongPressTime = null
-    logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
-  }
-
-  if (this.preventSubsequent) {
-    this.preventSubsequent = false
-    logger.info(`Event keyup prevented '${event.keyCode}'.`)
-    return
-  }
   if (this.handleAppListener('keyup', event)) {
     logger.info(`Delegated keyup to app.`)
     return
@@ -185,12 +178,12 @@ KeyboardHandler.prototype.onKeyup = function onKeyup (event) {
 
 KeyboardHandler.prototype.onLongpress = function onLongpress (event) {
   if (this.currentKeyCode !== event.keyCode) {
-    this.firstLongPressTime = null
+    logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, skipped for not matched keyCode.`)
     return
   }
   var timeDelta = event.keyTime - this.firstLongPressTime
   timeDelta = Math.round(timeDelta / this.longpressWindow) * this.longpressWindow
-  logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, timeDelta: ${timeDelta}, rounded time delta: ${timeDelta}`)
+  logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, timeDelta: ${timeDelta}`)
 
   if (this.preventSubsequent) {
     logger.info(`Event longpress prevented '${event.keyCode}'.`)
@@ -284,32 +277,6 @@ KeyboardHandler.prototype.onGesture = function onGesture (gesture, event) {
     }, debounce)
   }
   return this.execute(descriptor)
-}
-
-KeyboardHandler.prototype.preventKeyDefaults = function preventKeyDefaults (appId, keyCode, event) {
-  var key = String(keyCode)
-  var events = Object.keys(this.listeners)
-  if (event != null && events.indexOf(event) >= 0) {
-    events = [ event ]
-  }
-  events.forEach(it => {
-    this.listeners[it][key] = appId
-  })
-  return Promise.resolve()
-}
-
-KeyboardHandler.prototype.restoreKeyDefaults = function restoreKeyDefaults (appId, keyCode, event) {
-  var key = String(keyCode)
-  var events = Object.keys(this.listeners)
-  if (event != null && events.indexOf(event) >= 0) {
-    events = [ event ]
-  }
-  events.forEach(it => {
-    if (this.listeners[it][key] === appId) {
-      this.listeners[it][key] = null
-    }
-  })
-  return Promise.resolve()
 }
 
 KeyboardHandler.prototype.listenerWrap = function listenerWrap (eventName, fn, args) {

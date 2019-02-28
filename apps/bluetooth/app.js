@@ -103,7 +103,8 @@ module.exports = function (activity) {
     logger.debug(`after speak(mode = ${a2dp.getMode()}, radio = ${a2dp.getRadioState()}, audio = ${a2dp.getAudioState()})`)
     if (a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
       a2dp.unmute()
-    } else {
+    }
+    if (currentSkillName === 'bluetooth') {
       activity.setBackground()
     }
   }
@@ -115,6 +116,9 @@ module.exports = function (activity) {
         if (wifi.getWifiState() === wifi.WIFI_CONNECTED) {
           return activity.tts.speak(text, { impatient: false }).catch((err) => {
             logger.error('play tts error: ', err)
+            if (alternativeVoice != null) {
+              return activity.playSound(alternativeVoice)
+            }
           })
         } else if (alternativeVoice != null) {
           logger.debug('No wifi connection, play alternative voice.')
@@ -307,7 +311,6 @@ module.exports = function (activity) {
     },
     // 3.5 begin scan around bluetooth devices
     'bluetooth_discovery': () => {
-      activity.setBackground()
       a2dp.discovery()
     },
 
@@ -584,7 +587,7 @@ module.exports = function (activity) {
     return false
   }
 
-  function onCallStateChangedListener (state) {
+  function onCallStateChangedListener (state, extra) {
     logger.debug(`onCallStateChanged(${state}), lastState=${callState}`)
     switch (state) {
       case protocol.CALL_STATE.IDLE:
@@ -632,7 +635,9 @@ module.exports = function (activity) {
         callState = state
         break
       case protocol.CALL_STATE.RING:
-        playIncomingRingtone()
+        if (extra.play) {
+          playIncomingRingtone()
+        }
         break
       default:
         break

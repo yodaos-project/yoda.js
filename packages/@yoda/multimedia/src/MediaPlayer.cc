@@ -85,6 +85,13 @@ static JNativeInfoType this_module_native_info = {
   .free_cb = (jerry_object_native_free_callback_t)iotjs_player_destroy
 };
 
+static void iotjs_player_async_onclose(uv_handle_t* handle) {
+  iotjs_player_t* player_wrap = (iotjs_player_t*)handle->data;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
+  jerry_value_t jval = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_release_value(jval);
+}
+
 static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
   iotjs_player_t* player_wrap = IOTJS_ALLOC(iotjs_player_t);
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_player_t, player_wrap);
@@ -111,12 +118,7 @@ static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
 }
 
 static void iotjs_player_onclose(uv_async_t* handle) {
-  iotjs_player_t* player_wrap = (iotjs_player_t*)handle->data;
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
-
-  uv_close((uv_handle_t*)handle, NULL);
-  jerry_value_t jval = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
-  jerry_release_value(jval);
+  uv_close((uv_handle_t*)handle, iotjs_player_async_onclose);
 }
 
 JS_FUNCTION(Player) {

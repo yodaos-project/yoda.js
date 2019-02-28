@@ -22,10 +22,12 @@ component/dispatcher/*.test.js
 component/dnd-mode/*.test.js
 component/keyboard/*.test.js
 component/lifetime/*.test.js
+component/light/*.test.js
 component/ota/*.test.js
 component/turen/*.test.js
 descriptor/*.test.js
 descriptor/activity/*.test.js
+descriptor/keyboard/*.test.js
 descriptor/tts/*.test.js
 runtime/init/*.test.js
 runtime/cloudapi-util.*.js

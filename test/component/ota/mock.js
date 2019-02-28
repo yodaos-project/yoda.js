@@ -5,6 +5,10 @@ function mockRuntime () {
     setPickup: () => {},
     openUrl: () => {},
     startMonologue: () => {},
-    component: {}
+    component: {
+      lifetime: {
+        isMonopolized: () => false
+      }
+    }
   }
 }

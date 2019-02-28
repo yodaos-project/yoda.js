@@ -3,6 +3,7 @@ var logger = require('logger')('comp-de-voix')
 
 module.exports = function compositionDeVoix (activity) {
   var currId
+  var fastResolveId
 
   var map = {
     execute_batch: (nlp, id) => {
@@ -13,21 +14,12 @@ module.exports = function compositionDeVoix (activity) {
       } catch (err) {
         activity.tts.speak('你想干蛤').then(() => activity.exit())
       }
-      exec = exec.map(it => {
-        if (_.startsWith(it.voice, 'tts')) {
-          return {
-            type: 'tts',
-            text: it.voice.substring(3) + '<silence=1></silence>',
-            delay: it.delay * 1000
-          }
-        }
-        return {
-          type: 'voice-command',
-          text: it.voice,
-          delay: it.delay * 1000
-        }
-      })
-      execute(id, exec).catch(err => logger.error('Unexpected error on batch execution.', err))
+      exec = exec.map(it => ({
+        type: 'voice-command',
+        text: it.voice,
+        delay: it.delay * 1000
+      }))
+      execute(id, exec).catch(err => logger.error(`Unexpected error on batch execution(${id}).`, err))
     }
   }
 
@@ -46,25 +38,25 @@ module.exports = function compositionDeVoix (activity) {
     logger.info('app destroyed')
   })
 
-  activity.on('active', () => {
+  activity.on('active', userData => {
+    var reason = _.get(userData, 'reason')
+    if (reason !== 'carrier') {
+      logger.info('doesn\'t activated for carrier, nothing to do.')
+    }
     fastResolveDelay()
   })
 
   var execMap = {
-    tts: text => {
-      logger.info('executing tts:', text)
-      return activity.tts.speak(text)
-    },
     'voice-command': text => {
-      logger.info('executing voice command:', text)
       return activity.voiceCommand(text, { isTriggered: true })
     }
   }
   function execute (id, executions, idx) {
     if (currId !== id) {
-      logger.info('Batch execution has been preempted, skipping.')
+      logger.info(`Batch execution(${id}) has been preempted, skipping.`)
       return Promise.resolve()
     }
+    fastResolveId = null
     return activity.setForeground()
       .then(() => {
         if (idx == null) {
@@ -73,17 +65,22 @@ module.exports = function compositionDeVoix (activity) {
         var exec = executions[idx]
         var handler = execMap[exec.type]
         if (handler == null) {
-          return Promise.reject(new Error(`Unknown execution type ${exec.type} at index '${idx}'.`))
+          return Promise.reject(new Error(`Unknown execution(${id}) type ${exec.type} at index '${idx}'.`))
         }
+        logger.info(`executing execution(${id}) ${exec.type}(${exec.text})`)
         return handler(exec.text)
           .then(() => {
-            var timeout = exec.delay || 5000
-            logger.info(`delaying ${timeout}ms, actual setting ${exec.delay}ms`)
+            var timeout = exec.delay
+            if (timeout === 0) {
+              fastResolveId = id
+              timeout = 5000
+            }
+            logger.info(`delaying execution(${id}) ${timeout}ms, actual setting ${exec.delay}ms`)
             return delay(timeout)
           })
           .then(() => {
             if (idx < executions.length - 1) {
-              logger.info('next step', idx + 1)
+              logger.info(`execution(${id}) next step`, idx + 1)
               return execute(id, executions, idx + 1)
             }
             /** execution done */
@@ -113,6 +110,10 @@ module.exports = function compositionDeVoix (activity) {
   function fastResolveDelay () {
     if (timer == null) {
       logger.info('no timer found, skipping fast resolving.')
+      return
+    }
+    if (fastResolveId !== currId) {
+      logger.info('fast resolve id not match, skipping fast resolving.')
       return
     }
     logger.info('fast resolving, continue work queue.')

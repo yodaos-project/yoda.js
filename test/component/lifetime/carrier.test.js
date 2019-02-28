@@ -5,6 +5,34 @@ var helper = require('../../helper')
 var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
 var mock = require('./mock')
 
+test('carrier shall be activated with reasons', t => {
+  mock.restore()
+  t.plan(2)
+
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.runtime)
+  var carrier
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(apps => {
+      carrier = apps[0]
+      return life.activateAppById('1', 'cut', '0')
+    })
+    .then(() => {
+      carrier.on('active', (params) => {
+        t.deepEqual(params, { reason: 'carrier', carriageId: '1' })
+      })
+      return life.deactivateAppById('1')
+    })
+    .then(() => {
+      t.pass('shall end with no error')
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('non-daemon inactive carrier shall be destroyed on preemption', t => {
   mock.restore()
   t.plan(2)
