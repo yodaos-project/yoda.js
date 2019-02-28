@@ -141,6 +141,7 @@ module.exports = activity => {
           setOffset(dt.data.item.offsetInMilliseconds)
         }
         activity.media.resume(pm.getByAppId(dt.data.appId))
+        next()
       } else {
         mediaClient.start(dt.data.item.url, { multiple: true }, function (name, args) {
           logger.log(`[cac-event](${name}) args(${JSON.stringify(args)}) `)
