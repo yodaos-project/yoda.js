@@ -131,6 +131,10 @@ module.exports = activity => {
         logger.log(`play forward offset: ${dt.data.item.offsetInMilliseconds} mutiple: ${dt.data.item.playMultiple}`)
         if (+dt.data.item.playMultiple > 0) {
           setSpeed(+dt.data.item.playMultiple)
+            .then(() => {
+              playerId = pm.getByAppId(dt.data.appId)
+              pm.setDataByPlayerId(playerId, dt.data)
+            })
             .catch((err) => {
               logger.error(`[cac-dt] set speed failed with error: ${err}`)
             })
@@ -203,11 +207,13 @@ module.exports = activity => {
               progress: args[1]
             })
           } else if (name === 'speedchange') {
+            playerId = pm.getByAppId(dt.data.appId)
+            var data = pm.getDataByPlayerId(playerId)
             sos.sendEventRequest('media', 'setspeed', dt.data, {
               itemId: _.get(dt, 'data.item.itemId'),
               duration: args[0],
               progress: args[1],
-              speed: +dt.data.item.playMultiple
+              speed: +data.item.playMultiple
             })
           }
         })
