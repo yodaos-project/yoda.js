@@ -539,10 +539,11 @@ AppRuntime.prototype.stopMonologue = function (appId) {
  * @param {object} nlp
  * @param {object} action
  * @param {object} [options]
+ * @param {'voice' | 'text' | string} [options.source] - voice command source
  * @param {boolean} [options.preemptive]
  * @param {boolean} [options.carrierId]
  */
-AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
+AppRuntime.prototype.onVoiceCommand = function (text, nlp, action, options) {
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
     return Promise.resolve(false)
@@ -569,14 +570,20 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve(false)
   }
 
-  return this.component.dispatcher.dispatchAppEvent(
-    appId,
-    'request', [ nlp, action ],
-    Object.assign({}, options, {
-      form: form,
-      skillId: nlp.appId
+  return this.component.dispatcher.delegate('runtimeWillDispatchVoiceCommand', [ appId, text, nlp, action, options ])
+    .then(delegation => {
+      if (delegation) {
+        return true
+      }
+      return this.component.dispatcher.dispatchAppEvent(
+        appId,
+        'request', [ nlp, action ],
+        Object.assign({}, options, {
+          form: form,
+          skillId: nlp.appId
+        })
+      )
     })
-  )
 }
 
 /**
@@ -986,29 +993,6 @@ AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
   this.cloudSkillIdStack = stack || []
   logger.log('cloudStack', this.cloudSkillIdStack)
   return Promise.resolve()
-}
-
-/**
- *
- * @param {string} skillId
- * @param {object} nlp
- * @param {object} action
- * @param {object} [options]
- * @param {boolean} [options.preemptive]
- */
-AppRuntime.prototype.startApp = function (skillId, nlp, action, options) {
-  nlp.cloud = false
-  nlp.appId = skillId
-  action = {
-    appId: skillId,
-    startWithActiveWord: false,
-    response: {
-      action: action || {}
-    }
-  }
-  action.response.action.appId = skillId
-  action.response.action.form = 'cut'
-  return this.onVoiceCommand('', nlp, action, options)
 }
 
 /**

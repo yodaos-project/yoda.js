@@ -234,9 +234,7 @@ DBus.prototype.amsexport = {
         var data = JSON.parse(status)
         cb(null, true)
 
-        if (data.upgrade === true) {
-          this.runtime.startApp('@upgrade', {}, {})
-        } else if (this.component.custodian.isConfiguringNetwork()) {
+        if (this.component.custodian.isConfiguringNetwork()) {
           logger.info('recevice message with data', data)
           var filter = [
             'CTRL-EVENT-SCAN-STARTED',

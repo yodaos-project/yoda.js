@@ -3,6 +3,7 @@
   "interception": {
     "runtimeDidLogin": [ "ota.runtimeDidLogin" ],
     "runtimeDidResumeFromSleep": [ "customConfig.runtimeDidResumeFromSleep" ],
+    "runtimeWillDispatchVoiceCommand": [ "customConfig.runtimeWillDispatchVoiceCommand" ],
     "turenDidWakeUp": [
       "battery.delegateWakeUpIfDangerousStatus",
       "custodian.turenDidWakeUp",
