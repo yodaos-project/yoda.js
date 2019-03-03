@@ -102,7 +102,7 @@ NetworkListener.prototype._onevent = function onevent (data) {
        * @type {boolean}
        */
       this.emit('stateupdate', this._online)
-    } else if (this._online === true && msg['Wifi'] === false) {
+    } else if (this._online === true && msg['Network'] === false) {
       this._online = false
       this.emit('stateupdate', this._online)
     } else if (this._online === false && msg['Network'] === true) {
