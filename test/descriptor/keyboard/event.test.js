@@ -84,6 +84,52 @@ test('should register all interests on prevent defaults with no event specified'
     })
 })
 
+test('should unregister all interests on restore all', t => {
+  var descriptor
+  var runtime = {}
+  var firstKeyCode = 123
+  var nbrKeys = 5
+  var keyCode = firstKeyCode
+  extApp('@test', { appHome: target }, runtime)
+    .then(res => {
+      descriptor = res
+      descriptor.emit('test-invoke', 'keyboard.preventDefaults', [ keyCode ])
+      var events = Object.keys(descriptor.keyboard.interests)
+      descriptor._childProcess.on('message', msg => {
+        if (msg.type !== 'test' || msg.event !== 'invoke') {
+          return
+        }
+        t.error(msg.error)
+
+        switch (msg.method) {
+          case 'keyboard.preventDefaults': {
+            events.forEach(it => {
+              t.strictEqual(_.get(descriptor, `keyboard.interests.${it}.${keyCode}`), true, `${it} should be registered`)
+            })
+            keyCode++
+            if (keyCode < firstKeyCode + nbrKeys) {
+              descriptor.emit('test-invoke', 'keyboard.preventDefaults', [ keyCode ])
+            } else {
+              descriptor.emit('test-invoke', 'keyboard.restoreAll')
+            }
+            break
+          }
+          case 'keyboard.restoreAll': {
+            events.forEach(it => {
+              for (var i = 0; i < nbrKeys; i++) {
+                keyCode = firstKeyCode + i
+                t.looseEqual(_.get(descriptor, `keyboard.interests.${it}.${keyCode}`), null, `${it} should be restored`)
+              }
+            })
+            descriptor.destruct()
+            t.end()
+            break
+          }
+        }
+      })
+    })
+})
+
 test('should transfer events', t => {
   var descriptor
   var runtime = {}

@@ -79,11 +79,14 @@ Object.assign(KeyboardDescriptor.prototype,
         if (typeof keyCode !== 'number') {
           return Promise.reject(new Error('Expect a number on first argument of keyboard.preventDefaults.'))
         }
-        if (event != null && typeof event !== 'string') {
-          return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))
-        }
         var events = Object.keys(this.interests)
-        if (event != null && events.indexOf(event) >= 0) {
+        if (event != null) {
+          if (typeof event !== 'string') {
+            return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))
+          }
+          if (events.indexOf(event) === -1) {
+            return Promise.reject(new Error(`Unexpected keyboard event: ${event}.`))
+          }
           events = [ event ]
         }
         events.forEach(it => {
@@ -107,15 +110,36 @@ Object.assign(KeyboardDescriptor.prototype,
         if (typeof keyCode !== 'number') {
           return Promise.reject(new Error('Expect a string on first argument of keyboard.restoreDefaults.'))
         }
-        if (event != null && typeof event !== 'string') {
-          return Promise.reject(new Error('Expect a string on second argument of keyboard.restoreDefaults.'))
-        }
         var events = Object.keys(this.interests)
-        if (event != null && events.indexOf(event) >= 0) {
+        if (event != null) {
+          if (typeof event !== 'string') {
+            return Promise.reject(new Error('Expect a string on second argument of keyboard.restoreDefaults.'))
+          }
+          if (events.indexOf(event) === -1) {
+            return Promise.reject(new Error(`Unexpected keyboard event: ${event}.`))
+          }
           events = [ event ]
         }
         events.forEach(it => {
           delete this.interests[it][keyCode]
+        })
+      }
+    },
+    /**
+     * Restore default behavior of all key codes.
+     *
+     * @memberof yodaRT.activity.Activity.KeyboardClient
+     * @instance
+     * @function restoreAll
+     * @returns {Promise<void>}
+     */
+    restoreAll: {
+      type: 'method',
+      returns: 'promise',
+      fn: function restoreAll () {
+        var events = Object.keys(this.interests)
+        events.forEach(it => {
+          this.interests[it] = {}
         })
       }
     }
