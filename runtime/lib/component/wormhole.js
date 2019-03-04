@@ -107,7 +107,7 @@ Wormhole.prototype.handlers = {
           var nlp = res[0]
           var action = res[1]
           logger.info('MQTT command: get nlp result for asr', asr, nlp, action)
-          return this.runtime.onVoiceCommand(asr, nlp, action)
+          return this.runtime.handleNlpIntent(asr, nlp, action)
         },
         err => {
           logger.error('occurrs some error in speechT', err)
@@ -121,7 +121,7 @@ Wormhole.prototype.handlers = {
     try {
       var msg = JSON.parse(data)
       var params = JSON.parse(msg.content.params)
-      this.runtime.onVoiceCommand('', params.nlp, params.action)
+      this.runtime.handleNlpIntent('', params.nlp, params.action)
     } catch (err) {
       logger.error(err && err.stack)
     }
@@ -291,5 +291,5 @@ Wormhole.prototype.handleAppEvent = function handleAppEvent (data) {
       }
     }
   }
-  this.runtime.onVoiceCommand('', mockNlp, mockAction, { preemptive: false })
+  this.runtime.handleNlpIntent('', mockNlp, mockAction, { preemptive: false })
 }

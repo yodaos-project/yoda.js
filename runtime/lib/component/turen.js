@@ -424,7 +424,8 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
     })
   }
 
-  return future.then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action))
+  return future
+    .then(() => this.runtime.handleNlpIntent(data.asr, data.nlp, data.action, { source: 'voice' }))
     .then(success => {
       this.component.light.stop('@yoda', 'system://loading.js')
       if (success) {
@@ -441,6 +442,7 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
     }, err => {
       this.component.light.stop('@yoda', 'system://loading.js')
       logger.error('Unexpected error on open handling nlp', err.stack)
+      this.recoverPausedOnAwaken()
     })
 }
 
