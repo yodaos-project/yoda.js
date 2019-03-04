@@ -124,10 +124,12 @@ Light.prototype.loadfile = function (appId, uri, data, option, callback) {
       zIndex = this.getSystemZIndexByURI(uri)
       zIndex = zIndex >= maxSystemspaceLayers ? maxSystemspaceLayers - 1 : zIndex
       zIndex = zIndex < 0 ? 0 : zIndex
+      logger.log(`The light of URI: [${uri}] is belong to systemspace`)
     } else {
       zIndex = option.zIndex || 0
       zIndex = zIndex >= maxUserspaceLayers ? maxUserspaceLayers - 1 : zIndex
       zIndex = zIndex < 0 ? 0 : zIndex
+      logger.log(`The light of URI: [${uri}] is belong to userspace`)
     }
     // update layers by uri
     if (!option.shouldResume) {
@@ -347,13 +349,20 @@ Light.prototype.canRender = function (uri, zIndex) {
     if (isSystemUri && !isPrevSystemUri) {
       return true
     }
+    // systemspace is always higher than userspace
+    if (!isSystemUri && isPrevSystemUri) {
+      return false
+    }
     if (isSystemUri && isPrevSystemUri) {
       // the smaller the number, the higher the priority
       return this.getSystemZIndexByURI(uri) <= this.prevZIndex
     }
-    // the larger the number, the higher the number of layers
-    return zIndex >= this.prevZIndex
+    if (!isSystemUri && !isPrevSystemUri) {
+      // the larger the number, the higher the number of layers
+      return zIndex >= this.prevZIndex
+    }
   }
+  // systemspace is always higher than userspace
   return true
 }
 

@@ -58,7 +58,13 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
 
   if (appType === 'light') {
     return lightApp(appId, metadata, this.runtime)
-      .then(app => this.handleAppCreate(appId, app))
+      .then(
+        app => this.handleAppCreate(appId, app),
+        err => {
+          logger.error(`Unexpected error on creating light app(${appId})`, err)
+          this.handleAppExit(appId, null, null)
+          throw err
+        })
   }
 
   if (appType === 'dbus') {
