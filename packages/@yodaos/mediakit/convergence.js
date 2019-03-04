@@ -35,6 +35,10 @@ Convergence.prototype.converge = function (name, playerId, args) {
     delete this.registry[playerId]
     delete this.url[playerId]
   }
+  /**
+   * when media resumed, also must set playerid
+   * since before resumed,this.curPlayerId may have changed
+   */
   if (name === 'resumed') {
     this.curPlayerId = playerId
   }
