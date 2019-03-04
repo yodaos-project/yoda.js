@@ -5,6 +5,7 @@ var querystring = require('querystring')
 var safeParse = require('@yoda/util').json.safeParse
 var EventEmitter = require('events')
 var property = require('@yoda/property')
+var _ = require('@yoda/util')._
 
 /**
  * handle all custom-config
@@ -13,10 +14,20 @@ class CustomConfig extends EventEmitter {
   constructor (runtime) {
     super()
     this.runtime = runtime
+    this.voiceActivatedAppId = null
     this.runtime.component.lifetime.on('eviction', (appId, form) => {
-      if (form === 'cut' && property.get('persist.sys.pickupswitch') === 'open') {
-        this.runtime.setPickup(true, 6000, false)
+      if (appId !== this.voiceActivatedAppId) {
+        return
       }
+      this.voiceActivatedAppId = null
+      if (form !== 'cut') {
+        return
+      }
+      if (property.get('persist.sys.pickupswitch') !== 'open') {
+        return
+      }
+      logger.info('open pick up for continuous dialog.')
+      this.runtime.setPickup(true, 6000, false)
     })
   }
 
@@ -108,6 +119,13 @@ class CustomConfig extends EventEmitter {
   runtimeDidResumeFromSleep () {
     return this.runtime.openUrl('yoda-skill://custom-config/reload',
       { preemptive: false })
+  }
+
+  runtimeWillDispatchNlpIntent (appId, text, nlp, action, options) {
+    if (_.get(options, 'source') === 'voice') {
+      this.voiceActivatedAppId = appId
+    }
+    return false
   }
 }
 

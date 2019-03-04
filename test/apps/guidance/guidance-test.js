@@ -14,7 +14,7 @@ function testWrap (title, intent, slots) {
           t.notEqual(text, undefined)
           return Promise.resolve([this.ttsId++])
         })
-        runtime.onVoiceCommand('', {intent: intent, slots: slots, appId: '3C5AF934560C46CA968AA7AD067C8B9A'})
+        runtime.handleNlpIntent('', {intent: intent, slots: slots, appId: '3C5AF934560C46CA968AA7AD067C8B9A'})
       })
     t.end()
   })

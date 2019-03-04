@@ -60,7 +60,7 @@ Object.assign(ActivityTestDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function nlpCommand (nlp, action) {
-        return this._runtime.onVoiceCommand('@test', nlp, action)
+        return this._runtime.handleNlpIntent('@test', nlp, action)
       }
     }
   }
