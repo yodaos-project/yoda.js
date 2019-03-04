@@ -425,7 +425,7 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
   }
 
   return future
-    .then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action, { source: 'voice' }))
+    .then(() => this.runtime.handleNlpIntent(data.asr, data.nlp, data.action, { source: 'voice' }))
     .then(success => {
       this.component.light.stop('@yoda', 'system://loading.js')
       if (success) {

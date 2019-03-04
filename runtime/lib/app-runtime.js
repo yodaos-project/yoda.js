@@ -539,11 +539,11 @@ AppRuntime.prototype.stopMonologue = function (appId) {
  * @param {object} nlp
  * @param {object} action
  * @param {object} [options]
- * @param {'voice' | 'text' | string} [options.source] - voice command source
+ * @param {'voice' | 'text' | undefined} [options.source] - nlp intent source
  * @param {boolean} [options.preemptive]
  * @param {boolean} [options.carrierId]
  */
-AppRuntime.prototype.onVoiceCommand = function (text, nlp, action, options) {
+AppRuntime.prototype.handleNlpIntent = function (text, nlp, action, options) {
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
     return Promise.resolve(false)
@@ -570,7 +570,7 @@ AppRuntime.prototype.onVoiceCommand = function (text, nlp, action, options) {
     return Promise.resolve(false)
   }
 
-  return this.component.dispatcher.delegate('runtimeWillDispatchVoiceCommand', [ appId, text, nlp, action, options ])
+  return this.component.dispatcher.delegate('runtimeWillDispatchNlpIntent', [ appId, text, nlp, action, options ])
     .then(delegation => {
       if (delegation) {
         return true
@@ -585,6 +585,7 @@ AppRuntime.prototype.onVoiceCommand = function (text, nlp, action, options) {
       )
     })
 }
+AppRuntime.prototype.onVoiceCommand = AppRuntime.prototype.handleNlpIntent
 
 /**
  *
@@ -923,7 +924,7 @@ AppRuntime.prototype.voiceCommand = function (text, options) {
          */
         future = this.component.lifetime.setBackgroundById(appId)
       }
-      return future.then(() => this.onVoiceCommand(text, nlp, action, {
+      return future.then(() => this.handleNlpIntent(text, nlp, action, {
         carrierId: isTriggered ? appId : undefined
       }))
     })
@@ -1049,7 +1050,7 @@ AppRuntime.prototype.onForward = function (message) {
       }
     }
   }
-  this.onVoiceCommand('', mockNlp, mockAction, { preemptive: preemptive })
+  this.handleNlpIntent('', mockNlp, mockAction, { preemptive: preemptive })
 }
 
 /**

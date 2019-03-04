@@ -121,7 +121,7 @@ class CustomConfig extends EventEmitter {
       { preemptive: false })
   }
 
-  runtimeWillDispatchVoiceCommand (appId, text, nlp, action, options) {
+  runtimeWillDispatchNlpIntent (appId, text, nlp, action, options) {
     if (_.get(options, 'source') === 'voice') {
       this.voiceActivatedAppId = appId
     }
