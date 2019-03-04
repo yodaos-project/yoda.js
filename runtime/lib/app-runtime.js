@@ -933,12 +933,15 @@ AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
   var clearContext = _.get(options, 'clearContext', false)
   var ignoreKeptAlive = _.get(options, 'ignoreKeptAlive', false)
   if (clearContext) {
-    if (appId === this.component.appLoader.getAppIdBySkillId(this.domain.scene)) {
-      this.updateCloudStack('', 'scene', { isActive: false })
-    }
-    if (appId === this.component.appLoader.getAppIdBySkillId(this.domain.cut)) {
-      this.updateCloudStack('', 'cut', { isActive: false })
-    }
+    ['scene', 'cut'].forEach(it => {
+      var expectedAppId = this.component.appLoader.getAppIdBySkillId(this.domain[it])
+      if (appId === '@yoda/cloudappclient' && expectedAppId == null) {
+        this.updateCloudStack('', it, { isActive: false })
+      }
+      if (appId === expectedAppId) {
+        this.updateCloudStack('', it, { isActive: false })
+      }
+    })
   }
   return this.component.lifetime.deactivateAppById(appId, { force: ignoreKeptAlive })
 }
