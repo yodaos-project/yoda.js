@@ -1207,11 +1207,11 @@ AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
           this.disableRuntimeFor('welcoming')
           logger.info('announcing welcome')
           return this.setMicMute(false, { silent: true })
-            .then(() => {
-              this.component.light.play('@yoda', 'system://setWelcome.js')
-                .then(() => this.component.light.stop('@yoda', 'system://boot.js'))
-              return this.component.light.appSound('@yoda', 'system://startup0.ogg')
-            })
+            //.then(() => {
+            //  this.component.light.play('@yoda', 'system://setWelcome.js')
+            //    .then(() => this.component.light.stop('@yoda', 'system://boot.js'))
+            //  return this.component.light.appSound('@yoda', 'system://startup0.ogg')
+            //})
             .then(() => {
               this.enableRuntimeFor('welcoming')
             })
