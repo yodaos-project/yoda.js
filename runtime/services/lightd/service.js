@@ -345,7 +345,6 @@ Light.prototype.canRender = function (uri, zIndex) {
   if (this.prevUri) {
     var isPrevSystemUri = this.isSystemURI(this.prevUri)
     var isSystemUri = this.isSystemURI(uri)
-    console.log('prev cur', isPrevSystemUri, isSystemUri, this.prevZIndex)
     // systemspace is always higher than userspace
     if (isSystemUri && !isPrevSystemUri) {
       return true
