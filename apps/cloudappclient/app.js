@@ -142,6 +142,9 @@ module.exports = activity => {
             })
         }
         activity.media.resume(pm.getByAppId(dt.data.appId))
+          .catch((err) => {
+            logger.error(`[cac-dt] activity.media.resume error: ${err}`)
+          })
         next()
       } else {
         mediaClient.start(dt.data.item.url, { multiple: true }, function (name, args) {
