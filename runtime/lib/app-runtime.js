@@ -935,10 +935,8 @@ AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
   if (clearContext) {
     ['scene', 'cut'].forEach(it => {
       var expectedAppId = this.component.appLoader.getAppIdBySkillId(this.domain[it])
-      if (appId === '@yoda/cloudappclient' && expectedAppId == null) {
-        this.updateCloudStack('', it, { isActive: false })
-      }
-      if (appId === expectedAppId) {
+      if ((appId === '@yoda/cloudappclient' && expectedAppId == null) ||
+          appId === expectedAppId) {
         this.updateCloudStack('', it, { isActive: false })
       }
     })
