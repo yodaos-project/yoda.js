@@ -1,5 +1,6 @@
 'use strict'
 var flora = require('./singleton-flora')
+
 /**
  * base config class
  */
@@ -40,4 +41,30 @@ class BaseConfig {
   }
 }
 
-module.exports = BaseConfig
+/**
+ * request checker
+ */
+class RequestChecker {
+  constructor () {
+    this.requestID = RequestChecker.reqID++
+  }
+
+  /**
+   * do check
+   * @param future {Promise<T>}
+   * @return {Promise<T | never>}
+   */
+  do (future) {
+    return future.then((res) => {
+      if (this.requestID === RequestChecker.reqID - 1) {
+        return Promise.resolve(res)
+      } else {
+        return Promise.reject(new Error(`request abort`))
+      }
+    })
+  }
+}
+RequestChecker.reqID = 0
+
+module.exports.BaseConfig = BaseConfig
+module.exports.RequestChecker = RequestChecker

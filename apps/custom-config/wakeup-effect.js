@@ -5,7 +5,8 @@ var fs = require('fs')
 var _ = require('@yoda/util')._
 var promisify = require('util').promisify
 var ActivationConfig = require('@yoda/env')().activation
-var BaseConfig = require('./base-config')
+var BaseConfig = require('./base-config').BaseConfig
+var RequestChecker = require('./base-config').RequestChecker
 var Caps = require('@yoda/caps/caps.node').Caps
 var property = require('@yoda/property')
 var safeParse = require('@yoda/util').json.safeParse
@@ -13,14 +14,14 @@ var mkdirp = require('@yoda/util').fs.mkdirp
 var logger = require('logger')('custom-config-wakeup')
 var flora = require('./singleton-flora')
 
-var AWAKE_EFFECT_DEFAULT = '0'
+// var AWAKE_EFFECT_DEFAULT = '0'
 var AWAKE_EFFECT_CUSTOM = '1'
 var AWAKE_EFFECT = 'rokid.custom_config.wakeup_sound'
 
 var WAKE_SOUND_OPEN_DEFAULT = '唤醒应答已设置为默认声音'
 var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>你录制的声音'
+var WAKE_SOUND_OPEN = '已为你开启'
 var WAKE_SOUND_CLOSE = '已关闭唤醒应答'
-var CONFIG_FAILED = '设置失败'
 var SWITCH_OPEN = 'open'
 var SWITCH_CLOSE = 'close'
 
@@ -202,8 +203,30 @@ class WakeupEffect extends BaseConfig {
    * @param {string} action - 'open'/'close'
    */
   onWakeupEffectStatusChangedFromIntent (action) {
-    property.set('sys.wakeupwitch', action, 'persist')
-    this.refresh()
+    if (action === SWITCH_CLOSE || action === SWITCH_OPEN) {
+      property.set('sys.wakeupwitch', action, 'persist')
+      if (action === SWITCH_CLOSE) {
+        logger.info('wakeup effect turned off')
+        this.notifyActivation([])
+        return this.activity.tts.speak(WAKE_SOUND_CLOSE)
+      } else {
+        return this.getFileList().then((fileList) => {
+          if (!Array.isArray(fileList)) {
+            fileList = []
+          }
+          this.notifyActivation(fileList)
+          if (property.get('sys.wakeupsound', 'persist') === AWAKE_EFFECT_CUSTOM) {
+            logger.info('custom wakeup effect turned on')
+          } else {
+            logger.info('default wakeup effect turned on')
+          }
+        }).then(() => {
+          return this.activity.tts.speak(WAKE_SOUND_OPEN)
+        })
+      }
+    } else {
+      return Promise.reject(new Error(`invalid intent '${action}'`))
+    }
   }
 
   /**
@@ -249,7 +272,9 @@ class WakeupEffect extends BaseConfig {
   onWakeupEffectStatusChangedFromUrl (queryObj) {
     if (typeof queryObj === 'object' && typeof queryObj.param === 'string') {
       var realQueryObj = safeParse(queryObj.param)
-      this.applyWakeupEffect(realQueryObj, queryObj.isFirstLoad)
+      return this.applyWakeupEffect(realQueryObj, queryObj.isFirstLoad)
+    } else {
+      return Promise.reject(new Error(`invalid queryObj: ${JSON.stringify(queryObj)}`))
     }
   }
 
@@ -257,64 +282,56 @@ class WakeupEffect extends BaseConfig {
    * apply changes
    * @param queryObj - query object
    * @param isFirstLoad -
+   * @return {promise}
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
-    if (typeof queryObj === 'object' && typeof queryObj.action === 'string') {
-      property.set('sys.wakeupswitch', queryObj.action, 'persist')
-      if (typeof queryObj.type === 'string') {
-        property.set('sys.wakeupsound', queryObj.type, 'persist')
-      }
-      if (queryObj.action === SWITCH_CLOSE) {
-        this.notifyActivation([])
-      } else {
-        if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
-          if (Array.isArray(queryObj.wakeupSoundEffects) && queryObj.wakeupSoundEffects.length !== 0) {
-            for (var i = 0; i < queryObj.wakeupSoundEffects.length; ++i) {
-              if (typeof queryObj.wakeupSoundEffects[i].wakeupUrl !== 'string' ||
-                typeof queryObj.wakeupSoundEffects[i].wakeupId !== 'string') {
-                logger.warn('custom wakeupSoundEffects field type error: ', queryObj)
-                return
-              }
-            }
-          } else {
-            logger.warn('custom wakeupSoundEffects should be array : ', queryObj)
-            return
-          }
-          mkdirpAsync(ActivationConfig.customPath).then(() => {
-            return clearDir(ActivationConfig.customPath)
-          }).then(() => {
-            return downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath)
-          }).then((fileList) => {
-            this.notifyActivation(fileList)
-          }).catch((err) => {
-            logger.warn(`download custom wakeup sound error: ${err}`)
-          })
-        } else {
-          if (queryObj.type === AWAKE_EFFECT_DEFAULT &&
-            Array.isArray(queryObj.wakeupSoundEffects) &&
-            queryObj.wakeupSoundEffects.length === 0) {
-            this.getFileList().then((fileList) => {
-              this.notifyActivation(fileList)
-            })
-          } else {
-            logger.warn('default wakeupSoundEffects should be array with size 0: ', queryObj)
-            return
-          }
-        }
-      }
-
+    var checker = new RequestChecker()
+    if (typeof queryObj !== 'object' || typeof queryObj.action !== 'string') {
+      return Promise.reject(new Error('invalid config object'))
+    }
+    property.set('sys.wakeupswitch', queryObj.action, 'persist')
+    if (typeof queryObj.type === 'string') {
+      property.set('sys.wakeupsound', queryObj.type, 'persist')
+    }
+    if (queryObj.action === SWITCH_CLOSE) {
+      this.notifyActivation([])
       if (!isFirstLoad) {
-        if (queryObj.action === SWITCH_OPEN) {
-          if (typeof queryObj.type === 'string' && queryObj.type === AWAKE_EFFECT_CUSTOM) {
-            this.activity.tts.speak(WAKE_SOUND_OPEN_CUSTOM).then(() => this.activity.exit())
-          } else {
-            this.activity.tts.speak(WAKE_SOUND_OPEN_DEFAULT).then(() => this.activity.exit())
+        return this.activity.tts.speak(WAKE_SOUND_CLOSE)
+      }
+    } else {
+      // custom awake effect
+      if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
+        if (Array.isArray(queryObj.wakeupSoundEffects) && queryObj.wakeupSoundEffects.length !== 0) {
+          for (var i = 0; i < queryObj.wakeupSoundEffects.length; ++i) {
+            if (typeof queryObj.wakeupSoundEffects[i].wakeupUrl !== 'string' ||
+              typeof queryObj.wakeupSoundEffects[i].wakeupId !== 'string') {
+              return Promise.reject(
+                new Error(`custom wakeupSoundEffects field type error: ${JSON.stringify(queryObj)}`)
+              )
+            }
           }
-        } else if (queryObj.action === SWITCH_CLOSE) {
-          this.activity.tts.speak(WAKE_SOUND_CLOSE).then(() => this.activity.exit())
         } else {
-          this.activity.tts.speak(CONFIG_FAILED).then(() => this.activity.exit())
+          return Promise.reject(
+            new Error(`custom wakeupSoundEffects should be array : ${JSON.stringify(queryObj)}`)
+          )
         }
+        return checker.do(mkdirpAsync(ActivationConfig.customPath)).then(() => {
+          return checker.do(clearDir(ActivationConfig.customPath))
+        }).then(() => {
+          return checker.do(downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath))
+        }).then((fileList) => {
+          this.notifyActivation(fileList)
+          if (!isFirstLoad) {
+            return this.activity.tts.speak(WAKE_SOUND_OPEN_CUSTOM)
+          }
+        })
+      } else { // default awake effect
+        return checker.do(this.getFileList()).then((fileList) => {
+          this.notifyActivation(fileList)
+          if (!isFirstLoad) {
+            return this.activity.tts.speak(WAKE_SOUND_OPEN_DEFAULT)
+          }
+        })
       }
     }
   }

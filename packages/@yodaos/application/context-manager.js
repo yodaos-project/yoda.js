@@ -21,6 +21,7 @@ class ContextManager extends EventEmitter {
     })
 
     this.activity.on('request', this.onRequest.bind(this))
+    this.activity.on('url', this.onUrl.bind(this))
   }
 
   /**
@@ -60,6 +61,14 @@ class ContextManager extends EventEmitter {
   onRequest (nlp, action) {
     var ctx = this.constructContext('request', { nlp: nlp, action: action })
     this.emit('request', ctx)
+  }
+
+  /**
+   * @private
+   */
+  onUrl (urlObj) {
+    var ctx = this.constructContext('url', { urlObj: urlObj })
+    this.emit('url', ctx)
   }
 
   /**

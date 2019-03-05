@@ -1,5 +1,5 @@
 'use strict'
-var BaseConfig = require('./base-config')
+var BaseConfig = require('./base-config').BaseConfig
 
 var SWITCH_VT_UPDATE = 'update'
 var SWITCH_VT_ADD = 'add'
@@ -46,7 +46,7 @@ class VtWord extends BaseConfig {
       logger.info(`vt words in ${queryObj}`)
     }
     if (!realQueryObj || !(realQueryObj instanceof Array)) {
-      return
+      return Promise.reject(new Error(`invalid queryObj: ${queryObj}`))
     }
     realQueryObj = realQueryObj[0]
     if (!isFirstLoad && realQueryObj.action) {
@@ -65,7 +65,7 @@ class VtWord extends BaseConfig {
         this.sendDeleteStatusToServer(realQueryObj)
         this.sendSuccessStatusToApp(realQueryObj, true)
       }
-      this.activity.exit()
+      return Promise.resolve()
     } else if (isFirstLoad) {
       if (realQueryObj.action === SWITCH_VT_UPDATE) {
         logger.info(`turen update first load ${realQueryObj.txt}`)
@@ -76,7 +76,7 @@ class VtWord extends BaseConfig {
       } else if (realQueryObj.action === SWITCH_VT_DELETE) {
         this.activity.turen.deleteVtWord(realQueryObj.txt)
       }
-      this.activity.exit()
+      return Promise.resolve()
     }
   }
 

@@ -38,6 +38,7 @@ test('should exit activity while all contexts are exited', t => {
   var cm = new ContextManager(activity)
   var nlp = { intent: 'foo' }
   var action = { foo: 'bar' }
+  var urlObj = {}
 
   cm.on('request', ctx => {
     ++activeContexts
@@ -46,7 +47,15 @@ test('should exit activity while all contexts are exited', t => {
       ctx.exit()
     }, 0)
   })
+  cm.on('url', ctx => {
+    ++activeContexts
+    setTimeout(() => {
+      --activeContexts
+      ctx.exit()
+    }, 0)
+  })
   _.times(10).forEach(() => activity.emit('request', nlp, action))
+  _.times(10).forEach(() => activity.emit('url', urlObj))
 })
 
 test('should clear contexts on activity destroy', t => {

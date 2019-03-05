@@ -1,6 +1,6 @@
 'use strict'
 var property = require('@yoda/property')
-var BaseConfig = require('./base-config')
+var BaseConfig = require('./base-config').BaseConfig
 var logger = require('logger')('custom-config-g-sensor')
 
 /**
@@ -23,14 +23,12 @@ class GSensor extends BaseConfig {
    * @param {object} queryObj
    */
   onGSensorSwitchChanged (queryObj) {
-    if (queryObj) {
-      if (queryObj.action) {
-        logger.info(`GSensor is turned ${(queryObj.action === 'open' ? 'on' : 'off')}`)
-        property.set('sys.gsensor', queryObj.action, 'persist')
-      }
-    }
-    if (!queryObj.isFirstLoad) {
-      this.activity.exit()
+    if (queryObj && queryObj.action) {
+      logger.info(`GSensor is turned ${(queryObj.action === 'open' ? 'on' : 'off')}`)
+      property.set('sys.gsensor', queryObj.action, 'persist')
+      return Promise.resolve()
+    } else {
+      return Promise.reject(new Error(`invalid queryObj ${JSON.stringify(queryObj)}`))
     }
   }
 }

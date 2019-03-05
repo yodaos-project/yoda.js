@@ -1,7 +1,6 @@
 'use strict'
 var property = require('@yoda/property')
-var BaseConfig = require('./base-config')
-var logger = require('logger')('custom-config-continuous-dialog')
+var BaseConfig = require('./base-config').BaseConfig
 
 /**
  * continuous dialog handler
@@ -41,8 +40,10 @@ class ContinuousDialog extends BaseConfig {
    * @param {object} queryObj
    */
   onPickupSwitchStatusChanged (queryObj) {
-    if (queryObj) {
-      this.applyPickupSwitch(false, queryObj.action, queryObj.isFirstLoad)
+    if (queryObj && typeof queryObj.action === 'string') {
+      return this.applyPickupSwitch(false, queryObj.action, queryObj.isFirstLoad)
+    } else {
+      return Promise.reject(new Error(`invalid queryObj ${JSON.stringify(queryObj)}`))
     }
   }
 
@@ -51,6 +52,7 @@ class ContinuousDialog extends BaseConfig {
    * @param {boolean} isFromIntent
    * @param {string} action
    * @param {boolean} isFirstLoad
+   * @return {promise}
    */
   applyPickupSwitch (isFromIntent, action, isFirstLoad) {
     if (action) {
@@ -58,7 +60,7 @@ class ContinuousDialog extends BaseConfig {
       if (!isFirstLoad) {
         if (this.tts.hasOwnProperty(action)) {
           if (isFromIntent) {
-            this.activity.tts.speak(this.tts[action]).then(() => {
+            return this.activity.tts.speak(this.tts[action]).then(() => {
               return this.activity.httpgw.request(
                 '/v1/device/deviceManager/addOrUpdateDeviceInfo',
                 {
@@ -68,19 +70,16 @@ class ContinuousDialog extends BaseConfig {
                   }
                 },
                 {})
-            }).then((data) => {
-              this.activity.exit()
-            }).catch((err) => {
-              logger.warn(`request cloud api error: ${err}`)
-              this.activity.exit()
             })
           } else {
-            this.activity.tts.speak(this.tts[action]).then(() => this.activity.exit())
+            return this.activity.tts.speak(this.tts[action])
           }
         } else {
-          this.activity.tts.speak(this.tts.error).then(() => this.activity.exit())
+          return this.activity.tts.speak(this.tts.error)
         }
       }
+    } else {
+      return Promise.reject(new Error(`invalid action ${action}`))
     }
   }
 }

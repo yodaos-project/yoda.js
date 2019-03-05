@@ -1,6 +1,6 @@
 'use strict'
 var property = require('@yoda/property')
-var BaseConfig = require('./base-config')
+var BaseConfig = require('./base-config').BaseConfig
 var logger = require('logger')('custom-config-standby')
 
 var STANDBY_LIGHT_JS = 'system://setSysStandby.js'
@@ -61,8 +61,10 @@ class StandbyLight extends BaseConfig {
    * @param {object} queryObj
    */
   onStandbyLightSwitchStatusChanged (queryObj) {
-    if (queryObj) {
-      this.applyStandbyLightSwitch(false, queryObj.action, queryObj.isFirstLoad)
+    if (queryObj && typeof queryObj.action === 'string') {
+      return this.applyStandbyLightSwitch(false, queryObj.action, queryObj.isFirstLoad)
+    } else {
+      return Promise.reject(new Error(`invalid queryObj ${JSON.stringify(queryObj)}`))
     }
   }
 
@@ -73,7 +75,7 @@ class StandbyLight extends BaseConfig {
    * @param {boolean} isFirstLoad
    */
   applyStandbyLightSwitch (isFromIntent, action, isFirstLoad) {
-    if (action) {
+    if (action === SWITCH_OPEN || action === SWITCH_CLOSE) {
       property.set('sys.standbylightswitch', action, 'persist')
       if (action === SWITCH_OPEN) {
         logger.info('standby light turned on')
@@ -85,7 +87,7 @@ class StandbyLight extends BaseConfig {
       if (!isFirstLoad) {
         if (this.tts.hasOwnProperty(action)) {
           if (isFromIntent) {
-            this.activity.tts.speak(this.tts[action]).then(() => {
+            return this.activity.tts.speak(this.tts[action]).then(() => {
               return this.activity.httpgw.request(
                 '/v1/device/deviceManager/addOrUpdateDeviceInfo',
                 {
@@ -94,19 +96,18 @@ class StandbyLight extends BaseConfig {
                     standbyLight: `{"action":"${action}"}`
                   }
                 }, {})
-            }).then((data) => {
-              this.activity.exit()
-            }).catch((err) => {
-              logger.warn(`request cloud api error: ${err}`)
-              this.activity.exit()
             })
           } else {
-            this.activity.tts.speak(this.tts[action]).then(() => this.activity.exit())
+            return this.activity.tts.speak(this.tts[action])
           }
         } else {
-          this.activity.tts.speak(this.tts.error).then(() => this.activity.exit())
+          return this.activity.tts.speak(this.tts.error)
         }
+      } else {
+        return Promise.resolve()
       }
+    } else {
+      return Promise.reject(new Error(`invalid action: ${action}`))
     }
   }
 }

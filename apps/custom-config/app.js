@@ -6,8 +6,10 @@ var StandbyLight = require('./standby-light')
 var ContinuousDialog = require('./continuous-dialog')
 var VtWord = require('./vt-word')
 var GSensor = require('./g-sensor')
+var ContextManager = require('@yodaos/application/context-manager')
 
 module.exports = function CustomConfig (activity) {
+  var ctxMgr = new ContextManager(activity)
   var intentMap = {}
   var urlMap = {}
   var processorList = []
@@ -33,14 +35,15 @@ module.exports = function CustomConfig (activity) {
     Object.assign(urlMap, tmpUrlMap)
   }
   activity.on('ready', onReady)
-  activity.on('request', onRequest)
-  activity.on('url', onUrl)
+  ctxMgr.on('request', onRequest)
+  ctxMgr.on('url', onUrl)
 
   /**
    * skill url was requested
-   * @param {object} urlObj - skill url
+   * @param {object} ctx - context
    */
-  function onUrl (urlObj) {
+  function onUrl (ctx) {
+    var urlObj = ctx.urlObj
     var queryObj = urlObj.query
     var path = ''
     if (urlObj.pathname && urlObj.pathname.length > 0) {
@@ -67,9 +70,15 @@ module.exports = function CustomConfig (activity) {
     } else {
       var func = urlMap[path]
       if (func) {
-        func(queryObj)
+        func(queryObj).then(() => {
+          ctx.exit()
+        }).catch((err) => {
+          logger.warn(err)
+          ctx.exit()
+        })
       } else {
         logger.warn(`skill url [${path}] is not hit`)
+        ctx.exit()
       }
     }
   }
@@ -87,18 +96,24 @@ module.exports = function CustomConfig (activity) {
 
   /**
    * intent request
-   * @param {string} nlp - request nlp
-   * @param {string} action - request action
+   * @param {object} ctx - context
    */
-  function onRequest (nlp, action) {
+  function onRequest (ctx) {
+    var nlp = ctx.nlp
     var intent = nlp.intent
     var actionValue = _.get(nlp, 'slots.open.type') || _.get(nlp, 'slots.close.type')
     logger.info(`request---->intent: ${intent};   action:  + ${actionValue}`)
     var func = intentMap[intent]
     if (func) {
-      func(actionValue)
+      func(actionValue).then(() => {
+        ctx.exit()
+      }).catch((err) => {
+        logger.warn(err)
+        ctx.exit()
+      })
     } else {
       logger.warn(`intent [${intent}] is not hit`)
+      ctx.exit()
     }
   }
 }
