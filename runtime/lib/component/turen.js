@@ -6,6 +6,7 @@ var manifest = require('@yoda/manifest')
 
 var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
 var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
+var Caps = require('@yoda/caps/caps.node').Caps
 
 module.exports = Turen
 function Turen (runtime) {
@@ -599,13 +600,18 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  * Add an activation word.
  * @param {string} activationTxt
  * @param {string} activationPy
+ * @param {float} margin_index, 1-100
+ * @param {boolean} cloud_confirm, 1/0
  */
-Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
-  this.component.flora.post(VT_WORDS_ADD_WORD_CHANNEL, [
-    activationWord,
-    activationPy,
-    1
-  ])
+Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy, margin_index, cloud_confirm) {
+  var msg = new Caps()
+  msg.write(activationWord)
+  msg.write(activationPy)
+  msg.writeInt32(1) // type of awake
+  msg.writeDouble(margin_index) //sensibility of awake
+  msg.writeInt32(cloud_confirm)
+  logger.info(`turen addVTWord, margin_index= ${margin_index} , cloud_confirm= ${cloud_confirm}`)
+  this.component.flora.post(VT_WORDS_ADD_WORD_CHANNEL, msg)
 }
 
 /**
