@@ -289,7 +289,6 @@ module.exports = function (activity) {
         template = {'currentDevice': a2dp.getConnectedDevice()}
       }
       sendMsgToApp(status, template)
-      activity.setBackground()
     },
     // 3.2 open and auto connect to history bluetooth speaker via source mode
     'connect_speaker': () => {

@@ -6,7 +6,7 @@ var helper = require('../helper')
 
 var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
 
-test.skip('test onVoiceCommand', (t) => {
+test.skip('test handleNlpIntent', (t) => {
   var testSceneCreate = new EventEmitter()
   var testSceneDestroy = new EventEmitter()
   var testCutInterrupt = new EventEmitter()
@@ -52,7 +52,7 @@ test.skip('test onVoiceCommand', (t) => {
     t.pass('@testSceneCreate should be request')
 
     // test scene destroy
-    runtime.onVoiceCommand('', {
+    runtime.handleNlpIntent('', {
       appId: 'testSceneDestroy',
       cloud: false
     }, {
@@ -74,7 +74,7 @@ test.skip('test onVoiceCommand', (t) => {
     t.pass('@testSceneDestroy should be request')
 
     // // test cut interrupt
-    runtime.onVoiceCommand('', {
+    runtime.handleNlpIntent('', {
       appId: 'testCutInterrupt',
       cloud: false
     }, {
@@ -110,7 +110,7 @@ test.skip('test onVoiceCommand', (t) => {
   })
 
   // test scene create
-  runtime.onVoiceCommand('', {
+  runtime.handleNlpIntent('', {
     appId: 'testSceneCreate',
     cloud: false
   }, {

@@ -1,7 +1,25 @@
 var logger = require('logger')('battery')
 
 /** ordered by priority */
-var lowPowerWaterMark = [ 8, 10, 20 ]
+var lowPowerWaterMarks = [
+  {
+    level: 8,
+    /** proactively push low power notifications but doesn't announce */
+    proactive: () => true,
+    preempt: () => false
+  },
+  {
+    level: 10,
+    /** proactively announce low power if not idle */
+    proactive: idle => !idle,
+    preempt: idle => !idle
+  },
+  {
+    level: 20,
+    /** lazily announce low power */
+    proactive: () => false
+  }
+]
 
 class Battery {
   constructor (runtime) {
@@ -59,13 +77,21 @@ class Battery {
 
     var idle = this.component.lifetime.getCurrentAppId() == null
 
-    for (var markIdx in lowPowerWaterMark) {
-      var mark = lowPowerWaterMark[markIdx]
-      if (this.memoInfo.batLevel > mark && data.batLevel <= mark) {
-        this.shouldAnnounceLowPower = true
-        logger.info(`low power level water mark ${mark} applied`)
+    for (var markIdx in lowPowerWaterMarks) {
+      var option = lowPowerWaterMarks[markIdx]
+      var mark = option.level
+      if (this.memoInfo.batLevel <= mark || data.batLevel > mark) {
+        continue
+      }
+      if (option.proactive(idle)) {
+        logger.info(`proactive low power level water mark ${mark} applied`)
+        this.shouldAnnounceLowPower = false
+        this.runtime.openUrl(`yoda-skill://battery/low_power_${mark}?is_play=${!idle}`, { preemptive: option.preempt(idle) })
         break
       }
+      logger.info(`low power level water mark ${mark} applied`)
+      this.shouldAnnounceLowPower = true
+      break
     }
 
     if (this.memoInfo.batChargingOnline !== data.batChargingOnline) {
@@ -169,8 +195,8 @@ class Battery {
     this.shouldAnnounceLowPower = false
     var idle = this.component.lifetime.getCurrentAppId() == null
 
-    for (var markIdx in lowPowerWaterMark) {
-      var mark = lowPowerWaterMark[markIdx]
+    for (var markIdx in lowPowerWaterMarks) {
+      var mark = lowPowerWaterMarks[markIdx].level
       if (this.memoInfo.batLevel <= mark) {
         return this.runtime.openUrl(`yoda-skill://battery/low_power_${mark}?is_play=${!idle}`)
           .then(() => true)

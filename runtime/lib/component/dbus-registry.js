@@ -234,9 +234,7 @@ DBus.prototype.amsexport = {
         var data = JSON.parse(status)
         cb(null, true)
 
-        if (data.upgrade === true) {
-          this.runtime.startApp('@upgrade', {}, {})
-        } else if (this.component.custodian.isConfiguringNetwork()) {
+        if (this.component.custodian.isConfiguringNetwork()) {
           logger.info('recevice message with data', data)
           var filter = [
             'CTRL-EVENT-SCAN-STARTED',
@@ -437,7 +435,7 @@ DBus.prototype.amsexport = {
         .then(res => {
           var nlp = res[0]
           var action = res[1]
-          return this.runtime.onVoiceCommand(text, nlp, action)
+          return this.runtime.handleNlpIntent(text, nlp, action)
             .then(() => cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } })))
         })
         .catch(err => {
@@ -457,7 +455,7 @@ DBus.prototype.amsexport = {
       if (text == null || nlp == null || action == null) {
         return cb(null, JSON.stringify({ ok: false, message: 'Invalid Argument' }))
       }
-      this.runtime.onVoiceCommand(text, nlp, action)
+      this.runtime.handleNlpIntent(text, nlp, action)
         .then(
           () => cb(null, JSON.stringify({ ok: true, result: { nlp: nlp, action: action } })),
           err => {
