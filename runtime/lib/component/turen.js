@@ -605,8 +605,8 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  */
 Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy, margin_index, cloud_confirm) {
   var msg = new Caps()
-  msg.write(activationWord)
-  msg.write(activationPy)
+  msg.writeString(activationWord)
+  msg.writeString(activationPy)
   msg.writeInt32(1) // type of awake
   msg.writeDouble(margin_index) //sensibility of awake
   msg.writeInt32(cloud_confirm)
