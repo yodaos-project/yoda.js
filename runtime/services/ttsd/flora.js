@@ -5,6 +5,7 @@ var FloraComp = require('@yoda/flora/comp')
 var property = require('@yoda/property')
 var env = require('@yoda/env')()
 var _ = require('@yoda/util')._
+var profiler = require('@yoda/util/profiler')
 var floraConfig = require('/etc/yoda/flora-config.json')
 
 module.exports = Flora
@@ -137,6 +138,11 @@ Flora.prototype.remoteMethods = {
       'pausedReqIdOnAwaken'
     )
     res.end(0, [JSON.stringify(obj)])
+  },
+  'yoda.debug.heap_snapshot': function (reqMsg, res) {
+    logger.info('take heapsnapshot', reqMsg)
+    var fullpath = profiler.takeHeapSnapshot(reqMsg[0], 'ttsd')
+    res.end(0, [JSON.stringify({ ok: true, result: fullpath })])
   }
 }
 

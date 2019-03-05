@@ -3,6 +3,7 @@ var inherits = require('util').inherits
 
 var FloraComp = require('@yoda/flora/comp')
 var property = require('@yoda/property')
+var profiler = require('@yoda/util/profiler')
 
 var floraConfig = require('/etc/yoda/flora-config.json')
 
@@ -45,6 +46,14 @@ Flora.prototype.handlers = {
     var alphaFactor = msg[0]
     logger.info(`global alpha factor ${alphaFactor}`)
     this.light.manager.setGlobalAlphaFactor(alphaFactor)
+  }
+}
+
+Flora.prototype.remoteMethods = {
+  'yoda.debug.heap_snapshot': function (reqMsg, res) {
+    logger.info('take heapsnapshot', reqMsg)
+    var fullpath = profiler.takeHeapSnapshot(reqMsg[0], 'lightd')
+    res.end(0, [JSON.stringify({ ok: true, result: fullpath })])
   }
 }
 

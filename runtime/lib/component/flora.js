@@ -5,6 +5,7 @@ var inherits = require('util').inherits
 var floraFactory = require('@yoda/flora')
 var FloraComp = require('@yoda/flora/comp')
 var _ = require('@yoda/util')._
+var profiler = require('@yoda/util/profiler')
 
 var floraConfig = require('/etc/yoda/flora-config.json')
 var globalEnv = require('@yoda/env')()
@@ -38,6 +39,14 @@ Flora.prototype.handlers = {
     /** [ event, ttsId, Optional(errno) ] */
     msg.splice(2, 1)
     descriptor.tts.handleEvent.apply(descriptor.tts, msg)
+  }
+}
+
+Flora.prototype.remoteMethods = {
+  'yoda.debug.heap_snapshot': function (reqMsg, res) {
+    logger.info('take heapsnapshot', reqMsg)
+    var fullpath = profiler.takeHeapSnapshot(reqMsg[0], 'vui')
+    res.end(0, [JSON.stringify({ ok: true, result: fullpath })])
   }
 }
 
