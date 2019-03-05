@@ -6,7 +6,7 @@
   "SINK_OPEN_FAILED": "蓝牙暂时无法打开，稍候再试一次吧！",
   "PLEASE_WAIT": "请稍等……",
   "PLAY_FAILED_ARG1S": "暂时无法播放，请在%s上打开你想要播放的内容。",
-  "SOURCE_OPENED": "正在搜索你的蓝牙音箱……",
+  "SOURCE_OPENED": "正在搜索你的设备……",
   "SOURCE_FIRST_OPENED": "正在进行蓝牙搜索，请在若琪App中找到你想要连接的设备。",
   "SOURCE_OPEN_FAILED": "暂时无法进行蓝牙搜索，稍候再试一次吧！",
   "SOURCE_CONNECT_FAILED": "未能连上你的设备，请在若琪App中连接其它蓝牙音箱。",
