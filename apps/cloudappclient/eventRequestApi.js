@@ -1,6 +1,6 @@
 'use strict'
 
-var https = require('https')
+var httpsession = require('@yoda/httpsession')
 var crypto = require('crypto')
 var qs = require('querystring')
 var logger = require('logger')('cloudAppClient-eventReq')
@@ -55,36 +55,32 @@ function request (event, appId, options, onaction) {
 
   data = JSON.stringify(data)
   logger.log(`[eventReq-raw](${appId}, ${event}) body(${data})`)
-  var req = https.request({
+  var url = `https://${DEFAULT_HOST}${DEFAULT_URI}`
+  var reqOpt = {
     method: 'POST',
-    host: DEFAULT_HOST,
-    path: DEFAULT_URI,
     headers: {
       'Authorization': getAuth(),
       'Content-Type': 'application/json;charset=utf-8',
       'Content-Length': data.length
+    },
+    body: data
+  }
+  httpsession.request(url, reqOpt, (err, res) => {
+    if (err) {
+      onaction(err)
+      return
     }
-  }, (res) => {
-    var list = []
-    res.on('data', (chunk) => list.push(chunk))
-    res.on('end', () => {
-      var msg = Buffer.concat(list).toString()
-      if (res.statusCode !== 200) {
-        onaction(new Error(`Error: failed upload ${event} ${data} with ${msg}`))
-      } else {
-        logger.log(`[eventRes-raw](${appId}, ${event}) raw(${msg})`)
-        msg = JSON.parse(msg)
-        if (typeof onaction === 'function') {
-          onaction(null, msg.response)
-        }
+    var msg = res.body
+    if (res.code !== 200) {
+      onaction(new Error(`Error: failed upload ${event} ${data} with ${msg}`))
+    } else {
+      logger.log(`[eventRes-raw](${appId}, ${event}) raw(${msg})`)
+      msg = JSON.parse(msg)
+      if (typeof onaction === 'function') {
+        onaction(null, msg.response)
       }
-    })
+    }
   })
-  req.on('error', (err) => {
-    onaction(err)
-  })
-  req.write(data)
-  req.end()
 };
 
 function ttsEvent (name, appId, itemId, cb) {
