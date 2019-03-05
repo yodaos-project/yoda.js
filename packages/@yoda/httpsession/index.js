@@ -15,6 +15,7 @@ var native = require('./httpsession.node')
  * @param {string} [options.method]
  * @param {string} [options.body]
  * @param {number} [timeout]
+ * @param {boolean} [options.trust_all] trust all SSL certs
  * @param {object} [options.headers]
  * @param {function} [callback]
  */

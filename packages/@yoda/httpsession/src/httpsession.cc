@@ -218,6 +218,15 @@ static bool buildRequest(HttpSession::Request& req, napi_env env,
     return false;
   }
 
+  value = NAPI_GET_PROPERTY(env, options, "trust_all", nullptr, napi_boolean);
+  if (value) {
+      bool trust = false;
+      NAPI_CALL_BASE(env, napi_get_value_bool(env, value, &trust), false);
+      if (trust) {
+          req.verifyPolicy = HttpSession::SSLVerifyPolicy::VERIFY_NONE;
+      }
+  }
+
   return true;
 }
 
