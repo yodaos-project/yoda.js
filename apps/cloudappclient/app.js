@@ -351,6 +351,8 @@ module.exports = activity => {
     if (appId && intentType === 'EXIT') {
       logger.warn(`The intent value is [EXIT] with appId: [${appId}]`)
       sos.destroyByAppId(appId)
+      // clear domain locally and it will automatically upload to cloud
+      activity.exit({ clearContext: true })
       return
     }
     if (intentType === 'EXIT') {
