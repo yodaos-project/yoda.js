@@ -5,7 +5,6 @@ var LightRenderingContextManager = require('./effects')
 var AudioManager = require('@yoda/audio').AudioManager
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var helper = require('./helper')
-var light = require('@yoda/light')
 
 var LIGHT_SOURCE = '/opt/light/'
 var maxUserspaceLayers = 3
@@ -94,8 +93,7 @@ Light.prototype.stopPrev = function (keepLastFrame) {
   }
   // turn off LED if keepLastFrame not specified as true
   if (keepLastFrame !== true) {
-    light.clear()
-    light.write()
+    this.manager.clearLight()
   }
   this.prevZIndex = null
   this.prevUri = null
