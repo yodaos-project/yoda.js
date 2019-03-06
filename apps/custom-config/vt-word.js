@@ -45,6 +45,7 @@ class VtWord extends BaseConfig {
       isFirstLoad = true
       logger.info(`vt words in ${queryObj}`)
     }
+    logger.info('vt-word values= ', realQueryObj)
     if (!realQueryObj || !(realQueryObj instanceof Array)) {
       return
     }
