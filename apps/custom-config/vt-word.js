@@ -82,7 +82,7 @@ class VtWord extends BaseConfig {
     }
   }
 
-  assertVtWordValueValid(config) {
+  assertVtWordValueValid (config) {
     if (config) {
       if (!config.margin_index) {
         // set default margin-index to 50 as normal sensibility of awake
@@ -98,7 +98,7 @@ class VtWord extends BaseConfig {
    * call the cloud api: addOrUpdateDeviceInfo
    * @param {object} queryObj
    */
-  sendAddUpdateStatusToServer(queryObj) {
+  sendAddUpdateStatusToServer (queryObj) {
     var sendVtObj = {
       vt_words: JSON.stringify([{
         py: queryObj.py,

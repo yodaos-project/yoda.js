@@ -603,14 +603,13 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  * @param {float} margin_index, 1-100
  * @param {boolean} cloud_confirm, 1/0
  */
-Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy, margin_index, cloud_confirm) {
+Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy, marginIndex, cloudConfirm) {
   var msg = new Caps()
   msg.writeString(activationWord)
   msg.writeString(activationPy)
   msg.writeInt32(1) // type of awake
-  msg.writeDouble(margin_index) //sensibility of awake
-  msg.writeInt32(cloud_confirm)
-  logger.info(`turen addVTWord, margin_index= ${margin_index} , cloud_confirm= ${cloud_confirm}`)
+  msg.writeDouble(marginIndex) // sensibility of awake
+  msg.writeInt32(cloudConfirm)
   this.component.flora.post(VT_WORDS_ADD_WORD_CHANNEL, msg)
 }
 
