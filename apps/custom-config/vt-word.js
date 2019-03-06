@@ -50,6 +50,7 @@ class VtWord extends BaseConfig {
       return
     }
     realQueryObj = realQueryObj[0]
+    this.assertVtWordValueValid(realQueryObj) // set default value for undefine values
     if (!isFirstLoad && realQueryObj.action) {
       if (realQueryObj.action === SWITCH_VT_UPDATE) {
         logger.info(`turen update ${realQueryObj.txt}`)
@@ -81,11 +82,23 @@ class VtWord extends BaseConfig {
     }
   }
 
+  assertVtWordValueValid(config) {
+    if (config) {
+      if (!config.margin_index) {
+        // set default margin-index to 50 as normal sensibility of awake
+        config.margin_index = 50
+      } else if (!config.cloud_confirm) {
+        // set default value for cloud second confirm switcher to off
+        config.cloud_confirm = 0
+      }
+    }
+  }
+
   /**
    * call the cloud api: addOrUpdateDeviceInfo
    * @param {object} queryObj
    */
-  sendAddUpdateStatusToServer (queryObj) {
+  sendAddUpdateStatusToServer(queryObj) {
     var sendVtObj = {
       vt_words: JSON.stringify([{
         py: queryObj.py,
