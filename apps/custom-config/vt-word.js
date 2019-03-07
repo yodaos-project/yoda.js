@@ -87,7 +87,8 @@ class VtWord extends BaseConfig {
       if (typeof config.margin_index !== 'number') {
         // set default margin-index to 50 as normal sensibility of awake
         config.margin_index = 50
-      } else if (typeof config.cloud_confirm !== 'number') {
+      }
+      if (typeof config.cloud_confirm !== 'number') {
         // set default value for cloud second confirm switcher to off
         config.cloud_confirm = 0
       }
