@@ -61,6 +61,16 @@ module.exports = activity => {
           logger.log(`${skill.appId}: an error occur when destroy media ${err}`)
         })
     }
+    // continuous dialogue only for cloudappclient.
+    if (sos.skills.length > 1 && property.get('persist.sys.pickupswitch') === 'open') {
+      activity.setPickup(true)
+        .then(() => {
+          logger.warn(`success: open pickup for continuous dialogue after SKILL[${skill.appId}] exited.`)
+        })
+        .catch((err) => {
+          logger.warn(`failed: open pickup for continuous dialogue after SKILL[${skill.appId}] exited. err: ${err}`)
+        })
+    }
   })
   // for debug and test: save playerId map to property
   pm.on('update', (handle) => {
