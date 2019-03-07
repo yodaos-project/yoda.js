@@ -45,19 +45,21 @@ class VtWord extends BaseConfig {
       isFirstLoad = true
       logger.info(`vt words in ${queryObj}`)
     }
+    logger.info('vt-word values= ', realQueryObj)
     if (!realQueryObj || !(realQueryObj instanceof Array)) {
       return
     }
     realQueryObj = realQueryObj[0]
+    this.assertVtWordValueValid(realQueryObj) // set default value for undefine values
     if (!isFirstLoad && realQueryObj.action) {
       if (realQueryObj.action === SWITCH_VT_UPDATE) {
         logger.info(`turen update ${realQueryObj.txt}`)
         this.activity.turen.deleteVtWord(realQueryObj.oldTxt)
-        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py)
+        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py, realQueryObj.margin_index, realQueryObj.cloud_confirm)
         this.sendAddUpdateStatusToServer(realQueryObj)
         this.sendSuccessStatusToApp(realQueryObj, true)
       } else if (realQueryObj.action === SWITCH_VT_ADD) {
-        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py)
+        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py, realQueryObj.margin_index, realQueryObj.cloud_confirm)
         this.sendAddUpdateStatusToServer(realQueryObj)
         this.sendSuccessStatusToApp(realQueryObj, true)
       } else if (realQueryObj.action === SWITCH_VT_DELETE) {
@@ -70,13 +72,26 @@ class VtWord extends BaseConfig {
       if (realQueryObj.action === SWITCH_VT_UPDATE) {
         logger.info(`turen update first load ${realQueryObj.txt}`)
         this.activity.turen.deleteVtWord(realQueryObj.oldTxt)
-        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py)
+        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py, realQueryObj.margin_index, realQueryObj.cloud_confirm)
       } else if (realQueryObj.action === SWITCH_VT_ADD) {
-        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py)
+        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py, realQueryObj.margin_index, realQueryObj.cloud_confirm)
       } else if (realQueryObj.action === SWITCH_VT_DELETE) {
         this.activity.turen.deleteVtWord(realQueryObj.txt)
       }
       this.activity.exit()
+    }
+  }
+
+  assertVtWordValueValid (config) {
+    if (config) {
+      if (typeof config.margin_index !== 'number') {
+        // set default margin-index to 50 as normal sensibility of awake
+        config.margin_index = 50
+      }
+      if (typeof config.cloud_confirm !== 'number') {
+        // set default value for cloud second confirm switcher to off
+        config.cloud_confirm = 0
+      }
     }
   }
 
@@ -91,7 +106,10 @@ class VtWord extends BaseConfig {
         txt: queryObj.txt,
         oldTxt: queryObj.oldTxt,
         action: queryObj.action,
-        phoneme: ''
+        phoneme: '',
+        // add sensibility and cloud-confirm option of awake words
+        margin_index: queryObj.margin_index,
+        cloud_confirm: queryObj.cloud_confirm
       }])
     }
     if (this.cloudgw) {

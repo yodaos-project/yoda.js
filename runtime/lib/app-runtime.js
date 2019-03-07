@@ -539,10 +539,11 @@ AppRuntime.prototype.stopMonologue = function (appId) {
  * @param {object} nlp
  * @param {object} action
  * @param {object} [options]
+ * @param {'voice' | 'text' | undefined} [options.source] - nlp intent source
  * @param {boolean} [options.preemptive]
  * @param {boolean} [options.carrierId]
  */
-AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
+AppRuntime.prototype.handleNlpIntent = function (text, nlp, action, options) {
   if (_.get(nlp, 'appId') == null) {
     logger.log('invalid nlp/action, ignore')
     return Promise.resolve(false)
@@ -569,15 +570,22 @@ AppRuntime.prototype.onVoiceCommand = function (asr, nlp, action, options) {
     return Promise.resolve(false)
   }
 
-  return this.component.dispatcher.dispatchAppEvent(
-    appId,
-    'request', [ nlp, action ],
-    Object.assign({}, options, {
-      form: form,
-      skillId: nlp.appId
+  return this.component.dispatcher.delegate('runtimeWillDispatchNlpIntent', [ appId, text, nlp, action, options ])
+    .then(delegation => {
+      if (delegation) {
+        return true
+      }
+      return this.component.dispatcher.dispatchAppEvent(
+        appId,
+        'request', [ nlp, action ],
+        Object.assign({}, options, {
+          form: form,
+          skillId: nlp.appId
+        })
+      )
     })
-  )
 }
+AppRuntime.prototype.onVoiceCommand = AppRuntime.prototype.handleNlpIntent
 
 /**
  *
@@ -916,7 +924,7 @@ AppRuntime.prototype.voiceCommand = function (text, options) {
          */
         future = this.component.lifetime.setBackgroundById(appId)
       }
-      return future.then(() => this.onVoiceCommand(text, nlp, action, {
+      return future.then(() => this.handleNlpIntent(text, nlp, action, {
         carrierId: isTriggered ? appId : undefined
       }))
     })
@@ -990,29 +998,6 @@ AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
 }
 
 /**
- *
- * @param {string} skillId
- * @param {object} nlp
- * @param {object} action
- * @param {object} [options]
- * @param {boolean} [options.preemptive]
- */
-AppRuntime.prototype.startApp = function (skillId, nlp, action, options) {
-  nlp.cloud = false
-  nlp.appId = skillId
-  action = {
-    appId: skillId,
-    startWithActiveWord: false,
-    response: {
-      action: action || {}
-    }
-  }
-  action.response.action.appId = skillId
-  action.response.action.form = 'cut'
-  return this.onVoiceCommand('', nlp, action, options)
-}
-
-/**
  * handle mqtt forward message
  * @param {string} message string receive from mqtt
  */
@@ -1066,7 +1051,7 @@ AppRuntime.prototype.onForward = function (message) {
       }
     }
   }
-  this.onVoiceCommand('', mockNlp, mockAction, { preemptive: preemptive })
+  this.handleNlpIntent('', mockNlp, mockAction, { preemptive: preemptive })
 }
 
 /**

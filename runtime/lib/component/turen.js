@@ -6,6 +6,7 @@ var manifest = require('@yoda/manifest')
 
 var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
 var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
+var Caps = require('@yoda/caps/caps.node').Caps
 
 module.exports = Turen
 function Turen (runtime) {
@@ -424,7 +425,8 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
     })
   }
 
-  return future.then(() => this.runtime.onVoiceCommand(data.asr, data.nlp, data.action))
+  return future
+    .then(() => this.runtime.handleNlpIntent(data.asr, data.nlp, data.action, { source: 'voice' }))
     .then(success => {
       this.component.light.stop('@yoda', 'system://loading.js')
       if (success) {
@@ -441,6 +443,7 @@ Turen.prototype.handleNlpResult = function handleNlpResult (data) {
     }, err => {
       this.component.light.stop('@yoda', 'system://loading.js')
       logger.error('Unexpected error on open handling nlp', err.stack)
+      this.recoverPausedOnAwaken()
     })
 }
 
@@ -599,13 +602,17 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  * Add an activation word.
  * @param {string} activationTxt
  * @param {string} activationPy
+ * @param {float} marginIndex, 1-100
+ * @param {boolean} cloudConfirm, 1/0
  */
-Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
-  this.component.flora.post(VT_WORDS_ADD_WORD_CHANNEL, [
-    activationWord,
-    activationPy,
-    1
-  ])
+Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy, marginIndex, cloudConfirm) {
+  var msg = new Caps()
+  msg.writeString(activationWord)
+  msg.writeString(activationPy)
+  msg.writeInt32(1) // type of awake
+  msg.writeDouble(marginIndex) // sensibility of awake
+  msg.writeInt32(cloudConfirm)
+  this.component.flora.post(VT_WORDS_ADD_WORD_CHANNEL, msg)
 }
 
 /**

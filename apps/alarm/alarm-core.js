@@ -227,14 +227,14 @@ AlarmCore.prototype.restoreEventsDefaults = function () {
  * @param {String} Options alarm type
  */
 AlarmCore.prototype._taskCallback = function (option, mode) {
-  var state = wifi.getNetworkState()
+  var state = wifi.getWifiState()
   var tts = option.tts
   if (option.type === 'Remind') {
     tts = this.reminderTTS.join(',') + option.tts
     this.reminderTTS = []
     this.startTts = true
     this.activity.setForeground().then(() => {
-      if (state === wifi.NETSERVER_CONNECTED) {
+      if (state === wifi.WIFI_CONNECTED) {
         return this._ttsSpeak(tts || option.tts)
       }
     }).then(() => {
@@ -257,12 +257,12 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
   } else {
     this.activity.setForeground().then(() => {
       this.startTts = true
-      if (state === wifi.NETSERVER_CONNECTED) {
+      if (state === wifi.WIFI_CONNECTED) {
         return this._ttsSpeak(option.tts)
       }
     }).then(() => {
       logger.info('alarm start second media')
-      var ringUrl = state === wifi.NETSERVER_CONNECTED ? option.url : DEFAULT_ALARM_RING
+      var ringUrl = state === wifi.WIFI_CONNECTED ? option.url : DEFAULT_ALARM_RING
       this.activity.media.start(ringUrl, { streamType: 'alarm' })
       return this.activity.media.setLoopMode(true)
     }).then(() => {
@@ -305,12 +305,12 @@ AlarmCore.prototype._onTaskActive = function (option, mode) {
     this.activeOption = option
     this._preventEventsDefaults()
     this._controlVolume(10, 1000, 7)
-    var state = wifi.getNetworkState()
+    var state = wifi.getWifiState()
     var ringUrl = ''
     if (option.type === 'Remind') {
       ringUrl = DEFAULT_REMINDER_RING
     } else {
-      ringUrl = state === wifi.NETSERVER_CONNECTED ? option.url : DEFAULT_ALARM_RING
+      ringUrl = state === wifi.WIFI_CONNECTED ? option.url : DEFAULT_ALARM_RING
     }
     // send card to app
     request({
