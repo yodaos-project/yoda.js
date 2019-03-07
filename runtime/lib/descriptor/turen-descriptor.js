@@ -50,8 +50,8 @@ Object.assign(TurenDescriptor.prototype,
     addVtWord: {
       type: 'method',
       returns: 'promise',
-      fn: function addVtWord (activationTxt, activationPy) {
-        return this._runtime.component.turen.addVtWord(activationTxt, activationPy)
+      fn: function addVtWord (activationTxt, activationPy, marginIndex, cloudConfirm) {
+        return this._runtime.component.turen.addVtWord(activationTxt, activationPy, marginIndex, cloudConfirm)
       }
     },
 
