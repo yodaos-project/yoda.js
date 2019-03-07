@@ -129,6 +129,8 @@ module.exports = activity => {
   })
   directive.do('frontend', 'media', function (dt, next) {
     var playerId
+    // this is for medie.start event and speedchange event.
+    var eventDeferred = null
     logger.log(`exe dt: media.${dt.action}`)
     function setSpeed (speed) {
       return activity.media.setSpeed(speed, pm.getByAppId(dt.data.appId))
@@ -141,6 +143,10 @@ module.exports = activity => {
         logger.log(`play forward offset: ${dt.data.item.offsetInMilliseconds} mutiple: ${dt.data.item.playMultiple}`)
         if (+dt.data.item.playMultiple > 0) {
           setSpeed(+dt.data.item.playMultiple)
+            .then(() => {
+              playerId = pm.getByAppId(dt.data.appId)
+              pm.setDataByPlayerId(playerId, dt.data)
+            })
             .catch((err) => {
               logger.error(`[cac-dt] set speed failed with error: ${err}`)
             })
@@ -176,10 +182,13 @@ module.exports = activity => {
                   logger.error(`[cac-dt] set offset failed with error: ${err}`)
                 })
             }
-            sos.sendEventRequest('media', 'prepared', dt.data, {
-              itemId: _.get(dt, 'data.item.itemId'),
-              duration: args[0],
-              progress: args[1]
+            eventDeferred = new Promise((resolve, reject) => {
+              // should be always upload event to cloud even if prepard upload failed.
+              sos.sendEventRequest('media', 'prepared', dt.data, {
+                itemId: _.get(dt, 'data.item.itemId'),
+                duration: args[0],
+                progress: args[1]
+              }, resolve)
             })
           } else if (name === 'paused') {
             sos.sendEventRequest('media', 'paused', dt.data, {
@@ -216,11 +225,19 @@ module.exports = activity => {
               progress: args[1]
             })
           } else if (name === 'speedchange') {
-            sos.sendEventRequest('media', 'setspeed', dt.data, {
-              itemId: _.get(dt, 'data.item.itemId'),
-              duration: args[0],
-              progress: args[1],
-              speed: +dt.data.item.playMultiple
+            playerId = pm.getByAppId(dt.data.appId)
+            var data = pm.getDataByPlayerId(playerId)
+            if (eventDeferred === null) {
+              return
+            }
+            // The speedchange event should be upload after prepared event responded.
+            eventDeferred.then(() => {
+              sos.sendEventRequest('media', 'setspeed', dt.data, {
+                itemId: _.get(dt, 'data.item.itemId'),
+                duration: args[0],
+                progress: args[1],
+                speed: +data.item.playMultiple
+              })
             })
           }
         })
