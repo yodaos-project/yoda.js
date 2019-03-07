@@ -16,9 +16,6 @@ test('custodian state shall shifts', t => {
     reconnect: function () {
       t.pass('onNetworkConnect shall trigger runtime#reconnect')
     },
-    startApp: function () {
-      t.fail('runtime#startApp shall not be called since logged in')
-    },
     component: {
       appScheduler: {
         appMap: {}
@@ -98,7 +95,7 @@ test('custodian shall reset network', t => {
       t.fail('onNetworkConnect shall not trigger runtime#reconnect')
     },
     openUrl: function () {
-      t.pass('resetNetwork shall trigger runtime#startApp')
+      t.pass('resetNetwork shall trigger runtime#openUrl')
     },
     component: {
       appScheduler: {

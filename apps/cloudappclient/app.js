@@ -142,6 +142,9 @@ module.exports = activity => {
             })
         }
         activity.media.resume(pm.getByAppId(dt.data.appId))
+          .catch((err) => {
+            logger.error(`[cac-dt] activity.media.resume error: ${err}`)
+          })
         next()
       } else {
         mediaClient.start(dt.data.item.url, { multiple: true }, function (name, args) {
@@ -351,6 +354,8 @@ module.exports = activity => {
     if (appId && intentType === 'EXIT') {
       logger.warn(`The intent value is [EXIT] with appId: [${appId}]`)
       sos.destroyByAppId(appId)
+      // clear domain locally and it will automatically upload to cloud
+      activity.exit({ clearContext: true })
       return
     }
     if (intentType === 'EXIT') {

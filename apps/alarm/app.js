@@ -12,8 +12,8 @@ module.exports = function (activity) {
     logger.log('alarm notification event: ', channel)
     if (channel === 'on-ready' || channel === 'on-system-booted') {
       AlarmCore.createConfigFile()
-      var state = wifi.getNetworkState()
-      if (state === wifi.NETSERVER_CONNECTED) {
+      var state = wifi.getWifiState()
+      if (state === wifi.WIFI_CONNECTED) {
         getAlarms(activity, (command) => AlarmCore.init(command, true))
       } else {
         AlarmCore.getTasksFromConfig((command) => {
