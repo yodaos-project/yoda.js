@@ -84,10 +84,10 @@ class VtWord extends BaseConfig {
 
   assertVtWordValueValid (config) {
     if (config) {
-      if (!config.margin_index) {
+      if (typeof config.margin_index !== 'number') {
         // set default margin-index to 50 as normal sensibility of awake
         config.margin_index = 50
-      } else if (!config.cloud_confirm) {
+      } else if (typeof config.cloud_confirm !== 'number') {
         // set default value for cloud second confirm switcher to off
         config.cloud_confirm = 0
       }
