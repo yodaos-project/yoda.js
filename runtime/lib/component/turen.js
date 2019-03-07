@@ -600,8 +600,8 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  * Add an activation word.
  * @param {string} activationTxt
  * @param {string} activationPy
- * @param {float} margin_index, 1-100
- * @param {boolean} cloud_confirm, 1/0
+ * @param {float} marginIndex, 1-100
+ * @param {boolean} cloudConfirm, 1/0
  */
 Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy, marginIndex, cloudConfirm) {
   var msg = new Caps()
