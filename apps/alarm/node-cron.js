@@ -27,27 +27,22 @@ module.exports = (function () {
     function compareTask (id, current, refered) {
       var currentInterval = CronExpression.parseSync(current.expression)
       var referedInterval = CronExpression.parseSync(refered.expression)
-
       // no concurrency alarm or reminder
       if (Math.floor(currentInterval.next().getTime() / 1000) !== Math.floor(referedInterval.next().getTime() / 1000)) {
         return true
       } else {
-        // current is reminder
         if (priority[current.type] > priority[refered.type]) {
           return true
-        } else if (priority[current.type] === priority[refered.type] && current.type === 'Alarm') {
+        } else if (priority[current.type] === priority[refered.type]) {
           if (current.createTime > refered.createTime) {
             return true
           } else {
             return false
           }
         } else {
-          if (current.createTime > refered.createTime) {
-            return true
-          }
+          return false
         }
       }
-      return false
     }
 
     /**
