@@ -151,7 +151,8 @@ module.exports = activity => {
               logger.error(`[cac-dt] set speed failed with error: ${err}`)
             })
         }
-        if (dt.data.item.offsetInMilliseconds > 0) {
+        // Users may need to play from the beginning
+        if (dt.data.item.offsetInMilliseconds >= 0) {
           setOffset(dt.data.item.offsetInMilliseconds)
             .catch((err) => {
               logger.error(`[cac-dt] set offset failed with error: ${err}`)
@@ -175,6 +176,7 @@ module.exports = activity => {
                   logger.error(`[cac-dt] set speed failed with error: ${err}`)
                 })
             }
+            // Only perform operations that are not played from the beginning...
             if (dt.data.item.offsetInMilliseconds > 0) {
               logger.log(`[cac-dt] set offset with offset(${dt.data.item.offsetInMilliseconds}`)
               setOffset(dt.data.item.offsetInMilliseconds)
