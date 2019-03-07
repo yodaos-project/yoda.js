@@ -47,11 +47,19 @@ module.exports = function (activity) {
     }
   })
 
-  // media canceled
+  // first media canceled
   activity.media.on('cancel', function () {
     logger.log('alarm media cancel')
     if (!AlarmCore.startTts) {
       AlarmCore.clearReminderTts()
+    }
+  })
+
+  // first media error
+  activity.media.on('error', function () {
+    logger.log('alarm media error')
+    if (!AlarmCore.startTts) {
+      AlarmCore.playFirstMedia(true)
     }
   })
 
