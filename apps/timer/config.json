@@ -7,7 +7,8 @@
   },
   "TIME": {
     "SHORTEST": 10,
-    "LONGEST": 43200
+    "LONGEST": 43200,
+    "PICKUP": 6000
   },
   "RINGTONE": {
     "URL": "system://alarm_default_ringtone.mp3",
