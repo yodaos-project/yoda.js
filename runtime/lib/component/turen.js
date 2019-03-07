@@ -4,8 +4,8 @@ var _ = require('@yoda/util')._
 var bluetooth = require('@yoda/bluetooth')
 var manifest = require('@yoda/manifest')
 
-var VT_WORDS_ADD_WORD_CHANNEL = 'rokid.turen.addVtWord'
-var VT_WORDS_DEL_WORD_CHANNEL = 'rokid.turen.removeVtWord'
+var VT_WORDS_SET_WORD_CHANNEL = 'rokid.turen.vtwords'
+var Caps = require('@yoda/caps/caps.node').Caps
 
 module.exports = Turen
 function Turen (runtime) {
@@ -598,24 +598,22 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
 }
 
 /**
- * Add an activation word.
- * @param {string} activationTxt
- * @param {string} activationPy
+ * set all activation words.
+ * @param {array<object>} vtWords
  */
-Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
-  this.component.flora.post(VT_WORDS_ADD_WORD_CHANNEL, [
-    activationWord,
-    activationPy,
-    1
-  ])
-}
-
-/**
- * Delete an activation word
- * @param {string} activationTxt
- */
-Turen.prototype.deleteVtWord = function deleteVtWord (activationWord) {
-  this.component.flora.post(VT_WORDS_DEL_WORD_CHANNEL, [ activationWord ])
+Turen.prototype.setVtWords = function setVtWords (vtWords) {
+  var msg = new Caps()
+  vtWords.forEach((vtWord) => {
+    var vtWordCaps = new Caps()
+    vtWordCaps.writeString(vtWord.txt)
+    vtWordCaps.writeString(vtWord.py)
+    vtWordCaps.writeInt32(1) // type of awake
+    vtWordCaps.writeFloat(vtWord.margin_index) // sensibility of awake
+    vtWordCaps.writeInt32(vtWord.cloud_confirm)
+    msg.writeCaps(vtWordCaps)
+  })
+  this.component.flora.post(VT_WORDS_SET_WORD_CHANNEL, msg, 1)
+  return Promise.resolve()
 }
 
 /**

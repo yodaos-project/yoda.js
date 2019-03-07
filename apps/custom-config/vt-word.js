@@ -45,38 +45,68 @@ class VtWord extends BaseConfig {
       isFirstLoad = true
       logger.info(`vt words in ${queryObj}`)
     }
-    if (!realQueryObj || !(realQueryObj instanceof Array)) {
-      return Promise.reject(new Error(`invalid queryObj: ${queryObj}`))
+    logger.info('vt-word values= ', realQueryObj)
+    if (!realQueryObj || !(realQueryObj instanceof Array) || realQueryObj.length === 0) {
+      return
     }
-    realQueryObj = realQueryObj[0]
-    if (!isFirstLoad && realQueryObj.action) {
-      if (realQueryObj.action === SWITCH_VT_UPDATE) {
-        logger.info(`turen update ${realQueryObj.txt}`)
-        this.activity.turen.deleteVtWord(realQueryObj.oldTxt)
-        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py)
+    for (var i = 0; i < realQueryObj.length; ++i) {
+      if (!this.assertVtWordValueValid(realQueryObj[i])) { // set default value for undefine values
+        logger.warn('invalid vt-words config: ', realQueryObj[i])
+        return
+      }
+    }
+    if (!isFirstLoad && realQueryObj[0].action) {
+      if (realQueryObj[0].action === SWITCH_VT_UPDATE) {
+        logger.info('turen update load:', realQueryObj)
+        this.activity.turen.setVtWords(realQueryObj)
         this.sendAddUpdateStatusToServer(realQueryObj)
         this.sendSuccessStatusToApp(realQueryObj, true)
-      } else if (realQueryObj.action === SWITCH_VT_ADD) {
-        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py)
+      } else if (realQueryObj[0].action === SWITCH_VT_ADD) {
+        this.activity.turen.setVtWords(realQueryObj)
         this.sendAddUpdateStatusToServer(realQueryObj)
         this.sendSuccessStatusToApp(realQueryObj, true)
-      } else if (realQueryObj.action === SWITCH_VT_DELETE) {
-        this.activity.turen.deleteVtWord(realQueryObj.txt)
+      } else if (realQueryObj[0].action === SWITCH_VT_DELETE) {
+        this.activity.turen.setVtWords([{
+          txt: '',
+          py: '',
+          margin_index: 50,
+          cloud_confirm: 0
+        }])
         this.sendDeleteStatusToServer(realQueryObj)
         this.sendSuccessStatusToApp(realQueryObj, true)
       }
       return Promise.resolve()
     } else if (isFirstLoad) {
-      if (realQueryObj.action === SWITCH_VT_UPDATE) {
-        logger.info(`turen update first load ${realQueryObj.txt}`)
-        this.activity.turen.deleteVtWord(realQueryObj.oldTxt)
-        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py)
-      } else if (realQueryObj.action === SWITCH_VT_ADD) {
-        this.activity.turen.addVtWord(realQueryObj.txt, realQueryObj.py)
-      } else if (realQueryObj.action === SWITCH_VT_DELETE) {
-        this.activity.turen.deleteVtWord(realQueryObj.txt)
+      if (realQueryObj[0].action === SWITCH_VT_UPDATE) {
+        logger.info('turen update first load:', realQueryObj)
+        this.activity.turen.setVtWords(realQueryObj)
+      } else if (realQueryObj[0].action === SWITCH_VT_ADD) {
+        this.activity.turen.setVtWords(realQueryObj)
+      } else if (realQueryObj[0].action === SWITCH_VT_DELETE) {
+        this.activity.turen.setVtWords([{
+          txt: '',
+          py: '',
+          margin_index: 50,
+          cloud_confirm: 0
+        }])
       }
       return Promise.resolve()
+    }
+  }
+
+  assertVtWordValueValid (config) {
+    if (config) {
+      if (typeof config.margin_index !== 'number') {
+        // set default margin-index to 50 as normal sensibility of awake
+        config.margin_index = 50
+      }
+      if (typeof config.cloud_confirm !== 'number') {
+        // set default value for cloud second confirm switcher to off
+        config.cloud_confirm = 0
+      }
+      return typeof config.txt === 'string' && typeof config.py === 'string'
+    } else {
+      return false
     }
   }
 
@@ -86,14 +116,22 @@ class VtWord extends BaseConfig {
    */
   sendAddUpdateStatusToServer (queryObj) {
     var sendVtObj = {
-      vt_words: JSON.stringify([{
-        py: queryObj.py,
-        txt: queryObj.txt,
-        oldTxt: queryObj.oldTxt,
-        action: queryObj.action,
-        phoneme: ''
-      }])
+      vt_words: ''
     }
+    var arrayOfVtWords = []
+    queryObj.forEach((obj) => {
+      arrayOfVtWords.push({
+        py: obj.py,
+        oldTxt: obj.oldTxt,
+        txt: obj.txt,
+        action: obj.action,
+        phoneme: '',
+        // add sensibility and cloud-confirm option of awake words
+        margin_index: queryObj.margin_index,
+        cloud_confirm: queryObj.cloud_confirm
+      })
+    })
+    sendVtObj.vt_words = JSON.stringify(arrayOfVtWords)
     if (this.cloudgw) {
       this.cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
         { namespace: 'custom_config', values: sendVtObj })
@@ -108,14 +146,19 @@ class VtWord extends BaseConfig {
    */
   sendDeleteStatusToServer (queryObj) {
     var sendVtObj = {
-      vt_words: JSON.stringify([{
-        py: queryObj.py,
+      vt_words: ''
+    }
+    var arrayOfVtWords = []
+    queryObj.forEach((obj) => {
+      arrayOfVtWords.push({
+        py: obj.py,
         txt: '',
-        oldTxt: queryObj.oldTxt,
+        oldTxt: obj.oldTxt,
         action: '',
         phoneme: ''
-      }])
-    }
+      })
+    })
+    sendVtObj.vt_words = JSON.stringify(arrayOfVtWords)
     if (this.cloudgw) {
       this.cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
         { namespace: 'custom_config', values: sendVtObj })
@@ -130,16 +173,21 @@ class VtWord extends BaseConfig {
    * @param {boolean} setStatus - result for operating
    */
   sendSuccessStatusToApp (queryObj, setStatus) {
-    var sendObj = {
-      vt_words: JSON.stringify([{
-        py: queryObj.py,
-        oldTxt: queryObj.oldTxt,
-        txt: queryObj.txt,
-        action: queryObj.action,
-        success: setStatus
-      }])
+    var sendVtObj = {
+      vt_words: ''
     }
-    this.activity.wormhole.sendToApp(VT_WORDS_TOPIC, sendObj)
+    var arrayOfVtWords = []
+    queryObj.forEach((obj) => {
+      arrayOfVtWords.push({
+        py: obj.py,
+        oldTxt: obj.oldTxt,
+        txt: obj.txt,
+        action: obj.action,
+        success: setStatus
+      })
+    })
+    sendVtObj.vt_words = JSON.stringify(arrayOfVtWords)
+    this.activity.wormhole.sendToApp(VT_WORDS_TOPIC, sendVtObj)
   }
 }
 

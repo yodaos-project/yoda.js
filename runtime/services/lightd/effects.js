@@ -172,6 +172,7 @@ module.exports = LightRenderingContextManager
 function LightRenderingContextManager () {
   this.id = 0
   this.ledsConfig = light.getProfile()
+  this.context = new LightRenderingContext()
   Common.initLedStatus(this.ledsConfig)
 }
 
@@ -197,13 +198,21 @@ LightRenderingContextManager.prototype.getContext = function getContext () {
 LightRenderingContextManager.prototype.setGlobalAlphaFactor = function (alphaFactor) {
   logger.info(`global alpha factor has been set ${alphaFactor}`)
   Common.setAlphaFactor(alphaFactor)
-  var context = new LightRenderingContext()
   for (var i = 0; i < Common.ledStatus.length; ++i) {
-    context.pixel(i, Common.ledStatus[i].r, Common.ledStatus[i].g, Common.ledStatus[i].b, Common.ledStatus[i].a)
+    this.context.pixel(i, Common.ledStatus[i].r, Common.ledStatus[i].g, Common.ledStatus[i].b, Common.ledStatus[i].a)
   }
-  context.render()
+  this.context.render()
 }
 
+/**
+ * Clear light
+ * @memberof yodaRT.light.LightRenderingContextManager
+ * @method clearLight
+ */
+LightRenderingContextManager.prototype.clearLight = function () {
+  this.context.clear()
+  this.context.render()
+}
 /**
  * @memberof yodaRT.light
  * @class LightRenderingContext
@@ -363,6 +372,7 @@ LightRenderingContext.prototype.clear = function () {
   if (this._getCurrentId() !== this._id) {
     return
   }
+  Common.setFill(0, 0, 0, 0)
   return light.clear()
 }
 

@@ -37,39 +37,24 @@ Object.assign(TurenDescriptor.prototype,
   {
     type: 'namespace'
   },
+  /**
+   * set all vtWords.
+   * @memberof yodaRT.activity.Activity.TurenClient
+   * @instance
+   * @function setVtWords
+   * @param {array<object>} vtWords -
+   * @returns {Promise<void>}
+   */
   {
-    /**
-     * add an activation word.
-     * @memberof yodaRT.activity.Activity.TurenClient
-     * @instance
-     * @function addVtWord
-     * @param {string} activationTxt -
-     * @param {string} activationPy -
-     * @returns {Promise<void>}
-     */
-    addVtWord: {
+    setVtWords: {
       type: 'method',
       returns: 'promise',
-      fn: function addVtWord (activationTxt, activationPy) {
-        return this._runtime.component.turen.addVtWord(activationTxt, activationPy)
+      fn: function setVtWords (vtWords) {
+        return this._runtime.component.turen.setVtWords(vtWords)
       }
-    },
-
-    /**
-     * delete an activation word.
-     * @memberof yodaRT.activity.Activity.TurenClient
-     * @instance
-     * @function deleteVtWord
-     * @param {string} activationTxt -
-     * @returns {Promise<void>}
-     */
-    deleteVtWord: {
-      type: 'method',
-      returns: 'promise',
-      fn: function deleteVtWord (activationTxt) {
-        return this._runtime.component.turen.deleteVtWord(activationTxt)
-      }
-    },
+    }
+  },
+  {
     /**
      * Disable wake up processing engine if `enabled` is false, or enable the process if `enabled` is true.
      * Switch enabled state if `enabled` is not set.

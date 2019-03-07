@@ -15,6 +15,9 @@ module.exports = function (activity) {
   var remainMilliSecs = 0
   var lastStartTimestamp = 0
   var ringtoneTimer = null
+  var isPickup = false
+  var pickupTimer = null
+  var isDestroied = true
 
   activity.on('create', () => {
     logger.log('on create')
@@ -22,6 +25,7 @@ module.exports = function (activity) {
     activity.keyboard.on('dbclick', (event) => { kbdHandler('dbclick', event) })
     activity.keyboard.preventDefaults(config.KEY_CODE.POWER)
     activity.setContextOptions({ keepAlive: true })
+    isDestroied = false
   })
 
   activity.on('active', () => {
@@ -39,11 +43,10 @@ module.exports = function (activity) {
 
   activity.on('destroy', () => {
     logger.log('on destroy')
-    activity.keyboard.restoreDefaults(config.KEY_CODE.MIKE)
-    activity.keyboard.restoreDefaults(config.KEY_CODE.VOLDOWN)
-    activity.keyboard.restoreDefaults(config.KEY_CODE.VOLUP)
-    activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
+    activity.keyboard.restoreAll()
     shutup()
+    activity.setPickup(false)
+    isDestroied = true
   })
 
   activity.on('request', (nlp, action) => {
@@ -54,6 +57,7 @@ module.exports = function (activity) {
         totalSecs = parseTimeToSeconds(nlp.slots)
         logger.debug(`count ${totalSecs} seconds`)
         if (totalSecs === 0) {
+          setPickup()
           speak(strings.SET_FAIL.NO_TIME)
         } else if (totalSecs < config.TIME.SHORTEST) {
           speak(strings.SET_FAIL.TOO_SHORT, time.toString(config.TIME.SHORTEST))
@@ -102,11 +106,19 @@ module.exports = function (activity) {
         }
         break
       case 'howtouse_timer':
+        setPickup()
         speak(strings.USAGE)
         break
       case 'timer_comeback':
-        var deltaTime = remainMilliSecs - (Date.now() - lastStartTimestamp)
-        speak(strings.CHECK, time.toString(Math.ceil(deltaTime / 1000)))
+        if (isTimerExist()) {
+          var deltaTime = remainMilliSecs
+          if (timer !== null) {
+            deltaTime -= (Date.now() - lastStartTimestamp)
+          }
+          speak(strings.CHECK, time.toString(Math.ceil(deltaTime / 1000)))
+        } else {
+          speak(strings.CANCEL_FAIL)
+        }
         break
       default:
         activity.exit({ clearContext: true })
@@ -171,18 +183,79 @@ module.exports = function (activity) {
     return timer !== null || remainMilliSecs > 0
   }
 
-  function afterSpeak () {
+  function defaultNextAction () {
+    if (isDestroied) {
+      logger.warn('Destroied early...')
+      return activity.exit({ clearContext: true })
+    }
+    if (isPickup) {
+      logger.info('In pickup mode, listening...')
+      return
+    }
     if (isTimerExist()) {
-      logger.debug('default after speak, set background.')
+      logger.debug('Timer running, set background.')
       activity.setBackground()
     } else {
-      logger.log('timer cancelled? exit app now.')
+      logger.log('Timer cancelled, exit now.')
       activity.exit({ clearContext: true })
     }
   }
 
+  var nextActionFunc = null
+  var nextActionId = 0
+  function registerNextAction (fn) {
+    if (typeof fn === 'function' && fn !== defaultNextAction) {
+      nextActionFunc = fn
+      logger.debug('register private fn')
+    } else {
+      nextActionFunc = defaultNextAction
+      logger.debug('register default fn')
+    }
+    nextActionId = Date.now()
+    return nextActionId
+  }
+
+  function triggerNextAction (id, fn) {
+    logger.debug(`queueId=${nextActionId}, triggerId=${id}`)
+    if (nextActionId !== id) {
+      logger.info('action updated.')
+      return
+    }
+    if (typeof fn === 'function') {
+      nextActionFunc = fn
+    }
+    process.nextTick(nextActionFunc)
+  }
+
+  function setPickup () {
+    if (!isPickup) {
+      var id = registerNextAction()
+      activity.setPickup(true, 999999)
+        .then(() => {
+          logger.debug('setPickup OK.')
+          isPickup = true
+          if (pickupTimer != null) {
+            clearTimeout(pickupTimer)
+          }
+          pickupTimer = setTimeout(() => {
+            isPickup = false
+            triggerNextAction(id)
+          }, config.TIME.PICKUP)
+        })
+        .catch((err) => {
+          logger.error('setPickup failed:', err)
+          triggerNextAction(id)
+        })
+    }
+  }
+
+  function afterSpeakCallback (id) {
+    logger.debug('Before trigger next action.')
+    triggerNextAction(id)
+  }
+
   function speak (text, args) {
-    var afterFunc = afterSpeak
+    var regFunc = defaultNextAction
     if (Array.isArray(text)) {
       var i = math.randInt(text.length)
       text = text[i]
@@ -190,16 +263,17 @@ module.exports = function (activity) {
     if (typeof args === 'string') {
       text = util.format(text, args)
     } else if (typeof args === 'function') {
-      afterFunc = args
+      regFunc = args
     }
+    var id = registerNextAction(regFunc)
     sendCardToApp('ROKID.TIMER', {text: text})
     activity.tts.stop().catch((err) => { logger.warn('stop tts err:', err) })
     return activity.setForeground().then(() => {
       return activity.tts.speak(text, { impatient: false }).catch((err) => {
         logger.error('Speak error: ', err)
-        afterFunc()
+        afterSpeakCallback(id)
       })
-    }).then(afterFunc)
+    }).then(() => { afterSpeakCallback(id) })
   }
 
   function shutup () {
@@ -237,7 +311,10 @@ module.exports = function (activity) {
     logger.log('timer is up')
     timer = null
     remainMilliSecs = 0
-    speak(strings.TIMEUP, () => playRingtone(config.RINGTONE.RING_TIMES))
+    speak(strings.TIMEUP, () => {
+      logger.debug('before trigger play ringtone')
+      playRingtone(config.RINGTONE.RING_TIMES)
+    })
     trace([{
       event: 'timer',
       action: 'triggered'
