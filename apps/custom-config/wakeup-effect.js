@@ -289,17 +289,13 @@ class WakeupEffect extends BaseConfig {
           }).catch((err) => {
             logger.warn(`download custom wakeup sound error: ${err}`)
           })
+        } else if (queryObj.type === AWAKE_EFFECT_DEFAULT) {
+          this.getFileList().then((fileList) => {
+            this.notifyActivation(fileList)
+          })
         } else {
-          if (queryObj.type === AWAKE_EFFECT_DEFAULT &&
-            Array.isArray(queryObj.wakeupSoundEffects) &&
-            queryObj.wakeupSoundEffects.length === 0) {
-            this.getFileList().then((fileList) => {
-              this.notifyActivation(fileList)
-            })
-          } else {
-            logger.warn('default wakeupSoundEffects should be array with size 0: ', queryObj)
-            return
-          }
+          logger.warn(`invalid wakeupSoundEffects type: ${queryObj.type}`)
+          return
         }
       }
 
