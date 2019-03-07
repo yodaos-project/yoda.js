@@ -40,6 +40,9 @@ Skill.prototype.onrequest = function (action, append) {
   logger.log(`--> update shouldEndSession: ${this.shouldEndSession}`)
   logger.log(`skill ${this.appId} onrequest`)
   this.transform(directives || [], append)
+  if (append === undefined) {
+    this.paused = false
+  }
   if (this.paused === false) {
     logger.log('onrequest nextTick', this.directives)
     /**
@@ -51,6 +54,8 @@ Skill.prototype.onrequest = function (action, append) {
       logger.log('onrequest nextTick start', this.directives)
       this.emit('start')
     })
+  } else {
+    logger.warn(`SKILL[${this.appId}] paused. waiting for lifecycle resume.`)
   }
 }
 

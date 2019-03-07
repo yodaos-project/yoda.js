@@ -101,7 +101,7 @@ Manager.prototype.append = function (nlp, action) {
   var pos = this.findByAppId(action.appId)
   if (pos > -1) {
     logger.log(`skill ${action.appId}  index ${pos} append request`)
-    this.skills[pos].onrequest(action)
+    this.skills[pos].onrequest(action, true)
   } else {
     logger.log(`skill ${action.appId} not in stack, append ignore`)
   }
