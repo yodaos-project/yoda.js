@@ -105,8 +105,15 @@ module.exports = function (activity) {
         speak(strings.USAGE)
         break
       case 'timer_comeback':
-        var deltaTime = remainMilliSecs - (Date.now() - lastStartTimestamp)
-        speak(strings.CHECK, time.toString(Math.ceil(deltaTime / 1000)))
+        if (isTimerExist()) {
+          var deltaTime = remainMilliSecs
+          if (timer !== null) {
+            deltaTime -= (Date.now() - lastStartTimestamp)
+          }
+          speak(strings.CHECK, time.toString(Math.ceil(deltaTime / 1000)))
+        } else {
+          speak(strings.CANCEL_FAIL)
+        }
         break
       default:
         activity.exit({ clearContext: true })
