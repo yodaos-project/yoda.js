@@ -83,6 +83,9 @@ MqttClient.prototype.onmessage = function onmessage (channel, message) {
     logger.error(err && err.stack)
     return
   }
+  if (!msg.topic) {
+   msg.topic = `cmcc/${msg.type}`
+  }
   logger.info(`mqtt message with topic -> ${msg.topic}; text -> ${msg.text}`)
   this._messageHandler(msg.topic, msg.text)
 }
