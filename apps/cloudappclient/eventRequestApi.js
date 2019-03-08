@@ -7,7 +7,10 @@ var logger = require('logger')('cloudAppClient-eventReq')
 var env = require('@yoda/env')()
 
 var CONFIG = null
-var DEFAULT_HOST = env.cloudgw.restful || 'apigwrest.open.rokid.com'
+var DEFAULT_HOST = env.cloudgw.restful
+if (typeof DEFAULT_HOST !== 'string') {
+  throw new Error('Expect DEFAULT_HOST from env.json')
+}
 var DEFAULT_URI = '/v1/skill/dispatch/sendEvent'
 
 function gensigh (data) {

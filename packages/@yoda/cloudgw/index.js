@@ -13,7 +13,10 @@ var env = require('@yoda/env')()
 var logger = require('logger')('cloudgw')
 var StatusCodeError = require('./status-code-error')
 
-var defaultHost = env.cloudgw.restful || 'apigwrest.open.rokid.com'
+var defaultHost = env.cloudgw.restful
+if (typeof defaultHost !== 'string') {
+  throw new Error('Expect defaultHost from env.json')
+}
 var signKeys = [ 'key', 'device_type_id', 'device_id', 'service', 'version', 'time', 'secret' ]
 var authKeys = [ 'version', 'time', 'sign', 'key', 'device_type_id', 'device_id', 'service' ]
 
