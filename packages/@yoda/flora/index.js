@@ -50,6 +50,8 @@
  * @param {object} options
  * @param {number} options.reconnInterval - reconnect interval time when flora disconnected. default value 10000
  * @param {number} options.bufsize - flora msg buf size. default value 32768
+ * @param {number} options.beepInterval - interval time of client send ping, only effective when connection is tcp protocol.
+ * @param {number} options.norespTimeout - timeout of flora service no response, only effective when connection is tcp protocol.
  */
 
 /**

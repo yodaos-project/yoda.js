@@ -130,6 +130,8 @@ Napi::Value NativeObjectWrap::genArray(const Napi::CallbackInfo& info) {
 typedef struct {
   uint32_t reconnInterval;
   uint32_t bufsize;
+  uint32_t beepInterval;
+  uint32_t norespTimeout;
 } AgentOptions;
 
 static void parseAgentOptions(const Napi::Value& jsopts,
@@ -147,9 +149,23 @@ static void parseAgentOptions(const Napi::Value& jsopts,
     } else {
       cxxopts.bufsize = DEFAULT_BUFSIZE;
     }
+    v = jsopts.As<Object>().Get("beepInterval");
+    if (v.IsNumber()) {
+      cxxopts.beepInterval = v.As<Number>().Uint32Value();
+    } else {
+      cxxopts.beepInterval = FLORA_CLI_DEFAULT_BEEP_INTERVAL;
+    }
+    v = jsopts.As<Object>().Get("norespTimeout");
+    if (v.IsNumber()) {
+      cxxopts.norespTimeout = v.As<Number>().Uint32Value();
+    } else {
+      cxxopts.norespTimeout = FLORA_CLI_DEFAULT_NORESP_TIMEOUT;
+    }
   } else {
     cxxopts.reconnInterval = DEFAULT_RECONN_INTERVAL;
     cxxopts.bufsize = DEFAULT_BUFSIZE;
+    cxxopts.beepInterval = FLORA_CLI_DEFAULT_BEEP_INTERVAL;
+    cxxopts.norespTimeout = FLORA_CLI_DEFAULT_NORESP_TIMEOUT;
   }
 }
 
@@ -169,6 +185,8 @@ void ClientNative::initialize(const CallbackInfo& info) {
   parseAgentOptions(info[1], opts);
   floraAgent.config(FLORA_AGENT_CONFIG_RECONN_INTERVAL, opts.reconnInterval);
   floraAgent.config(FLORA_AGENT_CONFIG_BUFSIZE, opts.bufsize);
+  floraAgent.config(FLORA_AGENT_CONFIG_KEEPALIVE, opts.beepInterval,
+                    opts.norespTimeout);
   status |= NATIVE_STATUS_CONFIGURED;
 }
 
