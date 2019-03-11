@@ -532,12 +532,16 @@ Turen.prototype.toggleMute = function toggleMute (mute) {
  * Add an activation word.
  * @param {string} activationTxt
  * @param {string} activationPy
+ * @param {number} marginIndex
+ * @param {number} cloudConfirm
  */
-Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy) {
+Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy, marginIndex, cloudConfirm) {
   var caps = new Caps()
   caps.write(activationWord)
   caps.write(activationPy)
   caps.writeInt32(1)
+  caps.writeDouble(marginIndex)
+  caps.writeInt32(cloudConfirm)
   this.runtime.flora.post(VT_WORDS_ADD_WORD_CHANNEL, caps)
 }
 

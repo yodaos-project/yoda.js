@@ -38,6 +38,8 @@ module.exports = function customConfig (activity) {
   this.oldTxt = null
   this.py = null
   this.txt = null
+  this.marginIndex = 50
+  this.cloudConfirm = 0
 
   activity.on('request', (nlp, action) => {
     var intent = nlp.intent
@@ -86,6 +88,16 @@ module.exports = function customConfig (activity) {
       this.oldTxt = queryObj.oldTxt
       this.txt = queryObj.txt
       this.py = queryObj.py
+      if (typeof queryObj.margin_index === 'number') {
+        this.marginIndex = queryObj.margin_index
+      } else {
+        this.marginIndex = 50
+      }
+      if (typeof queryObj.cloud_confirm === 'number') {
+        this.cloudConfirm = queryObj.cloud_confirm
+      } else {
+        this.cloudConfirm = 0
+      }
       onVtWordSwitchStatusChanged(action, false)
     } else if (urlObj.pathname === '/continuousDialog') {
       onPickupSwitchStatusChanged(action, isFirstLoad)
@@ -103,11 +115,11 @@ module.exports = function customConfig (activity) {
     if (action && !isFirstLoad) {
       if (action === SWITCH_VT_UPDATE) {
         activity.turen.deleteVtWord(this.oldTxt)
-        activity.turen.addVtWord(this.txt, this.py)
+        activity.turen.addVtWord(this.txt, this.py, this.marginIndex, this.cloudConfirm)
         sendAddUpdateStatusToServer(action)
         sendSuccessStatusToApp(action, true)
       } else if (action === SWITCH_VT_ADD) {
-        activity.turen.addVtWord(this.txt, this.py)
+        activity.turen.addVtWord(this.txt, this.py, this.marginIndex, this.cloudConfirm)
         sendAddUpdateStatusToServer(action)
         sendSuccessStatusToApp(action, true)
       } else if (action === SWITCH_VT_DELETE) {
@@ -122,9 +134,9 @@ module.exports = function customConfig (activity) {
     if (action && !isFirstLoad) {
       if (action === SWITCH_VT_UPDATE) {
         activity.turen.deleteVtWord(this.oldTxt)
-        activity.turen.addVtWord(this.txt, this.py)
+        activity.turen.addVtWord(this.txt, this.py, this.marginIndex, this.cloudConfirm)
       } else if (action === SWITCH_VT_ADD) {
-        activity.turen.addVtWord(this.txt, this.py)
+        activity.turen.addVtWord(this.txt, this.py, this.marginIndex, this.cloudConfirm)
       } else if (action === SWITCH_VT_DELETE) {
         activity.turen.deleteVtWord(this.txt)
       }
@@ -138,7 +150,9 @@ module.exports = function customConfig (activity) {
         txt: this.txt,
         oldTxt: this.oldTxt,
         action: action,
-        phoneme: ''
+        phoneme: '',
+        margin_index: this.marginIndex,
+        cloud_confirm: this.cloudConfirm
       }])
     }
     cloudgw.request('/v1/device/deviceManager/addOrUpdateDeviceInfo',
@@ -165,6 +179,8 @@ module.exports = function customConfig (activity) {
         py: this.py,
         oldTxt: this.oldTxt,
         txt: this.txt,
+        margin_index: this.marginIndex,
+        cloud_confirm: this.cloudConfirm,
         action: action,
         success: setStatus
       }])

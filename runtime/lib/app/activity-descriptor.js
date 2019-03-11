@@ -1291,13 +1291,15 @@ Object.assign(TurenDescriptor.prototype,
      * @function addVtWord
      * @param {string} activationTxt -
      * @param {string} activationPy -
+     * @param {number} marginIndex -
+     * @param {number} cloudConfirm -
      * @returns {Promise<void>}
      */
     addVtWord: {
       type: 'method',
       returns: 'promise',
-      fn: function addVtWord (activationTxt, activationPy) {
-        return this._runtime.turen.addVtWord(activationTxt, activationPy)
+      fn: function addVtWord (activationTxt, activationPy, marginIndex, cloudConfirm) {
+        return this._runtime.turen.addVtWord(activationTxt, activationPy, marginIndex, cloudConfirm)
       }
     },
 
