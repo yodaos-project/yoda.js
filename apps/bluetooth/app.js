@@ -474,14 +474,14 @@ module.exports = function (activity) {
         break
       case protocol.CONNECTION_STATE.CONNECT_FAILED:
         if (mode === protocol.A2DP_MODE.SOURCE) {
-          speak(getText('SOURCE_CONNECT_FAILED'), res.AUDIO[state])
+          speak(getText('SOURCE_CONNECT_FAILED_ARG1S', device.name), res.AUDIO[state])
         }
         break
       case protocol.CONNECTION_STATE.AUTOCONNECT_FAILED:
         if (lastIntent === 'bluetooth_broadcast') {
           // NOP while auto connect failed if user only says 'open bluetooth'.
         } else {
-          speak(getText('SOURCE_CONNECT_FAILED'), res.AUDIO[state])
+          speak(getText('SOURCE_CONNECT_FAILED_ARG1S', device.name), res.AUDIO[state])
         }
         break
       default:
