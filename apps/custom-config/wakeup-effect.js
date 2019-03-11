@@ -13,6 +13,8 @@ var safeParse = require('@yoda/util').json.safeParse
 var mkdirp = require('@yoda/util').fs.mkdirp
 var logger = require('logger')('custom-config-wakeup')
 var flora = require('./singleton-flora')
+var CancelablePromise = require('./cancelable-promise.js').CancelablePromise
+var cancelablePromisify = require('./cancelable-promise.js').cancelablePromisify
 
 // var AWAKE_EFFECT_DEFAULT = '0'
 var AWAKE_EFFECT_CUSTOM = '1'
@@ -25,10 +27,10 @@ var WAKE_SOUND_CLOSE = '已关闭唤醒应答'
 var SWITCH_OPEN = 'open'
 var SWITCH_CLOSE = 'close'
 
-var readDirAsync = promisify(fs.readdir)
-var unlinkAsync = promisify(fs.unlink)
-var downloadAsync = promisify(doDownloadFile)
-var mkdirpAsync = promisify(mkdirp)
+var readDirAsync = cancelablePromisify(fs.readdir)
+var unlinkAsync = cancelablePromisify(fs.unlink)
+var downloadAsync = cancelablePromisify(doDownloadFile)
+var mkdirpAsync = cancelablePromisify(mkdirp)
 
 /**
  * download file use `wget`
@@ -79,13 +81,13 @@ function doDownloadFile (url, dest, options, callback) {
 function clearDir (path) {
   return readDirAsync(path).then((files) => {
     if (!files) {
-      return Promise.resolve(true)
+      return CancelablePromise.resolve(true)
     }
     var promises = []
     for (var i = 0; i < files.length; ++i) {
       promises.push(unlinkAsync(path + files[i]))
     }
-    return Promise.all(promises).catch((error) => {
+    return CancelablePromise.all(promises).catch((error) => {
       logger.warn(`clear dir error: ${error}`)
     })
   })
@@ -95,7 +97,7 @@ function clearDir (path) {
  * Download wav files
  * @param wakeupSoundEffects - array of query value
  * @param path - download path
- * @returns {Promise}
+ * @returns {CancelablePromise}
  */
 function downloadWav (wakeupSoundEffects, path) {
   var promises = []
@@ -106,7 +108,7 @@ function downloadWav (wakeupSoundEffects, path) {
         `${path}${wakeupSoundEffects[i].wakeupId}.wav`, null))
     }
   }
-  return Promise.all(promises)
+  return CancelablePromise.all(promises)
 }
 
 /**
@@ -208,7 +210,8 @@ class WakeupEffect extends BaseConfig {
       if (action === SWITCH_CLOSE) {
         logger.info('wakeup effect turned off')
         this.notifyActivation([])
-        return this.activity.tts.speak(WAKE_SOUND_CLOSE)
+        this.activity.tts.speak(WAKE_SOUND_CLOSE)
+        return CancelablePromise.resolve()
       } else {
         return this.getFileList().then((fileList) => {
           if (!Array.isArray(fileList)) {
@@ -221,24 +224,26 @@ class WakeupEffect extends BaseConfig {
             logger.info('default wakeup effect turned on')
           }
         }).then(() => {
-          return this.activity.tts.speak(WAKE_SOUND_OPEN)
+          this.activity.tts.speak(WAKE_SOUND_OPEN)
+          return CancelablePromise.resolve()
         })
       }
     } else {
-      return Promise.reject(new Error(`invalid intent '${action}'`))
+      return CancelablePromise.reject(new Error(`invalid intent '${action}'`))
     }
   }
 
   /**
-   * refresh the activation sound
+   * refresh the activation sound after startup
    */
   refresh () {
     var action = property.get('sys.wakeupwitch', 'persist')
+    var allPromise = []
     if (action === SWITCH_CLOSE) {
       logger.info('wakeup effect turned off')
       this.notifyActivation([])
     } else {
-      this.getFileList().then((fileList) => {
+      allPromise.push(this.getFileList().then((fileList) => {
         if (!Array.isArray(fileList)) {
           fileList = []
         }
@@ -248,22 +253,24 @@ class WakeupEffect extends BaseConfig {
         } else {
           logger.info('default wakeup effect turned on')
         }
-      })
+      }))
     }
-    this.activity.get().then(prop => {
-      this.activity.httpgw.request('/v1/rokidAccount/RokidAccount/getUserCustomConfigByDevice',
-        {userId: prop.masterId}, {}).then((data) => {
+    allPromise.push(CancelablePromise.init(this.activity.get()).then(prop => {
+        return CancelablePromise.init(this.activity.httpgw.request('/v1/rokidAccount/RokidAccount/getUserCustomConfigByDevice',
+          {userId: prop.masterId}, {}))
+      }).then((data) => {
         var config = safeParse(_.get(data, 'values.wakeupSoundEffects', ''))
         if (typeof config === 'object') {
           config.wakeupSoundEffects = config.value
-          this.applyWakeupEffect(config, true)
+          return this.applyWakeupEffect(config, true)
         } else {
-          logger.warn(`custom config error: ${JSON.stringify(data)}`)
+          return CancelablePromise.reject(new Error(`format error: ${JSON.stringify(data)}`))
         }
       }).catch((err) => {
         logger.error(`request custom config error: ${err}`)
       })
-    })
+    )
+    this.promise = allPromise
   }
   /**
    * process request from url
@@ -274,29 +281,38 @@ class WakeupEffect extends BaseConfig {
       var realQueryObj = safeParse(queryObj.param)
       return this.applyWakeupEffect(realQueryObj, queryObj.isFirstLoad)
     } else {
-      return Promise.reject(new Error(`invalid queryObj: ${JSON.stringify(queryObj)}`))
+      return CancelablePromise.reject(new Error(`invalid queryObj: ${JSON.stringify(queryObj)}`))
     }
   }
-
+  abortLastProcess () {
+    if (this.promise instanceof CancelablePromise) {
+      logger.error('abortLastProcess 1')
+      this.promise.abort()
+      logger.error('abortLastProcess 2')
+    } else {
+      logger.error('abortLastProcess 3')
+    }
+  }
   /**
    * apply changes
    * @param queryObj - query object
    * @param isFirstLoad -
-   * @return {promise}
+   * @return {CancelablePromise}
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
-    var checker = new RequestChecker()
     if (typeof queryObj !== 'object' || typeof queryObj.action !== 'string') {
-      return Promise.reject(new Error('invalid config object'))
+      return CancelablePromise.reject(new Error('invalid config object'))
     }
     property.set('sys.wakeupswitch', queryObj.action, 'persist')
     if (typeof queryObj.type === 'string') {
       property.set('sys.wakeupsound', queryObj.type, 'persist')
     }
     if (queryObj.action === SWITCH_CLOSE) {
+      this.abortLastProcess()
       this.notifyActivation([])
       if (!isFirstLoad) {
-        return this.activity.tts.speak(WAKE_SOUND_CLOSE)
+        this.activity.tts.speak(WAKE_SOUND_CLOSE)
+        return CancelablePromise.resolve()
       }
     } else {
       // custom awake effect
@@ -305,34 +321,39 @@ class WakeupEffect extends BaseConfig {
           for (var i = 0; i < queryObj.wakeupSoundEffects.length; ++i) {
             if (typeof queryObj.wakeupSoundEffects[i].wakeupUrl !== 'string' ||
               typeof queryObj.wakeupSoundEffects[i].wakeupId !== 'string') {
-              return Promise.reject(
+              return CancelablePromise.reject(
                 new Error(`custom wakeupSoundEffects field type error: ${JSON.stringify(queryObj)}`)
               )
             }
           }
         } else {
-          return Promise.reject(
+          return CancelablePromise.reject(
             new Error(`custom wakeupSoundEffects should be array : ${JSON.stringify(queryObj)}`)
           )
         }
-        return checker.do(mkdirpAsync(ActivationConfig.customPath)).then(() => {
-          return checker.do(clearDir(ActivationConfig.customPath))
+        this.abortLastProcess()
+        this.promise = mkdirpAsync(ActivationConfig.customPath).then(() => {
+          return clearDir(ActivationConfig.customPath)
         }).then(() => {
-          return checker.do(downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath))
+          return downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath)
         }).then((fileList) => {
           this.notifyActivation(fileList)
           if (!isFirstLoad) {
-            return this.activity.tts.speak(WAKE_SOUND_OPEN_CUSTOM)
+            this.activity.tts.speak(WAKE_SOUND_OPEN_CUSTOM)
+            return CancelablePromise.resolve()
           }
         })
       } else { // default awake effect
-        return checker.do(this.getFileList()).then((fileList) => {
+        this.abortLastProcess()
+        this.promise = this.getFileList().then((fileList) => {
           this.notifyActivation(fileList)
           if (!isFirstLoad) {
-            return this.activity.tts.speak(WAKE_SOUND_OPEN_DEFAULT)
+            this.activity.tts.speak(WAKE_SOUND_OPEN_DEFAULT)
+            return CancelablePromise.resolve()
           }
         })
       }
+      return this.promise
     }
   }
 }

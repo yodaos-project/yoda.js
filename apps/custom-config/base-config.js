@@ -9,6 +9,7 @@ class BaseConfig {
     this.activity = activity
     this.floraAgent = flora.getInstance()
     this.cloudgw = null
+    this.promise = null
   }
 
   /**

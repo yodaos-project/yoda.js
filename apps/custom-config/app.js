@@ -72,6 +72,9 @@ module.exports = function CustomConfig (activity) {
       if (func) {
         func(queryObj).then(() => {
           ctx.exit()
+        }).cancel(()=>{
+          logger.error('cancel')
+          ctx.exit()
         }).catch((err) => {
           logger.warn(err)
           ctx.exit()

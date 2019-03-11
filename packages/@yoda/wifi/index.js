@@ -9,7 +9,7 @@ var dns = require('dns')
 var os = require('os')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
-var FloraComp = require('@yoda/flora/comp')
+var flora = require('@yoda/flora')
 
 var logger = require('logger')('wifi')
 var native = require('./wifi.node')
@@ -63,14 +63,9 @@ module.exports = {
 function NetworkListener () {
   EventEmitter.call(this)
   this._online = null
-  this._flora = new FloraComp('wifi', {
-    'uri': 'unix:/var/run/flora.sock',
-    'bufsize': 40960,
-    'reconnInterval': 10000
-  })
-  this._flora.handlers = {
-    'network': this._onevent.bind(this)
-  }
+  this._flora = new flora.Agent('unix:/var/run/flora.sock')
+
+  this._flora.subscribe('network', this._onevent.bind(this))
 }
 inherits(NetworkListener, EventEmitter)
 
@@ -81,7 +76,7 @@ inherits(NetworkListener, EventEmitter)
  * @fires module:@yoda/wifi.NetworkListener#error
  */
 NetworkListener.prototype.start = function start () {
-  this._flora.init()
+  this._flora.start()
 }
 
 /**
