@@ -208,12 +208,13 @@ BluetoothA2dp.prototype._onSourceEvent = function (data) {
 
 /**
  * @private
+ * @returns {boolean} `true` if send success else `false`.
  */
 BluetoothA2dp.prototype._send = function (mode, cmdstr, props) {
   var data = Object.assign({ command: cmdstr }, props)
   var msg = [ JSON.stringify(data) ]
   var name = (mode === protocol.A2DP_MODE.SINK ? 'bluetooth.a2dpsink.command' : 'bluetooth.a2dpsource.command')
-  return this._flora.post(name, msg, floraFactory.MSGTYPE_INSTANT)
+  return this._flora.post(name, msg, floraFactory.MSGTYPE_INSTANT) === 0
 }
 
 /**
@@ -227,7 +228,7 @@ BluetoothA2dp.prototype._send = function (mode, cmdstr, props) {
  * @param {A2DP_MODE} [mode] - Specify the bluetooth a2dp profile mode. Default will starts `A2DP_MODE.SINK`.
  * @param {object} [options] - The extra options.
  * @param {boolean} [options.autoplay=false] - Whether after autoconnected, music should be played automatically.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#radio_state_changed
  * @fires module:@yoda/bluetooth/BluetoothA2dp#connection_state_changed
  * @example
@@ -257,7 +258,7 @@ BluetoothA2dp.prototype.open = function (mode, options) {
     // Bluetooth phone call is binded with bluetooth music.
     msg.sec_pro = 'HFP'
   }
-  this._send(mode, 'ON', msg)
+  return this._send(mode, 'ON', msg)
 }
 
 /**
@@ -266,7 +267,7 @@ BluetoothA2dp.prototype.open = function (mode, options) {
  * You can listen following changed state events:
  * - `protocol.RADIO_STATE.OFF` when bluetooth is closed.
  *
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#radio_state_changed
  */
 BluetoothA2dp.prototype.close = function () {
@@ -276,9 +277,9 @@ BluetoothA2dp.prototype.close = function () {
   }
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
     // Bluetooth phone call is binded with bluetooth music.
-    this._send(this.lastMode, 'OFF', {sec_pro: 'HFP'})
+    return this._send(this.lastMode, 'OFF', {sec_pro: 'HFP'})
   } else {
-    this._send(this.lastMode, 'OFF')
+    return this._send(this.lastMode, 'OFF')
   }
 }
 
@@ -290,7 +291,7 @@ BluetoothA2dp.prototype.close = function () {
  * - `protocol.CONNECTION_STATE.CONNECT_FAILED` when cannot connect to remote device.
  * @param {string} addr - Specify the remote bluetooth device's MAC address.
  * @param {string} name - Specify the remote bluetooth device's name.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#connection_state_changed
  */
 BluetoothA2dp.prototype.connect = function (addr, name) {
@@ -303,12 +304,13 @@ BluetoothA2dp.prototype.connect = function (addr, name) {
     if (this.lastMsg.connect_state === 'connected' && this.lastMsg.connect_address === addr) {
       logger.warn('connect() to same already connected device?')
     }
-    this._send(this.lastMode, 'CONNECT', target)
+    return this._send(this.lastMode, 'CONNECT', target)
   } else {
     logger.warn('connect() is not supported for SINK!')
     process.nextTick(() => {
       this.emit(protocol.STATE_CHANGED.CONNECTION, this.lastMode, protocol.CONNECTION_STATE.CONNECT_FAILED)
     })
+    return false
   }
 }
 
@@ -317,7 +319,7 @@ BluetoothA2dp.prototype.connect = function (addr, name) {
  *
  * You can listen following changed state:
  * - `protocol.CONNECTION_STATE.DISCONNECTED` after disconnected from remote device.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#connection_state_changed
  */
 BluetoothA2dp.prototype.disconnect = function () {
@@ -325,19 +327,19 @@ BluetoothA2dp.prototype.disconnect = function () {
   if (this.lastMsg.connect_state !== 'connected') {
     logger.warn('disconnect() while last state is not connected.')
   }
-  this._send(this.lastMode, 'DISCONNECT')
+  return this._send(this.lastMode, 'DISCONNECT')
 }
 
 /**
  * Mute a2dp-sink music stream.
  *
  *  No state changed after this command execution.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  */
 BluetoothA2dp.prototype.mute = function () {
   logger.debug(`mute(${this.lastMode})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    this._send(this.lastMode, 'MUTE')
+    return this._send(this.lastMode, 'MUTE')
   }
 }
 
@@ -345,12 +347,12 @@ BluetoothA2dp.prototype.mute = function () {
  * Unmute a2dp-sink music stream.
  *
  * No state changed after this command execution.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  */
 BluetoothA2dp.prototype.unmute = function () {
   logger.debug(`unmute(${this.lastMode})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    this._send(this.lastMode, 'UNMUTE')
+    return this._send(this.lastMode, 'UNMUTE')
   }
 }
 
@@ -358,12 +360,12 @@ BluetoothA2dp.prototype.unmute = function () {
  * Sync volume to remote device.
  *
  * @param {string} [vol] - the volume number to be synced.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  */
 BluetoothA2dp.prototype.syncVol = function (vol) {
   logger.debug(`sync volume(${vol})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    this._send(this.lastMode, 'VOLUME', { value: vol })
+    return this._send(this.lastMode, 'VOLUME', { value: vol })
   }
 }
 
@@ -372,7 +374,7 @@ BluetoothA2dp.prototype.syncVol = function (vol) {
  *
  * You can listen following changed state:
  * - `protocol.AUDIO_STATE.PLAYING` after music play started.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
  */
 BluetoothA2dp.prototype.play = function () {
@@ -381,8 +383,7 @@ BluetoothA2dp.prototype.play = function () {
     if (this.lastMsg.play_state === 'played') {
       logger.warn('play() while last state is already played.')
     }
-    this._send(this.lastMode, 'UNMUTE')
-    this._send(this.lastMode, 'PLAY')
+    return this._send(this.lastMode, 'PLAY_UNMUTE')
   }
 }
 
@@ -391,7 +392,7 @@ BluetoothA2dp.prototype.play = function () {
  *
  * You can listen following changed state:
  * - `protocol.AUDIO_STATE.PAUSED` after music play paused.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
  */
 BluetoothA2dp.prototype.pause = function () {
@@ -401,8 +402,7 @@ BluetoothA2dp.prototype.pause = function () {
       logger.warn('pause() while last state is already stopped.')
     }
     this.lastCmd = 'pause'
-    this._send(this.lastMode, 'MUTE')
-    this._send(this.lastMode, 'PAUSE')
+    return this._send(this.lastMode, 'PAUSE_MUTE')
   }
 }
 
@@ -411,7 +411,7 @@ BluetoothA2dp.prototype.pause = function () {
  *
  * You can listen following changed state:
  * - `protocol.AUDIO_STATE.STOPPED` after music play stopped.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
  */
 BluetoothA2dp.prototype.stop = function () {
@@ -421,7 +421,7 @@ BluetoothA2dp.prototype.stop = function () {
       logger.warn('stop() while last state is already stopped.')
     }
     this.lastCmd = 'stop'
-    this._send(this.lastMode, 'STOP')
+    return this._send(this.lastMode, 'STOP')
   }
 }
 
@@ -429,13 +429,12 @@ BluetoothA2dp.prototype.stop = function () {
  * Play a2dp-sink previous song.
  *
  * No state changed after this command execution.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  */
 BluetoothA2dp.prototype.prev = function () {
   logger.debug(`prev(${this.lastMode})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    this._send(this.lastMode, 'UNMUTE')
-    this._send(this.lastMode, 'PREV')
+    return this._send(this.lastMode, 'UNMUTE') && this._send(this.lastMode, 'PREV')
   }
 }
 
@@ -443,13 +442,12 @@ BluetoothA2dp.prototype.prev = function () {
  * Play a2dp-sink next song.
  *
  * No state changed after this command execution.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  */
 BluetoothA2dp.prototype.next = function () {
   logger.debug(`next(${this.lastMode})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    this._send(this.lastMode, 'UNMUTE')
-    this._send(this.lastMode, 'NEXT')
+    return this._send(this.lastMode, 'UNMUTE') && this._send(this.lastMode, 'NEXT')
   }
 }
 
@@ -458,13 +456,13 @@ BluetoothA2dp.prototype.next = function () {
  *
  * You can listen following changed state:
  * - `protocol.AUDIO_STATE.QUERY_RESULT`.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
  */
 BluetoothA2dp.prototype.query = function () {
   logger.debug(`query song info`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    this._send(this.lastMode, 'GETSONG_ATTRS')
+    return this._send(this.lastMode, 'GETSONG_ATTRS')
   }
 }
 
@@ -473,12 +471,13 @@ BluetoothA2dp.prototype.query = function () {
  *
  * You can listen following changed state:
  * - `protocol.DISCOVER_STATE.ON` after set succeeded.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#discovery_state_changed
  * @private
  */
 BluetoothA2dp.prototype.setDiscoverable = function () {
   logger.debug('Todo: not implemenet yet.')
+  return true
 }
 
 /**
@@ -486,12 +485,13 @@ BluetoothA2dp.prototype.setDiscoverable = function () {
  *
  * You can listen following changed state:
  * - `protocol.DISCOVER_STATE.OFF` after set succeeded.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#discovery_state_changed
  * @private
  */
 BluetoothA2dp.prototype.setUndiscoverable = function () {
   logger.debug('Todo: not implemenet yet.')
+  return true
 }
 
 /**
@@ -499,7 +499,7 @@ BluetoothA2dp.prototype.setUndiscoverable = function () {
  *
  * You can listen following changed state:
  * - `protocol.DISCOVER_STATE.DEVICE_LIST_CHANGED` while some bluetooth devices have been found.
- * @returns {null}
+ * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#discovery_state_changed
  */
 BluetoothA2dp.prototype.discovery = function () {
@@ -508,7 +508,7 @@ BluetoothA2dp.prototype.discovery = function () {
     if (this.lastMsg.a2dpstate !== 'opened') {
       logger.warn('discovery() while last state is not opened.')
     }
-    this._send(this.lastMode, 'DISCOVERY')
+    return this._send(this.lastMode, 'DISCOVERY')
   }
 }
 
