@@ -660,23 +660,27 @@ test('module->flora->client: rpc call target', { timeout: 10 * 1000 }, t => {
   var retFailed = (err) => {
     t.fail('remote method call failed: ' + err)
   }
-  agentInfo[0].agent.call(methodName, null, agentInfo[1].id).then(retCallback, retFailed)
-  agentInfo[0].agent.post(methodName, null)
-  agentInfo[0].agent.call(methodName, null, agentInfo[0].id).then(retCallback, retFailed)
-  agentInfo[0].agent.call(methodName, null, '##xx!!').then((reply) => {
-    t.failed('missing target remote call should failed')
-  }, (err) => {
-    t.equal(err, flora.ERROR_TARGET_NOT_EXISTS)
-  })
-  agentInfo[0].agent.call(methodName, null, agentInfo[2].id).then(retCallback, retFailed)
-  agentInfo[0].agent.call(methodName, null, agentInfo[2].id).then(retCallback, retFailed)
-  agentInfo[0].agent.call(methodName, null, agentInfo[0].id).then(retCallback, retFailed)
-  agentInfo[0].agent.call(methodName, null, 'missingTarget').then((reply) => {
-    t.failed('missing target remote call should failed')
-  }, (err) => {
-    t.equal(err, flora.ERROR_TARGET_NOT_EXISTS)
-  })
-  agentInfo[0].agent.call(methodName, null, agentInfo[0].id).then(retCallback, retFailed)
+
+  // wait 500 ms, for invocations of declareMethod in effect.
+  setTimeout(() => {
+    agentInfo[0].agent.call(methodName, null, agentInfo[1].id).then(retCallback, retFailed)
+    agentInfo[0].agent.post(methodName, null)
+    agentInfo[0].agent.call(methodName, null, agentInfo[0].id).then(retCallback, retFailed)
+    agentInfo[0].agent.call(methodName, null, '##xx!!').then((reply) => {
+      t.failed('missing target remote call should failed')
+    }, (err) => {
+      t.equal(err, flora.ERROR_TARGET_NOT_EXISTS)
+    })
+    agentInfo[0].agent.call(methodName, null, agentInfo[2].id).then(retCallback, retFailed)
+    agentInfo[0].agent.call(methodName, null, agentInfo[2].id).then(retCallback, retFailed)
+    agentInfo[0].agent.call(methodName, null, agentInfo[0].id).then(retCallback, retFailed)
+    agentInfo[0].agent.call(methodName, null, 'missingTarget').then((reply) => {
+      t.failed('missing target remote call should failed')
+    }, (err) => {
+      t.equal(err, flora.ERROR_TARGET_NOT_EXISTS)
+    })
+    agentInfo[0].agent.call(methodName, null, agentInfo[0].id).then(retCallback, retFailed)
+  }, 500)
 
   setTimeout(() => {
     t.equal(agentInfo[0].invokeCount, 3)
@@ -687,5 +691,5 @@ test('module->flora->client: rpc call target', { timeout: 10 * 1000 }, t => {
     agentInfo[1].agent.close()
     agentInfo[2].agent.close()
     t.end()
-  }, 3000)
+  }, 3500)
 })
