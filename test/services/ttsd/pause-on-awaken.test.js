@@ -97,7 +97,7 @@ test('should resume voice coming paused tts on reset awaken', t => {
 })
 
 test('should not resume voice coming paused tts if app is not expected one', t => {
-  t.plan(4)
+  t.plan(6)
   var service = new TtsService(ttsMock.lightd)
   service.connect({})
   var comp = new TtsFlora(service)
@@ -126,10 +126,16 @@ test('should not resume voice coming paused tts if app is not expected one', t =
         t.strictEqual(service.pausedReqIdOnAwaken, null)
       })
   })
+  var ttsId
+  service.on('cancel', (id, appId) => {
+    /** 4. cancel event should always be emitted */
+    t.strictEqual(id, ttsId)
+    t.strictEqual(appId, '@test', 'req of app(@test) should be canceled on reset awaken')
+  })
   service.on('end', (id, appId) => {
     t.fail('no end event expected')
   })
 
   /** 1. start speech synthesis */
-  service.speak('@test', 'foobar')
+  ttsId = service.speak('@test', 'foobar')
 })
