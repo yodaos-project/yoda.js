@@ -30,6 +30,7 @@ function Tts (lightd) {
 
   this.playingReqId = null
   this.pausedReqIdOnAwaken = null
+  this.pausedAppIdOnAwaken = null
 
   AudioManager.setPlayingState(audioModuleName, false)
 }
@@ -66,13 +67,17 @@ Tts.prototype.speak = function (appId, text) {
   return reqId
 }
 
-Tts.prototype.stop = function (appId) {
+Tts.prototype.stop = function (appId, expectedReqId) {
   var appMemo = this.appRequestMemo[appId]
   if (appMemo == null) {
     logger.info(`app(${appId}) doesn't own any active requests`)
     return false
   }
   var reqId = appMemo.reqId
+  if (expectedReqId != null && reqId !== expectedReqId) {
+    logger.info(`app(${appId}) may have requested new speak, skip stopping req(${expectedReqId})`)
+    return false
+  }
   var reqMemo = reqId == null ? undefined : this.requestMemo[reqId]
 
   var status = true
