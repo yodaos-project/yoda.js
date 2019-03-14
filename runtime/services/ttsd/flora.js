@@ -43,7 +43,6 @@ Flora.prototype.handlers = {
         'skip voice coming for no currently playing.')
       return
     }
-    this.tts.pausedReqIdOnAwaken = reqId
     if (reqId == null) {
       logger.info('no currently tts playing requests, skipping.')
       return
@@ -53,6 +52,8 @@ Flora.prototype.handlers = {
       logger.error(`Un-owned tts request(${reqId})`)
       return
     }
+    this.tts.pausedReqIdOnAwaken = reqId
+    this.tts.pausedAppIdOnAwaken = appId
     logger.info(`pausing tts(${reqId}, app:${appId})`)
     return this.tts.pause(appId)
   },
@@ -114,11 +115,14 @@ Flora.prototype.remoteMethods = {
   'yodart.ttsd.resetAwaken': function resetAwaken (reqMsg, res) {
     var appId = reqMsg[0]
     var pausedReqIdOnAwaken = this.tts.pausedReqIdOnAwaken
+    var pausedAppIdOnAwaken = this.tts.pausedAppIdOnAwaken
     this.tts.pausedReqIdOnAwaken = null
+    this.tts.pausedAppIdOnAwaken = null
 
     var appMemo = this.tts.appRequestMemo[appId]
     if (appMemo == null) {
       logger.info(`reset awaken requested by vui, yet doesn't have any memo of app(${appId})`)
+      this.tts.stop(pausedAppIdOnAwaken, pausedReqIdOnAwaken)
       return res.end(0, [ false ])
     }
     if (appMemo.reqId !== pausedReqIdOnAwaken) {
