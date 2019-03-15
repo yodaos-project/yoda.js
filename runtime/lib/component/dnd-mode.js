@@ -103,7 +103,7 @@ class DNDCommon {
    */
   static getDNDTime () {
     function formatDate (dt) {
-      return `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDay()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
+      return `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDate()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
     }
     var now = new Date()
     now.setHours(now.getHours() + now.getTimezoneOffset() / 60)
