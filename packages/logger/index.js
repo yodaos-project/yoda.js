@@ -38,7 +38,7 @@ var logLevels = {
   'warn': 4,
   'error': 5
 }
-
+var testFlag = '[Automation]'
 /**
  * @constructor
  * @param {String} name - the logger name
@@ -47,7 +47,7 @@ function Logger (name) {
   this.name = name || 'default'
 }
 
-function createLoggerFunction (level) {
+function createLoggerFunction (level, isTestlog) {
   level = logLevels[level]
   if (!level || level < 1 || level > 5) {
     level = 3 // info
@@ -60,6 +60,9 @@ function createLoggerFunction (level) {
       line = `${util.formatValue(arguments[0])} ${util.formatValue(arguments[1])}`
     } else {
       line = util.format.apply(util, arguments)
+    }
+    if (isTestlog) {
+      line = testFlag + line
     }
     if (line.length >= 1024) {
       line = line.slice(0, 1024) + '...'
@@ -97,6 +100,36 @@ Logger.prototype.warn = createLoggerFunction('warn')
  * log level: error
  */
 Logger.prototype.error = createLoggerFunction('error')
+
+/**
+ * log level: verbose
+ */
+Logger.prototype.keyVerbose = createLoggerFunction('verbose', true)
+
+/**
+ * log level: debug
+ */
+Logger.prototype.keyDebug = createLoggerFunction('debug', true)
+
+/**
+ * log level: log
+ */
+Logger.prototype.keyLog = createLoggerFunction('info', true)
+
+/**
+ * log level: info
+ */
+Logger.prototype.keyInfo = createLoggerFunction('info', true)
+
+/**
+ * log level: warn
+ */
+Logger.prototype.keyWarn = createLoggerFunction('warn', true)
+
+/**
+ * log level: error
+ */
+Logger.prototype.keyError = createLoggerFunction('error', true)
 
 /**
  * @example

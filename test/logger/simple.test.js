@@ -16,6 +16,9 @@ test('simple ', (t) => {
     t.doesNotThrow(() => {
       if (it !== 'none') {
         logger[it](text)
+        var keyFn = 'key' + it[0].toUpperCase() + it.substr(1, it.length - 1)
+        console.log(keyFn)
+        logger[keyFn](text)
       }
     })
   })

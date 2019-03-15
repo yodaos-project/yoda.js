@@ -76,10 +76,10 @@ class StandbyLight extends BaseConfig {
     if (action) {
       property.set('sys.standbylightswitch', action, 'persist')
       if (action === SWITCH_OPEN) {
-        logger.info('standby light turned on')
+        logger.keyInfo('standby light turned on')
         this.activity.light.play(STANDBY_LIGHT_JS, {}, {shouldResume: true})
       } else if (action === SWITCH_CLOSE) {
-        logger.info('standby light turned off')
+        logger.keyInfo('standby light turned off')
         this.activity.light.stop(STANDBY_LIGHT_JS)
       }
       if (!isFirstLoad) {

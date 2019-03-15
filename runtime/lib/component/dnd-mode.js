@@ -62,7 +62,7 @@ class DNDCommon {
     this.light.setDNDMode(false)
     DNDCommon.setStatus('off')
     DNDCommon.setAwakeSwitch('open')
-    logger.info('dnd mode turned off')
+    logger.keyInfo('dnd mode turned off')
   }
 
   isVolumeChanging () {
@@ -87,12 +87,12 @@ class DNDCommon {
       this.volumeChangingStart()
       this.sound.setVolume(DND_MODE_VOLUME)
       DNDCommon.setSavedVolume(curVolume)
-      logger.info(`save volume [${curVolume}%]`)
+      logger.keyInfo(`save volume [${curVolume}%]`)
     }
     this.light.setDNDMode(true)
     DNDCommon.setStatus('on')
     DNDCommon.setAwakeSwitch('close')
-    logger.info('dnd mode turned on')
+    logger.keyInfo('dnd mode turned on')
   }
 
   /**
