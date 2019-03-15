@@ -5,11 +5,25 @@ var logger = require('logger')('pony')
 
 var yodaUtil = require('@yoda/util')
 
-var heapdumpFlag = property.get('sys.vm.heapdump', 'persist')
-if (heapdumpFlag === 'true') {
-  process.on('SIGUSR2', function () {
-    var timestamp = Math.floor(Date.now())
+var profilerFlag = property.get('sys.vm.profiler', 'persist')
+if (profilerFlag === 'true') {
+  var profiling = false
+  process.on('SIGUSR1', function () {
     var profiler = require('profiler')
+    if (profiling) {
+      logger.debug('stop profiling')
+      profiler.stopProfiling()
+      return
+    }
+    var timestamp = Math.floor(Date.now())
+    var filename = `/data/cpu-profile-${process.pid}-${timestamp}.txt`
+    profiler.startProfiling(filename)
+    logger.debug(`start profiling, target ${filename}`)
+    profiling = true
+  })
+  process.on('SIGUSR2', function () {
+    var profiler = require('profiler')
+    var timestamp = Math.floor(Date.now())
     var filename = `/data/heapdump-${process.pid}-${timestamp}.json`
     profiler.takeSnapshot(filename)
     logger.debug(`dump the heap profile at ${filename}`)
