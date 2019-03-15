@@ -37,12 +37,18 @@ var stateFilters = [
   // connect to remote device failed
   {
     inflowMsg: {a2dpstate: 'opened', connect_state: 'connect failed'},
-    outflowEvent: {type: 'connection_state_changed', state: protocol.CONNECTION_STATE.CONNECT_FAILED}
+    outflowEvent: {type: 'connection_state_changed', state: protocol.CONNECTION_STATE.CONNECT_FAILED},
+    extraDataGenerator: (msg) => {
+      return {'address': msg.connect_address, 'name': msg.connect_name}
+    }
   },
   // auto connect to history paired device failed
   {
     inflowMsg: {a2dpstate: 'opened', connect_state: 'connect over'},
-    outflowEvent: {type: 'connection_state_changed', state: protocol.CONNECTION_STATE.AUTOCONNECT_FAILED}
+    outflowEvent: {type: 'connection_state_changed', state: protocol.CONNECTION_STATE.AUTOCONNECT_FAILED},
+    extraDataGenerator: (msg) => {
+      return {'address': msg.connect_address, 'name': msg.connect_name}
+    }
   },
   // started music
   {
