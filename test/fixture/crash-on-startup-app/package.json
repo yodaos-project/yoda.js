@@ -8,7 +8,6 @@
       "@test/crash-on-startup-app"
     ],
     "permission": [
-      "ACCESS_TTS"
     ]
   },
   "scripts": {

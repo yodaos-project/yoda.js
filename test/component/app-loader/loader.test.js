@@ -90,7 +90,7 @@ test('should load dbus app', t => {
     objectPath: 'foo',
     ifaceName: 'bar',
     skills: [ 'foobar-skill' ],
-    permission: ['ACCESS_TTS', 'ACCESS_MULTIMEDIA']
+    permission: []
   }
   loader.setManifest(appId, manifest, { dbusApp: true })
   manifest.skills.forEach(it => {

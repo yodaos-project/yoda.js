@@ -165,12 +165,6 @@ Object.assign(MultimediaDescriptor.prototype,
         var self = this
         var streamType = _.get(options, 'streamType', 'playback')
 
-        if (!self._runtime.component.permission.check(self._appId, 'ACCESS_MULTIMEDIA', {
-          acquiresActive: false
-        })) {
-          return Promise.reject(new Error('Permission denied.'))
-        }
-
         if (typeof streamType !== 'string') {
           return Promise.reject(new Error('Expect string on options.streamType.'))
         }
@@ -219,7 +213,7 @@ Object.assign(MultimediaDescriptor.prototype,
         var impatient = _.get(options, 'impatient', true)
         var streamType = _.get(options, 'streamType', 'playback')
 
-        if (!self._runtime.component.permission.check(self._appId, 'ACCESS_MULTIMEDIA')) {
+        if (!self._runtime.component.permission.check(self._appId)) {
           return Promise.reject(new Error('Permission denied.'))
         }
 
@@ -300,7 +294,7 @@ Object.assign(MultimediaDescriptor.prototype,
       returns: 'promise',
       fn: function resume (playerId) {
         var pid = playerId || '-1'
-        if (!this._runtime.component.permission.check(this._appId, 'ACCESS_MULTIMEDIA')) {
+        if (!this._runtime.component.permission.check(this._appId)) {
           return Promise.reject(new Error('Permission denied.'))
         }
         return this._runtime.multimediaMethod('resume', [this._appId, pid])

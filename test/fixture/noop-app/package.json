@@ -8,7 +8,6 @@
       "@test/noop-app"
     ],
     "permission": [
-      "ACCESS_TTS"
     ]
   },
   "scripts": {

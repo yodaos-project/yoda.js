@@ -8,8 +8,6 @@
       "9CA6C0CBB4994F6A8732EA0863784C0E"
     ],
     "permission": [
-      "ACCESS_TTS",
-      "ACCESS_MULTIMEDIA",
       "INTERRUPT"
     ],
     "hosts": [{
