@@ -13,10 +13,6 @@
       "R05A20771E99463ABEBCDFDDE34B07E2"
     ],
     "permission": [
-      "ACCESS_NETWORK_STATE",
-      "ACCESS_TTS",
-      "ACCESS_MULTIMEDIA",
-      "ACCESS_SOUND",
       "INTERRUPT"
     ],
     "hosts": [

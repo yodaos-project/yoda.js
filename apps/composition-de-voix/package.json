@@ -12,7 +12,6 @@
       "RB0BF7E9D7F84B2BB4A1C2990A1EF8F5"
     ],
     "permission": [
-      "ACCESS_TTS",
       "ACCESS_VOICE_COMMAND",
       "INTERRUPT"
     ]
