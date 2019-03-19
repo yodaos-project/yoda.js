@@ -158,7 +158,7 @@ DBus.prototype.extapp = {
       if (this.component.appLoader.getAppManifest(appId) == null) {
         return cb(null, '-1')
       }
-      var permit = this.component.permission.check(appId, 'ACCESS_TTS')
+      var permit = this.component.permission.check(appId)
       if (!permit) {
         return cb(null, '-1')
       }
@@ -176,7 +176,7 @@ DBus.prototype.extapp = {
       if (this.component.appLoader.getAppManifest(appId) == null) {
         return cb(null, '-1')
       }
-      var permit = this.component.permission.check(appId, 'ACCESS_MULTIMEDIA')
+      var permit = this.component.permission.check(appId)
       if (!permit) {
         return cb(null, '-1')
       }

@@ -13,7 +13,6 @@
       "RC3CA6A6C04C4513B1F54191F9E749A9"
     ],
     "permission": [
-      "ACCESS_TTS",
       "ACCESS_VOICE_COMMAND",
       "INTERRUPT"
     ],
