@@ -38,16 +38,24 @@ Permission.prototype.load = function (appId, permission) {
 Permission.prototype.check = function (appId, name, options) {
   var acquiresActive = _.get(options, 'acquiresActive', true)
 
-  if (appId === undefined || name === undefined) {
+  if (appId === undefined) {
     return false
   }
+  var isActiveApp = appId === this.component.lifetime.getCurrentAppId()
+
+  if (name === undefined) {
+    if (!isActiveApp) {
+      logger.info(`app is not currently active app, denying.`, appId, this.component.lifetime.getCurrentAppId())
+    }
+    return isActiveApp
+  }
+
   // check if the app does specify the permission.
   if (this.permission[appId] && this.permission[appId][name] === true) {
     if (acquiresActive === false) {
       return true
     }
     /** no permission other than `INTERRUPT` shall be allow if app is not top of stack */
-    var isActiveApp = appId === this.component.lifetime.getCurrentAppId()
     if (!isActiveApp) {
       logger.info(`app has permission ${name}, but is not currently active app, denying.`, appId, this.component.lifetime.getCurrentAppId())
     }

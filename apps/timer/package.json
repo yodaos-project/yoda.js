@@ -11,10 +11,6 @@
       "RFCBA81EECAC4E11BA0EBC1AEC397A93"
     ],
     "permission": [
-      "ACCESS_NETWORK_STATE",
-      "ACCESS_TTS",
-      "ACCESS_MULTIMEDIA",
-      "ACCESS_SOUND",
       "INTERRUPT"
     ],
     "hosts": [
