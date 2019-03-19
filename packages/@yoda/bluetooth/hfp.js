@@ -131,7 +131,7 @@ class BluetoothHfp extends EventEmitter {
   _send (cmdstr, props) {
     var data = Object.assign({ command: cmdstr }, props)
     var msg = [ JSON.stringify(data) ]
-    return this._flora.post('bluetooth.hfp.command', msg, floraFactory.MSGTYPE_INSTANT)
+    return this._flora.post('bluetooth.hfp.command', msg, floraFactory.MSGTYPE_INSTANT) === 0
   }
 
   /**
@@ -141,7 +141,7 @@ class BluetoothHfp extends EventEmitter {
    * - `protocol.RADIO_STATE.ON` when bluetooth is opened successfully.
    * - `protocol.RADIO_STATE.ON_FAILED` when bluetooth cannot be opened.
    *
-   * @returns {null}
+   * @returns {boolean} `true` if send command success else `false`.
    * @fires module:@yoda/bluetooth/BluetoothHfp#radio_state_changed
    * @example
    * var bluetooth = require('@yoda/bluetooth')
@@ -158,7 +158,7 @@ class BluetoothHfp extends EventEmitter {
       name: this.localName,
       unique: false
     }
-    this._send('ON', msg)
+    return this._send('ON', msg)
   }
 
   /**
@@ -167,7 +167,7 @@ class BluetoothHfp extends EventEmitter {
    * You can listen following changed state events:
    * - `protocol.RADIO_STATE.OFF` when bluetooth is closed.
    *
-   * @returns {null}
+   * @returns {boolean} `true` if send command success else `false`.
    * @fires module:@yoda/bluetooth/BluetoothHfp#radio_state_changed
    */
   close () {
@@ -175,38 +175,38 @@ class BluetoothHfp extends EventEmitter {
     if (this.lastMsg.hfpstate === 'closed') {
       logger.warn('close() while last state is already closed.')
     }
-    this._send('OFF')
+    return this._send('OFF')
   }
 
   /**
    * Answer incoming call.
-   * @return {null}
+   * @return {boolean} `true` if send command success else `false`.
    * @fires module:@yoda/bluetooth/BluetoothHfp#call_state_changed
    */
   answer () {
     logger.debug(`answer()`)
-    this._send('ANSWERCALL')
+    return this._send('ANSWERCALL')
   }
 
   /**
    * Hang up call.
-   * @return {null}
+   * @return {boolean} `true` if send command success else `false`.
    * @fires module:@yoda/bluetooth/BluetoothHfp#call_state_changed
    */
   hangup () {
     logger.debug(`hangup()`)
-    this._send('HANGUP')
+    return this._send('HANGUP')
   }
 
   /**
    * Outgoing a call.
    * @param {string} number - Specify the destination phone number.
-   * @return {null}
+   * @return {boolean} `true` if send command success else `false`.
    * @fires module:@yoda/bluetooth/BluetoothHfp#call_state_changed
    */
   dial (number) {
     logger.debug(`dial(${number})`)
-    this._send('DIALING', {'NUMBER': number})
+    return this._send('DIALING', {'NUMBER': number})
   }
 
   /**
