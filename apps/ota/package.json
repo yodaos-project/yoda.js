@@ -10,8 +10,6 @@
       "com.rokid.system.upgrade"
     ],
     "permission": [
-      "ACCESS_TTS",
-      "ACCESS_MULTIMEDIA"
     ],
     "hosts": [
       [ "ota", { "skillId": "@ota" } ]

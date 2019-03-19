@@ -119,7 +119,7 @@ Object.assign(TtsDescriptor.prototype,
         var self = this
         var impatient = _.get(options, 'impatient', false)
 
-        if (!self._runtime.component.permission.check(self._appId, 'ACCESS_TTS')) {
+        if (!self._runtime.component.permission.check(self._appId)) {
           return Promise.reject(new Error('Permission denied.'))
         }
 
