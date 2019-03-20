@@ -382,14 +382,30 @@ module.exports = activity => {
     var appId = _.get(nlp, 'appId')
     if (appId && intentType === 'EXIT') {
       logger.warn(`The intent value is [EXIT] with appId: [${appId}]`)
-      sos.destroyByAppId(appId)
+      savePlayerInfo()
+        .then(() => {
+          sos.destroyByAppId(appId)
+          logger.log('save playerInfo success!')
+        })
+        .catch((err) => {
+          sos.destroyByAppId(appId)
+          logger.error(`save playerInfo error(${err})`)
+        })
       // clear domain locally and it will automatically upload to cloud
       activity.exit({ clearContext: true })
       return
     }
     if (intentType === 'EXIT') {
       logger.warn(`${this.appId}: intent value is [EXIT]`)
-      sos.destroy()
+      savePlayerInfo()
+        .then(() => {
+          sos.destroy()
+          logger.log('save playerInfo success!')
+        })
+        .catch((err) => {
+          logger.error(`save playerInfo error(${err})`)
+          sos.destroy()
+        })
       pm.clear()
       // clear domain locally and it will automatically upload to cloud
       activity.exit({ clearContext: true })
@@ -402,19 +418,15 @@ module.exports = activity => {
 
   activity.on('destroy', function () {
     logger.log(this.appId + ' destroyed')
-    var index = sos.getSceneSkillIndex()
-    if (index >= 0) {
-      activity.media.getPosition().then(progress => {
-        logger.log('progress =', progress)
-        if (sos.skills[index]) {
-          sos.skills[index].setProgress(progress)
-          sos.skills[index].saveRecoverData(activity)
-        }
+    savePlayerInfo()
+      .then(() => {
+        sos.destroy()
+        logger.log('save playerInfo success!')
+      })
+      .catch((err) => {
+        logger.error(`save playerInfo error(${err})`)
         sos.destroy()
       })
-    } else {
-      sos.destroy()
-    }
   })
   activity.on('notification', (state) => {
     switch (state) {
@@ -459,4 +471,18 @@ module.exports = activity => {
         break
     }
   })
+
+  function savePlayerInfo () {
+    var index = sos.getSceneSkillIndex()
+    if (index >= 0) {
+      var skill = sos.skills[index]
+      var playerId = pm.getByAppId(skill.appId)
+      return activity.media.getPosition(playerId).then(progress => {
+        logger.log(`set playerInfo with progress(${progress})`)
+        skill.setProgress(progress)
+        skill.saveRecoverData(activity)
+      })
+    }
+    return Promise.resolve()
+  }
 }

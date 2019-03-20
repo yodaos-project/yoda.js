@@ -22,7 +22,7 @@ function Skill (exe, nlp, action) {
   this.exe = exe
   this.handleEvent()
   this.transform(action.response.action.directives || [])
-  this.playerCtlData = {}
+  this.playerCtlData = null
 }
 inherits(Skill, EventEmitter)
 
@@ -215,18 +215,23 @@ Skill.prototype.handleEvent = function () {
   })
 }
 Skill.prototype.saveRecoverData = function (activity) {
-  logger.log('saveRecoverData start:')
-  logger.log('data = ', this.playerCtlData)
+  if (this.playerCtlData === null) {
+    logger.warn('playerCtlData is NULL. Abandon SaveData.')
+    return
+  }
   var str = JSON.stringify(this.playerCtlData)
-  logger.log('str = ', str)
+  logger.log(`send URL to app(playercontrol) for save playerData with data(${str})`)
   var url = 'yoda-skill://playercontrol/playercontrol?name=' + this.appId + '&url=' + encodeURIComponent('yoda-skill://cloudappclient/resume?data=' + str)
-  logger.log('url = ', url)
   activity.openUrl(url, { preemptive: false })
 }
 Skill.prototype.setplayerCtlData = function (data) {
   this.playerCtlData = data
 }
 Skill.prototype.setProgress = function (data) {
+  if (this.playerCtlData === null) {
+    logger.warn('playerCtlData is NULL. Abandon setProgress.')
+    return
+  }
   this.playerCtlData.item.offsetInMilliseconds = data
 }
 Skill.prototype.transform = function (directives, append) {
@@ -281,8 +286,10 @@ Skill.prototype.transform = function (directives, append) {
         logger.log('skill active set true')
         this.isSkillActive = true
       }
-      this.playerCtlData = ele
-      logger.log('playerCtlData === ', this.playerCtlData)
+      if (ele.action === 'PLAY') {
+        this.playerCtlData = ele
+        logger.log(`replace playerCtlData with [${this.playerCtlData}]`)
+      }
     } else if (ele.type === 'confirm') {
       tdt = {
         type: 'confirm',
