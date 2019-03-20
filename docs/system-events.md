@@ -6,7 +6,7 @@ This document defines system events in YodaOS that can be used to:
 - Monitor system status
 - Provide system integration test interface
 
-> [Flora][] is an IPC library with both PUB/SUB and Req/Res, which you can use to get the following system states and methods.
+> [Flora][] is an IPC library with both PUB/SUB and Req/Res, which you can use to get the following system events and methods.
 
 ### Table of Contents
 
