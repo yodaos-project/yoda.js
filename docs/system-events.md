@@ -8,6 +8,7 @@ This document defines system events in YodaOS that can be used to:
 
 ### Table of Contents
 
+* [Modules Overview](#modules-overview)
 * [Events](#events)
   * [`rokid.turen.voice_coming`](#rokidturenvoice_coming)
   * [`rokid.turen.local_awake`](#rokidturenlocal_awake)
@@ -27,12 +28,20 @@ This document defines system events in YodaOS that can be used to:
   * [`rokid.speech.extra`](#rokidspeechextra)
   * [`rokid.speech.nlp`](#rokidspeechnlp)
   * [`rokid.speech.error`](#rokidspeecherror)
-  * [`rokid.speech.completed`](#rokidspeechcompleted-1)
+  * [`rokid.speech.completed`](#rokidspeechcompleted)
 * [Methods](#methods)
   * [speech-service](#speech-service)
     * [`asr2nlp(text, options)`](#asr2nlptext-options)
   * [vui](#vui)
     * [`rokid.skilloptions()`](#rokidskilloptions)
+
+### Modules Overview
+
+In the process of voice interaction, YodaOS is mainly divided into three system modules: turenproc, speech service and vui service.
+
+The turenproc is used to capture PCM data from microphone, determine whether the voice activates the device, and report the activated voice data. The speech service receives the voice data of turenproc, uploads it to the cloud, and returns the NLP result to vui. 
+
+The vui service manages the lifetime of the applications and dispatches NLP to different applications through the configration.
 
 ### Events
 
