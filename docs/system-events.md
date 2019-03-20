@@ -6,6 +6,8 @@ This document defines system events in YodaOS that can be used to:
 - Monitor system status
 - Provide system integration test interface
 
+> [Flora][] is an IPC library with both PUB/SUB and Req/Res, which you can use to get the following system states and methods.
+
 ### Table of Contents
 
 * [Modules Overview](#modules-overview)
@@ -206,3 +208,5 @@ The vui service is used to handle the logic related to voice interaction, includ
 ##### `rokid.skilloptions()`
 
 Gets the skill options, it returns a JSON string, no parameters is required.
+
+[Flora]: https://github.com/yodaos-project/flora
