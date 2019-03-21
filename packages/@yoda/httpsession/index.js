@@ -11,7 +11,7 @@ var native = require('./httpsession.node')
  * Send a http request.
  * @function request
  * @param {string} url
- * @param {object} options
+ * @param {object} [options]
  * @param {string} [options.method] - the http method, like `GET', 'POST', 'PUT'.
  * @param {string} [options.body] - the http body to send.
  * @param {number} [options.timeout] - the timeout in seconds.
