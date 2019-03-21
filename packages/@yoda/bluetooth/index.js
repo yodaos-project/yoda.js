@@ -15,8 +15,6 @@ var logger = require('logger')('bluetooth-index')
 var system = require('@yoda/system')
 var messageStreamInstance = null
 var playerInstance = null
-var a2dpInstance = null
-var hfpInstance = null
 
 module.exports = {
   /**
@@ -55,10 +53,6 @@ module.exports = {
       playerInstance.disconnect()
       playerInstance = null
     }
-    if (a2dpInstance) {
-      a2dpInstance.disconnect()
-      a2dpInstance = null
-    }
   },
   /**
    * @typedef {Object} PROFILE
@@ -74,19 +68,13 @@ module.exports = {
     logger.debug(`getAdapter(${profile})`)
     switch (profile) {
       case this.protocol.PROFILE.A2DP:
-        if (a2dpInstance === null) {
-          var BluetoothA2dp = require('./a2dp').BluetoothA2dp
-          a2dpInstance = new BluetoothA2dp(system.getDeviceName())
-          logger.info('Create -- BluetoothA2dp --')
-        }
-        return a2dpInstance
+        var BluetoothA2dp = require('./a2dp').BluetoothA2dp
+        logger.info('new Create -- BluetoothA2dp --')
+        return new BluetoothA2dp(system.getDeviceName())
       case this.protocol.PROFILE.HFP:
-        if (hfpInstance === null) {
-          var BluetoothHfp = require('./hfp').BluetoothHfp
-          hfpInstance = new BluetoothHfp(system.getDeviceName())
-          logger.info('Create -- bluetooth hands-free profile --')
-        }
-        return hfpInstance
+        var BluetoothHfp = require('./hfp').BluetoothHfp
+        logger.info('new Create -- bluetooth hands-free profile --')
+        return new BluetoothHfp(system.getDeviceName())
       case this.protocol.PROFILE.BLE:
       default:
         return this.getMessageStream()
