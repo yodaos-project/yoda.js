@@ -7,9 +7,6 @@ var Manager = require(`${helper.paths.apps}/cloudappclient/manager.js`)
 var Skill = require(`${helper.paths.apps}/cloudappclient/skill`)
 var eventRequestMap = require(`${helper.paths.apps}/cloudappclient/eventRequestMap.json`)
 
-// todo: This is a temporary plan. For httpsession's bug.
-var http = require('@yoda/httpsession')
-
 class EventRequest extends EventEmitter {
   ttsEvent (name, appId, itemId, cb) {
     cb(null, '{}')
