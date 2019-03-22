@@ -63,8 +63,3 @@ test('test manager-eventRequest: tts cancel', (t) => {
   pm.sendEventRequest('tts', 'cancel', { appId: 'testAppId' }, {})
   t.end()
 })
-
-test('todo: This is a temporary plan. For httpsession\'s bug. In order to close httpsession.', (t) => {
-  http.abort()
-  t.end()
-})
