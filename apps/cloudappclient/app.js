@@ -382,17 +382,21 @@ module.exports = activity => {
     var appId = _.get(nlp, 'appId')
     if (appId && intentType === 'EXIT') {
       logger.warn(`The intent value is [EXIT] with appId: [${appId}]`)
-      sos.destroyByAppId(appId)
-      // clear domain locally and it will automatically upload to cloud
-      activity.exit({ clearContext: true })
+      sos.onrequestOnce(nlp, action, () => {
+        sos.destroyByAppId(appId)
+        // clear domain locally and it will automatically upload to cloud
+        activity.exit({ clearContext: true })
+      })
       return
     }
     if (intentType === 'EXIT') {
       logger.warn(`${this.appId}: intent value is [EXIT]`)
-      sos.destroy()
-      pm.clear()
-      // clear domain locally and it will automatically upload to cloud
-      activity.exit({ clearContext: true })
+      sos.onrequestOnce(nlp, action, () => {
+        sos.destroy()
+        pm.clear()
+        // clear domain locally and it will automatically upload to cloud
+        activity.exit({ clearContext: true })
+      })
       return
     }
     logger.log(`${this.appId} app request`)
