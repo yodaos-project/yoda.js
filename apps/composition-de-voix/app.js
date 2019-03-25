@@ -42,6 +42,11 @@ module.exports = function compositionDeVoix (activity) {
     var reason = _.get(userData, 'reason')
     if (reason !== 'carrier') {
       logger.info('doesn\'t activated for carrier, nothing to do.')
+      return
+    }
+    if (currId == null) {
+      activity.exit()
+      return
     }
     fastResolveDelay()
   })
@@ -73,7 +78,7 @@ module.exports = function compositionDeVoix (activity) {
             var timeout = exec.delay
             if (timeout === 0) {
               fastResolveId = id
-              timeout = 5000
+              timeout = 5 * 60 * 1000 /** 5min */
             }
             logger.info(`delaying execution(${id}) ${timeout}ms, actual setting ${exec.delay}ms`)
             return delay(timeout)
@@ -83,8 +88,11 @@ module.exports = function compositionDeVoix (activity) {
               logger.info(`execution(${id}) next step`, idx + 1)
               return execute(id, executions, idx + 1)
             }
-            /** execution done */
-            activity.exit()
+            if (currId === id) {
+              /** execution done */
+              currId = null
+              activity.exit()
+            }
           })
       })
   }
