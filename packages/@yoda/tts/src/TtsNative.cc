@@ -2,42 +2,45 @@
 
 void TtsNative::SendEvent(void* self, TtsResultType type, int id, int code) {
   TtsNative* native = static_cast<TtsNative*>(self);
-  uv_async_t* async_handle = new uv_async_t;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, native->ttswrap);
   iotjs_tts_event_t* event = new iotjs_tts_event_t;
 
-  event->ttswrap = native->ttswrap;
   event->type = type;
   event->code = code;
   event->id = id;
-  async_handle->data = (void*)event;
 
-  uv_async_init(uv_default_loop(), async_handle, TtsNative::OnEvent);
-  uv_async_send(async_handle);
+  uv_mutex_lock(&_this->event_mutex);
+  _this->events.push_back(event);
+  uv_mutex_unlock(&_this->event_mutex);
+  uv_async_send(&_this->event_handle);
 }
 
 void TtsNative::OnEvent(uv_async_t* handle) {
-  iotjs_tts_event_t* event = (iotjs_tts_event_t*)handle->data;
-  iotjs_tts_t* ttswrap = event->ttswrap;
+  iotjs_tts_t* ttswrap = (iotjs_tts_t*)handle->data;
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_tts_t, ttswrap);
+
+  list<iotjs_tts_event_t*> event_list;
+  uv_mutex_lock(&_this->event_mutex);
+  event_list.swap(_this->events);
+  uv_mutex_unlock(&_this->event_mutex);
 
   jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
   jerry_value_t onevent = iotjs_jval_get_property(jthis, "onevent");
-  if (jerry_value_is_function(onevent)) {
-    iotjs_jargs_t jargs = iotjs_jargs_create(3);
-    iotjs_jargs_append_number(&jargs, (double)event->type);
-    iotjs_jargs_append_number(&jargs, (double)event->id);
-    iotjs_jargs_append_number(&jargs, (double)event->code);
-    iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
-    iotjs_jargs_destroy(&jargs);
+  bool has_listeners = jerry_value_is_function(onevent);
+
+  for (auto it = event_list.begin(); it != event_list.end(); ++it) {
+    iotjs_tts_event_t* event = *it;
+    if (has_listeners) {
+      iotjs_jargs_t jargs = iotjs_jargs_create(3);
+      iotjs_jargs_append_number(&jargs, (double)event->type);
+      iotjs_jargs_append_number(&jargs, (double)event->id);
+      iotjs_jargs_append_number(&jargs, (double)event->code);
+      iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
+      iotjs_jargs_destroy(&jargs);
+    }
+    delete event;
   }
   jerry_release_value(onevent);
-
-  delete event;
-  uv_close((uv_handle_t*)handle, TtsNative::AfterEvent);
-}
-
-void TtsNative::AfterEvent(uv_handle_t* handle) {
-  delete handle;
 }
 
 static void iotjs_tts_destroy(iotjs_tts_t* tts) {
@@ -46,8 +49,9 @@ static void iotjs_tts_destroy(iotjs_tts_t* tts) {
     delete _this->handle;
     _this->prepared = false;
   }
+  uv_mutex_destroy(&_this->event_mutex);
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
-  IOTJS_RELEASE(tts);
+  delete tts;
 }
 
 static JNativeInfoType this_module_native_info = {
@@ -61,12 +65,8 @@ static void iotjs_tts_async_onclose(uv_handle_t* handle) {
   jerry_release_value(jval);
 }
 
-static void iotjs_tts_onclose(uv_async_t* handle) {
-  uv_close((uv_handle_t*)handle, iotjs_tts_async_onclose);
-}
-
 static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
-  iotjs_tts_t* ttswrap = IOTJS_ALLOC(iotjs_tts_t);
+  iotjs_tts_t* ttswrap = new iotjs_tts_t;
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_tts_t, ttswrap);
 
   jerry_value_t jval = jerry_acquire_value(jtts);
@@ -74,8 +74,9 @@ static iotjs_tts_t* iotjs_tts_create(jerry_value_t jtts) {
                                &this_module_native_info);
   _this->handle = new TtsNative(ttswrap);
   _this->prepared = false;
-  _this->close_handle.data = (void*)ttswrap;
-  uv_async_init(uv_default_loop(), &_this->close_handle, iotjs_tts_onclose);
+  _this->event_handle.data = (void*)ttswrap;
+  uv_async_init(uv_default_loop(), &_this->event_handle, TtsNative::OnEvent);
+  uv_mutex_init(&_this->event_mutex);
   return ttswrap;
 }
 
@@ -204,7 +205,7 @@ JS_FUNCTION(Disconnect) {
     return JS_CREATE_ERROR(COMMON, "tts is not initialized");
   }
   _this->handle->disconnect();
-  uv_async_send(&_this->close_handle);
+  uv_close((uv_handle_t*)&_this->event_handle, iotjs_tts_async_onclose);
   return jerry_create_boolean(true);
 }
 
