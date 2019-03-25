@@ -493,12 +493,14 @@ module.exports = function (activity) {
     logger.debug(`${mode} onAudioStateChanged(${state})`)
     switch (state) {
       case protocol.AUDIO_STATE.PLAYING:
-        setAppType('bluetooth_music')
-        cancelTimer()
-        setTimer(() => { // To ensure unmute because turen may mute music by itself.
-          a2dp.unmute()
-        }, 100)
-        lastIntent = 'derived_from_phone'
+        if (currentSkillName !== 'bluetooth_call') {
+          setAppType('bluetooth_music')
+          cancelTimer()
+          setTimer(() => { // To ensure unmute because turen may mute music by itself.
+            a2dp.unmute()
+          }, 100)
+          lastIntent = 'derived_from_phone'
+        }
         break
       case protocol.AUDIO_STATE.PAUSED:
       case protocol.AUDIO_STATE.STOPPED:
@@ -608,7 +610,12 @@ module.exports = function (activity) {
           }
           activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
           activity.stopMonologue()
-          setAppType('bluetooth')
+          if (a2dp.getAudioState() === protocol.AUDIO_STATE.PLAYING) {
+            setAppType('bluetooth_music')
+            a2dp.unmute()
+          } else {
+            setAppType('bluetooth')
+          }
           activity.light.play(res.LIGHT.CALL[state], {}, { zIndex: 2 })
           activity.light.stop(res.LIGHT.CALL[callState])
         }
