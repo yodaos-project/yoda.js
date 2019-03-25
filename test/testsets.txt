@@ -1,4 +1,5 @@
 @yoda/audio/*.test.js
+@yoda/bluetooth/*.test.js
 @yoda/bolero/**/*.test.js
 @yoda/env/*.test.js
 @yoda/light/*.test.js
