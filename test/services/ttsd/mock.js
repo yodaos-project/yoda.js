@@ -22,23 +22,29 @@ MockTtsRequest.prototype.stop = function stop () {
     return
   }
   this.playing = false
-  this.handle.emit('cancel', this.id)
+  process.nextTick(() => {
+    this.handle.emit('cancel', this.id)
+  })
 }
 MockTtsRequest.prototype.__end = function __end () {
   if (!this.playing) {
     return
   }
   this.playing = false
-  this.handle.emit('end', this.id)
   currHandle = null
+  process.nextTick(() => {
+    this.handle.emit('end', this.id)
+  })
 }
 MockTtsRequest.prototype.__error = function __error (errno) {
   if (!this.playing) {
     return
   }
   this.playing = false
-  this.handle.emit('error', this.id, errno)
   currHandle = null
+  process.nextTick(() => {
+    this.handle.emit('error', this.id, errno)
+  })
 }
 
 mock.mockReturns(TtsWrap, 'createTts', function () {
