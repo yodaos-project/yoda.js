@@ -28,37 +28,43 @@ module.exports = function (activity) {
   var deviceProps = null
   var agent = null
   var currentSkillName = 'bluetooth'
-
-  function setAppType (skillName, afterFunc) {
+  function serializePromise (func) {
+    var future = Promise.resolve()
+    return function PromiseProxy () {
+      var args = arguments
+      future = future
+        .then(() => func.apply(this, args))
+        .catch(err => {
+          logger.error('unexpected error on serialized promise:', err)
+          func.apply(this.args)
+        })
+    }
+  }
+  var setAppType = serializePromise(setAppTypeRaw)
+  function setAppTypeRaw (skillName, afterFunc) {
     var id = getSkillId(skillName)
     logger.debug(`setAppType(${skillName}: ${id})`)
+    var future = Promise.resolve()
     switch (skillName) {
       case 'bluetooth_music':
-        if (typeof afterFunc === 'function') {
-          activity.setForeground({form: 'scene', skillId: id}).then(afterFunc)
-        } else {
-          activity.setForeground({form: 'scene', skillId: id})
-        }
+        future = activity.setForeground({form: 'scene', skillId: id})
         break
       case 'bluetooth_call':
-        if (typeof afterFunc === 'function') {
-          activity.setForeground({form: 'scene', skillId: id}).then(afterFunc)
-        } else {
-          activity.setForeground({form: 'scene', skillId: id})
-        }
+        future = activity.setForeground({form: 'scene', skillId: id})
         break
       case 'bluetooth':
-        if (typeof afterFunc === 'function') {
-          activity.setBackground({form: 'cut', skillId: id}).then(afterFunc)
-        } else {
-          activity.setBackground({form: 'cut', skillId: id})
-        }
+        future = activity.setBackground({form: 'cut', skillId: id})
         break
       default:
         break
     }
     activity.setContextOptions({ keepAlive: true })
     currentSkillName = skillName
+    return future.then(() => {
+      if (typeof afterFunc === 'function') {
+        return afterFunc()
+      }
+    })
   }
 
   function playIncomingRingtone () {
