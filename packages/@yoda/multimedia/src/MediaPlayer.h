@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <list>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,23 +16,27 @@ extern "C" {
 #include <uv.h>
 #include <librplayer/MediaPlayer.h>
 
+using namespace std;
+
 class MultimediaListener;
+typedef struct iotjs_player_event_s iotjs_player_event_t;
 
 typedef struct {
   iotjs_jobjectwrap_t jobjectwrap;
   MediaPlayer* handle;
   MultimediaListener* listener;
-  uv_async_t close_handle;
   uint32_t id;
+  uv_async_t event_handle;
+  list<iotjs_player_event_t*> events;
+  uv_mutex_t event_mutex;
 } IOTJS_VALIDATED_STRUCT(iotjs_player_t);
 
-typedef struct {
-  iotjs_player_t* player;
+struct iotjs_player_event_s {
   int type;
   int ext1;
   int ext2;
   int from;
-} iotjs_player_event_t;
+};
 
 /**
  * @class MultimediaListener
@@ -57,7 +62,6 @@ class MultimediaListener : public MediaPlayerListener {
    */
   void notify(int msg, int ext1, int ext2, int from);
   static void DoNotify(uv_async_t* handle);
-  static void AfterNotify(uv_handle_t* handle);
   /**
    * @method isPrepared
    * @return {Boolean} if the player is prepared
