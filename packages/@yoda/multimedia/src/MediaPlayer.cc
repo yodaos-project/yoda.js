@@ -90,7 +90,6 @@ static JNativeInfoType this_module_native_info = {
   .free_cb = (jerry_object_native_free_callback_t)iotjs_player_destroy
 };
 
-// cppcheck-suppress unusedFunction
 static void iotjs_player_async_onclose(uv_handle_t* handle) {
   iotjs_player_t* player_wrap = (iotjs_player_t*)handle->data;
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
@@ -125,10 +124,6 @@ static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
   uv_mutex_destroy(&_this->event_mutex);
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
   delete player_wrap;
-}
-
-static void iotjs_player_onclose(uv_async_t* handle) {
-  uv_close((uv_handle_t*)handle, iotjs_player_async_onclose);
 }
 
 JS_FUNCTION(Player) {
