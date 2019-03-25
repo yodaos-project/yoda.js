@@ -120,13 +120,10 @@ static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
 static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_player_t, player_wrap);
   delete _this->handle;
+  delete _this->listener;
   uv_mutex_destroy(&_this->event_mutex);
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
   delete player_wrap;
-}
-
-static void iotjs_player_onclose(uv_async_t* handle) {
-  uv_close((uv_handle_t*)handle, iotjs_player_async_onclose);
 }
 
 JS_FUNCTION(Player) {
