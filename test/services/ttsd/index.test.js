@@ -239,3 +239,94 @@ test('new app request while paused request exists', t => {
     service.speak('@test-2', 'foobar')
   }, 1000)
 })
+
+test('fast stop on pausing', t => {
+  t.plan(1)
+  var service = new TtsService(ttsMock.lightd)
+  service.connect({})
+
+  var eventRecords = [ ]
+  service.on('start', (id, appId) => {
+    eventRecords.push(`start-${id}`)
+  })
+  service.on('cancel', (id) => {
+    eventRecords.push(`cancel-${id}`)
+  })
+  service.on('end', (id, appId) => {
+    eventRecords.push(`end-${id}`)
+    t.deepEqual(eventRecords, [
+      'start-0',
+      'cancel-0',
+      'start-1',
+      'end-1'
+    ])
+  })
+
+  service.speak('@test', 'foobar')
+  setTimeout(() => {
+    /** intended sequential invocations */
+    service.pause('@test')
+    service.stop('@test')
+  }, 500)
+  setTimeout(() => {
+    service.speak('@test', 'foobar')
+  }, 1000)
+})
+
+test('fast new request on pausing', t => {
+  t.plan(1)
+  var service = new TtsService(ttsMock.lightd)
+  service.connect({})
+
+  var eventRecords = [ ]
+  service.on('start', (id, appId) => {
+    eventRecords.push(`start-${id}`)
+  })
+  service.on('cancel', (id) => {
+    eventRecords.push(`cancel-${id}`)
+  })
+  service.on('end', (id, appId) => {
+    eventRecords.push(`end-${id}`)
+    t.deepEqual(eventRecords, [
+      'start-0',
+      'cancel-0',
+      'start-1',
+      'end-1'
+    ])
+  })
+
+  service.speak('@test', 'foobar')
+  setTimeout(() => {
+    /** intended sequential invocations */
+    service.pause('@test')
+    service.speak('@test', 'foobar')
+  }, 500)
+})
+
+test('fast resume on pausing', t => {
+  t.plan(1)
+  var service = new TtsService(ttsMock.lightd)
+  service.connect({})
+
+  var eventRecords = [ ]
+  service.on('start', (id, appId) => {
+    eventRecords.push(`start-${id}`)
+  })
+  service.on('cancel', (id) => {
+    eventRecords.push(`cancel-${id}`)
+  })
+  service.on('end', (id, appId) => {
+    eventRecords.push(`end-${id}`)
+    t.deepEqual(eventRecords, [
+      'start-0',
+      'end-0'
+    ])
+  })
+
+  service.speak('@test', 'foobar')
+  setTimeout(() => {
+    /** intended sequential invocations */
+    service.pause('@test')
+    service.resume('@test')
+  }, 500)
+})
