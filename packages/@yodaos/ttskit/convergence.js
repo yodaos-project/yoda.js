@@ -34,7 +34,7 @@ TtsConvergence.prototype.handle = function (ttsId, name) {
   if (typeof this.callbackHandle[`ttscb:${ttsId}`] === 'function') {
     this.callbackHandle[`ttscb:${ttsId}`](name)
     if (name === 'end' || name === 'cancel' || name === 'error') {
-      this.callbackHandle[`ttscb:${ttsId}`] = null
+      delete this.callbackHandle[`ttscb:${ttsId}`]
     }
   }
 }

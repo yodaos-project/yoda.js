@@ -4,6 +4,7 @@ var logger = require('logger')('ttsdService')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 
+var _ = require('@yoda/util')._
 var property = require('@yoda/property')
 var TtsWrap = require('@yoda/tts')
 var AudioManager = require('@yoda/audio').AudioManager
@@ -40,7 +41,7 @@ Tts.prototype.speak = function (appId, text) {
   var appMemo = this.appRequestMemo[appId]
   var reqId = appMemo ? appMemo.reqId : undefined
   var reqMemo = reqId == null ? undefined : this.requestMemo[reqId]
-  if (reqMemo) {
+  if (reqMemo && !reqMemo.eventMasked) {
     try {
       reqMemo.req.stop()
     } catch (err) {
@@ -48,9 +49,10 @@ Tts.prototype.speak = function (appId, text) {
       this.clearMemo(appId, reqId)
       return -1
     }
-  } else if (reqId != null) {
+  } else if (reqId != null || _.get(reqMemo, 'eventMasked') === true) {
     logger.info(`req(${reqId}) was possibly been paused, emit masqueraded cancel event`)
     this.emit('cancel', reqId, appId)
+    delete this.appRequestMemo[appId]
   }
 
   var req
@@ -81,9 +83,10 @@ Tts.prototype.stop = function (appId, expectedReqId) {
   var reqMemo = reqId == null ? undefined : this.requestMemo[reqId]
 
   var status = true
-  if (reqMemo == null) {
+  if (reqMemo == null || reqMemo.eventMasked === true) {
     logger.info(`req(${reqId}) was possibly been paused, emit masqueraded cancel event`)
     this.emit('cancel', reqId, appId)
+    delete this.appRequestMemo[appId]
     return
   }
 
@@ -134,7 +137,7 @@ Tts.prototype.resume = function (appId) {
   var reqId = appMemo.reqId
   var reqMemo = reqId == null ? undefined : this.requestMemo[reqId]
 
-  if (reqMemo) {
+  if (reqMemo && !reqMemo.eventMasked) {
     logger.info(`app(${appId}) already have active request(${reqId}), skip resuming`)
     return
   }

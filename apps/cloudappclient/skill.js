@@ -338,4 +338,17 @@ Skill.prototype.transform = function (directives, append) {
   this.lastDirectives = Object.assign([], this.directives)
 }
 
+Skill.prototype.requestOnce = function (nlp, action, callback) {
+  var directives = _.get(action, 'response.action.directives', [])
+  if (directives === undefined || directives.length <= 0) {
+    return callback()
+  }
+  this.transform(directives)
+  this.task++
+  this.exe.execute(this.directives, 'frontend', () => {
+    this.task--
+    callback()
+  })
+}
+
 module.exports = Skill
