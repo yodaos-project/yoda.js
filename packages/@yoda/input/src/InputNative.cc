@@ -58,7 +58,8 @@ class InputInitializer {
     iotjs_input_t* inputwrap = initializer->inputwrap;
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_input_t, inputwrap);
 
-    if (!status /* success */) {
+    if (status == 0 /* success */ &&
+        _this->event_handler != NULL /* not canceled */) {
       _this->event_handler->start();
     } else {
       // iotjs_input_onerror(_this);
@@ -96,6 +97,7 @@ int InputEventHandler::start() {
   event_handle.data = (void*)this;
   uv_async_init(uv_default_loop(), &event_handle, InputEventHandler::OnEvent);
   uv_mutex_init(&event_mutex);
+  this->started = true;
   return uv_queue_work(uv_default_loop(), &req, InputEventHandler::DoStart,
                        InputEventHandler::AfterStart);
 }
@@ -103,7 +105,9 @@ int InputEventHandler::start() {
 int InputEventHandler::stop() {
   int r = uv_cancel((uv_req_t*)&req);
   this->need_destroy_ = true;
-  uv_close((uv_handle_t*)&event_handle, InputEventHandler::OnStop);
+  if (this->started) {
+    uv_close((uv_handle_t*)&event_handle, InputEventHandler::OnStop);
+  }
   return r;
 }
 

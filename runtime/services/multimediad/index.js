@@ -9,6 +9,9 @@ var Flora = require('./flora')
 var Dbus = require('dbus')
 var logger = require('logger')('multimediad')
 var Remote = require('../../lib/dbus-remote-call.js')
+var system = require('@yoda/system')
+
+system.adjustMallocSettings(13)
 
 var dbusService = Dbus.registerService('session', 'com.service.multimedia')
 var dbusObject = dbusService.createObject('/multimedia/service')

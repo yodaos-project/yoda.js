@@ -192,6 +192,8 @@ module.exports = function (app) {
           })
         }
         sendWifiList(WifiList)
+      } if (message.topic === 'getSn') {
+        sendSn(property.get('ro.boot.serialno'))
       } else if (message.topic === 'bind') {
         connectWIFI(message.data, (err, connect) => {
           netStatus = NET_STATUS_IDLE
@@ -323,6 +325,14 @@ module.exports = function (app) {
     messageStream.write({
       topic: 'getWifiList',
       data: list || []
+    })
+  }
+
+  function sendSn (sn) {
+    logger.log('send SN to App: ', sn)
+    messageStream.write({
+      topic: 'getSn',
+      data: sn
     })
   }
 

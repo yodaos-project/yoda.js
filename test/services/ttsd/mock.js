@@ -1,5 +1,7 @@
 var EventEmitter = require('events')
 var TtsWrap = require('@yoda/tts')
+var property = require('@yoda/property')
+var _ = require('@yoda/util')._
 var mock = require('../../helper/mock')
 
 var currHandle
@@ -62,6 +64,15 @@ mock.mockReturns(TtsWrap, 'createTts', function () {
   handler.disconnect = function disconnect () {}
   handler.reconnect = function reconnect () {}
   return handler
+})
+
+mock.proxyFunction(property, 'get', {
+  after: function (ret, self, args) {
+    if (_.get(args, '0', 'state.network.connected')) {
+      return 'true'
+    }
+    return ret
+  }
 })
 
 module.exports = {
