@@ -1,13 +1,35 @@
 var flora = require('@yoda/flora')
 
-var name = process.argv[2]
-var target = process.argv[3]
-var args = process.argv[4]
+var uri = 'unix:/var/run/flora.sock#testAgent'
+var target = ''
+var name
+var args
+
+var cliArgs = process.argv.slice(2)
+while (cliArgs.length > 0) {
+  var $1 = cliArgs.shift()
+  switch ($1) {
+    case '-u':
+    case '--uri':
+      uri = cliArgs.shift()
+      break
+    case '-t':
+    case '--target':
+      target = cliArgs.shift()
+      break
+    default:
+      if (name == null) {
+        name = $1
+      } else if (args == null) {
+        args = $1
+      }
+  }
+}
 
 console.log(`invoking remote method(${name}) with body(${args})...`)
 
 function main () {
-  var cli = new flora.Agent(`unix:/var/run/flora.sock#testAgent`)
+  var cli = new flora.Agent(uri)
   cli.start()
 
   var msg = []
