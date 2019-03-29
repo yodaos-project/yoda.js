@@ -59,6 +59,7 @@ class InputEventHandler {
   iotjs_input_t* inputwrap;
   struct keyevent keyevent_;
   struct gesture gesture_;
+  bool started = false;
   bool need_destroy_;
   uv_work_t req;
   uv_async_t event_handle;
