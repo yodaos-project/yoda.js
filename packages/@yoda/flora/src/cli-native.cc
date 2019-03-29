@@ -194,10 +194,12 @@ Value ClientNative::start(const CallbackInfo& info) {
   Napi::Env env = info.Env();
   if ((status & NATIVE_STATUS_CONFIGURED) &&
       !(status & NATIVE_STATUS_STARTED)) {
+    uv_loop_s* loop;
+    napi_get_uv_event_loop(env, &loop);
     msgAsync.data = this;
-    uv_async_init(uv_default_loop(), &msgAsync, msg_async_cb);
+    uv_async_init(loop, &msgAsync, msg_async_cb);
     respAsync.data = this;
-    uv_async_init(uv_default_loop(), &respAsync, resp_async_cb);
+    uv_async_init(loop, &respAsync, resp_async_cb);
     napi_async_init(env, info.This(), String::New(env, "flora-agent"),
                     &asyncContext);
     floraAgent.start();
@@ -377,7 +379,7 @@ Value ClientNative::genArray(const CallbackInfo& info) {
   if (!info[0].IsExternal())
     return env.Undefined();
   HackedNativeCaps* hackedCaps = nullptr;
-  if (napi_unwrap(env, info[0], (void**)&hackedCaps) != napi_ok ||
+  if (napi_get_value_external(env, info[0], (void**)&hackedCaps) != napi_ok ||
       hackedCaps == nullptr) {
     return env.Undefined();
   }
@@ -495,7 +497,7 @@ static bool genCapsByJSArray(napi_env env, napi_value jsmsg,
       char* str;
       napi_get_value_string_utf8(env, v, nullptr, 0, &strlen);
       str = new char[strlen + 1];
-      napi_get_value_string_utf8(env, v, str, strlen, nullptr);
+      napi_get_value_string_utf8(env, v, str, strlen + 1, nullptr);
       str[strlen] = '\0';
       caps->write(str);
       delete[] str;
@@ -536,13 +538,14 @@ static void freeHackedCaps(napi_env, void* data, void* arg) {
 
 static napi_value genHackedCaps(napi_env env, shared_ptr<Caps> msg) {
   napi_value jsobj;
-  if (napi_create_object(env, &jsobj) != napi_ok) {
+  HackedNativeCaps* hackedCaps = new HackedNativeCaps();
+  hackedCaps->caps = msg;
+  if (napi_create_external(env, hackedCaps, freeHackedCaps, nullptr, &jsobj) !=
+      napi_ok) {
+    delete hackedCaps;
     napi_get_undefined(env, &jsobj);
     return jsobj;
   }
-  HackedNativeCaps* hackedCaps = new HackedNativeCaps();
-  hackedCaps->caps = msg;
-  napi_wrap(env, jsobj, hackedCaps, freeHackedCaps, nullptr, nullptr);
   return jsobj;
 }
 
