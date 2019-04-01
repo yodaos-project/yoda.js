@@ -21,13 +21,15 @@ class ContextManager extends EventEmitter {
     })
 
     this.activity.on('request', this.onRequest.bind(this))
+    this.activity.on('url', this.onUrl.bind(this))
   }
 
   /**
    * @public
-   * @param {Context}
+   * @param {Context} ctx -
+   * @param {any[]} args - arguments to `activity.exit`
    */
-  exit (ctx) {
+  exit (ctx, args) {
     var idx = this.contexts.indexOf(ctx.id)
     if (idx < 0) {
       return Promise.resolve()
@@ -36,7 +38,7 @@ class ContextManager extends EventEmitter {
     if (this.contexts.length > 0) {
       return Promise.resolve()
     }
-    return this.activity.exit()
+    return this.activity.exit.apply(this.activity, args)
   }
 
   /**
@@ -65,15 +67,24 @@ class ContextManager extends EventEmitter {
   /**
    * @private
    */
+  onUrl (urlObj) {
+    var ctx = this.constructContext('url', { urlObj: urlObj })
+    this.emit('url', ctx)
+  }
+
+  /**
+   * @private
+   */
   constructContext (type, fields) {
+    var self = this
     var ctx = Object.assign({}, fields, {
       type: type,
-      id: ++this.__ctxId,
-      exit: () => {
-        this.exit(ctx)
+      id: ++self.__ctxId,
+      exit: function () {
+        self.exit(ctx, arguments)
       }
     })
-    this.contexts.push(ctx.id)
+    self.contexts.push(ctx.id)
     return ctx
   }
 }
