@@ -22,19 +22,34 @@ Flora.prototype.handlers = {
     if (property.get('state.network.connected') !== 'true') {
       return
     }
-    var appId = this.tts.lastAppId
-    if (this.tts.pausedAppIdOnAwaken != null && appId == null) {
+    var reqId = this.tts.playingReqId
+    if (this.tts.pausedReqIdOnAwaken != null && reqId == null) {
       logger.info('previously paused tts not been resumed yet, ' +
         'skip voice coming for no currently playing.')
       return
     }
-    this.tts.pausedAppIdOnAwaken = appId
-    if (!appId) {
-      logger.info('no currently tts playing app, skipping.')
+    if (reqId == null) {
+      logger.info('no currently tts playing requests, skipping.')
       return
     }
-    logger.info('pausing tts of app', appId)
-    this.tts.pause(appId)
+    var reqMemo = this.tts.requestMemo[reqId]
+    if (reqMemo == null) {
+      logger.warn(`unknown playing request(${reqId}), skipping.`)
+      return
+    }
+    var masqueradeId = reqMemo.masqueradeId
+    var appId = reqMemo.appId
+    if (appId == null) {
+      logger.error(`Un-owned tts request(${reqId})`)
+      return
+    }
+    logger.info(`pausing tts(${reqId}${masqueradeId ? `, masquerading(${masqueradeId})` : ''}, app:${appId})`)
+    if (masqueradeId != null) {
+      reqId = masqueradeId
+    }
+    this.tts.pausedReqIdOnAwaken = reqId
+    this.tts.pausedAppIdOnAwaken = appId
+    return this.tts.pause(appId)
   }
 }
 
