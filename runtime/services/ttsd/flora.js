@@ -47,14 +47,23 @@ Flora.prototype.handlers = {
       logger.info('no currently tts playing requests, skipping.')
       return
     }
-    var appId = _.get(this.tts.requestMemo[reqId], 'appId')
+    var reqMemo = this.tts.requestMemo[reqId]
+    if (reqMemo == null) {
+      logger.warn(`unknown playing request(${reqId}), skipping.`)
+      return
+    }
+    var masqueradeId = reqMemo.masqueradeId
+    var appId = reqMemo.appId
     if (appId == null) {
       logger.error(`Un-owned tts request(${reqId})`)
       return
     }
+    logger.info(`pausing tts(${reqId}${masqueradeId ? `, masquerading(${masqueradeId})` : ''}, app:${appId})`)
+    if (masqueradeId != null) {
+      reqId = masqueradeId
+    }
     this.tts.pausedReqIdOnAwaken = reqId
     this.tts.pausedAppIdOnAwaken = appId
-    logger.info(`pausing tts(${reqId}, app:${appId})`)
     return this.tts.pause(appId)
   },
   'yodart.vui.logged-in': function onVuiLoggedIn (msg) {
