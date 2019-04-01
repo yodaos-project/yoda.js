@@ -88,14 +88,12 @@ module.exports = function customConfig (activity) {
       this.oldTxt = queryObj.oldTxt
       this.txt = queryObj.txt
       this.py = queryObj.py
-      if (typeof queryObj.margin_index === 'number') {
-        this.marginIndex = queryObj.margin_index
-      } else {
+      this.marginIndex = Number(queryObj.margin_index)
+      if (isNaN(this.marginIndex)) {
         this.marginIndex = 50
       }
-      if (typeof queryObj.cloud_confirm === 'number') {
-        this.cloudConfirm = queryObj.cloud_confirm
-      } else {
+      this.cloudConfirm = Number(queryObj.cloud_confirm)
+      if (isNaN(this.cloudConfirm)) {
         this.cloudConfirm = 0
       }
       onVtWordSwitchStatusChanged(action, false)
