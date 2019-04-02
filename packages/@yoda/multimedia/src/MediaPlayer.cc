@@ -1,4 +1,5 @@
 #include "MediaPlayer.h"
+#include <malloc.h>
 
 // cppcheck-suppress unusedFunction
 void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
@@ -124,6 +125,7 @@ static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
   uv_mutex_destroy(&_this->event_mutex);
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
   delete player_wrap;
+  malloc_trim(0);
 }
 
 JS_FUNCTION(Player) {
