@@ -12,6 +12,7 @@ var config = {
 }
 
 test('useful data', (t) => {
+  t.plan(3)
   var otaEndpoint = '/v1/extended/ota/check'
   var localVersion = '1.0.7-20180901-071701'
   var cloudgw = new Cloudgw(config)
@@ -36,6 +37,4 @@ test('useful data', (t) => {
       t.notEqual(body, null, 'the body is not null')
       t.notEqual(body, {}, 'the body is not {}')
     })
-
-  t.end()
 })
