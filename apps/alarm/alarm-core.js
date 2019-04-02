@@ -33,6 +33,7 @@ function AlarmCore (activity) {
   this.volumeInterval = null
   this.stopTimeout = null
   this.activeOption = null
+  this.ringUrl = null
   this.ttsClient = new TtsEventHandle(activity.tts)
 }
 
@@ -260,8 +261,8 @@ AlarmCore.prototype._taskCallback = function (option, isLocal) {
       }
     }).then(() => {
       logger.info('alarm start second media')
-      var ringUrl = status ? option.url : DEFAULT_ALARM_RING
-      this.activity.media.start(ringUrl, { streamType: 'alarm' })
+      this.ringUrl = status ? option.url : DEFAULT_ALARM_RING
+      this.activity.media.start(this.ringUrl, { streamType: 'alarm' })
       return this.activity.media.setLoopMode(true)
     }).then(() => {
       this.stopTimeout = setTimeout(() => {
@@ -315,22 +316,33 @@ AlarmCore.prototype._onTaskActive = function (option) {
 }
 
 /**
+ * alarm play media prepared
+ */
+AlarmCore.prototype.playMediaPrepared = function(){
+  this.taskTimeout && clearTimeout(this.taskTimeout)
+  // pd require online url can only play 7s,after 7s should stop && play anther tts
+  this.taskTimeout = setTimeout(() => {
+    var isLocal = false;
+    this.activity.media.stop()
+    if(this.ringUrl === DEFAULT_REMINDER_RING || this.ringUrl === DEFAULT_ALARM_RING){
+      isLocal = true
+    }
+    this._taskCallback(this.activeOption,isLocal)
+  }, 7000)
+}
+
+/**
  * alarm play first media
  * @param {Boolean} isLocal if play local ring
  */
 AlarmCore.prototype.playFirstMedia = function (isLocal) {
   var state = wifi.getWifiState()
-  var ringUrl = ''
   if (this.activeOption.type === 'Remind') {
-    ringUrl = DEFAULT_REMINDER_RING
+    this.ringUrl = DEFAULT_REMINDER_RING
   } else {
-    ringUrl = state === wifi.WIFI_CONNECTED && !isLocal ? this.activeOption.url : DEFAULT_ALARM_RING
+    this.ringUrl = state === wifi.WIFI_CONNECTED && !isLocal ? this.activeOption.url : DEFAULT_ALARM_RING
   }
-  this.activity.media.start(ringUrl, { streamType: 'alarm' }).then(() => {
-    this.taskTimeout = setTimeout(() => {
-      this.activity.media.stop()
-      this._taskCallback(this.activeOption, isLocal)
-    }, 7000)
+  this.activity.media.start(this.ringUrl, { streamType: 'alarm' }).then(() => {
   }).catch((err) => {
     logger.log('alarm first media play error', err.stack)
   })
