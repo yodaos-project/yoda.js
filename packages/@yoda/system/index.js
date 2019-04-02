@@ -145,3 +145,25 @@ exports.getDeviceName = function getDeviceName () {
   var deviceName = [ productName, uuid ].join('-')
   return deviceName
 }
+
+/**
+ * @function adjustMallocSettings
+ * @param {int} maxThreads - max threads of current process
+ */
+exports.adjustMallocSettings = function adjustMallocSettings (maxThreads) {
+  return native.adjustMallocSettings(maxThreads)
+}
+
+/**
+ * @function mallocTrim
+ */
+exports.mallocTrim = function mallocTrim () {
+  return native.mallocTrim()
+}
+
+/**
+ * @function mallocStats
+ */
+exports.mallocStats = function mallocStats () {
+  return native.mallocStats()
+}
