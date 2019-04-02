@@ -5,7 +5,7 @@
  * @module @yoda/cloudgw
  */
 
-var https = require('https')
+var httpsession = require('@yoda/httpsession')
 var crypto = require('crypto')
 
 var _ = require('@yoda/util')._
@@ -83,7 +83,7 @@ function Cloudgw (config) {
  * @param {object} [options]
  * @param {string} [options.host]
  * @param {string} [options.service]
- * @param {number} [options.timeout]
+ * @param {number} [options.timeout] timeout in milliseconds
  * @param {Function} callback
  */
 Cloudgw.prototype.request = function request (path, data, options, callback) {
@@ -100,50 +100,41 @@ Cloudgw.prototype.request = function request (path, data, options, callback) {
 
   var host = options.host || defaultHost
 
-  data = Buffer.from(JSON.stringify(data))
-  logger.info(`request https://${host}${path}`)
+  data = JSON.stringify(data)
+  var url = `https://${host}${path}`
+  logger.info(`request ${url}`)
   var authorization = getAuth(Object.assign({}, options, this.config))
-  var req = https.request({
+  var reqOpt = {
     method: 'POST',
-    host: host,
-    path: path,
     headers: {
       'Authorization': authorization,
       'Content-Type': 'application/json;charset=utf-8',
       'Content-Length': data.length
-    }
-  }, res => {
-    var bufs = []
-    res.on('data', chunk => bufs.push(chunk))
-    res.on('end', onResponse)
-
-    function onResponse () {
-      var body = Buffer.concat(bufs).toString()
-      if (res.statusCode !== 200) {
-        callback(new StatusCodeError(res.statusCode, body, res))
-        return
-      }
-      try {
-        body = JSON.parse(body)
-      } catch (err) {
-        err.message = `Failed to parse response data. ${err.message}`
-        callback(err)
-      }
-      callback(null, body)
-    }
-  })
-  if (options.timeout) {
-    req.setTimeout(options.timeout, () => {
-      // FIXME: request is not automatically aborted in shadow-node
-      req.abort()
-      req.emit('error', new Error('Request Aborted.'))
-    })
+    },
+    body: data
   }
-
-  req.on('error', err => {
-    callback(err)
+  if (typeof options.timeout === 'number') {
+    reqOpt.timeout = options.timeout / 1000
+  }
+  httpsession.request(url, reqOpt, (err, res) => {
+    if (err) {
+      callback(err)
+      return
+    }
+    var body = res.body
+    if (res.code !== 200) {
+      callback(new StatusCodeError(res.code, body, res))
+      return
+    }
+    try {
+      body = JSON.parse(body)
+    } catch (err) {
+      err.message = `Failed to parse response data. ${err.message}`
+      callback(err)
+      return
+    }
+    callback(null, body)
   })
-  req.end(data)
 }
 
 module.exports = Cloudgw
