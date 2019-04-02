@@ -55,7 +55,11 @@ Wormhole.prototype.messageHandler = function messageHandler (topic, text) {
       return method.apply(this.runtime, params.concat(text))
     }
     if (descriptor.bin) {
-      var cp = ChildProcess.spawn(descriptor.bin, descriptor.args || [], {
+      var args = descriptor.args || []
+      if (descriptor.withContent) {
+        args = args.concat(text)
+      }
+      var cp = ChildProcess.spawn(descriptor.bin, args, {
         stdio: 'inherit'
       })
       var timeout = descriptor.timeout || 10 * 1000

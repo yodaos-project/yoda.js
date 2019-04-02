@@ -542,7 +542,7 @@ Turen.prototype.addVtWord = function addVtWord (activationWord, activationPy, ma
   caps.writeInt32(1)
   caps.writeDouble(marginIndex)
   caps.writeInt32(cloudConfirm)
-  this.runtime.flora.post(VT_WORDS_ADD_WORD_CHANNEL, caps)
+  this.runtime.flora.post(VT_WORDS_ADD_WORD_CHANNEL, caps, 1)
 }
 
 /**
