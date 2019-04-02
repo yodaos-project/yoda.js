@@ -63,13 +63,13 @@ module.exports = function (activity) {
     }
   })
 
-    // media prepared
-    activity.media.on('prepared', function () {
-      logger.log('alarm media prepared')
-      if (!AlarmCore.startTts) {
-        AlarmCore.playMediaPrepared()
-      }
-    })
+  // media prepared
+  activity.media.on('prepared', function () {
+    logger.log('alarm media prepared')
+    if (!AlarmCore.startTts) {
+      AlarmCore.playMediaPrepared()
+    }
+  })
 
   /**
    * media paused event
