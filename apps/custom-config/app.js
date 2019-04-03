@@ -124,6 +124,7 @@ module.exports = function customConfig (activity) {
         sendSuccessStatusToApp(action, true)
       } else if (action === SWITCH_VT_DELETE) {
         activity.turen.deleteVtWord(this.txt)
+        activity.turen.addVtWord('', '', 50, 0) // cancel the persist msg for add
         sendDeleteStatusToServer(action)
         sendSuccessStatusToApp(action, true)
       }
