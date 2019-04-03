@@ -96,7 +96,10 @@ if [ hostname = "OpenWrt" ]; then
 fi
 
 ps_cmd="ps -eo pid,rss,args | grep -E '$ps_grep' | grep -v grep"
-free_cmd="cat /proc/meminfo | grep MemAvailable | awk '{print \$2}'"
+avaliable_cmd="cat /proc/meminfo | grep MemAvailable | awk '{print \$2}'"
+free_cmd="cat /proc/meminfo | grep MemFree | awk '{print \$2}'"
+buffers_cmd="cat /proc/meminfo | grep Buffers | awk '{print \$2}'"
+cached_cmd="cat /proc/meminfo | grep -E '^Cached' | awk '{print \$2}'"
 top_cmd="busybox top -b -n 1 | grep -E '$ps_grep|CPU:' | grep -v grep"
 
 run_memory_cmd() {
@@ -106,9 +109,15 @@ run_memory_cmd() {
   if [ $adb_mode = "true" ]; then
     ps_result=($(adb -s $host shell "$ps_cmd"))
     free_result=($(adb -s $host shell "$free_cmd"))
+    buffers_result=($(adb -s $host shell "$buffers_cmd"))
+    cached_result=($(adb -s $host shell "$cached_cmd"))
+    avaliable_result=($(adb -s $host shell "$avaliable_cmd"))
   else
     ps_result=($(eval $ps_cmd))
-    free_result=($(eval $free))
+    free_result=($(eval $free_cmd))
+    buffers_result=($(eval $buffers_cmd))
+    cached_result=($(eval $cached_cmd))
+    avaliable_result=($(eval $avaliable_cmd))
   fi
   ps_len=${#ps_result[@]}
   data_path=`pwd`/mem-$datat_file_prefix-$host.json
@@ -123,7 +132,10 @@ run_memory_cmd() {
   if [ ! $free_result ]; then
     free_result=0
   fi
-  echo "{\"data\":$free_result,\"args\":\"free\",\"time\":\"$now\"}," >> $data_path
+  echo "{\"data\":$free_result,\"args\":\"freeMem\",\"time\":\"$now\"}," >> $data_path
+  echo "{\"data\":$buffers_result,\"args\":\"buffersMem\",\"time\":\"$now\"}," >> $data_path
+  echo "{\"data\":$cached_result,\"args\":\"cachedMem\",\"time\":\"$now\"}," >> $data_path
+  echo "{\"data\":$avaliable_result,\"args\":\"avaliableMem\",\"time\":\"$now\"}," >> $data_path
 }
 
 run_cpu_cmd() {
