@@ -12,13 +12,10 @@ var EventEmitter = require('events').EventEmitter
 
 var MEDIA_SOURCE = '/opt/media'
 
-var HttpgwDescriptor = require('./httpgw-descriptor')
 var KeyboardDescriptor = require('./keyboard-descriptor')
 var LightDescriptor = require('./light-descriptor')
 var MultimediaDescriptor = require('./multimedia-descriptor')
 var TtsDescriptor = require('./tts-descriptor')
-var TurenDescriptor = require('./turen-descriptor')
-var WormholeDescriptor = require('./wormhole-descriptor')
 
 module.exports = ActivityDescriptor
 
@@ -82,30 +79,6 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.KeyboardClient} keyboard
    */
   this.keyboard = new KeyboardDescriptor(this, appId, appHome, runtime)
-
-  /**
-   * The `WormholeClient` is used to send or receive mqtt message to/from Rokid.
-   * @memberof yodaRT.activity.Activity
-   * @instance
-   * @member {yodaRT.activity.Activity.WormholeClient} wormhole
-   */
-  this.wormhole = new WormholeDescriptor(this, appId, appHome, runtime)
-
-  /**
-   * The `TurenClient` is used to communication with turen
-   * @memberof yodaRT.activity.Activity
-   * @instance
-   * @member {yodaRT.activity.Activity.TurenClient} turen
-   */
-  this.turen = new TurenDescriptor(this, appId, appHome, runtime)
-
-  /**
-   * The `HttpgwClient` is used to work with Rokid HTTPGW service.
-   * @memberof yodaRT.activity.Activity
-   * @instance
-   * @member {yodaRT.activity.Activity.HttpgwClient} httpgw
-   */
-  this.httpgw = new HttpgwDescriptor(this, appId, appHome, runtime)
 
   /**
    * Get current `appId`.
@@ -380,60 +353,6 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Set your application in background mode, in this mode, the application still could keep alive,
-     * and listen other events, but no ablitity to control TTS, light and multimedia.
-     *
-     * To use this API, you must specify the permission `INTERRUPT` in your application manifest.
-     *
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function setBackground
-     * @return {Promise<void>}
-     */
-    setBackground: {
-      type: 'method',
-      returns: 'promise',
-      fn: function setBackground () {
-        if (!this._runtime.component.permission.check(this._appId, 'INTERRUPT', { acquiresActive: false })) {
-          return Promise.reject(new Error('Permission denied.'))
-        }
-        return this._runtime.component.lifetime.setBackgroundById(this._appId).then(() => {})
-      }
-    },
-    /**
-     * Push the app in foreground, the reverse slide to `setBackground()`, it requires the `INTERRUPT`
-     * permission, either.
-     *
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function setForeground
-     * @param {'cut' | 'scene' | object} [options]
-     * @param {'cut' | 'scene'} [options.form] - the running form of the activity, available value are: cut
-     *                          or scene.
-     * @param {string} [options.skillId] - update cloud skill stack if specified.
-     * @return {Promise<void>}
-     */
-    setForeground: {
-      type: 'method',
-      returns: 'promise',
-      fn: function setForeground (options) {
-        if (!this._runtime.component.permission.check(this._appId, 'INTERRUPT', { acquiresActive: false })) {
-          return Promise.reject(new Error('Permission denied.'))
-        }
-        var form
-        if (typeof options === 'string') {
-          form = options
-          options = null
-        } else {
-          form = _.get(options, 'form')
-        }
-        if (form != null && (form !== 'cut' && form !== 'scene')) {
-          return Promise.reject(new TypeError(`Expect 'cut' or 'scene' on first argument of setForeground.`))
-        }
-        return this._runtime.setForegroundById(this._appId, Object.assign({ form: form }, options)).then(() => {})
-      }
-    },
-    /**
      * Set context options to current context.
      *
      * Options would be merged to current options so that it's not required
@@ -468,60 +387,6 @@ Object.assign(ActivityDescriptor.prototype,
       returns: 'promise',
       fn: function getContextOptions () {
         return this._runtime.component.lifetime.getContextOptionsById(this._appId)
-      }
-    },
-    /**
-     * Set skill id of current context.
-     *
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function setContextSkillId
-     * @param {string} skillId
-     * @param {'cut' | 'scene'} [form] - derive from current app if not specified.
-     * @returns {Promise<object>}
-     */
-    setContextSkillId: {
-      type: 'method',
-      returns: 'promise',
-      fn: function setContextSkillId (skillId, form) {
-        if (this._appId !== '@yoda/cloudappclient') {
-          /** bypass @yoda/cloudappclient to allow arbitrary skill id updates */
-          if (this._runtime.component.appLoader.getAppIdBySkillId(skillId) !== this._appId) {
-            return Promise.reject(new Error(`skill id '${skillId}' not owned by app ${this._appId}.`))
-          }
-        }
-        if (form == null) {
-          var contextOptions = this._runtime.component.lifetime.getContextOptionsById(this._appId)
-          form = _.get(contextOptions, 'form')
-        }
-        return this._runtime.updateCloudStack(skillId, form)
-      }
-    },
-    /**
-     * Get skill id of current context.
-     *
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function getContextSkillId
-     * @param {'cut' | 'scene'} [form] - derive from current app if not specified.
-     * @returns {Promise<string | undefined>}
-     */
-    getContextSkillId: {
-      type: 'method',
-      returns: 'promise',
-      fn: function getContextSkillId (form) {
-        if (form == null) {
-          var contextOptions = this._runtime.component.lifetime.getContextOptionsById(this._appId)
-          form = _.get(contextOptions, 'form')
-        }
-        var skillId = this._runtime.domain[form]
-        if (this._appId !== '@yoda/cloudappclient') {
-          /** bypass @yoda/cloudappclient to allow arbitrary skill id queries */
-          if (this._runtime.component.appLoader.getAppIdBySkillId(skillId) !== this._appId) {
-            return undefined
-          }
-        }
-        return skillId
       }
     },
     /**

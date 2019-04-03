@@ -7,7 +7,6 @@
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var Url = require('url')
-var querystring = require('querystring')
 var fs = require('fs')
 var childProcess = require('child_process')
 
@@ -16,14 +15,11 @@ var logger = require('logger')('yoda')
 var ComponentConfig = require('/etc/yoda/component-config.json')
 
 var _ = require('@yoda/util')._
-var deprecate = require('@yoda/util/deprecate')
-var wifi = require('@yoda/wifi')
 var property = require('@yoda/property')
 var system = require('@yoda/system')
 var env = require('@yoda/env')()
 var Loader = require('@yoda/bolero').Loader
 
-var CloudStore = require('./cloudapi')
 var perf = require('./performance')
 
 module.exports = AppRuntime
@@ -43,15 +39,6 @@ function AppRuntime () {
     secret: null
   }
 
-  this.cloudSkillIdStack = []
-  this.domain = {
-    cut: '',
-    scene: '',
-    active: ''
-  }
-  this.cloudApi = new CloudStore({
-    notify: this.handleCloudEvent.bind(this)
-  })
   this.shouldWelcome = true
 
   this.componentLoader = new Loader(this, 'component')
@@ -62,9 +49,6 @@ function AppRuntime () {
   this.inited = false
   this.hibernated = false
   this.__temporaryDisablingReasons = [ 'initiating' ]
-  // identify load app complete
-  this.loadAppComplete = false
-  this.shouldStopLongPressMicLight = false
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -81,16 +65,12 @@ AppRuntime.prototype.init = function init () {
   this.componentsInvoke('init')
   /** 2. init device properties, such as volume and cloud stack. */
   this.initiate()
-  this.resetCloudStack()
   /** 3. init services */
   this.component.turen.toggleMute(false)
   this.component.turen.toggleWakeUpEngine(true)
   this.resetServices()
 
   /** 4. listen on lifetime events */
-  this.component.lifetime.on('stack-reset', () => {
-    this.resetCloudStack()
-  })
   this.component.lifetime.on('preemption', appId => {
     this.appPause(appId)
   })
@@ -152,7 +132,6 @@ AppRuntime.prototype.init = function init () {
         return
       }
       /** 9. force-enable and check network states */
-      this.component.custodian.prepareNetwork()
       this.dispatchNotification('on-system-booted', [])
     }).catch(err => {
       logger.error('unexpected error on boot welcoming', err.stack)
@@ -234,22 +213,6 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
         /** ignore error and continue populating */
         return start(idx + 1)
       })
-  }
-}
-
-/**
- * Handle cloud events.
- * @private
- */
-AppRuntime.prototype.handleCloudEvent = function handleCloudEvent (code, msg) {
-  logger.debug(`cloud event code=${code} msg=${msg}`)
-  if (this.component.custodian.isRegistering() &&
-    this.component.custodian.isConfiguringNetwork()) {
-    this.openUrl(`yoda-skill://network/cloud_status?code=${code}&msg=${msg}`, {
-      preemptive: false
-    })
-  } else {
-    logger.info('skip send to network.')
   }
 }
 
@@ -370,10 +333,6 @@ AppRuntime.prototype.enableRuntimeFor = function enableRuntimeFor (reason) {
  */
 AppRuntime.prototype.idle = function idle () {
   logger.info('set runtime to idling')
-  /**
-   * Clear apps and its contexts
-   */
-  this.resetCloudStack()
   return this.component.lifetime.deactivateAppsInStack()
 }
 
@@ -419,90 +378,8 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
   this.component.turen.toggleMute(false)
   this.component.turen.toggleWakeUpEngine(true)
 
-  this.component.custodian.resetState()
-  this.component.custodian.prepareNetwork()
   this.component.dispatcher.delegate('runtimeDidResumeFromSleep')
   this.dispatchNotification('on-system-booted', [])
-}
-
-/**
- * play longPressMic.js if long press mic is bigger than 2 second.
- */
-AppRuntime.prototype.playLongPressMic = function lightLoadFile () {
-  this.shouldStopLongPressMicLight = true
-  if (this.component.sound.isMuted()) {
-    this.component.sound.unmute()
-  }
-
-  // reset network if current is at network app.
-  if (this.component.custodian.isConfiguringNetwork()) {
-    return this.openUrl('yoda-skill://network/renew')
-  }
-
-  // In order to play sound when currently is muted
-  Promise.all([
-    this.component.light.appSound('@yoda', 'system://key_config_notify.ogg'),
-    this.component.light.play('@yoda', 'system://longPressMic.js')
-  ]).catch((err) => {
-    logger.error(`play longPress light or sound error: ${err.message}`)
-  })
-}
-
-/**
- * Stop light if long press between 2 and 7 second.
- */
-AppRuntime.prototype.stopLongPressMicLight = function stopLongPressMicLight () {
-  if (this.shouldStopLongPressMicLight === true) {
-    // stop longPress light and sound ahead of time
-    Promise.all([
-      this.component.light.stopSoundByAppId('@yoda'),
-      this.component.light.stop('@yoda', '/opt/light/longPressMic.js')
-    ]).then(() => {
-      logger.log('stop longPress light or sound ahead of time')
-    }).catch((err) => {
-      logger.error(`An error occurend while stopping longPress the lighting or sound in advance: ${err.message}`)
-    })
-    this.shouldStopLongPressMicLight = false
-  }
-}
-
-/**
- * Reset network and start procedure of configuring network.
- *
- * @param {object} [options] -
- * @param {boolean} [options.removeAll] - remove local wifi config?
- */
-AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
-  this.shouldStopLongPressMicLight = false
-  // skip if current is at network app
-  if (this.component.custodian.isConfiguringNetwork()) {
-    logger.info('skip reset network when configuring network.')
-    return
-  }
-
-  var deferred = () => {
-    this.component.light.stop('@yoda', '/opt/light/longPressMic.js')
-  }
-
-  /**
-   * reset should welcome so that welcome effect could be played on re-login
-   */
-  this.shouldWelcome = true
-  return Promise.all([
-    this.component.lifetime.destroyAll(),
-    this.setMicMute(false, { silent: true })
-  ]).then(() => this.component.custodian.resetNetwork(options))
-    .then(() => {
-      // todo lightd will not display setupNetwork.js sometime, so we need to stop longPressMic in timeout.
-      // we need to refactor it
-      setTimeout(() => {
-        deferred()
-      }, 2000)
-    })
-    .catch(err => {
-      logger.error('Unexpected error on resetting network', err.stack)
-      deferred()
-    })
 }
 
 /**
@@ -533,63 +410,8 @@ AppRuntime.prototype.stopMonologue = function (appId) {
 }
 
 /**
- * Resolving the NLP from service and execute the application lifetime.
- * @private
- * @param {string} asr
- * @param {object} nlp
- * @param {object} action
- * @param {object} [options]
- * @param {'voice' | 'text' | undefined} [options.source] - nlp intent source
- * @param {boolean} [options.preemptive]
- * @param {boolean} [options.carrierId]
- */
-AppRuntime.prototype.handleNlpIntent = function (text, nlp, action, options) {
-  if (_.get(nlp, 'appId') == null) {
-    logger.log('invalid nlp/action, ignore')
-    return Promise.resolve(false)
-  }
-  var form = _.get(action, 'response.action.form')
-
-  var appId
-  if (nlp.cloud) {
-    appId = '@yoda/cloudappclient'
-  } else {
-    appId = this.component.appLoader.getAppIdBySkillId(nlp.appId)
-  }
-  if (appId == null) {
-    logger.warn(`Local app '${nlp.appId}' not found.`)
-    if (nlp.appName) {
-      return this.openUrl(`yoda-skill://rokid-exception/no-local-app?${querystring.stringify({
-        appId: nlp.appId,
-        appName: nlp.appName
-      })}`)
-    }
-    /**
-     * do nothing if no `appName` specified in malicious NLP to prevent frequent harassments.
-     */
-    return Promise.resolve(false)
-  }
-
-  return this.component.dispatcher.delegate('runtimeWillDispatchNlpIntent', [ appId, text, nlp, action, options ])
-    .then(delegation => {
-      if (delegation) {
-        return true
-      }
-      return this.component.dispatcher.dispatchAppEvent(
-        appId,
-        'request', [ nlp, action ],
-        Object.assign({}, options, {
-          form: form,
-          skillId: nlp.appId
-        })
-      )
-    })
-}
-AppRuntime.prototype.onVoiceCommand = AppRuntime.prototype.handleNlpIntent
-
-/**
  *
- * > Note: currently only `yoda-skill:` scheme is supported.
+ * > Note: currently only `yoda-app:` scheme is supported.
  *
  * @param {string} url -
  * @param {object} [options] -
@@ -600,23 +422,20 @@ AppRuntime.prototype.onVoiceCommand = AppRuntime.prototype.handleNlpIntent
  */
 AppRuntime.prototype.openUrl = function (url, options) {
   var urlObj = Url.parse(url, true)
-  if (urlObj.protocol !== 'yoda-skill:') {
-    logger.info('Url protocol other than yoda-skill is not supported now.')
+  if (urlObj.protocol !== 'yoda-app:') {
+    logger.info('Url protocol other than yoda-app is not supported now.')
     return Promise.resolve(false)
   }
-  var skillId = this.component.appLoader.getSkillIdByHost(urlObj.hostname)
-  if (skillId == null) {
-    logger.info(`No app registered for skill host '${urlObj.hostname}'.`)
+  var appId = this.component.appLoader.getAppIdByHost(urlObj.hostname)
+  if (appId == null) {
+    logger.info(`No app registered for app host '${urlObj.hostname}'.`)
     return Promise.resolve(false)
   }
-  var appId = this.component.appLoader.getAppIdBySkillId(skillId)
 
   return this.component.dispatcher.dispatchAppEvent(
     appId,
     'url', [ urlObj ],
-    Object.assign({}, options, {
-      skillId: skillId
-    })
+    Object.assign({}, options)
   )
 }
 
@@ -674,25 +493,6 @@ AppRuntime.prototype.dispatchNotification = function dispatchNotification (chann
       })
       .then(() => step(++idx))
   }
-}
-
-/**
- *
- * @param {string} appId -
- * @param {object} [options]
- * @param {'cut' | 'scene'} [options.form='cut'] - running form of the activity.
- * @param {string} [options.skillId] - update cloud skill stack if specified.
- */
-AppRuntime.prototype.setForegroundById = function setForegroundById (appId, options) {
-  var skillId = _.get(options, 'skillId')
-  var form = _.get(options, 'form', 'cut')
-  if (skillId) {
-    if (this.component.appLoader.getAppIdBySkillId(skillId) !== appId) {
-      return Promise.reject(new Error(`skill id '${skillId}' not owned by app ${appId}.`))
-    }
-    this.updateCloudStack(skillId, form)
-  }
-  return this.component.lifetime.setForegroundById(appId, form)
 }
 
 /**
@@ -789,41 +589,6 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
   return Promise.all(promises)
 }
 
-/**
- * Update the app stack.
- * @private
- * @param {string} skillId -
- * @param {'cut' | 'scene'} form -
- * @param {object} [options] -
- * @param {boolean} [options.isActive] - if update currently active skillId
- */
-AppRuntime.prototype.updateCloudStack = function (skillId, form, options) {
-  if (this.component.appLoader.isSkillIdExcludedFromStack(skillId)) {
-    return
-  }
-
-  var isActive = _.get(options, 'isActive', true)
-  if (isActive) {
-    this.domain.active = skillId
-  }
-
-  if (form === 'cut') {
-    this.domain.cut = skillId
-  } else if (form === 'scene') {
-    this.domain.scene = skillId
-  }
-  var ids = [this.domain.scene, this.domain.cut]
-  var stack = ids.join(':')
-  this.component.flora.updateStack(stack)
-}
-
-AppRuntime.prototype.resetCloudStack = function () {
-  this.domain.cut = ''
-  this.domain.scene = ''
-  this.domain.active = ''
-  this.component.flora.updateStack(this.domain.scene + ':' + this.domain.cut)
-}
-
 AppRuntime.prototype.appPause = function appPause (appId) {
   logger.info('Pausing resources of app', appId)
   var promises = [
@@ -903,33 +668,6 @@ AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs)
   }).then(() => this.setPickup(true))
 }
 
-AppRuntime.prototype.voiceCommand = function (text, options) {
-  var isTriggered = _.get(options, 'isTriggered', false)
-  var appId = _.get(options, 'appId')
-
-  var deviceSkillOption = {
-    linkage: {
-      trigger: isTriggered
-    }
-  }
-  return this.component.flora.getNlpResult(text, deviceSkillOption)
-    .then((result) => {
-      var nlp = result[0]
-      var action = result[1]
-      var future = Promise.resolve()
-      if (appId) {
-        /**
-         * retreat self-app into background, then promote the upcoming app
-         * to prevent self being destroy in stack preemption.
-         */
-        future = this.component.lifetime.setBackgroundById(appId)
-      }
-      return future.then(() => this.handleNlpIntent(text, nlp, action, {
-        carrierId: isTriggered ? appId : undefined
-      }))
-    })
-}
-
 /**
  *
  * @param {string} appId -
@@ -938,17 +676,7 @@ AppRuntime.prototype.voiceCommand = function (text, options) {
  * @param {boolean} [options.ignoreKeptAlive] - ignore contextOptions.keepAlive
  */
 AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
-  var clearContext = _.get(options, 'clearContext', false)
   var ignoreKeptAlive = _.get(options, 'ignoreKeptAlive', false)
-  if (clearContext) {
-    ['scene', 'cut'].forEach(it => {
-      var expectedAppId = this.component.appLoader.getAppIdBySkillId(this.domain[it])
-      if ((appId === '@yoda/cloudappclient' && expectedAppId == null) ||
-          appId === expectedAppId) {
-        this.updateCloudStack('', it, { isActive: false })
-      }
-    })
-  }
   return this.component.lifetime.deactivateAppById(appId, { force: ignoreKeptAlive })
 }
 
@@ -965,7 +693,6 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
     this.component.appLoader.setManifest(appId, {
       objectPath: objectPath,
       ifaceName: ifaceName,
-      skills: [ appId ],
       permission: []
     }, {
       dbusApp: true
@@ -978,90 +705,6 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
   }
   /** dbus apps are already running, creating a daemon app proxy for then */
   return this.component.lifetime.createApp(appId)
-}
-
-/**
- * @param {string} appId
- * @private
- */
-AppRuntime.prototype.deleteDbusApp = function (appId) {}
-
-/**
- * sync cloudappclient appid stack
- * @param {Array} stack appid stack
- * @private
- */
-AppRuntime.prototype.syncCloudAppIdStack = function (stack) {
-  this.cloudSkillIdStack = stack || []
-  logger.log('cloudStack', this.cloudSkillIdStack)
-  return Promise.resolve()
-}
-
-/**
- * handle mqtt forward message
- * @param {string} message string receive from mqtt
- */
-AppRuntime.prototype.onForward = function (message) {
-  var data = {}
-  try {
-    data = JSON.parse(message)
-  } catch (error) {
-    data = {}
-    logger.debug('parse mqtt forward message error: message -> ', message)
-    return
-  }
-  if (typeof data.content === 'string') {
-    /**
-     * FIXME: compatibility with message format of android Rokid app
-     */
-    try {
-      data.content = JSON.parse(data.content)
-    } catch (err) {}
-  }
-
-  var skillId = data.appId || data.domain
-  if (typeof skillId !== 'string') {
-    logger.error('Expecting data.appId or data.domain exists in mqtt forward message.')
-    return
-  }
-  var form = _.get(data, 'form')
-  if (typeof form !== 'string') {
-    form = _.get(this.component.appLoader.skillAttrsMap[skillId], 'defaultForm')
-  }
-  if (!form) {
-    form = 'cut'
-  }
-  var preemptive = !_.get(data, 'getInfos', false)
-
-  var mockNlp = {
-    cloud: false,
-    intent: 'RokidAppChannelForward',
-    forwardContent: data.content,
-    getInfos: data.getInfos,
-    appId: skillId
-  }
-  var mockAction = {
-    appId: skillId,
-    version: '2.0.0',
-    startWithActiveWord: false,
-    response: {
-      action: {
-        appId: skillId,
-        form: form
-      }
-    }
-  }
-  this.handleNlpIntent('', mockNlp, mockAction, { preemptive: preemptive })
-}
-
-/**
- * handle mqtt unbind topic
- */
-AppRuntime.prototype.unBindDevice = function () {
-  return Promise.resolve().then(() => {
-    this.resetNetwork({ removeAll: true })
-    this.onLogout()
-  })
 }
 
 /**
@@ -1101,62 +744,6 @@ AppRuntime.prototype.multimediaMethod = function (name, args) {
     name, args)
 }
 
-/**
- * @private
- */
-AppRuntime.prototype.reconnect = function () {
-  wifi.resetDns()
-  this.dispatchNotification('on-network-connected', [])
-  logger.log('received the wifi is online, reset DNS config.')
-
-  if (this.component.custodian.isConfiguringNetwork()) {
-    return this.openUrl(`yoda-skill://network/connected`, { preemptive: false })
-  }
-  if (!this.component.custodian.isNetworkUnavailable()) {
-    return this.login()
-  }
-}
-
-/**
- * @private
- * @param {object} [options] - the options to login.
- * @param {string} [options.masterId] - the masterId to bind
- */
-AppRuntime.prototype.login = _.singleton(function login (options) {
-  var masterId = _.get(options, 'masterId')
-  var future = Promise.resolve()
-
-  return future.then(() => {
-    logger.info(`recconecting with -> ${masterId}`)
-    // check if logged in and not for reconfiguring network,
-    // just reconnect in background.
-    if (!this.component.custodian.isConfiguringNetwork() &&
-      !masterId && this.component.custodian.isLoggedIn()) {
-      logger.info('no login process is required, just skip and wait for awaking')
-      return
-    }
-
-    // login -> mqtt
-    this.component.custodian.onLogout()
-    return this.cloudApi.connect(masterId)
-      .then(this.onLoggedIn.bind(this), (err) => {
-        if (err && err.code === 'BIND_MASTER_REQUIRED') {
-          logger.error('bind master is required, just clear the local and enter network')
-          this.component.custodian.resetNetwork()
-        } else {
-          logger.error('initializing occurs error', err && err.stack)
-        }
-      })
-  })
-})
-
-AppRuntime.prototype.onGetPropAll = deprecate(
-  function () {
-    return Object.assign({}, this.credential)
-  },
-  'AppRuntime.onGetPropAll is deprecated. Try AppRuntime.getCopyOfCredential instead.'
-)
-
 AppRuntime.prototype.getCopyOfCredential = function () {
   return Object.assign({}, this.credential)
 }
@@ -1169,14 +756,10 @@ AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
   this.component.flora.updateSpeechPrepareOptions(Object.assign({ uri: env.speechUri }, config))
   this.component.flora.post('yodart.vui.logged-in', [JSON.stringify(this.credential)], 1 /** persist message */)
 
-  this.component.wormhole.setClient(this.cloudApi.mqttcli)
   var customConfig = _.get(config, 'extraInfo.custom_config')
   if (customConfig && typeof customConfig === 'string') {
     this.component.customConfig.onLoadCustomConfig(customConfig)
   }
-
-  this.component.dndMode.recheck()
-  this.component.custodian.onLoggedIn()
 
   var sendReady = () => {
     var ids = Object.keys(this.component.appScheduler.appMap)

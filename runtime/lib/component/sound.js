@@ -86,10 +86,3 @@ Sound.prototype.unmuteIfNecessary = function unmuteIfNecessary (skillId) {
 Sound.prototype.isMuted = function isMuted () {
   return this.manager.isMuted() || this.getUserLandVolume() <= 0
 }
-
-/**
- * Determines if given skillId is related to system volume app.
- */
-Sound.prototype.isVolumeApp = function isVolumeApp (skillId) {
-  return skillId === '7D0F5E5D57CD496B940654D7C8963AE0'
-}

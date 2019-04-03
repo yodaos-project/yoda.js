@@ -20,12 +20,8 @@ function AppChargeur (runtime) {
   this.runtime = runtime
   this.config = this.markupConfig(defaultConfig)
 
-  /** skillId -> appId */
-  this.skillIdAppIdMap = {}
-  /** skillId -> skillAttrs */
-  this.skillAttrsMap = {}
-  /** hostName -> skillId */
-  this.hostSkillIdMap = {}
+  /** hostName -> appId */
+  this.hostAppIdMap = {}
   /** appId -> manifest */
   this.appManifests = {}
 
@@ -40,14 +36,9 @@ AppChargeur.prototype.reload = function reload (appId) {
   if (appId && this.appManifests[appId]) {
     var manifest = this.appManifests[appId]
     delete this.appManifests[appId]
-    manifest.skills.forEach(skill => {
-      var skillId = skill[0]
-      delete this.skillIdAppIdMap[skillId]
-      delete this.skillAttrsMap[skillId]
-    })
     manifest.hosts.forEach(host => {
       var hostname = host[0]
-      delete this.hostSkillIdMap[hostname]
+      delete this.hostAppIdMap[hostname]
     })
     manifest.notifications.forEach(notification => {
       var ntf = notification[0]
@@ -56,12 +47,8 @@ AppChargeur.prototype.reload = function reload (appId) {
     })
     return this.loadApp(manifest.appHome)
   }
-  /** skillId -> appId */
-  this.skillIdAppIdMap = {}
-  /** skillId -> skillAttrs */
-  this.skillAttrsMap = {}
-  /** hostName -> skillId */
-  this.hostSkillIdMap = {}
+  /** hostName -> appId */
+  this.hostAppIdMap = {}
   /** appId -> manifest */
   this.appManifests = {}
 
@@ -78,8 +65,7 @@ AppChargeur.prototype.markupConfig = function markupConfig (config) {
   }
   ;['paths',
     'lightAppIds',
-    'dbusAppIds',
-    'cloudStackExcludedSkillIds'
+    'dbusAppIds'
   ].forEach(key => {
     if (!Array.isArray(config[key])) {
       config[key] = []
@@ -130,27 +116,6 @@ AppChargeur.prototype.getTypeOfApp = function getTypeOfApp (appId) {
 }
 
 /**
- * Determines if the skill shall be excluded from cloud stack.
- */
-AppChargeur.prototype.isSkillIdExcludedFromStack = function isSkillIdExcludedFromStack (skillId) {
-  /**
-   * Exclude local convenience app from cloud skill stack
-   */
-  if (_.startsWith(skillId, '@')) {
-    return true
-  }
-  /**
-   * Exclude apps from cloud skill stack
-   * - composition-de-voix
-   * - ROKID.EXCEPTION
-   */
-  if (this.config.cloudStackExcludedSkillIds.indexOf(skillId) >= 0) {
-    return true
-  }
-  return false
-}
-
-/**
  * Register a notification channel so that apps could declare their interests on the notification.
  *
  * > NOTE: should be invoked on component's init or construction. Doesn't work on apps loaded before
@@ -167,11 +132,10 @@ AppChargeur.prototype.registerNotificationChannel = function registerNotificatio
 }
 
 /**
- * Directly set manifest for appId and populate its skills and permissions.
+ * Directly set manifest for appId and populate its permissions.
  *
  * @param {string} appId
  * @param {object} manifest
- * @param {string[]} [manifest.skills]
  * @param {string[]} [manifest.permission]
  * @param {string[]} [manifest.hosts]
  * @returns {void}
@@ -188,22 +152,12 @@ AppChargeur.prototype.setManifest = function setManifest (appId, manifest, optio
 }
 
 /**
- * Get appId that the skillId was mapped to.
- *
- * @param {string} skillId -
- * @returns {string | undefined} appId
- */
-AppChargeur.prototype.getAppIdBySkillId = function getAppIdBySkillId (skillId) {
-  return this.skillIdAppIdMap[skillId]
-}
-
-/**
- * Get skillId that the hostname was mapped to.
+ * Get appId that the hostname was mapped to.
  *
  * @param {string} scheme
  */
-AppChargeur.prototype.getSkillIdByHost = function getSkillIdByHost (scheme) {
-  return this.hostSkillIdMap[scheme]
+AppChargeur.prototype.getAppIdByHost = function getAppIdByHost (scheme) {
+  return this.hostAppIdMap[scheme]
 }
 
 /**
@@ -294,13 +248,9 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     throw new Error(`AppId conflicts at ${appId}(${appHome}).`)
   }
 
-  var skillIds = _.get(manifest, 'skills', [])
   var hosts = _.get(manifest, 'hosts', [])
   var permissions = _.get(manifest, 'permission', [])
   var notifications = _.get(manifest, 'notifications', [])
-  if (!Array.isArray(skillIds)) {
-    throw new Error(`manifest.skills is not valid at ${appId}(${appHome}).`)
-  }
   if (!Array.isArray(hosts)) {
     throw new Error(`manifest.hosts is not valid at ${appId}(${appHome}).`)
   }
@@ -311,29 +261,6 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     throw new Error(`manifest.notifications is not valid at ${appId}(${appHome}).`)
   }
 
-  skillIds = skillIds.map(skillId => {
-    var skillAttrs
-    if (Array.isArray(skillId)) {
-      var arr = skillId
-      skillId = arr[0]
-      skillAttrs = arr[1]
-    }
-    if (typeof skillId !== 'string') {
-      throw new Error(`manifest.skills '${skillId}' by '${appId}' type mismatch, expecting a string or an array.`)
-    }
-    var currAppId = this.skillIdAppIdMap[skillId]
-    if (currAppId != null) {
-      throw new Error(`manifest.skills '${skillId}' by '${appId}' exists, declaring by ${currAppId}.`)
-    }
-    if (skillAttrs && typeof skillAttrs !== 'object') {
-      throw new Error(`manifest.skills '${skillId}' by '${appId}' attributes type mismatch, expecting a object.`)
-    }
-    this.skillIdAppIdMap[skillId] = appId
-    if (skillAttrs) {
-      this.skillAttrsMap[skillId] = skillAttrs
-    }
-    return [skillId, skillAttrs]
-  })
   hosts = hosts.map(host => {
     var hostAttrs
     if (Array.isArray(host)) {
@@ -346,16 +273,11 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     if (typeof host !== 'string') {
       throw new Error(`manifest.host '${host}' by '${appId}' type mismatch, expecting a string or an array.`)
     }
-    var skillId = _.get(hostAttrs, 'skillId')
-
-    if (this.skillIdAppIdMap[skillId] !== appId) {
-      throw new Error(`manifest.hosts '${skillId}' mapped from '${host}' doesn't owned by ${appId}.`)
+    var currAppId = this.hostAppIdMap[host]
+    if (currAppId != null) {
+      throw new Error(`manifest.hosts '${host}' by '${currAppId}' exists, declaring by ${appId}.`)
     }
-    var currSkillId = this.hostSkillIdMap[host]
-    if (currSkillId != null) {
-      throw new Error(`manifest.hosts '${host}' by '${currSkillId}' exists, declaring by ${appId}.`)
-    }
-    this.hostSkillIdMap[host] = skillId
+    this.hostAppIdMap[host] = appId
     return [host, hostAttrs]
   })
 
@@ -376,7 +298,6 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
 
   this.runtime.component.permission.load(appId, permissions)
   this.appManifests[appId] = Object.assign(_.pick(manifest, 'daemon', 'objectPath', 'ifaceName'), {
-    skills: skillIds,
     hosts: hosts,
     permissions: permissions,
     notifications: notifications,

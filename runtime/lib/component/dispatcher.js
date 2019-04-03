@@ -111,13 +111,11 @@ class Dispatcher {
    * @param {object} [options]
    * @param {boolean} [options.preemptive=true] - if app is preemptive
    * @param {'cut' | 'scene'} [options.form='cut']
-   * @param {string} [options.skillId] - cloud skill stack would be updated to given skill id.
    * @param {string} [options.carrierId] - if app is brought to life by other app
    */
   dispatchAppEvent (appId, event, params, options) {
     var preemptive = _.get(options, 'preemptive', true)
     var form = _.get(options, 'form', 'cut')
-    var skillId = _.get(options, 'skillId')
     var carrierId = _.get(options, 'carrierId')
 
     if (this.runtime.hasBeenDisabled()) {
@@ -146,10 +144,6 @@ class Dispatcher {
 
         logger.info(`app is preemptive, activating app ${appId}`)
         return this.component.lifetime.activateAppById(appId, form, carrierId)
-          .then(() => {
-            this.runtime.updateCloudStack(skillId, form)
-            this.component.sound.unmuteIfNecessary(skillId)
-          })
       })
       .then(() => this.component.lifetime.onLifeCycle(appId, event, params))
       .then(() => true)

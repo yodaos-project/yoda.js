@@ -226,37 +226,7 @@ DBus.prototype.amsexport = {
     in: ['s'],
     out: ['b'],
     fn: function ReportSysStatus (status, cb) {
-      if (this.runtime.hasBeenDisabled()) {
-        logger.debug(`system disabled ${this.runtime.getDisabledReasons()}, ignoring sys status report`)
-        return cb(null, false)
-      }
-      try {
-        var data = JSON.parse(status)
-        cb(null, true)
-
-        if (this.component.custodian.isConfiguringNetwork()) {
-          logger.info('recevice message with data', data)
-          var filter = [
-            'CTRL-EVENT-SCAN-STARTED',
-            'CTRL-EVENT-SCAN-RESULTS',
-            'CTRL-EVENT-SUBNET-STATUS-UPDATE'
-          ]
-          if (data.msg && filter.indexOf(data.msg) === -1) {
-            this.runtime.openUrl(
-              `yoda-skill://network/wifi_status?status=${data.msg}&value=${data.data}`, {
-                preemptive: false
-              })
-          }
-        }
-        if (data['Network'] === true) {
-          this.component.custodian.onNetworkConnect()
-        } else if (data['Network'] === false || data['Wifi'] === false) {
-          this.component.custodian.onNetworkDisconnect()
-        }
-      } catch (err) {
-        logger.error(err && err.stack)
-        cb(null, false)
-      }
+      cb(null, true)
     }
   },
   SetTesting: {
