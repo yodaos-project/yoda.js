@@ -365,12 +365,13 @@ Value ClientNative::call(const CallbackInfo& info) {
       make_shared<FunctionReference>(Napi::Persistent(info[3].As<Function>()));
   // TODO: if callback of flora.get never invokded, the FunctionReference will
   // never Unref!!
-  int32_t r = floraAgent.call(info[0].As<String>().Utf8Value().c_str(), msg,
-                              info[2].As<String>().Utf8Value().c_str(),
-                              [this, cbr](int32_t rescode, Response& resp) {
-                                this->respCallback(cbr, rescode, resp);
-                              },
-                              timeout);
+  int32_t r = floraAgent.call(
+      info[0].As<String>().Utf8Value().c_str(), msg,
+      info[2].As<String>().Utf8Value().c_str(),
+      [this, cbr](int32_t rescode, Response& resp) {
+        this->respCallback(cbr, rescode, resp);
+      },
+      timeout);
   return Number::New(env, r);
 }
 
@@ -401,7 +402,7 @@ void ClientNative::msgCallback(const char* name, Napi::Env env,
   uv_async_send(&msgAsync);
 }
 
-void ClientNative::respCallback(shared_ptr<FunctionReference> cbr,
+void ClientNative::respCallback(const shared_ptr<FunctionReference>& cbr,
                                 int32_t rescode, Response& response) {
   cb_mutex.lock();
   pendingResponses.emplace_back();
