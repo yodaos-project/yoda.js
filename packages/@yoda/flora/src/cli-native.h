@@ -71,7 +71,7 @@ class ClientNative {
   void msgCallback(const char* name, Napi::Env env, std::shared_ptr<Caps>& msg,
                    uint32_t type, std::shared_ptr<flora::Reply> reply);
 
-  void respCallback(std::shared_ptr<Napi::FunctionReference> cbr,
+  void respCallback(const std::shared_ptr<Napi::FunctionReference>& cbr,
                     int32_t rescode, flora::Response& response);
 
  private:
