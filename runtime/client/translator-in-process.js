@@ -76,6 +76,9 @@ var PropertyDescriptions = {
     }
   },
   event: function Event (name, descriptor, namespace, nsDescriptor) {
+    if (nsDescriptor.listeners(name).length > 0) {
+      return
+    }
     /** Should use namespace descriptor as this since property descriptor is a plain object */
     nsDescriptor.on(name, function onEvent () {
       EventEmitter.prototype.emit.apply(
@@ -86,7 +89,7 @@ var PropertyDescriptions = {
   },
   'event-ack': function EventAck (name, descriptor, namespace, nsDescriptor) {
     if (nsDescriptor[descriptor.trigger]) {
-      throw new Error(`Double subscription on event-ack descriptor '${name}'.`)
+      return
     }
     nsDescriptor[descriptor.trigger] = function onEventTrigger () {
       var params = Array.prototype.slice.call(arguments, 0)
