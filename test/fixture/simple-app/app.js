@@ -15,6 +15,7 @@ module.exports = function (activity) {
         eventProxy,
         [ eve ].concat(Array.prototype.slice.call(arguments, 0)))
     })
+    activity.on(eve, function foo () {})
   })
 
   ;['end'].forEach(eve => {

@@ -42,7 +42,7 @@ test('should listen events in need', t => {
   lightApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
       ;['create', 'pause', 'resume', 'destroy', 'request'].forEach(it => {
-        t.assert(descriptor.listeners(it).length > 0, `listener of '${it}' shall presents.`)
+        t.strictEqual(descriptor.listeners(it).length, 1, `listener of '${it}' shall presents.`)
       })
       t.end()
     })
@@ -57,7 +57,7 @@ test('should listen events in nested namespaces in need', t => {
   var runtime = new EventEmitter()
   lightApp('@test', { appHome: target }, runtime)
     .then(descriptor => {
-      t.assert(descriptor.tts.listeners('end').length > 0, `listener of 'tts.end' shall presents.`)
+      t.strictEqual(descriptor.tts.listeners('end').length, 1, `listener of 'tts.end' shall presents.`)
       t.end()
     })
     .catch(err => {
