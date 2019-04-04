@@ -318,7 +318,7 @@ AlarmCore.prototype._onTaskActive = function (option) {
 /**
  * alarm play media prepared
  */
-AlarmCore.prototype.playMediaPrepared = () => {
+AlarmCore.prototype.playMediaPrepared = function () {
   this.taskTimeout && clearTimeout(this.taskTimeout)
   // pd require online url can only play 7s,after 7s should stop && play anther tts
   this.taskTimeout = setTimeout(() => {
