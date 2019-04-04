@@ -5,6 +5,12 @@ var logger = require('logger')('pony')
 
 var yodaUtil = require('@yoda/util')
 
+var HealthReporter = require('./health-reporter')
+
+module.exports.catchUncaughtError = catchUncaughtError
+module.exports.HealthReporter = HealthReporter
+module.exports.healthReport = healthReport
+
 var profilerFlag = property.get('sys.vm.profiler', 'persist')
 if (profilerFlag === 'true') {
   var profiling = false
@@ -31,7 +37,7 @@ if (profilerFlag === 'true') {
   })
 }
 
-module.exports.catchUncaughtError = function catchUncaughtError (logfile) {
+function catchUncaughtError (logfile) {
   var stream
   if (logfile) {
     yodaUtil.fs.mkdirp(path.dirname(logfile), (err) => {
@@ -54,4 +60,13 @@ ${err.stack}\n`, () => {})
     stream && stream.write(`[${new Date().toISOString()}] <${process.argv[1]}> Unhandled Rejection:
 ${err.stack}\n`, () => {})
   })
+
+  return module.exports
+}
+
+function healthReport (name) {
+  var reporter = new HealthReporter(name)
+  reporter.start()
+
+  return module.exports
 }

@@ -5,6 +5,7 @@ var exodus = require('@yoda/exodus')
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/yodart-err.log')
+  .healthReport('vuid')
 
 var AppRuntime = require('../../lib/app-runtime')
 
