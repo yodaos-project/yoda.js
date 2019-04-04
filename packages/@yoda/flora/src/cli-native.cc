@@ -381,7 +381,7 @@ void ClientNative::msgCallback(const char* name, Napi::Env env,
   uv_async_send(&msgAsync);
 }
 
-void ClientNative::respCallback(shared_ptr<FunctionReference> cbr,
+void ClientNative::respCallback(const shared_ptr<FunctionReference> &cbr,
                                 int32_t rescode, Response& response) {
   cb_mutex.lock();
   pendingResponses.emplace_back();
