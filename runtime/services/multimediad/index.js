@@ -2,6 +2,7 @@
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/multimediad-err.log')
+  .healthReport('multimediad')
 
 var _ = require('@yoda/util')._
 var Service = require('./service')
