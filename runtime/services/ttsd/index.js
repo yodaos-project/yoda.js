@@ -2,6 +2,7 @@
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/ttsd-err.log')
+  .healthReport('ttsd')
 
 var logger = require('logger')('ttsd')
 var Service = require('./service')

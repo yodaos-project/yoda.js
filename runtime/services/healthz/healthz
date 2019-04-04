@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -e
+
+baseline_now=`date -u +%s`
+while true; do
+  prefix="/tmp/health"
+  reports=`ls $prefix`
+  for it in $reports; do
+    if ! test -f $prefix/$it; then
+      continue
+    fi
+    name=${it%-*}
+    pid=${it##*-}
+    found=`ps aux | grep -v grep | grep $pid -c || true`
+    if test "$found" = "0"; then
+      printf "$name($pid) bad report: process not found\n" >&2
+      rm $prefix/$it
+      continue
+    fi
+    dd=`date -u -d $(cat $prefix/$it) -D '%Y-%m-%dT%H:%M:%S.%3Z' +%s || true`
+    if test -z "$dd"; then
+      printf "$name($pid) bad report: invalid datetime\n"  >&2
+      rm $prefix/$it
+      continue
+    fi
+
+    now=`date -u +%s`
+    baseline_offset=$(($now - $baseline_now))
+    baseline_offset=${baseline_offset#-}
+    if (($baseline_offset > 15)); then
+      printf "a long duration elapsed in an interval, skipping\n" >&2
+      continue
+    fi
+    # health check: 5seconds * 3intervals
+    itv=$(($now - dd))
+    if (($itv > 15)); then
+      printf "$name($pid) not alive $itv, force terminating $pid\n"
+      kill -9 $pid
+    else
+      printf "$name($pid) alive $itv\n"
+    fi
+  done
+  baseline_now=`date -u +%s`
+  sleep 10
+done
