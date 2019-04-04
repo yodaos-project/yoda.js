@@ -2,6 +2,7 @@
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/lightd-err.log')
+  .healthReport('lightd')
 
 var Dbus = require('dbus')
 var logger = require('logger')('lightd')
