@@ -1,0 +1,31 @@
+stages:
+- test
+
+language: c
+os: linux
+dist: boinic
+
+cache:
+  npm: true
+
+before_install:
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tools/apt-get-install-deps.sh; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tools/brew-install-deps.sh; fi
+- yarn global add n
+- export N_PREFIX=$HOME/.node
+- export PATH=$(yarn global bin):$PATH
+
+install:
+- n 10
+- yarn
+
+script:
+- npm run lint
+
+fast_finish: true
+
+jobs:
+  include:
+  - stage: test
+    env:
+    - JOBNAME="Linux/x86-64 Correctness Tests"
