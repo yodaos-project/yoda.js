@@ -38,6 +38,22 @@ Object.assign(KeyboardDescriptor.prototype,
   },
   {
     /**
+     * @event yodaRT.activity.Activity.KeyboardClient#keydown
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    keydown: {
+      type: 'event'
+    },
+    /**
+     * @event yodaRT.activity.Activity.KeyboardClient#keyup
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    keyup: {
+      type: 'event'
+    },
+    /**
      * @event yodaRT.activity.Activity.KeyboardClient#click
      * @param {object} event -
      * @param {number} event.keyCode -
@@ -46,11 +62,11 @@ Object.assign(KeyboardDescriptor.prototype,
       type: 'event'
     },
     /**
-     * @event yodaRT.activity.Activity.KeyboardClient#dbclick
+     * @event yodaRT.activity.Activity.KeyboardClient#dblclick
      * @param {object} event -
      * @param {number} event.keyCode -
      */
-    dbclick: {
+    dblclick: {
       type: 'event'
     },
     /**
@@ -70,6 +86,7 @@ Object.assign(KeyboardDescriptor.prototype,
      * @instance
      * @function preventDefaults
      * @param {number} keyCode -
+     * @param {string} event -
      * @returns {Promise<void>}
      */
     preventDefaults: {
@@ -101,6 +118,7 @@ Object.assign(KeyboardDescriptor.prototype,
      * @instance
      * @function restoreDefaults
      * @param {number} keyCode -
+     * @param {string} event -
      * @returns {Promise<void>}
      */
     restoreDefaults: {

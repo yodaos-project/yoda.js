@@ -8,38 +8,37 @@ var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 
 var yodaPath = require('@yoda/util').path
-
 var LIGHT_SOURCE = '/opt/light'
 
-module.exports = LightDescriptor
+module.exports = EffectDescriptor
 
 /**
  * @memberof yodaRT.activity.Activity
- * @class LightClient
+ * @class EffectClient
  * @hideconstructor
  * @extends EventEmitter
  */
-function LightDescriptor (activityDescriptor, appId, appHome, runtime) {
+function EffectDescriptor (activityDescriptor, appId, appHome, runtime) {
   EventEmitter.call(this)
   this._activityDescriptor = activityDescriptor
   this._appId = appId
   this._appHome = appHome
   this._runtime = runtime
 }
-inherits(LightDescriptor, EventEmitter)
-LightDescriptor.prototype.toJSON = function toJSON () {
-  return LightDescriptor.prototype
+inherits(EffectDescriptor, EventEmitter)
+EffectDescriptor.prototype.toJSON = function toJSON () {
+  return EffectDescriptor.prototype
 }
 
-Object.assign(LightDescriptor.prototype,
+Object.assign(EffectDescriptor.prototype,
   {
     type: 'namespace'
   },
   {
 
     /**
-     * play the given light effect
-     * @memberof yodaRT.activity.Activity.LightClient
+     * play the given effect
+     * @memberof yodaRT.activity.Activity.EffectClient
      * @instance
      * @function play
      * @param {string} uri - the light resource uri.
@@ -66,7 +65,7 @@ Object.assign(LightDescriptor.prototype,
     },
     /**
      * stop the given light effect and clear from the recovery queue
-     * @memberof yodaRT.activity.Activity.LightClient
+     * @memberof yodaRT.activity.Activity.EffectClient
      * @instance
      * @function stop
      * @param {string} [uri] - the light resource uri.

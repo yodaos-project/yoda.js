@@ -13,9 +13,11 @@ var EventEmitter = require('events').EventEmitter
 var MEDIA_SOURCE = '/opt/media'
 
 var KeyboardDescriptor = require('./keyboard-descriptor')
-var LightDescriptor = require('./light-descriptor')
+var EffectDescriptor = require('./effect-descriptor')
 var MultimediaDescriptor = require('./multimedia-descriptor')
 var TtsDescriptor = require('./tts-descriptor')
+var RuntimeDescriptor = require('./runtime-descriptor')
+var NotificationDescriptor = require('./notification-descriptor')
 
 module.exports = ActivityDescriptor
 
@@ -29,9 +31,6 @@ module.exports = ActivityDescriptor
  *   })
  *   activity.on('destroy', () => {
  *     console.log('app is destroyed')
- *   })
- *   activity.on('request', nlp => {
- *     // handle nlp
  *   })
  * }
  * ```
@@ -49,12 +48,12 @@ function ActivityDescriptor (appId, appHome, runtime) {
   this._destructed = false
 
   /**
-   * The `LightClient` is used to control LED APIs.
+   * The `EffectClient` is used to control hardware effects.
    * @memberof yodaRT.activity.Activity
    * @instance
-   * @member {yodaRT.activity.Activity.LightClient} light
+   * @member {yodaRT.activity.Activity.EffectClient} effect
    */
-  this.light = new LightDescriptor(this, appId, appHome, runtime)
+  this.effect = new EffectDescriptor(this, appId, appHome, runtime)
 
   /**
    * The `MediaClient` is used to control multimedia APIs.
@@ -79,6 +78,22 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.KeyboardClient} keyboard
    */
   this.keyboard = new KeyboardDescriptor(this, appId, appHome, runtime)
+
+  /**
+   * The `RuntimeClient` is used to control runtime behaviors.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {yodaRT.activity.Activity.RuntimeClient} runtime
+   */
+  this.runtime = new RuntimeDescriptor(this, appId, appHome, runtime)
+
+  /**
+   * The `NotificationClient` is used to control notification behaviors.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {yodaRT.activity.Activity.NotificationClient} notification
+   */
+  this.notification = new NotificationDescriptor(this, appId, appHome, runtime);
 
   /**
    * Get current `appId`.
@@ -127,64 +142,31 @@ ActivityDescriptor.prototype.destruct = function destruct () {
 Object.assign(ActivityDescriptor.prototype,
   {
     /**
-     * When the app is active.
-     * @event yodaRT.activity.Activity#active
-     */
-    active: {
-      type: 'event'
-    },
-    /**
-     * When the Activity API is ready.
-     * @event yodaRT.activity.Activity#ready
-     */
-    ready: {
-      type: 'event'
-    },
-    /**
      * When an activity is created.
-     * @event yodaRT.activity.Activity#create
+     * @event yodaRT.activity.Activity#created
      */
-    create: {
+    created: {
       type: 'event'
     },
     /**
      * When an activity is about been paused.
-     * @event yodaRT.activity.Activity#pause
+     * @event yodaRT.activity.Activity#paused
      */
-    pause: {
+    paused: {
       type: 'event'
     },
     /**
      * When an activity is resumed.
-     * @event yodaRT.activity.Activity#resume
+     * @event yodaRT.activity.Activity#resumed
      */
-    resume: {
+    resumed: {
       type: 'event'
     },
     /**
      * When an activity is about been destroyed.
-     * @event yodaRT.activity.Activity#destroy
+     * @event yodaRT.activity.Activity#destroyed
      */
-    destroy: {
-      type: 'event'
-    },
-    /**
-     * When an activity is put into background.
-     * @event yodaRT.activity.Activity#background
-     */
-    background: {
-      type: 'event'
-    },
-    /**
-     * Fires on nlp requests.
-     * @event yodaRT.activity.Activity#request
-     * @param {object} data
-     * @param {string} data.intent - your nlp intent.
-     * @param {object} data.slots  - your nlp slots.
-     * @param {string} data.asr    - the asr text.
-     * @param {object} action      - the cloud post-processed data.
-     */
-    request: {
+    destroyed: {
       type: 'event'
     },
     /**
@@ -210,50 +192,23 @@ Object.assign(ActivityDescriptor.prototype,
      * > Only fires to apps in monologue mode.
      *
      * @event yodaRT.activity.Activity#oppressing
-     * @param {'request' | 'url'} event - the event of oppressed app which would had
+     * @param {string} event - the event of oppressed app which would had
      * activated the app if not in monologue mode.
      */
     oppressing: {
       type: 'event'
     },
     /**
-     * Fires on notification requests.
-     * @event yodaRT.activity.Activity#notification
-     * @param {string} channel
+     * Fires on events.
+     * @event yodaRT.activity.Activity#channel
+     * @param {string} name - the channel name.
+     * @param {object} data - the channel data.
      */
-    notification: {
+    channel: {
       type: 'event'
     }
   },
   {
-    /**
-     * Get all properties, it contains the following fields:
-     * - `deviceId` the device id.
-     * - `deviceTypeId` the device type id.
-     * - `key` the cloud key.
-     * - `secret` the cloud secret.
-     * - `masterId` the userId or masterId.
-     *
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function get
-     * @returns {Promise<object>}
-     * @example
-     * module.exports = function (activity) {
-     *   activity.on('ready', () => {
-     *     activity.get().then((props) => console.log(props))
-     *   })
-     * }
-     */
-    get: {
-      type: 'method',
-      returns: 'promise',
-      fn: function get () {
-        // TODO(Yorkie): check permission.
-        logger.warn('activity.get() is deprecated, please use @yoda/property instead.')
-        return Promise.resolve(this._runtime.getCopyOfCredential())
-      }
-    },
     /**
      * Exits the current application.
      * @memberof yodaRT.activity.Activity
@@ -271,41 +226,28 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
-     *
-     * Also clears apps' contexts.
+     * Use this method to open the specified resource. If the specified URL could
+     * be handled by another app, YodaOS launches that app and passes the URL to it.
+     * (Launching the app brings the other app to the foreground.) If no app is
+     * capable of handling the specified scheme, the returning promise is resolved
+     * with false.
      *
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @function idle
-     * @returns {Promise<void>}
+     * @function openUrl
+     * @param {string} url - the YodaOS url to open.
+     * @param {object} [options]
+     * @param {boolean} [options.preemptive=true] -
+     * @returns {Promise<boolean>}
      */
-    idle: {
+    openUrl: {
       type: 'method',
       returns: 'promise',
-      fn: function idle () {
-        return this._runtime.idle()
-      }
-    },
-    /**
-     * Starts the login flow.
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function login
-     * @param {object} [options] - the options to login
-     * @param {string} [options.masterId] - the masterId to bind.
-     * @returns {Promise<void>}
-     */
-    login: {
-      type: 'method',
-      returns: 'promise',
-      fn: function startLogin (options) {
-        return this._runtime.login(options).catch((err) => {
-          if (err.code !== 'FUNCTION_IS_LOCKED') {
-            throw err
-          }
-          logger.warn('call `startLogin` when its working, just skip it')
-        })
+      fn: function open (url, options) {
+        if (typeof options === 'string') {
+          options = { form: options }
+        }
+        return this._runtime.openUrl(url, options)
       }
     },
     /**
@@ -390,23 +332,6 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
-     * Play the sound effect, support the following schemas: `system://` and `self://`.
-     *
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function playSound
-     * @param {string} uri - the sound resource uri.
-     * @returns {Promise<void>}
-     */
-    playSound: {
-      type: 'method',
-      returns: 'promise',
-      fn: function playSound (uri) {
-        var absPath = yodaPath.transformPathScheme(uri, MEDIA_SOURCE, this._appHome + '/media')
-        return this._runtime.component.light.appSound(this._appId, absPath)
-      }
-    },
-    /**
      * Send a voice command to the main process. It requires the permission `ACCESS_VOICE_COMMAND`.
      *
      * @memberof yodaRT.activity.Activity
@@ -463,31 +388,6 @@ Object.assign(ActivityDescriptor.prototype,
           return Promise.reject(new Error('Permission denied.'))
         }
         return this._runtime.stopMonologue(this._appId)
-      }
-    },
-    /**
-     * Use this method to open the specified resource. If the specified URL could
-     * be handled by another app, YodaOS launches that app and passes the URL to it.
-     * (Launching the app brings the other app to the foreground.) If no app is
-     * capable of handling the specified scheme, the returning promise is resolved
-     * with false.
-     *
-     * @memberof yodaRT.activity.Activity
-     * @instance
-     * @function openUrl
-     * @param {string} url -
-     * @param {'cut' | 'scene' | object} [options]
-     * @param {boolean} [options.preemptive=true] -
-     * @returns {Promise<boolean>}
-     */
-    openUrl: {
-      type: 'method',
-      returns: 'promise',
-      fn: function openUrl (url, options) {
-        if (typeof options === 'string') {
-          options = { form: options }
-        }
-        return this._runtime.openUrl(url, options)
       }
     },
     /**
