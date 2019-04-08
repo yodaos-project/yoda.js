@@ -261,6 +261,9 @@ Object.assign(MultimediaDescriptor.prototype,
               })
             })
           })
+          .catch((err) => {
+            logger.error('create media player error', err)
+          })
       }
     },
     /**
