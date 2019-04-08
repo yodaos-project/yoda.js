@@ -13,7 +13,7 @@ Example:
 "
 
 patternPrefix='/data/workspace/test/'
-pattern="**/*.test.js"
+patterns=""
 reporter="cat"
 coverage=""
 timeout=""
@@ -21,8 +21,8 @@ local="NO"
 sn=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    -p)
-      pattern="$2"
+    -p|--pattern)
+      patterns="$2"
       shift
       ;;
     --reporter)
@@ -36,11 +36,7 @@ while [ $# -gt 0 ]; do
       sn="$2"
       shift
       ;;
-    --help)
-      printf "$help"
-      exit
-      ;;
-    -h)
+    -h|--help)
       printf "$help"
       exit
       ;;
@@ -59,18 +55,23 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
+if test -z "$patterns"; then
+  patterns=$(cat test/testsets.txt)
+fi
+
+pre_scripts=""
+
 if test "$local" = "YES"; then
   export NODE_PATH="$(pwd)/packages"
 
   patternPrefix="$(pwd)/test/"
-  scripts="$patternPrefix$pattern"
 
   cmd='iotjs ./node_modules/tape/bin/tape.js '
 else
-  scripts="
+  pre_scripts="
 export BLUETOOTH_CHANNEL_PREFIX=/tmp;
 export NODE_ENV=unittest;
-iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
+iotjs /usr/lib/node_modules/tape/bin/tape.js
 "
   if test "$sn" != ""; then
     cmd="adb -s $sn shell"
@@ -79,4 +80,9 @@ iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
   fi
 fi
 
-$cmd $scripts $coverage $timeout | $reporter
+for pattern in $patterns; do
+  if ! test -z "$pattern"; then
+    printf "# $patternPrefix$pattern\n"
+    $cmd $pre_scripts $coverage $timeout "'$patternPrefix$pattern'" | $reporter
+  fi
+done
