@@ -11,13 +11,14 @@
     "website": "jsdoc -c jsdoc.config -R README.md -r . -d website/docs -u website/tutorials",
     "pretest": "tools/runtime-install -t",
     "bare-test": "tools/runtime-install -t --no-os && tools/test",
-    "test": "tools/test --reporter tap-nyan"
+    "test-local": "tools/test --local --reporter tap-spec --testset 'test/testsets-local.txt'",
+    "test": "tools/test --reporter tap-spec"
   },
   "config": {
     "unsafe-perm": true
   },
   "engine": {
-    "shadow": "0.10.9"
+    "shadow-node": "0.11.3"
   },
   "manifest": {
     "apilevel": 0.6

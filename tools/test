@@ -12,6 +12,7 @@ Example:
   $ ./tools/test --reporter tap-nyan --pattern '**/*.test.js'
 "
 
+testset='test/testsets.txt'
 patternPrefix='/data/workspace/test/'
 patterns=""
 reporter="cat"
@@ -25,11 +26,15 @@ while [ $# -gt 0 ]; do
       patterns="$2"
       shift
       ;;
+    --testset)
+      testset="$2"
+      shift
+      ;;
     --reporter)
       reporter="./node_modules/.bin/$2"
       shift
       ;;
-    -l)
+    -l|--local)
       local="YES"
       ;;
     -s)
@@ -56,13 +61,15 @@ while [ $# -gt 0 ]; do
 done
 
 if test -z "$patterns"; then
-  patterns=$(cat test/testsets.txt)
+  patterns=$(cat $testset)
 fi
 
 pre_scripts=""
 
 if test "$local" = "YES"; then
   export NODE_PATH="$(pwd)/packages"
+  export YODA_RUN_MODE=host
+  export NODE_ENV=unittest
 
   patternPrefix="$(pwd)/test/"
 
@@ -83,6 +90,6 @@ fi
 for pattern in $patterns; do
   if ! test -z "$pattern"; then
     printf "# $patternPrefix$pattern\n"
-    $cmd $pre_scripts $coverage $timeout "'$patternPrefix$pattern'" | $reporter
+    $cmd $pre_scripts $coverage $timeout "$patternPrefix$pattern" | $reporter
   fi
 done
