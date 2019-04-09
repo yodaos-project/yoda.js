@@ -11,6 +11,7 @@ cache:
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tools/apt-get-install-deps.sh; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tools/brew-install-deps.sh; fi
+- tools/install-shadow-node.sh
 - yarn global add n
 - export N_PREFIX=$HOME/.node
 - export PATH=$(yarn global bin):$PATH
@@ -21,6 +22,7 @@ install:
 
 script:
 - npm run lint
+- npm run test-local
 
 fast_finish: true
 

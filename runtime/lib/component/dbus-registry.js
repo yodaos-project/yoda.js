@@ -9,7 +9,7 @@ var safeParse = require('@yoda/util').json.safeParse
 var AudioManager = require('@yoda/audio').AudioManager
 
 var DbusRemoteCall = require('../dbus-remote-call')
-var dbusConfig = require('/etc/yoda/dbus-config.json')
+var dbusConfig = require('../helper/config').getConfig('dbus-config.json')
 
 module.exports = DBus
 function DBus (runtime) {
