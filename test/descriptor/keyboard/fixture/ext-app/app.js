@@ -22,6 +22,8 @@ module.exports = function (activity) {
   })
 
   ;[
+    'keydown',
+    'keyup',
     'click',
     'dbclick',
     'longpress'
