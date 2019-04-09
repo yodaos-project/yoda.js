@@ -6,9 +6,9 @@ var floraFactory = require('@yoda/flora')
 var FloraComp = require('@yoda/flora/comp')
 var _ = require('@yoda/util')._
 
-var floraConfig = require('/etc/yoda/flora-config.json')
 var globalEnv = require('@yoda/env')()
-var ovsdkConfig = require('/etc/yoda/openvoice-sdk.json')
+var floraConfig = require('../helper/config').getConfig('flora-config.json')
+var ovsdkConfig = require('../helper/config').getConfig('openvoice-sdk.json')
 
 module.exports = Flora
 /**

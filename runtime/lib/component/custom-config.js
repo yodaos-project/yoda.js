@@ -1,11 +1,12 @@
 'use strict'
 var logger = require('logger')('custom-config-runtime')
-var config = require('/etc/yoda/custom-config.json')
 var querystring = require('querystring')
 var safeParse = require('@yoda/util').json.safeParse
 var EventEmitter = require('events')
 var property = require('@yoda/property')
 var _ = require('@yoda/util')._
+
+var config = require('../helper/config').getConfig('custom-config.json')
 
 /**
  * handle all custom-config

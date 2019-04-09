@@ -20,6 +20,7 @@ sudo apt-get install -q -y \
     cmake \
     clang-format-8 \
     build-essential \
+    jq \
     yarn
 
 sudo ln -s /usr/bin/clang-format-8 /usr/bin/clang-format-8.0

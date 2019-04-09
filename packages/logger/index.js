@@ -8,7 +8,7 @@ var util = require('util')
  * The above command would starts a tcp server on the port 8000 for logs.
  */
 var native
-if (process.platform === 'darwin' || process.env.NODE_ENV === 'unittest') {
+if (process.env.NODE_ENV === 'unittest') {
   console.log('/** using stdout as @yoda/logger output target. */')
   var consoleLevels = [
     () => {}, /** none */

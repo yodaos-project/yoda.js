@@ -6,6 +6,7 @@ PKGS="
   cmake
   node
   yarn
+  jq
 "
 
 for pkg in $PKGS
