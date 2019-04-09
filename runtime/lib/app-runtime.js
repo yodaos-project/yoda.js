@@ -13,7 +13,7 @@ var path = require('path')
 
 var logger = require('logger')('yoda')
 
-var ComponentConfig = require('/etc/yoda/component-config.json')
+var ComponentConfig = require('./helper/config').getConfig('component-config.json')
 
 var _ = require('@yoda/util')._
 var property = require('@yoda/property')
