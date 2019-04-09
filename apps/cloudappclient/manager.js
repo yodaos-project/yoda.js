@@ -27,7 +27,7 @@ Manager.prototype.getManualPauseFLag = function () {
   return this.manualPause
 }
 
-Manager.prototype.onrequest = function (nlp, action) {
+Manager.prototype.onrequest = function (nlp, action, calmly) {
   if (!action || !action.appId) {
     logger.error(`Missing the appId! The action value is: [${JSON.stringify(action)}]`)
     if (this.skills.length === 0) {
@@ -84,7 +84,9 @@ Manager.prototype.onrequest = function (nlp, action) {
       }
     }
     skill.on('exit', this.next.bind(this, skill))
-    skill.emit('start')
+    if (calmly !== true) {
+      skill.emit('start')
+    }
   }
 }
 
@@ -98,13 +100,23 @@ Manager.prototype.onrequestOnce = function (nlp, action, callback) {
     logger.warn(`directive is empty! The action value is: [${JSON.stringify(action)}]`)
     return callback()
   }
+  var cur
   var pos = this.findByAppId(action.appId)
+
   if (pos > -1) {
-    var cur = this.skills[pos]
-    cur.requestOnce(nlp, action, callback)
+    if (this.getCurrentSkill().appId !== action.appId) {
+      // destroy current skill
+      var prev = this.skills.pop()
+      prev.emit('destroy')
+      this.skills[pos].emit('resume')
+    }
+    cur = this.skills[pos]
   } else {
-    callback()
+    this.onrequest(nlp, action, true)
+    pos = this.findByAppId(action.appId)
+    cur = this.skills[pos]
   }
+  cur.requestOnce(nlp, action, callback)
 }
 
 Manager.prototype.findByAppId = function (appId) {
