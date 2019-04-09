@@ -15,7 +15,7 @@ function getAppRuntime () {
 }
 
 test('should not break if runtime has not been disabled', t => {
-  t.plan(8)
+  t.plan(7)
   rtHelper.loadBaseConfig()
   var runtime = getAppRuntime()
 
@@ -35,9 +35,7 @@ test('should not break if runtime has not been disabled', t => {
     t.strictEqual(appId, '@yoda')
     t.strictEqual(name, 'system://boot.ogg')
   })
-  mock.mockReturns(runtime.component.custodian, 'prepareNetwork', () => {
-    t.pass('should prepare network')
-  })
+  // TODO: Phase to setup
   runtime.init()
     .then(() => {
       t.strictEqual(runtime.hasBeenDisabled(), false)
@@ -53,7 +51,7 @@ test('should not break if runtime has not been disabled', t => {
 })
 
 test('should not announce first boot guide if is not first boot', t => {
-  t.plan(6)
+  t.plan(5)
   rtHelper.loadBaseConfig()
   var runtime = getAppRuntime(initComponents)
 
@@ -74,9 +72,7 @@ test('should not announce first boot guide if is not first boot', t => {
     t.strictEqual(appId, '@yoda')
     t.strictEqual(name, 'system://boot.ogg')
   })
-  mock.mockReturns(runtime.component.custodian, 'prepareNetwork', () => {
-    t.pass('should prepare network')
-  })
+  // TODO: Phase to setup
   runtime.init()
     .then(() => {
       t.strictEqual(runtime.hasBeenDisabled(), false)
@@ -117,9 +113,7 @@ test('should break announcements if runtime disabled', t => {
       t.fail('unreachable path')
     }
   })
-  mock.mockReturns(runtime.component.custodian, 'prepareNetwork', () => {
-    t.fail('unreachable path')
-  })
+  // TODO: should not phase to setup
   runtime.init()
     .then(() => {
       t.strictEqual(runtime.hasBeenDisabled(), true)
@@ -161,9 +155,7 @@ test('should break in announcing if runtime disabled', t => {
       t.fail('unreachable path')
     }
   })
-  mock.mockReturns(runtime.component.custodian, 'prepareNetwork', () => {
-    t.fail('unreachable path')
-  })
+  // TODO: should not phase to setup
   runtime.init()
     .then(() => {
       t.strictEqual(runtime.hasBeenDisabled(), true)

@@ -61,15 +61,11 @@ test('should load app', t => {
       var packagePath = path.join(appPath, 'package.json')
       var pkgInfo = require(packagePath)
       var appId = pkgInfo.name
-      var skillIds = _.get(pkgInfo, 'metadata.skills', [])
       var permissions = _.get(pkgInfo, 'metadata.permission', [])
       var hosts = _.get(pkgInfo, 'metadata.hosts', [])
 
-      skillIds.forEach(it => {
-        t.strictEqual(loader.skillIdAppIdMap[it], appId)
-      })
       hosts.forEach(it => {
-        t.strictEqual(loader.hostSkillIdMap[it.name], it.skillId)
+        t.strictEqual(loader.hostAppIdMap[it.name], it.appId)
       })
       t.deepEqual(fakeRuntime.component.permission.map[appId], permissions)
 
@@ -89,13 +85,9 @@ test('should load dbus app', t => {
   var manifest = {
     objectPath: 'foo',
     ifaceName: 'bar',
-    skills: [ 'foobar-skill' ],
     permission: []
   }
   loader.setManifest(appId, manifest, { dbusApp: true })
-  manifest.skills.forEach(it => {
-    t.strictEqual(loader.skillIdAppIdMap[it], appId)
-  })
   t.deepEqual(fakeRuntime.component.permission.map[appId], manifest.permission)
 
   var loadedManifest = loader.appManifests[appId]

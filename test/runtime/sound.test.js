@@ -1,7 +1,7 @@
 'use strict'
 
 var test = require('tape')
-var AppRuntime = require('@yoda/mock/lib/mock-app-runtime')
+var AppRuntime = require('../helper/mock-runtime')
 var helper = require('../helper')
 var Sound = require(`${helper.paths.runtime}/lib/component/sound`)
 

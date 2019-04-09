@@ -2,7 +2,7 @@ var test = require('tape')
 var _ = require('@yoda/util')._
 var mock = require('../../helper/mock')
 
-var AppRuntime = require('@yoda/mock/lib/mock-app-runtime')
+var AppRuntime = require('../../helper/mock-runtime')
 
 function mockAppSound (light) {
   mock.mockPromise(light, 'play', null, undefined)

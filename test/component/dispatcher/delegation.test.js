@@ -1,6 +1,6 @@
 var test = require('tape')
 
-var AppRuntime = require('@yoda/mock/lib/mock-app-runtime')
+var AppRuntime = require('../../helper/mock-runtime')
 
 test('should validate config', t => {
   t.plan(1)

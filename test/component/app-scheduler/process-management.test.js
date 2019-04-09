@@ -3,9 +3,8 @@ var path = require('path')
 
 var helper = require('../../helper')
 var mock = require('./mock')
+var mm = require('../../helper/mock')
 var Scheduler = require(`${helper.paths.runtime}/lib/component/app-scheduler`)
-
-require('@yoda/oh-my-little-pony')
 
 test('shall create child process', t => {
   var target = path.join(helper.paths.fixture, 'noop-app')
@@ -32,8 +31,10 @@ test('shall create child process', t => {
       t.notLooseEqual(scheduler.appMap[appId], null)
       t.strictEqual(scheduler.appStatus[appId], 'running')
 
-      app.once('exit', () => {
-        t.looseEqual(scheduler.appStatus[appId], 'exited')
+      mm.proxyFunction(app, 'onExit', {
+        after: function () {
+          t.looseEqual(scheduler.appStatus[appId], 'exited')
+        }
       })
       scheduler.suspendApp(appId)
     })
@@ -79,7 +80,7 @@ test('app exits on start up', t => {
     })
 })
 
-test('trying start app while app is destructing', t => {
+test('trying start app while app is suspending', t => {
   var target = path.join(helper.paths.fixture, 'noop-app')
   t.plan(7)
   var appId = '@test'
@@ -100,13 +101,13 @@ test('trying start app while app is destructing', t => {
 
   setTimeout(() => { /** FIXME: child_process.fork doesn't trigger next tick */ }, 1000)
   promise
-    .then(app => {
+    .then(() => {
       t.notLooseEqual(scheduler.appMap[appId], null)
       t.strictEqual(scheduler.appStatus[appId], 'running')
 
       var promise = scheduler.suspendApp(appId)
-      t.strictEqual(scheduler.appStatus[appId], 'destructing')
-      return promise.then(() => app)
+      t.strictEqual(scheduler.appStatus[appId], 'suspending')
+      return promise
     })
     .then(() => {
       return scheduler.createApp(appId)
@@ -116,6 +117,7 @@ test('trying start app while app is destructing', t => {
       t.strictEqual(scheduler.appStatus[appId], 'running')
       return scheduler.suspendApp(appId)
     })
+    .then(() => t.end())
     .catch(err => {
       t.error(err)
       t.end()

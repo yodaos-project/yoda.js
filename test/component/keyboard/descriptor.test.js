@@ -1,7 +1,7 @@
 var test = require('tape')
 var EventEmitter = require('events')
 
-var AppRuntime = require('@yoda/mock/lib/mock-app-runtime')
+var AppRuntime = require('../../helper/mock-runtime')
 
 var helper = require('../../helper')
 var Keyboard = require(`${helper.paths.runtime}/lib/component/keyboard`)

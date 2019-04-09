@@ -9,6 +9,7 @@ var inherits = require('util').inherits
 var Url = require('url')
 var fs = require('fs')
 var childProcess = require('child_process')
+var path = require('path')
 
 var logger = require('logger')('yoda')
 
@@ -17,7 +18,6 @@ var ComponentConfig = require('/etc/yoda/component-config.json')
 var _ = require('@yoda/util')._
 var property = require('@yoda/property')
 var system = require('@yoda/system')
-var env = require('@yoda/env')()
 var Loader = require('@yoda/bolero').Loader
 
 var perf = require('./performance')
@@ -41,14 +41,12 @@ function AppRuntime () {
 
   this.shouldWelcome = true
 
-  this.componentLoader = new Loader(this, 'component')
-  ComponentConfig.paths.forEach(it => {
-    this.componentLoader.load(it)
-  })
-
   this.inited = false
   this.hibernated = false
   this.__temporaryDisablingReasons = [ 'initiating' ]
+
+  this.componentLoader = new Loader(this, 'component')
+  this.descriptorLoader = new Loader(this, 'descriptor')
 }
 inherits(AppRuntime, EventEmitter)
 
@@ -61,13 +59,19 @@ AppRuntime.prototype.init = function init () {
   if (this.inited) {
     return Promise.resolve()
   }
+
+  ComponentConfig.paths.forEach(it => {
+    this.componentLoader.load(it)
+  })
+
+  this.descriptorLoader.load(path.join(__dirname, 'descriptor'))
+
   /** 1. init components. */
   this.componentsInvoke('init')
   /** 2. init device properties, such as volume and cloud stack. */
   this.initiate()
   /** 3. init services */
-  this.component.turen.toggleMute(false)
-  this.component.turen.toggleWakeUpEngine(true)
+  // TODO: OPEN WAKEUP ENGINE
   this.resetServices()
 
   /** 4. listen on lifetime events */
@@ -300,7 +304,7 @@ AppRuntime.prototype.disableRuntimeFor = function disableRuntimeFor (reason) {
   }
   this.__temporaryDisablingReasons.push(reason)
   logger.warn(`disabling runtime for reason: ${reason}, current reasons: ${this.__temporaryDisablingReasons}`)
-  this.component.turen.toggleWakeUpEngine(false)
+  // TODO: OPEN WAKEUP ENGINE
   return true
 }
 
@@ -321,7 +325,7 @@ AppRuntime.prototype.enableRuntimeFor = function enableRuntimeFor (reason) {
   this.__temporaryDisablingReasons.splice(idx, 1)
   logger.warn(`enabling runtime for reason: ${reason}, current reasons: ${this.__temporaryDisablingReasons}`)
   if (this.__temporaryDisablingReasons.length === 0) {
-    this.component.turen.toggleWakeUpEngine(true)
+    // TODO: DISABLE WAKEUP ENGINE
   }
   return true
 }
@@ -347,7 +351,7 @@ AppRuntime.prototype.hibernate = function hibernate () {
   logger.info('hibernating runtime')
   this.hibernated = true
   this.disableRuntimeFor('hibernated')
-  this.component.turen.pickup(false)
+  // TODO: DISABLE WAKEUP ENGINE
   this.setMicMute(true, { silent: true })
   /**
    * Clear apps and its contexts
@@ -751,16 +755,7 @@ AppRuntime.prototype.getCopyOfCredential = function () {
 /**
  * @private
  */
-AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
-  this.credential = _.pick(config, 'masterId', 'deviceId', 'deviceTypeId', 'key', 'secret')
-  this.component.flora.updateSpeechPrepareOptions(Object.assign({ uri: env.speechUri }, config))
-  this.component.flora.post('yodart.vui.logged-in', [JSON.stringify(this.credential)], 1 /** persist message */)
-
-  var customConfig = _.get(config, 'extraInfo.custom_config')
-  if (customConfig && typeof customConfig === 'string') {
-    this.component.customConfig.onLoadCustomConfig(customConfig)
-  }
-
+AppRuntime.prototype.phaseToReady = function phaseToReady () {
   var sendReady = () => {
     var ids = Object.keys(this.component.appScheduler.appMap)
     return Promise.all(ids.map(it => this.component.lifetime.onLifeCycle(it, 'ready')))

@@ -1,14 +1,12 @@
 {
   "paths": ["/usr/yoda/lib/component"],
   "interception": {
-    "runtimeDidLogin": [ "ota.runtimeDidLogin" ],
-    "runtimeDidResumeFromSleep": [ "customConfig.runtimeDidResumeFromSleep" ],
-    "runtimeWillDispatchNlpIntent": [ "customConfig.runtimeWillDispatchNlpIntent" ],
+    "runtimeDidLogin": [],
+    "runtimeDidResumeFromSleep": [],
+    "runtimeWillDispatchNlpIntent": [],
     "turenDidWakeUp": [
       "battery.delegateWakeUpIfDangerousStatus",
-      "custodian.turenDidWakeUp",
-      "battery.delegateWakeUpIfBatteryInsufficient",
-      "ota.turenDidWakeUp"
+      "battery.delegateWakeUpIfBatteryInsufficient"
     ]
   }
 }

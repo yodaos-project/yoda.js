@@ -6,8 +6,6 @@ var mock = require('../../helper/mock')
 var getLoader = require('./mock').getLoader
 var Scheduler = require(`${helper.paths.runtime}/lib/component/app-scheduler`)
 
-require('@yoda/oh-my-little-pony')
-
 test('shall create light app', t => {
   var target = path.join(helper.paths.fixture, 'noop-app')
   t.plan(4)

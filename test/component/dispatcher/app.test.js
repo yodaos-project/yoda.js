@@ -2,7 +2,7 @@ var test = require('tape')
 var EventEmitter = require('events')
 
 var mock = require('../../helper/mock')
-var AppRuntime = require('@yoda/mock/lib/mock-app-runtime')
+var AppRuntime = require('../../helper/mock-runtime')
 
 function createMockApp (runtime, appId) {
   var app = new EventEmitter()
