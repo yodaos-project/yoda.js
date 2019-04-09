@@ -68,6 +68,7 @@ pre_scripts=""
 
 if test "$local" = "YES"; then
   export NODE_PATH="$(pwd)/packages"
+  export YODA_RUN_MODE=host
   export NODE_ENV=unittest
 
   patternPrefix="$(pwd)/test/"

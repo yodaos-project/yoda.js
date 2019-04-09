@@ -6,7 +6,7 @@ var _ = require('@yoda/util')._
 var ChildProcess = require('child_process')
 var url = require('url')
 
-var config = require('/etc/yoda/wormhole.json')
+var config = require('../helper/config').getConfig('wormhole.json')
 
 module.exports = Wormhole
 function Wormhole (runtime) {

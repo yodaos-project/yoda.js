@@ -2,3 +2,5 @@
 @yoda/util/*.test.js
 @yodaos/application/*.test.js
 logger/*.test.js
+component/app-loader/*.test.js
+component/battery/*.test.js
