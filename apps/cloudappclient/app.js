@@ -207,7 +207,9 @@ module.exports = activity => {
           } else if (name === 'playbackcomplete') {
             sos.sendEventRequest('media', 'playbackcomplete', dt.data, {
               itemId: _.get(dt, 'data.item.itemId'),
-              token: _.get(dt, 'data.item.token')
+              token: _.get(dt, 'data.item.token'),
+              duration: args[0],
+              progress: args[1]
             }, next)
           } else if (name === 'cancel' || name === 'error') {
             sos.sendEventRequest('media', name, dt.data, {
