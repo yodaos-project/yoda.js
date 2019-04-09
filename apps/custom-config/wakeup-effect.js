@@ -261,9 +261,10 @@ class WakeupEffect extends BaseConfig {
   applyWakeupEffect (queryObj, isFirstLoad) {
     if (typeof queryObj === 'object' && typeof queryObj.action === 'string') {
       property.set('sys.wakeupswitch', queryObj.action, 'persist')
-      if (typeof queryObj.type === 'string') {
-        property.set('sys.wakeupsound', queryObj.type, 'persist')
+      if (typeof queryObj.type !== 'string') {
+        queryObj.type = AWAKE_EFFECT_DEFAULT
       }
+      property.set('sys.wakeupsound', queryObj.type, 'persist')
       if (queryObj.action === SWITCH_CLOSE) {
         this.notifyActivation([])
       } else {
@@ -289,13 +290,10 @@ class WakeupEffect extends BaseConfig {
           }).catch((err) => {
             logger.warn(`download custom wakeup sound error: ${err}`)
           })
-        } else if (queryObj.type === AWAKE_EFFECT_DEFAULT) {
+        } else {
           this.getFileList().then((fileList) => {
             this.notifyActivation(fileList)
           })
-        } else {
-          logger.warn(`invalid wakeupSoundEffects type: ${queryObj.type}`)
-          return
         }
       }
 
