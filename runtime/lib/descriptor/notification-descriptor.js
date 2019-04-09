@@ -42,7 +42,7 @@ Object.assign(NotificationDescriptor.prototype,
   {
     /**
      * Fires on notification requests.
-     * @event yodaRT.activity.Activity.NotificationClient#notify
+     * @event yodaRT.activity.Activity.NotificationClient#notification
      * @param {yodaRT.activity.Activity.NotificationClient~NotificationEvent} event - the notfication event.
      */
     notification: {

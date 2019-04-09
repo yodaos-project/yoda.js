@@ -13,6 +13,7 @@ var EventEmitter = require('events').EventEmitter
 var MEDIA_SOURCE = '/opt/media'
 
 var KeyboardDescriptor = require('./keyboard-descriptor')
+var AudioFocusDescriptor = require('./audio-focus-descriptor')
 var EffectDescriptor = require('./effect-descriptor')
 var MultimediaDescriptor = require('./multimedia-descriptor')
 var TtsDescriptor = require('./tts-descriptor')
@@ -54,6 +55,14 @@ function ActivityDescriptor (appId, appHome, runtime) {
    * @member {yodaRT.activity.Activity.EffectClient} effect
    */
   this.effect = new EffectDescriptor(this, appId, appHome, runtime)
+
+  /**
+   * The `AudioFocusClient` is used to control hardware effects.
+   * @memberof yodaRT.activity.Activity
+   * @instance
+   * @member {yodaRT.activity.Activity.AudioFocusClient} audioFocus
+   */
+  this.audioFocus = new AudioFocusDescriptor(this, appId, appHome, runtime)
 
   /**
    * The `MediaClient` is used to control multimedia APIs.
@@ -200,11 +209,11 @@ Object.assign(ActivityDescriptor.prototype,
     },
     /**
      * Fires on events.
-     * @event yodaRT.activity.Activity#channel
-     * @param {string} name - the channel name.
-     * @param {object} data - the channel data.
+     * @event yodaRT.activity.Activity#broadcast
+     * @param {string} name - the broadcast name.
+     * @param {object} data - the broadcast data.
      */
-    channel: {
+    broadcast: {
       type: 'event'
     }
   },
