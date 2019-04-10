@@ -1,12 +1,12 @@
 var test = require('tape')
-var EventEmitter = require('events')
 
+var helper = require('../../helper')
 var mock = require('../../helper/mock')
 var AppRuntime = require('../../helper/mock-runtime')
+var AppBridge = require(`${helper.paths.runtime}/lib/app/app-bridge`)
 
 function createMockApp (runtime, appId) {
-  var app = new EventEmitter()
-  app.destruct = () => {}
+  var app = new AppBridge(runtime)
 
   var component = runtime.component
   component.appScheduler.appMap[appId] = app
@@ -24,7 +24,7 @@ test('should dispatch app event', t => {
 
   var args = [ { foo: 'bar' }, 'foobar' ]
   var app = createMockApp(runtime, 'foobar')
-  app.on('test-event', function () {
+  app.subscribe(null, 'test-event', function () {
     t.deepEqual(Array.prototype.slice.call(arguments), args)
   })
 
@@ -49,7 +49,7 @@ test('should not dispatch app event if runtime has been disabled', t => {
 
   var args = [ { foo: 'bar' }, 'foobar' ]
   var app = createMockApp(runtime, 'foobar')
-  app.on('test-event', function () {
+  app.subscribe(null, 'test-event', function () {
     t.fail('unreachable path')
   })
 
@@ -74,10 +74,10 @@ test('should not dispatch preemptive app event if lifetime has been monopolized 
   var args = [ { foo: 'bar' }, 'foobar' ]
   var app = createMockApp(runtime, 'foobar')
   var monopolist = createMockApp(runtime, 'monopolist')
-  app.on('test-event', function () {
+  app.subscribe(null, 'test-event', function () {
     t.fail('unreachable path')
   })
-  monopolist.on('oppressing', event => {
+  monopolist.subscribe(null, 'oppressing', event => {
     t.strictEqual(event, 'test-event')
   })
 
@@ -85,7 +85,7 @@ test('should not dispatch preemptive app event if lifetime has been monopolized 
     .then(() => runtime.startMonologue('monopolist'))
     .then(() => dispatcher.dispatchAppEvent('foobar', 'test-event', args))
     .then(dispatched => {
-      t.deepEqual(dispatched, /** event has been handled, prevent tts/media from recovering */true)
+      t.strictEqual(dispatched, /** event has been handled, prevent tts/media from recovering */true)
       t.strictEqual(runtime.component.lifetime.getCurrentAppId(), 'monopolist')
     }).catch(err => {
       t.error(err)
@@ -103,7 +103,7 @@ test('should dispatch preemptive cut app event if lifetime has been monopolized 
   createMockApp(runtime, 'monopolist')
   var args = [ { foo: 'bar' }, 'foobar' ]
   var app = createMockApp(runtime, 'foobar')
-  app.on('test-event', function () {
+  app.subscribe(null, 'test-event', function () {
     t.deepEqual(Array.prototype.slice.call(arguments), args)
   })
 

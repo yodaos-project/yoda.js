@@ -3,7 +3,6 @@ var logger = require('logger')('flora')
 var inherits = require('util').inherits
 
 var FloraComp = require('@yoda/flora/comp')
-var _ = require('@yoda/util')._
 var safeParse = require('@yoda/util').json.safeParse
 
 var floraConfig = require('/etc/yoda/flora-config.json')
@@ -17,6 +16,7 @@ function Flora (runtime) {
   FloraComp.call(this, 'vui', floraConfig)
   this.runtime = runtime
   this.component = runtime.component
+  this.descriptor = runtime.descriptor
 }
 inherits(Flora, FloraComp)
 
@@ -27,14 +27,7 @@ Flora.prototype.handlers = {
     var ttsId = msg[1]
     var appId = msg[2]
     logger.info(`VuiDaemon received ttsd event(${event}) for app(${appId}), tts(${ttsId})`)
-    var descriptor = _.get(this.component.appScheduler.appMap, appId)
-    if (descriptor == null) {
-      logger.warn(`app is not alive, ignoring tts event(${event} for app(${appId})`)
-      return
-    }
-    /** [ event, ttsId, Optional(errno) ] */
-    msg.splice(2, 1)
-    descriptor.tts.handleEvent.apply(descriptor.tts, msg)
+    this.descriptor.tts.handleEvent.apply(this.descriptor.tts, msg)
   }
 }
 

@@ -4,7 +4,7 @@ module.exports = {
       notRunning: 'not running',
       creating: 'creating',
       running: 'running',
-      destructing: 'destructing',
+      suspending: 'suspending',
       exited: 'exited'
     },
     modes: {

@@ -63,7 +63,6 @@ AppRuntime.prototype.init = function init () {
   ComponentConfig.paths.forEach(it => {
     this.componentLoader.load(it)
   })
-
   this.descriptorLoader.load(path.join(__dirname, 'descriptor'))
 
   /** 1. init components. */
@@ -379,8 +378,7 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
     this.shouldWelcome = true
   }
   /** set turen to not muted */
-  this.component.turen.toggleMute(false)
-  this.component.turen.toggleWakeUpEngine(true)
+  // TODO: OPEN WAKEUP ENGINE
 
   this.component.dispatcher.delegate('runtimeDidResumeFromSleep')
   this.dispatchNotification('on-system-booted', [])
@@ -491,7 +489,7 @@ AppRuntime.prototype.dispatchNotification = function dispatchNotification (chann
         })
     }
     return future
-      .then(() => self.component.lifetime.onLifeCycle(appId, 'notification', [ channel ].concat(params)))
+      .then(() => self.descriptor.activity.emitToApp(appId, 'notification', [ channel ].concat(params)))
       .catch(err => {
         logger.error(`send notification(${channel}) failed with appId: ${appId}`, err.stack)
       })
@@ -758,7 +756,7 @@ AppRuntime.prototype.getCopyOfCredential = function () {
 AppRuntime.prototype.phaseToReady = function phaseToReady () {
   var sendReady = () => {
     var ids = Object.keys(this.component.appScheduler.appMap)
-    return Promise.all(ids.map(it => this.component.lifetime.onLifeCycle(it, 'ready')))
+    return Promise.all(ids.map(it => this.descriptor.activity.emitToApp(it, 'ready')))
   }
 
   var deferred = () => {

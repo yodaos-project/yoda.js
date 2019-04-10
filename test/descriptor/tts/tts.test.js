@@ -1,107 +1,76 @@
 'use strict'
 
 var test = require('tape')
-var path = require('path')
 
-var helper = require('../../helper')
-var Descriptors = require(`${helper.paths.runtime}/lib/descriptor`)
-var extApp = require(`${helper.paths.runtime}/lib/app/ext-app`)
-
-var ActivityDescriptor = Descriptors.ActivityDescriptor
-Object.assign(ActivityDescriptor.prototype, {
-  'test-invoke': {
-    type: 'event'
-  }
-})
-
-var target = path.join(__dirname, 'fixture', 'ext-app')
+var mm = require('../../helper/mock')
+var bootstrap = require('../bootstrap')
 
 test('descriptor should register request', t => {
-  t.plan(3)
-  var runtime = {
-    component: {
-      permission: {
-        check: () => true
-      }
-    },
-    ttsMethod: () => Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
-  }
-  extApp('@test/app-id', { appHome: target }, runtime)
-    .then(descriptor => {
-      descriptor.emit('test-invoke', 'tts.speak', [ 'foobar', { impatient: true } ])
-      descriptor._childProcess.on('message', message => {
-        if (message.type !== 'test' || message.event !== 'invoke') {
-          return
-        }
-        t.error(message.error)
-        t.strictEqual(message.result, '1')
-        t.notLooseEqual(descriptor.tts._requests['1'], null)
-        descriptor.destruct()
-        t.end()
-      })
+  t.plan(2)
+
+  var tt = bootstrap()
+  mm.mockPromise(tt.runtime, 'ttsMethod', () => {
+    return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
+  })
+
+  var bridge = tt.getBridge({ appId: 'test' })
+  bridge.invoke('tts', 'speak', [ 'foobar', { impatient: true } ])
+    .then(ttsId => {
+      t.strictEqual(ttsId, '1')
+      t.notLooseEqual(tt.runtime.descriptor.tts.requests['1'], null)
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
     })
 })
 
 test('descriptor should clear request on spoken', t => {
-  t.plan(2)
-  var descriptor
-  var runtime = {
-    component: {
-      permission: {
-        check: () => true
-      }
-    },
-    ttsMethod: () => {
-      setTimeout(() => {
-        descriptor.tts.handleEvent('end', '1')
-      }, 1000)
-      return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
-    }
-  }
-  extApp('@test/app-id', { appHome: target }, runtime)
-    .then(res => {
-      descriptor = res
-      descriptor.emit('test-invoke', 'tts.speak', [ 'foobar' ])
-      descriptor._childProcess.on('message', message => {
-        if (message.type !== 'test' || message.event !== 'invoke') {
-          return
-        }
-        t.error(message.error)
-        t.looseEqual(descriptor.tts._requests['1'], null)
-        descriptor.destruct()
-        t.end()
-      })
+  t.plan(1)
+
+  var tt = bootstrap()
+  mm.mockPromise(tt.runtime, 'ttsMethod', () => {
+    setTimeout(() => {
+      tt.runtime.descriptor.tts.handleEvent('start', '1', 'test')
+      tt.runtime.descriptor.tts.handleEvent('end', '1', 'test')
+    }, 1000)
+    return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
+  })
+
+  var bridge = tt.getBridge({ appId: 'test' })
+  bridge.invoke('tts', 'speak', [ 'foobar' ])
+    .then(() => {
+      t.looseEqual(tt.runtime.descriptor.tts.requests['1'], null)
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
     })
 })
 
-test('descriptor should clear request on spoken', t => {
+test('descriptor should clear request on error', t => {
   t.plan(2)
-  var descriptor
-  var runtime = {
-    component: {
-      permission: {
-        check: () => true
-      }
-    },
-    ttsMethod: () => {
-      setTimeout(() => {
-        descriptor.tts.handleEvent('error', '1', 123)
-      }, 1000)
-      return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
-    }
-  }
-  extApp('@test/app-id', { appHome: target }, runtime)
-    .then(res => {
-      descriptor = res
-      descriptor.emit('test-invoke', 'tts.speak', [ 'foobar' ])
-      descriptor._childProcess.on('message', message => {
-        if (message.type !== 'test' || message.event !== 'invoke') {
-          return
-        }
-        t.strictEqual(message.error.message, 'Unexpected ttsd error(123)')
-        t.strictEqual(message.error.code, 123)
-        descriptor.destruct()
-        t.end()
-      })
+
+  var tt = bootstrap()
+  mm.mockPromise(tt.runtime, 'ttsMethod', () => {
+    setTimeout(() => {
+      tt.runtime.descriptor.tts.handleEvent('start', '1', 'test')
+      tt.runtime.descriptor.tts.handleEvent('error', '1', 'test', 123)
+    }, 1000)
+    return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
+  })
+
+  var bridge = tt.getBridge({ appId: 'test' })
+  bridge.invoke('tts', 'speak', [ 'foobar' ])
+    .then(() => {
+      t.fail('unreachable path')
+      t.end()
+    })
+    .catch(err => {
+      t.strictEqual(err.code, 123)
+      t.looseEqual(tt.runtime.descriptor.tts.requests['1'], null)
+      t.end()
     })
 })

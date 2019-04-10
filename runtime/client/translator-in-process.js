@@ -31,32 +31,26 @@ var EventEmitter = require('events')
  */
 
 var PropertyDescriptions = {
-  namespace: function Namespace (name, descriptor/** , namespace, nsProfile */) {
+  namespace: function Namespace (name, descriptor, namespace, nsDescriptor, bridge) {
     var ns = new EventEmitter()
+    descriptor.name = name
     var events = []
-    Object.keys(descriptor).forEach(step)
-    /**
-     * Since descriptions of activity descriptor are attached to ActivityDescriptor.prototype,
-     * keys of prototype shall be iterated too.
-     */
-    Object.keys(Object.getPrototypeOf(descriptor)).forEach(step)
+    if (typeof descriptor.events === 'object') {
+      events = Object.keys(descriptor.events)
+    }
+    if (typeof descriptor.methods === 'object') {
+      Object.keys(descriptor.methods).forEach(key => step('method', key, descriptor.methods[key]))
+    }
+    if (typeof descriptor.namespaces === 'object') {
+      Object.keys(descriptor.namespaces).forEach(key => step('namespace', key, descriptor.namespaces[key]))
+    }
 
-    function step (key) {
-      var propDescriptor = descriptor[key]
+    function step (type, key, propDescriptor) {
       if (typeof propDescriptor !== 'object') {
         return
       }
-      if (descriptorTypes.indexOf(propDescriptor.type) < 0) {
-        return
-      }
-      if ([ 'event', 'event-ack' ].indexOf(propDescriptor.type) >= 0) {
-        events.push(key)
-        return
-      }
-      var ret = PropertyDescriptions[propDescriptor.type](key, propDescriptor, ns, descriptor)
-      if (propDescriptor.type !== 'event') {
-        ns[key] = ret
-      }
+      var ret = PropertyDescriptions[type](key, propDescriptor, ns, descriptor, bridge)
+      ns[key] = ret
     }
 
     ns.on('newListener', event => {
@@ -64,48 +58,33 @@ var PropertyDescriptions = {
       if (idx < 0) {
         return
       }
-      var propDescriptor = descriptor[event]
-      PropertyDescriptions[propDescriptor.type](event, propDescriptor, ns, descriptor)
+      var propDescriptor = descriptor.events[event]
+      PropertyDescriptions.event(event, propDescriptor, ns, descriptor, bridge)
     })
     return ns
   },
-  method: function Method (name, descriptor, namespace, nsDescriptor) {
+  method: function Method (name, descriptor, namespace, nsDescriptor, bridge) {
     return function proxy () {
       /** Should use namespace descriptor as this since property descriptor is a plain object */
-      return descriptor.fn.apply(nsDescriptor, arguments)
+      return bridge.invoke(nsDescriptor.name, name, Array.prototype.slice.call(arguments))
     }
   },
-  event: function Event (name, descriptor, namespace, nsDescriptor) {
+  event: function Event (name, descriptor, namespace, nsDescriptor, bridge) {
     /** Should use namespace descriptor as this since property descriptor is a plain object */
-    nsDescriptor.on(name, function onEvent () {
+    bridge.subscribe(nsDescriptor.name, name, function onEvent () {
       EventEmitter.prototype.emit.apply(
         namespace,
         [ name ].concat(Array.prototype.slice.call(arguments, 0))
       )
     })
   },
-  'event-ack': function EventAck (name, descriptor, namespace, nsDescriptor) {
-    if (nsDescriptor[descriptor.trigger]) {
-      throw new Error(`Double subscription on event-ack descriptor '${name}'.`)
-    }
-    nsDescriptor[descriptor.trigger] = function onEventTrigger () {
-      var params = Array.prototype.slice.call(arguments, 0)
-      return Promise.resolve().then(() =>
-        EventEmitter.prototype.emit.apply(
-          namespace,
-          [ name ].concat(params)
-        )
-      )
-    }
-  },
   value: function Value (name, descriptor, namespace, nsDescriptor) {
     return descriptor.value
   }
 }
-var descriptorTypes = Object.keys(PropertyDescriptions)
 
 module.exports.translate = translate
-function translate (descriptor) {
-  var activity = PropertyDescriptions.namespace(null, descriptor, null, null)
+function translate (descriptor, bridge) {
+  var activity = PropertyDescriptions.namespace(null, descriptor, null, null, bridge)
   return activity
 }

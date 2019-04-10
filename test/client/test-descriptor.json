@@ -1,0 +1,22 @@
+{
+  "events": {
+    "echo": {}
+  },
+  "methods": {
+    "ping": {
+      "returns": "promise"
+    }
+  },
+  "namespaces": {
+    "foobar": {
+      "events": {
+        "echo": {}
+      },
+      "methods": {
+        "ping": {
+          "returns": "promise"
+        }
+      }
+    }
+  }
+}

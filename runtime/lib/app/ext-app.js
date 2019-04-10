@@ -8,8 +8,6 @@ var logger = require('logger')('ext-app')
 var _ = require('@yoda/util')._
 
 var kAppModesTest = require('../../constants').AppScheduler.modes.test
-var ActivityDescriptor = require('../descriptor/activity-descriptor')
-var ActivityTestDescriptor = require('../descriptor/activity-test-descriptor')
 
 var entriesDir = path.join(__dirname, '..', '..', 'client')
 var defaultEntry = path.join(entriesDir, 'ext-app-entry.js')
@@ -23,13 +21,16 @@ module.exports = createExtApp
  * @param {string} target - app home directory
  * @param {AppRuntime} runtime -
  */
-function createExtApp (appId, metadata, runtime, mode) {
+function createExtApp (appId, metadata, bridge, mode, options) {
   var target = _.get(metadata, 'appHome')
+  options = options || {}
   var entry = defaultEntry
-  var descriptor = new ActivityDescriptor(appId, target, runtime)
   if (mode & kAppModesTest) {
     entry = testEntry
-    descriptor.test = new ActivityTestDescriptor(descriptor, appId, target, runtime)
+  }
+
+  if (options.descriptorPath == null) {
+    options.descriptorPath = path.join(__dirname, '../../client/api/default.json')
   }
 
   var cp = childProcess.fork(entry, [ target, mode ], {
@@ -37,7 +38,7 @@ function createExtApp (appId, metadata, runtime, mode) {
     env: Object.assign({}, process.env),
     stdio: 'inherit'
   })
-  descriptor._childProcess = cp
+  bridge.childProcess = cp
   logger.info(`Forked child app ${target}(${cp.pid}).`)
   var send = cp.send
   cp.send = function sendProxy () {
@@ -48,13 +49,13 @@ function createExtApp (appId, metadata, runtime, mode) {
     send.apply(cp, arguments)
   }
 
-  var eventBus = new EventBus(descriptor, cp, appId)
+  var eventBus = new EventBus(bridge, cp, appId, options)
   var onMessage = eventBus.onMessage.bind(eventBus)
-  var onDestruct = () => {
+  var onSuspend = () => {
     logger.info(`${appId}(${cp.pid}) Activity end of life, killing process after 1s.`)
     setTimeout(() => cp.kill(), 1000)
   }
-  descriptor.once('destruct', onDestruct)
+  bridge.onSuspend = onSuspend
   cp.on('message', onMessage)
   cp.once('disconnect', function onDisconnected () {
     logger.info(`${appId}(${cp.pid}) Child process disconnected from VuiDaemon.`)
@@ -66,8 +67,7 @@ function createExtApp (appId, metadata, runtime, mode) {
   })
   cp.once('exit', (code, signal) => {
     logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
-    descriptor.removeListener('destruct', onDestruct)
-    descriptor.emit('exit', code, signal)
+    bridge.exit(code, signal)
     eventBus.emit('status-report:exit')
     eventBus.removeAllListeners()
   })
@@ -88,7 +88,7 @@ function createExtApp (appId, metadata, runtime, mode) {
       cleanup()
       /** initiate ping-pong */
       eventBus.ping()
-      resolve(descriptor)
+      resolve(bridge)
     })
 
     eventBus.once('status-report:exit', () => {
@@ -112,17 +112,18 @@ function createExtApp (appId, metadata, runtime, mode) {
 
 /**
  *
- * @param {ActivityDescriptor} descriptor
+ * @param {ActivityDescriptor} appBridge
  * @param {childProcess.ChildProcess} socket
  * @param {string} appId
  */
-function EventBus (descriptor, socket, appId, pid) {
+function EventBus (appBridge, socket, appId, options) {
   EventEmitter.call(this)
-  this.descriptor = descriptor
+  this.bridge = appBridge
   this.socket = socket
   this.appId = appId
   this.pid = socket.pid
   this.logger = require('logger')(`bus-${this.pid}`)
+  this.options = options
   this.pingTimer = null
 
   /**
@@ -133,17 +134,17 @@ function EventBus (descriptor, socket, appId, pid) {
   this.eventSynTable = {}
   this.eventSyn = 0
 
-  descriptor.on('internal:network-connected', () => {
-    this.socket.send({
-      type: 'internal',
-      topic: 'network-connected'
-    })
-  })
+  // TODO:
+  // appBridge.on('internal:network-connected', () => {
+  //   this.socket.send({
+  //     type: 'internal',
+  //     topic: 'network-connected'
+  //   })
+  // })
 }
 inherits(EventBus, EventEmitter)
 
-EventBus.prototype.eventTable = [ 'test', 'ping', 'status-report', 'subscribe', 'invoke',
-  'subscribe-ack', 'event-ack' ]
+EventBus.prototype.eventTable = [ 'test', 'ping', 'status-report', 'subscribe', 'invoke' ]
 
 EventBus.prototype.onMessage = function onMessage (message) {
   var type = message.type
@@ -171,7 +172,7 @@ EventBus.prototype['status-report'] = function onStatusReport (message) {
     case 'initiating': {
       this.socket.send({
         type: 'descriptor',
-        result: this.descriptor
+        result: _.get(this.options, 'descriptorPath')
       })
       break
     }
@@ -193,22 +194,7 @@ EventBus.prototype.subscribe = function onSubscribe (message) {
   var self = this
   var event = message.event
   var namespace = message.namespace
-
-  var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}`
-  this.logger.debug(`Received child ${this.appId} subscription: ${eventStr}`)
-  if (this.subscriptionTable[eventStr]) {
-    this.logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
-    return
-  }
-  this.subscriptionTable[eventStr] = true
-
-  var nsObj = this.descriptor
-  if (namespace != null) {
-    nsObj = nsObj[namespace]
-  }
-  nsObj.on(message.event, onEvent)
-
-  function onEvent () {
+  this.bridge.subscribe(namespace, event, function OnEvent () {
     if (!self.socket.connected) {
       throw new Error('Child process disconnected')
     }
@@ -218,7 +204,7 @@ EventBus.prototype.subscribe = function onSubscribe (message) {
       event: event,
       params: Array.prototype.slice.call(arguments, 0)
     })
-  }
+  })
 }
 
 EventBus.prototype.invoke = function onInvoke (message) {
@@ -226,117 +212,20 @@ EventBus.prototype.invoke = function onInvoke (message) {
   var namespace = message.namespace
   var method = message.method
   var params = message.params
-
-  var methodStr = `Activity.${namespace ? namespace + '.' : ''}${method}`
-  this.logger.debug(`Received child ${this.appId} invocation(${invocationId}): ${methodStr}`)
-
-  var nsObj = this.descriptor
-  if (namespace != null) {
-    nsObj = nsObj[namespace]
-  }
-  var fnDescriptor = nsObj[method]
-  if (fnDescriptor == null &&
-      fnDescriptor.type !== 'method') {
-    return this.socket.send({
-      type: 'fatal-error',
-      message: `Unknown method '${methodStr}' invoked.`
-    })
-  }
-
-  // TODO: returns type handler, currently only 'promise' is supported.
-  if (fnDescriptor.returns !== 'promise') {
-    throw new Error(`Not implemented return type '${fnDescriptor.returns}' for method '${methodStr}'`)
-  }
-  var fn = fnDescriptor.fn
-  Promise.resolve(fn.apply(nsObj, params))
-    .then(result => this.socket.send({
-      type: 'promise',
-      action: 'resolve',
-      invocationId: invocationId,
-      result: result
-    }), err => this.socket.send({
-      type: 'promise',
-      action: 'reject',
-      invocationId: invocationId,
-      error: Object.assign({}, err, _.pick(err, 'name', 'message', 'stack'))
-    }))
-}
-
-EventBus.prototype['subscribe-ack'] = function onSubscribeAck (message) {
-  var self = this
-  var event = message.event
-  var namespace = message.namespace
-
-  var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}`
-  this.logger.debug(`Received child ${this.appId} ack-subscription: ${eventStr}`)
-
-  if (this.subscriptionTable[eventStr]) {
-    this.logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
-    return
-  }
-  this.subscriptionTable[eventStr] = true
-
-  var nsObj = this.descriptor
-  if (namespace != null) {
-    nsObj = nsObj[namespace]
-  }
-  var eventDescriptor = nsObj[event]
-  if (eventDescriptor.type !== 'event-ack') {
-    return self.socket.send({
-      type: 'fatal-error',
-      message: `Subscribed non event-ack descriptor '${event}'.`
-    })
-  }
-
-  if (nsObj[eventDescriptor.trigger]) {
-    return self.socket.send({
-      type: 'fatal-error',
-      message: `Double subscription on event-ack descriptor '${event}'.`
-    })
-  }
-  var timeout = eventDescriptor.timeout || 1000
-  nsObj[eventDescriptor.trigger] = function onEventTrigger () {
-    if (!self.socket.connected) {
-      throw new Error('Child process disconnected')
-    }
-
-    var eventId = self.eventSyn
-    self.eventSyn += 1
-    self.socket.send({
-      type: 'event-syn',
-      event: event,
-      eventId: eventId,
-      params: Array.prototype.slice.call(arguments, 0)
-    })
-    return new Promise((resolve, reject) => {
-      var timer = setTimeout(
-        () => {
-          this.logger.info('onEventTrigger timedout', eventId)
-          delete self.eventSynTable[eventId]
-          reject(new Error(`EventAck '${event}' timed out for ${timeout}`))
-        },
-        timeout)
-      self.eventSynTable[eventId] = function onAck () {
-        self.logger.info('onEventTrigger resolved', eventId)
-        clearTimeout(timer)
-        resolve()
-      }
-    })
-  }
-}
-
-EventBus.prototype['event-ack'] = function onEventAck (message) {
-  var namespace = message.namespace
-  var event = message.event
-  var eventId = message.eventId
-
-  var eventStr = `Activity.${namespace ? namespace + '.' : ''}${event}.${eventId}`
-
-  var callback = this.eventSynTable[eventId]
-  if (callback == null) {
-    this.logger.info(`Unregistered or timed out event-ack for event '${eventStr}'`)
-    return
-  }
-  this.logger.info(`Callback event-ack for event '${eventStr}'`)
-  callback(message)
+  this.logger.debug(`Received child invocation(${invocationId}) ${namespace || 'activity'}.${method}`)
+  this.bridge.invoke(namespace, method, params)
+    .then(
+      res => this.socket.send({
+        type: 'invoke',
+        action: 'resolve',
+        invocationId: invocationId,
+        result: res
+      }),
+      err => this.socket.send({
+        type: 'invoke',
+        action: 'reject',
+        invocationId: invocationId,
+        error: Object.assign({}, err, _.pick(err, 'name', 'message', 'stack'))
+      })
+    )
 }

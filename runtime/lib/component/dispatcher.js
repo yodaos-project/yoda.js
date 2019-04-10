@@ -10,6 +10,7 @@ class Dispatcher {
   constructor (runtime) {
     this.runtime = runtime
     this.component = runtime.component
+    this.descriptor = runtime.descriptor
 
     this.config = this.validateConfig(config)
   }
@@ -125,8 +126,8 @@ class Dispatcher {
 
     if (this.component.lifetime.guardMonopolization(appId, { form: form, preemptive: preemptive })) {
       logger.warn(`LaVieEnPile has ben monopolized, skip dispatching event(${event}) to app(${appId}.`)
-      return this.component.lifetime.onLifeCycle(this.component.lifetime.monopolist, 'oppressing', event)
-        .then(() => /** event has been handled, prevent tts/media from recovering */true)
+      this.descriptor.activity.emitToApp(this.component.lifetime.monopolist, 'oppressing', [ event ])
+      return Promise.resolve(/** event has been handled, prevent tts/media from recovering */true)
     }
 
     return this.component.lifetime.createApp(appId)
@@ -145,7 +146,7 @@ class Dispatcher {
         logger.info(`app is preemptive, activating app ${appId}`)
         return this.component.lifetime.activateAppById(appId, form, carrierId)
       })
-      .then(() => this.component.lifetime.onLifeCycle(appId, event, params))
+      .then(() => this.descriptor.activity.emitToApp(appId, event, params))
       .then(() => true)
       .catch(err => {
         logger.error(`Unexpected error on sending event(${event}) to ${appId}`, err.stack)

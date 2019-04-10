@@ -1,164 +1,107 @@
 'use strict'
 
 var test = require('tape')
-var path = require('path')
-var EventEmitter = require('events')
+var _ = require('@yoda/util')._
 
-var helper = require('../../helper')
-var Descriptors = require(`${helper.paths.runtime}/lib/descriptor`)
-var extApp = require(`${helper.paths.runtime}/lib/app/ext-app`)
-
-var ActivityDescriptor = Descriptors.ActivityDescriptor
-Object.assign(ActivityDescriptor.prototype, {
-  'test-invoke': {
-    type: 'event'
-  }
-})
-
-var target = path.join(__dirname, 'fixture', 'ext-app')
+var mm = require('../../helper/mock')
+var bootstrap = require('../bootstrap')
 
 test('descriptor should transfer normal events', t => {
-  t.plan(3)
-  var descriptor
-  var runtime = {
-    component: {
-      permission: {
-        check: () => true
-      }
-    },
-    ttsMethod: () => {
-      setTimeout(() => {
-        descriptor.tts.handleEvent('start', '1')
-        descriptor.tts.handleEvent('end', '1')
-      }, 1000)
-      return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
-    }
-  }
-  extApp('@test/app-id', { appHome: target }, runtime)
-    .then(res => {
-      descriptor = res
-      descriptor.emit('test-invoke', 'tts.speak', [ 'foobar' ])
-      descriptor._childProcess.on('message', msg => {
-        if (msg.type !== 'test' || msg.event !== 'invoke') {
-          return
-        }
-        t.error(msg.error)
+  t.plan(2)
 
-        descriptor.destruct()
-        t.end()
-      })
+  var tt = bootstrap()
+  mm.mockPromise(tt.runtime, 'ttsMethod', () => {
+    setTimeout(() => {
+      tt.runtime.descriptor.tts.handleEvent('start', '1', 'test')
+      tt.runtime.descriptor.tts.handleEvent('end', '1', 'test')
+    }, 1000)
+    return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
+  })
 
-      var eventSplitter = new EventEmitter()
-      descriptor._childProcess.on('message', msg => {
-        if (msg.type !== 'test' || msg.event !== 'event') {
-          return
-        }
-        eventSplitter.emit.apply(eventSplitter, [ msg.name ].concat(msg.params))
-      })
+  var bridge = tt.getBridge({ appId: 'test' })
+  ;['start', 'end'].forEach(it => {
+    bridge.subscribe('tts', it, (ttsId) => {
+      t.strictEqual(ttsId, '1')
+    })
+  })
 
-      eventSplitter.on('tts.start', ttsId => {
-        t.strictEqual(ttsId, '1')
-      })
-
-      eventSplitter.on('tts.end', ttsId => {
-        t.strictEqual(ttsId, '1')
-      })
+  bridge.invoke('tts', 'speak', [ 'foobar' ])
+    .then(() => {
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
     })
 })
 
 test('descriptor should not transfer error events for patient clients', t => {
   t.plan(2)
-  var descriptor
-  var runtime = {
-    component: {
-      permission: {
-        check: () => true
-      }
-    },
-    ttsMethod: () => {
-      setTimeout(() => {
-        descriptor.tts.handleEvent('start', '1')
-        descriptor.tts.handleEvent('error', '1', 123)
-      }, 1000)
-      return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
-    }
-  }
-  extApp('@test/app-id', { appHome: target }, runtime)
-    .then(res => {
-      descriptor = res
-      descriptor.emit('test-invoke', 'tts.speak', [ 'foobar' ])
-      descriptor._childProcess.on('message', msg => {
-        if (msg.type !== 'test' || msg.event !== 'invoke') {
-          return
-        }
-        t.deepEqual(msg.error, { name: 'Error', message: 'Unexpected ttsd error(123)', code: 123 })
-        descriptor.destruct()
-        t.end()
-      })
 
-      var eventSplitter = new EventEmitter()
-      descriptor._childProcess.on('message', msg => {
-        if (msg.type !== 'test' || msg.event !== 'event') {
-          return
-        }
-        eventSplitter.emit.apply(eventSplitter, [ msg.name ].concat(msg.params))
-      })
+  var tt = bootstrap()
+  mm.mockPromise(tt.runtime, 'ttsMethod', () => {
+    setTimeout(() => {
+      tt.runtime.descriptor.tts.handleEvent('start', '1', 'test')
+      tt.runtime.descriptor.tts.handleEvent('error', '1', 'test', 123)
+    }, 1000)
+    return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
+  })
 
-      eventSplitter.on('tts.start', ttsId => {
-        t.strictEqual(ttsId, '1')
-      })
+  var bridge = tt.getBridge({ appId: 'test' })
+  ;['start'].forEach(it => {
+    bridge.subscribe('tts', it, (ttsId) => {
+      t.strictEqual(ttsId, '1')
+    })
+  })
+  ;['error'].forEach(it => {
+    bridge.subscribe('tts', it, () => {
+      t.fail('unexpected error event')
+    })
+  })
 
-      eventSplitter.on('tts.error', (ttsId, errno) => {
-        t.fail('patient client should not receive error event')
-      })
+  bridge.invoke('tts', 'speak', [ 'foobar' ])
+    .then(() => {
+      t.fail('unreachable path')
+      t.end()
+    })
+    .catch(err => {
+      t.deepEqual(_.pick(err, 'name', 'message', 'code'), { name: 'Error', message: 'Unexpected ttsd error(123)', code: 123 })
+      t.end()
     })
 })
 
 test('descriptor should transfer error events for impatient clients', t => {
   t.plan(4)
-  var descriptor
-  var runtime = {
-    component: {
-      permission: {
-        check: () => true
-      }
-    },
-    ttsMethod: () => {
-      setTimeout(() => {
-        descriptor.tts.handleEvent('start', '1')
-        descriptor.tts.handleEvent('error', '1', 123)
-      }, 1000)
-      return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
-    }
-  }
-  extApp('@test/app-id', { appHome: target }, runtime)
-    .then(res => {
-      descriptor = res
-      descriptor.emit('test-invoke', 'tts.speak', [ 'foobar', { impatient: true } ])
-      descriptor._childProcess.on('message', msg => {
-        if (msg.type !== 'test' || msg.event !== 'invoke') {
-          return
-        }
-        t.error(msg.error)
-      })
 
-      var eventSplitter = new EventEmitter()
-      descriptor._childProcess.on('message', msg => {
-        if (msg.type !== 'test' || msg.event !== 'event') {
-          return
-        }
-        eventSplitter.emit.apply(eventSplitter, [ msg.name ].concat(msg.params))
-      })
+  var tt = bootstrap()
+  mm.mockPromise(tt.runtime, 'ttsMethod', () => {
+    setTimeout(() => {
+      tt.runtime.descriptor.tts.handleEvent('start', '1', 'test')
+      tt.runtime.descriptor.tts.handleEvent('error', '1', 'test', 123)
+    }, 1000)
+    return Promise.resolve(/** flora.Reply */{ msg: [ '1' ] })
+  })
 
-      eventSplitter.on('tts.start', ttsId => {
-        t.strictEqual(ttsId, '1')
-      })
+  var bridge = tt.getBridge({ appId: 'test' })
+  ;['start'].forEach(it => {
+    bridge.subscribe('tts', it, (ttsId) => {
+      t.strictEqual(ttsId, '1')
+    })
+  })
+  ;['error'].forEach(it => {
+    bridge.subscribe('tts', it, (ttsId, errno) => {
+      t.strictEqual(ttsId, '1')
+      t.strictEqual(errno, 123)
+      t.end()
+    })
+  })
 
-      eventSplitter.on('tts.error', (ttsId, errno) => {
-        t.strictEqual(ttsId, '1')
-        t.strictEqual(errno, 123)
-        descriptor.destruct()
-        t.end()
-      })
+  bridge.invoke('tts', 'speak', [ 'foobar', { impatient: true } ])
+    .then((ttsId) => {
+      t.strictEqual(ttsId, '1')
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
     })
 })
