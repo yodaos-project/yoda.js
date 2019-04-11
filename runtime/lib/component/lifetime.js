@@ -363,9 +363,7 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   var memoStack = this.activeSlots.copy()
   this.activeSlots.addApp(appId, isScene)
   var deferred = () => {
-    // TODO:
-    // return this.onLifeCycle(appId, 'active', activateParams)
-    return Promise.resolve()
+    return this.onLifeCycle(appId, 'active', activateParams)
   }
 
   if (form === 'scene') {

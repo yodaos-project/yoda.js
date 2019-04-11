@@ -23,15 +23,16 @@ var api = descriptorFiles
 fs.writeFileSync(path.join(__dirname, '../runtime/client/api/default.json'), JSON.stringify(api, null, 2))
 
 function generate (filename) {
+  var dirname = path.join(__dirname, '../runtime/lib/descriptor')
   var module = { exports: {} } //eslint-disable-line
   var require = (id) => {  //eslint-disable-line
-    if (id === '@yoda/bolero') {
-      return { Descriptor: null }
-    }
     if (id === 'logger') {
       return function () {}
     }
-    var ret = {}
+    var ret = function () {}
+    if (id.startsWith('.')) {
+      id = path.join(dirname, id)
+    }
     try {
       ret = nodeRequire(id)
     } catch (err) {
@@ -39,7 +40,7 @@ function generate (filename) {
     }
     return ret
   }
-  var file = fs.readFileSync(path.join(__dirname, '../runtime/lib/descriptor', filename))
+  var file = fs.readFileSync(path.join(dirname, filename))
   var content = file.toString()
   eval(content)  //eslint-disable-line
   return {
