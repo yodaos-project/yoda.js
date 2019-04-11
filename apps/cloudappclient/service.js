@@ -34,17 +34,14 @@ class CloudAppService {
           opts.voice.state = 'PLAYING'
         }
 
-        var selectMedia = directive => {
-          return directive.type === 'media' && directive.action === 'play'
-        }
-        var mediaDirective = (skill.lastDirectives.filter(selectMedia) || []).slice(-1)[0]
-        if (mediaDirective) {
+        if (mediaId) {
+          var data = this.ctx.playerMgr.getDataByPlayerId(mediaId)
           future = future.then(() => {
             return this.ctx.activity.media.getState(mediaId)
           }).then((mediaState) => {
             mediaState = JSON.parse(mediaState)
             opts.media = Object.assign({
-              itemId: _.get(mediaDirective, 'data.item.itemId', undefined),
+              itemId: _.get(data, 'item.itemId', ''),
               progress: mediaState.position
             }, mediaState)
           })

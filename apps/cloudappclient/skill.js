@@ -10,7 +10,6 @@ function Skill (exe, nlp, action) {
   this.form = action.response.action.form
   this.shouldEndSession = action.response.action.shouldEndSession
   this.directives = []
-  this.lastDirectives = []
   // skill life cycle is paused
   this.paused = false
   // indicates the user has paused
@@ -335,7 +334,6 @@ Skill.prototype.transform = function (directives, append) {
 
     return (dtOrder[a.type] || 100) - (dtOrder[b.type] || 100)
   })
-  this.lastDirectives = Object.assign([], this.directives)
 }
 
 Skill.prototype.requestOnce = function (nlp, action, callback) {
