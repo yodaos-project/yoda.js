@@ -22,6 +22,8 @@ function KeyboardDescriptor (activityDescriptor, appId, appHome, runtime) {
   this._runtime = runtime
 
   this.interests = {
+    keydown: {},
+    keyup: {},
     click: {},
     dbclick: {},
     longpress: {}
@@ -37,6 +39,22 @@ Object.assign(KeyboardDescriptor.prototype,
     type: 'namespace'
   },
   {
+    /**
+     * @event yodaRT.activity.Activity.KeyboardClient#keydown
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    keydown: {
+      type: 'event'
+    },
+    /**
+     * @event yodaRT.activity.Activity.KeyboardClient#keyup
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    keyup: {
+      type: 'event'
+    },
     /**
      * @event yodaRT.activity.Activity.KeyboardClient#click
      * @param {object} event -
