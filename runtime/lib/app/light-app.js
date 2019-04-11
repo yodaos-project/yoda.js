@@ -3,7 +3,6 @@
 var logger = require('logger')('lapp')
 
 var _ = require('@yoda/util')._
-var ActivityDescriptor = require('../descriptor/activity-descriptor')
 var translate = require('../../client/translator-in-process').translate
 /**
  *
@@ -12,17 +11,17 @@ var translate = require('../../client/translator-in-process').translate
  * @param {string} target - app home directory
  * @param {AppRuntime} runtime
  */
-module.exports = function createLightApp (appId, metadata, runtime) {
+module.exports = function createLightApp (appId, metadata, bridge, options) {
   var target = _.get(metadata, 'appHome')
   logger.log(`load target: ${target}/package.json`)
   var pkg = require(`${target}/package.json`)
   var main = `${target}/${pkg.main || 'app.js'}`
 
-  var descriptor = new ActivityDescriptor(appId, target, runtime)
   logger.log('descriptor created.')
-  var activity = translate(descriptor)
+  var descriptor = require(_.get(options, 'descriptorPath', '../../client/api/default.json'))
+  var activity = translate(descriptor, bridge)
   logger.log('descriptor translated.')
-  descriptor.activity = activity
+  bridge.activity = activity
 
   try {
     logger.log(`load main: ${main}`)
@@ -34,5 +33,5 @@ module.exports = function createLightApp (appId, metadata, runtime) {
     return Promise.reject(err)
   }
 
-  return Promise.resolve(descriptor)
+  return Promise.resolve(bridge)
 }

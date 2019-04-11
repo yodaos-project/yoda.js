@@ -1,12 +1,12 @@
 'use strict'
 
+var EventEmitter = require('events')
 var childProcess = require('child_process')
 var path = require('path')
 var fs = require('fs')
 var promisify = require('util').promisify
 var logger = require('logger')('ext-app')
 var _ = require('@yoda/util')._
-var ActivityDescriptor = require('../descriptor/activity-descriptor')
 
 var readFileAsync = promisify(fs.readFile)
 var statAsync = promisify(fs.stat)
@@ -21,7 +21,7 @@ module.exports = createExtApp
  */
 function createExtApp (appId, metadata, runtime) {
   var target = _.get(metadata, 'appHome')
-  var descriptor = new ActivityDescriptor(appId, target, runtime)
+  var appBridge = new EventEmitter()
   var packageJsonPath = path.join(target, 'package.json')
   var executablePath
 
@@ -50,13 +50,13 @@ function createExtApp (appId, metadata, runtime) {
       })
       cp.once('exit', (code, signal) => {
         logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
-        descriptor.emit('exit', code, signal)
+        appBridge.exit(code, signal)
       })
-      descriptor.once('destruct', () => {
+      appBridge.onSuspend = () => {
         logger.info(`${appId}(${cp.pid}) Activity end of life, killing process.`)
         cp.kill()
-      })
-      return descriptor
+      }
+      return appBridge
     })
 }
 

@@ -14,7 +14,7 @@
 @yodaos/application/*.test.js
 logger/*.test.js
 apps/cloudAppClient/*.test.js
-activity/*.test.js
+client/*.test.js
 component/app-loader/*.test.js
 component/app-scheduler/*.test.js
 component/battery/*.test.js

@@ -34,11 +34,12 @@ function main (target, runner) {
   var handle = require(main)
   logger.log(`load main: ${main}`)
 
-  keepAlive(appId)
-  getActivityDescriptor(appId)
+  keepAlive()
+  getActivityDescriptor()
     .then(descriptor => {
       translator.setLogger(require('logger')(`@ipc-${process.pid}`))
       var activity = translator.translate(descriptor)
+      activity.appId = appId
       activity.appHome = target
 
       /**
@@ -62,25 +63,23 @@ function main (target, runner) {
     })
 }
 
-function getActivityDescriptor (appId) {
+function getActivityDescriptor () {
   return new Promise((resolve, reject) => {
     process.on('message', onMessage)
     process.send({
       type: 'status-report',
-      status: 'initiating',
-      appId: appId
+      status: 'initiating'
     })
 
     function onMessage (message) {
       if (message.type !== 'descriptor') {
         return
       }
-      if (typeof message.result !== 'object') {
-        process.removeListener('message', onMessage)
-        return reject(new Error('Nil result on message descriptor.'))
-      }
       process.removeListener('message', onMessage)
-      resolve(message.result)
+      if (typeof message.result !== 'string') {
+        return reject(new Error('Unexpected result on fetching descriptor path.'))
+      }
+      return resolve(require(message.result))
     }
   })
 }
@@ -91,7 +90,7 @@ function launchApp (handle, activity) {
 }
 
 var aliveInterval
-function keepAlive (appId) {
+function keepAlive () {
   /**
    * FIXME: though there do have listeners on process#message,
    * ShadowNode still exits on end of current context.

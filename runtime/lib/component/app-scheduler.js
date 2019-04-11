@@ -3,6 +3,7 @@ var logger = require('logger')('scheduler')
 var _ = require('@yoda/util')._
 
 var Constants = require('../../constants').AppScheduler
+var AppBridge = require('../app/app-bridge')
 var lightApp = require('../app/light-app')
 var extApp = require('../app/ext-app')
 var DbusApp = require('../app/dbus-app')
@@ -18,8 +19,8 @@ function AppScheduler (runtime) {
   this.appLaunchOptions = {}
   this.appCreationFutures = {}
 
-  this.__appDestructionResolvers = {}
-  this.appDestructionFutures = {}
+  this.__appSuspensionResolvers = {}
+  this.appSuspensionFutures = {}
 }
 
 AppScheduler.prototype.isAppRunning = function isAppRunning (appId) {
@@ -46,10 +47,10 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
         return future
       }
       return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
-    case Constants.status.destructing:
-      future = this.appDestructionFutures[appId]
+    case Constants.status.suspending:
+      future = this.appSuspensionFutures[appId]
       if (future == null) {
-        return Promise.reject(new Error(`Scheduler is destructing app ${appId}.`))
+        return Promise.reject(new Error(`Scheduler is suspending app ${appId}.`))
       }
       return future.then(() => this.createApp(appId, mode), () => this.createApp(appId, mode))
   }
@@ -63,8 +64,9 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   }
   this.appLaunchOptions[appId] = { type: appType, mode: mode }
 
+  var appBridge = new AppBridge(this.runtime, appId)
   if (appType === 'light') {
-    return lightApp(appId, metadata, this.runtime)
+    return lightApp(appId, metadata, appBridge)
       .then(
         app => this.handleAppCreate(appId, app),
         err => {
@@ -81,24 +83,24 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   }
 
   if (appType === 'exe') {
-    future = executableProc(appId, metadata, this.runtime)
+    future = executableProc(appId, metadata, appBridge)
   } else {
-    future = extApp(appId, metadata, this.runtime, mode)
+    future = extApp(appId, metadata, appBridge, mode)
   }
 
   future = future
-    .then(app => {
+    .then(() => {
       logger.info(`App(${appId}) successfully started`)
-      app.once('exit', (code, signal) => {
-        if (this.appMap[appId] !== app) {
+      appBridge.onExit = (code, signal) => {
+        if (this.appMap[appId] !== appBridge) {
           logger.info(`Not matched app on exiting, skip unset executor.app(${appId})`)
           return
         }
         this.handleAppExit(appId, code, signal)
-      })
+      }
 
       delete this.appCreationFutures[appId]
-      return this.handleAppCreate(appId, app)
+      return this.handleAppCreate(appId, appBridge)
     }, err => {
       logger.error(`Unexpected error on starting ext-app(${appId})`, err.stack)
 
@@ -114,17 +116,15 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
 AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
   this.appMap[appId] = app
   this.appStatus[appId] = Constants.status.running
-  app.emit('ready')
-  app.emit('create')
 
   return app
 }
 
 AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, signal) {
   logger.info(`${appId} exited.`)
-  /** incase descriptors has not been destructed */
-  if (this.appMap[appId] && typeof this.appMap[appId].destruct === 'function') {
-    this.appMap[appId].destruct()
+  /** incase bridge has not been marked as suspended */
+  if (this.appMap[appId] && typeof this.appMap[appId].suspend === 'function') {
+    this.appMap[appId].suspend()
   }
   this.appStatus[appId] = Constants.status.exited
   this.runtime.appGC(appId)
@@ -132,11 +132,11 @@ AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, sign
   delete this.appMap[appId]
   delete this.appLaunchOptions[appId]
 
-  var destructionResolver = this.__appDestructionResolvers[appId]
-  if (typeof destructionResolver === 'function') {
-    destructionResolver()
+  var suspensionResolver = this.__appSuspensionResolvers[appId]
+  if (typeof suspensionResolver === 'function') {
+    suspensionResolver()
   }
-  delete this.__appDestructionResolvers[appId]
+  delete this.__appSuspensionResolvers[appId]
 
   if (code != null) {
     var manifest = this.loader.getAppManifest(appId)
@@ -175,23 +175,23 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
     return Promise.resolve()
   }
 
-  if (this.appStatus[appId] === Constants.status.destructing) {
+  if (this.appStatus[appId] === Constants.status.suspending) {
     return Promise.resolve()
   }
 
   var app = this.appMap[appId]
   if (app) {
-    app.destruct()
-    this.appStatus[appId] = Constants.status.destructing
-    this.appDestructionFutures[appId] = new Promise((resolve, reject) => {
+    app.suspend()
+    this.appStatus[appId] = Constants.status.suspending
+    this.appSuspensionFutures[appId] = new Promise((resolve, reject) => {
       var timer = setTimeout(() => {
         if (timer == null) {
           return
         }
         timer = null
-        reject(new Error(`Destruct app(${appId}) timed out`))
+        reject(new Error(`Suspend app(${appId}) timed out`))
       }, 5000)
-      this.__appDestructionResolvers[appId] = () => {
+      this.__appSuspensionResolvers[appId] = () => {
         if (timer == null) {
           return
         }

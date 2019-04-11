@@ -32,11 +32,11 @@ var wifi = require('@yoda/wifi')
  * }
  */
 
-var eventBus = new EventEmitter()
+var messageRegistry = {}
 
 var invocationId = 0
 var MethodProxies = {
-  promise: (name, descriptor, ns) => function proxy () {
+  promise: (name, descriptor, ns, nsDescriptor) => function proxy () {
     var id = invocationId
     invocationId += 1
 
@@ -47,7 +47,9 @@ var MethodProxies = {
     var err = new Error('Pending error.')
     var args = Array.prototype.slice.call(arguments, 0)
     return new Promise((resolve, reject) => {
-      eventBus.once(`promise:${id}`, function onCallback (msg) {
+      var channel = `invoke:${id}`
+      messageRegistry[channel] = function onCallback (msg) {
+        delete messageRegistry[channel]
         if (msg.action === 'resolve') {
           return resolve(msg.result)
         }
@@ -58,12 +60,12 @@ var MethodProxies = {
         err.message = 'Unknown response message type from VuiDaemon.'
         err.msg = msg
         reject(err)
-      })
+      }
 
       process.send({
         type: 'invoke',
         invocationId: id,
-        namespace: ns.name,
+        namespace: nsDescriptor.name,
         method: name,
         params: args
       })
@@ -74,23 +76,23 @@ var MethodProxies = {
 var PropertyDescriptions = {
   namespace: function Namespace (name, descriptor/** , namespace, nsProfile */) {
     var ns = new EventEmitter()
-    ns.name = name
+    descriptor.name = name
     var events = []
-    Object.keys(descriptor).forEach(step)
+    if (typeof descriptor.events === 'object') {
+      events = Object.keys(descriptor.events)
+    }
+    if (typeof descriptor.methods === 'object') {
+      Object.keys(descriptor.methods).forEach(key => step('method', key, descriptor.methods[key]))
+    }
+    if (typeof descriptor.namespaces === 'object') {
+      Object.keys(descriptor.namespaces).forEach(key => step('namespace', key, descriptor.namespaces[key]))
+    }
 
-    function step (key) {
-      var propDescriptor = descriptor[key]
+    function step (type, key, propDescriptor) {
       if (typeof propDescriptor !== 'object') {
         return
       }
-      if (descriptorTypes.indexOf(propDescriptor.type) < 0) {
-        return
-      }
-      if ([ 'event', 'event-ack' ].indexOf(propDescriptor.type) >= 0) {
-        events.push(key)
-        return
-      }
-      var ret = PropertyDescriptions[propDescriptor.type](key, propDescriptor, ns, descriptor)
+      var ret = PropertyDescriptions[type](key, propDescriptor, ns, descriptor)
       ns[key] = ret
     }
 
@@ -99,8 +101,8 @@ var PropertyDescriptions = {
       if (idx < 0) {
         return
       }
-      var propDescriptor = descriptor[event]
-      PropertyDescriptions[propDescriptor.type](event, propDescriptor, ns, descriptor)
+      var propDescriptor = descriptor.events[event]
+      PropertyDescriptions.event(event, propDescriptor, ns, descriptor)
     })
     return ns
   },
@@ -117,41 +119,14 @@ var PropertyDescriptions = {
       return
     }
     descriptor.subscribed = true
-    var channel = `event:${namespace.name ? namespace.name + ':' : ''}${name}`
-    eventBus.on(channel, function onEvent (params) {
+    var channel = `event:${nsDescriptor.name ? nsDescriptor.name + ':' : ''}${name}`
+    messageRegistry[channel] = function onEvent (params) {
       EventEmitter.prototype.emit.apply(namespace, [ name ].concat(params))
-    })
+    }
 
     process.send({
       type: 'subscribe',
-      namespace: namespace.name,
-      event: name
-    })
-  },
-  'event-ack': function EventAck (name, descriptor, namespace, nsDescriptor) {
-    eventBus.on(`event-syn:${name}`, function onEvent (eventId, params) {
-      try {
-        EventEmitter.prototype.emit.apply(namespace, [ name ].concat(params))
-      } catch (err) {
-        return process.send({
-          type: 'event-ack',
-          namespace: namespace.name,
-          event: name,
-          eventId: eventId,
-          error: err.message
-        })
-      }
-      process.send({
-        type: 'event-ack',
-        namespace: namespace.name,
-        event: name,
-        eventId: eventId
-      })
-    })
-
-    process.send({
-      type: 'subscribe-ack',
-      namespace: namespace.name,
+      namespace: nsDescriptor.name,
       event: name
     })
   },
@@ -159,7 +134,6 @@ var PropertyDescriptions = {
     return descriptor.value
   }
 }
-var descriptorTypes = Object.keys(PropertyDescriptions)
 
 module.exports.setLogger = function setLogger (_logger) {
   logger = _logger
@@ -191,21 +165,18 @@ var listenMap = {
       return
     }
     logger.debug(`Received VuiDaemon event ${channel}`)
-    return eventBus.emit(channel, msg.params)
-  },
-  'event-syn': msg => {
-    var channel = `event-syn:${msg.event}`
-    if (!Array.isArray(msg.params)) {
-      logger.error(`Params of event message '${channel}' is not an array.`)
-      return
+    var reg = messageRegistry[channel]
+    if (typeof reg === 'function') {
+      reg(msg.params)
     }
-    logger.debug(`Received VuiDaemon ack-event ${channel}`)
-    return eventBus.emit(channel, msg.eventId, msg.params)
   },
-  promise: msg => {
-    var channel = `promise:${msg.invocationId}`
-    logger.debug(`Received VuiDaemon resolved ${channel}`)
-    return eventBus.emit(channel, msg)
+  invoke: msg => {
+    var channel = `invoke:${msg.invocationId}`
+    logger.debug(`Received VuiDaemon response('${msg.action || 'returned'}') of '${channel}'`)
+    var reg = messageRegistry[channel]
+    if (typeof reg === 'function') {
+      reg(msg)
+    }
   },
   'fatal-error': msg => {
     var err = new Error(msg.message)

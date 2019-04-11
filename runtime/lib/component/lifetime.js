@@ -363,7 +363,9 @@ LaVieEnPile.prototype.activateAppById = function activateAppById (appId, form, c
   var memoStack = this.activeSlots.copy()
   this.activeSlots.addApp(appId, isScene)
   var deferred = () => {
-    return this.onLifeCycle(appId, 'active', activateParams)
+    // TODO:
+    // return this.onLifeCycle(appId, 'active', activateParams)
+    return Promise.resolve()
   }
 
   if (form === 'scene') {
@@ -603,35 +605,6 @@ LaVieEnPile.prototype.setForegroundById = function (appId, form) {
 // MARK: - END Stack Manipulation
 
 // MARK: - App Events
-
-/**
- * Emit life cycle event to app asynchronously.
- *
- * > NOTE: doesn't perform any actual life cycle operations, only event emitting.
- *
- * @param {string} appId - app id
- * @param {string} event - event name to be emitted
- * @param {any[]} params -
- * @returns {Promise<ActivityDescriptor | undefined>} LifeCycle events are asynchronous.
- */
-LaVieEnPile.prototype.onLifeCycle = function onLifeCycle (appId, event, params) {
-  var app = this.scheduler.getAppById(appId)
-  if (app == null) {
-    return Promise.reject(new Error(`Trying to send life cycle '${event}' to app '${appId}', yet it's not created.`))
-  }
-
-  logger.info('on life cycle', event, appId)
-  emit(app)
-
-  return Promise.resolve(app)
-
-  function emit (target) {
-    if (params === undefined) {
-      params = []
-    }
-    EventEmitter.prototype.emit.apply(target, [ event ].concat(params))
-  }
-}
 
 /**
  * Emit event `eviction` with the evicted app id as first argument to listeners.

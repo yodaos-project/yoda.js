@@ -1,0 +1,180 @@
+'use strict'
+/**
+ * @namespace yodaRT.activity
+ */
+
+var logger = require('logger')('keyboard-descriptor')
+var _ = require('@yoda/util')._
+var Descriptor = require('../descriptor')
+
+/**
+ * @memberof yodaRT.activity.Activity
+ * @class KeyboardClient
+ * @hideconstructor
+ * @extends EventEmitter
+ */
+class KeyboardDescriptor extends Descriptor {
+  constructor (runtime) {
+    super(runtime, 'keyboard')
+
+    this.events = [ 'keydown', 'keyup', 'click', 'dbclick', 'longpress' ]
+    /** @type { [appId: string]: { [ uniqKey: string ]: true } } */
+    this.interests = {}
+  }
+
+  handleAppListener (type, event) {
+    var appId = this.component.lifetime.getCurrentAppId()
+    var app = this.component.appScheduler.getAppById(appId)
+    if (app == null) {
+      logger.info(`No active app, skip ${type} '${event.keyCode}' delegation.`)
+      return false
+    }
+    var interest = _.get(this.interests, `${appId}.${type}:${event.keyCode}`)
+    if (interest !== true) {
+      logger.info(`Current app(${appId}) has no interest, skip ${type} '${event.keyCode}' delegation.`)
+      return false
+    }
+    logger.info(`Delegating ${type} '${event.keyCode}' to app ${appId}.`)
+    this.emitToApp(appId, type, [ event ])
+    return true
+  }
+
+  preventDefaults (ctx) {
+    var appId = ctx.appId
+    var keyCode = ctx.args[0]
+    var event = ctx.args[1]
+
+    if (typeof keyCode !== 'number') {
+      return Promise.reject(new Error('Expect a number on first argument of keyboard.preventDefaults.'))
+    }
+    var events = this.events
+    if (event != null) {
+      if (typeof event !== 'string') {
+        return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))
+      }
+      if (this.events.indexOf(event) === -1) {
+        return Promise.reject(new Error(`Unexpected keyboard event: ${event}.`))
+      }
+      events = [ event ]
+    }
+    events.forEach(it => {
+      if (this.interests[appId] == null) {
+        this.interests[appId] = {}
+      }
+      this.interests[appId][`${it}:${keyCode}`] = true
+    })
+  }
+
+  restoreDefaults (ctx) {
+    var appId = ctx.appId
+    var keyCode = ctx.args[0]
+    var event = ctx.args[1]
+
+    if (typeof keyCode !== 'number') {
+      return Promise.reject(new Error('Expect a string on first argument of keyboard.restoreDefaults.'))
+    }
+    var events = this.events
+    if (event != null) {
+      if (typeof event !== 'string') {
+        return Promise.reject(new Error('Expect a string on second argument of keyboard.restoreDefaults.'))
+      }
+      if (events.indexOf(event) === -1) {
+        return Promise.reject(new Error(`Unexpected keyboard event: ${event}.`))
+      }
+      events = [ event ]
+    }
+    events.forEach(it => {
+      delete this.interests[appId][`${it}:${keyCode}`]
+    })
+  }
+
+  restoreAll (ctx) {
+    var appId = ctx.appId
+    delete this.interests[appId]
+  }
+}
+
+KeyboardDescriptor.events = {
+  /**
+   * @event yodaRT.activity.Activity.KeyboardClient#keydown
+   * @param {object} event -
+   * @param {number} event.keyCode -
+   */
+  keydown: {
+    type: 'event'
+  },
+  /**
+   * @event yodaRT.activity.Activity.KeyboardClient#keyup
+   * @param {object} event -
+   * @param {number} event.keyCode -
+   */
+  keyup: {
+    type: 'event'
+  },
+  /**
+   * @event yodaRT.activity.Activity.KeyboardClient#click
+   * @param {object} event -
+   * @param {number} event.keyCode -
+   */
+  click: {
+    type: 'event'
+  },
+  /**
+   * @event yodaRT.activity.Activity.KeyboardClient#dblclick
+   * @param {object} event -
+   * @param {number} event.keyCode -
+   */
+  dblclick: {
+    type: 'event'
+  },
+  /**
+   * @event yodaRT.activity.Activity.KeyboardClient#longpress
+   * @param {object} event -
+   * @param {number} event.keyCode -
+   */
+  longpress: {
+    type: 'event'
+  }
+}
+
+KeyboardDescriptor.methods = {
+  /**
+   * Intercepts all events for key code until restores default behavior by KeyboardClient.restoreDefaults
+   *
+   * @memberof yodaRT.activity.Activity.KeyboardClient
+   * @instance
+   * @function preventDefaults
+   * @param {number} keyCode -
+   * @param {string} event -
+   * @returns {Promise<void>}
+   */
+  preventDefaults: {
+    returns: 'promise'
+  },
+  /**
+   * Restore default behavior of key code.
+   *
+   * @memberof yodaRT.activity.Activity.KeyboardClient
+   * @instance
+   * @function restoreDefaults
+   * @param {number} keyCode -
+   * @param {string} event -
+   * @returns {Promise<void>}
+   */
+  restoreDefaults: {
+    returns: 'promise'
+  },
+  /**
+   * Restore default behavior of all key codes.
+   *
+   * @memberof yodaRT.activity.Activity.KeyboardClient
+   * @instance
+   * @function restoreAll
+   * @returns {Promise<void>}
+   */
+  restoreAll: {
+    returns: 'promise'
+  }
+}
+
+module.exports = KeyboardDescriptor

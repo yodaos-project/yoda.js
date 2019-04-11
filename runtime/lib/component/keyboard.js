@@ -11,6 +11,7 @@ function KeyboardHandler (runtime) {
   this.preventSubsequent = false
   this.runtime = runtime
   this.component = runtime.component
+  this.descriptor = runtime.descriptor
   this.config = config
 
   this.longpressWindow = _.get(this.config, 'config.longpressWindow', 500)
@@ -80,20 +81,7 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
 }
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
-  var currentApp = this.component.lifetime.getCurrentAppId()
-  var app = this.component.appScheduler.getAppById(currentApp)
-  if (app == null) {
-    logger.info(`No active app, skip ${type} '${event.keyCode}' delegation.`)
-    return false
-  }
-  var interest = _.get(app, `keyboard.interests.${type}.${event.keyCode}`)
-  if (interest !== true) {
-    logger.info(`Current app(${currentApp}) has no interest, skip ${type} '${event.keyCode}' delegation.`)
-    return false
-  }
-  logger.info(`Delegating ${type} '${event.keyCode}' to app ${currentApp}.`)
-  app.keyboard.emit(type, event)
-  return true
+  return this.descriptor.keyboard.handleAppListener(type, event)
 }
 
 KeyboardHandler.prototype.listen = function listen () {
