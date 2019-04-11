@@ -2,7 +2,7 @@
 // create by yuna.li
 var crypto = require('crypto')
 var https = require('https')
-var logger = require('logger')('alarm')
+var logger = require('logger')('alarm-request')
 var DEFAULT_HOST = require('@yoda/env')().skills.alarmUri
 var DEFAULT_URI = '/skill-alarm/alarm/operate'
 var id = 0
@@ -14,51 +14,67 @@ function _createMd5 (extraData) {
     .toUpperCase()
 }
 
-function request (params) {
+function request (params, requestCallback) {
   params.activity.get()
     .then(extraData => {
-      id++
-      var data = {
-        deviceId: extraData.deviceId,
-        deviceType: extraData.deviceTypeId,
-        intent: params.intent,
-        masterId: extraData.masterId,
-        nonce: extraData.deviceId + (new Date()).getTime() + id,
-        requestTimestamp: (new Date()).getTime(),
-        sessionId: (new Date()).getTime(),
-        sign: _createMd5(extraData),
-        signMethod: 'MD5',
-        businessParams: params.businessParams || {}
-      }
-      data = Buffer.from(JSON.stringify(data))
-      var req = https.request({
-        method: 'POST',
-        host: DEFAULT_HOST,
-        path: DEFAULT_URI || params.url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': data.length
+      try {
+        id++
+        var data = {
+          deviceId: extraData.deviceId,
+          deviceType: extraData.deviceTypeId,
+          intent: params.intent,
+          masterId: extraData.masterId,
+          nonce: extraData.deviceId + (new Date()).getTime() + id,
+          requestTimestamp: (new Date()).getTime(),
+          sessionId: (new Date()).getTime(),
+          sign: _createMd5(extraData),
+          signMethod: 'MD5',
+          businessParams: params.businessParams || {}
         }
-      }, (res) => {
-        var list = []
-        res.on('data', (chunk) => list.push(chunk))
-          .on('end', () => {
-            var result = Buffer.concat(list).toString()
-            if (res.statusCode !== 200) {
-              logger.error(`Error: failed get data with ${result}`)
-            } else {
-              if (typeof params.callback === 'function') {
-                params.callback(result)
+        data = Buffer.from(JSON.stringify(data))
+        var req = https.request({
+          method: 'POST',
+          host: DEFAULT_HOST,
+          path: DEFAULT_URI || params.url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': data.length
+          }
+        }, (res) => {
+          var list = []
+          res.on('data', (chunk) => list.push(chunk))
+            .on('end', () => {
+              var result = Buffer.concat(list).toString()
+              if (res.statusCode !== 200) {
+                logger.error(`Error: failed get data with ${result}`)
+                if (requestCallback) {
+                  requestCallback(false)
+                }
+              } else {
+                if (typeof params.callback === 'function') {
+                  params.callback(result)
+                  if (requestCallback) {
+                    requestCallback(true)
+                  }
+                }
               }
-            }
-          })
-      })
+            })
+        })
 
-      req.on('error', (err) => {
+        req.on('error', (err) => {
+          logger.error(err && err.stack)
+          if (requestCallback) {
+            requestCallback(false)
+          }
+        })
+        req.write(data)
+        req.end()
+      } catch (err) {
         logger.error(err && err.stack)
-      })
-      req.write(data)
-      req.end()
+        if (requestCallback) {
+          requestCallback(false)
+        }
+      }
     })
 }
 

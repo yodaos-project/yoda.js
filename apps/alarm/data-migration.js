@@ -20,9 +20,13 @@ module.exports = function getAlarms (activity, callback) {
           requestAlarms('upload_alarms', {
             alarms: alarms,
             reminders: reminders
+          }, (requestResult) => {
+            logger.log('upload_alarms--->result: ', requestResult)
+            if (requestResult) {
+              unlinkFiles()
+            }
           })
         }
-        unlinkFiles()
       } catch (err) {
         throw err
       }
@@ -75,7 +79,7 @@ module.exports = function getAlarms (activity, callback) {
     ])
   }
 
-  function requestAlarms (intent, businessParams) {
+  function requestAlarms (intent, businessParams, requestCallback) {
     request({
       activity: activity,
       intent: intent,
@@ -102,7 +106,7 @@ module.exports = function getAlarms (activity, callback) {
           }
         })
       }
-    })
+    }, requestCallback)
     logger.log('alarm get config from cloud', intent)
   }
 
