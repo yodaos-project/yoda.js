@@ -12,7 +12,7 @@ test('shall prevent default', t => {
   var keyboard = new Keyboard(runtime)
   var app = new EventEmitter()
   app.keyboard = new EventEmitter()
-  app.keyboard.interests = { click: { 233: true } }
+  app.keyboard.interests = { keydown: { 233: true } }
   runtime.component.appScheduler.getAppById = function (appId) {
     if (appId === '@test/simple-app') {
       return app
@@ -25,7 +25,7 @@ test('shall prevent default', t => {
   keyboard.input = new EventEmitter()
   keyboard.listen()
 
-  app.keyboard.on('click', event => {
+  app.keyboard.on('keydown', event => {
     t.strictEqual(event.keyCode, 233)
     later()
   })
@@ -33,12 +33,12 @@ test('shall prevent default', t => {
     t.fail('shall not receive un-listened events')
   })
 
-  keyboard.input.emit('click', { keyCode: 233 })
+  keyboard.input.emit('keydown', { keyCode: 233 })
   keyboard.input.emit('dbclick', { keyCode: 233 })
 
   function later () {
-    delete app.keyboard.interests.click[233]
-    keyboard.input.emit('click', { keyCode: 233 })
+    delete app.keyboard.interests.keydown[233]
+    keyboard.input.emit('keydown', { keyCode: 233 })
     runtime.deinit()
   }
 })
