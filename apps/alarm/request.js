@@ -19,58 +19,56 @@ function request (params) {
     .then(extraData => {
       try {
         id++
+        var curTime = (new Date()).getTime()
         var data = {
           deviceId: extraData.deviceId,
           deviceType: extraData.deviceTypeId,
           intent: params.intent,
           masterId: extraData.masterId,
-          nonce: extraData.deviceId + (new Date()).getTime() + id,
-          requestTimestamp: (new Date()).getTime(),
-          sessionId: (new Date()).getTime(),
+          nonce: extraData.deviceId + curTime + id,
+          requestTimestamp: curTime,
+          sessionId: curTime,
           sign: _createMd5(extraData),
           signMethod: 'MD5',
           businessParams: params.businessParams || {}
         }
         data = Buffer.from(JSON.stringify(data))
+        var callback = (err, result) => {
+          if (typeof params.callback === 'function') {
+            params.callback(err, result)
+          }
+        }
         var req = https.request({
           method: 'POST',
           host: DEFAULT_HOST,
-          path: DEFAULT_URI || params.url,
+          path: params.url || DEFAULT_URI,
           headers: {
             'Content-Type': 'application/json',
             'Content-Length': data.length
           }
         }, (res) => {
+          if (res.statusCode !== 200) {
+            logger.error(`Error: failed get data with statusCodse ${res.statusCode}`)
+            callback(res.statusCode)
+            return
+          }
           var list = []
           res.on('data', (chunk) => list.push(chunk))
             .on('end', () => {
               var result = Buffer.concat(list).toString()
-              if (res.statusCode !== 200) {
-                logger.error(`Error: failed get data with ${result}`)
-                if (typeof params.callback === 'function') {
-                  params.callback(true, null)
-                }
-              } else {
-                if (typeof params.callback === 'function') {
-                  params.callback(false, result)
-                }
-              }
+              callback(null, result)
             })
         })
 
         req.on('error', (err) => {
-          logger.error(err && err.stack)
-          if (typeof params.callback === 'function') {
-            params.callback(true, null)
-          }
+          logger.error('request on Error: ', err && err.stack)
+          callback(err)
         })
         req.write(data)
         req.end()
       } catch (err) {
-        logger.error(err && err.stack)
-        if (typeof params.callback === 'function') {
-          params.callback(true, null)
-        }
+        logger.error('request exception: ', err && err.stack)
+        callback(err)
       }
     })
 }
