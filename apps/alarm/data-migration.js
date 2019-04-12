@@ -83,7 +83,7 @@ module.exports = function getAlarms (activity, callback) {
         if (err) {
           return
         }
-        if(intent === 'upload_alarms'){
+        if (intent === 'upload_alarms') {
           logger.log('upload_alarms--->success && unlinkOldFiles')
           unlinkFiles()
         }
