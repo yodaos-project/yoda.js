@@ -1,7 +1,7 @@
 
 'use strict'
 var fs = require('fs')
-var logger = require('logger')('alarm')
+var logger = require('logger')('alarm-core')
 var yodaUtil = require('@yoda/util')
 var wifi = require('@yoda/wifi')
 var TtsEventHandle = require('@yodaos/ttskit').Convergence
