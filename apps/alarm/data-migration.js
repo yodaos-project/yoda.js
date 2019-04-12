@@ -22,7 +22,6 @@ module.exports = function getAlarms (activity, callback) {
             reminders: reminders
           })
         }
-        unlinkFiles()
       } catch (err) {
         throw err
       }
@@ -80,7 +79,14 @@ module.exports = function getAlarms (activity, callback) {
       activity: activity,
       intent: intent,
       businessParams: businessParams || {},
-      callback: (res) => {
+      callback: (err, res) => {
+        if (err) {
+          return
+        }
+        if (intent === 'upload_alarms') {
+          logger.log('upload_alarms--->success && unlinkOldFiles')
+          unlinkFiles()
+        }
         var resObj = {}
         try {
           resObj = JSON.parse(res)
