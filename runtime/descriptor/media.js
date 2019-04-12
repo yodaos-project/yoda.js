@@ -17,9 +17,9 @@ var MEDIA_SOURCE = '/opt/media'
  * @hideconstructor
  * @extends EventEmitter
  */
-class MultimediaDescriptor extends Descriptor {
+class MediaDescriptor extends Descriptor {
   constructor (runtime) {
-    super(runtime, 'multimedia')
+    super(runtime, 'media')
     this.registeredDbusSignals = []
   }
 
@@ -243,7 +243,7 @@ class MultimediaDescriptor extends Descriptor {
   }
 }
 
-MultimediaDescriptor.events = {
+MediaDescriptor.events = {
   /**
    * When the media resource is prepared.
    * @event yodaRT.activity.Activity.MediaClient#prepared
@@ -334,7 +334,7 @@ MultimediaDescriptor.events = {
     type: 'event'
   }
 }
-MultimediaDescriptor.methods = {
+MediaDescriptor.methods = {
   /**
    * Prepare a multimedia player for url, yet doesn't play it.
    * Doesn't requires app to be the active app.
@@ -489,4 +489,4 @@ MultimediaDescriptor.methods = {
   }
 }
 
-module.exports = MultimediaDescriptor
+module.exports = MediaDescriptor
