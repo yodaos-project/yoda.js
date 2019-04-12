@@ -20,11 +20,6 @@ module.exports = function getAlarms (activity, callback) {
           requestAlarms('upload_alarms', {
             alarms: alarms,
             reminders: reminders
-          }, (requestResult) => {
-            logger.log('upload_alarms--->result: ', requestResult)
-            if (requestResult) {
-              unlinkFiles()
-            }
           })
         }
       } catch (err) {
@@ -79,12 +74,19 @@ module.exports = function getAlarms (activity, callback) {
     ])
   }
 
-  function requestAlarms (intent, businessParams, requestCallback) {
+  function requestAlarms (intent, businessParams) {
     request({
       activity: activity,
       intent: intent,
       businessParams: businessParams || {},
-      callback: (res) => {
+      callback: (err,res) => {
+        if(err){
+          return
+        }
+        if(intent === 'upload_alarms'){
+          logger.log('upload_alarms--->success && unlinkOldFiles')
+          unlinkFiles()
+        }
         var resObj = {}
         try {
           resObj = JSON.parse(res)
@@ -106,7 +108,7 @@ module.exports = function getAlarms (activity, callback) {
           }
         })
       }
-    }, requestCallback)
+    })
     logger.log('alarm get config from cloud', intent)
   }
 

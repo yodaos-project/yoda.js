@@ -14,7 +14,7 @@ function _createMd5 (extraData) {
     .toUpperCase()
 }
 
-function request (params, requestCallback) {
+function request (params) {
   params.activity.get()
     .then(extraData => {
       try {
@@ -47,15 +47,12 @@ function request (params, requestCallback) {
               var result = Buffer.concat(list).toString()
               if (res.statusCode !== 200) {
                 logger.error(`Error: failed get data with ${result}`)
-                if (requestCallback) {
-                  requestCallback(false)
+                if (typeof params.callback === 'function') {
+                  params.callback(true,null)
                 }
               } else {
                 if (typeof params.callback === 'function') {
-                  params.callback(result)
-                  if (requestCallback) {
-                    requestCallback(true)
-                  }
+                  params.callback(false, result)
                 }
               }
             })
@@ -63,16 +60,16 @@ function request (params, requestCallback) {
 
         req.on('error', (err) => {
           logger.error(err && err.stack)
-          if (requestCallback) {
-            requestCallback(false)
+          if (typeof params.callback === 'function') {
+            params.callback(true,null)
           }
         })
         req.write(data)
         req.end()
       } catch (err) {
         logger.error(err && err.stack)
-        if (requestCallback) {
-          requestCallback(false)
+        if (typeof params.callback === 'function') {
+          params.callback(true,null)
         }
       }
     })
