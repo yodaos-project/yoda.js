@@ -71,13 +71,14 @@ function proxyFunction (target, prop, proxy) {
 
   var orig = target[prop]
   mockReturns(target, prop, function () {
-    var args = before(this, arguments)
+    var args = Array.prototype.slice.call(arguments)
+    args = before(this, args)
     if (args == null) {
       args = arguments
     }
     var ret = orig.apply(this, args)
     if (typeof after === 'function') {
-      ret = after(ret, this, arguments)
+      ret = after(ret, this, args)
     }
     return ret
   })
