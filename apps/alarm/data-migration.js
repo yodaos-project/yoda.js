@@ -79,8 +79,8 @@ module.exports = function getAlarms (activity, callback) {
       activity: activity,
       intent: intent,
       businessParams: businessParams || {},
-      callback: (err,res) => {
-        if(err){
+      callback: (err, res) => {
+        if (err) {
           return
         }
         if(intent === 'upload_alarms'){

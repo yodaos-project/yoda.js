@@ -48,7 +48,7 @@ function request (params) {
               if (res.statusCode !== 200) {
                 logger.error(`Error: failed get data with ${result}`)
                 if (typeof params.callback === 'function') {
-                  params.callback(true,null)
+                  params.callback(true, null)
                 }
               } else {
                 if (typeof params.callback === 'function') {
@@ -61,7 +61,7 @@ function request (params) {
         req.on('error', (err) => {
           logger.error(err && err.stack)
           if (typeof params.callback === 'function') {
-            params.callback(true,null)
+            params.callback(true, null)
           }
         })
         req.write(data)
@@ -69,7 +69,7 @@ function request (params) {
       } catch (err) {
         logger.error(err && err.stack)
         if (typeof params.callback === 'function') {
-          params.callback(true,null)
+          params.callback(true, null)
         }
       }
     })
