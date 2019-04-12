@@ -10,8 +10,7 @@ var _ = require('@yoda/util')._
  * 1. CreateApp -> app created, now inactive
  * 2. ActivateApp -> app activated, now on top of stack
  * 3. DeactivateApp -> app deactivated, now inactive
- * 4. SetBackground -> app running in background
- * 5. DestroyApp -> app suspended, waiting for eviction
+ * 4. DestroyApp -> app suspended, waiting for eviction
  *
  * - OnLifeCycle -> send events to app
  *
@@ -81,7 +80,7 @@ class Lifetime extends EventEmitter {
     return this.contextOptionsMap[appId]
   }
   /**
-   * Get if app is active (neither inactive nor in background).
+   * Get if app is in activities stack.
    * @param {string} appId -
    * @returns {boolean} true if active, false otherwise.
    */
@@ -224,8 +223,7 @@ class Lifetime extends EventEmitter {
    * > Note: deactivating doesn't apply to apps that not in stack.
    *
    * On deactivating:
-   * - non-daemon app: destroyed
-   * - daemon app: switched to background
+   * - app: destroyed
    *
    * Possible subsequent calls:
    *   - Lifetime#setForegroundById
@@ -261,7 +259,7 @@ class Lifetime extends EventEmitter {
     if (idx >= 0) {
       this.onEviction(appId)
     }
-    var future = this.suspendAppById(appId)
+    var future = this.destroyAppById(appId)
     if (recover && idx >= 0) {
       return future
     }
@@ -357,7 +355,7 @@ class Lifetime extends EventEmitter {
    *
    * @returns {Promise<void>}
    */
-  suspendAll (options) {
+  destroyAll (options) {
     var force = _.get(options, 'force', false)
     logger.log(`destroying all apps${force ? ' by force' : ''}`)
     var activitiesStack = this.activitiesStack
@@ -380,14 +378,12 @@ class Lifetime extends EventEmitter {
   /**
    * Destroy the app managed by Lifetime.
    *
-   * **Also destroy daemon apps.**
-   *
    * @param {string} appId -
    * @param {object} [options] -
    * @param {boolean} [options.force=false] -
    * @returns {Promise<void>}
    */
-  suspendAppById (appId, options) {
+  destroyAppById (appId, options) {
     var force = _.get(options, 'force', false)
     /**
      * Remove apps from records of Lifetime.

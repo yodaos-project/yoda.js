@@ -1,7 +1,7 @@
 var test = require('tape')
 
 var helper = require('../../helper')
-var Battery = require(`${helper.paths.runtime}/lib/component/battery`)
+var Battery = require(`${helper.paths.runtime}/component/battery`)
 var batHelper = require('./helper')
 
 var getRuntime = batHelper.getRuntime

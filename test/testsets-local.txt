@@ -3,4 +3,11 @@
 @yodaos/application/*.test.js
 logger/*.test.js
 component/app-loader/*.test.js
+component/app-scheduler/*.test.js
 component/battery/*.test.js
+component/dispatcher/*.test.js
+component/keyboard/*.test.js
+component/lifetime/*.test.js
+descriptor/activity/*.test.js
+descriptor/keyboard/*.test.js
+descriptor/tts/*.test.js

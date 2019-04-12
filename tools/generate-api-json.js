@@ -3,7 +3,7 @@ var path = require('path')
 
 var nodeRequire = require
 
-var descriptorFiles = fs.readdirSync(path.join(__dirname, '../runtime/lib/descriptor'))
+var descriptorFiles = fs.readdirSync(path.join(__dirname, '../runtime/descriptor'))
 var api = descriptorFiles
   .filter(it => !it.endsWith('descriptor.js'))
   .map(it => ({
@@ -23,7 +23,7 @@ var api = descriptorFiles
 fs.writeFileSync(path.join(__dirname, '../runtime/client/api/default.json'), JSON.stringify(api, null, 2))
 
 function generate (filename) {
-  var dirname = path.join(__dirname, '../runtime/lib/descriptor')
+  var dirname = path.join(__dirname, '../runtime/descriptor')
   var module = { exports: {} } //eslint-disable-line
   var require = (id) => {  //eslint-disable-line
     if (id === 'logger') {

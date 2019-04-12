@@ -3,7 +3,7 @@ var path = require('path')
 
 var _ = require('@yoda/util')._
 var helper = require('../../helper')
-var AppLoader = require(`${helper.paths.runtime}/lib/component/app-loader`)
+var AppLoader = require(`${helper.paths.runtime}/component/app-loader`)
 var mock = require('./mock')
 
 test('should load path', t => {

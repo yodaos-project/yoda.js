@@ -3,7 +3,7 @@ var _ = require('@yoda/util')._
 
 var helper = require('../../helper')
 var mock = require('../../helper/mock')
-var Battery = require(`${helper.paths.runtime}/lib/component/battery`)
+var Battery = require(`${helper.paths.runtime}/component/battery`)
 var batHelper = require('./helper')
 
 var getRuntime = batHelper.getRuntime

@@ -3,7 +3,7 @@
  * @namespace yodaRT.activity.test
  */
 
-var Descriptor = require('../descriptor')
+var Descriptor = require('../lib/descriptor')
 
 /**
  * @memberof yodaRT.activity.Activity

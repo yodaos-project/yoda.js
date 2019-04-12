@@ -16,7 +16,7 @@ ota.getInfoOfPendingUpgrade[util.promisify.custom] = otaMock('getInfoOfPendingUp
 
 var helper = require('../../helper')
 var mock = require('../../helper/mock')
-var OtaComponent = require(`${helper.paths.runtime}/lib/component/ota`)
+var OtaComponent = require(`${helper.paths.runtime}/component/ota`)
 var mockRuntime = require('./mock').mockRuntime
 
 test('should delegate runtimeDidLogin if first upgraded boot info is available', t => {

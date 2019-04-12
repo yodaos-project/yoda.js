@@ -3,7 +3,7 @@ var path = require('path')
 var Component = require('@yoda/bolero/base-class')
 var Loader = require('@yoda/bolero/loader')
 
-test('should loads classes', t => {
+test('should register classes', t => {
   t.plan(3)
 
   var runtime = {}
@@ -30,8 +30,8 @@ test('should loads classes', t => {
   }
 
   var loader = new Loader(runtime, 'component')
-  loader.register('foo', Foo)
-  loader.register('bar', Bar)
+  loader.registerClass('foo', Foo)
+  loader.registerClass('bar', Bar)
   t.strictEqual(runtime.component.bar.hello(), 'hello')
 })
 

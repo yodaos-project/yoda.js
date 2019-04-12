@@ -4,7 +4,7 @@ var inherits = require('util').inherits
 var FloraComp = require('@yoda/flora/comp')
 var property = require('@yoda/property')
 
-var floraConfig = require('../../lib/helper/config').getConfig('flora-config.json')
+var floraConfig = require('../../lib/config').getConfig('flora-config.json')
 
 module.exports = Flora
 /**

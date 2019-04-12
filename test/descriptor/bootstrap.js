@@ -1,6 +1,6 @@
 var helper = require('../helper')
-var bootRuntime = require('../bootstrap')
-var AppBridge = require(`${helper.paths.runtime}/lib/app/app-bridge`)
+var bootRuntime = require('../bootstrap.js')
+var AppBridge = require(`${helper.paths.runtime}/app/app-bridge`)
 var kRunning = require(`${helper.paths.runtime}/constants`).AppScheduler.status.running
 
 module.exports = function bootstrap () {

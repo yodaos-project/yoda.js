@@ -4,7 +4,7 @@
  */
 
 var logger = require('logger')('activity')
-var Descriptor = require('../descriptor')
+var Descriptor = require('../lib/descriptor')
 
 var yodaPath = require('@yoda/util').path
 var _ = require('@yoda/util')._

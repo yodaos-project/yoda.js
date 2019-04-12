@@ -1,7 +1,7 @@
 var logger = require('logger')('dispatcher')
 var _ = require('@yoda/util')._
 
-var config = require('../helper/config').getConfig('component-config.json')
+var config = require('../lib/config').getConfig('component-config.json')
 
 /**
  * Event/Command Dispatcher.

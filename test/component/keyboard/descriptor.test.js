@@ -1,29 +1,23 @@
 var test = require('tape')
 var EventEmitter = require('events')
 
-var AppRuntime = require('../../helper/mock-runtime')
-
-var helper = require('../../helper')
-var Keyboard = require(`${helper.paths.runtime}/lib/component/keyboard`)
+var bootstrap = require('../../bootstrap')
 
 function setUp () {
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
-  Object.defineProperty(runtime.component, 'keyboard', {
-    value: keyboard
-  })
+  var tt = bootstrap()
+  var keyboard = tt.component.keyboard
 
   keyboard.input = new EventEmitter()
   keyboard.input.disconnect = function noop () {}
 
-  return { runtime: runtime, keyboard: keyboard }
+  return { runtime: tt.runtime, keyboard: keyboard }
 }
 
 test('shall interpret descriptor: openUrl', t => {
   t.plan(2)
-  var pack = setUp()
-  var keyboard = pack.keyboard
-  var runtime = pack.runtime
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.listen()
 
@@ -47,15 +41,13 @@ test('shall interpret descriptor: openUrl', t => {
   }
 
   keyboard.input.emit('click', { keyCode: 233 })
-
-  runtime.deinit()
 })
 
 test('shall interpret descriptor: runtimeMethod', t => {
   t.plan(2)
-  var pack = setUp()
-  var keyboard = pack.keyboard
-  var runtime = pack.runtime
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.listen()
 
@@ -79,15 +71,12 @@ test('shall interpret descriptor: runtimeMethod', t => {
   }
 
   keyboard.input.emit('click', { keyCode: 233 })
-
-  runtime.deinit()
 })
 
 test('shall interpret descriptor: componentMethod', t => {
   t.plan(2)
-  var pack = setUp()
-  var keyboard = pack.keyboard
-  var runtime = pack.runtime
+  var tt = setUp()
+  var keyboard = tt.keyboard
 
   keyboard.listen()
 
@@ -111,14 +100,12 @@ test('shall interpret descriptor: componentMethod', t => {
   }
 
   keyboard.input.emit('click', { keyCode: 233 })
-
-  runtime.deinit()
 })
 
 test('shall not interpret malformed descriptor: openUrl - url', t => {
   t.plan(1)
-  var runtime = new EventEmitter()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
 
   try {
     keyboard.execute({
@@ -135,8 +122,8 @@ test('shall not interpret malformed descriptor: openUrl - url', t => {
 
 test('shall not interpret malformed descriptor: openUrl - options', t => {
   t.plan(1)
-  var runtime = new EventEmitter()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
 
   try {
     keyboard.execute({
@@ -151,8 +138,8 @@ test('shall not interpret malformed descriptor: openUrl - options', t => {
 
 test('shall not interpret malformed descriptor: not exists runtimeMethod', t => {
   t.plan(1)
-  var runtime = new EventEmitter()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
 
   try {
     keyboard.execute({
@@ -166,8 +153,8 @@ test('shall not interpret malformed descriptor: not exists runtimeMethod', t => 
 
 test('shall not interpret malformed descriptor: non-array runtimeMethod params', t => {
   t.plan(1)
-  var runtime = new EventEmitter()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
 
   try {
     keyboard.execute({
@@ -181,8 +168,9 @@ test('shall not interpret malformed descriptor: non-array runtimeMethod params',
 })
 
 test('gesture: fallbacks', t => {
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -215,14 +203,13 @@ test('gesture: fallbacks', t => {
 
   keyboard.input.emit('click', { keyCode: 233 })
   keyboard.input.emit('dbclick', { keyCode: 233 })
-
-  runtime.deinit()
 })
 
 test('gesture: override fallbacks', t => {
   t.plan(1)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -251,14 +238,13 @@ test('gesture: override fallbacks', t => {
   }
 
   keyboard.input.emit('click', { keyCode: 233 })
-
-  runtime.deinit()
 })
 
 test('keyup: keyup should always fire regardless of not matching keyCode', t => {
   t.plan(1)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -278,14 +264,13 @@ test('keyup: keyup should always fire regardless of not matching keyCode', t => 
   keyboard.input.emit('keydown', { keyCode: 233, keyTime: 0 })
   keyboard.input.emit('keydown', { keyCode: 244, keyTime: 0 })
   keyboard.input.emit('keyup', { keyCode: 233, keyTime: 500 })
-
-  runtime.deinit()
 })
 
 test('longpress: repetitive longpress', t => {
   t.plan(3)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -307,14 +292,13 @@ test('longpress: repetitive longpress', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 500 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1000 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1500 })
-
-  runtime.deinit()
 })
 
 test('longpress: round longpress timeDelta', t => {
   t.plan(3)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -336,14 +320,13 @@ test('longpress: round longpress timeDelta', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 499 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1001 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1256 })
-
-  runtime.deinit()
 })
 
 test('longpress: non-repetitive longpress', t => {
   t.plan(1)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -369,14 +352,13 @@ test('longpress: non-repetitive longpress', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 2000 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 2500 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 3000 })
-
-  runtime.deinit()
 })
 
 test('longpress: prevent subsequent keyup event', t => {
   t.plan(1)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -403,14 +385,13 @@ test('longpress: prevent subsequent keyup event', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 500 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 1000 })
   keyboard.input.emit('keyup', { keyCode: 233 })
-
-  runtime.deinit()
 })
 
 test('longpress: multiple endpoints for time delta', t => {
   t.plan(2)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -440,14 +421,13 @@ test('longpress: multiple endpoints for time delta', t => {
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 4000 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 7000 })
   keyboard.input.emit('keyup', { keyCode: 233 })
-
-  runtime.deinit()
 })
 
 test('longpress: multiple endpoints for time delta on interrupting another keydown-keyup', t => {
   t.plan(2)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -478,14 +458,13 @@ test('longpress: multiple endpoints for time delta on interrupting another keydo
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 4000 })
   keyboard.input.emit('longpress', { keyCode: 233, keyTime: 7000 })
   keyboard.input.emit('keyup', { keyCode: 233 })
-
-  runtime.deinit()
 })
 
 test('longpress: interrupted with a new key code', t => {
   t.plan(2)
-  var runtime = new AppRuntime()
-  var keyboard = new Keyboard(runtime)
+  var tt = setUp()
+  var keyboard = tt.keyboard
+  var runtime = tt.runtime
 
   keyboard.input = new EventEmitter()
   keyboard.listen()
@@ -523,6 +502,4 @@ test('longpress: interrupted with a new key code', t => {
   keyboard.input.emit('keyup', { keyCode: 233, keyTime: 1500 })
   /** 2. while previous key keyup during second key long pressing */
   keyboard.input.emit('longpress', { keyCode: 244, keyTime: 1000 })
-
-  runtime.deinit()
 })

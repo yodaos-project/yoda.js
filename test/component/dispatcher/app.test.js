@@ -2,8 +2,8 @@ var test = require('tape')
 
 var helper = require('../../helper')
 var mock = require('../../helper/mock')
-var AppRuntime = require('../../helper/mock-runtime')
-var AppBridge = require(`${helper.paths.runtime}/lib/app/app-bridge`)
+var bootstrap = require('../../bootstrap')
+var AppBridge = require(`${helper.paths.runtime}/app/app-bridge`)
 
 function createMockApp (runtime, appId) {
   var app = new AppBridge(runtime)
@@ -17,8 +17,9 @@ function createMockApp (runtime, appId) {
 
 test('should dispatch app event', t => {
   t.plan(4)
-  var runtime = new AppRuntime()
-  var dispatcher = runtime.component.dispatcher
+  var tt = bootstrap()
+  var runtime = tt.runtime
+  var dispatcher = tt.component.dispatcher
 
   mock.mockReturns(runtime, 'hasBeenDisabled', false)
 
@@ -42,7 +43,8 @@ test('should dispatch app event', t => {
 
 test('should not dispatch app event if runtime has been disabled', t => {
   t.plan(2)
-  var runtime = new AppRuntime()
+  var tt = bootstrap()
+  var runtime = tt.runtime
   var dispatcher = runtime.component.dispatcher
 
   runtime.disableRuntimeFor('test')
@@ -64,9 +66,10 @@ test('should not dispatch app event if runtime has been disabled', t => {
     })
 })
 
-test('should not dispatch preemptive app event if lifetime has been monopolized by a cut app', t => {
+test('should not dispatch preemptive app event if lifetime has been monopolized by an app', t => {
   t.plan(3)
-  var runtime = new AppRuntime()
+  var tt = bootstrap()
+  var runtime = tt.runtime
   var dispatcher = runtime.component.dispatcher
 
   mock.mockReturns(runtime, 'hasBeenDisabled', false)
@@ -87,32 +90,6 @@ test('should not dispatch preemptive app event if lifetime has been monopolized 
     .then(dispatched => {
       t.strictEqual(dispatched, /** event has been handled, prevent tts/media from recovering */true)
       t.strictEqual(runtime.component.lifetime.getCurrentAppId(), 'monopolist')
-    }).catch(err => {
-      t.error(err)
-      t.end()
-    })
-})
-
-test('should dispatch preemptive cut app event if lifetime has been monopolized by a scene app', t => {
-  t.plan(3)
-  var runtime = new AppRuntime()
-  var dispatcher = runtime.component.dispatcher
-
-  mock.mockReturns(runtime, 'hasBeenDisabled', false)
-
-  createMockApp(runtime, 'monopolist')
-  var args = [ { foo: 'bar' }, 'foobar' ]
-  var app = createMockApp(runtime, 'foobar')
-  app.subscribe(null, 'test-event', function () {
-    t.deepEqual(Array.prototype.slice.call(arguments), args)
-  })
-
-  runtime.component.lifetime.activateAppById('monopolist', 'scene')
-    .then(() => runtime.startMonologue('monopolist'))
-    .then(() => dispatcher.dispatchAppEvent('foobar', 'test-event', args))
-    .then(dispatched => {
-      t.deepEqual(dispatched, true)
-      t.strictEqual(runtime.component.lifetime.getCurrentAppId(), 'foobar')
     }).catch(err => {
       t.error(err)
       t.end()

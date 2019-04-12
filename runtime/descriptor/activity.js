@@ -5,7 +5,7 @@
  */
 
 var _ = require('@yoda/util')._
-var Descriptor = require('../descriptor')
+var Descriptor = require('../lib/descriptor')
 
 /**
  * @memberof yodaRT.activity
@@ -180,8 +180,6 @@ ActivityDescriptor.methods = {
    * @instance
    * @function setContextOptions
    * @param {object} options - context options to be set.
-   * @param {boolean} [options.keepAlive] - if app is preferring entering
-   * background instead of being destroyed on preemption
    * @returns {Promise<object>}
    */
   setContextOptions: {

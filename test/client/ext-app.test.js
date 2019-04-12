@@ -5,8 +5,8 @@ var path = require('path')
 
 var helper = require('../helper')
 var mm = require('../helper/mock')
-var AppBridge = require(`${helper.paths.runtime}/lib/app/app-bridge`)
-var extApp = require(`${helper.paths.runtime}/lib/app/ext-app`)
+var AppBridge = require(`${helper.paths.runtime}/app/app-bridge`)
+var extApp = require(`${helper.paths.runtime}/app/ext-app`)
 
 function getBridge () {
   var runtime = {

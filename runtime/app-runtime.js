@@ -13,17 +13,12 @@ var path = require('path')
 
 var logger = require('logger')('yoda')
 
-var ComponentConfig = require('./helper/config').getConfig('component-config.json')
+var ComponentConfig = require('./lib/config').getConfig('component-config.json')
 
 var _ = require('@yoda/util')._
-var property = require('@yoda/property')
-var system = require('@yoda/system')
 var Loader = require('@yoda/bolero').Loader
 
-var perf = require('./performance')
-
 module.exports = AppRuntime
-perf.stub('init')
 
 /**
  * @memberof yodaRT
@@ -80,8 +75,6 @@ AppRuntime.prototype.init = function init () {
 
   /** 5. determines if welcome announcements are needed */
   this.shouldWelcome = !this.isStartupFlagExists()
-  var isFirstBoot = property.get('sys.firstboot.init', 'persist') !== '1'
-  property.set('sys.firstboot.init', '1', 'persist')
 
   var shouldBreakInit = () => {
     if (this.hasBeenDisabled()) {
@@ -110,25 +103,28 @@ AppRuntime.prototype.init = function init () {
 
     /** 8. announce welcoming */
     var future = Promise.resolve()
-    if (isFirstBoot) {
-      /** 8.1. announce first time welcoming */
-      future = future.then(() => {
-        if (shouldBreakInit()) {
-          return
-        }
-        return this.component.light.ttsSound('@yoda', 'system://firstboot.ogg')
-      })
-    }
-    if (this.shouldWelcome) {
-      /** 8.2. announce system loading */
-      future = future.then(() => {
-        if (shouldBreakInit()) {
-          return
-        }
-        this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
-        return this.component.light.appSound('@yoda', 'system://boot.ogg')
-      })
-    }
+    // TODO: move welcoming to launcher app
+    // var isFirstBoot = property.get('sys.firstboot.init', 'persist') !== '1'
+    // property.set('sys.firstboot.init', '1', 'persist')
+    // if (isFirstBoot) {
+    //   /** 8.1. announce first time welcoming */
+    //   future = future.then(() => {
+    //     if (shouldBreakInit()) {
+    //       return
+    //     }
+    //     return this.component.light.ttsSound('@yoda', 'system://firstboot.ogg')
+    //   })
+    // }
+    // if (this.shouldWelcome) {
+    //   /** 8.2. announce system loading */
+    //   future = future.then(() => {
+    //     if (shouldBreakInit()) {
+    //       return
+    //     }
+    //     this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
+    //     return this.component.light.appSound('@yoda', 'system://boot.ogg')
+    //   })
+    // }
     return future.then(() => {
       this.enableRuntimeFor('welcoming')
       if (shouldBreakInit()) {
@@ -616,13 +612,6 @@ AppRuntime.prototype.appGC = function appGC (appId) {
     promises.push(
       this.component.lifetime.deactivateAppById(appId)
     )
-  } else if (this.component.lifetime.isBackgroundApp(appId)) {
-    /**
-     * clears background app registrations
-     */
-    promises.push(
-      this.component.lifetime.destroyAppById(appId)
-    )
   }
   return Promise.all(promises).catch(err => logger.error('Unexpected error on collecting resources of app', appId, err.stack))
 }
@@ -715,6 +704,7 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
 AppRuntime.prototype.onResetSettings = function () {
   this.cloudApi.resetSettings().then(() => {
     logger.info('system is already reset')
+    var system = require('@yoda/system')
     system.setRecoveryMode()
     process.nextTick(system.reboot)
   })
@@ -724,6 +714,7 @@ AppRuntime.prototype.shutdown = function shutdown () {
   logger.info('shuting down')
   this.component.light.play('@yoda', 'system://shutdown.js')
     .then(() => {
+      var system = require('@yoda/system')
       if (this.component.battery.isCharging()) {
         return system.rebootCharging()
       }
@@ -746,10 +737,6 @@ AppRuntime.prototype.multimediaMethod = function (name, args) {
     name, args)
 }
 
-AppRuntime.prototype.getCopyOfCredential = function () {
-  return Object.assign({}, this.credential)
-}
-
 /**
  * @private
  */
@@ -760,7 +747,6 @@ AppRuntime.prototype.phaseToReady = function phaseToReady () {
   }
 
   var deferred = () => {
-    perf.stub('started')
     if (this.shouldWelcome) {
       this.component.dispatcher.delegate('runtimeDidLogin')
         .then((delegation) => {

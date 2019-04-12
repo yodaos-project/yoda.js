@@ -1,17 +1,21 @@
 var fs = require('fs')
 var path = require('path')
-var property = require('@yoda/property')
 var logger = require('logger')('pony')
-
 var yodaUtil = require('@yoda/util')
 
 var HealthReporter = require('./health-reporter')
+
+var profilerFlag
+try {
+  profilerFlag = require('@yoda/property').get('sys.vm.profiler', 'persist')
+} catch (e) {
+
+}
 
 module.exports.catchUncaughtError = catchUncaughtError
 module.exports.HealthReporter = HealthReporter
 module.exports.healthReport = healthReport
 
-var profilerFlag = property.get('sys.vm.profiler', 'persist')
 if (profilerFlag === 'true') {
   var profiling = false
   process.on('SIGUSR1', function () {

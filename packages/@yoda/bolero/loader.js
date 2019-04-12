@@ -48,9 +48,36 @@ class Loader {
     return entities
       .filter(it => _.endsWith(it, '.js'))
       .map(it => {
-        var comp = require(path.join(compDir, it))
-        this.register(path.basename(it, '.js'), comp, comp.dependencies || [])
+        this.register(path.basename(it, '.js'), path.join(compDir, it))
       })
+  }
+
+  /**
+   * Attach the component class exported in the file to target with the name camel cased.
+   *
+   * @private
+   * @param {string} name - name of the class
+   * @param {string} filename - component file path
+   */
+  register (name, filename) {
+    name = _.camelCase(name)
+    if (this.registry[name]) {
+      throw new Error(`Conflict registration on '${name}'.`)
+    }
+    this.registry[name] = filename
+    Object.defineProperty(this.target, name, {
+      enumerable: true,
+      configurable: true,
+      get: () => {
+        var instance = this.cache[name]
+        if (!instance) {
+          var Klass = require(filename)
+          instance = new Klass(this.runtime)
+          this.cache[name] = instance
+        }
+        return instance
+      }
+    })
   }
 
   /**
@@ -58,9 +85,14 @@ class Loader {
    *
    * @private
    * @param {string} name - name of the class
-   * @param {Function} Klass - Class constructor
+   * @param {Function} Klass - component constructor
    */
-  loadToTarget (name, Klass) {
+  registerClass (name, Klass) {
+    name = _.camelCase(name)
+    if (this.registry[name]) {
+      throw new Error(`Conflict registration on '${name}'.`)
+    }
+    this.registry[name] = Klass
     Object.defineProperty(this.target, name, {
       enumerable: true,
       configurable: true,
@@ -73,21 +105,6 @@ class Loader {
         return instance
       }
     })
-  }
-
-  /**
-   * Register the class.
-   *
-   * @param {string} name - name of the class
-   * @param {Function} Klass - Class constructor
-   */
-  register (name, Klass) {
-    name = _.camelCase(name)
-    if (this.registry[name]) {
-      throw new Error(`Conflict registration on '${name}'.`)
-    }
-    this.registry[name] = Klass
-    this.loadToTarget(name, Klass)
   }
 }
 

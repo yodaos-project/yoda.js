@@ -1,7 +1,7 @@
 var test = require('tape')
 
 var helper = require('../../helper')
-var AppLoader = require(`${helper.paths.runtime}/lib/component/app-loader`)
+var AppLoader = require(`${helper.paths.runtime}/component/app-loader`)
 var mock = require('./mock')
 
 test('should register notifications', t => {

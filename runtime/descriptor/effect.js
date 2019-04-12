@@ -6,7 +6,7 @@
 var logger = require('logger')('activity')
 
 var yodaPath = require('@yoda/util').path
-var Descriptor = require('../descriptor')
+var Descriptor = require('../lib/descriptor')
 var LIGHT_SOURCE = '/opt/light'
 
 /**

@@ -6,8 +6,8 @@ var path = require('path')
 var helper = require('../helper')
 var mm = require('../helper/mock')
 var proxy = require('./fixture/invoke-light/app').proxy
-var lightApp = require(`${helper.paths.runtime}/lib/app/light-app`)
-var AppBridge = require(`${helper.paths.runtime}/lib/app/app-bridge`)
+var lightApp = require(`${helper.paths.runtime}/app/light-app`)
+var AppBridge = require(`${helper.paths.runtime}/app/app-bridge`)
 
 function getBridge () {
   var runtime = {

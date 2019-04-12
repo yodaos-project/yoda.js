@@ -8,8 +8,8 @@ var _ = require('@yoda/util')._
 var safeParse = require('@yoda/util').json.safeParse
 var AudioManager = require('@yoda/audio').AudioManager
 
-var DbusRemoteCall = require('../dbus-remote-call')
-var dbusConfig = require('../helper/config').getConfig('dbus-config.json')
+var DbusRemoteCall = require('../lib/dbus-remote-call')
+var dbusConfig = require('../lib/config').getConfig('dbus-config.json')
 
 module.exports = DBus
 function DBus (runtime) {
@@ -23,7 +23,7 @@ DBus.prototype.init = function init () {
   var service = dbus.registerService('session', dbusConfig.service)
   this.service = service
 
-  ;['extapp', 'prop', 'amsexport', 'yodadebug'].forEach(namespace => {
+  ;['extapp', 'amsexport', 'yodadebug'].forEach(namespace => {
     if (typeof this[namespace] !== 'object') {
       throw new TypeError(`Expect object on component.dbus.prototype.${namespace}.`)
     }
@@ -206,17 +206,6 @@ DBus.prototype.extapp = {
             )
           })
         })
-    }
-  }
-}
-
-DBus.prototype.prop = {
-  all: {
-    in: ['s'],
-    out: ['s'],
-    fn: function all (appId, cb) {
-      var credential = this.runtime.getCopyOfCredential()
-      cb(null, JSON.stringify(credential))
     }
   }
 }
@@ -556,38 +545,12 @@ DBus.prototype.yodadebug = {
       cb(null, JSON.stringify({
         ok: true,
         result: {
-          activeSlots: this.component.lifetime.activeSlots,
+          activitiesStack: this.component.lifetime.activitiesStack,
           contextOptionsMap: this.component.lifetime.contextOptionsMap,
-          backgroundAppIds: this.component.lifetime.backgroundAppIds,
-          carrierId: this.component.lifetime.carrierId,
           monopolist: this.component.lifetime.monopolist,
-          appIdOnPause: this.component.lifetime.appIdOnPause,
-          cloudAppStack: this.runtime.domain,
-          appStatus: this.component.appScheduler.appStatus,
-          appRuntimeInfo: this.component.appScheduler.appRuntimeInfo
+          appStatus: this.component.appScheduler.appStatus
         }
       }))
-    }
-  },
-  GetTurenState: {
-    in: [],
-    out: ['s'],
-    fn: function (cb) {
-      var ret = { ok: true, result: {} }
-      var keys = [
-        'muted',
-        'awaken',
-        'asrState',
-        'pickingUp',
-        'pickingUpDiscardNext'
-      ]
-      keys.forEach(key => {
-        ret.result[key] = this.component.turen[key]
-        if (ret.result[key] === undefined) {
-          ret.result[key] = null
-        }
-      })
-      cb(null, JSON.stringify(ret))
     }
   },
   GetLoader: {

@@ -4,7 +4,7 @@ var path = require('path')
 var helper = require('../../helper')
 var mock = require('./mock')
 var mm = require('../../helper/mock')
-var Scheduler = require(`${helper.paths.runtime}/lib/component/app-scheduler`)
+var Scheduler = require(`${helper.paths.runtime}/component/app-scheduler`)
 
 test('shall create child process', t => {
   var target = path.join(helper.paths.fixture, 'noop-app')

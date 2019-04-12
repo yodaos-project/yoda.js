@@ -14,7 +14,7 @@ test('should destroy app by id', t => {
   })
 
   life.createApp('1').then(() => {
-    life.suspendAppById('1')
+    life.destroyAppById('1')
   })
 })
 
@@ -29,7 +29,7 @@ test('should destroy app by id', t => {
   })
 
   life.createApp('1').then(() => {
-    life.suspendAppById('1', { force: true })
+    life.destroyAppById('1', { force: true })
   })
 })
 
@@ -45,6 +45,6 @@ test('should destroy all apps', t => {
 
   Promise.all(_.times(5).map(idx => life.createApp(`${idx}`)))
     .then(() => {
-      life.suspendAll()
+      life.destroyAll()
     })
 })

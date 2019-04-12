@@ -1,8 +1,7 @@
 var logger = require('logger')('keyboard')
-var Input = require('@yoda/input')
 var _ = require('@yoda/util')._
 
-var config = require('../helper/config').getConfig('keyboard.json')
+var config = require('../lib/config').getConfig('keyboard.json')
 
 module.exports = KeyboardHandler
 function KeyboardHandler (runtime) {
@@ -19,7 +18,7 @@ function KeyboardHandler (runtime) {
 }
 
 KeyboardHandler.prototype.init = function init () {
-  this.input = Input(_.get(this.config, 'config', {}))
+  this.input = require('@yoda/input')(_.get(this.config, 'config', {}))
   this.listen()
 }
 

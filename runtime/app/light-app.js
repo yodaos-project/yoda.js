@@ -3,7 +3,7 @@
 var logger = require('logger')('lapp')
 
 var _ = require('@yoda/util')._
-var translate = require('../../client/translator-in-process').translate
+var translate = require('../client/translator-in-process').translate
 /**
  *
  * @author Chengzhong Wu <chengzhong.wu@rokid.com>
@@ -18,7 +18,7 @@ module.exports = function createLightApp (appId, metadata, bridge, options) {
   var main = `${target}/${pkg.main || 'app.js'}`
 
   logger.log('descriptor created.')
-  var descriptor = require(_.get(options, 'descriptorPath', '../../client/api/default.json'))
+  var descriptor = require(_.get(options, 'descriptorPath', '../client/api/default.json'))
   var activity = translate(descriptor, bridge)
   logger.log('descriptor translated.')
   bridge.activity = activity

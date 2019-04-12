@@ -4,14 +4,14 @@ var path = require('path')
 
 var helper = require('../helper')
 var mock = require('../helper/mock')
-var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
+var AppRuntime = require(`${helper.paths.runtime}/app-runtime`)
 
 var ComponentConfig = require('/etc/yoda/component-config.json')
 var ComponentConfigCopy = Object.assign({}, ComponentConfig)
 
 module.exports.loadBaseConfig = loadBaseConfig
 function loadBaseConfig () {
-  ComponentConfig.paths = [ '/usr/yoda/lib/component' ]
+  ComponentConfig.paths = [ '/usr/yoda/component' ]
   ComponentConfig.interception = {}
 }
 
@@ -24,7 +24,7 @@ module.exports.getAppRuntime = getAppRuntime
 function getAppRuntime (enabledComponents) {
   mock.proxyFunction(fs, 'readdirSync', {
     after: (ret, target, args) => {
-      if (args[0] !== '/usr/yoda/lib/component') {
+      if (args[0] !== '/usr/yoda/component') {
         return ret
       }
       return ret.filter(it => {

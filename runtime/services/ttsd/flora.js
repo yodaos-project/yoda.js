@@ -5,7 +5,7 @@ var FloraComp = require('@yoda/flora/comp')
 var property = require('@yoda/property')
 var env = require('@yoda/env')()
 var _ = require('@yoda/util')._
-var floraConfig = require('../../lib/helper/config').getConfig('flora-config.json')
+var floraConfig = require('../../lib/config').getConfig('flora-config.json')
 
 module.exports = Flora
 /**

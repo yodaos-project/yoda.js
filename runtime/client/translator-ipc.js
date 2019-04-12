@@ -1,7 +1,6 @@
 'use strict'
 var EventEmitter = require('events')
 var logger = require('logger')('@ipc')
-var wifi = require('@yoda/wifi')
 
 /**
  * interface Descriptor {
@@ -153,7 +152,7 @@ function translate (descriptor) {
 
 var internalListenMap = {
   'network-connected': () => {
-    wifi.resetDns()
+    require('@yoda/wifi').resetDns()
   }
 }
 

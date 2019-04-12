@@ -7,9 +7,9 @@ var path = require('path')
 var logger = require('logger')('ext-app')
 var _ = require('@yoda/util')._
 
-var kAppModesTest = require('../../constants').AppScheduler.modes.test
+var kAppModesTest = require('../constants').AppScheduler.modes.test
 
-var entriesDir = path.join(__dirname, '..', '..', 'client')
+var entriesDir = path.join(__dirname, '..', 'client')
 var defaultEntry = path.join(entriesDir, 'ext-app-entry.js')
 var testEntry = path.join(entriesDir, 'ext-test-entry.js')
 
@@ -30,7 +30,7 @@ function createExtApp (appId, metadata, bridge, mode, options) {
   }
 
   if (options.descriptorPath == null) {
-    options.descriptorPath = path.join(__dirname, '../../client/api/default.json')
+    options.descriptorPath = path.join(__dirname, '../client/api/default.json')
   }
 
   var cp = childProcess.fork(entry, [ target, mode ], {

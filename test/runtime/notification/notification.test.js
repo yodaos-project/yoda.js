@@ -2,7 +2,7 @@ var test = require('tape')
 var helper = require('../../helper')
 var mock = require('../../helper/mock')
 
-var AppRuntime = require(`${helper.paths.runtime}/lib/app-runtime`)
+var AppRuntime = require(`${helper.paths.runtime}/app-runtime`)
 
 var getFakeRuntime = () => ({
   component: {

@@ -5,7 +5,7 @@
 
 var logger = require('logger')('activity')
 var _ = require('@yoda/util')._
-var Descriptor = require('../descriptor')
+var Descriptor = require('../lib/descriptor')
 
 /**
  * @memberof yodaRT.activity.Activity

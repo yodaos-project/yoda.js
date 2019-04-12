@@ -29,7 +29,7 @@ test('monopolization', t => {
         })
     })
     .then(() => {
-      return life.suspendAppById('1')
+      return life.destroyAppById('1')
     })
     .then(() => {
       t.strictEqual(life.isMonopolized(), false, 'monologue shall not be continue by app not on top of stack')
@@ -69,7 +69,7 @@ test('monopolist could be activated repetitively', t => {
       t.strictEqual(life.getCurrentAppId(), '1')
       t.strictEqual(life.isMonopolized(), true, 'monologue shall be started by app top of stack')
 
-      return life.suspendAppById('1')
+      return life.destroyAppById('1')
     })
     .then(() => {
       t.strictEqual(life.isMonopolized(), false, 'monologue shall not be continue by app not on top of stack')

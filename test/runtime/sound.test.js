@@ -3,7 +3,7 @@
 var test = require('tape')
 var AppRuntime = require('../helper/mock-runtime')
 var helper = require('../helper')
-var Sound = require(`${helper.paths.runtime}/lib/component/sound`)
+var Sound = require(`${helper.paths.runtime}/component/sound`)
 
 test('sounds isMuted check', function (t) {
   var runtime = new AppRuntime()

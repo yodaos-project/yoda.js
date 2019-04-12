@@ -4,7 +4,7 @@ var path = require('path')
 var helper = require('../../helper')
 var mock = require('../../helper/mock')
 var getLoader = require('./mock').getLoader
-var Scheduler = require(`${helper.paths.runtime}/lib/component/app-scheduler`)
+var Scheduler = require(`${helper.paths.runtime}/component/app-scheduler`)
 
 test('shall create light app', t => {
   var target = path.join(helper.paths.fixture, 'noop-app')
