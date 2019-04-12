@@ -8,8 +8,8 @@ var Core = require('./alarm-core')
 module.exports = function (activity) {
   logger.log('alarm load')
   var AlarmCore = new Core(activity)
-  activity.once('notification', (channel) => {
-    logger.log('alarm notification event: ', channel)
+  activity.on('notification', (channel) => {
+    logger.info('alarm notification event: ', channel)
     if (channel === 'on-ready' || channel === 'on-system-booted') {
       AlarmCore.createConfigFile()
       var state = wifi.getWifiState()
