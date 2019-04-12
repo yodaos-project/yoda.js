@@ -1,28 +1,36 @@
 var test = require('tape')
 
-var helper = require('../../helper')
-var Lifetime = require(`${helper.paths.runtime}/lib/component/lifetime`)
-var mock = require('./mock')
+var bootstrap = require('./bootstrap')
 
-test('non-daemon app life events', t => {
-  mock.restore()
-  t.plan(3)
+test('app life events', t => {
+  t.plan(4)
 
-  mock.eventBus.on('create', (appId, app) => {
+  var tt = bootstrap()
+  var life = tt.component.lifetime
+
+  tt.bus.on('create', (appId, bridge) => {
     if (appId === '0') {
-      app.on('create', () => {
+      bridge.subscribe('activity', 'created', () => {
         t.pass('create event shall be emitted')
       })
-      app.on('destroy', () => {
+      bridge.subscribe('activity', 'destroyed', () => {
+        t.fail('destroy event shall not be emitted')
+      })
+    }
+    if (appId === '1') {
+      bridge.subscribe('activity', 'created', () => {
+        t.pass('create event shall be emitted')
+      })
+      bridge.subscribe('activity', 'destroyed', () => {
         t.pass('destroy event shall be emitted')
       })
     }
   })
-  mock.mockAppExecutors(2)
-  var life = new Lifetime(mock.runtime)
-
-  mock.eventBus.on('destruct', appId => {
+  tt.bus.on('suspend', appId => {
     if (appId === '0') {
+      t.fail('app shall not be destroyed')
+    }
+    if (appId === '1') {
       t.pass('app shall be destroyed')
     }
   })
@@ -41,59 +49,7 @@ test('non-daemon app life events', t => {
     .then(() => {
       return life.activateAppById('1')
     })
-})
-
-test('daemon app life events', t => {
-  mock.restore()
-  t.plan(6)
-
-  mock.eventBus.on('create', (appId, app) => {
-    if (appId === '0') {
-      app.on('create', () => {
-        t.pass('create event shall be emitted')
-      })
-      app.on('background', () => {
-        t.pass('background event shall be emitted')
-      })
-      app.on('active', () => {
-        t.pass('active event shall be emitted')
-      })
-      app.on('destroy', () => {
-        /** destroy shall be emitted twice */
-        t.pass('destroy event shall be emitted')
-      })
-    }
-  })
-  mock.mockAppExecutors(1, true)
-  mock.mockAppExecutors(1, false, 1)
-  var life = new Lifetime(mock.runtime)
-
-  mock.eventBus.on('destruct', appId => {
-    if (appId === '0') {
-      t.pass('app shall be destroyed')
-    }
-  })
-
-  life.createApp('0')
     .then(() => {
-      /** daemon app is create as inactive app, 'background' event shall be emitted */
-      return life.setBackgroundById('0')
-    })
-    .then(() => {
-      return life.activateAppById('0')
-    })
-    .then(() => {
-      /** create app twice shall only emit one 'create' event */
-      return life.createApp('0')
-    })
-    .then(() => {
-      return life.createApp('1')
-    })
-    .then(() => {
-      /** evict app '0' from stack, emit 'destroy' event */
-      return life.activateAppById('1')
-    })
-    .then(() => {
-      return life.destroyAppById('0', { force: true })
+      return life.deactivateAppById('1')
     })
 })

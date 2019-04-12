@@ -6,7 +6,6 @@ var Constants = require('../../constants').AppScheduler
 var AppBridge = require('../app/app-bridge')
 var lightApp = require('../app/light-app')
 var extApp = require('../app/ext-app')
-var DbusApp = require('../app/dbus-app')
 var executableProc = require('../app/executable-proc')
 
 module.exports = AppScheduler
@@ -33,6 +32,18 @@ AppScheduler.prototype.getAppById = function getAppById (appId) {
 
 AppScheduler.prototype.getAppStatusById = function getAppStatusById (appId) {
   return this.appStatus[appId] || Constants.status.notRunning
+}
+
+AppScheduler.prototype.appCreationHandler = {
+  light: function (appId, metadata, appBridge, mode) {
+    return lightApp(appId, metadata, appBridge)
+  },
+  exe: function (appId, metadata, appBridge, mode) {
+    return executableProc(appId, metadata, appBridge)
+  },
+  default: function (appId, metadata, appBridge, mode) {
+    return extApp(appId, metadata, appBridge, mode)
+  }
 }
 
 AppScheduler.prototype.createApp = function createApp (appId, mode) {
@@ -65,30 +76,12 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   this.appLaunchOptions[appId] = { type: appType, mode: mode }
 
   var appBridge = new AppBridge(this.runtime, appId)
-  if (appType === 'light') {
-    return lightApp(appId, metadata, appBridge)
-      .then(
-        app => this.handleAppCreate(appId, app),
-        err => {
-          logger.error(`Unexpected error on creating light app(${appId})`, err)
-          this.handleAppExit(appId, null, null)
-          throw err
-        })
+  var creationHandler = this.appCreationHandler[appType]
+  if (creationHandler == null) {
+    creationHandler = this.appCreationHandler.default
   }
 
-  if (appType === 'dbus') {
-    var app = new DbusApp(appId, metadata, this.runtime)
-    this.handleAppCreate(appId, app)
-    return Promise.resolve(app)
-  }
-
-  if (appType === 'exe') {
-    future = executableProc(appId, metadata, appBridge)
-  } else {
-    future = extApp(appId, metadata, appBridge, mode)
-  }
-
-  future = future
+  future = Promise.resolve().then(() => creationHandler(appId, metadata, appBridge, mode))
     .then(() => {
       logger.info(`App(${appId}) successfully started`)
       appBridge.onExit = (code, signal) => {
@@ -116,6 +109,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
 AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
   this.appMap[appId] = app
   this.appStatus[appId] = Constants.status.running
+  app.emit('activity', 'created')
 
   return app
 }
