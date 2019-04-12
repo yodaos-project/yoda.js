@@ -175,6 +175,7 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
 
   var app = this.appMap[appId]
   if (app) {
+    app.emit('activity', 'destroyed')
     app.suspend()
     this.appStatus[appId] = Constants.status.suspending
     this.appSuspensionFutures[appId] = new Promise((resolve, reject) => {

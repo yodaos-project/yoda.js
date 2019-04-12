@@ -373,7 +373,6 @@ class Lifetime extends EventEmitter {
            */
           return Promise.resolve()
         }
-        this.activity.emitToApp(it, 'destroyed')
         return Promise.resolve()
       }))
       .then(() => this.scheduler.suspendAllApps({ force: force }))
@@ -405,7 +404,6 @@ class Lifetime extends EventEmitter {
       logger.info(`app(${appId}) is not running, skip destroying.`)
       return Promise.resolve()
     }
-    this.activity.emitToApp(appId, 'destroyed')
     return this.scheduler.suspendApp(appId, { force: force })
   }
   // MARK: - END App Termination
