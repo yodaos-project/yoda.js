@@ -3,6 +3,7 @@
  * @namespace yodaRT.activity
  */
 
+var _ = require('@yoda/util')._
 var Descriptor = require('../lib/descriptor')
 
 /**
@@ -14,14 +15,27 @@ var Descriptor = require('../lib/descriptor')
 class AudioFocusDescriptor extends Descriptor {
   constructor (runtime) {
     super(runtime, 'audioFocus')
+
+    this._id = 0
   }
 
-  requestAudioFocus (ctx) {
-    // TODO
+  request (ctx) {
+    var appId = ctx.appId
+    var options = ctx.args[0]
+    var gain = _.get(options, 'gain')
+    var req = {
+      id: ++this._id,
+      appId: appId,
+      gain: gain
+    }
+
+    req.status = this.component.audioFocus.request(req)
+    return req
   }
 
-  abandonAudioFocus (ctx) {
-    // TODO
+  abandon (ctx) {
+    var id = ctx.args[0]
+    this.component.audioFocus.abandon(id)
   }
 }
 
@@ -56,7 +70,6 @@ AudioFocusDescriptor.methods = {
    * @function request
    * @param {object} [options] - the options.
    * @param {string} [options.gain=null] - gain types, "TRANSIENT", "TRANSIENT_EXCLUSIVE" and "TRANSIENT_MAY_DUCK".
-   * @param {boolean} [options.acceptsDelayedFocusGain] marks this request as compatible with delayed focus.
    * @returns {Promise<string>} the request id.
    */
   request: {
