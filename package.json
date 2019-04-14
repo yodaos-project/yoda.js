@@ -20,7 +20,7 @@
     "unsafe-perm": true
   },
   "engine": {
-    "shadow-node": "0.11.3"
+    "shadow-node": "0.11.4"
   },
   "manifest": {
     "apilevel": 0.6

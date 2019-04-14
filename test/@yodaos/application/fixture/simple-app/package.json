@@ -1,0 +1,8 @@
+{
+  "name": "simple-app",
+  "manifest": {
+    "services": [
+      "a-service"
+    ]
+  }
+}

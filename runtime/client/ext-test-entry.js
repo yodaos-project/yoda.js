@@ -48,6 +48,5 @@ function test (testGlobs) {
 }
 
 extapp.main(target, (appId, pkg, activity) => {
-  global.activity = activity
   test([ 'test/**/*.test.js' ])
 })
