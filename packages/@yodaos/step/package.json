@@ -1,12 +1,24 @@
 {
   "name": "@yodaos/step",
+  "original": "https://github.com/hiproxy/step-flow",
   "version": "0.0.1",
-  "description": "",
+  "description": "step flow",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "xiaofei.lan <xiaofei.lan@rokid.com>",
-  "original": "https://github.com/hiproxy/step-flow",
+  "author": "zdying",
+  "homepage": "https://github.com/hiproxy/step-flow#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiproxy/step-flow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hiproxy/step-flow/issues"
+  },
+  "keywords": [
+    "step",
+    "flow"
+  ],
   "license": "MIT"
 }
