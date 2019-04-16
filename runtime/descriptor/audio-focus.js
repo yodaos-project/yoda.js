@@ -15,27 +15,29 @@ var Descriptor = require('../lib/descriptor')
 class AudioFocusDescriptor extends Descriptor {
   constructor (runtime) {
     super(runtime, 'audioFocus')
-
-    this._id = 0
   }
 
   request (ctx) {
     var appId = ctx.appId
     var options = ctx.args[0]
+    var id = _.get(options, 'id')
     var gain = _.get(options, 'gain')
+    if (id == null) {
+      throw new TypeError('options.id of audioFocus#request is required.')
+    }
     var req = {
-      id: ++this._id,
+      id: id,
       appId: appId,
       gain: gain
     }
 
-    req.status = this.component.audioFocus.request(req)
-    return req
+    return this.component.audioFocus.request(req)
   }
 
   abandon (ctx) {
+    var appId = ctx.appId
     var id = ctx.args[0]
-    this.component.audioFocus.abandon(id)
+    this.component.audioFocus.abandon(appId, id)
   }
 }
 
