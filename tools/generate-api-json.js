@@ -1,5 +1,6 @@
 var fs = require('fs')
 var path = require('path')
+var _ = require('../packages/@yoda/util/_')
 
 var nodeRequire = require
 
@@ -16,7 +17,7 @@ var api = descriptorFiles
       return accu
     }
 
-    accu.namespaces[it.name] = it.descriptor
+    accu.namespaces[_.camelCase(it.name)] = it.descriptor
     return accu
   }, { namespaces: {} })
 
