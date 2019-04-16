@@ -2,6 +2,7 @@
 
 var logger = require('logger')('ext-app-client')
 var translator = require('./translator-ipc')
+var apiSymbol = Symbol.for('yoda#api')
 
 module.exports = {
   main: main,
@@ -31,8 +32,6 @@ function main (target, runner) {
   logger = require('logger')(`entry-${appId}`)
 
   var main = `${target}/${pkg.main || 'app.js'}`
-  var handle = require(main)
-  logger.log(`load main: ${main}`)
 
   keepAlive()
   getActivityDescriptor()
@@ -41,11 +40,12 @@ function main (target, runner) {
       var activity = translator.translate(descriptor)
       activity.appId = appId
       activity.appHome = target
+      global[apiSymbol] = activity
 
       /**
        * Executes app's main function
        */
-      launchApp(handle, activity)
+      launchApp(main, activity)
       runner(appId, pkg, activity)
 
       process.send({
@@ -60,6 +60,7 @@ function main (target, runner) {
         error: error.message,
         stack: error.stack
       })
+      process.exit(1)
     })
 }
 
@@ -84,9 +85,13 @@ function getActivityDescriptor () {
   })
 }
 
-function launchApp (handle, activity) {
+function launchApp (main, activity) {
+  logger.log(`loading app: '${main}'`)
+  var handle = require(main)
   /** start a new clean context */
-  handle(activity)
+  if (typeof handle === 'function') {
+    handle(activity)
+  }
 }
 
 var aliveInterval
