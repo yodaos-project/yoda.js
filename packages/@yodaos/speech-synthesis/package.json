@@ -1,5 +1,5 @@
 {
-  "name": "@yodaos/ttskit",
+  "name": "@yodaos/speech-synthesis",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
@@ -9,8 +9,9 @@
   "keywords": [
     "yodaos",
     "yoda",
-    "ttskit"
+    "tts",
+    "speech-synthesis"
   ],
   "author": "Wu Chengzhong <chengzhong.wu@rokid.com>",
-  "license": "MIT"
+  "license": "Apache-2.0"
 }
