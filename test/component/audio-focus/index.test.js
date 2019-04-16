@@ -232,3 +232,39 @@ test('default request should gain focus over transient request', t => {
   })
   t.end()
 })
+
+test('apps request with same request id', t => {
+  var tt = bootstrap()
+  var comp = tt.component.audioFocus
+  var desc = tt.descriptor.audioFocus
+
+  var eventSeq = []
+  var expected = [
+    [ 'test', 'gain' ],
+    [ 'test', 'loss' ],
+    [ 'test2', 'gain' ],
+    [ 'test2', 'loss' ],
+    [ 'test', 'gain' ],
+    [ 'test', 'loss' ]
+  ]
+  mm.mockReturns(desc, 'emitToApp', function (appId, event) {
+    eventSeq.push([ appId, event ])
+    if (eventSeq.length === expected.length) {
+      t.deepEqual(eventSeq, expected)
+      t.end()
+    }
+  })
+
+  comp.request({
+    id: 1,
+    appId: 'test',
+    gain: 0b000 /** default */
+  })
+  comp.request({
+    id: 1,
+    appId: 'test2',
+    gain: 0b001 /** transient */
+  })
+  comp.abandon('test2', 1)
+  comp.abandon('test', 1)
+})

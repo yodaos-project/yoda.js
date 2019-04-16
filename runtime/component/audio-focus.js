@@ -75,16 +75,16 @@ class AudioFocus {
    *
    * @param {number} id
    */
-  abandon (id) {
+  abandon (appId, id) {
     var req
-    if (this.transientRequest.id === id) {
+    if (this.transientRequest && this.transientRequest.appId === appId && this.transientRequest.id === id) {
       req = this.transientRequest
       this.transientRequest = null
       this.castRequest(req)
       this.recoverLastingRequest()
       return
     }
-    if (this.lastingRequest.id === id) {
+    if (this.lastingRequest && this.lastingRequest.appId === appId && this.lastingRequest.id === id) {
       req = this.lastingRequest
       this.lastingRequest = null
       this.castRequest(req)

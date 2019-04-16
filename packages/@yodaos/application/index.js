@@ -6,6 +6,7 @@
 var properties = {}
 ;[
   { name: 'Application', path: './application' },
+  { name: 'AudioFocus', path: './audio-focus' },
   { name: 'Service', path: './service' }
 ].forEach(it => {
   properties[it.name] = {
