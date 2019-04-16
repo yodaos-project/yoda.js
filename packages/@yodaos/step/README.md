@@ -2,48 +2,40 @@
 
 # step-flow
 
-简单的流程控制库，可以轻松的完成按步骤执行的流程控制 - 按顺序一个一个执行函数。支持异步的步骤流程和流程跳转。
+step-flow is a lightweight(without any libraries and less than 200 lines) business processes control library that allows to easily manage business logic by step. step-flow using the syntax of middleware which is similar to express. It provides process control, step jumps, and unified error handling.
 
-[![Build Status](https://travis-ci.org/zdying/step-flow.svg?branch=master)](https://travis-ci.org/zdying/step-flow)
-[![Build status](https://ci.appveyor.com/api/projects/status/okl9e4xs1nsuv7yq/branch/master?svg=true)](https://ci.appveyor.com/project/zdying/step-flow/branch/master)
-[![codecov](https://codecov.io/gh/zdying/step-flow/branch/master/graph/badge.svg)](https://codecov.io/gh/zdying/step-flow)
-[![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat)](https://github.com/Flet/semistandard)
-[![Node.js version](https://img.shields.io/badge/node-%3E%3D0.12.7-green.svg)](https://nodejs.org/)
+[中文版文档](https://github.com/zdying/step-flow/blob/master/README-zh.md)
+
+
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/zdying/step-flow/blob/master/LICENSE)
 
-## 特色
+## Features
 
-* 简洁轻量
-* 代码覆盖率100%
-* 支持步骤名称
-* 支持步骤自由跳转
-* 支持异步步骤流程
-* 支持错误统一处理
-* 支持上下文
+* Simple and lightweight
+* Code coverage 100%
+* Support step name
+* Support step jump
+* Support asynchronous step flow
+* Supports error handling
+* Support context
 
-## 安装
+## Install
 
 ```bash
 npm install --save step-flow
 ```
 
-## 使用
+## Usage
 
-### 1. 引入step-flow
-
-```js
-var Flow = require('step-flow');
-```
-
-### 2. 创建一个流程
+### 1. create a flow
 
 ```js
 var flow = new Flow();
 ```
 
-### 3. 添加步骤和函数
+### 2. add step function
 
-一个步骤，对应多个函数：
+one step with multiple functions:
 
 ```js
 flow.use(
@@ -59,7 +51,7 @@ flow.use(
 );
 ```
 
-一个步骤对应一个函数：
+one step with one function:
 
 ```js
 flow
@@ -72,7 +64,7 @@ flow
   });
 ```
 
-### 4. 错误处理
+### 3. error handling
 
 ```js
 flow.catch(function (err) {
@@ -80,7 +72,7 @@ flow.catch(function (err) {
 });
 ```
 
-### 5. 运行步骤函数
+### 4. run
 
 ```js
 var context = {};
@@ -93,7 +85,6 @@ flow.run(context)
 <a name="StepFlow"></a>
 
 ### StepFlow()
-步骤流程控制
 
 * [StepFlow()](#StepFlow)
     * [.use([stepName])](#StepFlow+use) ⇒ [<code>StepFlow</code>](#StepFlow)
@@ -105,70 +96,59 @@ flow.run(context)
 <br/>
 
 #### stepFlow.use([stepName]) ⇒ [<code>StepFlow</code>](#StepFlow)
-添加步骤以及对应的函数。
-如果指定的步骤已经存在，这些函数将会追加到这个步骤中。
-如果不存在，则新建一个新的步骤。
 
-这里添加的每一个函数在执行时都会接收到参数`(context, next, nextTo, data)`：
+Add the steps and the corresponding function. If the specified steps already exist, these functions will be appended to this step. If it does not exist, create a new one.
 
-* `context`：上下文对象。
-* `next(err[,data])`：执行步骤中的下一个函数，如果不调用，不会执行下一个函数。
-* `nextTo(step[,data])`：调用这个方法并传递步骤名称，可以跳转到对应的步骤。
-* `data`：调用`next(null, data)`中传入的数据。
+Each function added here will receive the parameters `(context, next, nextTo, data)`:
 
-只有调用`next()`，才会继续执行步骤中的下一个函数。如果调用时，传入了非空的参数`err`，则后面的函数不再执行，使用`catch(fn)`设置的错误处理函数会被执行。
-如果调用`next()`/`nextTo()`时，传递了参数`data`，**下一个**函数会接收到这个数据。
-但是，下一个之后的的函数不会接收到这个数据，除非在下一个函数中再次调用`next()/nextTo()`时传递`data`。
+* `context`: context object.
+* `next(err[,data])`: Execute the next function in step, and if it is not called, the next function will not be executed.
+* `nextTo(step[,data])`: Call this method and pass the step name, you can jump to the corresponding steps.
+* `data`: the data that the `next(null, data)` pass.
+
+Only call `next()` will continue to execute the next function in the step. If a non-empty parameter err is passed, and the subsequent functions will not be executed. The error handling function set with `catch(fn)` will be executed. If you call `next()`/`nextTo()`, and passing the parameter `data`, the next function will receive this data. However, the functions that after the 'next function' will not receive this data, unless the 'next function' call `next()`/`nextTo()` and pass the data.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| [stepName] | <code>String</code> | <code>&#x27;default&#x27;</code> | 需要新建或者追加函数的步骤名称，如果省略这个参数，默认使用`default` |
+| [stepName] | <code>String</code> | <code>&#x27;default&#x27;</code> | The step name, if you omit this parameter, the default use is `default` |
 
 <a name="StepFlow+catch"></a>
 
 <br/>
 
 #### stepFlow.catch(fn) ⇒ [<code>StepFlow</code>](#StepFlow)
-添加错误处理函数，当调用`next(err)`，并传递非空的`err`参数时，会调用这些错误处理函数。
 
-此外，如果`use()`方法指定的方法运行时报错，`fn`也会被执行，错误对象也会被传递给`fn`。
+Add error handling functions that will be executed when `next (err)` is called and a non-null `err` arguments are passed.
 
-参数`fn`会接受到参数`(err)`, `err`为错误信息。
+In addition, if an error occurs while running the method specified by the `use()` method, `fn` will also be executed and the error object will be passed to `fn`.
+
+The `fn` will accept the parameter`(err)`,`err` for the error message.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| fn | <code>function</code> | 错误处理函数 |
+| fn | <code>function</code> | Error handling function |
 
 <a name="StepFlow+run"></a>
 
 <br/>
 
 #### stepFlow.run(context, stepName, thisArg) ⇒ [<code>StepFlow</code>](#StepFlow)
-开始执行步骤函数。
-如果指定了步骤名称，将从对应的步骤开始执行。如果没有指定，则从第一个步骤开始执行。
+
+Start to run the step functions.
+If the step name is specified, it will be executed from the corresponding step. If it is not specified, it will be executed from the first step.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| context | <code>Any</code> | 上下文对象，每个步骤的函数都会接受到这个参数 |
-| stepName | <code>String</code> |起始步骤名称，默认从第一个步骤开始 |
-| thisArg | <code>Object</code> | 步骤函数的this |
-
-## Running tests
-
-```bash
-npm test
-```
-
-## Contributing
-
-请参阅[CONTRIBUTING.md](https://github.com/zdying/step-flow/blob/master/CONTRIBUTING.md)了解我们的行为准则以及如何为step-flow贡献代码。
+| context | <code>Any</code> | Context object, the function of each step will accept this parameter|
+| stepName | <code>String</code> |Start step name, starting from the first step by default |
+| thisArg | <code>Object</code> | The `this` value of the step functions |
 
 ## Authors
 
 * __zdying__ - _HTML/JavaScript/CSS/Node.js developer_ [zdying](https://github.com/zdying)
 
-查看其他贡献者 [contributors](https://github.com/zdying/step-flow/graphs/contributors)。
+See also the list of [contributors](https://github.com/zdying/step-flow/graphs/contributors) who participated in this project.
 
 ## License
 
-这个项目采用MIT协议 - 详细信息请查看[LICENSE](https://github.com/zdying/step-flow/blob/master/LICENSE)。
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/zdying/step-flow/blob/master/LICENSE) file for details

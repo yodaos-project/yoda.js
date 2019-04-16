@@ -79,6 +79,7 @@ YodaLocalPackage(yoda-flora @yoda/flora)
 YodaLocalPackage(yodaos-application @yodaos/application)
 YodaLocalPackage(yodaos-mediakit @yodaos/mediakit)
 YodaLocalPackage(yodaos-ttskit @yodaos/ttskit)
+YodaLocalPackage(yodaos-step @yodaos/step)
 
 # system packages
 YodaLocalPackage(logger)
