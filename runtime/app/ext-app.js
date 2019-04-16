@@ -23,6 +23,7 @@ module.exports = createExtApp
  */
 function createExtApp (appId, metadata, bridge, mode, options) {
   var target = _.get(metadata, 'appHome')
+  var appSecret = _.get(metadata, 'appSecret')
   options = options || {}
   var entry = defaultEntry
   if (mode & kAppModesTest) {
@@ -33,9 +34,9 @@ function createExtApp (appId, metadata, bridge, mode, options) {
     options.descriptorPath = path.join(__dirname, '../client/api/default.json')
   }
 
-  var cp = childProcess.fork(entry, [ target, mode ], {
+  var cp = childProcess.fork(entry, [ mode ], {
     cwd: target,
-    env: Object.assign({}, process.env),
+    env: Object.assign({ APP_SECRET: appSecret }, process.env),
     stdio: 'inherit'
   })
   bridge.childProcess = cp

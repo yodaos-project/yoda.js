@@ -21,6 +21,13 @@ module.exports = function (activity) {
         })
       })
   })
+  activity.on('app-fetch', (path) => {
+    process.send({
+      type: 'test',
+      event: 'app-fetch',
+      result: _.get(activity, path)
+    })
+  })
   activity.foobar.on('echo', function () {
     process.send({
       type: 'test',

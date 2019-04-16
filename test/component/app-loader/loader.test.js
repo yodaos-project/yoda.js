@@ -3,12 +3,11 @@ var path = require('path')
 
 var _ = require('@yoda/util')._
 var helper = require('../../helper')
-var AppLoader = require(`${helper.paths.runtime}/component/app-loader`)
-var mock = require('./mock')
+var bootstrap = require('../../bootstrap')
 
 test('should load path', t => {
-  var fakeRuntime = mock.mockRuntime()
-  var loader = new AppLoader(fakeRuntime)
+  var tt = bootstrap()
+  var loader = tt.component.appLoader
 
   loader.loadPath(helper.paths.apps)
     .then(() => {
@@ -22,8 +21,8 @@ test('should load path', t => {
 })
 
 test('should skip path if not exist', t => {
-  var fakeRuntime = mock.mockRuntime()
-  var loader = new AppLoader(fakeRuntime)
+  var tt = bootstrap()
+  var loader = tt.component.appLoader
 
   loader.loadPath(helper.paths.apps + 'foobar')
     .then(() => {
@@ -37,8 +36,8 @@ test('should skip path if not exist', t => {
 })
 
 test('should load paths', t => {
-  var fakeRuntime = mock.mockRuntime()
-  var loader = new AppLoader(fakeRuntime)
+  var tt = bootstrap()
+  var loader = tt.component.appLoader
 
   loader.loadPaths([ helper.paths.apps ])
     .then(() => {
@@ -52,8 +51,8 @@ test('should load paths', t => {
 })
 
 test('should load app', t => {
-  var fakeRuntime = mock.mockRuntime()
-  var loader = new AppLoader(fakeRuntime)
+  var tt = bootstrap()
+  var loader = tt.component.appLoader
 
   var appPath = path.join(helper.paths.fixture, 'simple-app')
   loader.loadApp(appPath)
@@ -67,7 +66,7 @@ test('should load app', t => {
       hosts.forEach(it => {
         t.strictEqual(loader.hostAppIdMap[it.name], it.appId)
       })
-      t.deepEqual(fakeRuntime.component.permission.map[appId], permissions)
+      t.deepEqual(tt.component.permission.permission[appId], permissions)
 
       t.end()
     })
@@ -78,8 +77,8 @@ test('should load app', t => {
 })
 
 test('should load dbus app', t => {
-  var fakeRuntime = mock.mockRuntime()
-  var loader = new AppLoader(fakeRuntime)
+  var tt = bootstrap()
+  var loader = tt.component.appLoader
 
   var appId = '@dbus-app'
   var manifest = {
@@ -88,7 +87,7 @@ test('should load dbus app', t => {
     permission: []
   }
   loader.setManifest(appId, manifest, { dbusApp: true })
-  t.deepEqual(fakeRuntime.component.permission.map[appId], manifest.permission)
+  t.deepEqual(tt.component.permission.permission[appId], manifest.permission)
 
   var loadedManifest = loader.appManifests[appId]
   t.strictEqual(loadedManifest.objectPath, 'foo', 'objectPath')

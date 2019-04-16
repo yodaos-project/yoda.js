@@ -17,11 +17,9 @@ process.once('disconnect', () => {
   process.exit(233)
 })
 
-function main (target, runner) {
-  if (!target) {
-    logger.error('Target is required.')
-    process.exit(-1)
-  }
+function main (runner) {
+  var target = process.cwd()
+  var appSecret = process.env['APP_SECRET']
   if (runner == null) {
     runner = noopRunner
   }
@@ -37,16 +35,17 @@ function main (target, runner) {
   getActivityDescriptor()
     .then(descriptor => {
       translator.setLogger(require('logger')(`@ipc-${process.pid}`))
-      var activity = translator.translate(descriptor)
-      activity.appId = appId
-      activity.appHome = target
-      global[apiSymbol] = activity
+      var api = translator.translate(descriptor)
+      api.appId = appId
+      api.appHome = target
+      api.appSecret = appSecret
+      global[apiSymbol] = api
 
       /**
        * Executes app's main function
        */
-      launchApp(main, activity)
-      runner(appId, pkg, activity)
+      launchApp(main, api)
+      runner(appId, pkg, api)
 
       process.send({
         type: 'status-report',

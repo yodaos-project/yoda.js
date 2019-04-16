@@ -10,6 +10,7 @@ module.exports = function bootstrap () {
   var bus = new EventEmitter()
   mm.mockReturns(tt.runtime, 'appGC', true)
   mm.mockReturns(tt.component.appLoader, 'getTypeOfApp', 'test')
+  mm.mockReturns(tt.component.appLoader, 'getAppSecret', 'test')
   scheduler.appCreationHandler.test = function (appId, metadata, bridge) {
     bus.emit('create', appId, bridge)
     return Promise.resolve(bridge)

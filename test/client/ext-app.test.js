@@ -184,3 +184,25 @@ test('should invoke method with expected arguments', t => {
       t.end()
     })
 })
+
+test('should set app secret', t => {
+  var target = path.join(__dirname, 'fixture', 'invoke')
+  var bridge = getBridge()
+
+  var appSecret = 'foobar'
+  extApp('@test', { appHome: target, appSecret: appSecret }, bridge, /* mode */0, { descriptorPath: path.join(__dirname, './test-descriptor.json') })
+    .then(bridge => {
+      bridge.emit(null, 'app-fetch', [ 'appSecret' ])
+      bridge.childProcess.on('message', message => {
+        if (message.type !== 'test' && message.event !== 'app-fetch') {
+          return
+        }
+        t.deepEqual(message.result, appSecret)
+        bridge.suspend()
+        t.end()
+      })
+    }, err => {
+      t.error(err)
+      t.end()
+    })
+})

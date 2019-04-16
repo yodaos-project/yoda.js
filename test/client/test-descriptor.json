@@ -1,6 +1,7 @@
 {
   "events": {
-    "echo": {}
+    "echo": {},
+    "app-fetch": {}
   },
   "methods": {
     "ping": {

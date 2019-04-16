@@ -43,5 +43,13 @@ Flora.prototype.remoteMethods = {
         logger.info('unexpected error on opening url', url, options, err.stack)
         res.end(0, [ JSON.stringify({ ok: false, message: err.message, stack: err.stack }) ])
       })
+  },
+  'yodart.verify-and-decrypt-app-secret': function VerifyAndDecryptAppSecret (reqMsg, res) {
+    var secret = reqMsg[0]
+    var appId = this.component.appLoader.verifyAndDecryptAppSecret(secret)
+    if (!appId) {
+      return res.end(1)
+    }
+    res.end(0, [ appId ])
   }
 }

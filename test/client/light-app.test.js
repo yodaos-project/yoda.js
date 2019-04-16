@@ -138,3 +138,22 @@ test('should invoke methods with expected arguments', t => {
       t.end()
     })
 })
+
+test('should set app secret', t => {
+  proxy.removeAllListeners()
+  var bridge = getBridge()
+
+  var appSecret = 'foobar'
+  lightApp('@test', { appHome: target, appSecret: appSecret }, bridge, { descriptorPath: path.join(__dirname, './test-descriptor.json') })
+    .then(() => {
+      proxy.on('app-fetch', event => {
+        t.deepEqual(event.result, appSecret)
+        t.end()
+      })
+      bridge.emit(null, 'app-fetch', [ 'appSecret' ])
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})

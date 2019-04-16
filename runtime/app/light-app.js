@@ -13,6 +13,7 @@ var translate = require('../client/translator-in-process').translate
  */
 module.exports = function createLightApp (appId, metadata, bridge, options) {
   var target = _.get(metadata, 'appHome')
+  var appSecret = _.get(metadata, 'appSecret')
   logger.log(`load target: ${target}/package.json`)
   var pkg = require(`${target}/package.json`)
   var main = `${target}/${pkg.main || 'app.js'}`
@@ -20,13 +21,18 @@ module.exports = function createLightApp (appId, metadata, bridge, options) {
   logger.log('descriptor created.')
   var descriptor = require(_.get(options, 'descriptorPath', '../client/api/default.json'))
   var activity = translate(descriptor, bridge)
+  activity.appId = appId
+  activity.appHome = target
+  activity.appSecret = appSecret
   logger.log('descriptor translated.')
   bridge.activity = activity
 
   try {
     logger.log(`load main: ${main}`)
     var handle = require(main)
-    handle(activity)
+    if (typeof handle === 'function') {
+      handle(activity)
+    }
   } catch (err) {
     logger.error(`unexpected error on light app ${main}`, err.message, err.stack)
     delete require.cache[main]

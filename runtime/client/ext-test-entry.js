@@ -5,8 +5,6 @@ var logger = require('logger')('ext-app-client')
 require('@yoda/oh-my-little-pony')
 var extapp = require('./ext-helper')
 
-var target = process.argv[2]
-
 function test (testGlobs) {
   var tape = require('tape')
   var resolvePath = require('path').resolve
@@ -47,6 +45,6 @@ function test (testGlobs) {
   })
 }
 
-extapp.main(target, (appId, pkg, activity) => {
+extapp.main((appId, pkg, activity) => {
   test([ 'test/**/*.test.js' ])
 })

@@ -22,6 +22,11 @@ module.exports = function (activity) {
         })
       })
   })
+  activity.on('app-fetch', (path) => {
+    proxy.emit('app-fetch', {
+      result: _.get(activity, path)
+    })
+  })
   activity.foobar.on('echo', function () {
     proxy.emit('event', {
       args: Array.prototype.slice.call(arguments)

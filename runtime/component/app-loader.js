@@ -5,18 +5,19 @@ var promisify = require('util').promisify
 var logger = require('logger')('app-loader')
 var _ = require('@yoda/util')._
 var defaultConfig = require('../lib/config').getConfig('app-loader-config.json')
+var crypto = require('crypto')
 
 var readdirAsync = promisify(fs.readdir)
 var readFileAsync = promisify(fs.readFile)
 var statAsync = promisify(fs.stat)
 
-module.exports = AppChargeur
+module.exports = AppLoader
 /**
  * Loads and stores apps manifest for apps.
  *
  * @param {AppRuntime} runtime
  */
-function AppChargeur (runtime) {
+function AppLoader (runtime) {
   this.runtime = runtime
   this.config = this.markupConfig(defaultConfig)
 
@@ -25,6 +26,7 @@ function AppChargeur (runtime) {
   /** appId -> manifest */
   this.appManifests = {}
 
+  this.appSecrets = {}
   this.notifications = {
     'on-system-booted': [],
     'on-ready': [],
@@ -32,7 +34,7 @@ function AppChargeur (runtime) {
   }
 }
 
-AppChargeur.prototype.reload = function reload (appId) {
+AppLoader.prototype.reload = function reload (appId) {
   if (appId && this.appManifests[appId]) {
     var manifest = this.appManifests[appId]
     delete this.appManifests[appId]
@@ -59,7 +61,7 @@ AppChargeur.prototype.reload = function reload (appId) {
   return this.loadPaths(this.config.paths)
 }
 
-AppChargeur.prototype.markupConfig = function markupConfig (config) {
+AppLoader.prototype.markupConfig = function markupConfig (config) {
   if (config == null || typeof config !== 'object') {
     config = {}
   }
@@ -74,8 +76,50 @@ AppChargeur.prototype.markupConfig = function markupConfig (config) {
   return config
 }
 
-AppChargeur.prototype.getAppIds = function getAppIds () {
+AppLoader.prototype.getAppIds = function getAppIds () {
   return Object.keys(this.appManifests)
+}
+
+/**
+ * Get pre-generated app secret or re-generate it if doesn't exists.
+ *
+ * @param {string} appId
+ * @returns {string} secret generated or cached
+ */
+AppLoader.prototype.getAppSecret = function getAppSecret (appId) {
+  if (this.appManifests[appId] == null) {
+    throw new Error(`Unknown app ${appId}`)
+  }
+  var secret = this.appSecrets[appId]
+  if (secret == null) {
+    var ts = Date.now()
+    var md5 = crypto.createHash('md5')
+      .update(`${appId}:${ts}:${Math.random()}`)
+      .digest('hex')
+    secret = this.appSecrets[appId] = `${appId}:${md5}`
+  }
+  return secret
+}
+
+/**
+ * Verify the secret and return the corresponding app id if the secret is a correct one.
+ *
+ * Returns false if otherwise.
+ *
+ * @param {string} secret
+ * @returns {false|string} appId or false
+ */
+AppLoader.prototype.verifyAndDecryptAppSecret = function verifyAndDecryptAppSecret (secret) {
+  if (typeof secret !== 'string') {
+    return false
+  }
+  var match = secret.split(':', 2)
+  var appId = match[0]
+  var expected = this.appSecrets[appId]
+  if (expected == null || secret !== expected) {
+    return false
+  }
+  return appId
 }
 
 /**
@@ -84,7 +128,7 @@ AppChargeur.prototype.getAppIds = function getAppIds () {
  * @param {string} appId -
  * @returns {AppExecutor | undefined}
  */
-AppChargeur.prototype.getExecutorByAppId = function getExecutorByAppId (appId) {
+AppLoader.prototype.getExecutorByAppId = function getExecutorByAppId (appId) {
   return this.executors[appId]
 }
 
@@ -93,7 +137,7 @@ AppChargeur.prototype.getExecutorByAppId = function getExecutorByAppId (appId) {
  * @param {string} appId
  * @returns {Metadata}
  */
-AppChargeur.prototype.getAppManifest = function getAppManifest (appId) {
+AppLoader.prototype.getAppManifest = function getAppManifest (appId) {
   return _.get(this.appManifests, appId)
 }
 
@@ -102,7 +146,7 @@ AppChargeur.prototype.getAppManifest = function getAppManifest (appId) {
  * @param {string} appId
  * @returns {'ext' | 'light' | 'dbus'}
  */
-AppChargeur.prototype.getTypeOfApp = function getTypeOfApp (appId) {
+AppLoader.prototype.getTypeOfApp = function getTypeOfApp (appId) {
   if (this.config.lightAppIds.indexOf(appId) >= 0) {
     return 'light'
   }
@@ -123,7 +167,7 @@ AppChargeur.prototype.getTypeOfApp = function getTypeOfApp (appId) {
  *
  * @param {string} name
  */
-AppChargeur.prototype.registerNotificationChannel = function registerNotificationChannel (name) {
+AppLoader.prototype.registerNotificationChannel = function registerNotificationChannel (name) {
   if (this.notifications[name] != null) {
     return
   }
@@ -140,7 +184,7 @@ AppChargeur.prototype.registerNotificationChannel = function registerNotificatio
  * @param {string[]} [manifest.hosts]
  * @returns {void}
  */
-AppChargeur.prototype.setManifest = function setManifest (appId, manifest, options) {
+AppLoader.prototype.setManifest = function setManifest (appId, manifest, options) {
   var dbusApp = _.get(options, 'dbusApp', false)
 
   if (dbusApp && this.config.dbusAppIds.indexOf(appId) < 0) {
@@ -156,7 +200,7 @@ AppChargeur.prototype.setManifest = function setManifest (appId, manifest, optio
  *
  * @param {string} scheme
  */
-AppChargeur.prototype.getAppIdByHost = function getAppIdByHost (scheme) {
+AppLoader.prototype.getAppIdByHost = function getAppIdByHost (scheme) {
   return this.hostAppIdMap[scheme]
 }
 
@@ -166,7 +210,7 @@ AppChargeur.prototype.getAppIdByHost = function getAppIdByHost (scheme) {
  * @param {string[]} paths -
  * @returns {Promise<void>}
  */
-AppChargeur.prototype.loadPaths = function loadPaths (paths) {
+AppLoader.prototype.loadPaths = function loadPaths (paths) {
   return _.mapSeries(paths, path => this.loadPath(path))
 }
 
@@ -176,7 +220,7 @@ AppChargeur.prototype.loadPaths = function loadPaths (paths) {
  * @param {string} path -
  * @returns {Promise<void>}
  */
-AppChargeur.prototype.loadPath = function loadPath (path) {
+AppLoader.prototype.loadPath = function loadPath (path) {
   return readdirAsync(path)
     .then(entities => {
       return Promise.all(
@@ -210,7 +254,7 @@ AppChargeur.prototype.loadPath = function loadPath (path) {
  * @param {string} root - 应用的包路径
  * @returns {Promise<void>}
  */
-AppChargeur.prototype.loadApp = function loadApp (root) {
+AppLoader.prototype.loadApp = function loadApp (root) {
   logger.log('load app: ' + root)
   return readFileAsync(root + '/package.json', 'utf8')
     .then(data => {
@@ -240,7 +284,7 @@ AppChargeur.prototype.loadApp = function loadApp (root) {
  * @param {Manifest} manifest -
  * @returns {void}
  */
-AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) {
+AppLoader.prototype.__loadApp = function __loadApp (appId, appHome, manifest) {
   if (typeof appId !== 'string' || !appId) {
     throw new Error(`AppId is not valid at ${appHome}.`)
   }

@@ -2,14 +2,14 @@ var test = require('tape')
 var path = require('path')
 
 var helper = require('../../helper')
-var AppLoader = require(`${helper.paths.runtime}/component/app-loader`)
-var mock = require('./mock')
+var bootstrap = require('../../bootstrap')
 
-var fakeRuntime = mock.mockRuntime()
 var malformedApps = path.join(helper.paths.fixture, 'malformed-apps')
 
 test('should not load app if package.json is malformed', t => {
-  var loader = new AppLoader(fakeRuntime)
+  var tt = bootstrap()
+  var loader = tt.component.appLoader
+
   loader.loadApp(path.join(malformedApps, 'malformed-package'))
     .then(() => {
       t.fail('unreachable path')
@@ -21,7 +21,9 @@ test('should not load app if package.json is malformed', t => {
 })
 
 test('no error should be thrown on reload for apps with unknown notification', t => {
-  var loader = new AppLoader(fakeRuntime)
+  var tt = bootstrap()
+  var loader = tt.component.appLoader
+
   var appId = 'unknown-notification'
   loader.loadApp(path.join(malformedApps, appId))
     .then(() => {

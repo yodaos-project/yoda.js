@@ -69,6 +69,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
 
   var appType = this.loader.getTypeOfApp(appId)
   var metadata = this.loader.getAppManifest(appId)
+  var appSecret = this.loader.getAppSecret(appId)
 
   if (Constants.modes[mode] == null) {
     mode = Constants.modes.default
@@ -81,7 +82,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
     creationHandler = this.appCreationHandler.default
   }
 
-  future = Promise.resolve().then(() => creationHandler(appId, metadata, appBridge, mode))
+  future = Promise.resolve().then(() => creationHandler(appId, Object.assign({ appSecret: appSecret }, metadata), appBridge, mode))
     .then(() => {
       logger.info(`App(${appId}) successfully started`)
       appBridge.onExit = (code, signal) => {

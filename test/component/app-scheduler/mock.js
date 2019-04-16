@@ -5,6 +5,9 @@ module.exports.getLoader = function getLoader (appMap) {
     },
     getAppManifest: function getAppManifest (appId) {
       return appMap[appId]
+    },
+    getAppSecret: function getAppSecret (appId) {
+      return appId
     }
   }
 }
