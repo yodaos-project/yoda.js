@@ -77,9 +77,11 @@ YodaLocalPackage(yodaos-application @yodaos/application)
 YodaLocalPackage(yodaos-mediakit @yodaos/mediakit)
 YodaLocalPackage(yodaos-ttskit @yodaos/ttskit)
 YodaLocalPackage(yodaos-step @yodaos/step)
+YodaLocalPackage(yodaos-storage @yodaos/storage)
 
-# system packages
+# root scope packages
 YodaLocalPackage(logger)
+YodaLocalPackage(lru-cache)
 
 # Tools
 ExternalProject_Add(rklogger

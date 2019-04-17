@@ -10,6 +10,8 @@ node_modules/
 website/docs/
 test/config.json
 test/.result
+test/temp/*
+!test/temp/.gitkeep
 
 runtime/client/api/*
 !runtime/client/api/.gitkeep
