@@ -1,30 +1,16 @@
 {
   "name": "@yoda/system",
-  "version": "1.0.0",
-  "description": "Bluetooth Apps for Rokid",
   "main": "app.js",
   "manifest": {
-    "daemon": true,
-    "skills": [
-      "ROKID.SYSTEM",
-      "ROKID.EXCEPTION",
-      "1B54DBC9F7D74C619282CCE8FE28EB7E",
-      "280887DAFB9047418C18BAAC73AE4F24"
-    ],
-    "permission": [
-    ],
     "hosts": [
-      [ "rokid-exception", { "skillId": "ROKID.EXCEPTION" } ]
+      "system"
     ]
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "bluetooth",
-    "rokid",
-    "skill"
-  ],
-  "author": "Yazhong Liu <yorkiefixer@gmail.com>",
-  "license": "MIT"
+    "yodaos",
+    "system"
+  ]
 }

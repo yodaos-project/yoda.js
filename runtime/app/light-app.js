@@ -20,13 +20,17 @@ module.exports = function createLightApp (appId, metadata, bridge, options) {
   logger.log('descriptor created.')
   var descriptor = require(_.get(options, 'descriptorPath', '../client/api/default.json'))
   var activity = translate(descriptor, bridge)
+  activity.appId = appId
+  activity.appHome = target
   logger.log('descriptor translated.')
   bridge.activity = activity
 
   try {
     logger.log(`load main: ${main}`)
     var handle = require(main)
-    handle(activity)
+    if (typeof handle === 'function') {
+      handle(activity)
+    }
   } catch (err) {
     logger.error(`unexpected error on light app ${main}`, err.message, err.stack)
     delete require.cache[main]
