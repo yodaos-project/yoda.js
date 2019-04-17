@@ -39,6 +39,10 @@ module.exports = function getAlarms (activity, callback) {
     } else {
       try {
         alarms = JSON.parse(values[0] || '{}').alarms || []
+        if (!(alarms instanceof Array)) {
+          logger.warn('alarms data not Array,should format to []')
+          alarms = []
+        }
       } catch (err) {
         throw new Error('old alarm data parse error', err.stack)
       }
@@ -48,6 +52,10 @@ module.exports = function getAlarms (activity, callback) {
     } else {
       try {
         reminders = JSON.parse(values[1] || '{}').reminders || []
+        if (!(reminders instanceof Array)) {
+          logger.warn('reminders data not Array,should format to []')
+          reminders = []
+        }
       } catch (err) {
         throw new Error('old reminder data parse error', err.stack)
       }
