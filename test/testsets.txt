@@ -35,3 +35,4 @@ runtime/cloudapi-util.*.js
 runtime/cloudapi-*.test.js
 services/lightd/**/*.test.js
 services/ttsd/**/*.test.js
+apps/alarm/alarm-core.test.js
