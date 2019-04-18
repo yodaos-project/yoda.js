@@ -4,3 +4,4 @@
 logger/*.test.js
 component/app-loader/*.test.js
 component/battery/*.test.js
+apps/alarm/alarm-core.test.js
