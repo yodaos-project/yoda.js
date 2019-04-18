@@ -1,3 +1,5 @@
+var delegate = require('@yoda/util/delegate')
+
 var classLoader = require('./class-loader')
 var symbol = require('./symbol')
 
@@ -75,6 +77,27 @@ var ApplicationProto = {
   [symbol.finishService]: finishService,
   [symbol.finalize]: finalize
 }
+
+delegate(ApplicationProto, symbol.api)
+  /**
+   *
+   * @memberof module:@yodaos/application~ApplicationPrototype
+   * @method openUrl
+   * @param {string} url
+   */
+  .method('openUrl')
+  /**
+   *
+   * @memberof module:@yodaos/application~ApplicationPrototype
+   * @method startMonologue
+   */
+  .method('startMonologue')
+  /**
+   *
+   * @memberof module:@yodaos/application~ApplicationPrototype
+   * @method stopMonologue
+   */
+  .method('stopMonologue')
 
 /**
  *

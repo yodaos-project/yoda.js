@@ -46,3 +46,17 @@ test('should delegates url events', t => {
   })
   api.emit('url', expectedUrlObj)
 })
+
+test('should delegates methods', t => {
+  t.plan(1)
+  var expectedUrl = 'yoda-app://foobar'
+
+  var api = new EventEmitter()
+  api.appHome = path.join(__dirname, '../../fixture/noop-app')
+  api.openUrl = (url) => {
+    t.strictEqual(url, expectedUrl)
+  }
+
+  var application = Application({}, api)
+  application.openUrl(expectedUrl)
+})

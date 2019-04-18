@@ -2,7 +2,7 @@
   "name": "yodart",
   "version": "7.29.0",
   "scripts": {
-    "prerestart": "tools/runtime-install",
+    "prerestart": "npm run build; tools/runtime-install",
     "pre-push": "npm run lint",
     "postinstall": "npm run build",
     "restart": "tools/runtime-op restart",

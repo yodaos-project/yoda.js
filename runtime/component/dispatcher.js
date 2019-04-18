@@ -111,20 +111,16 @@ class Dispatcher {
    * @param {any[]} params
    * @param {object} [options]
    * @param {boolean} [options.preemptive=true] - if app is preemptive
-   * @param {'cut' | 'scene'} [options.form='cut']
-   * @param {string} [options.carrierId] - if app is brought to life by other app
    */
   dispatchAppEvent (appId, event, params, options) {
     var preemptive = _.get(options, 'preemptive', true)
-    var form = _.get(options, 'form', 'cut')
-    var carrierId = _.get(options, 'carrierId')
 
     if (this.runtime.hasBeenDisabled()) {
       logger.warn(`runtime has been disabled ${this.runtime.getDisabledReasons()}, skip dispatching event(${event}) to app(${appId}).`)
       return Promise.resolve(false)
     }
 
-    if (this.component.lifetime.guardMonopolization(appId, { form: form, preemptive: preemptive })) {
+    if (this.component.lifetime.guardMonopolization(appId, { preemptive: preemptive })) {
       logger.warn(`LaVieEnPile has ben monopolized, skip dispatching event(${event}) to app(${appId}.`)
       this.descriptor.activity.emitToApp(this.component.lifetime.monopolist, 'oppressing', [ event ])
       return Promise.resolve(/** event has been handled, prevent tts/media from recovering */true)
@@ -144,7 +140,7 @@ class Dispatcher {
         }
 
         logger.info(`app is preemptive, activating app ${appId}`)
-        return this.component.lifetime.activateAppById(appId, form, carrierId)
+        return this.component.lifetime.activateAppById(appId)
       })
       .then(() => this.descriptor.activity.emitToApp(appId, event, params))
       .then(() => true)

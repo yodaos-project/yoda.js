@@ -130,7 +130,6 @@ DBus.prototype.extapp = {
       this.component.lifetime.createApp(appId)
         .then(() => {
           logger.info(`activating dbus app '${appId}'`)
-          this.runtime.updateCloudStack(appId, 'cut')
           return this.component.lifetime.activateAppById(appId, form)
         })
         .then(
