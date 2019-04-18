@@ -16,8 +16,12 @@ class RuntimeDescriptor extends Descriptor {
     super(runtime, 'runtime')
   }
 
-  setMode (mode) {
-    // TODO
+  setPhase (phase) {
+    if (phase === 'ready') {
+      return this._runtime.phaseToReady()
+    } else if (phase === 'reset') {
+      return this._runtime.phaseToReset()
+    }
   }
 
   idle () {
@@ -27,17 +31,15 @@ class RuntimeDescriptor extends Descriptor {
 
 RuntimeDescriptor.methods = {
   /**
-   * Sets the runtime mode: `setup`, `ready`:
-   * - *setup* is to call setup app
-   * - *ready* should be triggered by an app, that tells runtime it’s available.
+   * Sets the runtime mode to `ready`, it should be triggered by an app,
+   * that tells runtime it’s available.
    *
    * @memberof yodaRT.activity.Activity.RuntimeClient
    * @instance
-   * @function setMode
-   * @param {string} mode - the runtime mode, alternatives: `setup` and `ready`.
+   * @function setPhase
    * @returns {Promise<void>}
    */
-  setMode: {
+  setPhase: {
     returns: 'promise'
   },
   /**

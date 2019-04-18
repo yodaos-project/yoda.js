@@ -26,16 +26,8 @@ module.exports = AppRuntime
  */
 function AppRuntime () {
   EventEmitter.call(this)
-  this.credential = {
-    masterId: null,
-    deviceId: null,
-    deviceTypeId: null,
-    key: null,
-    secret: null
-  }
 
   this.shouldWelcome = true
-
   this.inited = false
   this.hibernated = false
   this.__temporaryDisablingReasons = [ 'initiating' ]
@@ -59,6 +51,7 @@ AppRuntime.prototype.init = function init () {
     this.componentLoader.load(it)
   })
   this.descriptorLoader.load(path.join(__dirname, 'descriptor'))
+  this.phaseToBooting()
 
   /** 1. init components. */
   this.componentsInvoke('init')
@@ -136,6 +129,10 @@ AppRuntime.prototype.init = function init () {
       logger.error('unexpected error on boot welcoming', err.stack)
       this.enableRuntimeFor('welcoming')
     })
+  }).then(() => {
+    this.phaseToReset()
+    /** 10. open the setup url and wait for incoming `ready` call */
+    return this.openUrl('yoda-app://setup/init', { preemptive: true })
   })
 }
 
@@ -738,58 +735,46 @@ AppRuntime.prototype.multimediaMethod = function (name, args) {
 }
 
 /**
+ * Reset the runtime to the reset state, it deactivates all running apps and
+ * open the url "yoda-app://setup/reset".
+ */
+AppRuntime.prototype.reset = function reset () {
+  return this.phaseToReset().then(
+    () => this.openUrl('yoda-app://setup/reset'))
+}
+
+/**
+ * @private
+ */
+AppRuntime.prototype.phaseToBooting = function phaseToBooting () {
+  this.component.flora.post('yodaos.runtime.phase', ['booting'], require('@yoda/flora').MSGTYPE_PERSIST)
+}
+
+/**
  * @private
  */
 AppRuntime.prototype.phaseToReady = function phaseToReady () {
-  var sendReady = () => {
-    var ids = Object.keys(this.component.appScheduler.appMap)
-    return Promise.all(ids.map(it => this.descriptor.activity.emitToApp(it, 'ready')))
-  }
-
-  var deferred = () => {
-    if (this.shouldWelcome) {
-      this.component.dispatcher.delegate('runtimeDidLogin')
-        .then((delegation) => {
-          if (delegation) {
-            return
-            /** delegation should break all actions below */
-          }
-          this.disableRuntimeFor('welcoming')
-          logger.info('announcing welcome')
-          return this.setMicMute(false, { silent: true })
-            .then(() => {
-              this.component.light.play('@yoda', 'system://setWelcome.js')
-                .then(() => this.component.light.stop('@yoda', 'system://boot.js'))
-              return this.component.light.appSound('@yoda', 'system://startup0.ogg')
-            })
-            .then(() => {
-              this.enableRuntimeFor('welcoming')
-            })
-            .catch(err => {
-              this.enableRuntimeFor('welcoming')
-              logger.error('unexpected error on welcoming', err.stack)
-            })
-        })
-    }
-    this.shouldWelcome = false
-  }
-
   var onDone = () => {
     this.dispatchNotification('on-ready', [])
   }
 
+  this.component.flora.post('yodaos.runtime.phase', ['ready'], require('@yoda/flora').MSGTYPE_PERSIST)
   return Promise.all([
-    sendReady() /** only send ready to currently alive apps */,
     this.startDaemonApps(),
     this.setStartupFlag(),
-    this.initiate().then(deferred, err => {
-      logger.error('Unexpected error on bootstrap', err.stack)
-      return deferred()
-    })
+    this.initiate()
   ]).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()
   })
+}
+
+/**
+ * @private
+ */
+AppRuntime.prototype.phaseToReset = function phaseToReset () {
+  this.component.flora.post('yodaos.runtime.phase', ['setup'], require('@yoda/flora').MSGTYPE_PERSIST)
+  return this.idle()
 }
 
 /**
