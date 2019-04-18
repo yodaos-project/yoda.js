@@ -6,13 +6,13 @@ var AlarmCore = require(`${helper.paths.apps}/alarm/alarm-core.js`)
 var DEFAULT_REMINDER_RING = 'system://reminder_default.mp3'
 
 function bootstrap () {
-    var mockApi = {
-        tts: new EventEmitter(),
-        media: new EventEmitter()
-    }
-    mm.mockPromise(mockApi.media, 'start', null, null)
-    mm.mockPromise(mockApi.media, 'stop', null, null)
-    return mockApi
+  var mockApi = {
+    tts: new EventEmitter(),
+    media: new EventEmitter()
+  }
+  mm.mockPromise(mockApi.media, 'start', null, null)
+  mm.mockPromise(mockApi.media, 'stop', null, null)
+  return mockApi
 }
 
 test('playFirstMediaLocal', (t) => {
