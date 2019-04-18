@@ -93,6 +93,9 @@ class AudioFocus {
 
   recoverLastingRequest () {
     var req = this.lastingRequest
+    if (req == null) {
+      return
+    }
     this.descriptor.audioFocus.emitToApp(req.appId, 'gain', [ req.id ])
   }
 

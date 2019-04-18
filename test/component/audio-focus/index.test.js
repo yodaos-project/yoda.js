@@ -268,3 +268,29 @@ test('apps request with same request id', t => {
   comp.abandon('test2', 1)
   comp.abandon('test', 1)
 })
+
+test('abandoning transient request with no request available to be recovered', t => {
+  var tt = bootstrap()
+  var comp = tt.component.audioFocus
+  var desc = tt.descriptor.audioFocus
+
+  var eventSeq = []
+  var expected = [
+    [ 'test', 'gain' ],
+    [ 'test', 'loss' ]
+  ]
+  mm.mockReturns(desc, 'emitToApp', function (appId, event) {
+    eventSeq.push([ appId, event ])
+    if (eventSeq.length === expected.length) {
+      t.deepEqual(eventSeq, expected)
+      t.end()
+    }
+  })
+
+  comp.request({
+    id: 1,
+    appId: 'test',
+    gain: 0b001 /** transient */
+  })
+  comp.abandon('test', 1)
+})
