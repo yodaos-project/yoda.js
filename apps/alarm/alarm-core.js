@@ -322,12 +322,8 @@ AlarmCore.prototype.playMediaPrepared = function () {
   this.taskTimeout && clearTimeout(this.taskTimeout)
   // pd require online url can only play 7s,after 7s should stop && play anther tts
   this.taskTimeout = setTimeout(() => {
-    var isLocal = false
     this.activity.media.stop()
-    if (this.ringUrl === DEFAULT_REMINDER_RING || this.ringUrl === DEFAULT_ALARM_RING) {
-      isLocal = true
-    }
-    this._taskCallback(this.activeOption, isLocal)
+    this._taskCallback(this.activeOption, this.isLocal)
   }, 7000)
 }
 
@@ -337,6 +333,7 @@ AlarmCore.prototype.playMediaPrepared = function () {
  */
 AlarmCore.prototype.playFirstMedia = function (isLocal) {
   var state = wifi.getWifiState()
+  this.isLocal = isLocal
   if (this.activeOption.type === 'Remind') {
     this.ringUrl = DEFAULT_REMINDER_RING
   } else {
