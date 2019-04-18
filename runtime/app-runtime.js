@@ -413,9 +413,7 @@ AppRuntime.prototype.stopMonologue = function (appId) {
  *
  * @param {string} url -
  * @param {object} [options] -
- * @param {'cut' | 'scene'} [options.form='cut'] -
  * @param {boolean} [options.preemptive=true] -
- * @param {string} [options.carrierId] -
  * @returns {Promise<boolean>}
  */
 AppRuntime.prototype.openUrl = function (url, options) {
