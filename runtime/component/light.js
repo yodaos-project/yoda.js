@@ -216,4 +216,9 @@ Light.prototype.setDNDMode = function (dndMode) {
   }
 }
 
+Light.prototype.appDidExit = function (appId) {
+  this.stopByAppId(appId)
+  this.stopSoundByAppId(appId)
+}
+
 module.exports = Light

@@ -11,7 +11,7 @@ test('shall create light app', t => {
   t.plan(4)
   var appId = '@test'
   var runtime = {
-    appGC: function () {},
+    appDidExit: function () {},
     component: {
       appLoader: getLoader({
         '@test': {
@@ -43,7 +43,7 @@ test('light app exits on start up', t => {
   t.plan(5)
   var appId = '@test'
   var runtime = {
-    appGC: function () {},
+    appDidExit: function () {},
     component: {
       appLoader: getLoader({
         '@test': {
