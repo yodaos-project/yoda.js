@@ -39,3 +39,27 @@ test('playFirstMediaOnline', (t) => {
   alarmCore.playFirstMedia(false)
   alarmCore.playMediaPrepared()
 })
+
+test('weekdayAlarm', (t) => {
+  var api = bootstrap()
+  var alarmCore = new AlarmCore(api)
+  var date = new Date()
+  var time = '10:1:30'
+  var repeatType = 'WEEKDAY'
+  var alarmPattern = alarmCore._transferPattern(date, time, repeatType)
+  var correct = '30' + ' ' + '1' + ' ' + '10' + ' * * 1-5'
+  t.equal(alarmPattern, correct)
+  t.end()
+})
+
+test('weekendAlarm', (t) => {
+  var api = bootstrap()
+  var alarmCore = new AlarmCore(api)
+  var date = new Date()
+  var time = '10:1:30'
+  var repeatType = 'WEEKEND'
+  var alarmPattern = alarmCore._transferPattern(date, time, repeatType)
+  var correct = '30' + ' ' + '1' + ' ' + '10' + ' * * 6,0'
+  t.equal(alarmPattern, correct)
+  t.end()
+})
