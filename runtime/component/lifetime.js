@@ -403,6 +403,12 @@ class Lifetime extends EventEmitter {
     return this.scheduler.suspendApp(appId, { force: force })
   }
   // MARK: - END App Termination
+
+  appDidExit (appId) {
+    if (this.isAppInStack(appId)) {
+      this.deactivateAppById(appId)
+    }
+  }
 }
 
 module.exports = Lifetime

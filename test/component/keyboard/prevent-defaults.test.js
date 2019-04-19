@@ -8,9 +8,8 @@ test('shall prevent default', t => {
   t.plan(1)
   var runtime = new AppRuntime()
   var keyboard = runtime.component.keyboard
-  var descriptor = runtime.descriptor.keyboard
 
-  mm.mockReturns(descriptor, 'handleAppListener', true)
+  mm.mockReturns(keyboard, 'handleAppListener', true)
   mm.mockPromise(runtime, 'openUrl', () => {
     t.fail('unreachable path')
   })

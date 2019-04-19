@@ -8,7 +8,7 @@ module.exports = function bootstrap () {
   var scheduler = tt.component.appScheduler
 
   var bus = new EventEmitter()
-  mm.mockReturns(tt.runtime, 'appGC', true)
+  mm.mockReturns(tt.runtime, 'appDidExit', true)
   mm.mockReturns(tt.component.appLoader, 'getTypeOfApp', 'test')
   scheduler.appCreationHandler.test = function (appId, metadata, bridge) {
     bus.emit('create', appId, bridge)

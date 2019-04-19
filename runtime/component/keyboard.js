@@ -13,6 +13,9 @@ function KeyboardHandler (runtime) {
   this.descriptor = runtime.descriptor
   this.config = config
 
+  /** @type { [appId: string]: { [ uniqKey: string ]: true } } */
+  this.interests = {}
+
   this.longpressWindow = _.get(this.config, 'config.longpressWindow', 500)
   this.debounce = _.get(this.config, 'config.debounce', 0)
 }
@@ -25,6 +28,27 @@ KeyboardHandler.prototype.init = function init () {
 KeyboardHandler.prototype.deinit = function deinit () {
   this.input && this.input.disconnect()
   this.input = null
+}
+
+KeyboardHandler.prototype.appDidExit = function appDidExit (appId) {
+  this.restoreAll(appId)
+}
+
+KeyboardHandler.prototype.preventDefaults = function preventDefaults (appId, keyCode, events) {
+  events.forEach(it => {
+    if (this.interests[appId] == null) {
+      this.interests[appId] = {}
+    }
+    this.interests[appId][`${it}:${keyCode}`] = true
+  })
+}
+KeyboardHandler.prototype.restoreDefaults = function restoreDefaults (appId, keyCode, events) {
+  events.forEach(it => {
+    delete this.interests[appId][`${it}:${keyCode}`]
+  })
+}
+KeyboardHandler.prototype.restoreAll = function restoreAll (appId) {
+  delete this.interests[appId]
 }
 
 KeyboardHandler.prototype.execute = function execute (descriptor) {
@@ -80,7 +104,20 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
 }
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
-  return this.descriptor.keyboard.handleAppListener(type, event)
+  var appId = this.component.lifetime.getCurrentAppId()
+  var app = this.component.appScheduler.getAppById(appId)
+  if (app == null) {
+    logger.info(`No active app, skip ${type} '${event.keyCode}' delegation.`)
+    return false
+  }
+  var interest = _.get(this.interests, `${appId}.${type}:${event.keyCode}`)
+  if (interest !== true) {
+    logger.info(`Current app(${appId}) has no interest, skip ${type} '${event.keyCode}' delegation.`)
+    return false
+  }
+  logger.info(`Delegating ${type} '${event.keyCode}' to app ${appId}.`)
+  this.descriptor.keyboard.emitToApp(appId, type, [ event ])
+  return true
 }
 
 KeyboardHandler.prototype.listen = function listen () {

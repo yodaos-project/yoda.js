@@ -134,6 +134,22 @@ class AudioFocus {
     mayDuck = mayDuck == null ? false : mayDuck
     this.descriptor.audioFocus.emitToApp(req.appId, 'loss', [ req.id, transient === 1, mayDuck === 1 ])
   }
+
+  appDidExit (appId) {
+    var req
+    if (this.transientRequest && this.transientRequest.appId === appId) {
+      req = this.transientRequest
+      this.transientRequest = null
+      this.castRequest(req)
+      this.recoverLastingRequest()
+      return
+    }
+    if (this.lastingRequest && this.lastingRequest.appId === appId) {
+      req = this.lastingRequest
+      this.lastingRequest = null
+      this.castRequest(req)
+    }
+  }
 }
 
 AudioFocus.RequestType = RequestType

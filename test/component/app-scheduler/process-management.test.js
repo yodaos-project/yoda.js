@@ -11,7 +11,7 @@ test('shall create child process', t => {
   t.plan(5)
   var appId = '@test'
   var runtime = {
-    appGC: function () {},
+    appDidExit: function () {},
     component: {
       appLoader: mock.getLoader({
         '@test': {
@@ -49,7 +49,7 @@ test('app exits on start up', t => {
   t.plan(5)
   var appId = '@test'
   var runtime = {
-    appGC: function () {},
+    appDidExit: function () {},
     component: {
       appLoader: mock.getLoader({
         '@test': {
@@ -85,7 +85,7 @@ test('trying start app while app is suspending', t => {
   t.plan(7)
   var appId = '@test'
   var runtime = {
-    appGC: function () {},
+    appDidExit: function () {},
     component: {
       appLoader: mock.getLoader({
         '@test': {

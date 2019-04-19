@@ -121,7 +121,7 @@ AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, sign
     this.appMap[appId].suspend()
   }
   this.appStatus[appId] = Constants.status.exited
-  this.runtime.appGC(appId)
+  this.runtime.appDidExit(appId)
 
   delete this.appMap[appId]
   delete this.appLaunchOptions[appId]

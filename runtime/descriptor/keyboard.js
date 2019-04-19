@@ -3,8 +3,6 @@
  * @namespace yodaRT.activity
  */
 
-var logger = require('logger')('keyboard-descriptor')
-var _ = require('@yoda/util')._
 var Descriptor = require('../lib/descriptor')
 
 /**
@@ -18,25 +16,6 @@ class KeyboardDescriptor extends Descriptor {
     super(runtime, 'keyboard')
 
     this.events = [ 'keydown', 'keyup', 'click', 'dbclick', 'longpress' ]
-    /** @type { [appId: string]: { [ uniqKey: string ]: true } } */
-    this.interests = {}
-  }
-
-  handleAppListener (type, event) {
-    var appId = this.component.lifetime.getCurrentAppId()
-    var app = this.component.appScheduler.getAppById(appId)
-    if (app == null) {
-      logger.info(`No active app, skip ${type} '${event.keyCode}' delegation.`)
-      return false
-    }
-    var interest = _.get(this.interests, `${appId}.${type}:${event.keyCode}`)
-    if (interest !== true) {
-      logger.info(`Current app(${appId}) has no interest, skip ${type} '${event.keyCode}' delegation.`)
-      return false
-    }
-    logger.info(`Delegating ${type} '${event.keyCode}' to app ${appId}.`)
-    this.emitToApp(appId, type, [ event ])
-    return true
   }
 
   preventDefaults (ctx) {
@@ -57,12 +36,7 @@ class KeyboardDescriptor extends Descriptor {
       }
       events = [ event ]
     }
-    events.forEach(it => {
-      if (this.interests[appId] == null) {
-        this.interests[appId] = {}
-      }
-      this.interests[appId][`${it}:${keyCode}`] = true
-    })
+    this.component.keyboard.preventDefaults(appId, keyCode, events)
   }
 
   restoreDefaults (ctx) {
@@ -83,14 +57,13 @@ class KeyboardDescriptor extends Descriptor {
       }
       events = [ event ]
     }
-    events.forEach(it => {
-      delete this.interests[appId][`${it}:${keyCode}`]
-    })
+
+    this.component.keyboard.restoreDefaults(appId, keyCode, events)
   }
 
   restoreAll (ctx) {
     var appId = ctx.appId
-    delete this.interests[appId]
+    this.component.keyboard.restoreAll(appId)
   }
 }
 

@@ -68,12 +68,7 @@ AppRuntime.prototype.init = function init () {
   // TODO: OPEN WAKEUP ENGINE
   this.resetServices()
 
-  /** 4. listen on lifetime events */
-  this.component.lifetime.on('preemption', appId => {
-    this.appPause(appId)
-  })
-
-  /** 5. determines if welcome announcements are needed */
+  /** 4. determines if welcome announcements are needed */
   this.shouldWelcome = !this.isStartupFlagExists()
 
   var shouldBreakInit = () => {
@@ -88,12 +83,12 @@ AppRuntime.prototype.init = function init () {
     return false
   }
 
-  /** 6. load app manifests */
+  /** 5. load app manifests */
   return this.loadApps().then(() => {
     this.inited = true
     this.enableRuntimeFor('initiating')
 
-    /** 7. questioning if any interests of delegation */
+    /** 6. questioning if any interests of delegation */
     return this.component.dispatcher.delegate('runtimeDidInit')
   }).then(delegation => {
     if (delegation) {
@@ -101,7 +96,7 @@ AppRuntime.prototype.init = function init () {
     }
     this.disableRuntimeFor('welcoming')
 
-    /** 8. announce welcoming */
+    /** 7. announce welcoming */
     var future = Promise.resolve()
     // TODO: move welcoming to launcher app
     // var isFirstBoot = property.get('sys.firstboot.init', 'persist') !== '1'
@@ -130,7 +125,7 @@ AppRuntime.prototype.init = function init () {
       if (shouldBreakInit()) {
         return
       }
-      /** 9. force-enable and check network states */
+      /** 8. force-enable and check network states */
       this.dispatchNotification('on-system-booted', [])
     }).catch(err => {
       logger.error('unexpected error on boot welcoming', err.stack)
@@ -585,32 +580,14 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
   return Promise.all(promises)
 }
 
-AppRuntime.prototype.appPause = function appPause (appId) {
-  logger.info('Pausing resources of app', appId)
-  var promises = [
-    this.component.light.stopSoundByAppId(appId),
-    this.multimediaMethod('pause', [ appId ])
-  ]
-  return Promise.all(promises)
-    .catch(err => logger.error('Unexpected error on pausing resources of app', appId, err.stack))
-}
-
-AppRuntime.prototype.appGC = function appGC (appId) {
+AppRuntime.prototype.appDidExit = function appDidExit (appId) {
   logger.info('Collecting resources of app', appId)
   var promises = [
-    this.component.light.stopByAppId(appId),
-    this.component.light.stopSoundByAppId(appId),
     this.multimediaMethod('stop', [ appId ]),
-    this.ttsMethod('stop', [ appId ])
+    this.ttsMethod('stop', [ appId ]),
+    this.componentsInvoke('appDidExit', [ appId ])
   ]
-  if (this.component.lifetime.isAppInStack(appId)) {
-    /**
-     * clear app registrations and recover paused app if possible
-     */
-    promises.push(
-      this.component.lifetime.deactivateAppById(appId)
-    )
-  }
+
   return Promise.all(promises).catch(err => logger.error('Unexpected error on collecting resources of app', appId, err.stack))
 }
 
