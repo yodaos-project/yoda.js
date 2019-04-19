@@ -1,5 +1,5 @@
 {
-  "name": "@yodaos/step",
+  "name": "step",
   "original": "https://github.com/hiproxy/step-flow",
   "version": "0.0.1",
   "description": "step flow",

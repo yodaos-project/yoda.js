@@ -1,11 +1,11 @@
 {
-  "name": "@yodaos/application",
+  "name": "@yodaos/keyboard",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "keywords": [
     "yodaos",
     "yoda",
-    "application"
+    "keyboard"
   ]
 }
