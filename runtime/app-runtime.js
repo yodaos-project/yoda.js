@@ -51,10 +51,10 @@ AppRuntime.prototype.init = function init () {
     this.componentLoader.load(it)
   })
   this.descriptorLoader.load(path.join(__dirname, 'descriptor'))
-  this.phaseToBooting()
 
   /** 1. init components. */
   this.componentsInvoke('init')
+  this.phaseToBooting()
   /** 2. init device properties, such as volume and cloud stack. */
   this.initiate()
   /** 3. init services */
