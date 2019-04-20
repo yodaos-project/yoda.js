@@ -1,6 +1,7 @@
 @yoda/bolero/**/*.test.js
 @yoda/util/*.test.js
 @yodaos/application/*.test.js
+@yodaos/application/vui/*.test.js
 component/app-loader/*.test.js
 component/app-scheduler/*.test.js
 component/audio-focus/*.test.js
