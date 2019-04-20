@@ -16,7 +16,7 @@ var flora = require('@yoda/flora')
 module.exports = function (activity) {
   var a2dp = null
   var hfp = null
-  var deviceName = system.getDeviceName()
+  var deviceName = `<num=tel>${system.getDeviceName()}</num>`
   logger.debug(`deviceName = ${deviceName}`)
   var res = require('./resources.json')
   var strings = require('./strings.json')
