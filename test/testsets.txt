@@ -13,6 +13,7 @@
 @yoda/util/*.test.js
 @yodaos/application/*.test.js
 logger/*.test.js
+apps/cloudAppClient/*.test.js
 activity/*.test.js
 component/app-loader/*.test.js
 component/app-scheduler/*.test.js

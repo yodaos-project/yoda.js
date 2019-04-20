@@ -4,4 +4,4 @@
 logger/*.test.js
 component/app-loader/*.test.js
 component/battery/*.test.js
-apps/cloudAppClient/*.test.js
+apps/cloudAppClient/player-control.test.js
