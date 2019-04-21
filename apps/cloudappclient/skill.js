@@ -19,9 +19,9 @@ function Skill (exe, nlp, action) {
   // identify if this skill has a player
   this.hasPlayer = false
   this.exe = exe
+  this.playerCtlData = null
   this.handleEvent()
   this.transform(action.response.action.directives || [])
-  this.playerCtlData = null
 }
 inherits(Skill, EventEmitter)
 
@@ -220,7 +220,7 @@ Skill.prototype.saveRecoverData = function (activity) {
   }
   var str = JSON.stringify(this.playerCtlData)
   logger.log(`send URL to app(playercontrol) for save playerData with data(${str})`)
-  var url = 'yoda-skill://playercontrol/playercontrol?name=' + this.appId + '&url=' + encodeURIComponent('yoda-skill://cloudappclient/resume?data=' + str)
+  var url = 'yoda-skill://playercontrol/playercontrol?name=' + this.appId + '&url=' + encodeURIComponent('yoda-skill://cloudappclient/resume?data=' + encodeURIComponent(str))
   activity.openUrl(url, { preemptive: false })
 }
 Skill.prototype.setplayerCtlData = function (data) {
@@ -287,7 +287,7 @@ Skill.prototype.transform = function (directives, append) {
       }
       if (ele.action === 'PLAY') {
         this.playerCtlData = ele
-        logger.log(`replace playerCtlData with [${this.playerCtlData}]`)
+        logger.log(`replace playerCtlData with [${this.playerCtlData}] ${this.appId}`)
       }
     } else if (ele.type === 'confirm') {
       tdt = {
