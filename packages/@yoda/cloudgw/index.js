@@ -5,7 +5,7 @@
  * @module @yoda/cloudgw
  */
 
-var https = require('https')
+var httpsession = require('@yoda/httpsession')
 var crypto = require('crypto')
 
 var _ = require('@yoda/util')._
@@ -13,7 +13,10 @@ var env = require('@yoda/env')()
 var logger = require('logger')('cloudgw')
 var StatusCodeError = require('./status-code-error')
 
-var defaultHost = env.cloudgw.restful || 'apigwrest.open.rokid.com'
+var defaultHost = env.cloudgw.restful
+if (typeof defaultHost !== 'string') {
+  throw new Error('Expect defaultHost from env.json')
+}
 var signKeys = [ 'key', 'device_type_id', 'device_id', 'service', 'version', 'time', 'secret' ]
 var authKeys = [ 'version', 'time', 'sign', 'key', 'device_type_id', 'device_id', 'service' ]
 
@@ -75,11 +78,12 @@ function Cloudgw (config) {
 
 /**
  *
- * @param {String} path
- * @param {Object} data
- * @param {Object} [options]
- * @param {String} [options.host]
- * @param {String} [options.service]
+ * @param {string} path
+ * @param {object} data
+ * @param {object} [options]
+ * @param {string} [options.host]
+ * @param {string} [options.service]
+ * @param {number} [options.timeout] timeout in milliseconds
  * @param {Function} callback
  */
 Cloudgw.prototype.request = function request (path, data, options, callback) {
@@ -96,43 +100,41 @@ Cloudgw.prototype.request = function request (path, data, options, callback) {
 
   var host = options.host || defaultHost
 
-  data = Buffer.from(JSON.stringify(data))
-  logger.info(`request https://${host}${path}`)
+  data = JSON.stringify(data)
+  var url = `https://${host}${path}`
+  logger.info(`request ${url}`)
   var authorization = getAuth(Object.assign({}, options, this.config))
-  var req = https.request({
+  var reqOpt = {
     method: 'POST',
-    host: host,
-    path: path,
     headers: {
       'Authorization': authorization,
       'Content-Type': 'application/json;charset=utf-8',
       'Content-Length': data.length
+    },
+    body: data
+  }
+  if (typeof options.timeout === 'number') {
+    reqOpt.timeout = options.timeout / 1000
+  }
+  httpsession.request(url, reqOpt, (err, res) => {
+    if (err) {
+      callback(err)
+      return
     }
-  }, res => {
-    var bufs = []
-    res.on('data', chunk => bufs.push(chunk))
-    res.on('end', onResponse)
-
-    function onResponse () {
-      var body = Buffer.concat(bufs).toString()
-      if (res.statusCode !== 200) {
-        callback(new StatusCodeError(res.statusCode, body, res))
-        return
-      }
-      try {
-        body = JSON.parse(body)
-      } catch (err) {
-        err.message = `Failed to parse response data. ${err.message}`
-        callback(err)
-      }
-      callback(null, body)
+    var body = res.body
+    if (res.code !== 200) {
+      callback(new StatusCodeError(res.code, body, res))
+      return
     }
+    try {
+      body = JSON.parse(body)
+    } catch (err) {
+      err.message = `Failed to parse response data. ${err.message}`
+      callback(err)
+      return
+    }
+    callback(null, body)
   })
-
-  req.on('error', err => {
-    callback(err)
-  })
-  req.end(data)
 }
 
 module.exports = Cloudgw

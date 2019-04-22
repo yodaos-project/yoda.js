@@ -109,15 +109,18 @@ function install_resources() {
 }
 
 function install_apps {
-  # apps
-  shell "rm -rf /opt/apps/*"
+  # install apps
+  appdir=./apps
+  for file in `ls ${appdir}`; do
+    shell "rm -rf /opt/apps/${file}"
+  done
   push "./apps/*" "/opt/apps/"
 }
 
 function install_configs() {
   # etc config
   shell "rm -rf /etc/yoda/*"
-  push "./etc/*" "/etc/yoda/"
+  push "./etc/yoda/*" "/etc/yoda/"
 }
 
 shell "mount -o remount,rw /"

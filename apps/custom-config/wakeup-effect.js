@@ -9,15 +9,16 @@ var BaseConfig = require('./base-config')
 var Caps = require('@yoda/caps/caps.node').Caps
 var property = require('@yoda/property')
 var safeParse = require('@yoda/util').json.safeParse
+var mkdirp = require('@yoda/util').fs.mkdirp
 var logger = require('logger')('custom-config-wakeup')
 var flora = require('./singleton-flora')
 
-// var AWAKE_EFFECT_DEFAULT = '0'
+var AWAKE_EFFECT_DEFAULT = '0'
 var AWAKE_EFFECT_CUSTOM = '1'
 var AWAKE_EFFECT = 'rokid.custom_config.wakeup_sound'
 
 var WAKE_SOUND_OPEN_DEFAULT = '唤醒应答已设置为默认声音'
-var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>>你录制的声音'
+var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>你录制的声音'
 var WAKE_SOUND_CLOSE = '已关闭唤醒应答'
 var CONFIG_FAILED = '设置失败'
 var SWITCH_OPEN = 'open'
@@ -26,6 +27,7 @@ var SWITCH_CLOSE = 'close'
 var readDirAsync = promisify(fs.readdir)
 var unlinkAsync = promisify(fs.unlink)
 var downloadAsync = promisify(doDownloadFile)
+var mkdirpAsync = promisify(mkdirp)
 
 /**
  * download file use `wget`
@@ -108,6 +110,7 @@ function downloadWav (wakeupSoundEffects, path) {
 
 /**
  * Wakeup effect processor
+ * @extends BaseConfig
  */
 class WakeupEffect extends BaseConfig {
   constructor (activity) {
@@ -116,21 +119,21 @@ class WakeupEffect extends BaseConfig {
       logger.warn(`Activation config is null`)
       ActivationConfig = {}
     }
-    if (!ActivationConfig.hasOwnProperty('customPath')) {
+    if (typeof ActivationConfig.customPath !== 'string') {
       ActivationConfig.customPath = '/data/activation/media/'
     } else {
-      if (!ActivationConfig.customPath[ActivationConfig.customPath.length - 1] === '/') {
+      if (ActivationConfig.customPath[ActivationConfig.customPath.length - 1] !== '/') {
         ActivationConfig.customPath += '/'
       }
     }
-    if (!ActivationConfig.hasOwnProperty('defaultPath')) {
+    if (typeof ActivationConfig.defaultPath !== 'string') {
       ActivationConfig.defaultPath = '/opt/media/activation/'
     } else {
-      if (!ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] === '/') {
+      if (ActivationConfig.defaultPath[ActivationConfig.defaultPath.length - 1] !== '/') {
         ActivationConfig.defaultPath += '/'
       }
     }
-    this.init()
+    this.refresh()
   }
 
   /**
@@ -200,37 +203,51 @@ class WakeupEffect extends BaseConfig {
    */
   onWakeupEffectStatusChangedFromIntent (action) {
     property.set('sys.wakeupwitch', action, 'persist')
-    if (action === 'close') {
-      this.notifyActivation([])
-    } else {
-      this.getFileList().then((fileList) => {
-        if (!fileList || !(fileList instanceof Array)) {
-          fileList = []
-        }
-        this.notifyActivation(fileList)
-      })
-    }
+    this.refresh()
   }
 
   /**
-   * init the activation status
+   * refresh the activation sound
    */
-  init () {
+  refresh () {
     var action = property.get('sys.wakeupwitch', 'persist')
     if (action === SWITCH_CLOSE) {
+      logger.info('wakeup effect turned off')
       this.notifyActivation([])
     } else {
       this.getFileList().then((fileList) => {
+        if (!Array.isArray(fileList)) {
+          fileList = []
+        }
         this.notifyActivation(fileList)
+        if (property.get('sys.wakeupsound', 'persist') === AWAKE_EFFECT_CUSTOM) {
+          logger.info('custom wakeup effect turned on')
+        } else {
+          logger.info('default wakeup effect turned on')
+        }
       })
     }
+    this.activity.get().then(prop => {
+      this.activity.httpgw.request('/v1/rokidAccount/RokidAccount/getUserCustomConfigByDevice',
+        {userId: prop.masterId}, {}).then((data) => {
+        var config = safeParse(_.get(data, 'values.wakeupSoundEffects', ''))
+        if (typeof config === 'object') {
+          config.wakeupSoundEffects = config.value
+          this.applyWakeupEffect(config, true)
+        } else {
+          logger.warn(`custom config error: ${JSON.stringify(data)}`)
+        }
+      }).catch((err) => {
+        logger.error(`request custom config error: ${err}`)
+      })
+    })
   }
   /**
    * process request from url
-   * @param {string} queryObj - object from url,
+   * @param {object} queryObj - object from url,
    */
   onWakeupEffectStatusChangedFromUrl (queryObj) {
-    if (queryObj && queryObj.param) {
+    if (typeof queryObj === 'object' && typeof queryObj.param === 'string') {
       var realQueryObj = safeParse(queryObj.param)
       this.applyWakeupEffect(realQueryObj, queryObj.isFirstLoad)
     }
@@ -242,24 +259,36 @@ class WakeupEffect extends BaseConfig {
    * @param isFirstLoad -
    */
   applyWakeupEffect (queryObj, isFirstLoad) {
-    if (queryObj && queryObj.action) {
+    if (typeof queryObj === 'object' && typeof queryObj.action === 'string') {
       property.set('sys.wakeupswitch', queryObj.action, 'persist')
-      if (queryObj.type !== undefined) {
-        property.set('sys.wakeupsound', queryObj.type, 'persist')
+      if (typeof queryObj.type !== 'string') {
+        queryObj.type = AWAKE_EFFECT_DEFAULT
       }
+      property.set('sys.wakeupsound', queryObj.type, 'persist')
       if (queryObj.action === SWITCH_CLOSE) {
         this.notifyActivation([])
       } else {
         if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
-          if (typeof queryObj.wakeupSoundEffects !== 'object') {
+          if (Array.isArray(queryObj.wakeupSoundEffects) && queryObj.wakeupSoundEffects.length !== 0) {
+            for (var i = 0; i < queryObj.wakeupSoundEffects.length; ++i) {
+              if (typeof queryObj.wakeupSoundEffects[i].wakeupUrl !== 'string' ||
+                typeof queryObj.wakeupSoundEffects[i].wakeupId !== 'string') {
+                logger.warn('custom wakeupSoundEffects field type error: ', queryObj)
+                return
+              }
+            }
+          } else {
+            logger.warn('custom wakeupSoundEffects should be array : ', queryObj)
             return
           }
-          clearDir(ActivationConfig.customPath).then(() => {
-            downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath).then((fileList) => {
-              this.notifyActivation(fileList)
-            }).catch((err) => {
-              logger.warn(`download custom wakeup sound error: ${err}`)
-            })
+          mkdirpAsync(ActivationConfig.customPath).then(() => {
+            return clearDir(ActivationConfig.customPath)
+          }).then(() => {
+            return downloadWav(queryObj.wakeupSoundEffects, ActivationConfig.customPath)
+          }).then((fileList) => {
+            this.notifyActivation(fileList)
+          }).catch((err) => {
+            logger.warn(`download custom wakeup sound error: ${err}`)
           })
         } else {
           this.getFileList().then((fileList) => {
@@ -270,7 +299,7 @@ class WakeupEffect extends BaseConfig {
 
       if (!isFirstLoad) {
         if (queryObj.action === SWITCH_OPEN) {
-          if (queryObj.type && queryObj.type === AWAKE_EFFECT_CUSTOM) {
+          if (typeof queryObj.type === 'string' && queryObj.type === AWAKE_EFFECT_CUSTOM) {
             this.activity.tts.speak(WAKE_SOUND_OPEN_CUSTOM).then(() => this.activity.exit())
           } else {
             this.activity.tts.speak(WAKE_SOUND_OPEN_DEFAULT).then(() => this.activity.exit())

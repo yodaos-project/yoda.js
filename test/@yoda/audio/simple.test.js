@@ -90,14 +90,10 @@ test('set/get volume with different stream model in 0-100', (t) => {
     for (var i = 1; i <= 100; i++) {
       if (str !== '') {
         AudioManager.setVolume(AudioManager[str], i)
-        if (AudioManager.getVolume(AudioManager[str]) !== i) {
-          t.fail(`it should be set volume to ${i}`)
-        }
+        t.strictEqual(AudioManager.getVolume(AudioManager[str]), i, `it should be set volume to ${i}`)
       } else {
         AudioManager.setVolume(i)
-        if (AudioManager.getVolume() !== i) {
-          t.fail(`it should be set volume to ${i}`)
-        }
+        t.strictEqual(AudioManager.getVolume(), i, `it should be set volume to ${i}`)
       }
     }
   })

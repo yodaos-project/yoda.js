@@ -8,6 +8,20 @@
 #include <stdlib.h>
 #include <common.h>
 #include <errno.h>
+#include <malloc.h>
+#include <unistd.h>
+
+static napi_value PowerOff(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  napi_create_double(env, system("poweroff"), &returnVal);
+  return returnVal;
+}
+
+static napi_value RebootCharging(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  napi_create_double(env, system("rokid_reboot charging"), &returnVal);
+  return returnVal;
+}
 
 static napi_value Reboot(napi_env env, napi_callback_info info) {
   napi_value returnVal;
@@ -202,8 +216,40 @@ static napi_value Strptime(napi_env env, napi_callback_info info) {
   return obj;
 }
 
+static napi_value AdjustMallocSettings(napi_env env, napi_callback_info info) {
+  int max_thread = 0;
+  size_t argc = 1;
+  napi_value argv[1];
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+  napi_get_value_int32(env, argv[0], &max_thread);
+  if (max_thread < 1) {
+    max_thread = 1;
+  }
+  mallopt(M_ARENA_MAX, max_thread);
+  long long ps = sysconf(_SC_PAGESIZE);
+  long long pn = sysconf(_SC_PHYS_PAGES);
+  long long availMem = ps * pn / 1024 / 1024;
+  if (availMem < 512) {
+    mallopt(M_TRIM_THRESHOLD, 64 * 1024);
+    mallopt(M_MMAP_THRESHOLD, 64 * 1024);
+  }
+  return NULL;
+}
+
+static napi_value MallocTrim(napi_env env, napi_callback_info info) {
+  malloc_trim(0);
+  return NULL;
+}
+
+static napi_value MallocStats(napi_env env, napi_callback_info info) {
+  malloc_stats();
+  return NULL;
+}
+
 static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
+    DECLARE_NAPI_PROPERTY("powerOff", PowerOff),
+    DECLARE_NAPI_PROPERTY("rebootCharging", RebootCharging),
     DECLARE_NAPI_PROPERTY("reboot", Reboot),
     DECLARE_NAPI_PROPERTY("verifyOtaImage", VerifyOtaImage),
     DECLARE_NAPI_PROPERTY("prepareOta", PrepareOta),
@@ -212,6 +258,9 @@ static napi_value Init(napi_env env, napi_value exports) {
     DECLARE_NAPI_PROPERTY("setRecoveryOk", SetRecoveryOk),
     DECLARE_NAPI_PROPERTY("diskUsage", DiskUsage),
     DECLARE_NAPI_PROPERTY("strptime", Strptime),
+    DECLARE_NAPI_PROPERTY("adjustMallocSettings", AdjustMallocSettings),
+    DECLARE_NAPI_PROPERTY("mallocTrim", MallocTrim),
+    DECLARE_NAPI_PROPERTY("mallocStats", MallocStats),
   };
   napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc);
   return exports;

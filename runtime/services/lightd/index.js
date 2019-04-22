@@ -2,6 +2,7 @@
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/lightd-err.log')
+  .healthReport('lightd')
 
 var Dbus = require('dbus')
 var logger = require('logger')('lightd')
@@ -133,7 +134,7 @@ dbusApis.addMethod('reset', {
   out: ['b']
 }, function (cb) {
   logger.log('reset lightd requested by vui')
-  service.setHide()
+  service.reset()
   cb(null, true)
 })
 
@@ -182,18 +183,6 @@ dbusApis.addMethod('stopNetworkLagSound', {
   service.stopSoundByAppId('@network-lag')
   service.stopFile('@network-lag')
   cb(null, true)
-})
-dbusApis.addMethod('setGlobalAlphaFactor', {
-  in: ['s'],
-  out: []
-}, function (alphaFactor, cb) {
-  logger.info(`global alpha factor  ${alphaFactor}`)
-  var v = parseFloat(alphaFactor)
-  if (typeof v !== 'number' || (v < 0 || v > 1)) {
-    v = 1
-  }
-  service.manager.setGlobalAlphaFactor(v)
-  cb(null)
 })
 dbusApis.update()
 

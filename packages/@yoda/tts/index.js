@@ -180,6 +180,7 @@ TtsProxy.prototype.reconnect = function () {
 
 function createHandle (options) {
   if (!options) { throw new TypeError('options is required') }
+  if (!options.host) { throw new TypeError('options.host is required') }
   if (!options.deviceId) { throw new TypeError('options.deviceId is required') }
   if (!options.deviceTypeId) { throw new TypeError('options.deviceTypeId is required') }
   if (!options.secret) { throw new TypeError('options.secret is required') }
@@ -187,7 +188,7 @@ function createHandle (options) {
 
   var handle = refs.handle = new TtsWrap()
   handle.prepare(
-    options.host || 'apigwws.open.rokid.com', 443, '/api',
+    options.host, 443, '/api',
     options.key,
     options.deviceTypeId,
     options.deviceId,

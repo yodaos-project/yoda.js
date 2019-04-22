@@ -65,7 +65,9 @@ target_include_directories(shadow-flora-cli PRIVATE
 target_link_libraries(shadow-flora-cli iotjs flora-cli caps)
 
 install(TARGETS shadow-flora-cli DESTINATION ${CMAKE_INSTALL_DIR})
-install(FILES index.js comp.js DESTINATION ${CMAKE_INSTALL_DIR})
+
+file(GLOB YODA_FLORA_SRC *.js)
+install(FILES ${YODA_FLORA_SRC} DESTINATION ${CMAKE_INSTALL_DIR})
 endif(BUILD_INDEPENDENT)
 
 target_compile_options(shadow-flora-cli PRIVATE

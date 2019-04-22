@@ -1,4 +1,5 @@
 var logger = require('logger')('sound')
+var manifest = require('@yoda/manifest')
 var AudioManager = require('@yoda/audio').AudioManager
 
 module.exports = Sound
@@ -11,6 +12,10 @@ function Sound (runtime) {
   this.manager = AudioManager
 
   this.defaultVolume = 30
+  var defaultVolume = manifest.getDefaultValue('audio.volume.recover')
+  if (typeof defaultVolume === 'number' && !isNaN(defaultVolume)) {
+    this.defaultVolume = defaultVolume
+  }
 }
 
 /**

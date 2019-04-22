@@ -7,12 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "manifest": {
+    "daemon": true,
     "skills": [
       "@custom-config",
       "RF68BD0FD30340ECBB926023072A8179"
     ],
     "permission": [
-      "ACCESS_TTS",
       "ACCESS_VOICE_COMMAND",
       "INTERRUPT"
     ],

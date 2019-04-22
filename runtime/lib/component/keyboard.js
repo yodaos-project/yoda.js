@@ -2,7 +2,7 @@ var logger = require('logger')('keyboard')
 var Input = require('@yoda/input')
 var _ = require('@yoda/util')._
 
-var config = require('/etc/yoda/keyboard.json')
+var config = require('../helper/config').getConfig('keyboard.json')
 
 module.exports = KeyboardHandler
 function KeyboardHandler (runtime) {
@@ -15,14 +15,6 @@ function KeyboardHandler (runtime) {
 
   this.longpressWindow = _.get(this.config, 'config.longpressWindow', 500)
   this.debounce = _.get(this.config, 'config.debounce', 0)
-
-  this.listeners = {
-    keydown: {},
-    keyup: {},
-    click: {},
-    dbclick: {},
-    longpress: {}
-  }
 }
 
 KeyboardHandler.prototype.init = function init () {
@@ -31,7 +23,8 @@ KeyboardHandler.prototype.init = function init () {
 }
 
 KeyboardHandler.prototype.deinit = function deinit () {
-  this.input.disconnect()
+  this.input && this.input.disconnect()
+  this.input = null
 }
 
 KeyboardHandler.prototype.execute = function execute (descriptor) {
@@ -50,53 +43,73 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
         logger.error(`Unexpected error on opening url '${descriptor.url}'`, err && err.message, err && err.stack)
       })
   }
+  var target
+  var method
+  var params
   if (descriptor.runtimeMethod) {
-    var method = this.runtime[descriptor.runtimeMethod]
-    var params = _.get(descriptor, 'params', [])
-    if (typeof method !== 'function') {
-      logger.error('Malformed descriptor, runtime method not found.', descriptor)
+    target = this.runtime
+    method = this.runtime[descriptor.runtimeMethod]
+    params = _.get(descriptor, 'params', [])
+  } else if (typeof descriptor.componentMethod === 'string') {
+    var match = descriptor.componentMethod.split('.', 2)
+    logger.info('match', match)
+    var componentName = match[0]
+    var methodName = match[1]
+    target = this.component[componentName]
+    if (target == null) {
+      logger.error('Malformed descriptor, component not found.', descriptor)
       return
     }
-    if (!Array.isArray(params)) {
-      logger.error('Malformed descriptor, params is not an array.', descriptor)
-      return
-    }
-
-    return method.apply(this.runtime, params)
+    method = target[methodName]
+    params = _.get(descriptor, 'params', [])
   }
-  logger.error('Unknown descriptor', descriptor)
+
+  if (target == null) {
+    logger.error('Unknown descriptor', descriptor)
+    return
+  }
+  if (typeof method !== 'function') {
+    logger.error('Malformed descriptor, method not found', descriptor)
+    return
+  }
+  if (!Array.isArray(params)) {
+    logger.error('Malformed descriptor, params is not an array.', descriptor)
+    return
+  }
+  return method.apply(target, params)
 }
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
-  var listener = _.get(this.listeners, `${type}.${event.keyCode}`)
-  if (listener != null && listener === this.component.lifetime.getCurrentAppId()) {
-    var app = this.component.appScheduler.getAppById(listener)
-    if (app) {
-      logger.info(`Delegating ${type} '${event.keyCode}' to app ${listener}.`)
-      app.keyboard.emit(type, event)
-      return true
-    }
-    logger.info(`App ${listener} is not active, skip ${type} '${event.keyCode}' delegation.`)
+  var currentApp = this.component.lifetime.getCurrentAppId()
+  var app = this.component.appScheduler.getAppById(currentApp)
+  if (app == null) {
+    logger.info(`No active app, skip ${type} '${event.keyCode}' delegation.`)
+    return false
   }
-  return false
+  var interest = _.get(app, `keyboard.interests.${type}.${event.keyCode}`)
+  if (interest !== true) {
+    logger.info(`Current app(${currentApp}) has no interest, skip ${type} '${event.keyCode}' delegation.`)
+    return false
+  }
+  logger.info(`Delegating ${type} '${event.keyCode}' to app ${currentApp}.`)
+  app.keyboard.emit(type, event)
+  return true
 }
 
 KeyboardHandler.prototype.listen = function listen () {
-  this.input.on('keydown', listenerWrap(this.onKeydown, this))
-  this.input.on('keyup', listenerWrap(this.onKeyup, this))
-  this.input.on('longpress', listenerWrap(this.onLongpress, this))
+  this.input.on('keydown', this.listenerWrap('keydown', this.onKeydown))
+  this.input.on('keyup', this.listenerWrap('keyup', this.onKeyup))
+  this.input.on('longpress', this.listenerWrap('longpress', this.onLongpress))
 
   ;['click', 'dbclick', 'slide-clockwise', 'slide-counter-clockwise'].forEach(gesture => {
-    this.input.on(gesture, listenerWrap(this.onGesture, this, [ gesture ]))
+    this.input.on(gesture, this.listenerWrap(gesture, this.onGesture, [ gesture ]))
   })
 }
 
 KeyboardHandler.prototype.onKeydown = function onKeydown (event) {
   this.currentKeyCode = event.keyCode
-  logger.info(`keydown: ${event.keyCode}`)
-  if (this.firstLongPressTime == null) {
-    this.firstLongPressTime = event.keyTime
-  }
+  logger.info(`keydown: ${event.keyCode}, keyTime: ${event.keyTime}`)
+  this.firstLongPressTime = event.keyTime
 
   if (this.handleAppListener('keydown', event)) {
     logger.info(`Delegated keydown to app.`)
@@ -123,22 +136,22 @@ KeyboardHandler.prototype.onKeydown = function onKeydown (event) {
 }
 
 KeyboardHandler.prototype.onKeyup = function onKeyup (event) {
-  logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
-  if (this.currentKeyCode !== event.keyCode) {
+  logger.info(`keyup: ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}, keyTime: ${event.keyTime}`)
+  if (this.currentKeyCode === event.keyCode) {
+    if (this.firstLongPressTime != null) {
+      this.firstLongPressTime = null
+      logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
+    }
+
+    if (this.preventSubsequent) {
+      this.preventSubsequent = false
+      logger.info(`Event keyup prevented '${event.keyCode}'.`)
+      return
+    }
+  } else {
     logger.info(`Keyup a difference key '${event.keyCode}'.`)
-    return
   }
 
-  if (this.firstLongPressTime != null) {
-    this.firstLongPressTime = null
-    logger.info(`Keyup a long pressed key '${event.keyCode}'.`)
-  }
-
-  if (this.preventSubsequent) {
-    this.preventSubsequent = false
-    logger.info(`Event keyup prevented '${event.keyCode}'.`)
-    return
-  }
   if (this.handleAppListener('keyup', event)) {
     logger.info(`Delegated keyup to app.`)
     return
@@ -165,12 +178,12 @@ KeyboardHandler.prototype.onKeyup = function onKeyup (event) {
 
 KeyboardHandler.prototype.onLongpress = function onLongpress (event) {
   if (this.currentKeyCode !== event.keyCode) {
-    this.firstLongPressTime = null
+    logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, skipped for not matched keyCode.`)
     return
   }
   var timeDelta = event.keyTime - this.firstLongPressTime
   timeDelta = Math.round(timeDelta / this.longpressWindow) * this.longpressWindow
-  logger.info(`longpress: ${event.keyCode}, time: ${timeDelta}`)
+  logger.info(`longpress: ${event.keyCode}, keyTime: ${event.keyTime}, timeDelta: ${timeDelta}`)
 
   if (this.preventSubsequent) {
     logger.info(`Event longpress prevented '${event.keyCode}'.`)
@@ -206,7 +219,7 @@ KeyboardHandler.prototype.onLongpress = function onLongpress (event) {
 }
 
 KeyboardHandler.prototype.onSlide = function onSlide (event) {
-  logger.info(`slide: ${event.orientation}, currentKeyCode: ${this.currentKeyCode}`)
+  logger.info(`slide: ${event.orientation}, keyTime: ${event.keyTime}, currentKeyCode: ${this.currentKeyCode}`)
 
   if (this.handleAppListener('slide', event)) {
     logger.info(`Delegated slide to app.`)
@@ -236,7 +249,7 @@ KeyboardHandler.prototype.onSlide = function onSlide (event) {
 }
 
 KeyboardHandler.prototype.onGesture = function onGesture (gesture, event) {
-  logger.info(`gesture(${gesture}): ${event.keyCode}, currentKeyCode: ${this.currentKeyCode}`)
+  logger.info(`gesture(${gesture}): ${event.keyCode}, keyTime: ${event.keyTime}, currentKeyCode: ${this.currentKeyCode}`)
 
   if (this.handleAppListener(gesture, event)) {
     logger.info(`Delegated gesture(${gesture}) to app.`)
@@ -266,38 +279,20 @@ KeyboardHandler.prototype.onGesture = function onGesture (gesture, event) {
   return this.execute(descriptor)
 }
 
-KeyboardHandler.prototype.preventKeyDefaults = function preventKeyDefaults (appId, keyCode, event) {
-  var key = String(keyCode)
-  var events = Object.keys(this.listeners)
-  if (event != null && events.indexOf(event) >= 0) {
-    events = [ event ]
-  }
-  events.forEach(it => {
-    this.listeners[it][key] = appId
-  })
-  return Promise.resolve()
-}
-
-KeyboardHandler.prototype.restoreKeyDefaults = function restoreKeyDefaults (appId, keyCode, event) {
-  var key = String(keyCode)
-  var events = Object.keys(this.listeners)
-  if (event != null && events.indexOf(event) >= 0) {
-    events = [ event ]
-  }
-  events.forEach(it => {
-    if (this.listeners[it][key] === appId) {
-      this.listeners[it][key] = null
-    }
-  })
-  return Promise.resolve()
-}
-
-function listenerWrap (fn, receiver, args) {
-  return function () {
-    try {
-      fn.apply(receiver, (args || []).concat(Array.prototype.slice.call(arguments, 0)))
-    } catch (err) {
-      logger.error('Unexpected error on handling key events', err && err.message, err && err.stack)
-    }
+KeyboardHandler.prototype.listenerWrap = function listenerWrap (eventName, fn, args) {
+  var self = this
+  return function (event) {
+    var fnArgs = arguments
+    self.component.dispatcher.delegate('keyboardWillRespond', [ event.keyCode, eventName ])
+      .then(delegation => {
+        if (delegation) {
+          return
+        }
+        try {
+          fn.apply(self, (args || []).concat(Array.prototype.slice.call(fnArgs, 0)))
+        } catch (err) {
+          logger.error('Unexpected error on handling key events', err && err.message, err && err.stack)
+        }
+      })
   }
 }

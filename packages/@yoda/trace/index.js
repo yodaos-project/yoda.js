@@ -5,11 +5,14 @@
  */
 
 var crypto = require('crypto')
+var logger = require('logger')('@yoda/trace')
 var httpsession = require('@yoda/httpsession')
 var _ = require('@yoda/util')._
+var property = require('@yoda/property')
+
 var DEFAULT_HOST = require('@yoda/env')().trace.uploadUrl
 var DEFAULT_URI = '/das-tracing-collection/tracingUpload'
-var property = require('@yoda/property')
+
 var deviceId = property.get('ro.boot.serialno')
 var releaseVersion = property.get('ro.build.version.release')
 var defaultDeviceTypeId = property.get('ro.boot.devicetypeid')
@@ -42,10 +45,10 @@ function _createMd5 (id, nonce) {
   */
 function upload (traces) {
   if (!Array.isArray(traces)) {
-    throw new TypeError('Expect a object Array on traces.')
+    throw new TypeError('expect an array on traces.')
   }
   if (traces.length === 0) {
-    throw new Error('Expect traces length greater than 0.')
+    throw new Error('expect traces length greater than 0.')
   }
   var deviceTypeId = _.get(traces, '0.rokidDtId')
   if (typeof deviceTypeId !== 'string' || deviceTypeId.trim() === '') {
@@ -84,15 +87,18 @@ function upload (traces) {
       'Content-Type': 'text/plain;charset=utf-8'
     }
   }
-  var req = httpsession.request(DEFAULT_HOST + DEFAULT_URI, options, (err, res) => {
+  logger.verbose(`Uploading trace(${nonce})`)
+  httpsession.request(DEFAULT_HOST + DEFAULT_URI, options, (err, res) => {
     if (err) {
-      throw new Error(`Error: request failed ${err}`)
+      logger.error(`Uploading trace(${nonce}) failed for`, err.stack)
+      return
     }
     if (res.code !== 200) {
-      throw new Error(`Error: failed get data with ${res}`)
+      logger.error(`Uploading trace(${nonce}) got error response:`, res)
+      return
     }
+    logger.verbose(`Uploading trace(${nonce}) got success response:`, res)
   })
-  req.end()
 }
 
 module.exports = upload

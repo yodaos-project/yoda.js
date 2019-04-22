@@ -61,7 +61,7 @@ test('ota check should be ok if intent is start_sys_upgrade', t => {
         t.end()
         return process.exit()
       })
-      runtime.onVoiceCommand(undefined, {intent: 'start_sys_upgrade', appId: 'R07D6E0137294FFBBFEF623315220FD4'})
+      runtime.handleNlpIntent(undefined, {intent: 'start_sys_upgrade', appId: 'R07D6E0137294FFBBFEF623315220FD4'})
 
       // runtime.openUrl()
       // runtime.loader.getAppById('@yoda/ota')

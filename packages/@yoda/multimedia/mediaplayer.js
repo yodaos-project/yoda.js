@@ -266,6 +266,20 @@ MediaPlayer.prototype.reset = function () {
 }
 
 /**
+ * set play speed.
+ * @param {number} speed - the speed.
+ * @private
+ */
+MediaPlayer.prototype.setSpeed = function (speed) {
+  if (speed <= 2 && speed > 0) {
+    speed = (speed - 1) * 100
+  } else {
+    speed = 0
+  }
+  return this._handle.setTempoDelta(speed)
+}
+
+/**
  * disconnect the player.
  * @private
  */
@@ -348,6 +362,19 @@ Object.defineProperty(MediaPlayer.prototype, 'sessionId', {
   },
   set: function (id) {
     return this._handle.sessionIdSetter(id)
+  }
+})
+
+/**
+ * @member {number} eqMode
+ * @memberof @yoda/multimedia~MediaPlayer
+ */
+Object.defineProperty(MediaPlayer.prototype, 'eqMode', {
+  get: function () {
+    return this._handle.eqModeGetter()
+  },
+  set: function (mode) {
+    return this._handle.eqModeSetter(mode)
   }
 })
 

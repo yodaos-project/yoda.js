@@ -11,12 +11,23 @@ function Manager (exe, Skill) {
   EventEmitter.call(this)
   this.exe = exe
   this.Skill = Skill
+  this.eventRequest = eventRequest
   this.skills = []
   this.isAppActive = true
+  // for gsensor roll in back,like strongpause
+  this.manualPause = false
 }
 inherits(Manager, EventEmitter)
 
-Manager.prototype.onrequest = function (nlp, action) {
+Manager.prototype.setManualPauseFLag = function (flag) {
+  this.manualPause = flag
+}
+
+Manager.prototype.getManualPauseFLag = function () {
+  return this.manualPause
+}
+
+Manager.prototype.onrequest = function (nlp, action, calmly) {
   if (!action || !action.appId) {
     logger.error(`Missing the appId! The action value is: [${JSON.stringify(action)}]`)
     if (this.skills.length === 0) {
@@ -34,6 +45,7 @@ Manager.prototype.onrequest = function (nlp, action) {
       logger.log('there is no skill to run, emit [empty] event because directive is empty!')
       this.emit('empty')
     } else {
+      logger.log('try to resume current skill')
       this.resume()
     }
     return
@@ -72,8 +84,39 @@ Manager.prototype.onrequest = function (nlp, action) {
       }
     }
     skill.on('exit', this.next.bind(this, skill))
-    skill.emit('start')
+    if (calmly !== true) {
+      skill.emit('start')
+    }
   }
+}
+
+Manager.prototype.onrequestOnce = function (nlp, action, callback) {
+  if (!action || !action.appId) {
+    logger.error(`Missing the appId! The action value is: [${JSON.stringify(action)}]`)
+    return callback()
+  }
+  var directives = _.get(action, 'response.action.directives', [])
+  if (directives.length <= 0) {
+    logger.warn(`directive is empty! The action value is: [${JSON.stringify(action)}]`)
+    return callback()
+  }
+  var cur
+  var pos = this.findByAppId(action.appId)
+
+  if (pos > -1) {
+    if (this.getCurrentSkill().appId !== action.appId) {
+      // destroy current skill
+      var prev = this.skills.pop()
+      prev.emit('destroy')
+      this.skills[pos].emit('resume')
+    }
+    cur = this.skills[pos]
+  } else {
+    this.onrequest(nlp, action, true)
+    pos = this.findByAppId(action.appId)
+    cur = this.skills[pos]
+  }
+  cur.requestOnce(nlp, action, callback)
 }
 
 Manager.prototype.findByAppId = function (appId) {
@@ -89,7 +132,7 @@ Manager.prototype.append = function (nlp, action) {
   var pos = this.findByAppId(action.appId)
   if (pos > -1) {
     logger.log(`skill ${action.appId}  index ${pos} append request`)
-    this.skills[pos].onrequest(action)
+    this.skills[pos].onrequest(action, true)
   } else {
     logger.log(`skill ${action.appId} not in stack, append ignore`)
   }
@@ -97,6 +140,11 @@ Manager.prototype.append = function (nlp, action) {
 
 Manager.prototype.next = function (skill) {
   logger.log(`next skill`)
+  this.emit('exit', skill)
+  // if this flag equls true,means strong pause,so we do not exec next
+  if (this.getManualPauseFLag() === true) {
+    return
+  }
   var cur = this.getCurrentSkill()
   if (cur && cur.appId !== skill.appId) {
     return
@@ -125,6 +173,7 @@ Manager.prototype.pause = function () {
   // clear the form is not a scene type of skill
   if (cur.form !== 'scene') {
     this.skills.pop()
+    cur.emit('destroy')
     cur.emit('exit')
   }
 }
@@ -134,6 +183,8 @@ Manager.prototype.resume = function () {
   var cur = this.getCurrentSkill()
   if (cur !== false) {
     cur.emit('resume')
+  } else {
+    logger.log('not found skill, skipping resume skill')
   }
 }
 
@@ -175,11 +226,12 @@ Manager.prototype.getCurrentSkill = function () {
 }
 
 Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
+  logger.log(`[sendReq] type(${type}) name(${name}) data(${JSON.stringify(data)}) args(${JSON.stringify(args)})`)
   if (!data.appId) {
     logger.log('ignored eventRequest, because it is no appId given')
     return cb && cb()
   }
-  if ((type === 'tts' || type === 'media') && name === 'cancel' && this.isAppActive) {
+  if (type === 'tts' && name === 'cancel' && this.isAppActive) {
     if (this.getCurrentSkill().appId === data.appId) {
       logger.info(`ignored ${type} cancel eventRequest, because currently skill cancel it self`)
       cb && cb()
@@ -192,8 +244,12 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     return
   }
   if (type === 'tts') {
-    eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (response) => {
-      logger.log(`====> tts eventRequest response: ${response}`)
+    this.eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (err, response) => {
+      if (err) {
+        logger.error(err)
+        return cb && cb(err)
+      }
+      logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
       }
@@ -202,8 +258,12 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
       cb && cb()
     })
   } else if (type === 'media') {
-    eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (response) => {
-      logger.log(`====> media eventRequest response: ${response}`)
+    this.eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (err, response) => {
+      if (err) {
+        logger.error(err)
+        return cb && cb(err)
+      }
+      logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
       if (response === '{}') {
         return cb && cb()
       }
@@ -215,7 +275,31 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
 }
 
 Manager.prototype.setEventRequestConfig = function (config) {
-  eventRequest.setConfig(config || {})
+  this.eventRequest.setConfig(config || {})
 }
+Manager.prototype.generateAction = function (data) {
+  var action = {
+    startWithActiveWord: false,
+    appId: data.appId,
+    response: {
+      action: {
+        form: 'scene',
+        shouldEndSession: false,
+        directives: [data]
+      }
+    }
 
+  }
+  return action
+}
+Manager.prototype.getSceneSkillIndex = function () {
+  var index = -1
+  this.skills.forEach((skill, idx) => {
+    logger.info(`skill = ${skill.hasPlayer} ${skill.form} ${skill.saveRecoverData} ${idx}`)
+    if (skill.hasPlayer && skill.form === 'scene') {
+      index = idx
+    }
+  })
+  return index
+}
 module.exports = Manager

@@ -192,6 +192,8 @@ module.exports = function (app) {
           })
         }
         sendWifiList(WifiList)
+      } if (message.topic === 'getSn') {
+        sendSn(property.get('ro.boot.serialno'))
       } else if (message.topic === 'bind') {
         connectWIFI(message.data, (err, connect) => {
           netStatus = NET_STATUS_IDLE
@@ -204,7 +206,6 @@ module.exports = function (app) {
             stopConnectWIFI()
             app.playSound('system://wifi/connect_timeout.ogg')
           } else {
-            wifi.save()
             logger.info('connected and wait for internet connection.')
           }
         })
@@ -213,6 +214,7 @@ module.exports = function (app) {
   }
 
   function setupNetworkByBle () {
+    app.light.play('system://setStandby.js', {}, { shouldResume: true })
     wifi.disableAll()
     logger.log('open ble with name', BLE_NAME)
     initBleMessageStream(messageStream)
@@ -230,7 +232,6 @@ module.exports = function (app) {
         // FIXME(Yorkie): needs tell bind is unavailable?
       })
       app.playSound('system://wifi/setup_network.ogg')
-      app.light.play('system://setStandby.js', {}, { shouldResume: true })
     }
     timerAndSleep()
   }
@@ -327,6 +328,14 @@ module.exports = function (app) {
     })
   }
 
+  function sendSn (sn) {
+    logger.log('send SN to App: ', sn)
+    messageStream.write({
+      topic: 'getSn',
+      data: sn
+    })
+  }
+
   function sendWifiStatus (data) {
     messageStream.write(data)
   }
@@ -353,6 +362,10 @@ module.exports = function (app) {
       logger.log('closed ble')
     }
     if (!NET_DISABLE_RECONNECT) {
+      if (connectId >= 0) {
+        wifi.removeNetwork(connectId)
+        logger.info(`remove Network: ${connectId}`)
+      }
       wifi.enableScanPassively()
       logger.info('start scan network passively')
     }

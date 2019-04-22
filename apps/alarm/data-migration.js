@@ -22,7 +22,6 @@ module.exports = function getAlarms (activity, callback) {
             reminders: reminders
           })
         }
-        unlinkFiles()
       } catch (err) {
         throw err
       }
@@ -40,6 +39,10 @@ module.exports = function getAlarms (activity, callback) {
     } else {
       try {
         alarms = JSON.parse(values[0] || '{}').alarms || []
+        if (!Array.isArray(alarms)) {
+          logger.warn('alarms data not Array,should format to []')
+          alarms = []
+        }
       } catch (err) {
         throw new Error('old alarm data parse error', err.stack)
       }
@@ -49,6 +52,10 @@ module.exports = function getAlarms (activity, callback) {
     } else {
       try {
         reminders = JSON.parse(values[1] || '{}').reminders || []
+        if (!Array.isArray(reminders)) {
+          logger.warn('reminders data not Array,should format to []')
+          reminders = []
+        }
       } catch (err) {
         throw new Error('old reminder data parse error', err.stack)
       }
@@ -80,7 +87,14 @@ module.exports = function getAlarms (activity, callback) {
       activity: activity,
       intent: intent,
       businessParams: businessParams || {},
-      callback: (res) => {
+      callback: (err, res) => {
+        if (err) {
+          return
+        }
+        if (intent === 'upload_alarms') {
+          logger.log('upload_alarms--->success && unlinkOldFiles')
+          unlinkFiles()
+        }
         var resObj = {}
         try {
           resObj = JSON.parse(res)

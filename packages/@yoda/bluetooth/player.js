@@ -16,15 +16,15 @@ var helper = require('./helper')
  */
 function BluetoothPlayer () {
   EventEmitter.call(this)
-  this._flora = new FloraComp(logger)
-  this._flora.handlers = {
-    'bluetooth.a2dpsink.event': this._onevent.bind(this)
-  }
-  this._flora.init('bluetooth-mediaplayer', {
+  this._flora = new FloraComp('bluetooth-mediaplayer', {
     'uri': 'unix:/var/run/flora.sock',
     'bufsize': 40960,
     'reconnInterval': 10000
   })
+  this._flora.handlers = {
+    'bluetooth.a2dpsink.event': this._onevent.bind(this)
+  }
+  this._flora.init()
   this._end = false
 }
 inherits(BluetoothPlayer, EventEmitter)

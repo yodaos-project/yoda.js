@@ -204,6 +204,21 @@ var suites = [
         expected: 'fooBar'
       }
     ]
+  },
+  {
+    fn: 'format',
+    cases: [
+      {
+        title: 'should format string',
+        params: [ 'foo%s%d tail', 'bar', 123 ],
+        expected: 'foobar123 tail'
+      },
+      {
+        title: 'rest parameters should not be appended',
+        params: [ 'foo tail', 'bar', 123 ],
+        expected: 'foo tail'
+      }
+    ]
   }
 ]
 

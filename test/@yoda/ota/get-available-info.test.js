@@ -9,6 +9,7 @@ var mock = require('../../helper/mock')
 
 function mockPropertyGet (noota) {
   var get = property.get
+  mock.restore()
   mock.mockReturns(property, 'get', function mockGet (key) {
     if (key === 'persist.sys.rokid.noota') {
       return noota
@@ -19,8 +20,10 @@ function mockPropertyGet (noota) {
 
 test('if cloudgw is not initialized，getAvailableInfo is error', t => {
   t.plan(1)
-  t.throws(() => { ota.getAvailableInfo() }, 'cloudgw is not initialized.', 'cloudgw is not initialized.')
-  t.end()
+  ota.getAvailableInfo(err => {
+    t.throws(() => { throw err }, 'cloudgw is not initialized.', 'cloudgw is not initialized.')
+    t.end()
+  })
 })
 
 test('getAvailableInfo should be ok', t => {

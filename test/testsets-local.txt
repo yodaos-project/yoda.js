@@ -1,0 +1,7 @@
+@yoda/bolero/**/*.test.js
+@yoda/util/*.test.js
+@yodaos/application/*.test.js
+logger/*.test.js
+component/app-loader/*.test.js
+component/battery/*.test.js
+apps/cloudAppClient/player-control.test.js

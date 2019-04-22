@@ -1,76 +1,82 @@
 #include "MediaPlayer.h"
+#include <malloc.h>
 
 // cppcheck-suppress unusedFunction
 void MultimediaListener::notify(int type, int ext1, int ext2, int from) {
+  /** Runs in async work threads */
   printf("got event %d thread %d\n", type, from);
   if (type == MEDIA_PREPARED) {
     this->prepared = true;
   }
   if (this->prepared || type == MEDIA_ERROR) {
     // only if prepared or event is MEDIA_ERROR, enables the notify
-    uv_async_t* async_handle = new uv_async_t;
+    auto player_wrap = this->getPlayer();
+    IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_player_t, player_wrap);
     iotjs_player_event_t* event = new iotjs_player_event_t;
-    event->player = this->getPlayer();
     event->type = type;
     event->ext1 = ext1;
     event->ext2 = ext2;
     event->from = from;
-    async_handle->data = (void*)event;
-    uv_async_init(uv_default_loop(), async_handle,
-                  MultimediaListener::DoNotify);
-    uv_async_send(async_handle);
+
+    uv_mutex_lock(&_this->event_mutex);
+    _this->events.push_back(event);
+    uv_mutex_unlock(&_this->event_mutex);
+    uv_async_send(&_this->event_handle);
   }
 }
 
 void MultimediaListener::DoNotify(uv_async_t* handle) {
-  iotjs_player_event_t* event = (iotjs_player_event_t*)handle->data;
-  iotjs_player_t* player_wrap = event->player;
+  /** Runs in main loop thread */
+  iotjs_player_t* player_wrap = (iotjs_player_t*)handle->data;
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
 
+  list<iotjs_player_event_t*> event_list;
+  uv_mutex_lock(&_this->event_mutex);
+  event_list.swap(_this->events);
+  uv_mutex_unlock(&_this->event_mutex);
+
   jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
-  jerry_value_t notifyFn;
-  fprintf(stdout, "try to notify the event type %d\n", event->type);
 
-  if (event->type == MEDIA_PREPARED) {
-    notifyFn = iotjs_jval_get_property(jthis, "onprepared");
-  } else if (event->type == MEDIA_PLAYBACK_COMPLETE) {
-    notifyFn = iotjs_jval_get_property(jthis, "onplaybackcomplete");
-  } else if (event->type == MEDIA_BUFFERING_UPDATE) {
-    notifyFn = iotjs_jval_get_property(jthis, "onbufferingupdate");
-  } else if (event->type == MEDIA_SEEK_COMPLETE) {
-    notifyFn = iotjs_jval_get_property(jthis, "onseekcomplete");
-  } else if (event->type == MEDIA_PLAYING_STATUS) {
-    notifyFn = iotjs_jval_get_property(jthis, "onplayingstatus");
-  } else if (event->type == MEDIA_BLOCK_PAUSE_MODE) {
-    notifyFn = iotjs_jval_get_property(jthis, "onblockpausemode");
-  } else if (event->type == MEDIA_ERROR) {
-    fprintf(stderr, "[jsruntime] player occurrs an error %d %d %d", event->ext1,
-            event->ext2, event->from);
-    notifyFn = iotjs_jval_get_property(jthis, "onerror");
-  } else {
-    fprintf(stdout, "unhandled media event type: %d\n", event->type);
-    goto clean;
+  for (auto it = event_list.begin(); it != event_list.end(); ++it) {
+    iotjs_player_event_t* event = *it;
+    jerry_value_t notifyFn;
+
+    fprintf(stdout, "try to notify the event type %d\n", event->type);
+    if (event->type == MEDIA_PREPARED) {
+      notifyFn = iotjs_jval_get_property(jthis, "onprepared");
+    } else if (event->type == MEDIA_PLAYBACK_COMPLETE) {
+      notifyFn = iotjs_jval_get_property(jthis, "onplaybackcomplete");
+    } else if (event->type == MEDIA_BUFFERING_UPDATE) {
+      notifyFn = iotjs_jval_get_property(jthis, "onbufferingupdate");
+    } else if (event->type == MEDIA_SEEK_COMPLETE) {
+      notifyFn = iotjs_jval_get_property(jthis, "onseekcomplete");
+    } else if (event->type == MEDIA_PLAYING_STATUS) {
+      notifyFn = iotjs_jval_get_property(jthis, "onplayingstatus");
+    } else if (event->type == MEDIA_BLOCK_PAUSE_MODE) {
+      notifyFn = iotjs_jval_get_property(jthis, "onblockpausemode");
+    } else if (event->type == MEDIA_ERROR) {
+      fprintf(stderr, "[jsruntime] player occurrs an error %d %d %d",
+              event->ext1, event->ext2, event->from);
+      notifyFn = iotjs_jval_get_property(jthis, "onerror");
+    } else {
+      fprintf(stdout, "unhandled media event type: %d\n", event->type);
+    }
+
+    if (jerry_value_is_function(notifyFn)) {
+      iotjs_jargs_t jargs = iotjs_jargs_create(2);
+      iotjs_jargs_append_number(&jargs, event->ext1);
+      iotjs_jargs_append_number(&jargs, event->ext2);
+
+      iotjs_make_callback(notifyFn, jerry_create_undefined(), &jargs);
+      iotjs_jargs_destroy(&jargs);
+      jerry_release_value(notifyFn);
+    } else {
+      fprintf(stderr, "no function is registered for event type %d\n",
+              event->type);
+    }
+
+    delete event;
   }
-  if (!jerry_value_is_function(notifyFn)) {
-    fprintf(stderr, "no function is registered\n");
-    goto clean;
-  }
-
-  iotjs_jargs_t jargs = iotjs_jargs_create(2);
-  iotjs_jargs_append_number(&jargs, event->ext1);
-  iotjs_jargs_append_number(&jargs, event->ext2);
-
-  iotjs_make_callback(notifyFn, jerry_create_undefined(), &jargs);
-  iotjs_jargs_destroy(&jargs);
-  jerry_release_value(notifyFn);
-
-clean:
-  delete event;
-  uv_close((uv_handle_t*)handle, MultimediaListener::AfterNotify);
-}
-
-void MultimediaListener::AfterNotify(uv_handle_t* handle) {
-  delete handle;
 }
 
 bool MultimediaListener::isPrepared() {
@@ -85,8 +91,15 @@ static JNativeInfoType this_module_native_info = {
   .free_cb = (jerry_object_native_free_callback_t)iotjs_player_destroy
 };
 
+static void iotjs_player_async_onclose(uv_handle_t* handle) {
+  iotjs_player_t* player_wrap = (iotjs_player_t*)handle->data;
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
+  jerry_value_t jval = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
+  jerry_release_value(jval);
+}
+
 static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
-  iotjs_player_t* player_wrap = IOTJS_ALLOC(iotjs_player_t);
+  iotjs_player_t* player_wrap = new iotjs_player_t;
   IOTJS_VALIDATED_STRUCT_CONSTRUCTOR(iotjs_player_t, player_wrap);
 
   static uint32_t global_id = 1000;
@@ -98,25 +111,21 @@ static iotjs_player_t* iotjs_player_create(jerry_value_t jplayer) {
   _this->listener = new MultimediaListener(player_wrap);
   _this->id = (global_id++);
 
-  _this->close_handle.data = (void*)player_wrap;
-  uv_async_init(uv_default_loop(), &_this->close_handle, iotjs_player_onclose);
+  _this->event_handle.data = (void*)player_wrap;
+  uv_async_init(uv_default_loop(), &_this->event_handle,
+                MultimediaListener::DoNotify);
+  uv_mutex_init(&_this->event_mutex);
   return player_wrap;
 }
 
 static void iotjs_player_destroy(iotjs_player_t* player_wrap) {
   IOTJS_VALIDATED_STRUCT_DESTRUCTOR(iotjs_player_t, player_wrap);
   delete _this->handle;
+  delete _this->listener;
+  uv_mutex_destroy(&_this->event_mutex);
   iotjs_jobjectwrap_destroy(&_this->jobjectwrap);
-  IOTJS_RELEASE(player_wrap);
-}
-
-static void iotjs_player_onclose(uv_async_t* handle) {
-  iotjs_player_t* player_wrap = (iotjs_player_t*)handle->data;
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player_wrap);
-
-  uv_close((uv_handle_t*)handle, NULL);
-  jerry_value_t jval = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
-  jerry_release_value(jval);
+  delete player_wrap;
+  malloc_trim(0);
 }
 
 JS_FUNCTION(Player) {
@@ -188,7 +197,7 @@ JS_FUNCTION(Stop) {
     return JS_CREATE_ERROR(COMMON, "player native handle is not initialized");
 
   _this->handle->stop();
-  uv_async_send(&_this->close_handle);
+  uv_close((uv_handle_t*)&_this->event_handle, iotjs_player_async_onclose);
   return jerry_create_undefined();
 }
 
@@ -239,6 +248,39 @@ JS_FUNCTION(Reset) {
   // FIXME(Yorkie): reset needs forcily to reset without any errors.
   if (_this->handle) {
     _this->handle->reset();
+  }
+  return jerry_create_undefined();
+}
+
+JS_FUNCTION(EqModeGetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  int mode = 0;
+  if (_this->handle) {
+    _this->handle->getCurEqMode((rk_eq_type_t*)&mode);
+  }
+  return jerry_create_number(mode);
+}
+
+JS_FUNCTION(EqModeSetter) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  int type = JS_GET_ARG(0, number);
+  if (_this->handle) {
+    _this->handle->setEqMode((rk_eq_type_t)type);
+  }
+  return jerry_create_undefined();
+}
+
+JS_FUNCTION(SetTempoDelta) {
+  JS_DECLARE_THIS_PTR(player, player);
+  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_player_t, player);
+
+  float delta = JS_GET_ARG(0, number);
+  if (_this->handle) {
+    _this->handle->setTempoDelta(delta);
   }
   return jerry_create_undefined();
 }
@@ -341,6 +383,7 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "resume", Resume);
   iotjs_jval_set_method(proto, "seek", Seek);
   iotjs_jval_set_method(proto, "reset", Reset);
+  iotjs_jval_set_method(proto, "setTempoDelta", SetTempoDelta);
 
   // the following methods are for getters and setters internally
   iotjs_jval_set_method(proto, "idGetter", IdGetter);
@@ -351,6 +394,8 @@ void init(jerry_value_t exports) {
   iotjs_jval_set_method(proto, "loopModeSetter", LoopModeSetter);
   iotjs_jval_set_method(proto, "sessionIdGetter", SessionIdGetter);
   iotjs_jval_set_method(proto, "sessionIdSetter", SessionIdSetter);
+  iotjs_jval_set_method(proto, "eqModeGetter", EqModeGetter);
+  iotjs_jval_set_method(proto, "eqModeSetter", EqModeSetter);
   iotjs_jval_set_property_jval(jconstructor, "prototype", proto);
 
   jerry_release_value(proto);

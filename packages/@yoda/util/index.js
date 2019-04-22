@@ -3,5 +3,7 @@ module.exports = {
   compose: require('./compose'),
   fs: require('./fs'),
   json: require('./json'),
-  path: require('./path')
+  math: require('./math'),
+  path: require('./path'),
+  time: require('./time')
 }

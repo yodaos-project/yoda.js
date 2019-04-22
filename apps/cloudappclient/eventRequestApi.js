@@ -1,13 +1,16 @@
 'use strict'
 
-var https = require('https')
+var httpsession = require('@yoda/httpsession')
 var crypto = require('crypto')
 var qs = require('querystring')
 var logger = require('logger')('cloudAppClient-eventReq')
 var env = require('@yoda/env')()
 
 var CONFIG = null
-var DEFAULT_HOST = env.cloudgw.restful || 'apigwrest.open.rokid.com'
+var DEFAULT_HOST = env.cloudgw.restful
+if (typeof DEFAULT_HOST !== 'string') {
+  throw new Error('Expect DEFAULT_HOST from env.json')
+}
 var DEFAULT_URI = '/v1/skill/dispatch/sendEvent'
 
 function gensigh (data) {
@@ -19,7 +22,7 @@ function gensigh (data) {
 
 function getAuth () {
   if (CONFIG === null) {
-    logger.error('CONFIG not set yet, please set CONFIG first. in: eventRequest')
+    logger.error('CONFIG not set yet, please set CONFIG first. in: eventRequestApi.js')
     return ''
   }
   var data = {
@@ -52,39 +55,35 @@ function request (event, appId, options, onaction) {
     appId: appId,
     extra: JSON.stringify(options)
   }
-  logger.log('event:', data)
 
   data = JSON.stringify(data)
-  var req = https.request({
+  logger.log(`[eventReq-raw](${appId}, ${event}) body(${data})`)
+  var url = `https://${DEFAULT_HOST}${DEFAULT_URI}`
+  var reqOpt = {
     method: 'POST',
-    host: DEFAULT_HOST,
-    path: DEFAULT_URI,
     headers: {
       'Authorization': getAuth(),
       'Content-Type': 'application/json;charset=utf-8',
       'Content-Length': data.length
+    },
+    body: data
+  }
+  httpsession.request(url, reqOpt, (err, res) => {
+    if (err) {
+      onaction(err)
+      return
     }
-  }, (res) => {
-    var list = []
-    res.on('data', (chunk) => list.push(chunk))
-    res.on('end', () => {
-      var msg = Buffer.concat(list).toString()
-      if (res.statusCode !== 200) {
-        logger.error(`Error: failed upload ${event} ${data} with ${msg}`)
-      } else {
-        msg = JSON.parse(msg)
-        logger.log(`got ${event} successfully response`, msg)
-        if (typeof onaction === 'function') {
-          onaction(msg.response)
-        }
+    var msg = res.body
+    if (res.code !== 200) {
+      onaction(new Error(`Error: failed upload ${event} ${data} with ${msg}`))
+    } else {
+      logger.log(`[eventRes-raw](${appId}, ${event}) raw(${msg})`)
+      msg = JSON.parse(msg)
+      if (typeof onaction === 'function') {
+        onaction(null, msg.response)
       }
-    })
+    }
   })
-  req.on('error', (err) => {
-    logger.error(err && err.stack)
-  })
-  req.write(data)
-  req.end()
 };
 
 function ttsEvent (name, appId, itemId, cb) {

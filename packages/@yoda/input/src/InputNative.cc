@@ -58,7 +58,8 @@ class InputInitializer {
     iotjs_input_t* inputwrap = initializer->inputwrap;
     IOTJS_VALIDATED_STRUCT_METHOD(iotjs_input_t, inputwrap);
 
-    if (!status /* success */) {
+    if (status == 0 /* success */ &&
+        _this->event_handler != NULL /* not canceled */) {
       _this->event_handler->start();
     } else {
       // iotjs_input_onerror(_this);
@@ -74,18 +75,6 @@ class InputInitializer {
   int timeout_select;
   int timeout_dbclick;
   int timeout_slide;
-};
-
-class InputKeyEvent {
- public:
-  InputEventHandler* event_handler;
-  struct keyevent data;
-};
-
-class InputGestureEvent {
- public:
-  InputEventHandler* event_handler;
-  struct gesture data;
 };
 
 InputEventHandler::InputEventHandler() {
@@ -105,6 +94,10 @@ InputEventHandler::~InputEventHandler() {
 }
 
 int InputEventHandler::start() {
+  event_handle.data = (void*)this;
+  uv_async_init(uv_default_loop(), &event_handle, InputEventHandler::OnEvent);
+  uv_mutex_init(&event_mutex);
+  this->started = true;
   return uv_queue_work(uv_default_loop(), &req, InputEventHandler::DoStart,
                        InputEventHandler::AfterStart);
 }
@@ -112,6 +105,9 @@ int InputEventHandler::start() {
 int InputEventHandler::stop() {
   int r = uv_cancel((uv_req_t*)&req);
   this->need_destroy_ = true;
+  if (this->started) {
+    uv_close((uv_handle_t*)&event_handle, InputEventHandler::OnStop);
+  }
   return r;
 }
 
@@ -124,34 +120,32 @@ void InputEventHandler::DoStart(uv_work_t* req) {
     daemon_start_listener(&handler->keyevent_, &handler->gesture_);
     // Send InputKeyEvent
     if (handler->keyevent_.new_action) {
-      uv_async_t* async = new uv_async_t;
       InputKeyEvent* event = new InputKeyEvent();
-      event->event_handler = handler;
       event->data.new_action = handler->keyevent_.new_action;
       event->data.value = handler->keyevent_.value;
       event->data.action = handler->keyevent_.action;
       event->data.key_code = handler->keyevent_.key_code;
       event->data.key_timeval = handler->keyevent_.key_timeval;
-      async->data = (void*)event;
-      uv_async_init(uv_default_loop(), async, InputEventHandler::OnKeyEvent);
-      uv_async_send(async);
+
+      uv_mutex_lock(&handler->event_mutex);
+      handler->key_events.push_back(event);
+      uv_mutex_unlock(&handler->event_mutex);
     }
     // Send InputGestureEvent
     if (handler->gesture_.new_action) {
-      uv_async_t* async = new uv_async_t;
       InputGestureEvent* event = new InputGestureEvent();
-      event->event_handler = handler;
       event->data.new_action = handler->gesture_.new_action;
       event->data.action = handler->gesture_.action;
       event->data.key_code = handler->gesture_.key_code;
       event->data.slide_value = handler->gesture_.slide_value;
       event->data.click_count = handler->gesture_.click_count;
       event->data.long_press_time = handler->gesture_.long_press_time;
-      async->data = (void*)event;
-      uv_async_init(uv_default_loop(), async,
-                    InputEventHandler::OnGestureEvent);
-      uv_async_send(async);
+
+      uv_mutex_lock(&handler->event_mutex);
+      handler->gesture_events.push_back(event);
+      uv_mutex_unlock(&handler->event_mutex);
     }
+    uv_async_send(&handler->event_handle);
   }
 }
 
@@ -159,59 +153,67 @@ void InputEventHandler::AfterStart(uv_work_t* req, int status) {
   fprintf(stdout, "input event handler stopped\n");
 }
 
-void InputEventHandler::OnKeyEvent(uv_async_t* async) {
-  InputKeyEvent* event = (InputKeyEvent*)async->data;
-  iotjs_input_t* input = event->event_handler->inputwrap;
+void InputEventHandler::OnEvent(uv_async_t* async) {
+  InputEventHandler* event_handler = (InputEventHandler*)async->data;
+  iotjs_input_t* input = event_handler->inputwrap;
   IOTJS_VALIDATED_STRUCT_METHOD(iotjs_input_t, input);
+
+  list<InputKeyEvent*> key_event_list;
+  list<InputGestureEvent*> gesture_event_list;
+  uv_mutex_lock(&event_handler->event_mutex);
+  key_event_list.swap(event_handler->key_events);
+  gesture_event_list.swap(event_handler->gesture_events);
+  uv_mutex_unlock(&event_handler->event_mutex);
 
   jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
   jerry_value_t onevent = iotjs_jval_get_property(jthis, "onevent");
   if (!jerry_value_is_function(onevent)) {
     fprintf(stderr, "no onevent function is registered\n");
-    return;
+  } else {
+    for (auto it = key_event_list.begin(); it != key_event_list.end(); ++it) {
+      auto event = *it;
+
+      iotjs_jargs_t jargs = iotjs_jargs_create(4);
+      iotjs_jargs_append_number(&jargs, (double)event->data.value);
+      iotjs_jargs_append_number(&jargs, (double)event->data.action);
+      iotjs_jargs_append_number(&jargs, (double)event->data.key_code);
+
+      struct timeval key_time = event->data.key_timeval;
+      double jkey_time = static_cast<double>(key_time.tv_sec * 1000.0 +
+                                             key_time.tv_usec / 1000);
+      iotjs_jargs_append_number(&jargs, jkey_time);
+      iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
+      iotjs_jargs_destroy(&jargs);
+    }
   }
-  iotjs_jargs_t jargs = iotjs_jargs_create(4);
-  iotjs_jargs_append_number(&jargs, (double)event->data.value);
-  iotjs_jargs_append_number(&jargs, (double)event->data.action);
-  iotjs_jargs_append_number(&jargs, (double)event->data.key_code);
-
-  struct timeval key_time = event->data.key_timeval;
-  double jkey_time =
-      static_cast<double>(key_time.tv_sec * 1000.0 + key_time.tv_usec / 1000);
-  iotjs_jargs_append_number(&jargs, jkey_time);
-  iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
-  iotjs_jargs_destroy(&jargs);
   jerry_release_value(onevent);
-  uv_close((uv_handle_t*)async, InputEventHandler::AfterCallback);
-}
 
-void InputEventHandler::OnGestureEvent(uv_async_t* async) {
-  InputGestureEvent* event = (InputGestureEvent*)async->data;
-  iotjs_input_t* input = event->event_handler->inputwrap;
-  IOTJS_VALIDATED_STRUCT_METHOD(iotjs_input_t, input);
-
-  jerry_value_t jthis = iotjs_jobjectwrap_jobject(&_this->jobjectwrap);
-  jerry_value_t onevent = iotjs_jval_get_property(jthis, "ongesture");
+  onevent = iotjs_jval_get_property(jthis, "ongesture");
   if (!jerry_value_is_function(onevent)) {
-    fprintf(stderr, "no onevent function is registered\n");
-    return;
+    fprintf(stderr, "no ongesture function is registered\n");
+  } else {
+    for (auto it = gesture_event_list.begin(); it != gesture_event_list.end();
+         ++it) {
+      auto event = *it;
+
+      iotjs_jargs_t jargs = iotjs_jargs_create(5);
+      iotjs_jargs_append_number(&jargs, (double)event->data.action);
+      iotjs_jargs_append_number(&jargs, (double)event->data.key_code);
+      iotjs_jargs_append_number(&jargs, (double)event->data.slide_value);
+      iotjs_jargs_append_number(&jargs, (double)event->data.click_count);
+      iotjs_jargs_append_number(&jargs, (double)event->data.long_press_time);
+      iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
+      iotjs_jargs_destroy(&jargs);
+    }
   }
-  iotjs_jargs_t jargs = iotjs_jargs_create(5);
-  iotjs_jargs_append_number(&jargs, (double)event->data.action);
-  iotjs_jargs_append_number(&jargs, (double)event->data.key_code);
-  iotjs_jargs_append_number(&jargs, (double)event->data.slide_value);
-  iotjs_jargs_append_number(&jargs, (double)event->data.click_count);
-  iotjs_jargs_append_number(&jargs, (double)event->data.long_press_time);
-  iotjs_make_callback(onevent, jerry_create_undefined(), &jargs);
-  iotjs_jargs_destroy(&jargs);
   jerry_release_value(onevent);
-  uv_close((uv_handle_t*)async, InputEventHandler::AfterCallback);
 }
 
-void InputEventHandler::AfterCallback(uv_handle_t* handle) {
+void InputEventHandler::OnStop(uv_handle_t* handle) {
   uv_async_t* async = (uv_async_t*)handle;
-  delete async->data;
-  delete handle;
+  auto event_handler = static_cast<InputEventHandler*>(async->data);
+  uv_mutex_destroy(&event_handler->event_mutex);
+  delete event_handler;
 }
 
 iotjs_input_t* iotjs_input_create(const jerry_value_t jinput) {
@@ -257,8 +259,10 @@ JS_FUNCTION(Disconnect) {
 
   if (!_this->initializer->initialized)
     _this->initializer->stop();
-  if (_this->event_handler != NULL)
+  if (_this->event_handler != NULL) {
     _this->event_handler->stop();
+    _this->event_handler = NULL;
+  }
   return jerry_create_boolean(true);
 }
 

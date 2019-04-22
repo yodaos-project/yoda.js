@@ -3,11 +3,39 @@
 export NODE_PRIORITIZED_PATH=/usr/lib/node_modules
 
 while true; do
-  /usr/bin/iotjs /usr/yoda/services/otad/index.js
+  # run ota in **background**
+  /usr/bin/iotjs /usr/yoda/services/otad/index.js &
+  PID=$!
+  countdown=1800
+  remaining=0
+  # count down 30 minutes. checks every 30 seconds if ota is done.
+  # if ota exits early, swap countdown to remaining for later sleepping.
+  while test $countdown != 0; do
+    res=$(ps | grep "$PID")
+    printf "[DEBUG] $res"
+    if test -z "$res"; then
+      # ota exited
+      remaining=$countdown
+      countdown=0
+    else
+      # ota still running
+      countdown=$(expr $countdown - 30)
+      sleep 30
+    fi
+  done
+
+  res=$(ps | grep "$PID")
+  if test -z "$res"; then
+    # inform otad that it's time to pause
+    kill -SIGINT $PID
+  fi
+
+  # get last status code whether it's exited or not
+  wait $PID
   status=$?
   printf "OTA exited for code $status\n"
   if test $status = 0; then
-    sleep 1800
+    sleep $remaining
   else
     r=$(($RANDOM%30))
     printf "sleeping for ${r}s\n"

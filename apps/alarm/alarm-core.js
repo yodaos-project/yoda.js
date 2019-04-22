@@ -1,7 +1,7 @@
 
 'use strict'
 var fs = require('fs')
-var logger = require('logger')('alarm')
+var logger = require('logger')('alarm-core')
 var yodaUtil = require('@yoda/util')
 var wifi = require('@yoda/wifi')
 var TtsEventHandle = require('@yodaos/ttskit').Convergence
@@ -28,10 +28,12 @@ function AlarmCore (activity) {
   this.activity = activity
   this.scheduleHandler = new Cron.Schedule()
   this.jobQueue = []
+  this.reminderTTS = []
   this.taskTimeout = null
   this.volumeInterval = null
   this.stopTimeout = null
   this.activeOption = null
+  this.ringUrl = null
   this.ttsClient = new TtsEventHandle(activity.tts)
 }
 
@@ -75,9 +77,9 @@ AlarmCore.prototype._transferPattern = function (date, time, repeatType) {
     case 'D7':
       var weekNum = repeatType.split('D')[1]
       return s + ' ' + m + ' ' + h + ' * * ' + weekNum
-    case 'WEEKEND':
-      return s + ' ' + m + ' ' + h + ' * * 1-5'
     case 'WEEKDAY':
+      return s + ' ' + m + ' ' + h + ' * * 1-5'
+    case 'WEEKEND':
       return s + ' ' + m + ' ' + h + ' * * 6,0'
     default:
       break
@@ -132,8 +134,8 @@ AlarmCore.prototype._controlVolume = function (minVolume, tick, duration) {
  * @param {Object} Options formated alarm data
  * @param {String} Options mode
  */
-AlarmCore.prototype._setConfig = function (option, mode) {
-  fs.readFile(CONFIGFILEPATH, 'utf8', function readFileCallback (err, data) {
+AlarmCore.prototype._setConfig = function (options) {
+  fs.readFile(CONFIGFILEPATH, 'utf8', (err, data) => {
     if (err) {
       logger.error('alarm set config: get local data error', err.stack)
       return
@@ -144,20 +146,28 @@ AlarmCore.prototype._setConfig = function (option, mode) {
     } catch (err) {
       logger.error('alarm parse local data error ', err.stack)
     }
-    if (mode === 'add') {
-      parseJson[option.id] = option
-    }
-    if (mode === 'remove') {
-      delete parseJson[option.id]
+    for (var i = 0; i < options.length; i++) {
+      if (options[i].mode === 'add') {
+        parseJson[options[i].command.id] = options[i].command
+      }
+      if (options[i].mode === 'remove') {
+        delete parseJson[options[i].command.id]
+      }
     }
     fs.unlink(CONFIGFILEPATH, (err) => {
       if (err) {
         logger.error('alarm set config: clear local data error', err.stack)
         return
       }
-      fs.writeFile(CONFIGFILEPATH, JSON.stringify(parseJson), function (err) {
+      fs.writeFile(CONFIGFILEPATH, JSON.stringify(parseJson), (err) => {
         if (err) {
           logger.error('alarm set config: update local data error', err && err.stack)
+        }
+        // parseJson is empty, kill alarm
+        if (Object.keys(parseJson).length === 0) {
+          // kill alarm
+          logger.log('kill alarm')
+          this.activity.exit()
         }
       })
     })
@@ -177,7 +187,7 @@ AlarmCore.prototype._clearTask = function (mode, option) {
   }
   if (mode === 'single') {
     this.scheduleHandler.clear(option.id)
-    this._setConfig(option, 'remove')
+    this._setConfig([{ command: option, mode: 'remove' }])
   }
 }
 
@@ -217,28 +227,15 @@ AlarmCore.prototype.restoreEventsDefaults = function () {
  * @param {Object} Options formated alarm data
  * @param {String} Options alarm type
  */
-AlarmCore.prototype._taskCallback = function (option, mode) {
-  logger.log('alarm: ', option.id, ' start ')
-  if (this.jobQueue.indexOf(option.id) > -1) {
-    return
-  }
-
-  this.jobQueue.push(option.id)
-  var jobConf = this.scheduleHandler.getJobConfig(option.id)
-  if (!jobConf) {
-    logger.log('alarm' + option.id + ' can not run')
-    this._clearTask(mode, option)
-    return
-  }
-
+AlarmCore.prototype._taskCallback = function (option, isLocal) {
+  var status = wifi.getWifiState() === wifi.WIFI_CONNECTED && !isLocal
   var tts = option.tts
-  var state = wifi.getNetworkState()
-
   if (option.type === 'Remind') {
-    var sameReminder = this.scheduleHandler.combineReminderTts(this.activeOption.id)
-    tts = sameReminder.combinedTTS
+    tts = this.reminderTTS.join(',') + option.tts
+    this.reminderTTS = []
+    this.startTts = true
     this.activity.setForeground().then(() => {
-      if (state === wifi.NETSERVER_CONNECTED) {
+      if (status) {
         return this._ttsSpeak(tts || option.tts)
       }
     }).then(() => {
@@ -249,37 +246,28 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
       return this.activity.media.setLoopMode(true)
     }).then(() => {
       this.stopTimeout = setTimeout(() => {
-        this.restoreEventsDefaults()
+        logger.log('alarm-reminder: ', option.id, ' stop after 5 minutes')
         this.scheduleHandler.clearReminderQueue()
-        var reminderList = sameReminder.reminderList
-        var reminderLen = reminderList.length
-        for (var k = 0; k < reminderLen; k++) {
-          this._clearTask(mode, reminderList[k])
-        }
-        this.activity.media.stop()
-        this.activity.setBackground()
+        this.clearAll()
       }, 5 * 60 * 1000)
     }).catch(() => {
       // alarm only need end event, but promise has to reject
     })
   } else {
     this.activity.setForeground().then(() => {
-      logger.log('media play')
-    }).then(() => {
-      if (state === wifi.NETSERVER_CONNECTED) {
+      this.startTts = true
+      if (status) {
         return this._ttsSpeak(option.tts)
       }
     }).then(() => {
       logger.info('alarm start second media')
-      var ringUrl = state === wifi.NETSERVER_CONNECTED ? option.url : DEFAULT_ALARM_RING
-      this.activity.media.start(ringUrl, { streamType: 'alarm' })
+      this.ringUrl = status ? option.url : DEFAULT_ALARM_RING
+      this.activity.media.start(this.ringUrl, { streamType: 'alarm' })
       return this.activity.media.setLoopMode(true)
     }).then(() => {
       this.stopTimeout = setTimeout(() => {
-        this.activity.media.stop()
-        this._clearTask(mode, option)
-        this.restoreEventsDefaults()
-        this.activity.setBackground()
+        logger.log('alarm: ', option.id, ' stop after 5 minutes')
+        this.clearAll()
       }, 5 * 60 * 1000)
     }).catch(() => {
       // alarm only need end event, but promise has to reject
@@ -293,19 +281,27 @@ AlarmCore.prototype._taskCallback = function (option, mode) {
  * @param {Object} Options formated command data
  * @param {String} Options mode
  */
-AlarmCore.prototype._onTaskActive = function (option, mode) {
+AlarmCore.prototype._onTaskActive = function (option) {
   this.clearAll()
   this.activity.setForeground().then(() => {
+    logger.log('alarm: ', option.id, ' start ')
+    var mode = option.mode
+    if (this.jobQueue.indexOf(option.id) > -1) {
+      return
+    }
+    this.jobQueue.push(option.id)
+    var jobConf = this.scheduleHandler.getJobConfig(option.id)
+    if (!jobConf) {
+      logger.log('alarm: ' + option.id + ' can not run')
+      if (option.type === 'Remind') {
+        this.reminderTTS.push(option.tts)
+      }
+      this._clearTask(mode, option)
+      return
+    }
     this.activeOption = option
     this._preventEventsDefaults()
     this._controlVolume(10, 1000, 7)
-    var state = wifi.getNetworkState()
-    var ringUrl = ''
-    if (option.type === 'Remind') {
-      ringUrl = DEFAULT_REMINDER_RING
-    } else {
-      ringUrl = state === wifi.NETSERVER_CONNECTED ? option.url : DEFAULT_ALARM_RING
-    }
     // send card to app
     request({
       activity: this.activity,
@@ -314,12 +310,38 @@ AlarmCore.prototype._onTaskActive = function (option, mode) {
         alarmId: option.id
       }
     })
-    this.activity.media.start(ringUrl, { streamType: 'alarm' }).then(() => {
-      this.taskTimeout = setTimeout(() => {
-        this.activity.media.stop()
-        this._taskCallback(option, mode)
-      }, 7000)
-    })
+    this.startTts = false
+    this.playFirstMedia()
+  })
+}
+
+/**
+ * alarm play media prepared
+ */
+AlarmCore.prototype.playMediaPrepared = function () {
+  this.taskTimeout && clearTimeout(this.taskTimeout)
+  // pd require online url can only play 7s,after 7s should stop && play anther tts
+  this.taskTimeout = setTimeout(() => {
+    this.activity.media.stop()
+    this._taskCallback(this.activeOption, this.isLocal)
+  }, 7000)
+}
+
+/**
+ * alarm play first media
+ * @param {Boolean} isLocal if play local ring
+ */
+AlarmCore.prototype.playFirstMedia = function (isLocal) {
+  var state = wifi.getWifiState()
+  this.isLocal = isLocal
+  if (this.activeOption.type === 'Remind') {
+    this.ringUrl = DEFAULT_REMINDER_RING
+  } else {
+    this.ringUrl = state === wifi.WIFI_CONNECTED && !isLocal ? this.activeOption.url : DEFAULT_ALARM_RING
+  }
+  this.activity.media.start(this.ringUrl, { streamType: 'alarm' }).then(() => {
+  }).catch((err) => {
+    logger.log('alarm first media play error', err.stack)
   })
 }
 
@@ -332,7 +354,7 @@ AlarmCore.prototype._onTaskActive = function (option, mode) {
 AlarmCore.prototype.startTask = function (commandOpt, pattern) {
   logger.log('alarm task start')
   this.scheduleHandler.create(pattern, () => {
-    this._onTaskActive(commandOpt, commandOpt.mode)
+    this._onTaskActive(commandOpt)
   }, commandOpt)
 }
 
@@ -344,19 +366,25 @@ AlarmCore.prototype.startTask = function (commandOpt, pattern) {
 AlarmCore.prototype.init = function (command, isUpdateNative) {
   logger.log('alarm init')
   var flag = false
+  var options = []
   for (var i in command) {
     flag = true
     var commandOpt = this._formatCommandData(command[i])
     var pattern = this._transferPattern(command[i].date, command[i].time, command[i].repeatType)
     this.startTask(commandOpt, pattern)
-    isUpdateNative && this._setConfig(command[i], 'add')
+    options.push({ command: command[i], mode: 'add' })
   }
+
+  isUpdateNative && flag && this._setConfig(options)
   // clear local data
   if (!flag) {
-    fs.writeFile(CONFIGFILEPATH, '{}', function (err) {
+    fs.writeFile(CONFIGFILEPATH, '{}', (err) => {
       if (err) {
         logger.error('alarm init: clear local data error', err.stack)
       }
+      // kill alarm
+      logger.log('kill alarm')
+      this.activity.exit()
     })
   }
 }
@@ -409,22 +437,27 @@ AlarmCore.prototype.getTasksFromConfig = function (callback) {
  */
 AlarmCore.prototype.doTask = function (command) {
   if (command.length > 0) {
+    var options = []
     for (var i = 0; i < command.length; i++) {
       var commandItem = command[i]
       var commandOpt = this._formatCommandData(commandItem)
       if (commandItem.flag === 'add' || commandItem.flag === 'edit') {
         var pattern = this._transferPattern(commandItem.date, commandItem.time, commandItem.repeatType)
-        this._setConfig(commandItem, 'add')
+        options.push({ command: commandItem, mode: 'add' })
         this.startTask(commandOpt, pattern)
       }
 
       if (commandItem.flag === 'del') {
         this.scheduleHandler.clear(commandItem.id)
-        this._setConfig({
-          id: commandItem.id
-        }, 'remove')
+        options.push({
+          command: {
+            id: commandItem.id
+          },
+          mode: 'remove'
+        })
       }
     }
+    this._setConfig(options)
   }
 }
 
@@ -444,6 +477,10 @@ AlarmCore.prototype.clearAll = function () {
   this.stopTimeout && clearTimeout(this.stopTimeout)
   this.restoreEventsDefaults()
   this.activity.setBackground()
+}
+
+AlarmCore.prototype.clearReminderTts = function () {
+  this.reminderTTS = []
 }
 
 module.exports = AlarmCore

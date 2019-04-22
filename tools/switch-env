@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -e
+
+help="
+Usage:
+  -s          Device's serial number.
+
+Switch device's environment
+
+Example:
+  $ ./tools/switch-env test
+  $ ./tools/switch-env test -s 0502031835000257
+"
+
+env=""
+sn=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -s)
+      sn="$2"
+      shift
+      ;;
+    -h|--help)
+      printf "$help"
+      exit
+      ;;
+    --*)
+      echo "Illegal option $1"
+      ;;
+    *)
+      env="$1"
+      ;;
+  esac
+  shift $(( $# > 0 ? 1 : 0 ))
+done
+
+function shell() {
+  if test "$sn" != ""; then
+    adb -s "$sn" shell $1
+  else
+    adb shell $1
+  fi
+}
+
+shell "setprop persist.sys.rokid.env $env"
+shell reboot

@@ -1,7 +1,6 @@
 'use strict'
 
 var inherits = require('util').inherits
-var logger = require('logger')('bluetooth-stream')
 var EventEmitter = require('events').EventEmitter
 var floraFactory = require('@yoda/flora')
 var FloraComp = require('@yoda/flora/comp')
@@ -27,15 +26,15 @@ var helper = require('./helper')
  */
 function BluetoothMessageStream () {
   EventEmitter.call(this)
-  this._flora = new FloraComp(logger)
-  this._flora.handlers = {
-    'bluetooth.ble.event': this._onevent.bind(this)
-  }
-  this._flora.init('bluetooth-message-stream', {
+  this._flora = new FloraComp('bluetooth-message-stream', {
     'uri': 'unix:/var/run/flora.sock',
     'bufsize': 40960,
     'reconnInterval': 10000
   })
+  this._flora.handlers = {
+    'bluetooth.ble.event': this._onevent.bind(this)
+  }
+  this._flora.init()
   this._end = false
 }
 inherits(BluetoothMessageStream, EventEmitter)

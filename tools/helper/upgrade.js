@@ -9,4 +9,4 @@ if (fs.existsSync(imgPathname) === false) {
 }
 
 system.prepareOta(imgPathname)
-system.reboot()
+system.reboot('tools/upgrade')

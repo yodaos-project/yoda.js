@@ -12,7 +12,6 @@
       "280887DAFB9047418C18BAAC73AE4F24"
     ],
     "permission": [
-      "ACCESS_TTS"
     ],
     "hosts": [
       [ "rokid-exception", { "skillId": "ROKID.EXCEPTION" } ]

@@ -10,12 +10,13 @@ function Convergence (mediaClient, logger) {
   this.logger = logger
   this.registry = {}
   this.listen()
-
+  this.url = {}
+  this.curPlayerId = ''
   this.eventQueue = {}
 }
 
-Convergence.events = [ 'prepared', 'playbackcomplete', 'bufferingupdate',
-  'seekcomplete', 'cancel', 'error' ]
+Convergence.events = [ 'prepared', 'paused', 'resumed', 'playbackcomplete', 'bufferingupdate',
+  'seekcomplete', 'cancel', 'error', 'speedchange' ]
 Convergence.terminationEvents = [ 'playbackcomplete', 'cancel', 'error' ]
 
 Convergence.prototype.listen = function () {
@@ -32,6 +33,14 @@ Convergence.prototype.converge = function (name, playerId, args) {
   var handler = this.registry[playerId]
   if (Convergence.terminationEvents.indexOf(name) >= 0) {
     delete this.registry[playerId]
+    delete this.url[playerId]
+  }
+  /**
+   * when media resumed, also must set playerid
+   * since before resumed,this.curPlayerId may have changed
+   */
+  if (name === 'resumed') {
+    this.curPlayerId = playerId
   }
   if (handler == null) {
     this.logger.info(`[convergence] no handler listening on ${name}(${playerId}), enqueueing.`)
@@ -73,12 +82,20 @@ Convergence.prototype.processQueuedEvents = function processQueuedEvents (handle
   }
 }
 
-Convergence.prototype.start = function (url, handler) {
+Convergence.prototype.start = function (url, options, handler) {
+  if (typeof options === 'function') {
+    handler = options
+    options = {
+      multiple: false
+    }
+  }
   if (typeof handler !== 'function') {
     throw new TypeError('Expect a function on second argument of Convergence#start')
   }
-  this.mediaClient.start(url)
+  this.mediaClient.start(url, options)
     .then(playerId => {
+      this.url[playerId] = url
+      this.curPlayerId = playerId
       this.logger.info('[convergence] resolved Convergence.start with playerId', playerId)
       this.registry[playerId] = handler
       handler('resolved', playerId)
@@ -88,11 +105,17 @@ Convergence.prototype.start = function (url, handler) {
     })
 }
 
-Convergence.prototype.prepare = function (url, handler) {
+Convergence.prototype.prepare = function (url, options, handler) {
+  if (typeof options === 'function') {
+    handler = options
+    options = {
+      multiple: false
+    }
+  }
   if (typeof handler !== 'function') {
     throw new TypeError('Expect a function on second argument of Convergence#prepare')
   }
-  this.mediaClient.prepare(url)
+  this.mediaClient.prepare(url, options)
     .then(playerId => {
       this.logger.info('[convergence] resolved Convergence.prepare with playerId', playerId)
       this.registry[playerId] = handler
@@ -101,6 +124,10 @@ Convergence.prototype.prepare = function (url, handler) {
     }, err => {
       handler('error', err)
     })
+}
+
+Convergence.prototype.getUrl = function () {
+  return this.url[this.curPlayerId]
 }
 
 module.exports = Convergence

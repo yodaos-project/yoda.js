@@ -8,12 +8,42 @@ var native = require('./system.node')
 var property = require('@yoda/property')
 
 /**
- * Reboot the system.
- * @function reboot
- * @returns {Boolean}
+ * Power off the device.
+ * @function powerOff
+ * @param {string} [reason] - persist power off reason for easy debugging.
+ * @returns {boolean}
  * @private
  */
-exports.reboot = function reboot () {
+exports.powerOff = function powerOff (reason) {
+  property.set('sys.power_off.reason', reason || 'system', 'persist')
+  property.set('sys.power_off.time', new Date().toISOString(), 'persist')
+  process.nextTick(() => native.powerOff())
+  return true
+}
+
+/**
+ * Reboot the system into charging mode.
+ * @function rebootCharging
+ * @returns {boolean}
+ * @private
+ */
+exports.rebootCharging = function rebootCharging () {
+  property.set('sys.power_off.reason', 'charging', 'persist')
+  property.set('sys.power_off.time', new Date().toISOString(), 'persist')
+  process.nextTick(() => native.rebootCharging())
+  return true
+}
+
+/**
+ * Reboot the system.
+ * @function reboot
+ * @param {string} [reason] - persist power off reason for easy debugging.
+ * @returns {boolean}
+ * @private
+ */
+exports.reboot = function reboot (reason) {
+  property.set('sys.power_off.reason', reason || 'reboot', 'persist')
+  property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.reboot())
   return true
 }
@@ -21,7 +51,7 @@ exports.reboot = function reboot () {
 /**
  * Verify the OTA image, including hash(md5) check, section check and header check.
  * @function verifyOtaImage
- * @returns {Boolean}
+ * @returns {boolean}
  * @private
  */
 exports.verifyOtaImage = native.verifyOtaImage
@@ -114,4 +144,26 @@ exports.getDeviceName = function getDeviceName () {
   var productName = property.get('ro.rokid.build.productname') || 'Rokid-speaker-'
   var deviceName = [ productName, uuid ].join('-')
   return deviceName
+}
+
+/**
+ * @function adjustMallocSettings
+ * @param {int} maxThreads - max threads of current process
+ */
+exports.adjustMallocSettings = function adjustMallocSettings (maxThreads) {
+  return native.adjustMallocSettings(maxThreads)
+}
+
+/**
+ * @function mallocTrim
+ */
+exports.mallocTrim = function mallocTrim () {
+  return native.mallocTrim()
+}
+
+/**
+ * @function mallocStats
+ */
+exports.mallocStats = function mallocStats () {
+  return native.mallocStats()
 }

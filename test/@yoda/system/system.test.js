@@ -106,7 +106,7 @@ test('module->diskusage: support file path, eg. /bin/debug.sh', t => {
 
 test.skip('module->system: reboot', t => {
   t.plan(2)
-  var result = sys.reboot()
+  var result = sys.reboot('test')
   t.equal(typeof result, 'boolean')
   t.ok(result)
   t.end()

@@ -20,6 +20,14 @@ function KeyboardDescriptor (activityDescriptor, appId, appHome, runtime) {
   this._appId = appId
   this._appHome = appHome
   this._runtime = runtime
+
+  this.interests = {
+    keydown: {},
+    keyup: {},
+    click: {},
+    dbclick: {},
+    longpress: {}
+  }
 }
 inherits(KeyboardDescriptor, EventEmitter)
 KeyboardDescriptor.prototype.toJSON = function toJSON () {
@@ -31,6 +39,22 @@ Object.assign(KeyboardDescriptor.prototype,
     type: 'namespace'
   },
   {
+    /**
+     * @event yodaRT.activity.Activity.KeyboardClient#keydown
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    keydown: {
+      type: 'event'
+    },
+    /**
+     * @event yodaRT.activity.Activity.KeyboardClient#keyup
+     * @param {object} event -
+     * @param {number} event.keyCode -
+     */
+    keyup: {
+      type: 'event'
+    },
     /**
      * @event yodaRT.activity.Activity.KeyboardClient#click
      * @param {object} event -
@@ -73,10 +97,19 @@ Object.assign(KeyboardDescriptor.prototype,
         if (typeof keyCode !== 'number') {
           return Promise.reject(new Error('Expect a number on first argument of keyboard.preventDefaults.'))
         }
-        if (event != null && typeof event !== 'string') {
-          return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))
+        var events = Object.keys(this.interests)
+        if (event != null) {
+          if (typeof event !== 'string') {
+            return Promise.reject(new Error('Expect a string on second argument of keyboard.preventDefaults.'))
+          }
+          if (events.indexOf(event) === -1) {
+            return Promise.reject(new Error(`Unexpected keyboard event: ${event}.`))
+          }
+          events = [ event ]
         }
-        return this._runtime.component.keyboard.preventKeyDefaults(this._appId, keyCode, event)
+        events.forEach(it => {
+          this.interests[it][keyCode] = true
+        })
       }
     },
     /**
@@ -95,10 +128,37 @@ Object.assign(KeyboardDescriptor.prototype,
         if (typeof keyCode !== 'number') {
           return Promise.reject(new Error('Expect a string on first argument of keyboard.restoreDefaults.'))
         }
-        if (event != null && typeof event !== 'string') {
-          return Promise.reject(new Error('Expect a string on second argument of keyboard.restoreDefaults.'))
+        var events = Object.keys(this.interests)
+        if (event != null) {
+          if (typeof event !== 'string') {
+            return Promise.reject(new Error('Expect a string on second argument of keyboard.restoreDefaults.'))
+          }
+          if (events.indexOf(event) === -1) {
+            return Promise.reject(new Error(`Unexpected keyboard event: ${event}.`))
+          }
+          events = [ event ]
         }
-        return this._runtime.component.keyboard.restoreKeyDefaults(this._appId, keyCode, event)
+        events.forEach(it => {
+          delete this.interests[it][keyCode]
+        })
+      }
+    },
+    /**
+     * Restore default behavior of all key codes.
+     *
+     * @memberof yodaRT.activity.Activity.KeyboardClient
+     * @instance
+     * @function restoreAll
+     * @returns {Promise<void>}
+     */
+    restoreAll: {
+      type: 'method',
+      returns: 'promise',
+      fn: function restoreAll () {
+        var events = Object.keys(this.interests)
+        events.forEach(it => {
+          this.interests[it] = {}
+        })
       }
     }
   })

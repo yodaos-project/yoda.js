@@ -81,7 +81,7 @@ static void AfterInitPlayer(napi_env env, napi_status status, void* data) {
   NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, c->_callback));
   NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, c->_request));
 
-  free(c);
+  delete c;
 }
 
 static napi_value InitPlayer(napi_env env, napi_callback_info info) {
@@ -183,7 +183,7 @@ static void AfterPreparePlayer(napi_env env, napi_status status, void* data) {
   NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, c->_callback));
   NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, c->_request));
 
-  free(c);
+  delete c;
 }
 
 static napi_value Prepare(napi_env env, napi_callback_info info) {
@@ -271,7 +271,7 @@ static void AfterStartPlayer(napi_env env, napi_status status, void* data) {
   NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, c->_callback));
   NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, c->_request));
 
-  free(c);
+  delete c;
 }
 
 static napi_value Start(napi_env env, napi_callback_info info) {

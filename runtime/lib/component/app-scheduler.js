@@ -16,6 +16,10 @@ function AppScheduler (runtime) {
   this.appMap = {}
   this.appStatus = {}
   this.appLaunchOptions = {}
+  this.appCreationFutures = {}
+
+  this.__appDestructionResolvers = {}
+  this.appDestructionFutures = {}
 }
 
 AppScheduler.prototype.isAppRunning = function isAppRunning (appId) {
@@ -34,8 +38,20 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   if (this.isAppRunning(appId)) {
     return Promise.resolve(this.getAppById(appId))
   }
-  if (this.appStatus[appId] === Constants.status.creating) {
-    return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
+  var future
+  switch (this.appStatus[appId]) {
+    case Constants.status.creating:
+      future = this.appCreationFutures[appId]
+      if (future != null) {
+        return future
+      }
+      return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
+    case Constants.status.destructing:
+      future = this.appDestructionFutures[appId]
+      if (future == null) {
+        return Promise.reject(new Error(`Scheduler is destructing app ${appId}.`))
+      }
+      return future.then(() => this.createApp(appId, mode), () => this.createApp(appId, mode))
   }
   this.appStatus[appId] = Constants.status.creating
 
@@ -49,7 +65,13 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
 
   if (appType === 'light') {
     return lightApp(appId, metadata, this.runtime)
-      .then(app => this.handleAppCreate(appId, app))
+      .then(
+        app => this.handleAppCreate(appId, app),
+        err => {
+          logger.error(`Unexpected error on creating light app(${appId})`, err)
+          this.handleAppExit(appId, null, null)
+          throw err
+        })
   }
 
   if (appType === 'dbus') {
@@ -58,17 +80,13 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
     return Promise.resolve(app)
   }
 
-  logger.info('app creating prev', appId, appType)
-  var future
   if (appType === 'exe') {
     future = executableProc(appId, metadata, this.runtime)
   } else {
-    logger.info('ext app creating', appId)
     future = extApp(appId, metadata, this.runtime, mode)
   }
-  logger.info('app creating', appId, typeof future.then)
 
-  return future
+  future = future
     .then(app => {
       logger.info(`App(${appId}) successfully started`)
       app.once('exit', (code, signal) => {
@@ -79,12 +97,18 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
         this.handleAppExit(appId, code, signal)
       })
 
+      delete this.appCreationFutures[appId]
       return this.handleAppCreate(appId, app)
     }, err => {
       logger.error(`Unexpected error on starting ext-app(${appId})`, err.stack)
+
+      delete this.appCreationFutures[appId]
       this.handleAppExit(appId)
       throw err
     })
+
+  this.appCreationFutures[appId] = future
+  return future
 }
 
 AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
@@ -98,10 +122,21 @@ AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
 
 AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, signal) {
   logger.info(`${appId} exited.`)
-  delete this.appMap[appId]
-  delete this.appLaunchOptions[appId]
+  /** incase descriptors has not been destructed */
+  if (this.appMap[appId] && typeof this.appMap[appId].destruct === 'function') {
+    this.appMap[appId].destruct()
+  }
   this.appStatus[appId] = Constants.status.exited
   this.runtime.appGC(appId)
+
+  delete this.appMap[appId]
+  delete this.appLaunchOptions[appId]
+
+  var destructionResolver = this.__appDestructionResolvers[appId]
+  if (typeof destructionResolver === 'function') {
+    destructionResolver()
+  }
+  delete this.__appDestructionResolvers[appId]
 
   if (code != null) {
     var manifest = this.loader.getAppManifest(appId)
@@ -140,10 +175,31 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
     return Promise.resolve()
   }
 
+  if (this.appStatus[appId] === Constants.status.destructing) {
+    return Promise.resolve()
+  }
+
   var app = this.appMap[appId]
   if (app) {
     app.destruct()
     this.appStatus[appId] = Constants.status.destructing
+    this.appDestructionFutures[appId] = new Promise((resolve, reject) => {
+      var timer = setTimeout(() => {
+        if (timer == null) {
+          return
+        }
+        timer = null
+        reject(new Error(`Destruct app(${appId}) timed out`))
+      }, 5000)
+      this.__appDestructionResolvers[appId] = () => {
+        if (timer == null) {
+          return
+        }
+        clearTimeout(timer)
+        timer = null
+        resolve()
+      }
+    })
   }
 
   return Promise.resolve()

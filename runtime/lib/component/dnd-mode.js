@@ -47,13 +47,13 @@ class DNDCommon {
     this.life = life
     this.sound = sound
     this.light = light
+    this.setVolumeFlag = false
   }
   /**
    * Disable dnd mode
    * @function disable
    */
   disable () {
-    // TODO volume changed event
     var volume = DNDCommon.getSavedVolume()
     if (volume !== 0) {
       this.sound.setVolume(volume)
@@ -65,6 +65,18 @@ class DNDCommon {
     logger.info('dnd mode turned off')
   }
 
+  isVolumeChanging () {
+    return this.setVolumeFlag
+  }
+
+  volumeChangingEnd () {
+    this.setVolumeFlag = false
+  }
+
+  volumeChangingStart () {
+    this.setVolumeFlag = true
+  }
+
   /**
    * Enable dnd mode
    * @function enable
@@ -72,6 +84,7 @@ class DNDCommon {
   enable () {
     var curVolume = this.sound.getVolume()
     if (DND_MODE_VOLUME < curVolume) {
+      this.volumeChangingStart()
       this.sound.setVolume(DND_MODE_VOLUME)
       DNDCommon.setSavedVolume(curVolume)
       logger.info(`save volume [${curVolume}%]`)
@@ -90,7 +103,7 @@ class DNDCommon {
    */
   static getDNDTime () {
     function formatDate (dt) {
-      return `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDay()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
+      return `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDate()} ${dt.getHours()}:${dt.getMinutes()}:${dt.getSeconds()}`
     }
     var now = new Date()
     now.setHours(now.getHours() + now.getTimezoneOffset() / 60)
@@ -292,6 +305,7 @@ class DNDMode {
     var light = runtime.component.light
     var life = runtime.component.lifetime
     var sound = runtime.component.sound
+    runtime.component.flora.subscribe('yodart.audio.on-volume-change', this.onVolumeChanged.bind(this))
     this.common = new DNDCommon(light, sound, life)
     this.fsmStatus = FSM_READY
     this.fsmTimer = undefined
@@ -301,6 +315,24 @@ class DNDMode {
     life.on('idle', this.onDeviceIdle.bind(this))
   }
 
+  /**
+   * volume changed event handler
+   * @param {array} msg -
+   */
+  onVolumeChanged (msg) {
+    if (DNDCommon.getStatus() === 'on') {
+      var stream = msg[0]
+      var volume = msg[1]
+      if (stream === 'system') {
+        if (this.common.isVolumeChanging()) {
+          this.common.volumeChangingEnd()
+        } else {
+          DNDCommon.setSavedVolume(volume)
+          logger.info(`onVolumeChanged: save volume [${volume}%]`)
+        }
+      }
+    }
+  }
   /**
    * when the device changes from active to idle, this function will be triggered
    * @function onDeviceIdle
@@ -312,8 +344,6 @@ class DNDMode {
         logger.info('device is idle, recheck dnd mode')
         this.fsmWaitingBreaker()
       }
-    } else if (this.fsmStatus === FSM_END) {
-      this.start(FSMCode.Start)
     }
   }
   /**

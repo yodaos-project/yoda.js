@@ -30,6 +30,7 @@ module.exports = function createLightApp (appId, metadata, runtime) {
     handle(activity)
   } catch (err) {
     logger.error(`unexpected error on light app ${main}`, err.message, err.stack)
+    delete require.cache[main]
     return Promise.reject(err)
   }
 

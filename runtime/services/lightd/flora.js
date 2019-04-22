@@ -4,7 +4,9 @@ var inherits = require('util').inherits
 var FloraComp = require('@yoda/flora/comp')
 var property = require('@yoda/property')
 
-var floraConfig = require('/etc/yoda/flora-config.json')
+var floraConfig = require('../../lib/helper/config').getConfig('flora-config.json')
+
+var SETPICKUPURI = '/opt/light/setPickup.js'
 
 module.exports = Flora
 /**
@@ -12,8 +14,9 @@ module.exports = Flora
  * @param {AppRuntime} runtime
  */
 function Flora (light) {
-  FloraComp.call(this, logger)
+  FloraComp.call(this, 'lightd', floraConfig)
   this.light = light
+  this.wakeUri = '/opt/light/awake.js'
 }
 inherits(Flora, FloraComp)
 
@@ -23,7 +26,12 @@ Flora.prototype.handlers = {
     if (property.get('state.network.connected') !== 'true') {
       return
     }
-    this.light.setAwake('@yoda')
+    this.light.loadfile('@yoda', this.wakeUri, {}, {})
+  },
+  'rokid.turen.end_voice': function (msg) {
+    logger.log('rokid.turen.end_voice')
+    this.light.stopFile('@yoda', SETPICKUPURI)
+    this.light.stopFile('@yoda', this.wakeUri)
   },
   'rokid.turen.local_awake': function (msg) {
     logger.log('voice local awake')
@@ -31,7 +39,12 @@ Flora.prototype.handlers = {
       return
     }
     var degree = msg[0]
-    this.light.setDegree('@yoda', degree)
+    this.light.loadfile('@yoda', this.wakeUri, { degree: degree }, { shouldResume: true })
+  },
+  'rokid.lightd.global_alpha_factor': function (msg) {
+    var alphaFactor = msg[0]
+    logger.info(`global alpha factor ${alphaFactor}`)
+    this.light.manager.setGlobalAlphaFactor(alphaFactor)
   }
 }
 
@@ -39,5 +52,5 @@ Flora.prototype.handlers = {
  * Initialize flora client.
  */
 Flora.prototype.init = function init () {
-  FloraComp.prototype.init.call(this, 'lightd', floraConfig)
+  FloraComp.prototype.init.call(this)
 }

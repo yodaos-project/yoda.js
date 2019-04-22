@@ -1,0 +1,9 @@
+{
+  "KEY_CODE": {
+    "POWER": 116
+  },
+  "TIME": {
+    "SHORTEST": 10,
+    "LONGEST": 43200
+  }
+}

@@ -1,6 +1,7 @@
 var logger = require('logger')('cloudAppClient-skill')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
+var _ = require('@yoda/util')._
 
 function Skill (exe, nlp, action) {
   logger.log(action.appId + ' was create')
@@ -18,13 +19,14 @@ function Skill (exe, nlp, action) {
   // identify if this skill has a player
   this.hasPlayer = false
   this.exe = exe
+  this.playerCtlData = null
   this.handleEvent()
   this.transform(action.response.action.directives || [])
 }
 inherits(Skill, EventEmitter)
 
 Skill.prototype.onrequest = function (action, append) {
-  var directives = action.response.action.directives || []
+  var directives = _.get(action, 'response.action.directives', [])
   if (directives === undefined || directives.length <= 0) {
     return
   }
@@ -37,6 +39,9 @@ Skill.prototype.onrequest = function (action, append) {
   logger.log(`--> update shouldEndSession: ${this.shouldEndSession}`)
   logger.log(`skill ${this.appId} onrequest`)
   this.transform(directives || [], append)
+  if (append === undefined) {
+    this.paused = false
+  }
   if (this.paused === false) {
     logger.log('onrequest nextTick', this.directives)
     /**
@@ -48,6 +53,8 @@ Skill.prototype.onrequest = function (action, append) {
       logger.log('onrequest nextTick start', this.directives)
       this.emit('start')
     })
+  } else {
+    logger.warn(`SKILL[${this.appId}] paused. waiting for lifecycle resume.`)
   }
 }
 
@@ -90,7 +97,9 @@ Skill.prototype.handleEvent = function () {
           this.exe.execute([{
             type: 'media',
             action: 'resume',
-            data: {}
+            data: {
+              appId: this.appId
+            }
           }], 'frontend')
         }
         return
@@ -116,7 +125,9 @@ Skill.prototype.handleEvent = function () {
       dts.push({
         type: 'tts',
         action: 'cancel',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     // need pause player if this skill has player
@@ -124,7 +135,9 @@ Skill.prototype.handleEvent = function () {
       dts.push({
         type: 'media',
         action: 'pause',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     // nothing to do if dts is empty
@@ -140,7 +153,9 @@ Skill.prototype.handleEvent = function () {
       this.exe.execute([{
         type: 'media',
         action: 'resume',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       }], 'frontend')
       if (this.directives.length > 0) {
         // In order to identify how many tasks are currently running
@@ -177,26 +192,49 @@ Skill.prototype.handleEvent = function () {
     }
   })
   this.on('destroy', () => {
-    logger.log(this.appId + ' emit destroy')
+    logger.log(this.appId + ' emit destroy', this.hasPlayer)
     var dts = [{
       type: 'tts',
       action: 'cancel',
-      data: {}
+      data: {
+        appId: this.appId
+      }
     }]
     // need stop player if this skill has player
     if (this.hasPlayer) {
       dts.push({
         type: 'media',
         action: 'cancel',
-        data: {}
+        data: {
+          appId: this.appId
+        }
       })
     }
     this.exe.execute(dts, 'frontend')
   })
 }
-
+Skill.prototype.saveRecoverData = function (activity) {
+  if (this.playerCtlData === null) {
+    logger.warn('playerCtlData is NULL. Abandon SaveData.')
+    return
+  }
+  var str = JSON.stringify(this.playerCtlData)
+  logger.log(`send URL to app(playercontrol) for save playerData with data(${str})`)
+  var url = 'yoda-skill://playercontrol/playercontrol?name=' + this.appId + '&url=' + encodeURIComponent('yoda-skill://cloudappclient/resume?data=' + encodeURIComponent(str))
+  activity.openUrl(url, { preemptive: false })
+}
+Skill.prototype.setplayerCtlData = function (data) {
+  this.playerCtlData = data
+}
+Skill.prototype.setProgress = function (data) {
+  if (this.playerCtlData === null) {
+    logger.warn('playerCtlData is NULL. Abandon setProgress.')
+    return
+  }
+  this.playerCtlData.item.offsetInMilliseconds = data
+}
 Skill.prototype.transform = function (directives, append) {
-  logger.log(`transform start: ${this.appId} append: ${append} ${directives}`)
+  logger.log(`transform start: ${this.appId} append: `, append, directives)
   if (append !== true) {
     logger.log('cover directives')
     this.directives.splice(0, this.directives.length)
@@ -205,6 +243,7 @@ Skill.prototype.transform = function (directives, append) {
     logger.log('empty directives, nothong to do')
     return
   }
+
   var ttsActMap = {
     'PLAY': 'say',
     'STOP': 'cancel'
@@ -246,6 +285,10 @@ Skill.prototype.transform = function (directives, append) {
         logger.log('skill active set true')
         this.isSkillActive = true
       }
+      if (ele.action === 'PLAY') {
+        this.playerCtlData = ele
+        logger.log(`replace playerCtlData with [${this.playerCtlData}] ${this.appId}`)
+      }
     } else if (ele.type === 'confirm') {
       tdt = {
         type: 'confirm',
@@ -271,6 +314,38 @@ Skill.prototype.transform = function (directives, append) {
       tdt.data.appId = this.appId
       this.directives.push(tdt)
     }
+  })
+  // sort directives
+  var dtOrder = {
+    'native': 1,
+    'tts': 2,
+    'media': 3,
+    'pickup': 4
+  }
+  this.directives = this.directives.sort(function (a, b) {
+    // This is the business optimization code.
+    // purpose: exchange media.pause/stop and tts order. media.pause -> tts.say
+    if (a.type === 'media' && b.type === 'tts') {
+      return a.action === 'stop' || a.action === 'pause' ? -1 : 1
+    }
+    if (b.type === 'media' && a.type === 'tts') {
+      return b.action === 'stop' || b.action === 'pause' ? 1 : -1
+    }
+
+    return (dtOrder[a.type] || 100) - (dtOrder[b.type] || 100)
+  })
+}
+
+Skill.prototype.requestOnce = function (nlp, action, callback) {
+  var directives = _.get(action, 'response.action.directives', [])
+  if (directives === undefined || directives.length <= 0) {
+    return callback()
+  }
+  this.transform(directives)
+  this.task++
+  this.exe.execute(this.directives, 'frontend', () => {
+    this.task--
+    callback()
   })
 }
 

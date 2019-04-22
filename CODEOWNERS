@@ -1,0 +1,5 @@
+*.js                              @yodaos-project/js
+apps/cloudappclient               xiaofei.lan@rokid.com
+packages/@yoda/flora              @yodaos-project/flora
+runtime/lib/cloudapi              yazhong.liu@rokid.com
+runtime/services/lightd           xiaofei.lan@rokid.com feiyu.zhou@rokid.com

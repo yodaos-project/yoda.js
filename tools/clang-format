@@ -29,13 +29,20 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
-if test $inplace = 'YES'; then
-  find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file -i
+cmd=`command -v clang-format-8`
+if test -z "$cmd"; then
+  cmd=`command -v clang-format`
 fi
 
-rep_count=$(find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file -output-replacements-xml | grep -c '<replacement ')
+command $cmd --version
+
+if test $inplace = 'YES'; then
+  find packages -iname *.h -o -iname *.cc | xargs $cmd -style=file -i
+fi
+
+rep_count=`find packages -iname *.h -o -iname *.cc | xargs $cmd -style=file -output-replacements-xml | grep -c '<replacement '`
 
 if ! test $rep_count = 0; then
-  find packages -iname *.h -o -iname *.cc | xargs clang-format -style=file
+  find packages -iname *.h -o -iname *.cc | xargs $cmd -style=file
   exit 1
 fi

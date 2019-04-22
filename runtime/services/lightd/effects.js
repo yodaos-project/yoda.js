@@ -47,10 +47,12 @@ var property = require('@yoda/property')
 var light = require('@yoda/light')
 var logger = require('logger')('effects')
 var path = require('path')
+var EventEmitter = require('events')
+
+var helper = require('./helper')
 
 var SYSTEM_MEDIA_SOURCE = '/opt/media/'
 
-var globalAlphaFactor = 1
 var holdSoundConnect = true
 if (property.get('player.sound.holdcon', 'persist') === '0') {
   holdSoundConnect = false
@@ -60,13 +62,95 @@ if (property.get('player.lightd.holdcon', 'persist') === '0') {
   holdAwakeConnect = false
 }
 
-function applyAlphaFactor (alpha) {
-  if (alpha !== undefined && typeof alpha === 'number' && alpha >= 0 && alpha <= 1) {
-    alpha *= globalAlphaFactor
-  } else {
-    alpha = globalAlphaFactor
+/**
+ * common for context
+ */
+class Common {
+  /**
+   * apply alpha factor
+   * @param {number} alpha - alpha input
+   * @returns {number} - alpha output
+   */
+  static ApplyAlphaFactor (alpha) {
+    if (typeof alpha === 'number' && alpha >= 0 && alpha <= 1) {
+      return Common.alphaFactor * alpha
+    } else {
+      return Common.alphaFactor
+    }
   }
-  return alpha
+
+  /**
+   * set alpha factor
+   * @param {number} alpha - alpha factor
+   */
+  static setAlphaFactor (alpha) {
+    Common.alphaFactor = alpha
+  }
+
+  /**
+   * save the pixel result
+   * @param {number} pos - index of led
+   * @param {number} r - color.r
+   * @param {number} g - color.g
+   * @param {number} b - color.b
+   * @param {number} a - color.a
+   */
+  static setPixel (pos, r, g, b, a) {
+    if (pos < Common.ledStatus.length - 1) {
+      Common.ledStatus[pos].setRGBA(r, g, b, a)
+    }
+  }
+
+  /**
+   * save the fill result
+   * @param {number} r - color.r
+   * @param {number} g - color.g
+   * @param {number} b - color.b
+   * @param {number} a - color.a
+   */
+  static setFill (r, g, b, a) {
+    for (var i = 0; i < Common.ledStatus.length; ++i) {
+      Common.ledStatus[i].setRGBA(r, g, b, a)
+    }
+  }
+
+  /**
+   * init the led config
+   * @param config
+   */
+  static initLedStatus (config) {
+    Common.ledStatus = []
+    for (var i = 0; i < config.leds; ++i) {
+      Common.ledStatus.push(new Color(0, 0, 0, 1))
+    }
+  }
+}
+Common.alphaFactor = 1
+Common.ledStatus = []
+
+/**
+ * Color class for light
+ */
+class Color {
+  constructor (colorObj) {
+    if (typeof colorObj.r === 'number') {
+      this.setRGBA(colorObj.r, colorObj.g, colorObj.b, colorObj.a)
+    }
+  }
+
+  /**
+   * set rgba
+   * @param {number} r
+   * @param {number} g
+   * @param {number} b
+   * @param {number} a
+   */
+  setRGBA (r, g, b, a) {
+    this.r = r
+    this.g = g
+    this.b = b
+    this.a = a
+  }
 }
 
 module.exports = LightRenderingContextManager
@@ -87,6 +171,9 @@ module.exports = LightRenderingContextManager
  */
 function LightRenderingContextManager () {
   this.id = 0
+  this.ledsConfig = light.getProfile()
+  this.context = new LightRenderingContext()
+  Common.initLedStatus(this.ledsConfig)
 }
 
 /**
@@ -110,9 +197,22 @@ LightRenderingContextManager.prototype.getContext = function getContext () {
  */
 LightRenderingContextManager.prototype.setGlobalAlphaFactor = function (alphaFactor) {
   logger.info(`global alpha factor has been set ${alphaFactor}`)
-  globalAlphaFactor = alphaFactor
+  Common.setAlphaFactor(alphaFactor)
+  for (var i = 0; i < Common.ledStatus.length; ++i) {
+    this.context.pixel(i, Common.ledStatus[i].r, Common.ledStatus[i].g, Common.ledStatus[i].b, Common.ledStatus[i].a)
+  }
+  this.context.render()
 }
 
+/**
+ * Clear light
+ * @memberof yodaRT.light.LightRenderingContextManager
+ * @method clearLight
+ */
+LightRenderingContextManager.prototype.clearLight = function () {
+  this.context.clear()
+  this.context.render()
+}
 /**
  * @memberof yodaRT.light
  * @class LightRenderingContext
@@ -174,11 +274,8 @@ LightRenderingContext.prototype.playAwake = function playAwake () {
  */
 LightRenderingContext.prototype.sound = function sound (uri, self, options) {
   options = Object.assign({ ignore: false }, options)
-  var mockPlayer = {
-    stop: function () {
-      // nothing to do
-    }
-  }
+  var mockPlayer = new EventEmitter()
+  mockPlayer.stop = function noop () { /** nothing to do */ }
 
   if (options.ignore && (AudioManager.getPlayingState('tts') ||
     AudioManager.getPlayingState('bluetooth') ||
@@ -220,6 +317,7 @@ LightRenderingContext.prototype.sound = function sound (uri, self, options) {
 
   var sounder = new MediaPlayer(AudioManager.STREAM_SYSTEM)
   sounder.start(absPath)
+  helper.delegateEvents(sounder, mockPlayer)
 
   mockPlayer.stop = function () {
     try {
@@ -274,6 +372,7 @@ LightRenderingContext.prototype.clear = function () {
   if (this._getCurrentId() !== this._id) {
     return
   }
+  Common.setFill(0, 0, 0, 0)
   return light.clear()
 }
 
@@ -293,8 +392,8 @@ LightRenderingContext.prototype.pixel = function (pos, r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
-  a = applyAlphaFactor(a)
-  return light.pixel(pos, r, g, b, a)
+  Common.setPixel(pos, r, g, b, a)
+  return light.pixel(pos, r, g, b, Common.ApplyAlphaFactor(a))
 }
 
 /**
@@ -312,8 +411,8 @@ LightRenderingContext.prototype.fill = function (r, g, b, a) {
   if (this._getCurrentId() !== this._id) {
     return
   }
-  a = applyAlphaFactor(a)
-  return light.fill(r, g, b, a)
+  Common.setFill(r, g, b, a)
+  return light.fill(r, g, b, Common.ApplyAlphaFactor(a))
 }
 
 /**

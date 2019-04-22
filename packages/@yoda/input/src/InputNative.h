@@ -2,6 +2,7 @@
 #define INPUT_NATIVE_H
 
 #include <stdio.h>
+#include <list>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +15,8 @@ extern "C" {
 #include <uv.h>
 #include <input-event/input-event.h>
 
+using namespace std;
+
 class InputInitializer;
 class InputEventHandler;
 
@@ -25,6 +28,16 @@ typedef struct {
 
 static iotjs_input_t* iotjs_input_create(const jerry_value_t jinput);
 static void iotjs_input_destroy(iotjs_input_t* input);
+
+class InputKeyEvent {
+ public:
+  struct keyevent data;
+};
+
+class InputGestureEvent {
+ public:
+  struct gesture data;
+};
 
 class InputEventHandler {
  public:
@@ -39,16 +52,20 @@ class InputEventHandler {
  public:
   static void DoStart(uv_work_t* req);
   static void AfterStart(uv_work_t* req, int status);
-  static void OnKeyEvent(uv_async_t* async);
-  static void OnGestureEvent(uv_async_t* async);
-  static void AfterCallback(uv_handle_t* handle);
+  static void OnEvent(uv_async_t* async);
+  static void OnStop(uv_handle_t* handle);
 
  private:
   iotjs_input_t* inputwrap;
   struct keyevent keyevent_;
   struct gesture gesture_;
+  bool started = false;
   bool need_destroy_;
   uv_work_t req;
+  uv_async_t event_handle;
+  list<InputKeyEvent*> key_events;
+  list<InputGestureEvent*> gesture_events;
+  uv_mutex_t event_mutex;
 };
 
 #ifdef __cplusplus

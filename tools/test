@@ -1,5 +1,5 @@
-#!/usr/bin/env bash -i
-set -e
+#!/usr/bin/env bash
+set -e -o pipefail
 
 help="
 Usage:
@@ -12,8 +12,9 @@ Example:
   $ ./tools/test --reporter tap-nyan --pattern '**/*.test.js'
 "
 
+testset='test/testsets.txt'
 patternPrefix='/data/workspace/test/'
-pattern="**/*.test.js"
+patterns=""
 reporter="cat"
 coverage=""
 timeout=""
@@ -21,26 +22,26 @@ local="NO"
 sn=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    -p)
-      pattern="$2"
+    -p|--pattern)
+      patterns="$2"
+      shift
+      ;;
+    --testset)
+      testset="$2"
       shift
       ;;
     --reporter)
       reporter="./node_modules/.bin/$2"
       shift
       ;;
-    -l)
+    -l|--local)
       local="YES"
       ;;
     -s)
       sn="$2"
       shift
       ;;
-    --help)
-      printf "$help"
-      exit
-      ;;
-    -h)
+    -h|--help)
       printf "$help"
       exit
       ;;
@@ -59,17 +60,25 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
+if test -z "$patterns"; then
+  patterns=$(cat $testset)
+fi
+
+pre_scripts=""
+
 if test "$local" = "YES"; then
   export NODE_PATH="$(pwd)/packages"
+  export YODA_RUN_MODE=host
+  export NODE_ENV=unittest
 
   patternPrefix="$(pwd)/test/"
-  scripts="$patternPrefix$pattern"
 
   cmd='iotjs ./node_modules/tape/bin/tape.js '
 else
-  scripts="
-export BLUETOOTH_CHANNEL_PREFIX=/tmp > /dev/null;
-iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
+  pre_scripts="
+export BLUETOOTH_CHANNEL_PREFIX=/tmp;
+export NODE_ENV=unittest;
+iotjs /usr/lib/node_modules/tape/bin/tape.js
 "
   if test "$sn" != ""; then
     cmd="adb -s $sn shell"
@@ -78,4 +87,9 @@ iotjs /usr/lib/node_modules/tape/bin/tape.js '$patternPrefix$pattern'
   fi
 fi
 
-$cmd $scripts $coverage $timeout | $reporter
+for pattern in $patterns; do
+  if ! test -z "$pattern"; then
+    printf "# $patternPrefix$pattern\n"
+    $cmd $pre_scripts $coverage $timeout "$patternPrefix$pattern" | $reporter
+  fi
+done

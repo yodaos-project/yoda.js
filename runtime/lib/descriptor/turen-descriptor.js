@@ -20,6 +20,13 @@ function TurenDescriptor (activityDescriptor, appId, appHome, runtime) {
   this._appId = appId
   this._appHome = appHome
   this._runtime = runtime
+  this._shouldRecoverTuren = false
+
+  this._activityDescriptor.on('destruct', () => {
+    if (this._shouldRecoverTuren) {
+      this._runtime.component.turen.toggleWakeUpEngine(true)
+    }
+  })
 }
 inherits(TurenDescriptor, EventEmitter)
 TurenDescriptor.prototype.toJSON = function toJSON () {
@@ -30,37 +37,58 @@ Object.assign(TurenDescriptor.prototype,
   {
     type: 'namespace'
   },
+  /**
+   * set all vtWords.
+   * @memberof yodaRT.activity.Activity.TurenClient
+   * @instance
+   * @function setVtWords
+   * @param {array<object>} vtWords -
+   * @returns {Promise<void>}
+   */
+  {
+    setVtWords: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setVtWords (vtWords) {
+        return this._runtime.component.turen.setVtWords(vtWords)
+      }
+    }
+  },
   {
     /**
-     * add an activation word.
+     * Disable wake up processing engine if `enabled` is false, or enable the process if `enabled` is true.
+     * Switch enabled state if `enabled` is not set.
+     *
+     * Turen would be re-enabled on app exits if app did not recover the states.
+     *
      * @memberof yodaRT.activity.Activity.TurenClient
      * @instance
-     * @function addVtWord
-     * @param {string} activationTxt -
-     * @param {string} activationPy -
-     * @returns {Promise<void>}
+     * @function setEnabled
+     * @param {boolean} [enabled] - set turen wake up engine as disabled, switch if not given.
+     * @returns {Promise<boolean>}
      */
-    addVtWord: {
+    setEnabled: {
       type: 'method',
       returns: 'promise',
-      fn: function addVtWord (activationTxt, activationPy) {
-        return this._runtime.component.turen.addVtWord(activationTxt, activationPy)
+      fn: function setEnabled (enabled) {
+        var ret = this._runtime.component.turen.toggleWakeUpEngine(enabled)
+        this._shouldRecoverTuren = !ret
+        return ret
       }
     },
-
     /**
-     * delete an activation word.
+     * Get if turen wake up engine is disabled.
+     *
      * @memberof yodaRT.activity.Activity.TurenClient
      * @instance
-     * @function deleteVtWord
-     * @param {string} activationTxt -
-     * @returns {Promise<void>}
+     * @function getEnabled
+     * @returns {Promise<boolean>}
      */
-    deleteVtWord: {
+    getEnabled: {
       type: 'method',
       returns: 'promise',
-      fn: function deleteVtWord (activationTxt) {
-        return this._runtime.component.turen.deleteVtWord(activationTxt)
+      fn: function getEnabled () {
+        return Promise.resolve(this._runtime.component.turen.enabled)
       }
     }
   }

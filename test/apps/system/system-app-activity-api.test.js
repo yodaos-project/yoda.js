@@ -16,14 +16,14 @@ test('system should be ok if intent is unexpected', t => {
         t.end()
         return Promise.resolve([this.ttsId++])
       })
-      runtime.onVoiceCommand('', {intent: 'unexpected', appId: '1B54DBC9F7D74C619282CCE8FE28EB7E'})
+      runtime.handleNlpIntent('', {intent: 'unexpected', appId: '1B54DBC9F7D74C619282CCE8FE28EB7E'})
     })
 })
 
 test('system should be ok if intent is unexpected', t => {
   mock.mockAppRuntime('/opt/apps/system')
     .then(runtime => {
-      runtime.onVoiceCommand('', {intent: 'disconnect_network', appId: '1B54DBC9F7D74C619282CCE8FE28EB7E'})
+      runtime.handleNlpIntent('', {intent: 'disconnect_network', appId: '1B54DBC9F7D74C619282CCE8FE28EB7E'})
     })
   setTimeout(() => {
     var wifiState2 = wifi.getWifiState()
@@ -36,7 +36,7 @@ test('system should be ok if intent is unexpected', t => {
 test('system should be ok if intent is unexpected', t => {
   mock.mockAppRuntime('/opt/apps/system')
     .then(runtime => {
-      runtime.onVoiceCommand('', {intent: 'sleep', appId: '1B54DBC9F7D74C619282CCE8FE28EB7E'})
+      runtime.handleNlpIntent('', {intent: 'sleep', appId: '1B54DBC9F7D74C619282CCE8FE28EB7E'})
     })
   t.end()
 })

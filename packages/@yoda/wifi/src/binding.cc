@@ -202,6 +202,7 @@ static napi_value Init(napi_env env, napi_value exports) {
     DECLARE_NAPI_PROPERTY("removeNetwork", RemoveNetwork),
   };
   napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc);
+  NAPI_SET_CONSTANT(exports, WPA_ALL_NETWORK);
   return exports;
 }
 

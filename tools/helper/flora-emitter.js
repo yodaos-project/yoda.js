@@ -1,38 +1,42 @@
-var logger = require('logger')('flora')
+var flora = require('@yoda/flora')
 
-var floraFactory = require('@yoda/flora')
-var config = require('/etc/yoda/flora-config.json')
-var Caps = floraFactory.Caps
+var uri = 'unix:/var/run/flora.sock#testAgent'
+var channel
+var args
 
-var channel = process.argv[2]
-var args = process.argv[3]
+var cliArgs = process.argv.slice(2)
+while (cliArgs.length > 0) {
+  var $1 = cliArgs.shift()
+  switch ($1) {
+    case '-u':
+    case '--uri':
+      uri = cliArgs.shift()
+      break
+    default:
+      if (channel == null) {
+        channel = $1
+      } else if (args == null) {
+        args = $1
+      }
+  }
+}
 
-logger.info(`sending message to channel(${channel}) with body(${args})...`)
+console.log(`sending message to channel(${channel}) with body(${args})...`)
 
 function main () {
-  var cli = floraFactory.connect(`${config.uri}#flora-emitter`, config.bufsize)
-  if (!cli) {
-    logger.error('flora connect failed')
-    return
-  }
-  cli.on('disconnected', () => logger.info('flora disconnected'))
-  logger.info('flora connected')
+  var cli = new flora.Agent(uri)
+  cli.start()
 
-  var msg = new Caps()
+  var msg = []
   if (args) {
     args = JSON.parse(args)
     if (!Array.isArray(args)) {
       throw new Error('args is not an array')
     }
-    args.forEach(it => {
-      if (typeof it === 'number') {
-        msg.writeInt32(it)
-      }
-      msg.write(it)
-    })
+    msg = args
   }
 
-  cli.post(channel, msg, floraFactory.MSGTYPE_INSTANT)
+  cli.post(channel, msg)
 
   cli.close()
 }

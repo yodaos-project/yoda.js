@@ -124,6 +124,30 @@ function migrationOfRokid (callback) {
   })
 }
 
+function migrationOfOtaInfo (callback) {
+  logger.info('migrating ota info.')
+
+  compose([
+    cb => fs.stat('/data/upgrade/info', (_ /** ignoring error */, stat) => {
+      cb(null, stat)
+    }),
+    (cb, stat) => {
+      if (stat == null) {
+        return compose.Break()
+      }
+      if (!stat.isFile()) {
+        return compose.Break()
+      }
+      return fs.rename('/data/upgrade/info', '/data/upgrade/info.json', cb)
+    }
+  ], (err) => {
+    if (err) {
+      logger.error('Unexpected error on migrating ota info', err.stack)
+    }
+    callback()
+  })
+}
+
 module.exports = exodus
 function exodus (callback) {
   var migrationKey = 'sys.migration.lua'
@@ -136,7 +160,8 @@ function exodus (callback) {
   compose([
     migrationOfWiFi,
     migrationOfVolume,
-    migrationOfRokid
+    migrationOfRokid,
+    migrationOfOtaInfo
   ], (err) => {
     if (err) {
       return callback(err)

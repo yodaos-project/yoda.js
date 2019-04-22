@@ -1,0 +1,11 @@
+{
+  "product_name": "YODAOS-Device",
+  "version": "1.0.0",
+  "capabilities": {
+    "battery": false
+  },
+  "defaults": {
+    "audio.volume.init": 60,
+    "audio.volume.recover": 30
+  }
+}

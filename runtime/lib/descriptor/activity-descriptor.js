@@ -49,6 +49,7 @@ function ActivityDescriptor (appId, appHome, runtime) {
   this._runtime = runtime
 
   this._registeredDbusSignals = []
+  this._destructed = false
 
   /**
    * The `LightClient` is used to control LED APIs.
@@ -139,6 +140,11 @@ ActivityDescriptor.prototype.toString = function toString () {
   return `ActivityDescriptor(appId=>${this._appId}, appHome=>${this._appHome})`
 }
 ActivityDescriptor.prototype.destruct = function destruct () {
+  if (this._destructed) {
+    return
+  }
+  this._destructed = true
+
   this._registeredDbusSignals.forEach(it => {
     this._runtime.component.dbusRegistry.removeAllListeners(it)
   })
@@ -187,6 +193,13 @@ Object.assign(ActivityDescriptor.prototype,
      * @event yodaRT.activity.Activity#destroy
      */
     destroy: {
+      type: 'event'
+    },
+    /**
+     * When an activity is put into background.
+     * @event yodaRT.activity.Activity#background
+     */
+    background: {
       type: 'event'
     },
     /**
@@ -265,7 +278,7 @@ Object.assign(ActivityDescriptor.prototype,
       fn: function get () {
         // TODO(Yorkie): check permission.
         logger.warn('activity.get() is deprecated, please use @yoda/property instead.')
-        return Promise.resolve(this._runtime.onGetPropAll())
+        return Promise.resolve(this._runtime.getCopyOfCredential())
       }
     },
     /**
@@ -281,24 +294,24 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function exit (options) {
-        return this._runtime.exitAppById(this._appId, options)
+        return this._runtime.exitAppById(this._appId, Object.assign({}, options, { ignoreKeptAlive: true }))
       }
     },
     /**
-     * Put device into hibernation. Terminates apps in stack (i.e. apps in active and paused).
+     * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
      *
      * Also clears apps' contexts.
      *
      * @memberof yodaRT.activity.Activity
      * @instance
-     * @function hibernate
+     * @function idle
      * @returns {Promise<void>}
      */
-    hibernate: {
+    idle: {
       type: 'method',
       returns: 'promise',
-      fn: function hibernate () {
-        return this._runtime.hibernate()
+      fn: function idle () {
+        return this._runtime.idle()
       }
     },
     /**
@@ -458,6 +471,60 @@ Object.assign(ActivityDescriptor.prototype,
       }
     },
     /**
+     * Set skill id of current context.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function setContextSkillId
+     * @param {string} skillId
+     * @param {'cut' | 'scene'} [form] - derive from current app if not specified.
+     * @returns {Promise<object>}
+     */
+    setContextSkillId: {
+      type: 'method',
+      returns: 'promise',
+      fn: function setContextSkillId (skillId, form) {
+        if (this._appId !== '@yoda/cloudappclient') {
+          /** bypass @yoda/cloudappclient to allow arbitrary skill id updates */
+          if (this._runtime.component.appLoader.getAppIdBySkillId(skillId) !== this._appId) {
+            return Promise.reject(new Error(`skill id '${skillId}' not owned by app ${this._appId}.`))
+          }
+        }
+        if (form == null) {
+          var contextOptions = this._runtime.component.lifetime.getContextOptionsById(this._appId)
+          form = _.get(contextOptions, 'form')
+        }
+        return this._runtime.updateCloudStack(skillId, form)
+      }
+    },
+    /**
+     * Get skill id of current context.
+     *
+     * @memberof yodaRT.activity.Activity
+     * @instance
+     * @function getContextSkillId
+     * @param {'cut' | 'scene'} [form] - derive from current app if not specified.
+     * @returns {Promise<string | undefined>}
+     */
+    getContextSkillId: {
+      type: 'method',
+      returns: 'promise',
+      fn: function getContextSkillId (form) {
+        if (form == null) {
+          var contextOptions = this._runtime.component.lifetime.getContextOptionsById(this._appId)
+          form = _.get(contextOptions, 'form')
+        }
+        var skillId = this._runtime.domain[form]
+        if (this._appId !== '@yoda/cloudappclient') {
+          /** bypass @yoda/cloudappclient to allow arbitrary skill id queries */
+          if (this._runtime.component.appLoader.getAppIdBySkillId(skillId) !== this._appId) {
+            return undefined
+          }
+        }
+        return skillId
+      }
+    },
+    /**
      * Play the sound effect, support the following schemas: `system://` and `self://`.
      *
      * @memberof yodaRT.activity.Activity
@@ -470,9 +537,6 @@ Object.assign(ActivityDescriptor.prototype,
       type: 'method',
       returns: 'promise',
       fn: function playSound (uri) {
-        if (this._runtime.component.lifetime.getCurrentAppId() !== this._appId) {
-          return Promise.reject(new Error('currently app is not active'))
-        }
         var absPath = yodaPath.transformPathScheme(uri, MEDIA_SOURCE, this._appHome + '/media')
         return this._runtime.component.light.appSound(this._appId, absPath)
       }

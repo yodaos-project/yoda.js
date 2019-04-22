@@ -40,7 +40,6 @@ test('https status code', (t) => {
   httpsession.request('https://httpbin.org/status/256', null, (error, resp) => {
     t.equal(typeof error, 'undefined', 'the error should be undefined')
     t.equal(resp.code, 256, 'the status code should be 256')
-    httpsession.abort()
     t.end()
   })
 })

@@ -14,6 +14,6 @@ test('Timer: test stop timer while timer is not started.', t => {
         t.end()
         return Promise.resolve([this.ttsId++])
       })
-      runtime.onVoiceCommand('', {intent: 'timer_close', appId: 'RFCBA81EECAC4E11BA0EBC1AEC397A93'})
+      runtime.handleNlpIntent('', {intent: 'timer_close', appId: 'RFCBA81EECAC4E11BA0EBC1AEC397A93'})
     })
 })

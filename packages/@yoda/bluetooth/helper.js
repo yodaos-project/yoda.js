@@ -2,7 +2,7 @@
 
 function closeSocket (handle) {
   handle.removeAllListeners()
-  handle._flora.destruct()
+  handle._flora.deinit()
 }
 
 function disconnectAfterClose (handle, timeout) {

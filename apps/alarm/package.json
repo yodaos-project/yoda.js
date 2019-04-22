@@ -7,16 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "manifest": {
-    "daemon": true,
+    "daemon": false,
     "skills": [
       "R507AD024F9A4E358B9493BBC11C852F",
       "R05A20771E99463ABEBCDFDDE34B07E2"
     ],
     "permission": [
-      "ACCESS_NETWORK_STATE",
-      "ACCESS_TTS",
-      "ACCESS_MULTIMEDIA",
-      "ACCESS_SOUND",
       "INTERRUPT"
     ],
     "hosts": [
@@ -24,6 +20,10 @@
         "skillId": "R507AD024F9A4E358B9493BBC11C852F"
         }
       ]
+    ],
+    "notifications": [
+      "on-ready",
+      "on-system-booted"
     ]
   },
   "keywords": [
@@ -31,6 +31,6 @@
     "rokid",
     "skill"
   ],
-  "author": "jian.jiang",
+  "author": "yuna.li",
   "license": "MIT"
 }

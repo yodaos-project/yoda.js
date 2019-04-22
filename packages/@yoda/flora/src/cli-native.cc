@@ -10,9 +10,13 @@ using namespace std;
 using namespace Napi;
 using namespace flora;
 
-static bool genCapsByJSArray(Array&& jsmsg, shared_ptr<Caps>& caps);
-static bool genCapsByJSCaps(Object&& jsmsg, shared_ptr<Caps>& caps);
+static bool genCapsByJSArray(napi_env env, napi_value jsmsg,
+                             shared_ptr<Caps>& caps);
+static bool genCapsByJSCaps(napi_env env, napi_value jsmsg,
+                            shared_ptr<Caps>& caps);
 static Napi::Value genJSArrayByCaps(Napi::Env& env, std::shared_ptr<Caps>& msg);
+
+napi_ref NativeReply::replyConstructor;
 
 static void msg_async_cb(uv_async_t* handle) {
   ClientNative* _this = reinterpret_cast<ClientNative*>(handle->data);
@@ -39,11 +43,15 @@ Object NativeObjectWrap::Init(Napi::Env env, Object exports) {
                                    &NativeObjectWrap::subscribe),
                     InstanceMethod("unsubscribe",
                                    &NativeObjectWrap::unsubscribe),
+                    InstanceMethod("nativeDeclareMethod",
+                                   &NativeObjectWrap::declareMethod),
+                    InstanceMethod("removeMethod",
+                                   &NativeObjectWrap::removeMethod),
                     InstanceMethod("close", &NativeObjectWrap::close),
                     InstanceMethod("nativeGenArray",
                                    &NativeObjectWrap::genArray),
                     InstanceMethod("nativePost", &NativeObjectWrap::post),
-                    InstanceMethod("nativeGet", &NativeObjectWrap::get) });
+                    InstanceMethod("nativeCall", &NativeObjectWrap::call) });
   exports.Set("Agent", ctor);
   return exports;
 }
@@ -61,15 +69,33 @@ NativeObjectWrap::~NativeObjectWrap() {
 }
 
 Napi::Value NativeObjectWrap::start(const Napi::CallbackInfo& info) {
+  if (thisClient == nullptr)
+    return info.Env().Undefined();
   return thisClient->start(info);
 }
 
 Napi::Value NativeObjectWrap::subscribe(const Napi::CallbackInfo& info) {
+  if (thisClient == nullptr)
+    return info.Env().Undefined();
   return thisClient->subscribe(info);
 }
 
 Napi::Value NativeObjectWrap::unsubscribe(const Napi::CallbackInfo& info) {
+  if (thisClient == nullptr)
+    return info.Env().Undefined();
   return thisClient->unsubscribe(info);
+}
+
+Napi::Value NativeObjectWrap::declareMethod(const Napi::CallbackInfo& info) {
+  if (thisClient == nullptr)
+    return info.Env().Undefined();
+  return thisClient->declareMethod(info);
+}
+
+Napi::Value NativeObjectWrap::removeMethod(const Napi::CallbackInfo& info) {
+  if (thisClient == nullptr)
+    return info.Env().Undefined();
+  return thisClient->removeMethod(info);
 }
 
 Napi::Value NativeObjectWrap::close(const Napi::CallbackInfo& info) {
@@ -82,14 +108,20 @@ Napi::Value NativeObjectWrap::close(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value NativeObjectWrap::post(const Napi::CallbackInfo& info) {
+  if (thisClient == nullptr)
+    return Number::New(info.Env(), ERROR_NOT_CONNECTED);
   return thisClient->post(info);
 }
 
-Napi::Value NativeObjectWrap::get(const Napi::CallbackInfo& info) {
-  return thisClient->get(info);
+Napi::Value NativeObjectWrap::call(const Napi::CallbackInfo& info) {
+  if (thisClient == nullptr)
+    return Number::New(info.Env(), ERROR_NOT_CONNECTED);
+  return thisClient->call(info);
 }
 
 Napi::Value NativeObjectWrap::genArray(const Napi::CallbackInfo& info) {
+  if (thisClient == nullptr)
+    return info.Env().Undefined();
   return thisClient->genArray(info);
 }
 
@@ -98,6 +130,8 @@ Napi::Value NativeObjectWrap::genArray(const Napi::CallbackInfo& info) {
 typedef struct {
   uint32_t reconnInterval;
   uint32_t bufsize;
+  uint32_t beepInterval;
+  uint32_t norespTimeout;
 } AgentOptions;
 
 static void parseAgentOptions(const Napi::Value& jsopts,
@@ -115,9 +149,23 @@ static void parseAgentOptions(const Napi::Value& jsopts,
     } else {
       cxxopts.bufsize = DEFAULT_BUFSIZE;
     }
+    v = jsopts.As<Object>().Get("beepInterval");
+    if (v.IsNumber()) {
+      cxxopts.beepInterval = v.As<Number>().Uint32Value();
+    } else {
+      cxxopts.beepInterval = FLORA_CLI_DEFAULT_BEEP_INTERVAL;
+    }
+    v = jsopts.As<Object>().Get("norespTimeout");
+    if (v.IsNumber()) {
+      cxxopts.norespTimeout = v.As<Number>().Uint32Value();
+    } else {
+      cxxopts.norespTimeout = FLORA_CLI_DEFAULT_NORESP_TIMEOUT;
+    }
   } else {
     cxxopts.reconnInterval = DEFAULT_RECONN_INTERVAL;
     cxxopts.bufsize = DEFAULT_BUFSIZE;
+    cxxopts.beepInterval = FLORA_CLI_DEFAULT_BEEP_INTERVAL;
+    cxxopts.norespTimeout = FLORA_CLI_DEFAULT_NORESP_TIMEOUT;
   }
 }
 
@@ -137,6 +185,8 @@ void ClientNative::initialize(const CallbackInfo& info) {
   parseAgentOptions(info[1], opts);
   floraAgent.config(FLORA_AGENT_CONFIG_RECONN_INTERVAL, opts.reconnInterval);
   floraAgent.config(FLORA_AGENT_CONFIG_BUFSIZE, opts.bufsize);
+  floraAgent.config(FLORA_AGENT_CONFIG_KEEPALIVE, opts.beepInterval,
+                    opts.norespTimeout);
   status |= NATIVE_STATUS_CONFIGURED;
 }
 
@@ -144,10 +194,12 @@ Value ClientNative::start(const CallbackInfo& info) {
   Napi::Env env = info.Env();
   if ((status & NATIVE_STATUS_CONFIGURED) &&
       !(status & NATIVE_STATUS_STARTED)) {
+    uv_loop_s* loop;
+    napi_get_uv_event_loop(env, &loop);
     msgAsync.data = this;
-    uv_async_init(uv_default_loop(), &msgAsync, msg_async_cb);
+    uv_async_init(loop, &msgAsync, msg_async_cb);
     respAsync.data = this;
-    uv_async_init(uv_default_loop(), &respAsync, resp_async_cb);
+    uv_async_init(loop, &respAsync, resp_async_cb);
     napi_async_init(env, info.This(), String::New(env, "flora-agent"),
                     &asyncContext);
     floraAgent.start();
@@ -176,8 +228,8 @@ Value ClientNative::subscribe(const CallbackInfo& info) {
   }
   floraAgent.subscribe(name.c_str(),
                        [this, env](const char* name, std::shared_ptr<Caps>& msg,
-                                   uint32_t type, Reply* reply) {
-                         this->msgCallback(name, env, msg, type, reply);
+                                   uint32_t type) {
+                         this->msgCallback(name, env, msg, type, nullptr);
                        });
   return env.Undefined();
 }
@@ -197,6 +249,50 @@ Value ClientNative::unsubscribe(const CallbackInfo& info) {
     subscriptions.erase(it);
   }
   floraAgent.unsubscribe(name.c_str());
+  return env.Undefined();
+}
+
+Value ClientNative::declareMethod(const CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  if (!(status & NATIVE_STATUS_CONFIGURED))
+    return env.Undefined();
+  if (info.Length() < 2 || !info[0].IsString() || !info[1].IsFunction()) {
+    TypeError::New(env, "String, Function excepted")
+        .ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  std::string name = std::string(info[0].As<String>());
+  if (remoteMethods.find(name) != remoteMethods.end())
+    return env.Undefined();
+  Function cb = info[1].As<Function>();
+  auto r = remoteMethods.insert(std::make_pair(name, Napi::Persistent(cb)));
+  if (!r.second) {
+    return env.Undefined();
+  }
+  floraAgent.declare_method(name.c_str(),
+                            [this, env](const char* name, shared_ptr<Caps>& msg,
+                                        shared_ptr<Reply>& reply) {
+                              this->msgCallback(name, env, msg, 0xffffffff,
+                                                reply);
+                            });
+  return env.Undefined();
+}
+
+Value ClientNative::removeMethod(const CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  if (!(status & NATIVE_STATUS_CONFIGURED))
+    return env.Undefined();
+  if (info.Length() < 1 || !info[0].IsString()) {
+    TypeError::New(env, "String excepted").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  std::string name = std::string(info[0].As<String>());
+  SubscriptionMap::iterator it = remoteMethods.find(name);
+  if (it != remoteMethods.end()) {
+    it->second.Unref();
+    remoteMethods.erase(it);
+  }
+  floraAgent.remove_method(name.c_str());
   return env.Undefined();
 }
 
@@ -227,11 +323,11 @@ Value ClientNative::post(const CallbackInfo& info) {
 
   // msg is Caps object
   if (info[3].As<Boolean>().Value()) {
-    if (!genCapsByJSCaps(info[1].As<Object>(), msg)) {
+    if (!genCapsByJSCaps(env, info[1], msg)) {
       return Number::New(env, ERROR_INVALID_PARAM);
     }
   } else {
-    if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
+    if (info[1].IsArray() && !genCapsByJSArray(env, info[1], msg)) {
       return Number::New(env, ERROR_INVALID_PARAM);
     }
   }
@@ -245,34 +341,37 @@ Value ClientNative::post(const CallbackInfo& info) {
   return Number::New(env, FLORA_CLI_SUCCESS);
 }
 
-Value ClientNative::get(const CallbackInfo& info) {
+Value ClientNative::call(const CallbackInfo& info) {
   Napi::Env env = info.Env();
   if (!(status & NATIVE_STATUS_CONFIGURED))
     return Number::New(env, ERROR_INVALID_URI);
   // assert(info.Length() == 3);
   shared_ptr<Caps> msg;
   // msg is Caps object
-  if (info[3].As<Boolean>().Value()) {
-    if (!genCapsByJSCaps(info[1].As<Object>(), msg)) {
+  if (info[4].As<Boolean>().Value()) {
+    if (!genCapsByJSCaps(env, info[1], msg)) {
       return Number::New(env, ERROR_INVALID_PARAM);
     }
   } else {
-    if (info[1].IsArray() && !genCapsByJSArray(info[1].As<Array>(), msg)) {
+    if (info[1].IsArray() && !genCapsByJSArray(env, info[1], msg)) {
       return Number::New(env, ERROR_INVALID_PARAM);
     }
   }
-  // uint32_t timeout = 0;
-  // TODO: timeout not work correctly, need modify flora service
-  // if (info[2].IsNumber())
-  //   timeout = info[2].As<Number>().Uint32Value();
+  uint32_t timeout = 0;
+  if (info[5].IsNumber()) {
+    timeout = info[5].As<Number>().Uint32Value();
+  }
   shared_ptr<FunctionReference> cbr =
-      make_shared<FunctionReference>(Napi::Persistent(info[2].As<Function>()));
+      make_shared<FunctionReference>(Napi::Persistent(info[3].As<Function>()));
   // TODO: if callback of flora.get never invokded, the FunctionReference will
   // never Unref!!
-  int32_t r = floraAgent.get(info[0].As<String>().Utf8Value().c_str(), msg,
-                             [this, cbr](ResponseArray& resps) {
-                               this->respCallback(cbr, resps);
-                             });
+  int32_t r = floraAgent.call(
+      info[0].As<String>().Utf8Value().c_str(), msg,
+      info[2].As<String>().Utf8Value().c_str(),
+      [this, cbr](int32_t rescode, Response& resp) {
+        this->respCallback(cbr, rescode, resp);
+      },
+      timeout);
   return Number::New(env, r);
 }
 
@@ -281,7 +380,7 @@ Value ClientNative::genArray(const CallbackInfo& info) {
   if (!info[0].IsExternal())
     return env.Undefined();
   HackedNativeCaps* hackedCaps = nullptr;
-  if (napi_unwrap(env, info[0], (void**)&hackedCaps) != napi_ok ||
+  if (napi_get_value_external(env, info[0], (void**)&hackedCaps) != napi_ok ||
       hackedCaps == nullptr) {
     return env.Undefined();
   }
@@ -290,35 +389,27 @@ Value ClientNative::genArray(const CallbackInfo& info) {
 
 void ClientNative::msgCallback(const char* name, Napi::Env env,
                                std::shared_ptr<Caps>& msg, uint32_t type,
-                               Reply* reply) {
+                               shared_ptr<Reply> reply) {
   unique_lock<mutex> locker(cb_mutex);
   pendingMsgs.emplace_back(env);
   std::list<MsgCallbackInfo>::iterator it = --pendingMsgs.end();
   (*it).msgName = name;
   (*it).msg = msg;
   (*it).msgtype = type;
-  if (type == FLORA_MSGTYPE_REQUEST) {
+  if (type >= FLORA_NUMBER_OF_MSGTYPE) {
     (*it).reply = reply;
-    uv_async_send(&msgAsync);
-    while (true) {
-      cb_cond.wait(locker);
-      if ((*it).handled) {
-        pendingMsgs.erase(it);
-        break;
-      }
-    }
-  } else {
-    uv_async_send(&msgAsync);
   }
+  uv_async_send(&msgAsync);
 }
 
-void ClientNative::respCallback(shared_ptr<FunctionReference> cbr,
-                                ResponseArray& responses) {
+void ClientNative::respCallback(const shared_ptr<FunctionReference>& cbr,
+                                int32_t rescode, Response& response) {
   cb_mutex.lock();
   pendingResponses.emplace_back();
   list<RespCallbackInfo>::iterator it = --pendingResponses.end();
   (*it).cbr = std::move(cbr);
-  (*it).responses = responses;
+  (*it).rescode = rescode;
+  (*it).response = response;
   cb_mutex.unlock();
   uv_async_send(&respAsync);
 }
@@ -377,62 +468,69 @@ static Napi::Value genJSArrayByCaps(Napi::Env& env,
         msg->read(cv);
         ret[idx++] = genJSArrayByCaps(env, cv);
         break;
+      case CAPS_MEMBER_TYPE_VOID:
+        msg->read();
+        ret[idx++] = env.Undefined();
+        break;
     }
   }
   return ret;
 }
 
-static bool genCapsByJSArray(Array&& jsmsg, shared_ptr<Caps>& caps) {
+static bool genCapsByJSArray(napi_env env, napi_value jsmsg,
+                             shared_ptr<Caps>& caps) {
   caps = Caps::new_instance();
-  uint32_t len = jsmsg.Length();
+  uint32_t len;
   uint32_t i;
-  Napi::Value v;
+  napi_value v;
+  napi_valuetype tp;
 
+  napi_get_array_length(env, jsmsg, &len);
   for (i = 0; i < len; ++i) {
-    v = jsmsg[i];
-    if (v.IsNumber()) {
-      caps->write(v.As<Number>().DoubleValue());
-    } else if (v.IsString()) {
-      caps->write(v.As<String>().Utf8Value().c_str());
+    napi_get_element(env, jsmsg, i, &v);
+    napi_typeof(env, v, &tp);
+    if (tp == napi_number) {
+      double d;
+      napi_get_value_double(env, v, &d);
+      caps->write(d);
+    } else if (tp == napi_string) {
+      size_t strlen;
+      char* str;
+      napi_get_value_string_utf8(env, v, nullptr, 0, &strlen);
+      str = new char[strlen + 1];
+      napi_get_value_string_utf8(env, v, str, strlen + 1, nullptr);
+      str[strlen] = '\0';
+      caps->write(str);
+      delete[] str;
       // iotjs not support ArrayBuffer
       // } else if (v.IsArrayBuffer()) {
       //   caps->write(v.As<ArrayBuffer>().Data(),
       //   v.As<ArrayBuffer>().ByteLength());
-    } else if (v.IsArray()) {
+    } else if (tp == napi_object) {
+      bool isArray;
+      napi_is_array(env, v, &isArray);
+      if (!isArray)
+        return false;
       shared_ptr<Caps> sub;
-      if (!genCapsByJSArray(v.As<Array>(), sub))
+      if (!genCapsByJSArray(env, v, sub))
         return false;
       caps->write(sub);
+    } else if (tp == napi_undefined) {
+      caps->write();
     } else
       return false;
   }
   return true;
 }
 
-static bool genCapsByJSCaps(Object&& jsmsg, shared_ptr<Caps>& caps) {
+static bool genCapsByJSCaps(napi_env env, napi_value jsmsg,
+                            shared_ptr<Caps>& caps) {
   void* ptr = nullptr;
-  napi_unwrap(jsmsg.Env(), jsmsg, &ptr);
+  napi_unwrap(env, jsmsg, &ptr);
   if (ptr == nullptr)
     return false;
   caps = reinterpret_cast<HackedNativeCaps*>(ptr)->caps;
   return true;
-}
-
-static void genReplyByJSObject(Napi::Value& jsv, Reply& reply) {
-  if (!jsv.IsObject())
-    return;
-  Napi::Value m = jsv.As<Object>().Get("retCode");
-  if (!m.IsNumber())
-    return;
-  reply.ret_code = (int32_t)(m.As<Number>());
-  m = jsv.As<Object>().Get("msg");
-  if (m.IsArray()) {
-    if (!genCapsByJSArray(m.As<Array>(), reply.data))
-      reply.data.reset();
-  } else if (m.IsObject()) {
-    if (!genCapsByJSCaps(m.As<Object>(), reply.data))
-      reply.data.reset();
-  }
 }
 
 static void freeHackedCaps(napi_env, void* data, void* arg) {
@@ -441,20 +539,20 @@ static void freeHackedCaps(napi_env, void* data, void* arg) {
 
 static napi_value genHackedCaps(napi_env env, shared_ptr<Caps> msg) {
   napi_value jsobj;
-  if (napi_create_object(env, &jsobj) != napi_ok) {
+  HackedNativeCaps* hackedCaps = new HackedNativeCaps();
+  hackedCaps->caps = msg;
+  if (napi_create_external(env, hackedCaps, freeHackedCaps, nullptr, &jsobj) !=
+      napi_ok) {
+    delete hackedCaps;
     napi_get_undefined(env, &jsobj);
     return jsobj;
   }
-  HackedNativeCaps* hackedCaps = new HackedNativeCaps();
-  hackedCaps->caps = msg;
-  napi_wrap(env, jsobj, hackedCaps, freeHackedCaps, nullptr, nullptr);
   return jsobj;
 }
 
 void ClientNative::handleMsgCallbacks() {
   napi_value jsmsg;
   SubscriptionMap::iterator subit;
-  Napi::Value cbret;
   unique_lock<mutex> locker(cb_mutex);
   list<MsgCallbackInfo>::iterator mit = pendingMsgs.begin();
   list<MsgCallbackInfo>::iterator rmit;
@@ -469,50 +567,44 @@ void ClientNative::handleMsgCallbacks() {
 
     HandleScope scope(cbinfo.env);
     jsmsg = genHackedCaps(cbinfo.env, cbinfo.msg);
-    subit = subscriptions.find(cbinfo.msgName);
-    if (subit != subscriptions.end()) {
-      cbret = subit->second.MakeCallback(cbinfo.env.Global(),
-                                         { jsmsg, Number::New(cbinfo.env,
-                                                              cbinfo.msgtype) },
-                                         asyncContext);
-    }
-    if (cbinfo.msgtype == FLORA_MSGTYPE_REQUEST) {
-      genReplyByJSObject(cbret, *(cbinfo.reply));
-      locker.lock();
-      (*mit).handled = true;
-      ++mit;
-      cb_cond.notify_all();
-      locker.unlock();
+    if (cbinfo.msgtype < FLORA_NUMBER_OF_MSGTYPE) {
+      subit = subscriptions.find(cbinfo.msgName);
+      if (subit != subscriptions.end()) {
+        subit->second.MakeCallback(cbinfo.env.Global(),
+                                   { jsmsg,
+                                     Number::New(cbinfo.env, cbinfo.msgtype) },
+                                   asyncContext);
+      }
     } else {
-      locker.lock();
-      rmit = mit;
-      ++mit;
-      pendingMsgs.erase(rmit);
-      locker.unlock();
+      subit = remoteMethods.find(cbinfo.msgName);
+      if (subit != remoteMethods.end()) {
+        napi_value jsreply =
+            NativeReply::createObject(cbinfo.env, cbinfo.reply);
+        subit->second.MakeCallback(cbinfo.env.Global(), { jsmsg, jsreply },
+                                   asyncContext);
+      }
     }
+    locker.lock();
+    rmit = mit;
+    ++mit;
+    pendingMsgs.erase(rmit);
+    locker.unlock();
   }
 }
 
-static Value genJSResponseArray(Napi::Env env, ResponseArray& resps) {
+static Value genJSResponse(Napi::Env env, Response& resp) {
   EscapableHandleScope scope(env);
-  Array result;
-  Object ele;
-  uint32_t i;
+  Object jsresp;
 
-  result = Array::New(env, resps.size());
-  for (i = 0; i < resps.size(); ++i) {
-    ele = Object::New(env);
-    Response& resp = resps[i];
-    ele["retCode"] = Number::New(env, resp.ret_code);
-    ele["msg"] = genHackedCaps(env, resp.data);
-    ele["sender"] = String::New(env, resp.extra);
-    result[i] = ele;
-  }
-  return scope.Escape(result);
+  jsresp = Object::New(env);
+  jsresp["retCode"] = Number::New(env, resp.ret_code);
+  jsresp["msg"] = genHackedCaps(env, resp.data);
+  jsresp["sender"] = String::New(env, resp.extra);
+  return scope.Escape(jsresp);
 }
 
 void ClientNative::handleRespCallbacks() {
-  Napi::Value jsresps;
+  Napi::Value jsresp;
   unique_lock<mutex> locker(cb_mutex, defer_lock);
   list<RespCallbackInfo>::iterator it;
 
@@ -524,8 +616,10 @@ void ClientNative::handleRespCallbacks() {
     locker.unlock();
 
     HandleScope scope((*it).cbr->Env());
-    jsresps = genJSResponseArray((*it).cbr->Env(), (*it).responses);
-    (*it).cbr->MakeCallback((*it).cbr->Env().Global(), { jsresps },
+    jsresp = genJSResponse((*it).cbr->Env(), (*it).response);
+    (*it).cbr->MakeCallback((*it).cbr->Env().Global(),
+                            { Number::New((*it).cbr->Env(), (*it).rescode),
+                              jsresp },
                             asyncContext);
 
     locker.lock();
@@ -535,7 +629,152 @@ void ClientNative::handleRespCallbacks() {
   }
 }
 
+void NativeReply::init(napi_env env) {
+  napi_handle_scope scope;
+  napi_open_handle_scope(env, &scope);
+
+  napi_value cons;
+  napi_create_function(env, "Reply", NAPI_AUTO_LENGTH, NativeReply::newInstance,
+                       nullptr, &cons);
+  napi_value proto;
+  napi_create_object(env, &proto);
+  napi_value jsfunc;
+  napi_create_function(env, "writeCode", NAPI_AUTO_LENGTH,
+                       NativeReply::writeCodeStatic, nullptr, &jsfunc);
+  napi_set_named_property(env, proto, "writeCode", jsfunc);
+  napi_create_function(env, "writeData", NAPI_AUTO_LENGTH,
+                       NativeReply::writeDataStatic, nullptr, &jsfunc);
+  napi_set_named_property(env, proto, "writeData", jsfunc);
+  napi_create_function(env, "end", NAPI_AUTO_LENGTH, NativeReply::endStatic,
+                       nullptr, &jsfunc);
+  napi_set_named_property(env, proto, "end", jsfunc);
+  napi_set_named_property(env, cons, "prototype", proto);
+  napi_create_reference(env, cons, 1, &replyConstructor);
+
+  napi_close_handle_scope(env, scope);
+}
+
+napi_value NativeReply::newInstance(napi_env env, napi_callback_info cbinfo) {
+  napi_value thisObj;
+  napi_get_cb_info(env, cbinfo, nullptr, nullptr, &thisObj, nullptr);
+  return thisObj;
+}
+
+napi_value NativeReply::createObject(napi_env env,
+                                     shared_ptr<flora::Reply>& reply) {
+  napi_escapable_handle_scope scope;
+  napi_open_escapable_handle_scope(env, &scope);
+
+  napi_value res, cons;
+  napi_get_reference_value(env, replyConstructor, &cons);
+  napi_new_instance(env, cons, 0, nullptr, &res);
+  NativeReply* nativeReply = new NativeReply(reply);
+  napi_wrap(env, res, nativeReply, NativeReply::objectFinalize, nullptr,
+            nullptr);
+
+  napi_escape_handle(env, scope, res, &res);
+  napi_close_escapable_handle_scope(env, scope);
+  return res;
+}
+
+void NativeReply::objectFinalize(napi_env env, void* data, void* hint) {
+  delete reinterpret_cast<NativeReply*>(data);
+}
+
+#define MAX_NATIVE_ARGS 16
+napi_value NativeReply::callNativeMethod(napi_env env,
+                                         napi_callback_info cbinfo,
+                                         NapiCallbackFunc cb) {
+  napi_escapable_handle_scope scope;
+  napi_open_escapable_handle_scope(env, &scope);
+
+  napi_value thisObj;
+  size_t argc = MAX_NATIVE_ARGS;
+  napi_value argv[MAX_NATIVE_ARGS];
+  napi_get_cb_info(env, cbinfo, &argc, argv, &thisObj, nullptr);
+  void* data;
+  napi_unwrap(env, thisObj, &data);
+  napi_value r =
+      (reinterpret_cast<NativeReply*>(data)->*cb)(env, thisObj, argc, argv);
+
+  napi_escape_handle(env, scope, r, &r);
+  napi_close_escapable_handle_scope(env, scope);
+  return r;
+}
+
+napi_value NativeReply::writeCodeStatic(napi_env env,
+                                        napi_callback_info cbinfo) {
+  return callNativeMethod(env, cbinfo, &NativeReply::writeCode);
+}
+
+napi_value NativeReply::writeDataStatic(napi_env env,
+                                        napi_callback_info cbinfo) {
+  return callNativeMethod(env, cbinfo, &NativeReply::writeData);
+}
+
+napi_value NativeReply::endStatic(napi_env env, napi_callback_info cbinfo) {
+  return callNativeMethod(env, cbinfo, &NativeReply::end);
+}
+
+napi_value NativeReply::writeCode(napi_env env, napi_value thisObj, size_t argc,
+                                  napi_value* argv) {
+  if (argc >= 1) {
+    napi_valuetype tp;
+    napi_typeof(env, argv[0], &tp);
+    if (tp == napi_number) {
+      int32_t code;
+      napi_get_value_int32(env, argv[0], &code);
+      reply->write_code(code);
+    }
+  }
+  napi_value r;
+  napi_get_undefined(env, &r);
+  return r;
+}
+
+napi_value NativeReply::writeData(napi_env env, napi_value thisObj, size_t argc,
+                                  napi_value* argv) {
+  if (argc >= 1) {
+    bool isArray;
+    shared_ptr<Caps> caps;
+    napi_is_array(env, argv[0], &isArray);
+    if (isArray) {
+      if (!genCapsByJSArray(env, argv[0], caps))
+        goto exit;
+    } else {
+      napi_valuetype tp;
+      void* data;
+      napi_typeof(env, argv[0], &tp);
+      if (tp != napi_object || tp != napi_external)
+        goto exit;
+      if (!genCapsByJSCaps(env, argv[0], caps))
+        goto exit;
+    }
+    reply->write_data(caps);
+  }
+
+exit:
+  napi_value r;
+  napi_get_undefined(env, &r);
+  return r;
+}
+
+napi_value NativeReply::end(napi_env env, napi_value thisObj, size_t argc,
+                            napi_value* argv) {
+  if (argc >= 1) {
+    writeCode(env, thisObj, 1, argv);
+  }
+  if (argc >= 2) {
+    writeData(env, thisObj, 1, argv + 1);
+  }
+  reply->end();
+  napi_value r;
+  napi_get_undefined(env, &r);
+  return r;
+}
+
 static Object InitNode(Napi::Env env, Object exports) {
+  NativeReply::init(env);
   return NativeObjectWrap::Init(env, exports);
 }
 
