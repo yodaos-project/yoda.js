@@ -331,7 +331,8 @@ module.exports = function (activity) {
     }
   }))
 
-  activity.on('url', url => {
+  ctxManager.on('url', ctx => {
+    var url = ctx.urlObj
     var partition = parseInt(_.get(url.query, 'partition', 10))
     switch (url.pathname) {
       case '/volume_up':
@@ -352,7 +353,7 @@ module.exports = function (activity) {
         var vol = parseInt(_.get(url.query, 'value'))
         logger.info('set volume by url', typeof vol, vol)
         if (isNaN(vol) || vol < 0 || vol > 100) {
-          return
+          break
         }
         setVolume(vol, { type: null })
         break
@@ -364,5 +365,6 @@ module.exports = function (activity) {
         setUnmute({ type: 'effect' })
         break
     }
+    ctx.exit()
   })
 }
