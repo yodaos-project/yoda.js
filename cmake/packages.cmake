@@ -76,13 +76,15 @@ YodaLocalPackage(yoda-env @yoda/env)
 YodaLocalPackage(yoda-flora @yoda/flora)
 YodaLocalPackage(yodaos-application @yodaos/application)
 YodaLocalPackage(yodaos-mediakit @yodaos/mediakit)
+YodaLocalPackage(yodaos-effect @yodaos/effect)
+YodaLocalPackage(yodaos-keyboard @yodaos/keyboard)
 YodaLocalPackage(yodaos-speech-synthesis @yodaos/speech-synthesis)
-YodaLocalPackage(yodaos-step @yodaos/step)
 YodaLocalPackage(yodaos-storage @yodaos/storage)
 
 # root scope packages
 YodaLocalPackage(logger)
 YodaLocalPackage(lru-cache)
+YodaLocalPackage(step)
 
 # Tools
 ExternalProject_Add(rklogger
