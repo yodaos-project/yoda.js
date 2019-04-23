@@ -3,45 +3,13 @@
  */
 
 var EventEmitter = require('events')
+var SpeechSynthesizer = require('./out/speech-synthesizer.node').SpeechSynthesizer
 
-var REGISTRY = Symbol('synth#registry')
-var API = Symbol('synth#api')
-var SYNTH_ID = Symbol('synth#id')
+var SYNTH_LABEL = Symbol('synth#label')
 var UTTER = Symbol('synth#utter')
 var STATUS = Symbol('synth#status')
-
-function setup (api, speechSynthesis) {
-  var registry = api[REGISTRY] = {}
-  api.on('start', (id) => {
-    var utter = api[REGISTRY][id]
-    if (utter != null) {
-      if (speechSynthesis[UTTER] && speechSynthesis[UTTER][SYNTH_ID] === id) {
-        speechSynthesis[STATUS] = Status.speaking
-      }
-      utter.emit('start')
-    }
-  })
-  ;['end', 'error', 'cancel'].forEach(eve => {
-    api.on(eve, (id) => {
-      var utter = api[REGISTRY][id]
-      if (utter == null) {
-        return
-      }
-      delete api[REGISTRY][id]
-
-      if (speechSynthesis[UTTER] && speechSynthesis[UTTER][SYNTH_ID] === id) {
-        speechSynthesis[STATUS] = Status.none
-      }
-      utter.emit(eve)
-    })
-  })
-  return registry
-}
-
-function register (api, id, self) {
-  var registry = api[REGISTRY]
-  registry[id] = self
-}
+var QUEUE = Symbol('synth#queue')
+var NATIVE = Symbol('synth#native')
 
 var Status = {
   none: 0,
@@ -49,6 +17,8 @@ var Status = {
   paused: 0b010,
   speaking: 0b100
 }
+
+var Events = ['start', 'end', 'cancel']
 
 /**
  * @hideconstructor
@@ -59,12 +29,12 @@ var Status = {
  *     console.log('speech ended')
  *   })
  */
-class SpeechSynthesis extends EventEmitter {
+class SpeechSynthesis {
   constructor (api) {
-    super()
-
-    this[API] = api || global[Symbol.for('yoda#api')].tts
-    setup(api, this)
+    this[SYNTH_LABEL] = (api || global[Symbol.for('yoda#api')]).appId
+    this[QUEUE] = []
+    this[NATIVE] = new SpeechSynthesizer()
+    this[NATIVE].setup(this.onevent.bind(this))
 
     this[UTTER] = null
     this[STATUS] = Status.none
@@ -95,12 +65,18 @@ class SpeechSynthesis extends EventEmitter {
     if (typeof utterance === 'string') {
       utterance = new SpeechSynthesisUtterance(utterance)
     }
-    this[API].speak(utterance.text, { impatient: true })
-      .then(id => {
-        this[UTTER] = utterance
-        utterance[SYNTH_ID] = id
-        register(this[API], id, utterance)
-      })
+    if (!(utterance instanceof SpeechSynthesisUtterance)) {
+      throw TypeError('Expect a string or SpeechSynthesisUtterance on SpeechSynthesis.speak')
+    }
+    var idx = this[QUEUE].indexOf(utterance)
+    if (idx < 0) {
+      utterance.setId(this[SYNTH_LABEL])
+      this[QUEUE].push(utterance)
+    }
+    if (this[STATUS] === Status.none) {
+      this[STATUS] = Status.pending
+    }
+    this.go()
     return utterance
   }
 
@@ -111,7 +87,59 @@ class SpeechSynthesis extends EventEmitter {
    * If an utterance is currently being spoken, speaking will stop immediately.
    */
   cancel () {
-    this[API].stop()
+    if (this[STATUS] === Status.speaking) {
+      this[NATIVE].cancel()
+    }
+  }
+
+  playStream () {
+    this[STATUS] = Status.pending
+    var utterance = new SpeechSynthesisUtterance()
+    utterance.setId(this[SYNTH_LABEL])
+    this[QUEUE].push(utterance)
+    if (this[STATUS] === Status.none) {
+      this[STATUS] = Status.pending
+    }
+    this.go()
+    return utterance
+  }
+
+  onevent (eve, errCode) {
+    var utter = this[UTTER]
+    if (eve === 0) {
+      this[STATUS] = Status.speaking
+    } else if (eve > 0) {
+      this[STATUS] = Status.none
+      this[UTTER] = null
+    }
+    if (utter == null) {
+      return
+    }
+    var name = Events[eve]
+    if (name === 'cancel' && errCode !== 0) {
+      var err = new Error(`SpeechSynthesisError: code(${errCode})`)
+      err.code = errCode
+      utter.emit('error', err)
+    } else {
+      utter.emit(Events[eve])
+    }
+    this.go()
+  }
+
+  go () {
+    if (this[UTTER]) {
+      return
+    }
+    if (this[QUEUE].length <= 0) {
+      return
+    }
+    var utter = this[QUEUE].shift()
+    this[UTTER] = utter
+    if (utter.text) {
+      this[NATIVE].speak(utter)
+    } else {
+      this[NATIVE].playStream(utter)
+    }
   }
 }
 
@@ -127,6 +155,15 @@ class SpeechSynthesisUtterance extends EventEmitter {
     super()
     this.text = text
   }
+
+  setId (label) {
+    Object.defineProperty(this, 'id', {
+      enumerable: false,
+      configurable: false,
+      writable: false,
+      value: `yodaos.speech-synthesis.${label}.${Date.now()}`
+    })
+  }
 }
 
 module.exports.SpeechSynthesis = SpeechSynthesis
@@ -138,7 +175,7 @@ Object.defineProperty(module.exports, 'speechSynthesis', {
   configurable: true,
   get: () => {
     if (defaultInstance == null) {
-      defaultInstance = new SpeechSynthesis(global[Symbol.for('yoda#api')].tts)
+      defaultInstance = new SpeechSynthesis(global[Symbol.for('yoda#api')])
     }
     return defaultInstance
   }
