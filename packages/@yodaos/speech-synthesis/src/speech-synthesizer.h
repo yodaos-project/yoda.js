@@ -7,6 +7,9 @@
 #include "pcm-player.h"
 #include "flora-agent.h"
 
+#define YODAOS_SPEECH_SYNTHESIS_IPC_SPEAK "yodaos.voice-interface.tts.speak"
+#define YODAOS_SPEECH_SYNTHESIS_IPC_TARGET "voice-interface"
+
 class SpeechSynthesizer : public Napi::ObjectWrap<SpeechSynthesizer> {
  public:
   static Napi::Object Init(Napi::Env env, Napi::Object exports);

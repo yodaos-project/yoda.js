@@ -137,7 +137,8 @@ Value SpeechSynthesizer::speak(const CallbackInfo& info) {
   msg->write(id);
   msg->write(text);
   this->floraAgent.call(
-      "yoda.tts.speak", msg, "vbs-proc",
+      YODAOS_SPEECH_SYNTHESIS_IPC_SPEAK, msg,
+      YODAOS_SPEECH_SYNTHESIS_IPC_TARGET,
       [this](int32_t resCode, flora::Response& resp) {
         if (resCode != 0) {
           this->errCode = resCode;
