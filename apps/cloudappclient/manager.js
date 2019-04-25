@@ -6,6 +6,7 @@ var logger = require('logger')('cloudAppClient-manager')
 var eventRequest = require('./eventRequestApi')
 var eventRequestMap = require('./eventRequestMap.json')
 var _ = require('@yoda/util')._
+var retries = require('@yoda/util').retries
 
 function Manager (exe, Skill) {
   EventEmitter.call(this)
@@ -244,32 +245,42 @@ Manager.prototype.sendEventRequest = function (type, name, data, args, cb) {
     return
   }
   if (type === 'tts') {
-    this.eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (err, response) => {
-      if (err) {
-        logger.error(err)
-        return cb && cb(err)
-      }
-      logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
-      if (response === '{}') {
-        return cb && cb()
-      }
-      var action = JSON.parse(response)
-      this.append(null, action)
-      cb && cb()
+    retries.retries(3, (retry, lastly) => {
+      this.eventRequest.ttsEvent(eventRequestMap[type][name], data.appId, args, (err, response) => {
+        if (err) {
+          logger.error(err)
+          if (lastly) {
+            return cb && cb(err)
+          }
+          return setTimeout(retry, 300)
+        }
+        logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
+        if (response === '{}') {
+          return cb && cb()
+        }
+        var action = JSON.parse(response)
+        this.append(null, action)
+        cb && cb()
+      })
     })
   } else if (type === 'media') {
-    this.eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (err, response) => {
-      if (err) {
-        logger.error(err)
-        return cb && cb(err)
-      }
-      logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
-      if (response === '{}') {
-        return cb && cb()
-      }
-      var action = JSON.parse(response)
-      this.append(null, action)
-      cb && cb()
+    retries.retries(3, (retry, lastly) => {
+      this.eventRequest.mediaEvent(eventRequestMap[type][name], data.appId, args, (err, response) => {
+        if (err) {
+          logger.error(err)
+          if (lastly) {
+            return cb && cb(err)
+          }
+          return setTimeout(retry, 300)
+        }
+        logger.log(`[eventRes](${type}, ${name}) Res(${JSON.stringify(response)}`)
+        if (response === '{}') {
+          return cb && cb()
+        }
+        var action = JSON.parse(response)
+        this.append(null, action)
+        cb && cb()
+      })
     })
   }
 }
