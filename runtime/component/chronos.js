@@ -56,6 +56,20 @@ class Chronos {
   }
 
   /**
+   * @desc Query if specified `url` is scheduled.
+   * @param {string} url the URL to check.
+   * @return {boolean}
+   */
+  query (url) {
+    for (var i = 0; i < this.jobs.length; i++) {
+      if (this.jobs[i].url === url) {
+        return true
+      }
+    }
+    return false
+  }
+
+  /**
    * go routine
    * @param {boolean} recalc=true
    */

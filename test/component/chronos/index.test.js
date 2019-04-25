@@ -84,3 +84,25 @@ test('should reschedule on next jobs all cancelled', t => {
   })
   chronos.cancel('yoda-app://foobar-1')
 })
+
+test('Test interface of query():', t => {
+  t.plan(6)
+  var tt = bootstrap()
+  var chronos = tt.component.chronos
+
+  for (var i = 1; i <= 5; i++) {
+    chronos.schedule({
+      triggerAt: Date.now() + i * 1000,
+      url: `yoda-app://forbar-${i}`
+    })
+  }
+  t.equal(chronos.query('yoda-app://forbar-1'), true)
+  t.equal(chronos.query('yoda-app://forbar-1/path'), false)
+  t.equal(chronos.query('yoda-app://forbar-3'), true)
+  t.equal(chronos.query('yoda-app://forbar-3/path?q=yes'), false)
+  t.equal(chronos.query('yoda-app://forbar-5'), true)
+  t.equal(chronos.query('yoda-app://forbar-7'), false)
+  for (i = 1; i <= 5; i++) {
+    chronos.cancel(`yoda-app://forbar-${i}`)
+  }
+})

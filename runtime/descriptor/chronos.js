@@ -26,6 +26,11 @@ class ChronosDescriptor extends Descriptor {
     var url = ctx.args[0]
     this.chronos.cancel(url)
   }
+
+  query (ctx) {
+    var url = ctx.args[0]
+    this.chronos.query(url)
+  }
 }
 
 ChronosDescriptor.events = {
@@ -49,6 +54,15 @@ ChronosDescriptor.methods = {
    * @returns {Promise<void>}
    */
   cancel: {
+    returns: 'promise'
+  },
+  /**
+   * @memberof yodaRT.activity.Activity.ChronosClient
+   * @instance
+   * @function query
+   * @returns {boolean}
+   */
+  query: {
     returns: 'promise'
   }
 }
