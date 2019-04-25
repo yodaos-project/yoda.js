@@ -53,9 +53,9 @@ class AudioFocus {
   request (req) {
     var gain = req.gain || 0
     req = Object.assign(_.pick(req, 'id', 'appId'), {
-      transient: gain & RequestType.TRANSIENT,
-      exclusive: gain & RequestType.EXCLUSIVE,
-      mayDuck: gain & RequestType.MAY_DUCK
+      transient: (gain & RequestType.TRANSIENT) > 0,
+      exclusive: (gain & RequestType.EXCLUSIVE) > 0,
+      mayDuck: (gain & RequestType.MAY_DUCK) > 0
     })
     var currentFocus = this.getCurrentFocus()
     if (_.get(currentFocus, 'exclusive')) {
@@ -132,7 +132,7 @@ class AudioFocus {
   castRequest (req, transient, mayDuck) {
     transient = transient == null ? false : transient
     mayDuck = mayDuck == null ? false : mayDuck
-    this.descriptor.audioFocus.emitToApp(req.appId, 'loss', [ req.id, transient === 1, mayDuck === 1 ])
+    this.descriptor.audioFocus.emitToApp(req.appId, 'loss', [ req.id, transient, mayDuck ])
   }
 
   appDidExit (appId) {

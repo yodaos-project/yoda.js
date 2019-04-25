@@ -1,7 +1,3 @@
-/**
- * @module @yodaos/application
- */
-
 var registrySymbol = Symbol('audio-focus#registry')
 
 function setup (api) {
@@ -34,6 +30,7 @@ class AudioFocus {
   /**
    * AudioFocus
    *
+   * @memberof module:@yodaos/application
    * @param {number} type
    * @example
    * var focus = new AudioFocus(AudioFocus.Type.TRANSIENT)
@@ -99,11 +96,15 @@ class AudioFocus {
   onLoss () {}
 }
 
+/**
+ * @memberof module:@yodaos/application~AudioFocus
+ * @static
+ */
 AudioFocus.Type = {
   DEFAULT: 0b000,
   TRANSIENT: 0b001,
-  EXCLUSIVE: 0b010,
-  MAY_DUCK: 0b100
+  EXCLUSIVE_TRANSIENT: 0b011,
+  TRANSIENT_MAY_DUCK: 0b101
 }
 
 module.exports = AudioFocus
