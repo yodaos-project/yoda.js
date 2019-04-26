@@ -43,14 +43,20 @@ test('should schedule repeating job', t => {
 })
 
 test('should push job to next queue if next delta is equal to job\'s', t => {
-  t.plan(7)
+  t.plan(4)
   var tt = bootstrap()
   var chronos = tt.component.chronos
 
+  var expectedUrls = [ 'yoda-app://foobar', 'yoda-app://foobar-2' ]
+  var openedUrls = []
   mm.mockPromise(tt.runtime, 'openUrl', (url) => {
-    t.strictEqual(url, 'yoda-app://foobar')
-    t.strictEqual(chronos.findNextJobs(), Infinity)
-    t.strictEqual(chronos.jobs.length, 0)
+    openedUrls.push(url)
+    /** defer assertion to prevent flaky results */
+    if (openedUrls.length === expectedUrls.length) {
+      t.deepEqual(openedUrls, expectedUrls)
+      t.strictEqual(chronos.findNextJobs(), Infinity)
+      t.strictEqual(chronos.jobs.length, 0)
+    }
   })
   var triggerAt = Date.now() + 100
   chronos.schedule({
@@ -59,7 +65,7 @@ test('should push job to next queue if next delta is equal to job\'s', t => {
   })
   chronos.schedule({
     triggerAt: triggerAt,
-    url: 'yoda-app://foobar'
+    url: 'yoda-app://foobar-2'
   })
   t.strictEqual(chronos.nextJobs.length, 2)
 })
