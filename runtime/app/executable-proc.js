@@ -1,6 +1,5 @@
 'use strict'
 
-var EventEmitter = require('events')
 var childProcess = require('child_process')
 var path = require('path')
 var fs = require('fs')
@@ -19,9 +18,8 @@ module.exports = createExtApp
  * @param {string} target - app home directory
  * @param {AppRuntime} runtime -
  */
-function createExtApp (appId, metadata, runtime) {
+function createExtApp (appId, metadata, bridge) {
   var target = _.get(metadata, 'appHome')
-  var appBridge = new EventEmitter()
   var packageJsonPath = path.join(target, 'package.json')
   var executablePath
 
@@ -50,13 +48,13 @@ function createExtApp (appId, metadata, runtime) {
       })
       cp.once('exit', (code, signal) => {
         logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
-        appBridge.exit(code, signal)
+        bridge.exit(code, signal)
       })
-      appBridge.onSuspend = () => {
+      bridge.onSuspend = () => {
         logger.info(`${appId}(${cp.pid}) Activity end of life, killing process.`)
         cp.kill()
       }
-      return appBridge
+      return bridge
     })
 }
 

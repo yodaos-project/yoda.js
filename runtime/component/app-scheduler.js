@@ -75,7 +75,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   }
   this.appLaunchOptions[appId] = { type: appType, mode: mode }
 
-  var appBridge = new AppBridge(this.runtime, appId)
+  var appBridge = new AppBridge(this.runtime, appId, metadata)
   var creationHandler = this.appCreationHandler[appType]
   if (creationHandler == null) {
     creationHandler = this.appCreationHandler.default

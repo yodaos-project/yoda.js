@@ -8,9 +8,10 @@ class BridgeError extends Error {
 }
 
 class AppBridge {
-  constructor (runtime, appId) {
+  constructor (runtime, appId, metadata) {
     this.runtime = runtime
     this.appId = appId
+    this.metadata = metadata
     this.logger = Logger(`bridge-${appId}`)
 
     this.subscriptionTable = {}
@@ -53,12 +54,16 @@ class AppBridge {
     }
     // TODO: metadata check
     return Promise.resolve().then(() => fn.call(descriptor, this.getContext({ args: params })))
+      .catch(e => {
+        console.error(`Unexpected error on invoke '${methodStr}': ${e.stack}`)
+        throw e
+      })
   }
 
   getContext (fields) {
     return Object.assign({}, fields, {
       appId: this.appId
-    })
+    }, this.metadata)
   }
 
   exit (code, signal) {
