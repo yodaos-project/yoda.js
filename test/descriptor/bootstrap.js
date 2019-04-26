@@ -9,7 +9,7 @@ module.exports = function bootstrap () {
   var component = tt.component
   return Object.assign(tt, {
     getBridge: (ctx) => {
-      var bridge = new AppBridge(runtime, ctx.appId)
+      var bridge = new AppBridge(runtime, ctx.appId, Object.assign({ appHome: `/data/apps/${ctx.appId}` }, ctx))
       component.appScheduler.appMap[ctx.appId] = bridge
       component.appScheduler.appStatus[ctx.appId] = kRunning
       component.appScheduler.appLaunchOptions[ctx.appId] = {}

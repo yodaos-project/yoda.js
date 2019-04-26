@@ -297,7 +297,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
   }).filter(it => it != null)
 
   this.runtime.component.permission.load(appId, permissions)
-  this.appManifests[appId] = Object.assign(_.pick(manifest, 'daemon', 'objectPath', 'ifaceName'), {
+  this.appManifests[appId] = Object.assign(_.pick(manifest, 'objectPath', 'ifaceName'), {
     hosts: hosts,
     permissions: permissions,
     notifications: notifications,
