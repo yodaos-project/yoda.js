@@ -12,6 +12,7 @@ test/config.json
 test/.result
 test/temp/*
 !test/temp/.gitkeep
+out
 
 runtime/client/api/*
 !runtime/client/api/.gitkeep

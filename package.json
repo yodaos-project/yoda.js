@@ -28,6 +28,7 @@
   "devDependencies": {
     "@yoda/mock": "yodaos-project/yoda-mock#46f8faad2ac0ad1d334e667978627a37f26e6e62",
     "husky": "^1.0.0-rc.14",
+    "node-addon-api": "^1.6.3",
     "nyc": "^13.1.0",
     "standard": "^11.0.1",
     "tap-json": "^1.0.0",
