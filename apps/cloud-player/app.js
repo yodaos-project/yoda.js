@@ -3,28 +3,33 @@ var AudioFocus = require('@yodaos/application').AudioFocus
 var speechSynthesis = require('@yodaos/speech-synthesis').speechSynthesis
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var flora = require('@yoda/flora')
-var AudioManager = require('@yoda/audio').AudioManager
 var logger = require('logger')('cloud-player')
 var agent = new flora.Agent('unix:/var/run/flora.sock#cloud-player')
 agent.start()
-AudioManager.setVolume(100)
 
 var GetStreamChannel = 'yodaos.apps.cloud-player.get-stream-channel'
 
-function play (text, url, transient) {
-  logger.info(`playing text(${text}) & url(${url})`)
-  var focus = new AudioFocus()
+function play (text, url, transient, sequential) {
+  logger.info(`playing text(${text}) & url(${url}), transient(${transient}), sequential(${sequential})`)
+  var focus = new AudioFocus(transient ? AudioFocus.Type.TRANSIENT : AudioFocus.Type.DEFAULT)
   var utter
   var player
-  var resumeOnGain = true
+  var resumeOnGain = false
   if (url) {
     player = new MediaPlayer()
     player.prepare(url)
+    player.on('playbackcomplete', () => {
+      agent.post('yodaos.voice-interface.multimedia.next-url', [])
+    })
   }
   focus.onGain = () => {
     if (text && utter == null) {
       utter = speechSynthesis.speak(text)
-        .on('start', () => player && player.resume())
+        .on('start', () => {
+          if (!sequential && player != null) {
+            player && player.resume()
+          }
+        })
         .on('cancel', () => {
           logger.info('on cancel')
           focus.abandon()
@@ -35,6 +40,10 @@ function play (text, url, transient) {
         })
         .on('end', () => {
           logger.info('on end')
+          if (sequential && player != null) {
+            player.resume()
+            return
+          }
           focus.abandon()
         })
     } else if (resumeOnGain) {
@@ -57,7 +66,7 @@ function play (text, url, transient) {
 }
 
 function playStream () {
-  var focus = new AudioFocus(AudioFocus.Type.Transient)
+  var focus = new AudioFocus(AudioFocus.Type.TRANSIENT)
   focus.onGain = () => {
     var utter = speechSynthesis.playStream()
       .on('start', () => {
@@ -91,7 +100,7 @@ module.exports = Application({
     logger.info('received url', require('url').format(urlObj))
     switch (urlObj.pathname) {
       case '/play': {
-        play(urlObj.query.text, urlObj.query.url, urlObj.query.transient)
+        play(urlObj.query.text, urlObj.query.url, Number(urlObj.query.transient) !== 0, Number(urlObj.query.sequential) > 0)
         break
       }
       case '/play-tts-stream': {

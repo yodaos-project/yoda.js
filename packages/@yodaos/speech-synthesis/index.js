@@ -10,6 +10,9 @@ var UTTER = Symbol('synth#utter')
 var STATUS = Symbol('synth#status')
 var QUEUE = Symbol('synth#queue')
 var NATIVE = Symbol('synth#native')
+var EFFECT = Symbol('synth#effect')
+
+var SpeechSynthesisEffectUri = 'system://setSpeaking.js'
 
 var Status = {
   none: 0,
@@ -31,7 +34,9 @@ var Events = ['start', 'end', 'cancel']
  */
 class SpeechSynthesis {
   constructor (api) {
-    this[SYNTH_LABEL] = (api || global[Symbol.for('yoda#api')]).appId
+    api = api || global[Symbol.for('yoda#api')]
+    this[SYNTH_LABEL] = api.appId
+    this[EFFECT] = api.effect
     this[QUEUE] = []
     this[NATIVE] = new SpeechSynthesizer()
     this[NATIVE].setup(this.onevent.bind(this))
@@ -111,6 +116,7 @@ class SpeechSynthesis {
     } else if (eve > 0) {
       this[STATUS] = Status.none
       this[UTTER] = null
+      this[EFFECT].stop(SpeechSynthesisEffectUri)
     }
     if (utter == null) {
       return
@@ -140,6 +146,7 @@ class SpeechSynthesis {
     } else {
       this[NATIVE].playStream(utter)
     }
+    this[EFFECT].play(SpeechSynthesisEffectUri)
   }
 }
 
