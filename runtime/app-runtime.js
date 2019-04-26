@@ -127,7 +127,7 @@ AppRuntime.prototype.init = function init () {
   }).then(() => {
     this.phaseToReset()
     /** 10. open the setup url and wait for incoming `ready` call */
-    return this.openUrl('yoda-app://setup/init', { preemptive: true })
+    return this.openUrl('yoda-app://setup.local/init', { preemptive: true })
   })
 }
 
@@ -715,7 +715,7 @@ AppRuntime.prototype.multimediaMethod = function (name, args) {
  */
 AppRuntime.prototype.reset = function reset () {
   return this.phaseToReset().then(
-    () => this.openUrl('yoda-app://setup/reset'))
+    () => this.openUrl('yoda-app://setup.local/reset'))
 }
 
 /**
