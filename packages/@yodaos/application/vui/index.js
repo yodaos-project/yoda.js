@@ -1,14 +1,11 @@
 /**
- * @module @yodaos/application
- * @description YODAOS application framework.
+ * @module @yodaos/application/vui
+ * @description YODAOS application Voice UI framework.
  */
 
 var properties = {}
 ;[
-  { name: 'Application', path: './application' },
-  { name: 'AudioFocus', path: './audio-focus' },
-  { name: 'Service', path: './service' },
-  { name: 'vui', path: './vui' }
+  { name: 'SequentialFlow', path: './sequential-flow' }
 ].forEach(it => {
   properties[it.name] = {
     enumerable: true,
