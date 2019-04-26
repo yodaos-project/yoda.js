@@ -19,9 +19,9 @@ test('default request should gain focus', t => {
   t.deepEqual(comp.lastingRequest, {
     id: 1,
     appId: 'test',
-    exclusive: 0,
-    mayDuck: 0,
-    transient: 0
+    exclusive: false,
+    mayDuck: false,
+    transient: false
   })
   t.end()
 })
@@ -43,9 +43,9 @@ test('transient request should gain focus', t => {
   t.deepEqual(comp.transientRequest, {
     id: 1,
     appId: 'test',
-    exclusive: 0,
-    mayDuck: 0,
-    transient: 1
+    exclusive: false,
+    mayDuck: false,
+    transient: true
   })
   t.looseEqual(comp.lastingRequest, null)
   t.end()
@@ -87,16 +87,16 @@ test('transient request should gain focus over default request', t => {
   t.deepEqual(comp.transientRequest, {
     id: 2,
     appId: 'test',
-    exclusive: 0,
-    mayDuck: 0,
-    transient: 1
+    exclusive: false,
+    mayDuck: false,
+    transient: true
   })
   t.deepEqual(comp.lastingRequest, {
     id: 1,
     appId: 'test',
-    exclusive: 0,
-    mayDuck: 0,
-    transient: 0
+    exclusive: false,
+    mayDuck: false,
+    transient: false
   })
   t.end()
 })
@@ -137,9 +137,9 @@ test('transient request should gain focus over transient request', t => {
   t.deepEqual(comp.transientRequest, {
     id: 2,
     appId: 'test',
-    exclusive: 0,
-    mayDuck: 0,
-    transient: 1
+    exclusive: false,
+    mayDuck: false,
+    transient: true
   })
   t.looseEqual(comp.lastingRequest, null)
   t.end()
@@ -182,9 +182,9 @@ test('default request should gain focus over default request', t => {
   t.deepEqual(comp.lastingRequest, {
     id: 2,
     appId: 'test',
-    exclusive: 0,
-    mayDuck: 0,
-    transient: 0
+    exclusive: false,
+    mayDuck: false,
+    transient: false
   })
   t.end()
 })
@@ -226,9 +226,9 @@ test('default request should gain focus over transient request', t => {
   t.deepEqual(comp.lastingRequest, {
     id: 2,
     appId: 'test',
-    exclusive: 0,
-    mayDuck: 0,
-    transient: 0
+    exclusive: false,
+    mayDuck: false,
+    transient: false
   })
   t.end()
 })
@@ -293,4 +293,86 @@ test('abandoning transient request with no request available to be recovered', t
     gain: 0b001 /** transient */
   })
   comp.abandon('test', 1)
+})
+
+test('exclusive request should not be preempted', t => {
+  var tt = bootstrap()
+  var comp = tt.component.audioFocus
+  var desc = tt.descriptor.audioFocus
+
+  var eventSeq = []
+  var expected = [
+    [ 'test-a', 'gain' ],
+    [ 'test-a', 'loss', /** transient */ true, /** mayDuck */ false ],
+    [ 'test-b', 'gain' ],
+    [ 'test-b', 'loss', /** transient */ false, /** mayDuck */ false ],
+    [ 'test-a', 'gain' ],
+    [ 'test-a', 'loss', /** transient */ true, /** mayDuck */ false ],
+    [ 'test-c', 'gain' ]
+  ]
+  mm.mockReturns(desc, 'emitToApp', function (appId, event, args) {
+    eventSeq.push([ appId, event ].concat(args.splice(/** reqId */1)))
+    if (eventSeq.length === expected.length) {
+      t.deepEqual(eventSeq, expected)
+      t.end()
+    }
+  })
+
+  var ret = comp.request({
+    id: 1,
+    appId: 'test-a',
+    gain: 0b000 /** default */
+  })
+  t.strictEqual(ret, 0)
+  t.deepEqual(comp.lastingRequest, {
+    id: 1,
+    appId: 'test-a',
+    exclusive: false,
+    mayDuck: false,
+    transient: false
+  })
+
+  ret = comp.request({
+    id: 1,
+    appId: 'test-b',
+    gain: 0b011 /** exclusive_transient */
+  })
+  t.strictEqual(ret, 0)
+  t.deepEqual(comp.transientRequest, {
+    id: 1,
+    appId: 'test-b',
+    exclusive: true,
+    mayDuck: false,
+    transient: true
+  })
+
+  ret = comp.request({
+    id: 1,
+    appId: 'test-c',
+    gain: 0b001 /** transient */
+  })
+  t.strictEqual(ret, /** FAILED */-1)
+
+  t.deepEqual(comp.transientRequest, {
+    id: 1,
+    appId: 'test-b',
+    exclusive: true,
+    mayDuck: false,
+    transient: true
+  })
+  comp.abandon('test-b', 1)
+
+  ret = comp.request({
+    id: 1,
+    appId: 'test-c',
+    gain: 0b001 /** transient */
+  })
+  t.strictEqual(ret, 0)
+  t.deepEqual(comp.transientRequest, {
+    id: 1,
+    appId: 'test-c',
+    exclusive: false,
+    mayDuck: false,
+    transient: true
+  })
 })
