@@ -1,0 +1,8 @@
+{
+  "OUT_OF_RANGE_MAX": "已经是最大的音量了",
+  "OUT_OF_RANGE": "音量调节超出范围",
+  "SHOW_VOLUME": "当前音量为百分之",
+  "SHOW_MUTED": "设备静音了，已帮你调回到百分之",
+  "VOLUME_ALTERED": "音量百分之",
+  "VOLUME_ADJUST_HELP": "音量百分之%d，如果想快速调节，你可以直接对我说，音量调到百分之%d"
+}
