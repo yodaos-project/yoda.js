@@ -1,0 +1,8 @@
+{
+  "name": "cloud-player",
+  "manifest": {
+    "hosts": [
+      "cloud-player"
+    ]
+  }
+}
