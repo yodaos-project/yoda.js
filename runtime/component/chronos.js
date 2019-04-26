@@ -128,9 +128,6 @@ class Chronos {
       return -1
     }
     var delta = triggerAt - now
-    if (delta < job.interval) {
-      return job.interval + delta + now
-    }
     return delta % job.interval + job.interval + now
   }
 }
