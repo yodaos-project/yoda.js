@@ -5,7 +5,6 @@ var util = require('util')
 var _ = require('@yoda/util')._
 var time = require('@yoda/util').time
 var math = require('@yoda/util').math
-var trace = require('@yoda/trace')
 
 module.exports = function (activity) {
   var config = require('./config.json')
@@ -130,10 +129,6 @@ module.exports = function (activity) {
   function doSleep () {
     activity.idle().then(() => {
       sendCardToApp('ROKID.TIMED-SLEEP', {text: strings.GOOD_BYE})
-      trace([{
-        event: 'timed_sleep',
-        action: 'idle'
-      }])
       logger.log('sleep OK!')
     }).catch((err) => {
       logger.error('sleep failed:', err)
