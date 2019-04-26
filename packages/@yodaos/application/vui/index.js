@@ -5,7 +5,9 @@
 
 var properties = {}
 ;[
-  { name: 'SequentialFlow', path: './sequential-flow' }
+  { name: 'SequentialFlow', path: './sequential-flow' },
+  { name: 'AtomicTask', path: './atomic-task' },
+  { name: 'AppTask', path: './app-task' }
 ].forEach(it => {
   properties[it.name] = {
     enumerable: true,
