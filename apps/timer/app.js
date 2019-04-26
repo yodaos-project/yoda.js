@@ -5,7 +5,6 @@ var util = require('util')
 var _ = require('@yoda/util')._
 var time = require('@yoda/util').time
 var math = require('@yoda/util').math
-var trace = require('@yoda/trace')
 
 module.exports = function (activity) {
   var config = require('./config.json')
@@ -315,10 +314,6 @@ module.exports = function (activity) {
       logger.debug('before trigger play ringtone')
       playRingtone(config.RINGTONE.RING_TIMES)
     })
-    trace([{
-      event: 'timer',
-      action: 'triggered'
-    }])
     activity.keyboard.preventDefaults(config.KEY_CODE.MIKE)
     activity.keyboard.preventDefaults(config.KEY_CODE.VOLDOWN)
     activity.keyboard.preventDefaults(config.KEY_CODE.VOLUP)
