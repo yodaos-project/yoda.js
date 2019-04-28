@@ -49,7 +49,7 @@ function setConfig (config) {
   CONFIG = config
 };
 
-function request (event, appId, options, onaction) {
+function request (event, appId, options, onAction) {
   var data = {
     event: event,
     appId: appId,
@@ -70,21 +70,21 @@ function request (event, appId, options, onaction) {
   }
   httpsession.request(url, reqOpt, (err, res) => {
     if (err) {
-      onaction(err)
+      onAction(err)
       return
     }
     var msg = res.body
     if (res.code !== 200) {
-      onaction(new Error(`Error: failed upload ${event} ${data} with ${msg}`))
+      onAction(new Error(`Error: failed upload ${event} ${data} with ${msg}`))
     } else {
       logger.log(`[eventRes-raw](${appId}, ${event}) raw(${msg})`)
       msg = JSON.parse(msg)
-      if (typeof onaction === 'function') {
-        onaction(null, msg.response)
+      if (typeof onAction === 'function') {
+        onAction(null, msg.response)
       }
     }
   })
-};
+}
 
 function ttsEvent (name, appId, itemId, cb) {
   request(name, appId, {
