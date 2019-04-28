@@ -74,6 +74,7 @@ function Application (options, api) {
  */
 var ApplicationProto = {
   startService: startService,
+  getService: getService,
   [symbol.finishService]: finishService,
   [symbol.finalize]: finalize
 }
@@ -112,6 +113,20 @@ function startService (name) {
   this[symbol.activeServices].push(name)
   var component = classLoader.getComponent(this, name, 'service')
   invoke(component, 'created')
+}
+
+/**
+ *
+ * @memberof module:@yodaos/application~ApplicationPrototype
+ * @param {string} name
+ * @returns {Service | undefined}
+ */
+function getService (name) {
+  var idx = this[symbol.activeServices].indexOf(name)
+  if (idx < 0) {
+    return
+  }
+  return classLoader.getComponent(this, name, 'service')
 }
 
 function finishService (service) {
