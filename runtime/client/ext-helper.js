@@ -8,8 +8,7 @@ module.exports = {
   main: main,
   getActivityDescriptor: getActivityDescriptor,
   launchApp: launchApp,
-  keepAlive: keepAlive,
-  stopAlive: stopAlive
+  keepAlive: keepAlive
 }
 
 process.once('disconnect', () => {
@@ -36,22 +35,24 @@ function main (target, runner) {
   keepAlive()
   getActivityDescriptor()
     .then(descriptor => {
+      aliveInterval.unref()
       translator.setLogger(require('logger')(`@ipc-${process.pid}`))
-      var activity = translator.translate(descriptor)
-      activity.appId = appId
-      activity.appHome = target
-      global[apiSymbol] = activity
+      var api = translator.translate(descriptor)
+      api.appId = appId
+      api.appHome = target
+      global[apiSymbol] = api
 
       /**
        * Executes app's main function
        */
-      launchApp(main, activity)
-      runner(appId, pkg, activity)
+      launchApp(main, api)
 
       process.send({
         type: 'status-report',
         status: 'ready'
       })
+
+      runner(appId, pkg)
     }).catch(error => {
       logger.error('fatal error:', error.stack)
       process.send({
@@ -96,25 +97,12 @@ function launchApp (main, activity) {
 
 var aliveInterval
 function keepAlive () {
-  /**
-   * FIXME: though there do have listeners on process#message,
-   * ShadowNode still exits on end of current context.
-   * Yet this process should be kept alive and waiting for life
-   * cycle events.
-   */
+  if (aliveInterval) {
+    clearInterval(aliveInterval)
+  }
   aliveInterval = setInterval(() => {
     process.send({ type: 'ping' })
   }, 5 * 1000)
-  process.on('message', message => {
-    if (message.type === 'pong') {
-      logger.info('Received pong from VuiDaemon.')
-      stopAlive()
-    }
-  })
-}
-
-function stopAlive () {
-  clearInterval(aliveInterval)
 }
 
 function noopRunner () {

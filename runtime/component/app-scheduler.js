@@ -70,7 +70,10 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   var appType = this.loader.getTypeOfApp(appId)
   var metadata = this.loader.getAppManifest(appId)
 
-  if (Constants.modes[mode] == null) {
+  if (typeof mode !== 'number') {
+    mode = Constants.modes[mode]
+  }
+  if (mode == null) {
     mode = Constants.modes.default
   }
   this.appLaunchOptions[appId] = { type: appType, mode: mode }

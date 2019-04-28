@@ -1,35 +1,13 @@
 'use strict'
 
-var logger = require('logger')('ext-app-client')
-
 require('@yoda/oh-my-little-pony')
 var extapp = require('./ext-helper')
 
 var target = process.argv[2]
 
 function test (testGlobs) {
-  var tape = require('tape')
   var resolvePath = require('path').resolve
   var glob = require('tape/vendor/glob/glob-sync')
-
-  var total = 0
-  var ended = 0
-  tape.createStream({ objectMode: true }).on('data', (row) => {
-    logger.warn('test', row)
-    switch (row.type) {
-      case 'test':
-        ++total
-        break
-      case 'end':
-        ++ended
-        if (ended === total) {
-          // TODO: dump test result
-          extapp.stopAlive()
-        }
-        break
-      default:
-    }
-  })
 
   var cwd = process.cwd()
   testGlobs.forEach(function (arg) {
@@ -47,6 +25,6 @@ function test (testGlobs) {
   })
 }
 
-extapp.main(target, (appId, pkg, activity) => {
+extapp.main(target, (appId, pkg) => {
   test([ 'test/**/*.test.js' ])
 })
