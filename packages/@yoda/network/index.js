@@ -138,6 +138,15 @@ class NetworkAgent extends EventEmitter {
   }
 
   /**
+   * Sends the command to network service to reset dns.
+   *
+   * @function resetDns
+   */
+  resetDns () {
+    return this._call('NETWORK', 'RESET_DNS')
+  }
+
+  /**
    * Get current wifi status.
    *
    * @function getWifiStatus
@@ -231,6 +240,15 @@ class NetworkAgent extends EventEmitter {
    */
   removeWifi (ssid, passwd) {
     return this._call('WIFI', 'REMOVE', {'SSID': ssid, 'PASSWD': passwd})
+  }
+
+  /**
+   * Remove all item(s) of the WI-FI configuration according to ssid and passwd
+   *
+   * @function removeAllOfWifi
+   */
+  removeAllOfWifi () {
+    return this._call('WIFI', 'REMOVE_ALL')
   }
 
   /**
