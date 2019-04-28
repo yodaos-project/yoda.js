@@ -547,6 +547,7 @@ module.exports = function (activity) {
               }
               speak(util.format(strings.MUSIC_INFO_SUCC, extra.artist, extra.title, extra.album))
             }
+            lastIntent = 'derived_from_phone'
             break
           default:
             break
