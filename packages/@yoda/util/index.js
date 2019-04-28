@@ -5,5 +5,6 @@ module.exports = {
   json: require('./json'),
   math: require('./math'),
   path: require('./path'),
-  time: require('./time')
+  time: require('./time'),
+  retries: require('./retries')
 }
