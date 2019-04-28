@@ -11,7 +11,7 @@ test('duplicate construction on same path', t => {
 test('storage path conflicts', t => {
   t.throws(() => {
     new Storage(path.join(__dirname, '..', '..', 'temp', '.gitkeep')) // eslint-disable-line
-  }, 'Storage path conflicts.')
+  }, 'Path exists')
   t.end()
 })
 

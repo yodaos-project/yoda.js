@@ -2,6 +2,7 @@ var fs = require('fs')
 var path = require('path')
 
 module.exports.mkdirp = mkdirp
+module.exports.mkdirpSync = mkdirpSync
 /**
  * @param {string} dir
  * @param {Function} callback
@@ -33,4 +34,25 @@ function mkdirp (dir, callback) {
       return callback(null)
     }) /** fs.stat */
   }) /** fs.mkdir */
+}
+
+/**
+ * @param {string} dir
+ */
+function mkdirpSync (dir) {
+  try {
+    fs.mkdirSync(dir)
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      mkdirpSync(path.dirname(dir))
+      return mkdirpSync(dir)
+    }
+    var stat = fs.statSync(dir)
+    if (!stat.isDirectory()) {
+      var eexist = new Error('Path exists')
+      eexist.path = dir
+      eexist.code = 'EEXIST'
+      throw eexist
+    }
+  }
 }
