@@ -98,4 +98,4 @@ class AppTask {
   }
 }
 
-exports.AppTask = AppTask
+module.exports = AppTask

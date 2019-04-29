@@ -241,4 +241,4 @@ class AtomicTask {
   }
 }
 
-exports.AtomicTask = AtomicTask
+module.exports = AtomicTask
