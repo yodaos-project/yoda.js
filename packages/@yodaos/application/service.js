@@ -53,6 +53,13 @@ delegate(ComponentProto, symbol.application)
    * @param {string} name
    */
   .method('startService')
+  /**
+   *
+   * @method openUrl
+   * @memberof module:@yodaos/application~ServicePrototype
+   * @param {string} url
+   */
+  .method('openUrl')
 
 function finish () {
   var application = this[symbol.application]
