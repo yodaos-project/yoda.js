@@ -33,7 +33,9 @@ function createExtApp (appId, metadata, bridge, mode, options) {
     options.descriptorPath = path.join(__dirname, '../client/api/default.json')
   }
 
-  var cp = childProcess.fork(entry, [ target, mode ], {
+  // FIXME(yorkie): no necessary to convert the process argv to string at user-land, it should
+  // be fixed at ShadowNode.
+  var cp = childProcess.fork(entry, [ target, `${mode}` ], {
     cwd: target,
     env: Object.assign({}, process.env),
     stdio: 'inherit'
