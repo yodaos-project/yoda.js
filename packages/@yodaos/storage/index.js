@@ -1,29 +1,12 @@
 var fs = require('fs')
 var path = require('path')
 var LRU = require('lru-cache')
+var mkdirpSync = require('@yoda/util/fs').mkdirpSync
 
 function Storage (appDataDir, max) {
   this.appDataDir = appDataDir
   this.cache = new LRU(max || 15)
-  var stat
-  try {
-    stat = fs.statSync(this.appDataDir)
-  } catch (e) {
-    if (e.code !== 'ENOENT') {
-      throw e
-    }
-
-    try {
-      fs.mkdirSync(this.appDataDir)
-    } catch (e) {
-      if (e.code !== 'EEXIST') {
-        throw e
-      }
-    }
-  }
-  if (stat != null && !stat.isDirectory()) {
-    throw new Error('Storage path conflicts.')
-  }
+  mkdirpSync(this.appDataDir)
 }
 
 /**
@@ -109,3 +92,15 @@ Storage.prototype.clear = function clear () {
 }
 
 module.exports = Storage
+var localStorage
+Object.defineProperty(module.exports, 'localStorage', {
+  enumerable: true,
+  configurable: true,
+  get: () => {
+    if (localStorage == null) {
+      var appId = global[Symbol.for('yoda#api')].appId
+      localStorage = new Storage(path.join('/data/appData', appId), 10)
+    }
+    return localStorage
+  }
+})
