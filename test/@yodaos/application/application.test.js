@@ -60,3 +60,19 @@ test('should delegates methods', t => {
   var application = Application({}, api)
   application.openUrl(expectedUrl)
 })
+
+test('should get runtime instance', t => {
+  t.plan(1)
+
+  var expected = 'foobar'
+  var api = new EventEmitter()
+  api.appHome = path.join(__dirname, '../../fixture/noop-app')
+  api.runtime = {
+    ok: (actual) => t.strictEqual(expected, actual)
+  }
+  var apiSymbol = Symbol.for('yoda#api')
+  global[apiSymbol] = api
+
+  var application = Application({}, api)
+  application.getRuntime().ok(expected)
+})

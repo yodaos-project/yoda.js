@@ -75,6 +75,7 @@ function Application (options, api) {
 var ApplicationProto = {
   startService: startService,
   getService: getService,
+  getRuntime: getRuntime,
   [symbol.finishService]: finishService,
   [symbol.finalize]: finalize
 }
@@ -127,6 +128,15 @@ function getService (name) {
     return
   }
   return classLoader.getComponent(this, name, 'service')
+}
+
+/**
+ *
+ * @memberof module:@yodaos/application~ApplicationPrototype
+ * @returns {yodaRT.activity.Activity.RuntimeClient}
+ */
+function getRuntime () {
+  return this[symbol.api].runtime
 }
 
 function finishService (service) {
