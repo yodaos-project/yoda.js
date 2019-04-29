@@ -559,11 +559,9 @@ DBus.prototype.yodadebug = {
       cb(null, JSON.stringify({
         ok: true,
         result: {
-          skillIdAppIdMap: this.component.appLoader.skillIdAppIdMap,
-          skillAttrsMap: this.component.appLoader.skillAttrsMap,
-          hostSkillIdMap: this.component.appLoader.hostSkillIdMap,
+          hostAppIdMap: this.component.appLoader.hostAppIdMap,
           appManifests: this.component.appLoader.appManifests,
-          notifications: this.component.appLoader.notifications
+          broadcasts: this.component.appLoader.broadcasts
         }
       }))
     }

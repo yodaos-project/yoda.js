@@ -53,12 +53,6 @@ class ActivityDescriptor extends Descriptor {
     return this.runtime.component.lifetime.getContextOptionsById(ctx.appId)
   }
 
-  voiceCommand (ctx) {
-    var text = ctx.args[0]
-    var options = ctx.args[0]
-    return this.runtime.voiceCommand(text, Object.assign({}, options, { appId: ctx.appId }))
-  }
-
   startMonologue (ctx) {
     return this.runtime.startMonologue(ctx.appId)
   }
@@ -130,14 +124,7 @@ ActivityDescriptor.events = {
    * @param {string} event - the event of oppressed app which would had
    * activated the app if not in monologue mode.
    */
-  oppressing: {},
-  /**
-   * Fires on events.
-   * @event yodaRT.activity.Activity#broadcast
-   * @param {string} name - the broadcast name.
-   * @param {object} data - the broadcast data.
-   */
-  broadcast: {}
+  oppressing: {}
 }
 ActivityDescriptor.methods = {
   /**
@@ -195,19 +182,6 @@ ActivityDescriptor.methods = {
    */
   getContextOptions: {
     returns: 'promise'
-  },
-  /**
-   * Send a voice command to the main process. It requires the permission `ACCESS_VOICE_COMMAND`.
-   *
-   * @memberof yodaRT.activity.Activity
-   * @instance
-   * @function voiceCommand
-   * @param {string} text - voice asr/text command to be parsed and executed.
-   * @returns {Promise<void>}
-   */
-  voiceCommand: {
-    returns: 'promise',
-    permissions: ['ACCESS_VOICE_COMMAND']
   },
   /**
    * Start a session of monologue. In session of monologue, no other apps could preempt top of stack.

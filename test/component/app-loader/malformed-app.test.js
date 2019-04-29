@@ -20,16 +20,16 @@ test('should not load app if package.json is malformed', t => {
     })
 })
 
-test('no error should be thrown on reload for apps with unknown notification', t => {
+test('no error should be thrown on reload for apps with unknown broadcast', t => {
   var loader = new AppLoader(fakeRuntime)
-  var appId = 'unknown-notification'
+  var appId = 'unknown-broadcast'
   loader.loadApp(path.join(malformedApps, appId))
     .then(() => {
       return loader.reload(appId)
     })
     .then(() => {
       t.notLooseEqual(loader.appManifests[appId], null)
-      t.deepEqual(loader.appManifests[appId].notifications, [])
+      t.deepEqual(loader.appManifests[appId].broadcasts, [])
       t.end()
     })
     .catch(err => {
