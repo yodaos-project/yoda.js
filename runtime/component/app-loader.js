@@ -25,10 +25,10 @@ function AppChargeur (runtime) {
   /** appId -> manifest */
   this.appManifests = {}
 
-  this.notifications = {
-    'on-system-booted': [],
-    'on-ready': [],
-    'on-network-connected': []
+  this.broadcasts = {
+    'yodaos.on-system-booted': [],
+    'yodaos.on-phase-reset': [],
+    'yodaos.on-phase-ready': []
   }
 }
 
@@ -40,10 +40,10 @@ AppChargeur.prototype.reload = function reload (appId) {
       var hostname = host[0]
       delete this.hostAppIdMap[hostname]
     })
-    manifest.notifications.forEach(notification => {
-      var ntf = notification[0]
-      var idx = this.notifications[ntf].indexOf(appId)
-      this.notifications[ntf].splice(idx, 1)
+    manifest.broadcasts.forEach(broadcast => {
+      var ntf = broadcast[0]
+      var idx = this.broadcasts[ntf].indexOf(appId)
+      this.broadcasts[ntf].splice(idx, 1)
     })
     return this.loadApp(manifest.appHome)
   }
@@ -52,8 +52,8 @@ AppChargeur.prototype.reload = function reload (appId) {
   /** appId -> manifest */
   this.appManifests = {}
 
-  Object.keys(this.notifications).forEach(it => {
-    this.notifications[it] = []
+  Object.keys(this.broadcasts).forEach(it => {
+    this.broadcasts[it] = []
   })
 
   return this.loadPaths(this.config.paths)
@@ -116,19 +116,19 @@ AppChargeur.prototype.getTypeOfApp = function getTypeOfApp (appId) {
 }
 
 /**
- * Register a notification channel so that apps could declare their interests on the notification.
+ * Register a broadcast channel so that apps could declare their interests on the broadcast.
  *
  * > NOTE: should be invoked on component's init or construction. Doesn't work on apps loaded before
  * the registration.
  *
  * @param {string} name
  */
-AppChargeur.prototype.registerNotificationChannel = function registerNotificationChannel (name) {
-  if (this.notifications[name] != null) {
+AppChargeur.prototype.registerBroadcastChannel = function registerBroadcastChannel (name) {
+  if (this.broadcasts[name] != null) {
     return
   }
-  logger.info(`registering notification channel '${name}'`)
-  this.notifications[name] = []
+  logger.info(`registering broadcast channel '${name}'`)
+  this.broadcasts[name] = []
 }
 
 /**
@@ -250,15 +250,15 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
 
   var hosts = _.get(manifest, 'hosts', [])
   var permissions = _.get(manifest, 'permission', [])
-  var notifications = _.get(manifest, 'notifications', [])
+  var broadcasts = _.get(manifest, 'broadcasts', [])
   if (!Array.isArray(hosts)) {
     throw new Error(`manifest.hosts is not valid at ${appId}(${appHome}).`)
   }
   if (!Array.isArray(permissions)) {
     throw new Error(`manifest.permission is not valid at ${appId}(${appHome}).`)
   }
-  if (!Array.isArray(notifications)) {
-    throw new Error(`manifest.notifications is not valid at ${appId}(${appHome}).`)
+  if (!Array.isArray(broadcasts)) {
+    throw new Error(`manifest.broadcasts is not valid at ${appId}(${appHome}).`)
   }
 
   hosts = hosts.map(host => {
@@ -281,26 +281,26 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
     return [host, hostAttrs]
   })
 
-  notifications = notifications.map(notification => {
-    if (Array.isArray(notification)) {
-      notification = notification[0]
+  broadcasts = broadcasts.map(broadcast => {
+    if (Array.isArray(broadcast)) {
+      broadcast = broadcast[0]
     }
-    if (typeof notification !== 'string') {
-      throw new Error(`manifest.notification '${notification}' by '${appId}' type mismatch, expecting a string or an array.`)
+    if (typeof broadcast !== 'string') {
+      throw new Error(`manifest.broadcasts '${broadcast}' by '${appId}' type mismatch, expecting a string or an array.`)
     }
-    if (Object.keys(this.notifications).indexOf(notification) < 0) {
-      logger.debug(`Unknown notification chanel ${notification}`)
+    if (Object.keys(this.broadcasts).indexOf(broadcast) < 0) {
+      logger.debug(`Unknown broadcast chanel ${broadcast}`)
       return /** error tolerance */
     }
-    this.notifications[notification].push(appId)
-    return [notification]
+    this.broadcasts[broadcast].push(appId)
+    return [broadcast]
   }).filter(it => it != null)
 
   this.runtime.component.permission.load(appId, permissions)
   this.appManifests[appId] = Object.assign(_.pick(manifest, 'objectPath', 'ifaceName'), {
     hosts: hosts,
     permissions: permissions,
-    notifications: notifications,
+    broadcasts: broadcasts,
     appHome: appHome
   })
 }

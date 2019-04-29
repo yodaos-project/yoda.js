@@ -55,13 +55,14 @@ function Application (options, api) {
     })
   })
 
-  ;['url', 'broadcast'].forEach(eve => {
+  ;[['url', api], ['broadcast', api.broadcast]].forEach(it => {
+    var eve = it[0]
     var handler = application[symbol.options][eve]
     if (typeof handler !== 'function') {
       return
     }
 
-    api.on(eve, handler.bind(application))
+    it[1].on(eve, handler.bind(application))
   })
 
   return application

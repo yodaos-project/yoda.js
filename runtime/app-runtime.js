@@ -119,7 +119,7 @@ AppRuntime.prototype.init = function init () {
         return
       }
       /** 8. force-enable and check network states */
-      this.dispatchNotification('on-system-booted', [])
+      this.component.broadcast.dispatch('yodaos.on-system-booted', [])
     }).catch(err => {
       logger.error('unexpected error on boot welcoming', err.stack)
       this.enableRuntimeFor('welcoming')
@@ -369,7 +369,7 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
   // TODO: OPEN WAKEUP ENGINE
 
   this.component.dispatcher.delegate('runtimeDidResumeFromSleep')
-  this.dispatchNotification('on-system-booted', [])
+  this.component.broadcast.dispatch('yodaos.on-system-booted', [])
 }
 
 /**
@@ -425,62 +425,6 @@ AppRuntime.prototype.openUrl = function (url, options) {
     'url', [ urlObj ],
     Object.assign({}, options)
   )
-}
-
-/**
- * Dispatches a notification request to apps registered for the channel.
- *
- * @param {string} channel
- * @param {any[]} params
- * @param {object} [options]
- * @param {'active' | 'running' | 'all'} [options.filterOption='all']
- */
-AppRuntime.prototype.dispatchNotification = function dispatchNotification (channel, params, options) {
-  var filterOption = _.get(options, 'filterOption', 'all')
-  var appIds = this.component.appLoader.notifications[channel]
-  if (!Array.isArray(appIds)) {
-    return Promise.reject(new Error(`Unknown notification channel '${channel}'`))
-  }
-  switch (filterOption) {
-    case 'active':
-      appIds = this.component.lifetime.activeSlots.toArray()
-        .filter(it => appIds.indexOf(it) >= 0)
-      break
-    case 'running':
-      appIds = appIds.filter(it => this.component.appScheduler.isAppRunning(it))
-      break
-  }
-
-  if (params == null) {
-    params = []
-  }
-  logger.info(`on system notification(${channel}): ${appIds} with filter option '${filterOption}'`)
-
-  var self = this
-  return step(0)
-
-  function step (idx) {
-    if (idx >= appIds.length) {
-      return Promise.resolve()
-    }
-    var appId = appIds[idx]
-    var future = Promise.resolve()
-    if (filterOption === 'all') {
-      future = self.component.lifetime.createApp(appId)
-        /** force quit app on create error */
-        .catch(err => {
-          logger.error(`create app ${appId} failed`, err.stack)
-          return self.component.lifetime.destroyAppById(appId, { force: true })
-            .then(() => { /** rethrow error to break following procedures */throw err })
-        })
-    }
-    return future
-      .then(() => self.descriptor.activity.emitToApp(appId, 'notification', [ channel ].concat(params)))
-      .catch(err => {
-        logger.error(`send notification(${channel}) failed with appId: ${appId}`, err.stack)
-      })
-      .then(() => step(++idx))
-  }
 }
 
 /**
@@ -730,7 +674,7 @@ AppRuntime.prototype.phaseToBooting = function phaseToBooting () {
  */
 AppRuntime.prototype.phaseToReady = function phaseToReady () {
   var onDone = () => {
-    this.dispatchNotification('on-ready', [])
+    this.component.broadcast.dispatch('yodaos.on-phase-ready', [])
   }
 
   this.component.flora.post('yodaos.runtime.phase', ['ready'], require('@yoda/flora').MSGTYPE_PERSIST)
@@ -749,6 +693,7 @@ AppRuntime.prototype.phaseToReady = function phaseToReady () {
  */
 AppRuntime.prototype.phaseToReset = function phaseToReset () {
   this.component.flora.post('yodaos.runtime.phase', ['setup'], require('@yoda/flora').MSGTYPE_PERSIST)
+  this.component.broadcast.dispatch('yodaos.on-phase-reset', [])
   return this.idle()
 }
 
