@@ -39,6 +39,10 @@ class AudioFocusDescriptor extends Descriptor {
     var id = ctx.args[0]
     this.component.audioFocus.abandon(appId, id)
   }
+
+  getCurrentFocuses () {
+    return this.component.audioFocus.getCurrentFocuses()
+  }
 }
 
 AudioFocusDescriptor.events = {
@@ -87,6 +91,17 @@ AudioFocusDescriptor.methods = {
    * @returns {Promise<boolean>} if successfully abandon.
    */
   abandon: {
+    returns: 'promise'
+  },
+  /**
+   * Get current focus if there is any.
+   *
+   * @memberof yodaRT.activity.Activity.AudioFocusClient
+   * @instance
+   * @function getCurrentFocus
+   * @returns {Promise<object[]>}
+   */
+  getCurrentFocuses: {
     returns: 'promise'
   }
 }
