@@ -30,7 +30,7 @@ function speak (text) {
 
 module.exports = (api) => {
   apiInstance = api
-  synth = new SpeechSynthesis(api.tts)
+  synth = new SpeechSynthesis(api)
   return Application({
     url: function url (urlObj) {
       switch (urlObj.pathname) {
