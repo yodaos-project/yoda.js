@@ -8,7 +8,6 @@ var _ = require('@yoda/util')._
 var safeParse = require('@yoda/util').json.safeParse
 var AudioManager = require('@yoda/audio').AudioManager
 
-var DbusRemoteCall = require('../lib/dbus-remote-call')
 var dbusConfig = require('../lib/config').getConfig('dbus-config.json')
 
 module.exports = DBus
@@ -39,8 +38,6 @@ DBus.prototype.init = function init () {
       }, descriptor.fn.bind(this))
     })
   })
-
-  this.listenSignals()
 }
 
 DBus.prototype.callMethod = function callMethod (
@@ -60,35 +57,6 @@ DBus.prototype.callMethod = function callMethod (
       interfaceName,
       member, sig, args, resolve)
   })
-}
-
-DBus.prototype.listenSignals = function listenSignals () {
-  var self = this
-  var proxy = new DbusRemoteCall(this.service._bus)
-
-  var multimediaEvents = {
-    'multimediadevent': function onMultimediaEvent (msg) {
-      var channel = `callback:multimedia:${_.get(msg, 'args.0')}`
-      logger.info(`VuiDaemon received multimediad event on channel(${channel}) msg(${JSON.stringify(msg)})`)
-      EventEmitter.prototype.emit.apply(
-        self,
-        [ channel ].concat(msg.args.slice(1))
-      )
-    }
-  }
-  proxy.listen(
-    'com.service.multimedia',
-    '/multimedia/service',
-    'multimedia.service',
-    function onMultimediaEvent (msg) {
-      var handler = multimediaEvents[msg && msg.name]
-      if (handler == null) {
-        logger.warn(`Unknown multimediad event type '${msg && msg.name}'.`)
-        return
-      }
-      handler(msg)
-    }
-  )
 }
 
 DBus.prototype.extapp = {

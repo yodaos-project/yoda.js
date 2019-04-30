@@ -3,6 +3,10 @@
 var Application = require('@yodaos/application').Application
 var AudioFocus = require('@yodaos/application').AudioFocus
 var SpeechSynthesis = require('@yodaos/speech-synthesis').SpeechSynthesis
+
+var logger = require('logger')('@system')
+var system = require('@yoda/system')
+var battery = require('@yoda/battery')
 var apiInstance
 var synth
 
@@ -25,7 +29,6 @@ function speak (text) {
 }
 
 module.exports = (api) => {
-  // Compatible for light-app
   apiInstance = api
   synth = new SpeechSynthesis(api.tts)
   return Application({
@@ -33,6 +36,27 @@ module.exports = (api) => {
       switch (urlObj.pathname) {
         case '/speak':
           speak(urlObj.query.text)
+          break
+        case '/reboot':
+          api.effect.play('system://shutdown.js')
+            .then(() => system.reboot())
+          break
+        case '/shutdown':
+          api.effect.play('system://shutdown.js')
+            .then(() => battery.getBatteryCharging())
+            .then(charging => {
+              logger.info('shuting down, charging?', charging)
+              if (charging) {
+                return system.rebootCharging()
+              }
+              return system.powerOff()
+            })
+          break
+        case '/recovery':
+          system.setRecoveryMode()
+          api.effect.play('system://shutdown.js')
+            .then(() => system.reboot('recovery'))
+          break
       }
     }
   }, api)
