@@ -14,11 +14,21 @@ if (typeof defaultVolume !== 'number' || isNaN(defaultVolume)) {
   defaultVolume = 30
 }
 
+function volumeOutOfRange (vol) {
+  return isNaN(vol) || vol < 0 || vol > 100
+}
+
+function getVolume () {
+  /** FIXME: only volume on channel STREAM_TTS could be fetched right now */
+  return Math.floor(AudioManager.getVolume(AudioManager.STREAM_TTS))
+}
+
 module.exports = function (api) {
   var speechSynthesis = new SpeechSynthesis(api)
   var effect = api.effect
 
   function speakAsync (text) {
+    logger.info('speak text', text)
     return new Promise((resolve, reject) => {
       speechSynthesis.speak(text)
         .on('error', reject)
@@ -27,20 +37,14 @@ module.exports = function (api) {
     })
   }
 
-  function speakAndAbandonFocus (ctx, text) {
+  function speakAndAbandonFocus (audioFocus, text) {
     var ismuted = AudioManager.isMuted()
     if (ismuted) {
       AudioManager.setMute(false)
     }
     return speakAsync(text).then(() => {
-      if (ismuted) { AudioManager.setMute(true) }
-      return ctx.exit()
+      return audioFocus.abandon()
     })
-  }
-
-  function getVolume () {
-    /** FIXME: only volume on channel STREAM_TTS could be fetched right now */
-    return Math.floor(AudioManager.getVolume(AudioManager.STREAM_TTS))
   }
 
   /**
@@ -220,10 +224,7 @@ module.exports = function (api) {
     return setVolume(def, options)
   }
 
-  function voiceFeedback (pathname, query) {
-    var focus = new AudioFocus(AudioFocus.Type.TRANSIENT)
-    focus.onLoss = () => speechSynthesis.cancel()
-    focus.request()
+  function voiceFeedback (focus, pathname, query) {
     var partition = 10
     var vol = parseInt(_.get(query, 'value'))
     switch (pathname) {
@@ -236,7 +237,7 @@ module.exports = function (api) {
         }
         break
       case '/set_volume': {
-        if (vol < 0 || vol > 100) {
+        if (volumeOutOfRange(vol)) {
           speakAndAbandonFocus(focus, strings.OUT_OF_RANGE)
           break
         }
@@ -245,10 +246,18 @@ module.exports = function (api) {
         break
       }
       case '/add_volume':
+        if (volumeOutOfRange(vol)) {
+          speakAndAbandonFocus(focus, strings.OUT_OF_RANGE)
+          break
+        }
         incVolume(vol, { type: 'announce' })
           .then(() => focus.abandon())
         break
       case '/dec_volume':
+        if (volumeOutOfRange(vol)) {
+          speakAndAbandonFocus(focus, strings.OUT_OF_RANGE)
+          break
+        }
         decVolume(vol, { type: 'announce' })
           .then(() => focus.abandon())
         break
@@ -288,7 +297,7 @@ module.exports = function (api) {
     }
   }
 
-  function quietFeedback (pathname, query) {
+  function effectFeedback (pathname, query) {
     var partition = parseInt(_.get(query, 'partition', 10))
     switch (pathname) {
       case '/volume_up':
@@ -326,10 +335,13 @@ module.exports = function (api) {
   var app = Application({
     url: function url (url) {
       if (_.startsWith(url.pathname, '/voice_feedback')) {
-        voiceFeedback(url.pathname.replace('/voice_feedback', ''), url.query)
+        var focus = new AudioFocus(AudioFocus.Type.TRANSIENT, api.audioFocus)
+        focus.onGain = () => voiceFeedback(focus, url.pathname.replace('/voice_feedback', ''), url.query)
+        focus.onLoss = () => speechSynthesis.cancel()
+        focus.request()
         return
       }
-      quietFeedback(url.pathname, url.query)
+      effectFeedback(url.pathname, url.query)
     }
   }, api)
 

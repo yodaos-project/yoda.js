@@ -1,8 +1,12 @@
 'use strict'
 
-var _ = require('@yoda/util')._
+var Application = require('@yodaos/application').Application
+var AudioFocus = require('@yodaos/application').AudioFocus
+var SpeechSynthesis = require('@yodaos/speech-synthesis').SpeechSynthesis
+
 var ota = require('@yoda/ota')
 var system = require('@yoda/system')
+var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var logger = require('logger')('otap')
 var util = require('util')
 
@@ -10,160 +14,138 @@ var strings = require('./strings.json')
 
 var getAvailableInfoAsync = util.promisify(ota.getAvailableInfo)
 
-var intentHandler = {
-  start_sys_upgrade: checkUpdateAvailability,
-  check_sys_upgrade: checkUpdateAvailability,
-  check_upgrade_num: whatsCurrentVersion
-}
-
 /**
  *
  * @param {YodaRT.Activity} activity
  */
-module.exports = function (activity) {
-  activity.on('request', function (nlp, action) {
-    var intent = nlp.intent
-    if (intent === 'RokidAppChannelForward') {
-      intent = _.get(nlp, 'forwardContent.intent')
-    }
-    var handler = intentHandler[intent]
-    if (handler == null) {
-      return activity.tts.speak(strings.UNKNOWN_INTENT)
-        .then(() => activity.exit())
-    }
-    logger.info(`OtaApp got nlp ${nlp.intent}`)
-    handler(activity, nlp, action)
-  })
+module.exports = function (api) {
+  var speechSynthesis = new SpeechSynthesis(api)
 
-  activity.on('url', function (url) {
-    switch (url.pathname) {
-      case '/mqtt/check_update':
-        mqttCheckUpdate(activity)
-        break
-      case '/on_first_boot_after_upgrade':
-        onFirstBootAfterUpgrade(activity, url)
-        break
-      case '/force_upgrade':
-        startUpgrade(activity, url.query.image_path, true)
-        break
-    }
-  })
-}
-
-/**
- *
- * @param {YodaRT.Activity} activity
- */
-function checkUpdateAvailability (activity) {
-  logger.info('fetching available ota info')
-  getAvailableInfoAsync().then(info => {
-    if (info == null) {
-      return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
-        .then(() => activity.exit())
-    }
-    if (info.status === 'downloading') {
-      return ota.getImageDownloadProgress(info, (err, progress) => {
-        if (err) {
-          return activity.tts.speak(strings.UPDATES_START_DOWNLOADING)
-            .then(() => activity.exit())
-        }
-        var utterance
-        if (isNaN(progress) || progress < 0 || progress >= 100) {
-          utterance = strings.UPDATES_START_DOWNLOADING
-        } else {
-          progress = Math.round(progress * 100)
-          utterance = util.format(strings.UPDATES_ON_DOWNLOADING, progress)
-        }
-        return activity.tts.speak(utterance)
-          .then(() => activity.exit())
-      })
-    }
-    if (info.status !== 'downloaded') {
-      ota.runInBackground()
-      return activity.tts.speak(strings.UPDATES_START_DOWNLOADING)
-        .then(() => activity.exit())
-    }
-    return ota.condition.getAvailabilityOfOta(info)
-      .then(availability => {
-        switch (availability) {
-          case true:
-            return startUpgrade(activity, info.imagePath)
-          case 'low_power':
-            return activity.tts.speak(strings.UPDATE_NOT_AVAILABLE_LOW_POWER)
-              .then(() => activity.exit())
-          case 'extremely_low_power':
-            return activity.tts.speak(strings.UPDATE_NOT_AVAILABLE_EXTREMELY_LOW_POWER)
-              .then(() => activity.exit())
-          default:
-            return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
-              .then(() => activity.exit())
-        }
-      })
-  }, error => {
-    logger.error('Unexpected error on check available updates', error.stack)
-    return activity.tts.speak(strings.NO_UPDATES_AVAILABLE)
-      .then(() => activity.exit())
-  })
-}
-
-/**
- *
- * @param {YodaRT.Activity} activity
- */
-function whatsCurrentVersion (activity) {
-  activity.tts.speak(strings.GENERIC_VERSION_ANNOUNCEMENT)
-    .then(() => activity.exit())
-}
-
-/**
- *
- * @param {YodaRT.Activity} activity
- * @param {URL} url
- */
-function onFirstBootAfterUpgrade (activity, url) {
-  activity.tts.speak(url.query.changelog || strings.OTA_UPDATE_SUCCESS)
-    .then(
-      () => activity.exit(),
-      err => {
-        logger.error('unexpected error on announcing changelog', err.stack)
-        activity.exit()
-      }
-    )
-  ota.resetOta(function onReset (err) {
-    if (err) {
-      logger.error('Unexpected error on reset ota', err.stack)
-    }
-  })
-}
-
-function startUpgrade (activity, imagePath, isForce) {
-  logger.info(`using ota image ${imagePath}`)
-  var ret = system.prepareOta(imagePath)
-  if (ret !== 0) {
-    logger.error(`OTA prepared with status code ${ret}, terminating.`)
-    return activity.tts.speak(strings.OTA_PREPARATION_FAILED)
-      .then(() => activity.exit())
+  function speakAsync (text) {
+    var focus = new AudioFocus(AudioFocus.Type.TRANSIENT, api.audioFocus)
+    focus.onGain = () =>
+      speechSynthesis.speak(text)
+        .on('cancel', () => focus.abandon())
+        .on('error', () => focus.abandon())
+        .on('end', () => focus.abandon())
+    focus.onLoss = () =>
+      speechSynthesis.cancel()
+    focus.request()
   }
-  var media = 'system://ota_start_update.ogg'
-  if (isForce) {
-    media = 'system://ota_force_update.ogg'
-  }
-  return activity.media.start(media, { impatient: false })
-    .then(() => system.reboot('ota'), err => {
-      logger.error('Unexpected error on announcing start update', err.stack)
-      system.reboot('ota')
+
+  function playExAsync (url) {
+    return new Promise((resolve, reject) => {
+      var focus = new AudioFocus(AudioFocus.Type.TRANSIENT_EXCLUSIVE, api.audioFocus)
+      var player = new MediaPlayer()
+      player.prepare(url)
+      player.on('error', reject)
+      player.on('cancel', resolve)
+      player.on('playbackcomplete', resolve)
+      focus.onGain = () =>
+        player.resume()
+      focus.onLoss = () =>
+        player.stop()
+      focus.request()
     })
-}
+  }
 
-function mqttCheckUpdate (activity) {
-  ota.getMqttOtaReport(function onReport (error, report) {
-    if (error) {
-      logger.error('mqtt check update', error)
-      return
+  function checkUpdateAvailability () {
+    logger.info('fetching available ota info')
+    getAvailableInfoAsync().then(info => {
+      if (info == null) {
+        return speakAsync(strings.NO_UPDATES_AVAILABLE)
+      }
+      if (info.status === 'downloading') {
+        return ota.getImageDownloadProgress(info, (err, progress) => {
+          if (err) {
+            return speakAsync(strings.UPDATES_START_DOWNLOADING)
+          }
+          var utterance
+          if (isNaN(progress) || progress < 0 || progress >= 100) {
+            utterance = strings.UPDATES_START_DOWNLOADING
+          } else {
+            progress = Math.round(progress * 100)
+            utterance = util.format(strings.UPDATES_ON_DOWNLOADING, progress)
+          }
+          return speakAsync(utterance)
+        })
+      }
+      if (info.status !== 'downloaded') {
+        ota.runInBackground()
+        return speakAsync(strings.UPDATES_START_DOWNLOADING)
+      }
+      return ota.condition.getAvailabilityOfOta(info)
+        .then(availability => {
+          switch (availability) {
+            case true:
+              return startUpgrade(info.imagePath)
+            case 'low_power':
+              return speakAsync(strings.UPDATE_NOT_AVAILABLE_LOW_POWER)
+            case 'extremely_low_power':
+              return speakAsync(strings.UPDATE_NOT_AVAILABLE_EXTREMELY_LOW_POWER)
+            default:
+              return speakAsync(strings.NO_UPDATES_AVAILABLE)
+          }
+        })
+    }, error => {
+      logger.error('Unexpected error on check available updates', error.stack)
+      return speakAsync(strings.NO_UPDATES_AVAILABLE)
+    })
+  }
+
+  function whatsCurrentVersion () {
+    speakAsync(strings.GENERIC_VERSION_ANNOUNCEMENT)
+  }
+
+  /**
+   *
+   * @param {URL} url
+   */
+  function onFirstBootAfterUpgrade (url) {
+    speakAsync(url.query.changelog || strings.OTA_UPDATE_SUCCESS)
+    ota.resetOta(function onReset (err) {
+      if (err) {
+        logger.error('Unexpected error on reset ota', err.stack)
+      }
+    })
+  }
+
+  function startUpgrade (imagePath, isForce) {
+    logger.info(`using ota image ${imagePath}`)
+    var ret = system.prepareOta(imagePath)
+    if (ret !== 0) {
+      logger.error(`OTA prepared with status code ${ret}, terminating.`)
+      return speakAsync(strings.OTA_PREPARATION_FAILED)
     }
-    if (report.checkCode !== 0 && !report.updateAvailable) {
-      ota.runInBackground()
+    var media = '/opt/media/ota_start_update.ogg'
+    if (isForce) {
+      media = '/opt/media/ota_force_update.ogg'
     }
-    activity.wormhole.sendToApp('sys_update_available', report)
-  })
+    return playExAsync(media)
+      .then(() => system.reboot('ota'), err => {
+        logger.error('Unexpected error on announcing start update', err.stack)
+        system.reboot('ota')
+      })
+  }
+
+  var app = Application({
+    url: function url (url) {
+      switch (url.pathname) {
+        case '/check_sys_upgrade':
+          checkUpdateAvailability()
+          break
+        case '/check_sys_version':
+          whatsCurrentVersion()
+          break
+        case '/on_first_boot_after_upgrade':
+          onFirstBootAfterUpgrade(url)
+          break
+        case '/force_upgrade':
+          startUpgrade(url.query.image_path, true)
+          break
+      }
+    }
+  }, api)
+
+  return app
 }
