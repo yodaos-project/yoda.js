@@ -13,6 +13,5 @@ component/lifetime/*.test.js
 descriptor/activity/*.test.js
 descriptor/effect/*.test.js
 descriptor/keyboard/*.test.js
-descriptor/tts/*.test.js
 packages/logger/*.test.js
 packages/lru-cache/*.test.js

@@ -54,7 +54,7 @@ class Battery {
     this.batSupported = true
 
     if (!data.batChargingOnline && data.batLevel <= 5) {
-      return this.runtime.shutdown()
+      return this.runtime.openUrl('yoda-app://system/shutdown')
     }
 
     switch (true) {

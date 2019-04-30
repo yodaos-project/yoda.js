@@ -34,5 +34,16 @@ function getBatteryInfo (options) {
     })
 }
 
+function getBatteryCharging () {
+  if (!isBatterySupported()) {
+    return Promise.resolve(false)
+  }
+  return getBatteryInfo()
+    .then(info => {
+      return info.batSupported && info.batChargingOnline
+    })
+}
+
 module.exports.isBatterySupported = isBatterySupported
 module.exports.getBatteryInfo = getBatteryInfo
+module.exports.getBatteryCharging = getBatteryCharging

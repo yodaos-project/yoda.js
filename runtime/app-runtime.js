@@ -468,8 +468,6 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
  */
 AppRuntime.prototype.resetServices = function resetServices (options) {
   var lightd = _.get(options, 'lightd', true)
-  var ttsd = _.get(options, 'ttsd', true)
-  var multimediad = _.get(options, 'multimediad', true)
   logger.info('resetting services')
 
   var promises = []
@@ -488,48 +486,13 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
         })
     )
   }
-  if (ttsd) {
-    promises.push(
-      this.ttsMethod('reset', [])
-        .then((res) => {
-          if (res.msg[0] !== true) {
-            return logger.log('reset ttsd failed')
-          }
-          logger.log('reset ttsd success')
-        })
-        .catch((error) => {
-          logger.log('reset ttsd error', error)
-        })
-    )
-  }
-  if (multimediad) {
-    promises.push(
-      this.multimediaMethod('reset', [])
-        .then((res) => {
-          if (res && res[0] === true) {
-            logger.log('reset multimediad success')
-          } else {
-            logger.log('reset multimediad failed')
-          }
-        })
-        .catch((error) => {
-          logger.log('reset multimediad error', error)
-        })
-    )
-  }
 
   return Promise.all(promises)
 }
 
 AppRuntime.prototype.appDidExit = function appDidExit (appId) {
   logger.info('Collecting resources of app', appId)
-  var promises = [
-    this.multimediaMethod('stop', [ appId ]),
-    this.ttsMethod('stop', [ appId ]),
-    this.componentsInvoke('appDidExit', [ appId ])
-  ]
-
-  return Promise.all(promises).catch(err => logger.error('Unexpected error on collecting resources of app', appId, err.stack))
+  this.componentsInvoke('appDidExit', [ appId ])
 }
 
 /**
@@ -612,45 +575,6 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
   }
   /** dbus apps are already running, creating a daemon app proxy for then */
   return this.component.lifetime.createApp(appId)
-}
-
-/**
- * recover the default settings, it reboots when the request is done.
- */
-AppRuntime.prototype.onResetSettings = function () {
-  this.cloudApi.resetSettings().then(() => {
-    logger.info('system is already reset')
-    var system = require('@yoda/system')
-    system.setRecoveryMode()
-    process.nextTick(system.reboot)
-  })
-}
-
-AppRuntime.prototype.shutdown = function shutdown () {
-  logger.info('shuting down')
-  this.component.light.play('@yoda', 'system://shutdown.js')
-    .then(() => {
-      var system = require('@yoda/system')
-      if (this.component.battery.isCharging()) {
-        return system.rebootCharging()
-      }
-      return system.powerOff('power-key')
-    })
-}
-
-/**
- * @private
- */
-AppRuntime.prototype.ttsMethod = function (name, args) {
-  return this.component.flora.call(`yodart.ttsd.${name}`, args, 'ttsd', 1000)
-}
-
-AppRuntime.prototype.multimediaMethod = function (name, args) {
-  return this.component.dbusRegistry.callMethod(
-    'com.service.multimedia',
-    '/multimedia/service',
-    'multimedia.service',
-    name, args)
 }
 
 /**
