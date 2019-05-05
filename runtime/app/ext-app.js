@@ -86,8 +86,8 @@ function createExtApp (appId, metadata, bridge, mode, options) {
 
     eventBus.once('status-report:ready', () => {
       cleanup()
-      /** initiate ping-pong */
-      eventBus.ping()
+      /** initiate ANR */
+      eventBus.alive()
       resolve(bridge)
     })
 
@@ -124,7 +124,7 @@ function EventBus (appBridge, socket, appId, options) {
   this.pid = socket.pid
   this.logger = require('logger')(`bus-${this.pid}`)
   this.options = options
-  this.pingTimer = null
+  this.aliveTimer = null
 
   /**
    * keep records of subscribed events to deduplicate subscription requests.
@@ -144,7 +144,7 @@ function EventBus (appBridge, socket, appId, options) {
 }
 inherits(EventBus, EventEmitter)
 
-EventBus.prototype.eventTable = [ 'test', 'ping', 'status-report', 'subscribe', 'invoke' ]
+EventBus.prototype.eventTable = [ 'test', 'alive', 'status-report', 'subscribe', 'invoke' ]
 
 EventBus.prototype.onMessage = function onMessage (message) {
   var type = message.type
@@ -152,16 +152,16 @@ EventBus.prototype.onMessage = function onMessage (message) {
     this.logger.warn(`VuiDaemon received unknown ipc message type '${type}' from app.`)
     return
   }
-  if (type !== 'ping') {
+  if (type !== 'alive') {
     this.logger.debug(`Received child message from ${this.appId}, type: ${type}`)
   }
   this[type](message)
 }
 
 EventBus.prototype.test = function onTest () { /** nothing to do with test */ }
-EventBus.prototype.ping = function onPing () {
-  clearTimeout(this.pingTimer)
-  this.pingTimer = setTimeout(() => {
+EventBus.prototype.alive = function onAlive () {
+  clearTimeout(this.aliveTimer)
+  this.aliveTimer = setTimeout(() => {
     this.emit('application-not-responding')
   }, /** 3 times not received */15 * 1000)
 }
