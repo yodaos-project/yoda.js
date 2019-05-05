@@ -16,11 +16,12 @@ class RuntimeDescriptor extends Descriptor {
     super(runtime, 'runtime')
   }
 
-  setPhase (phase) {
+  setPhase (ctx) {
+    var phase = ctx.args[0]
     if (phase === 'ready') {
-      return this._runtime.phaseToReady()
+      return this.runtime.phaseToReady()
     } else if (phase === 'reset') {
-      return this._runtime.phaseToReset()
+      return this.runtime.phaseToReset()
     }
   }
 
