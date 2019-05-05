@@ -35,7 +35,8 @@ function main (target, runner) {
   keepAlive()
   getActivityDescriptor()
     .then(descriptor => {
-      aliveInterval.unref()
+      // FIXME: unref should be enabled on https://github.com/yodaos-project/ShadowNode/issues/517 got fixed.
+      // aliveInterval.unref()
       translator.setLogger(require('logger')(`@ipc-${process.pid}`))
       var api = translator.translate(descriptor)
       api.appId = appId
@@ -100,9 +101,14 @@ function keepAlive () {
   if (aliveInterval) {
     clearInterval(aliveInterval)
   }
+  setAlive()
   aliveInterval = setInterval(() => {
-    process.send({ type: 'ping' })
+    setAlive()
   }, 5 * 1000)
+}
+
+function setAlive () {
+  process.send({ type: 'alive' })
 }
 
 function noopRunner () {
