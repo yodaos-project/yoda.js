@@ -8,7 +8,9 @@ var util = require('util')
  * The above command would starts a tcp server on the port 8000 for logs.
  */
 var native
-if (process.env.NODE_ENV === 'unittest') {
+try {
+  native = require('./logger.node')
+} catch (e) {
   console.log('/** using stdout as @yoda/logger output target. */')
   var consoleLevels = [
     () => {}, /** none */
@@ -26,8 +28,6 @@ if (process.env.NODE_ENV === 'unittest') {
       fn(`${new Date().toISOString()} [${level.toUpperCase()}] <${tag}>`, line)
     }
   }
-} else {
-  native = require('./logger.node')
 }
 
 var logLevels = {
