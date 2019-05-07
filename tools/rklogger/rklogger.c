@@ -87,6 +87,7 @@ reconnect:
         } else if (len > 0) {
             buffer[len] = '\0';
             printf("%s", buffer);
+            fflush(stdout);
         } else if (len == 0) {
             printf("\nDisconnected.\n\n");
             if (wait) {
