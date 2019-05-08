@@ -1,27 +1,24 @@
 {
-  "name": "bluetooth",
-  "version": "1.0.1",
-  "description": "Pre-installed skill for bluetooth manipulation.",
+  "name": "bluetooth-music",
+  "version": "0.0.1",
+  "description": "Pre-installed skill for bluetooth music.",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "manifest": {
-    "services": [
-      "bluetooth-service"
-    ],
     "hosts": [
-      "bluetooth"
+      "bluetooth-music"
     ],
     "broadcast": [
-      "on-system-booted",
-      "on-system-shutdown"
+      "on-quite-front",
+      "on-quite-back",
+      "on-stop-shake"
     ]
   },
   "keywords": [
     "bluetooth",
-    "A2DP",
-    "HFP"
+    "music"
   ],
   "author": "Morrowind xie <morrowindxie@gmail.com>",
   "license": "Apache 2.0"
