@@ -1,9 +1,11 @@
-**/package-lock.json
-**/yarn.lock
 *.DS_Store
 
 .idea
 .vscode
+
+build
+node_modules
+.git
 
 sftp-config.json
 node_modules/
@@ -11,9 +13,7 @@ website/docs/
 test/config.json
 test/.result
 test/temp/*
-!test/temp/.gitkeep
 build
 out
 
 runtime/client/api/*
-!runtime/client/api/.gitkeep

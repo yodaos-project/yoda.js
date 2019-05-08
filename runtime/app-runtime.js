@@ -173,7 +173,6 @@ AppRuntime.prototype.loadApps = function loadApps () {
  * Initiate/Re-initiate runtime configs
  */
 AppRuntime.prototype.initiate = function initiate () {
-  this.component.sound.initVolume()
   return Promise.resolve()
 }
 
