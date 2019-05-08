@@ -21,9 +21,8 @@
  */
 
 var native
-try {
-  native = require('./property.node')
-} catch (err) {
+if (process.env.YODA_RUN_MODE === 'host') {
+  // A simple implementation for host
   native = {
     PROP_VALUE_MAX: 30,
     map: {},
@@ -34,6 +33,8 @@ try {
       this.map[key] = val
     }
   }
+} else {
+  native = require('./property.node')
 }
 
 var PROP_VALUE_MAX = native.PROP_VALUE_MAX
