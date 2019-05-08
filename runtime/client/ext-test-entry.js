@@ -1,13 +1,14 @@
 'use strict'
 
 require('@yoda/oh-my-little-pony')
+var path = require('path')
 var extapp = require('./ext-helper')
 
 var target = process.argv[2]
 
 function test (testGlobs) {
   var resolvePath = require('path').resolve
-  var glob = require('tape/vendor/glob/glob-sync')
+  var glob = require('glob/sync')
 
   var cwd = process.cwd()
   testGlobs.forEach(function (arg) {
@@ -26,5 +27,5 @@ function test (testGlobs) {
 }
 
 extapp.main(target, (appId, pkg) => {
-  test([ 'test/**/*.test.js' ])
+  test([ path.join(target, 'test/**/*.test.js') ])
 })

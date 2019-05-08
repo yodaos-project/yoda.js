@@ -91,6 +91,42 @@ function sample (arr) {
   return get(arr, Math.floor(Math.random() * length))
 }
 
+module.exports.find = find
+function find (arr, predicate, thisArg) {
+  // 1. Let O be ? ToObject(this value).
+  if (arr == null) {
+    throw new TypeError('"arr" is null or not defined')
+  }
+
+  // 2. Let len be ? ToLength(? Get(O, "length")).
+  var len = arr.length >>> 0
+
+  // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+  if (typeof predicate !== 'function') {
+    throw new TypeError('predicate must be a function')
+  }
+
+  // 4. Let k be 0.
+  var k = 0
+
+  // 5. Repeat, while k < len
+  while (k < len) {
+    // a. Let Pk be ! ToString(k).
+    // b. Let kValue be ? Get(O, Pk).
+    // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+    // d. If testResult is true, return kValue.
+    var kValue = arr[k]
+    if (predicate.call(thisArg, kValue, k, arr)) {
+      return kValue
+    }
+    // e. Increase k by 1.
+    k++
+  }
+
+  // 6. Return undefined.
+  return undefined
+}
+
 module.exports.times = times
 function times (number) {
   var ret = []

@@ -114,8 +114,10 @@ YodaLocalPackage(yodaos-speech-synthesis @yodaos/speech-synthesis)
 YodaLocalPackage(yodaos-storage @yodaos/storage)
 
 # root scope packages
+YodaLocalPackage(glob)
 YodaLocalPackage(logger)
 YodaLocalPackage(lru-cache)
+YodaLocalPackage(minimatch)
 YodaLocalPackage(step)
 
 if(NOT CMAKE_BUILD_HOST)

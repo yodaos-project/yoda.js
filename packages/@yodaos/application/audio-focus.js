@@ -1,15 +1,26 @@
-var registrySymbol = Symbol('audio-focus#registry')
+var symbol = require('./symbol').audioFocus
 
 function setup (api) {
-  var registry = api[registrySymbol] = {}
+  var registry = api[symbol.registry] = {}
   api.on('gain', (id) => {
-    var focus = api[registrySymbol][id]
+    var focus = api[symbol.registry][id]
+    var hook = registry[symbol.hook]
+    if (hook) {
+      hook('gain', focus)
+    }
     if (focus && typeof focus.onGain === 'function') {
       focus.onGain()
     }
   })
   api.on('loss', (id, transient, mayDuck) => {
-    var focus = api[registrySymbol][id]
+    var focus = api[symbol.registry][id]
+    if (!transient) {
+      delete api[symbol.registry][id]
+    }
+    var hook = registry[symbol.hook]
+    if (hook) {
+      hook('loss', focus, transient, mayDuck)
+    }
     if (focus && typeof focus.onLoss === 'function') {
       focus.onLoss(transient, mayDuck)
     }
@@ -18,7 +29,7 @@ function setup (api) {
 }
 
 function register (api, id, self) {
-  var registry = api[registrySymbol]
+  var registry = api[symbol.registry]
   if (registry == null) {
     registry = setup(api)
   }
@@ -108,3 +119,4 @@ AudioFocus.Type = {
 }
 
 module.exports = AudioFocus
+module.exports.setup = setup
