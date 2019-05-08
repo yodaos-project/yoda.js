@@ -91,6 +91,21 @@ class AudioFocus {
     }
   }
 
+  abandonCurrentFocus () {
+    var focus = this.getCurrentFocus()
+    if (focus) {
+      this.abandon(focus.appId, focus.id)
+    }
+  }
+
+  abandonAllFocuses () {
+    ;[this.transientRequest, this.lastingRequest].forEach(it => {
+      this.castRequest(it)
+    })
+    this.transientRequest = null
+    this.lastingRequest = null
+  }
+
   recoverLastingRequest () {
     var req = this.lastingRequest
     if (req == null) {

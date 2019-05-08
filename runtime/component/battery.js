@@ -75,7 +75,7 @@ class Battery {
       return
     }
 
-    var idle = this.component.lifetime.getCurrentAppId() == null
+    var idle = this.component.visibility.getKeyAndVisibleAppId() == null
 
     for (var markIdx in lowPowerWaterMarks) {
       var option = lowPowerWaterMarks[markIdx]
@@ -159,7 +159,7 @@ class Battery {
       logger.info(`announced in 10 minutes, skip wakeup delegation`)
       return false
     }
-    this.component.turen.pickup(false)
+    // TODO: close picking up
     this.lastDangerousAnnounceTimeStamp = now
 
     var url
@@ -191,9 +191,9 @@ class Battery {
       logger.info(`battery is charging, skip wakeup delegation`)
       return false
     }
-    this.component.turen.pickup(false)
+    // TODO: close picking up
     this.shouldAnnounceLowPower = false
-    var idle = this.component.lifetime.getCurrentAppId() == null
+    var idle = this.component.visibility.getKeyAndVisibleAppId() == null
 
     for (var markIdx in lowPowerWaterMarks) {
       var mark = lowPowerWaterMarks[markIdx].level

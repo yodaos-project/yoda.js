@@ -4,7 +4,6 @@
  * @namespace yodaRT.activity
  */
 
-var _ = require('@yoda/util')._
 var Descriptor = require('../lib/descriptor')
 
 /**
@@ -41,16 +40,6 @@ class ActivityDescriptor extends Descriptor {
       options = { form: options }
     }
     return this.runtime.openUrl(url, options)
-  }
-
-  setContextOptions (ctx) {
-    var options = ctx.args[0]
-    options = _.pick(options, 'keepAlive')
-    return this.runtime.component.lifetime.setContextOptionsById(ctx.appId, options)
-  }
-
-  getContextOptions (ctx) {
-    return this.runtime.component.lifetime.getContextOptionsById(ctx.appId)
   }
 
   startMonologue (ctx) {

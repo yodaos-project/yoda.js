@@ -1,5 +1,4 @@
 var logger = require('logger')('dispatcher')
-var _ = require('@yoda/util')._
 
 var config = require('../lib/config').getConfig('component-config.json')
 
@@ -110,37 +109,19 @@ class Dispatcher {
    * @param {string} event
    * @param {any[]} params
    * @param {object} [options]
-   * @param {boolean} [options.preemptive=true] - if app is preemptive
    */
   dispatchAppEvent (appId, event, params, options) {
-    var preemptive = _.get(options, 'preemptive', true)
-
     if (this.runtime.hasBeenDisabled()) {
       logger.warn(`runtime has been disabled ${this.runtime.getDisabledReasons()}, skip dispatching event(${event}) to app(${appId}).`)
       return Promise.resolve(false)
     }
 
-    if (this.component.lifetime.guardMonopolization(appId, { preemptive: preemptive })) {
-      logger.warn(`LaVieEnPile has ben monopolized, skip dispatching event(${event}) to app(${appId}.`)
-      this.descriptor.activity.emitToApp(this.component.lifetime.monopolist, 'oppressing', [ event ])
-      return Promise.resolve(/** event has been handled, prevent tts/media from recovering */true)
-    }
-
-    return this.component.lifetime.createApp(appId)
+    return this.component.appScheduler.createApp(appId)
       .catch(err => {
         logger.error(`create app ${appId} failed`, err.stack)
         /** force quit app on create error */
-        return this.component.lifetime.destroyAppById(appId, { force: true })
+        return this.component.appScheduler.suspendApp(appId, { force: true })
           .then(() => { /** rethrow error to break following procedures */throw err })
-      })
-      .then(() => {
-        if (!preemptive) {
-          logger.info(`app is not preemptive, skip activating app ${appId}`)
-          return
-        }
-
-        logger.info(`app is preemptive, activating app ${appId}`)
-        return this.component.lifetime.activateAppById(appId)
       })
       .then(() => this.descriptor.activity.emitToApp(appId, event, params))
       .then(() => true)

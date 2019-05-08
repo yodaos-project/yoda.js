@@ -104,7 +104,7 @@ KeyboardHandler.prototype.execute = function execute (descriptor) {
 }
 
 KeyboardHandler.prototype.handleAppListener = function handleAppListener (type, event) {
-  var appId = this.component.lifetime.getCurrentAppId()
+  var appId = this.component.visibility.getKeyAndVisibleAppId()
   var app = this.component.appScheduler.getAppById(appId)
   if (app == null) {
     logger.info(`No active app, skip ${type} '${event.keyCode}' delegation.`)
