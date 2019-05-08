@@ -1,8 +1,6 @@
 'use strict'
 
 var test = require('tape')
-
-var property = require('@yoda/property')
 var mocker = require('./battery.helper')
 
 test('intent: battery_usetime', (t) => {

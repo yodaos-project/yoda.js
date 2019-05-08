@@ -10,7 +10,6 @@ exports.setBatteryInfo = function setBatteryInfo (data) {
   _injectInfo = Object.assign({}, data)
 }
 
-var batteryApp = require(`${helper.paths.apps}/battery/app`)
 function createActivity () {
   var activity = new EventEmitter()
   activity.media = new EventEmitter()
