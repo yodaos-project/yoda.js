@@ -127,6 +127,7 @@ function onAudioStateChangedListener (mode, state, extra) {
             speak(util.format(strings.MUSIC_INFO_SUCC_TITLE_ALBUM, extra.title, extra.album))
           } else {
             speak(util.format(strings.MUSIC_INFO_SUCC, extra.artist, extra.title, extra.album))
+            reportToCloud('info', [ extra.artist, extra.title, extra.album ])
           }
           break
         case '/like':
