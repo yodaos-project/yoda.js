@@ -3,7 +3,7 @@
  */
 
 var EventEmitter = require('events')
-var SpeechSynthesizer = require('./out/speech-synthesizer.node').SpeechSynthesizer
+var SpeechSynthesizer = require('./out/speech-synthesis.node').SpeechSynthesizer
 
 var SYNTH_LABEL = Symbol('synth#label')
 var UTTER = Symbol('synth#utter')
