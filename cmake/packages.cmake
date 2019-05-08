@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(JSRUNTIME_SOURCE_DIR ${CMAKE_SOURCE_DIR} CACHE PATH "yodart source directory")
-list(INSERT CMAKE_INCLUDE_PATH 0 ${JSRUNTIME_SOURCE_DIR}/include)
+set(YODART_SOURCE_DIR ${CMAKE_SOURCE_DIR} CACHE PATH "yodart source directory")
+list(INSERT CMAKE_INCLUDE_PATH 0 ${YODART_SOURCE_DIR}/include)
 
 set(YODAPKG_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/node_modules)
 
@@ -22,6 +22,7 @@ function(YodaLocalPackage NAME)
     LIST_SEPARATOR | # Use the alternate list separator
     CMAKE_ARGS
       -DYODAOS_VERSION=${CMAKE_PROJECT_VERSION}
+      -DYODART_SOURCE_DIR=${YODART_SOURCE_DIR}
       -DNODEJS_VARIANT=shadow-node
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_BUILD_HOST=${CMAKE_BUILD_HOST}
@@ -29,7 +30,6 @@ function(YodaLocalPackage NAME)
       -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH_ALT_SEP}
       -DCMAKE_INCLUDE_PATH=${CMAKE_INCLUDE_PATH_ALT_SEP}
       -DCMAKE_LIBRARY_PATH=${CMAKE_LIBRARY_PATH_ALT_SEP}
-      -DJSRUNTIME_SOURCE_DIR=${JSRUNTIME_SOURCE_DIR}
       -DCMAKE_INSTALL_PREFIX=${YODAPKG_INSTALL_DIR}
       # cross-compiling
       -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
@@ -41,6 +41,7 @@ function(YodaLocalPackage NAME)
       # compat
       -DCMAKE_INSTALL_DIR=./
       -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+      -DJSRUNTIME_SOURCE_DIR=${YODART_SOURCE_DIR}
   )
 endfunction()
 
@@ -67,6 +68,7 @@ function(YodaGitPackage NAME REPO TAG)
     CMAKE_ARGS
       -DLIBFFI_LINK_EXTERNAL=YES
       -DYODAOS_VERSION=${CMAKE_PROJECT_VERSION}
+      -DYODART_SOURCE_DIR=${YODART_SOURCE_DIR}
       -DNODEJS_VARIANT=shadow-node
       -DLINK_DIRECTORIES=${CMAKE_LIBRARY_PATH_ALT_SEP}
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -75,7 +77,6 @@ function(YodaGitPackage NAME REPO TAG)
       -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH_ALT_SEP}
       -DCMAKE_INCLUDE_PATH=${CMAKE_INCLUDE_PATH_ALT_SEP}
       -DCMAKE_LIBRARY_PATH=${CMAKE_LIBRARY_PATH_ALT_SEP}
-      -DJSRUNTIME_SOURCE_DIR=${JSRUNTIME_SOURCE_DIR}
       -DCMAKE_INSTALL_PREFIX=${YODAPKG_INSTALL_DIR}
       # cross-compiling
       -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
@@ -87,6 +88,7 @@ function(YodaGitPackage NAME REPO TAG)
       # compat
       -DCMAKE_INSTALL_DIR=./
       -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
+      -DJSRUNTIME_SOURCE_DIR=${YODART_SOURCE_DIR}
   )
 endfunction()
 
@@ -120,7 +122,6 @@ if(NOT CMAKE_BUILD_HOST)
   # local packages
   YodaLocalPackage(yoda-audio @yoda/audio)
   YodaLocalPackage(yoda-httpdns @yoda/httpdns)
-  YodaLocalPackage(yoda-cloudgw @yoda/cloudgw)
   YodaLocalPackage(yoda-httpsession @yoda/httpsession)
   YodaLocalPackage(yoda-input @yoda/input)
   YodaLocalPackage(yoda-light @yoda/light)
