@@ -8,14 +8,14 @@ find_package(NodeAddon REQUIRED)
 add_node_addon(${PROJECT_NAME} SOURCES src/pcm-player.cc src/speech-synthesizer.cc)
 
 option(BUILD_DEBUG "compile with debug flags" OFF)
-if (BUILD_DEBUG)
+if(BUILD_DEBUG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s")
 endif()
 
-if (CMAKE_BUILD_HOST)
+if(CMAKE_BUILD_HOST)
   node_addon_find_package(mutils SHARED REQUIRED
     HINTS ${mutilsPrefix}
     HEADERS caps.h

@@ -116,7 +116,7 @@ YodaLocalPackage(logger)
 YodaLocalPackage(lru-cache)
 YodaLocalPackage(step)
 
-if (NOT CMAKE_BUILD_HOST)
+if(NOT CMAKE_BUILD_HOST)
   # local packages
   YodaLocalPackage(yoda-audio @yoda/audio)
   YodaLocalPackage(yoda-httpdns @yoda/httpdns)

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(node-logger CXX)
 set(CMAKE_CXX_STANDARD 11)
 
-if (NOT CMAKE_BUILD_HOST)
+if(NOT CMAKE_BUILD_HOST)
   add_library(node-logger MODULE binding.cc)
   target_include_directories(node-logger PRIVATE
     ../../include
