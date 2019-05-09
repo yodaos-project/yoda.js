@@ -57,6 +57,9 @@ module.exports = (api) => {
           api.effect.play('system://shutdown.js')
             .then(() => system.reboot('recovery'))
           break
+        case '/idle':
+          api.visibility.abandonAllVisibilities()
+          break
       }
     }
   }, api)

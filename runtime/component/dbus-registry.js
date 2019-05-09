@@ -241,7 +241,7 @@ DBus.prototype.amsexport = {
     out: ['s'],
     fn: function Hibernate (cb) {
       // TODO: `Hibernate` is a published API. Should be updated on next major version.
-      this.runtime.idle()
+      this.component.visibility.abandonAllVisibilities()
         .then(
           () => cb(null, '{"ok": true}'),
           err => {

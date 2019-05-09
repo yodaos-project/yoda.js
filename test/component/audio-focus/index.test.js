@@ -398,6 +398,7 @@ test('abandoning current focus', t => {
     }
   })
 
+  comp.abandonCurrentFocus()
   comp.request({
     id: 1,
     appId: 'test',
@@ -432,6 +433,7 @@ test('abandoning all focuses', t => {
     }
   })
 
+  comp.abandonAllFocuses()
   comp.request({
     id: 1,
     appId: 'test',

@@ -100,6 +100,9 @@ class AudioFocus {
 
   abandonAllFocuses () {
     ;[this.transientRequest, this.lastingRequest].forEach(it => {
+      if (it == null) {
+        return
+      }
       this.castRequest(it)
     })
     this.transientRequest = null
