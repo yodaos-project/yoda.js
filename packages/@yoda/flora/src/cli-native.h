@@ -25,7 +25,8 @@ class MsgCallbackInfo {
 
 class RespCallbackInfo {
  public:
-  std::shared_ptr<Napi::FunctionReference> cbr;
+  napi_env env;
+  napi_ref cbr;
   int32_t rescode;
   flora::Response response;
 };
@@ -71,8 +72,8 @@ class ClientNative {
   void msgCallback(const char* name, Napi::Env env, std::shared_ptr<Caps>& msg,
                    uint32_t type, std::shared_ptr<flora::Reply> reply);
 
-  void respCallback(const std::shared_ptr<Napi::FunctionReference>& cbr,
-                    int32_t rescode, flora::Response& response);
+  void respCallback(napi_env env, napi_ref cbr, int32_t rescode,
+                    flora::Response& response);
 
  private:
   flora::Agent floraAgent;

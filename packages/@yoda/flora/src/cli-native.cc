@@ -5,6 +5,7 @@
 #define ERROR_INVALID_URI -1
 #define ERROR_INVALID_PARAM -2
 #define ERROR_NOT_CONNECTED -3
+#define ERROR_NAPI_FAILED -4
 
 using namespace std;
 using namespace Napi;
@@ -361,15 +362,18 @@ Value ClientNative::call(const CallbackInfo& info) {
   if (info[5].IsNumber()) {
     timeout = info[5].As<Number>().Uint32Value();
   }
-  shared_ptr<FunctionReference> cbr =
-      make_shared<FunctionReference>(Napi::Persistent(info[3].As<Function>()));
-  // TODO: if callback of flora.get never invokded, the FunctionReference will
+  napi_ref cbr;
+  auto nr = napi_create_reference(env, info[3], 1, &cbr);
+  if (nr != napi_ok) {
+    return Number::New(env, ERROR_NAPI_FAILED);
+  }
+  // TODO: if callback of flora.call never invokded, the FunctionReference will
   // never Unref!!
   int32_t r = floraAgent.call(
       info[0].As<String>().Utf8Value().c_str(), msg,
       info[2].As<String>().Utf8Value().c_str(),
-      [this, cbr](int32_t rescode, Response& resp) {
-        this->respCallback(cbr, rescode, resp);
+      [this, env, cbr](int32_t rescode, Response& resp) {
+        this->respCallback(env, cbr, rescode, resp);
       },
       timeout);
   return Number::New(env, r);
@@ -402,12 +406,13 @@ void ClientNative::msgCallback(const char* name, Napi::Env env,
   uv_async_send(&msgAsync);
 }
 
-void ClientNative::respCallback(const shared_ptr<FunctionReference>& cbr,
-                                int32_t rescode, Response& response) {
+void ClientNative::respCallback(napi_env env, napi_ref cbr, int32_t rescode,
+                                Response& response) {
   cb_mutex.lock();
   pendingResponses.emplace_back();
   list<RespCallbackInfo>::iterator it = --pendingResponses.end();
-  (*it).cbr = std::move(cbr);
+  (*it).env = env;
+  (*it).cbr = cbr;
   (*it).rescode = rescode;
   (*it).response = response;
   cb_mutex.unlock();
@@ -592,7 +597,7 @@ void ClientNative::handleMsgCallbacks() {
   }
 }
 
-static Value genJSResponse(Napi::Env env, Response& resp) {
+static Value genJSResponse(napi_env env, Response& resp) {
   EscapableHandleScope scope(env);
   Object jsresp;
 
@@ -604,7 +609,6 @@ static Value genJSResponse(Napi::Env env, Response& resp) {
 }
 
 void ClientNative::handleRespCallbacks() {
-  Napi::Value jsresp;
   unique_lock<mutex> locker(cb_mutex, defer_lock);
   list<RespCallbackInfo>::iterator it;
 
@@ -615,15 +619,18 @@ void ClientNative::handleRespCallbacks() {
     it = pendingResponses.begin();
     locker.unlock();
 
-    HandleScope scope((*it).cbr->Env());
-    jsresp = genJSResponse((*it).cbr->Env(), (*it).response);
-    (*it).cbr->MakeCallback((*it).cbr->Env().Global(),
-                            { Number::New((*it).cbr->Env(), (*it).rescode),
-                              jsresp },
-                            asyncContext);
-
+    HandleScope scope((*it).env);
+    napi_value global;
+    napi_value res;
+    napi_value cb;
+    napi_value args[2];
+    napi_create_int32(it->env, it->rescode, args);
+    args[1] = genJSResponse((*it).env, (*it).response);
+    napi_get_global(it->env, &global);
+    napi_get_reference_value(it->env, it->cbr, &cb);
+    napi_make_callback(it->env, asyncContext, global, cb, 2, args, &res);
+    napi_delete_reference(it->env, it->cbr);
     locker.lock();
-    (*it).cbr->Unref();
     pendingResponses.pop_front();
     locker.unlock();
   }
