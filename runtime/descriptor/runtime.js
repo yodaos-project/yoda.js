@@ -24,10 +24,6 @@ class RuntimeDescriptor extends Descriptor {
       return this.runtime.phaseToReset()
     }
   }
-
-  idle () {
-    return this._runtime.idle()
-  }
 }
 
 RuntimeDescriptor.methods = {
@@ -41,17 +37,6 @@ RuntimeDescriptor.methods = {
    * @returns {Promise<void>}
    */
   setPhase: {
-    returns: 'promise'
-  },
-  /**
-   * Lets the runtime enter idle state.
-   *
-   * @memberof yodaRT.activity.Activity.RuntimeClient
-   * @instance
-   * @function idle
-   * @returns {Promise<void>}
-   */
-  idle: {
     returns: 'promise'
   }
 }

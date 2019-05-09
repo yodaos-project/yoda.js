@@ -317,16 +317,6 @@ AppRuntime.prototype.enableRuntimeFor = function enableRuntimeFor (reason) {
 }
 
 /**
- * Put device into idle state. Terminates apps in stack (i.e. apps in active and paused).
- *
- * Also clears apps' contexts.
- */
-AppRuntime.prototype.idle = function idle () {
-  logger.info('set runtime to idling')
-  return this.component.visibility.abandonAllVisibilities()
-}
-
-/**
  * Put device into hibernation state.
  */
 AppRuntime.prototype.hibernate = function hibernate () {
@@ -578,7 +568,7 @@ AppRuntime.prototype.phaseToReady = function phaseToReady () {
 AppRuntime.prototype.phaseToReset = function phaseToReset () {
   this.component.flora.post('yodaos.runtime.phase', ['setup'], require('@yoda/flora').MSGTYPE_PERSIST)
   this.component.broadcast.dispatch('yodaos.on-phase-reset', [])
-  return this.idle()
+  return this.component.visibility.abandonAllVisibilities()
 }
 
 /**
