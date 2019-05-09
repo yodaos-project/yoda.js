@@ -16,7 +16,13 @@
   },
   "keywords": [
     "bluetooth",
+<<<<<<< HEAD
     "A2DP"
+=======
+    "A2DP",
+    "AVRCP",
+    "HFP"
+>>>>>>> bluetooth: add call event handler and remove unused code.
   ],
   "author": "Morrowind xie <morrowindxie@gmail.com>",
   "license": "Apache 2.0"

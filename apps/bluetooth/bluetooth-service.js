@@ -197,6 +197,7 @@ function onConnectionStateChangedListener (mode, state, device) {
         speak(getText('PLEASE_WAIT'))
       } else {
         speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
+        lastUrl = '/derived_from_phone'
       }
       resetLastUrl()
       break
