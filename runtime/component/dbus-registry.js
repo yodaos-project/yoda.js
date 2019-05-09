@@ -95,10 +95,10 @@ DBus.prototype.extapp = {
         form = null
       }
       logger.info('on start', Array.prototype.slice.call(arguments, 0))
-      this.component.lifetime.createApp(appId)
+      this.component.appScheduler.createApp(appId)
         .then(() => {
           logger.info(`activating dbus app '${appId}'`)
-          return this.component.lifetime.activateAppById(appId, form)
+          // TODO: make key and visible
         })
         .then(
           () => cb(null),
@@ -110,11 +110,7 @@ DBus.prototype.extapp = {
     in: ['s'],
     out: [],
     fn: function exit (appId, cb) {
-      if (appId !== this.component.lifetime.getCurrentAppId()) {
-        logger.log('exit app permission deny')
-        return cb(null)
-      }
-      this.runtime.exitAppById(appId)
+      this.component.appScheduler.suspendApp(appId)
       cb(null)
     }
   },
@@ -484,13 +480,13 @@ DBus.prototype.amsexport = {
 
       var future
       if (appId) {
-        future = this.component.lifetime.destroyAppById(appId, { force: true })
+        future = this.component.appScheduler.suspendApp(appId, { force: true })
           .then(() => this.component.appLoader.reload(appId))
           .then(() => {
             cb(null, JSON.stringify({ ok: true, result: this.component.appLoader.appManifests[appId] }))
           })
       } else {
-        future = this.component.lifetime.destroyAll({ force: true })
+        future = this.component.appScheduler.suspendAllApps({ force: true })
           .then(() => this.component.appLoader.reload())
           .then(() => {
             cb(null, JSON.stringify({ ok: true, result: this.component.appLoader.appManifests }))
@@ -513,7 +509,6 @@ DBus.prototype.yodadebug = {
         ok: true,
         result: {
           activitiesStack: this.component.lifetime.activitiesStack,
-          contextOptionsMap: this.component.lifetime.contextOptionsMap,
           monopolist: this.component.lifetime.monopolist,
           appStatus: this.component.appScheduler.appStatus
         }

@@ -6,9 +6,15 @@
  */
 
 var fs = require('fs')
+var path = require('path')
 var _ = require('@yoda/util')._
 
-var data = fs.readFileSync('/etc/manifest.json', 'utf8')
+var manifestPath = '/etc/manifest.json'
+if (process.env.YODA_RUN_MODE === 'host') {
+  manifestPath = /** ${workspace}/etc/manifest.json */path.join(__dirname, '../../..', manifestPath)
+}
+
+var data = fs.readFileSync(manifestPath, 'utf8')
 var manifest
 try {
   manifest = JSON.parse(data)

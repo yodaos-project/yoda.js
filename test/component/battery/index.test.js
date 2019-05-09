@@ -5,30 +5,31 @@ var helper = require('../../helper')
 var mock = require('../../helper/mock')
 var Battery = require(`${helper.paths.runtime}/component/battery`)
 var batHelper = require('./helper')
+var bootstrap = require('../../bootstrap')
 
-var getRuntime = batHelper.getRuntime
 var sendInfo = batHelper.sendInfo
 
 test('should parse battery.info', t => {
   t.plan(1)
-  var runtime = getRuntime()
-  var battery = new Battery(runtime)
+  var tt = bootstrap()
+  var battery = new Battery(tt.runtime)
   var expected = sendInfo(battery, { batLevel: 60 })
   t.deepEqual(battery.memoInfo, expected)
 })
 
 test('should skip malformed battery.info', t => {
   t.plan(1)
-  var runtime = getRuntime()
-  var battery = new Battery(runtime)
+  var tt = bootstrap()
+  var battery = new Battery(tt.runtime)
   battery.handleFloraInfo('foobar')
   t.looseEqual(battery.memoInfo, null)
 })
 
 test('announce low power while idling', t => {
-  var runtime = getRuntime()
+  var tt = bootstrap()
+  var runtime = tt.runtime
   var battery = new Battery(runtime)
-  mock.mockReturns(runtime.component.lifetime, 'getCurrentAppId', null)
+  mock.mockReturns(runtime.component.visibility, 'getKeyAndVisibleAppId', null)
 
   function partialRestore () {
     runtime.openUrl = () => Promise.resolve()
@@ -107,9 +108,10 @@ test('announce low power while idling', t => {
 })
 
 test('announce low power while not idling', t => {
-  var runtime = getRuntime()
+  var tt = bootstrap()
+  var runtime = tt.runtime
   var battery = new Battery(runtime)
-  mock.mockReturns(runtime.component.lifetime, 'getCurrentAppId', 'foobar')
+  mock.mockReturns(runtime.component.visibility, 'getKeyAndVisibleAppId', 'foobar')
 
   function partialRestore () {
     runtime.openUrl = () => Promise.resolve()
@@ -182,7 +184,8 @@ test('announce low power while not idling', t => {
 })
 
 test('should not announce low power repeatedly on same interval', t => {
-  var runtime = getRuntime()
+  var tt = bootstrap()
+  var runtime = tt.runtime
   var battery = new Battery(runtime)
 
   function partialRestore () {
@@ -211,7 +214,8 @@ test('should not announce low power repeatedly on same interval', t => {
 test('should handle dangerous temperature on battery.info', t => {
   t.plan(5)
   mock.restore()
-  var runtime = getRuntime()
+  var tt = bootstrap()
+  var runtime = tt.runtime
   var battery = new Battery(runtime)
   t.strictEqual(battery.dangerousState, 'normal')
   sendInfo(battery, { batTemp: 55 })
@@ -229,7 +233,8 @@ test('should handle dangerous temperature on battery.info', t => {
 
 test('should announce dangerous temperature on wake up', t => {
   t.plan(10)
-  var runtime = getRuntime()
+  var tt = bootstrap()
+  var runtime = tt.runtime
   var battery = new Battery(runtime)
   var tenMinutes = 10 * 60 * 1000
   var times = 0
@@ -308,7 +313,8 @@ test('should announce dangerous temperature on wake up', t => {
 
 test('should not announce dangerous temperature on wake up within 10 minutes', t => {
   t.plan(5)
-  var runtime = getRuntime()
+  var tt = bootstrap()
+  var runtime = tt.runtime
   var battery = new Battery(runtime)
   var tenMinutes = 10 * 60 * 1000
   var times = 1

@@ -85,11 +85,11 @@ class Broadcast {
       }
       var appId = appIds[idx]
       var future = Promise.resolve()
-      future = self.component.lifetime.createApp(appId)
+      future = self.component.appScheduler.createApp(appId)
         .catch(err => {
           /** force quit app on create error */
           logger.error(`create app ${appId} failed`, err.stack)
-          return self.component.lifetime.destroyAppById(appId, { force: true })
+          return self.component.appScheduler.suspendApp(appId, { force: true })
             .then(() => { /** rethrow error to break following procedures */throw err })
         })
       return future

@@ -16,7 +16,7 @@ function createMockApp (runtime, appId) {
 }
 
 test('should dispatch app event', t => {
-  t.plan(4)
+  t.plan(3)
   var tt = bootstrap()
   var runtime = tt.runtime
   var dispatcher = tt.component.dispatcher
@@ -34,7 +34,6 @@ test('should dispatch app event', t => {
 
   ret.then(dispatched => {
     t.deepEqual(dispatched, true)
-    t.strictEqual(runtime.component.lifetime.getCurrentAppId(), 'foobar')
   }).catch(err => {
     t.error(err)
     t.end()
@@ -42,7 +41,7 @@ test('should dispatch app event', t => {
 })
 
 test('should not dispatch app event if runtime has been disabled', t => {
-  t.plan(2)
+  t.plan(1)
   var tt = bootstrap()
   var runtime = tt.runtime
   var dispatcher = runtime.component.dispatcher
@@ -58,39 +57,8 @@ test('should not dispatch app event if runtime has been disabled', t => {
   dispatcher.dispatchAppEvent('foobar', 'test-event', args)
     .then(dispatched => {
       t.deepEqual(dispatched, false)
-      t.looseEqual(runtime.component.lifetime.getCurrentAppId(), null)
     })
     .catch(err => {
-      t.error(err)
-      t.end()
-    })
-})
-
-test('should not dispatch preemptive app event if lifetime has been monopolized by an app', t => {
-  t.plan(3)
-  var tt = bootstrap()
-  var runtime = tt.runtime
-  var dispatcher = runtime.component.dispatcher
-
-  mock.mockReturns(runtime, 'hasBeenDisabled', false)
-
-  var args = [ { foo: 'bar' }, 'foobar' ]
-  var app = createMockApp(runtime, 'foobar')
-  var monopolist = createMockApp(runtime, 'monopolist')
-  app.subscribe(null, 'test-event', function () {
-    t.fail('unreachable path')
-  })
-  monopolist.subscribe(null, 'oppressing', event => {
-    t.strictEqual(event, 'test-event')
-  })
-
-  runtime.component.lifetime.activateAppById('monopolist')
-    .then(() => runtime.startMonologue('monopolist'))
-    .then(() => dispatcher.dispatchAppEvent('foobar', 'test-event', args))
-    .then(dispatched => {
-      t.strictEqual(dispatched, /** event has been handled, prevent tts/media from recovering */true)
-      t.strictEqual(runtime.component.lifetime.getCurrentAppId(), 'monopolist')
-    }).catch(err => {
       t.error(err)
       t.end()
     })

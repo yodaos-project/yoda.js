@@ -41,11 +41,12 @@ Permission.prototype.check = function (appId, name, options) {
   if (appId === undefined) {
     return false
   }
-  var isActiveApp = appId === this.component.lifetime.getCurrentAppId()
+  var keyVisibleAppId = this.component.visibility.getKeyAndVisibleAppId()
+  var isActiveApp = appId === keyVisibleAppId
 
   if (name === undefined) {
     if (!isActiveApp) {
-      logger.info(`app is not currently active app, denying.`, appId, this.component.lifetime.getCurrentAppId())
+      logger.info(`app is not currently active app, denying.`, appId, keyVisibleAppId)
     }
     return isActiveApp
   }
@@ -57,7 +58,7 @@ Permission.prototype.check = function (appId, name, options) {
     }
     /** no permission other than `INTERRUPT` shall be allow if app is not top of stack */
     if (!isActiveApp) {
-      logger.info(`app has permission ${name}, but is not currently active app, denying.`, appId, this.component.lifetime.getCurrentAppId())
+      logger.info(`app has permission ${name}, but is not currently active app, denying.`, appId, keyVisibleAppId)
     }
     return isActiveApp
   }

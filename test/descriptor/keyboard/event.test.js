@@ -4,6 +4,7 @@ var test = require('tape')
 var _ = require('@yoda/util')._
 
 var bootstrap = require('../bootstrap')
+var mm = require('../../helper/mock')
 
 test('should register interests on prevent defaults', t => {
   var tt = bootstrap()
@@ -78,6 +79,7 @@ test('should transfer events', t => {
       t.strictEqual(event.keyCode, 123)
     })
   })
+  mm.mockReturns(tt.component.visibility, 'getKeyAndVisibleAppId', 'test')
 
   events.forEach(it => {
     tt.runtime.component.keyboard.handleAppListener(it, { keyCode: 123 })

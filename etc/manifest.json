@@ -2,6 +2,7 @@
   "product_name": "YODAOS-Device",
   "version": "1.0.0",
   "capabilities": {
+    "main-visibility": "voice",
     "battery": false
   },
   "defaults": {

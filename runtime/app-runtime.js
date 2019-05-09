@@ -196,7 +196,7 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
     }
     var appId = daemons[idx]
     logger.info('Starting daemon app', appId)
-    return self.component.lifetime.createApp(appId)
+    return self.component.appScheduler.createApp(appId)
       .then(() => {
         return start(idx + 1)
       }, () => {
@@ -213,7 +213,7 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
  * - otherwise set device actively pickup.
  */
 AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
-  var currentAppId = this.component.lifetime.getCurrentAppId()
+  var currentAppId = this.component.visibility.getKeyAndVisibleAppId()
   logger.info('handling power activation, current app is', currentAppId)
 
   /**
@@ -323,7 +323,7 @@ AppRuntime.prototype.enableRuntimeFor = function enableRuntimeFor (reason) {
  */
 AppRuntime.prototype.idle = function idle () {
   logger.info('set runtime to idling')
-  return this.component.lifetime.deactivateAppsInStack()
+  return this.component.visibility.abandonAllVisibilities()
 }
 
 /**
@@ -343,7 +343,7 @@ AppRuntime.prototype.hibernate = function hibernate () {
    * Clear apps and its contexts
    */
   this.resetCloudStack()
-  return this.component.lifetime.destroyAll({ force: true })
+  return this.component.appScheduler.suspendAllApps({ force: true })
 }
 
 /**
@@ -369,33 +369,6 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
 
   this.component.dispatcher.delegate('runtimeDidResumeFromSleep')
   this.component.broadcast.dispatch('yodaos.on-system-booted', [])
-}
-
-/**
- * Start a session of monologue. In session of monologue, no other apps could preempt top of stack.
- *
- * Note that monologues automatically ends on unexpected exit of apps.
- *
- * @param {string} appId
- */
-AppRuntime.prototype.startMonologue = function (appId) {
-  if (appId !== this.component.lifetime.getCurrentAppId()) {
-    return Promise.reject(new Error(`App ${appId} is not currently on top of stack.`))
-  }
-  this.component.lifetime.monopolist = appId
-  return Promise.resolve()
-}
-
-/**
- * Stop a session of monologue started previously.
- *
- * @param {string} appId
- */
-AppRuntime.prototype.stopMonologue = function (appId) {
-  if (this.component.lifetime.monopolist === appId) {
-    this.component.lifetime.monopolist = null
-  }
-  return Promise.resolve()
 }
 
 /**
@@ -449,7 +422,7 @@ AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
 
   return future
     .then(() => {
-      var noTts = !!this.component.lifetime.getCurrentAppId()
+      var noTts = !!this.component.visibility.getKeyAndVisibleAppId()
       this.component.light.play(
         '@yoda',
         'system://setMuted.js',
@@ -523,7 +496,7 @@ AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
 }
 
 AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {
-  var currAppId = this.component.lifetime.getCurrentAppId()
+  var currAppId = this.component.visibility.getKeyAndVisibleAppId()
   if (currAppId !== appId) {
     return Promise.reject(new Error(`App is not currently active app, active app: ${currAppId}.`))
   }
@@ -535,18 +508,6 @@ AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs)
       resolve()
     })
   }).then(() => this.setPickup(true))
-}
-
-/**
- *
- * @param {string} appId -
- * @param {object} [options] -
- * @param {boolean} [options.clearContext] - also clears contexts
- * @param {boolean} [options.ignoreKeptAlive] - ignore contextOptions.keepAlive
- */
-AppRuntime.prototype.exitAppById = function exitAppById (appId, options) {
-  var ignoreKeptAlive = _.get(options, 'ignoreKeptAlive', false)
-  return this.component.lifetime.deactivateAppById(appId, { force: ignoreKeptAlive })
 }
 
 /**
@@ -573,7 +534,7 @@ AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
     throw err
   }
   /** dbus apps are already running, creating a daemon app proxy for then */
-  return this.component.lifetime.createApp(appId)
+  return this.component.appScheduler.createApp(appId)
 }
 
 /**

@@ -10,6 +10,7 @@ component/chronos/*.test.js
 component/dispatcher/*.test.js
 component/keyboard/*.test.js
 component/lifetime/*.test.js
+component/visibility/*.test.js
 descriptor/activity/*.test.js
 descriptor/effect/*.test.js
 descriptor/keyboard/*.test.js
