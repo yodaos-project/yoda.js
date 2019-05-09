@@ -5,20 +5,14 @@
     "ON_OPENED_FAILED": "system://openbluetootherror.ogg",
     "ON_CONNECTED": "system://connectbluetooth.ogg",
     "ON_CONNECTED_FAILED": "system://connectfailedbluetooth.ogg",
-    "ON_AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg",
-    "RINGTONE": "system://phone_ring.ogg"
+    "ON_AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg"
   },
   "LIGHT": {
-    "DISCOVERY_ON": "system://bluetoothOpen.js",
-    "CALL": {
-      "IDLE": "system://disconnectedCall.js",
-      "INCOMING": "system://connectedCall.js", 
-      "OFFHOOK": "system://inCall.js"
-    }
+    "DISCOVERY_ON": "system://bluetoothOpen.js"
   },
   "URL": {
-    "BLUETOOTH_MUSIC": "yoda-skill://bluetooth_music/bluetooth_start_bluetooth_music",
-    "PLAYER_CONTROLLER": "yoda-skill://playercontrol/playercontrol?name=%s",
-    "MUSIC_LIKE": "https://qqmusic-mobile-pro.rokid.com/rokid-cas-qqmusic/uniformEntry"
+    "BLUETOOTH_MUSIC": "yoda-app://bluetooth-music/play",
+    "BLUETOOTH_CALL": "yoda-app://bluetooth-call/start",
+    "PLAYER_CONTROLLER": "yoda-app://playercontrol/playercontrol?name=%s"
   }
 }

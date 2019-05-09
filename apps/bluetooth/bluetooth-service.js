@@ -6,33 +6,21 @@ var bluetooth = require('@yoda/bluetooth')
 var protocol = bluetooth.protocol
 var util = require('util')
 var _ = require('@yoda/util')._
-var os = global[Symbol.for('yoda#api')]
+var system = require('@yoda/system')
+var rt = global[Symbol.for('yoda#api')]
 var strings = require('./strings.json')
 var config = require('./config.json')
 var res = require('./resources.json')
-var AppTask = require('@yodaos/application').vui.AppTask
-var network = require('@yoda/network')
-var networkAgent = new network.NetworkAgent()
 
+var deviceName = null
 var a2dp = null
 var hfp = null
-var lastIntent = 'derived_from_phone'
+var lastUrl = '/derived_from_phone'
 var timer = null
 
-function speak (text, alternativeVoice) {
+function speak (text, altVoice) {
   logger.debug(`speak: ${text}`)
-  networkAgent.getWifiStatus().then((reply) => {
-    if (reply.wifi.status === network.CONNECTED) {
-      service.openUrl(`yoda-app://system/speak?text=${text}&alt=${alternativeVoice}`)
-    } else {
-      if (alternativeVoice != null) {
-        var task = new AppTask([
-          { media: alternativeVoice }
-        ])
-        task.execute()
-      }
-    }
-  })
+  service.openUrl(`yoda-app://system/speak?text=${text}&alt=${altVoice}`)
 }
 
 function getText (label, args) {
@@ -71,7 +59,7 @@ var urlHandlers = {
     }
   },
   // close bluetooth
-  '/luetooth_disconnect': () => {
+  '/bluetooth_disconnect': () => {
     a2dp.close()
   },
   // open and auto connect to history device (use last mode as default)
@@ -104,14 +92,57 @@ var urlHandlers = {
   }
 }
 
+function handleSinkRadioOn (autoConn) {
+  switch (lastUrl) {
+    case '/bluetooth_broadcast':
+      if (autoConn) {
+        speak(getText('SINK_OPENED'), res.AUDIO['ON_OPENED'])
+      } else {
+        speak(getText('SINK_FIRST_OPENED_ARG1S', deviceName), res.AUDIO['ON_OPENED'])
+      }
+      lastUrl = '/derived_from_phone'
+      break
+    case '/connect_phone':
+    case '/play_bluetoothmusic':
+      if (autoConn) {
+        setTimer(() => {
+          if (a2dp.getConnectionState() !== protocol.CONNECTION_STATE.CONNECTED) {
+            speak(getText('SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S', deviceName), res.AUDIO['ON_AUTOCONNECT_FAILED'])
+          }
+        }, config.TIMER.DELAY_BEFORE_AUTOCONNECT_FAILED)
+      } else {
+        speak(getText('SINK_FIRST_OPENED_BY_CONNECT_ARG1S', deviceName), res.AUDIO['ON_OPENED'])
+      }
+      break
+    default:
+      break
+  }
+}
+
+function handleSourceRadioOn (autoConn) {
+  if (autoConn) {
+    speak(getText('SOURCE_OPENED'), res.AUDIO['ON_OPENED'])
+  } else {
+    speak(getText('SOURCE_FIRST_OPENED'), res.AUDIO['ON_OPENED'])
+  }
+  lastUrl = '/derived_from_phone'
+}
+
 function onRadioStateChangedListener (mode, state, extra) {
   logger.debug(`${mode} onRadioStateChanged(${state}, ${JSON.stringify(extra)})`)
-
+  cancelTimer()
+  if (mode !== a2dp.getMode()) {
+    logger.warn('Suppress old mode event to avoid confusing users.')
+    return
+  }
   switch (state) {
     case protocol.RADIO_STATE.ON:
       var autoConn = _.get(extra, 'autoConn', false)
-      logger.debug('autoConn = ', autoConn)
-      speak(getText('SINK_OPENED'), res.AUDIO['ON_OPENED'])
+      if (mode === protocol.A2DP_MODE.SINK) {
+        handleSinkRadioOn(autoConn)
+      } else {
+        handleSourceRadioOn(autoConn)
+      }
       break
     case protocol.RADIO_STATE.ON_FAILED:
       if (mode === protocol.A2DP_MODE.SINK) {
@@ -121,7 +152,9 @@ function onRadioStateChangedListener (mode, state, extra) {
       }
       break
     case protocol.RADIO_STATE.OFF:
-      speak(getText('CLOSED'), res.AUDIO[state])
+      if (lastUrl === '/bluetooth_disconnect') {
+        speak(getText('CLOSED'), res.AUDIO[state])
+      }
       break
     default:
       break
@@ -130,11 +163,17 @@ function onRadioStateChangedListener (mode, state, extra) {
 
 function onConnectionStateChangedListener (mode, state, device) {
   logger.debug(`${mode} onConnectionStateChanged(${state})`)
+  cancelTimer()
+  if (mode !== a2dp.getMode()) {
+    logger.warn('Suppress old mode event to avoid confusing users.')
+    return
+  }
   switch (state) {
     case protocol.CONNECTION_STATE.CONNECTED:
-      if (lastIntent === 'play_bluetoothmusic') {
+      if (lastUrl === '/play_bluetoothmusic') {
         setTimer(() => {
-          if (a2dp.getAudioState() !== protocol.AUDIO_STATE.PLAYING) {
+          if (a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED &&
+            a2dp.getAudioState() !== protocol.AUDIO_STATE.PLAYING) {
             var dev = a2dp.getConnectedDevice()
             if (dev != null) {
               speak(getText('PLAY_FAILED_ARG1S', dev.name))
@@ -144,10 +183,15 @@ function onConnectionStateChangedListener (mode, state, device) {
         speak(getText('PLEASE_WAIT'))
       } else {
         speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
+        lastUrl = '/derived_from_phone'
       }
       break
     case protocol.CONNECTION_STATE.DISCONNECTED:
-      speak(getText('DISCONNECTED'))
+      if (lastUrl !== '/implicit_disconnect' && lastUrl !== '/bluetooth_disconnect') {
+        speak(getText('DISCONNECTED'))
+      } else {
+        logger.debug('Suppress "disconnected" prompt while NOT user explicit intent.')
+      }
       break
     case protocol.CONNECTION_STATE.CONNECT_FAILED:
       if (mode === protocol.A2DP_MODE.SOURCE) {
@@ -155,7 +199,7 @@ function onConnectionStateChangedListener (mode, state, device) {
       }
       break
     case protocol.CONNECTION_STATE.AUTOCONNECT_FAILED:
-      if (lastIntent === 'bluetooth_broadcast') {
+      if (lastUrl === '/bluetooth_broadcast') {
         // NOP while auto connect failed if user only says 'open bluetooth'.
       } else {
         speak(getText('SOURCE_CONNECT_FAILED_ARG1S', device.name), res.AUDIO[state])
@@ -171,7 +215,7 @@ function onAudioStateChangedListener (mode, state, extra) {
   switch (state) {
     case protocol.AUDIO_STATE.PLAYING:
       a2dp.mute()
-      service.openUrl('yoda-app://bluetooth-music/start')
+      service.openUrl(res.URL.BLUETOOTH_MUSIC)
       break
     default:
       break
@@ -185,15 +229,30 @@ function onDiscoveryStateChangedListener (mode, state, extra) {
   }
   switch (state) {
     case protocol.DISCOVERY_STATE.ON:
-      os.effect.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true, zIndex: 2 })
-        .catch((err) => {
-          logger.error('bluetooth play light error: ', err)
-        })
+      if (lastUrl !== '/implicit_disconnect' && lastUrl !== '/bluetooth_disconnect') {
+        rt.effect.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true, zIndex: 2 })
+          .catch((err) => {
+            logger.error('bluetooth play light error: ', err)
+          })
+      } else {
+        logger.debug('Suppress "discovery" light in conditions which is not user explicit intents.')
+      }
       break
     case protocol.DISCOVERY_STATE.OFF:
-      os.effect.stop(res.LIGHT.DISCOVERY_ON)
+      rt.effect.stop(res.LIGHT.DISCOVERY_ON)
       break
     case protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED:
+      break
+    default:
+      break
+  }
+}
+
+function onCallStateChangedListener (state, extra) {
+  logger.debug(`onCallStateChanged(${state})`)
+  switch (state) {
+    case protocol.CALL_STATE.INCOMING:
+      service.openUrl(res.URL.BLUETOOTH_CALL)
       break
     default:
       break
@@ -204,10 +263,13 @@ var service = Service({
   created: () => {
     logger.debug('Bluetooth service created')
     a2dp = bluetooth.getAdapter(protocol.PROFILE.A2DP)
+    hfp = bluetooth.getAdapter(protocol.PROFILE.HFP)
     a2dp.on('radio_state_changed', onRadioStateChangedListener)
     a2dp.on('connection_state_changed', onConnectionStateChangedListener)
     a2dp.on('audio_state_changed', onAudioStateChangedListener)
     a2dp.on('discovery_state_changed', onDiscoveryStateChangedListener)
+    hfp.on('call_state_changed', onCallStateChangedListener)
+    deviceName = `<num=tel>${system.getDeviceName()}</num>`
   },
   destroyed: () => {
     logger.debug('Bluetooth service destroyed')
@@ -237,7 +299,7 @@ service.handleUrl = (url) => {
   cancelTimer()
   var handler = urlHandlers[url.pathname]
   if (typeof handler === 'function') {
-    lastIntent = url.pathname
+    lastUrl = url.pathname
     handler(url)
   } else {
     speak(getText('FALLBACK'))
