@@ -5,14 +5,11 @@
  * @description provide the battery state management.
  */
 
-var manifest = require('@yoda/manifest')
-var floraDisposable = require('@yoda/flora/disposable')
-
 /**
  * @returns {boolean} true if device has battery support enabled
  */
 function isBatterySupported () {
-  return manifest.isCapabilityEnabled('battery')
+  return require('@yoda/manifest').isCapabilityEnabled('battery')
 }
 
 /**
@@ -22,7 +19,7 @@ function isBatterySupported () {
  * @returns {object} battery info
  */
 function getBatteryInfo (options) {
-  return floraDisposable.once('battery.info', options)
+  return require('@yoda/flora/disposable').once('battery.info', options)
     .then(msg => {
       var data
       try {
