@@ -5,12 +5,7 @@
 var EventEmitter = require('events')
 var SpeechSynthesizer = require('./out/speech-synthesis.node').SpeechSynthesizer
 
-var SYNTH_LABEL = Symbol('synth#label')
-var UTTER = Symbol('synth#utter')
-var STATUS = Symbol('synth#status')
-var QUEUE = Symbol('synth#queue')
-var NATIVE = Symbol('synth#native')
-var EFFECT = Symbol('synth#effect')
+var symbol = require('./symbol')
 
 var SpeechSynthesisEffectUri = 'system://setSpeaking.js'
 
@@ -35,26 +30,26 @@ var Events = ['start', 'end', 'cancel']
 class SpeechSynthesis {
   constructor (api) {
     api = api || global[Symbol.for('yoda#api')]
-    this[SYNTH_LABEL] = api.appId
-    this[EFFECT] = api.effect
-    this[QUEUE] = []
-    this[NATIVE] = new SpeechSynthesizer()
-    this[NATIVE].setup(this.onevent.bind(this))
+    this[symbol.label] = api.appId
+    this[symbol.effect] = api.effect
+    this[symbol.queue] = []
+    this[symbol.native] = new SpeechSynthesizer()
+    this[symbol.native].setup(this.onevent.bind(this))
 
-    this[UTTER] = null
-    this[STATUS] = Status.none
+    this[symbol.utter] = null
+    this[symbol.status] = Status.none
   }
 
   get paused () {
-    return (this[STATUS] & Status.paused) > 0
+    return (this[symbol.status] & Status.paused) > 0
   }
 
   get pending () {
-    return (this[STATUS] & Status.pending) > 0
+    return (this[symbol.status] & Status.pending) > 0
   }
 
   get speaking () {
-    return (this[STATUS] & Status.speaking) > 0
+    return (this[symbol.status] & Status.speaking) > 0
   }
 
   /**
@@ -66,20 +61,20 @@ class SpeechSynthesis {
    * @returns {SpeechSynthesisUtterance} the utterance
    */
   speak (utterance) {
-    this[STATUS] = Status.pending
+    this[symbol.status] = Status.pending
     if (typeof utterance === 'string') {
       utterance = new SpeechSynthesisUtterance(utterance)
     }
     if (!(utterance instanceof SpeechSynthesisUtterance)) {
       throw TypeError('Expect a string or SpeechSynthesisUtterance on SpeechSynthesis.speak')
     }
-    var idx = this[QUEUE].indexOf(utterance)
+    var idx = this[symbol.queue].indexOf(utterance)
     if (idx < 0) {
-      utterance.setId(this[SYNTH_LABEL])
-      this[QUEUE].push(utterance)
+      utterance.setId(this[symbol.label])
+      this[symbol.queue].push(utterance)
     }
-    if (this[STATUS] === Status.none) {
-      this[STATUS] = Status.pending
+    if (this[symbol.status] === Status.none) {
+      this[symbol.status] = Status.pending
     }
     this.go()
     return utterance
@@ -92,36 +87,39 @@ class SpeechSynthesis {
    * If an utterance is currently being spoken, speaking will stop immediately.
    */
   cancel () {
-    if (this[STATUS] === Status.speaking) {
-      this[NATIVE].cancel()
+    if (this[symbol.status] === Status.speaking) {
+      this[symbol.native].cancel()
     }
   }
 
   playStream () {
-    this[STATUS] = Status.pending
+    this[symbol.status] = Status.pending
     var utterance = new SpeechSynthesisUtterance()
-    utterance.setId(this[SYNTH_LABEL])
-    this[QUEUE].push(utterance)
-    if (this[STATUS] === Status.none) {
-      this[STATUS] = Status.pending
+    utterance.setId(this[symbol.label])
+    this[symbol.queue].push(utterance)
+    if (this[symbol.status] === Status.none) {
+      this[symbol.status] = Status.pending
     }
     this.go()
     return utterance
   }
 
   onevent (eve, errCode) {
-    var utter = this[UTTER]
+    var utter = this[symbol.utter]
     if (eve === 0) {
-      this[STATUS] = Status.speaking
+      this[symbol.status] = Status.speaking
     } else if (eve > 0) {
-      this[STATUS] = Status.none
-      this[UTTER] = null
-      this[EFFECT].stop(SpeechSynthesisEffectUri)
+      this[symbol.status] = Status.none
+      this[symbol.utter] = null
+      this[symbol.effect].stop(SpeechSynthesisEffectUri)
     }
     if (utter == null) {
       return
     }
     var name = Events[eve]
+    if (this[symbol.hook]) {
+      this[symbol.hook](name, utter)
+    }
     if (name === 'cancel' && errCode !== 0) {
       var err = new Error(`SpeechSynthesisError: code(${errCode})`)
       err.code = errCode
@@ -133,20 +131,26 @@ class SpeechSynthesis {
   }
 
   go () {
-    if (this[UTTER]) {
+    if (this[symbol.utter]) {
       return
     }
-    if (this[QUEUE].length <= 0) {
+    if (this[symbol.queue].length <= 0) {
       return
     }
-    var utter = this[QUEUE].shift()
-    this[UTTER] = utter
+    var utter = this[symbol.queue].shift()
+    this[symbol.utter] = utter
     if (utter.text) {
-      this[NATIVE].speak(utter)
+      if (this[symbol.hook]) {
+        this[symbol.hook]('speak', utter)
+      }
+      this[symbol.native].speak(utter)
     } else {
-      this[NATIVE].playStream(utter)
+      if (this[symbol.hook]) {
+        this[symbol.hook]('playStream', utter)
+      }
+      this[symbol.native].playStream(utter)
     }
-    this[EFFECT].play(SpeechSynthesisEffectUri)
+    this[symbol.effect].play(SpeechSynthesisEffectUri)
   }
 }
 

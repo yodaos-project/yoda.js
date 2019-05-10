@@ -2,22 +2,39 @@ var path = require('path')
 var _ = require('@yoda/util')._
 var symbol = require('./symbol')
 
+module.exports.getManifest = getManifest
 module.exports.loadPackage = loadPackage
 module.exports.getComponent = getComponent
 
-function loadPackage (api, registry) {
+function getManifest (api) {
+  var manifest = api[symbol.manifest]
+  if (manifest != null) {
+    return manifest
+  }
   var appHome = api.appHome
   var packageJson = require(path.join(appHome, 'package.json'))
-  var services = _.get(packageJson, 'manifest.services', [])
+  manifest = packageJson.manifest || {}
 
+  ;['services', 'hosts'].forEach(field => {
+    var ff = _.get(manifest, field, [])
+    manifest[field] = ff.map(it => {
+      if (!Array.isArray(it)) {
+        it = [ it ]
+      }
+      return it
+    })
+  })
+
+  api[symbol.manifest] = manifest
+  return manifest
+}
+
+function loadPackage (api, registry) {
+  var appHome = api.appHome
+  var manifest = getManifest(api)
+  var services = manifest.services
   services.forEach(it => {
-    if (!Array.isArray(it)) {
-      it = [ it ]
-    }
     var name = it[0]
-    if (typeof name !== 'string') {
-      return
-    }
     registry.service[name] = {
       path: path.join(appHome, _.get(it, '1.main', name))
     }
