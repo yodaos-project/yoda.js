@@ -112,6 +112,7 @@ YodaLocalPackage(yodaos-effect @yodaos/effect)
 YodaLocalPackage(yodaos-keyboard @yodaos/keyboard)
 YodaLocalPackage(yodaos-speech-synthesis @yodaos/speech-synthesis)
 YodaLocalPackage(yodaos-storage @yodaos/storage)
+YodaLocalPackage(yodaos-voice-interface @yodaos/voice-interface)
 
 # root scope packages
 YodaLocalPackage(glob)
