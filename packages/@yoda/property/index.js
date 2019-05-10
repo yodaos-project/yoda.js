@@ -20,7 +20,23 @@
  * - normal key: otherwise are read and write, but in-memory.
  */
 
-var native = require('./property.node')
+var native
+if (process.env.YODA_RUN_MODE === 'host') {
+  // A simple implementation for host
+  native = {
+    PROP_VALUE_MAX: 30,
+    map: {},
+    get: function (key) {
+      return this.map[key]
+    },
+    set: function (key, val) {
+      this.map[key] = val
+    }
+  }
+} else {
+  native = require('./property.node')
+}
+
 var PROP_VALUE_MAX = native.PROP_VALUE_MAX
 
 function normalize (key, flag) {
