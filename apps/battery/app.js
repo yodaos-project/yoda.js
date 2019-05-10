@@ -11,7 +11,7 @@ module.exports = function (activity) {
   var contextMgr = new ContextManager(activity)
   activity.media.on('error', err => logger.warn(err))
 
-  function notifyMedia (url, callback) {
+  function notifyMedia (ctx, url, callback) {
     logger.log('notify media will setForeground:', url)
     activity.media.start(url, { impatient: false })
       .then(() => {
@@ -20,33 +20,33 @@ module.exports = function (activity) {
           return
         }
         logger.log('notify media callback will exit:', url)
-        this.exit()
+        ctx.exit()
       })
       .catch(error => {
         logger.warn(error)
       })
   }
 
-  function notifyTTS (text) {
+  function notifyTTS (ctx, text) {
     if (text === false) {
-      return this.exit()
+      return ctx.exit()
     }
     logger.log('notifyTTS', text)
     activity.tts.speak(text)
       .then(() => {
         logger.log('notify tts callback will exit:', text)
-        this.exit()
+        ctx.exit()
       })
       .catch(error => {
         logger.error(error)
       })
   }
 
-  function powerStatusChange (isOnline, isPlaying, testPercent) {
+  function powerStatusChange (ctx, isOnline, isPlaying, testPercent) {
     var sound = isOnline ? 'system://power_plug.ogg' : 'system://power_pull.ogg'
     activity.playSound(sound).then(() => {
       return battery.onPowerStatusChanged(isOnline, isPlaying, testPercent)
-    }).then(notifyTTS.bind(this))
+    }).then((text) => notifyTTS(ctx, text))
   }
 
   function pushNotification () {
@@ -72,54 +72,58 @@ module.exports = function (activity) {
       })
   }
 
-  contextMgr.on('request', function (context) {
-    var intent = context.nlp.intent
+  contextMgr.on('request', function (ctx) {
+    var intent = ctx.nlp.intent
     logger.log('battery_intent:', intent)
     switch (intent) {
       case 'battery_usetime':
-        battery.getUseTime().then(notifyTTS.bind(context))
+        battery.getUseTime().then((text) => notifyTTS(ctx, text))
         break
       case 'battery_charging':
-        battery.isCharging().then(notifyTTS.bind(context))
+        battery.isCharging().then((text) => notifyTTS(ctx, text))
         break
       case 'battery_level':
-        battery.getLevel().then(notifyTTS.bind(context))
+        battery.getLevel().then((text) => notifyTTS(ctx, text))
         break
       default:
         logger.warn('unsupported intent:', intent)
     }
   })
 
-  contextMgr.on('url', function handleUrl (context) {
-    var url = context.urlObj
+  contextMgr.on('url', function handleUrl (ctx) {
+    var url = ctx.urlObj
     if (!url || !url.pathname) {
       logger.warn('url object is invalid')
       return
     }
     switch (url.pathname) {
       case '/power_on':
-        powerStatusChange.call(context, true)
+        powerStatusChange(ctx, true)
         break
       case '/power_off':
-        powerStatusChange.call(context, false,
+        powerStatusChange(ctx, false,
           url.query && url.query.is_play,
           url.query && url.query.is_test && url.query.test_percent)
         break
       case '/low_power_20':
-        battery.lowerPower(20, url.query && url.query.is_play).then(notifyMedia.bind(context))
+        battery.lowerPower(20, url.query && url.query.is_play)
+          .then((url) => notifyMedia(ctx, url))
         break
       case '/low_power_10':
-        battery.lowerPower(10, url.query && url.query.is_play).then(notifyMedia.bind(context))
+        battery.lowerPower(10, url.query && url.query.is_play)
+          .then((url) => notifyMedia(ctx, url))
         break
       case '/low_power_8':
         logger.error('random:', Math.random())
-        pushNotification.call(context)
+        pushNotification()
         break
       case '/temperature_55':
-        battery.temperatureAbnormal(true).then(notifyMedia.bind(context))
+        battery.temperatureAbnormal(true)
+          .then((url) => notifyMedia(ctx, url))
         break
       case '/temperature_0':
-        battery.temperatureAbnormal(false).then(notifyMedia.bind(context))
+        battery.temperatureAbnormal(false)
+          .then((url) => notifyMedia(ctx, url))
         break
       case '/temperature_light_55':
         logger.warn('temperatureAbnormalLight: true')
@@ -136,14 +140,15 @@ module.exports = function (activity) {
         })
         break
       case '/test_batlevel':
-        battery.getLevel().then(notifyTTS)
+        battery.getLevel().then((text) => notifyTTS(ctx, text))
         break
       case '/test_use_time':
-        battery.getUseTime().then(notifyTTS)
+        battery.getUseTime().then((text) => notifyTTS(ctx, text))
         break
       case '/test_time_full':
         var isCharingError = url.query && url.query.is_charging_error
-        battery.isCharging(isCharingError).then(notifyTTS)
+        battery.isCharging(isCharingError)
+          .then((text) => notifyTTS(ctx, text))
         break
       default:
         logger.warn('without this path:', url.pathname)
