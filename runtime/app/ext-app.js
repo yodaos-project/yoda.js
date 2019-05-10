@@ -36,7 +36,8 @@ function createExtApp (appId, metadata, bridge, mode, options) {
   var cp = childProcess.fork(entry, [ target, mode ], {
     cwd: target,
     env: Object.assign({}, process.env),
-    stdio: 'inherit'
+    // rklog would redirect process log to logd if stdout is not a tty
+    stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ]
   })
   bridge.childProcess = cp
   logger.info(`Forked child app ${target}(${cp.pid}).`)
