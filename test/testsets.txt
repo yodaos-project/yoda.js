@@ -22,6 +22,7 @@ component/dispatcher/*.test.js
 component/keyboard/*.test.js
 component/lifetime/*.test.js
 component/light/*.test.js
+component/dnd-mode/*.test.js
 descriptor/activity/*.test.js
 descriptor/keyboard/*.test.js
 descriptor/tts/*.test.js
