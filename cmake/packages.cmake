@@ -135,4 +135,6 @@ if(NOT CMAKE_BUILD_HOST)
   YodaLocalPackage(yoda-wifi @yoda/wifi)
 endif()
 
-install(DIRECTORY ${YODAPKG_INSTALL_PREFIX} DESTINATION /usr/lib)
+install(DIRECTORY ${YODAPKG_INSTALL_PREFIX}
+        DESTINATION /usr/lib
+        USE_SOURCE_PERMISSIONS)
