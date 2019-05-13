@@ -47,9 +47,6 @@ SpeechSynthesizer::~SpeechSynthesizer() {
 
 Value SpeechSynthesizer::setup(const CallbackInfo& info) {
   Napi::Env env = info.Env();
-  if (player) {
-    return env.Undefined();
-  }
   auto status = napi_create_threadsafe_function(
       env, info[0].As<Function>(), env.Undefined(), env.Undefined(),
       /** max_queue */ 5, /** initial_ref */ 1,
@@ -116,21 +113,22 @@ Value SpeechSynthesizer::speak(const CallbackInfo& info) {
   });
   this->player->init(ss);
 
-  this->floraAgent.subscribe(id.c_str(), [this, id](const char* name,
-                                                    std::shared_ptr<Caps>& msg,
-                                                    uint32_t type) {
+  this->id = id;
+  this->floraAgent.subscribe(id.c_str(), [this](const char* name,
+                                                std::shared_ptr<Caps>& msg,
+                                                uint32_t type) {
     int32_t status = 0;
     msg->read(status);
     if (status > 0) {
       fprintf(stdout, "[SpeechSynthesizer] end(%d)\n", status);
       this->player->end();
-      this->floraAgent.unsubscribe(id.c_str());
+      this->floraAgent.unsubscribe(this->id.c_str());
       return;
     }
 
     std::vector<uint8_t> data;
     msg->read(data);
-    fprintf(stdout, "[SpeechSynthesizer] write data(%d)\n", data.size());
+    fprintf(stdout, "[SpeechSynthesizer] write data(%zu)\n", data.size());
     this->player->write(data);
   });
   std::shared_ptr<Caps> msg = Caps::new_instance();
@@ -151,6 +149,10 @@ Value SpeechSynthesizer::speak(const CallbackInfo& info) {
 
 Value SpeechSynthesizer::cancel(const CallbackInfo& info) {
   auto env = info.Env();
+  if (this->player == nullptr) {
+    return env.Undefined();
+  }
+  this->floraAgent.unsubscribe(this->id.c_str());
   this->player->cancel();
   return env.Undefined();
 }
@@ -190,20 +192,21 @@ Value SpeechSynthesizer::playStream(const CallbackInfo& info) {
   });
   this->player->init(ss);
 
-  this->floraAgent.subscribe(id.c_str(), [this, id](const char* name,
-                                                    std::shared_ptr<Caps>& msg,
-                                                    uint32_t type) {
-    int32_t status = 0;
-    msg->read(status);
-    if (status > 0) {
-      this->player->end();
-      this->floraAgent.unsubscribe(id.c_str());
-      return;
-    }
-    std::vector<uint8_t> data;
-    msg->read(data);
-    this->player->write(data);
-  });
+  this->id = id;
+  this->floraAgent.subscribe(id.c_str(),
+                             [this](const char* name,
+                                    std::shared_ptr<Caps>& msg, uint32_t type) {
+                               int32_t status = 0;
+                               msg->read(status);
+                               if (status > 0) {
+                                 this->player->end();
+                                 this->floraAgent.unsubscribe(this->id.c_str());
+                                 return;
+                               }
+                               std::vector<uint8_t> data;
+                               msg->read(data);
+                               this->player->write(data);
+                             });
   return env.Undefined();
 }
 
@@ -221,7 +224,7 @@ void SpeechSynthesizer::onevent(Napi::Function fn, void* data) {
     this->player = nullptr;
   }
 
-  fprintf(stdout, "[SpeechSynthesizer] calling js\n", eve);
+  fprintf(stdout, "[SpeechSynthesizer] calling js for Event(%d)\n", eve);
   fn.Call({ Number::New(env, (uintptr_t)data), Number::New(env, errCode) });
   fprintf(stdout, "[SpeechSynthesizer] Event(%d) fired\n", eve);
 }

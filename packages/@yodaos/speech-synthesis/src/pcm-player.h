@@ -38,6 +38,5 @@ class PcmPlayer {
   EventListener onevent;
   pa_simple* stream = nullptr;
   ThreadPool* tp;
-  ThreadPool* drainp;
   PcmPlayerStatus status = player_status_pending;
 };

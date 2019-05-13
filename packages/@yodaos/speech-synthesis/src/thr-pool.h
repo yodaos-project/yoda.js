@@ -107,6 +107,11 @@ class ThreadPool {
     push(task);
   }
 
+  void clear() {
+    std::lock_guard<std::mutex> locker(task_mutex);
+    pending_tasks.clear();
+  }
+
   void finish() {
     close();
     init_idle_threads();
