@@ -6,7 +6,7 @@ class Broadcast {
     this.component = runtime.component
     this.descriptor = runtime.descriptor
 
-    this.broadcasts = [ 'yodaos.on-phase-reset', 'yodaos.on-phase-ready' ]
+    this.broadcasts = [ 'yodaos.on-phase-reset', 'yodaos.on-phase-ready', 'yodaos.on-time-changed' ]
     this.interests = Object.create(null)
   }
 
