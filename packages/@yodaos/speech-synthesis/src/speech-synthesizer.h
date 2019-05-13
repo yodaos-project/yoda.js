@@ -26,6 +26,7 @@ class SpeechSynthesizer : public Napi::ObjectWrap<SpeechSynthesizer> {
   void onevent(Napi::Function fn, void* data);
 
  private:
+  std::string id;
   PcmPlayer* player = nullptr;
   int32_t errCode = 0;
 

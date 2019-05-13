@@ -8,7 +8,6 @@ bool PcmPlayer::init(pa_sample_spec ss) {
     return true;
 
   tp = new ThreadPool(1);
-  drainp = new ThreadPool(1);
   int err;
   stream = pa_simple_new(nullptr, "speech-synthesizer", PA_STREAM_PLAYBACK,
                          nullptr, "tts", &ss, nullptr, nullptr, &err);
@@ -26,8 +25,6 @@ void PcmPlayer::destroy() {
     stream = nullptr;
     tp->close();
     delete tp;
-    drainp->close();
-    delete drainp;
   }
 }
 
@@ -45,7 +42,7 @@ void PcmPlayer::write(std::vector<uint8_t>& data) {
 
   tp->push([this, data]() {
     if (stream == nullptr) {
-      fprintf(stderr, "[PcmPlayer] Unexpected null on stream");
+      fprintf(stderr, "[PcmPlayer] Unexpected null on stream\n");
       return;
     }
     if (status != player_status_playing &&
@@ -58,7 +55,7 @@ void PcmPlayer::write(std::vector<uint8_t>& data) {
     }
     int err;
 
-    fprintf(stdout, "[PcmPlayer] write data(%d)\n", data.size());
+    fprintf(stdout, "[PcmPlayer] write data(%zu)\n", data.size());
     if (pa_simple_write(stream, data.data(), data.size(), &err) < 0) {
       fprintf(stderr, "[PcmPlayer] write data error(%d): %s\n", err,
               pa_strerror(err));
@@ -75,7 +72,7 @@ void PcmPlayer::end() {
   if (status == player_status_playing) {
     status = player_status_pending_end;
   }
-  drainp->push([this]() {
+  tp->push([this]() {
     if (stream == nullptr) {
       fprintf(stderr, "[PcmPlayer] Unexpected null on stream\n");
       return;
@@ -89,10 +86,12 @@ void PcmPlayer::end() {
     }
     int err;
     fprintf(stdout, "[PcmPlayer] draining player\n");
-    if (pa_simple_drain(stream, &err) < 0) {
-      fprintf(stderr, "[PcmPlayer] drain player error(%d): %s\n", err,
-              pa_strerror(err));
-    }
+    do {
+      if (pa_simple_drain(stream, &err) < 0) {
+        fprintf(stderr, "[PcmPlayer] drain player error(%d): %s\n", err,
+                pa_strerror(err));
+      }
+    } while (err == /** drain timed out, retrying */ PA_ERR_TIMEOUT);
     fprintf(stdout, "[PcmPlayer] drained player, status(%d)\n", status);
 
     if (status == player_status_cancelled) {
@@ -101,16 +100,25 @@ void PcmPlayer::end() {
       onevent(pcm_player_ended);
     }
     status = player_status_pending;
+    /** clears all pending tasks on end */
+    tp->clear();
   });
 }
 
 void PcmPlayer::cancel() {
+  if (status != player_status_playing && status != player_status_pending_end) {
+    fprintf(
+        stdout,
+        "[PcmPlayer] player not playing nor pending end, skip cancelling\n");
+    return;
+  }
   status = player_status_cancelled;
   int err;
   if (pa_simple_flush(stream, &err) < 0) {
     fprintf(stderr, "[PcmPlayer] flush data error(%d): %s\n", err,
             pa_strerror(err));
   }
-  tp->finish();
+  /** clears pending writes */
+  tp->clear();
   this->end();
 }
