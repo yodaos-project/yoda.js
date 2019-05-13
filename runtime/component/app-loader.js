@@ -28,7 +28,8 @@ function AppChargeur (runtime) {
   this.broadcasts = {
     'yodaos.on-system-booted': [],
     'yodaos.on-phase-reset': [],
-    'yodaos.on-phase-ready': []
+    'yodaos.on-phase-ready': [],
+    'yodaos.on-time-changed': []
   }
 }
 
