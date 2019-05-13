@@ -94,6 +94,7 @@ function BluetoothA2dp (deviceName) {
   this._end = false
   this.lastMode = protocol.A2DP_MODE.SINK // last used a2dp mode
   this.localName = deviceName // local bluetooth device name
+  this.settingVolume = false
 
   this._flora = new FloraComp(null, {
     'uri': 'unix:/var/run/flora.sock',
@@ -163,12 +164,13 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       }
     } else if (msg.action === 'volumechange') {
       var vol = msg.value
-      if (vol === undefined) {
-        vol = AudioManager.getVolume(AudioManager.STREAM_PLAYBACK)
+      var sysVol = AudioManager.getVolume(AudioManager.STREAM_PLAYBACK)
+      if (vol != null && vol !== sysVol) {
+        this.settingVolume = true
+        AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
+        logger.info(`Set volume ${vol} for bluetooth a2dp sink.`)
+        this.emit('audio_state_changed', protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.VOLUMN_CHANGED, {volumn: vol})
       }
-      AudioManager.setVolume(vol)
-      logger.info(`Set volume ${vol} for bluetooth a2dp sink.`)
-      this.emit('audio_state_changed', protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.VOLUMN_CHANGED, {volumn: vol})
     } else if (msg.action === 'discovery') {
       var results = msg.results
       var nbr = results.deviceList != null ? results.deviceList.length : 0
@@ -363,6 +365,11 @@ BluetoothA2dp.prototype.unmute = function () {
  * @returns {boolean} `true` if send command success else `false`.
  */
 BluetoothA2dp.prototype.syncVol = function (vol) {
+  if (this.settingVolume) {
+    this.settingVolume = false
+    logger.warn('Ignore sync while setting volume.')
+    return true
+  }
   logger.debug(`sync volume(${vol})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
     return this._send(this.lastMode, 'VOLUME', { value: vol })
