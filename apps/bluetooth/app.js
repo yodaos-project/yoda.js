@@ -31,31 +31,19 @@ var app = Application({
         break
       default:
         service = app.getService('bluetooth-service')
+        if (service == null) {
+          logger.debug('bluetooth service not running, now start it.')
+          app.startService()
+          service = app.getService('bluetooth-service')
+        }
         if (service != null) {
           var text = service.handleUrl(url)
           if (typeof text === 'string') {
             speak(text)
           } else if (text != null && typeof text === 'object') {
-            speak(text.text, text.alt)
+            speak(text.text, text.altVoice)
           }
         }
-        break
-    }
-  },
-  broadcast: channel => {
-    logger.error('on broadcast: ', channel)
-    switch (channel) {
-      case 'yoda.on-system-booted':
-        app.startService()
-        break
-      case 'yoda.on-system-shutdown':
-        var service = app.getService('bluetooth-service')
-        if (service != null) {
-          service.finish()
-        }
-        rt.exit()
-        break
-      default:
         break
     }
   }

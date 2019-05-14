@@ -11,7 +11,9 @@ var rt = global[Symbol.for('yoda#api')]
 var strings = require('./strings.json')
 var config = require('./config.json')
 var res = require('./resources.json')
+var Agent = require('@yoda/flora').Agent
 
+var agent = null
 var deviceName = null
 var a2dp = null
 var hfp = null
@@ -45,68 +47,74 @@ function cancelTimer () {
   }
 }
 
+function resetLastUrl () {
+  lastUrl = '/derived_from_phone'
+}
+
+function uploadEvent (event, data) {
+  logger.debug('upload bluetooth event =', event)
+  var msg = {
+    profile: 'A2DP.SOURCE',
+    event: event,
+    data: data
+  }
+  agent.post('yodaos.apps.bluetooth', [ JSON.stringify(msg) ])
+}
+
 var urlHandlers = {
   // ask for how to use bluetooth
-  '/ask_bluetooth': () => {
+  '/usage': () => {
     speak(getText('ASK'))
   },
   // open bluetooth
-  '/bluetooth_broadcast': (url) => {
+  '/open': (url) => {
     if (url.query != null && url.query.mode != null) {
       a2dp.open(url.query.mode)
     } else {
       a2dp.open()
     }
   },
+  // open bluetooth then connect to remote device (phone or speaker)
+  '/open_and_connect': (url) => {
+    if (url.query != null && url.query.mode != null) {
+      a2dp.open(url.query.mode)
+    } else {
+      a2dp.open()
+    }
+  },
+  // open bluetooth then connect to phone then start play music (always sink mode)
+  '/open_and_play': () => {
+    if (a2dp.isConnected()) {
+      a2dp.play()
+    } else {
+      a2dp.open(protocol.A2DP_MODE.SINK, {autoplay: true})
+    }
+  },
   // close bluetooth
-  '/bluetooth_disconnect': () => {
+  '/close': () => {
     a2dp.close()
   },
-  // open and auto connect to history device (use last mode as default)
-  '/connect_devices': () => {
-    a2dp.open()
-  },
-  // open and auto connect to history phone (means sink mode)
-  '/connect_phone': () => {
-    a2dp.open(protocol.A2DP_MODE.SINK)
-  },
-  // open and auto connect to history speaker (means source mode)
-  '/connect_speaker': () => {
-    a2dp.open(protocol.A2DP_MODE.SOURCE)
-  },
-  // disconnect from remote device
-  '/disconnect_devices': () => {
+  // disconnect from remote device whatever in sink or source mode
+  '/disconnect': () => {
     a2dp.disconnect()
-  },
-  // disconnect from remote phone
-  '/disconnect_phone': () => {
-    a2dp.disconnect()
-  },
-  // disconnect from remote speaker
-  '/disconnect_speaker': () => {
-    a2dp.disconnect()
-  },
-  // sequentially open bt then connect to phone then start play music
-  '/play_bluetoothmusic': () => {
-    a2dp.open(protocol.A2DP_MODE.SINK, {autoplay: true})
   }
 }
 
 function handleSinkRadioOn (autoConn) {
   switch (lastUrl) {
-    case '/bluetooth_broadcast':
+    case '/open':
       if (autoConn) {
         speak(getText('SINK_OPENED'), res.AUDIO['ON_OPENED'])
       } else {
         speak(getText('SINK_FIRST_OPENED_ARG1S', deviceName), res.AUDIO['ON_OPENED'])
       }
-      lastUrl = '/derived_from_phone'
+      resetLastUrl()
       break
-    case '/connect_phone':
-    case '/play_bluetoothmusic':
+    case '/open_and_connect':
+    case '/open_and_play':
       if (autoConn) {
         setTimer(() => {
-          if (a2dp.getConnectionState() !== protocol.CONNECTION_STATE.CONNECTED) {
+          if (!a2dp.isConnected()) {
             speak(getText('SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S', deviceName), res.AUDIO['ON_AUTOCONNECT_FAILED'])
           }
         }, config.TIMER.DELAY_BEFORE_AUTOCONNECT_FAILED)
@@ -125,12 +133,15 @@ function handleSourceRadioOn (autoConn) {
   } else {
     speak(getText('SOURCE_FIRST_OPENED'), res.AUDIO['ON_OPENED'])
   }
-  lastUrl = '/derived_from_phone'
+  resetLastUrl()
 }
 
 function onRadioStateChangedListener (mode, state, extra) {
   logger.debug(`${mode} onRadioStateChanged(${state}, ${JSON.stringify(extra)})`)
   cancelTimer()
+  if (mode === protocol.A2DP_MODE.SOURCE) {
+    uploadEvent(state)
+  }
   if (mode !== a2dp.getMode()) {
     logger.warn('Suppress old mode event to avoid confusing users.')
     return
@@ -152,9 +163,10 @@ function onRadioStateChangedListener (mode, state, extra) {
       }
       break
     case protocol.RADIO_STATE.OFF:
-      if (lastUrl === '/bluetooth_disconnect') {
+      if (lastUrl === '/close') {
         speak(getText('CLOSED'), res.AUDIO[state])
       }
+      service.finish()
       break
     default:
       break
@@ -164,16 +176,18 @@ function onRadioStateChangedListener (mode, state, extra) {
 function onConnectionStateChangedListener (mode, state, device) {
   logger.debug(`${mode} onConnectionStateChanged(${state})`)
   cancelTimer()
+  if (mode === protocol.A2DP_MODE.SOURCE) {
+    uploadEvent(state, device)
+  }
   if (mode !== a2dp.getMode()) {
     logger.warn('Suppress old mode event to avoid confusing users.')
     return
   }
   switch (state) {
     case protocol.CONNECTION_STATE.CONNECTED:
-      if (lastUrl === '/play_bluetoothmusic') {
+      if (lastUrl === '/open_and_play') {
         setTimer(() => {
-          if (a2dp.getConnectionState() === protocol.CONNECTION_STATE.CONNECTED &&
-            a2dp.getAudioState() !== protocol.AUDIO_STATE.PLAYING) {
+          if (a2dp.isConnected() && !a2dp.isPlaying()) {
             var dev = a2dp.getConnectedDevice()
             if (dev != null) {
               speak(getText('PLAY_FAILED_ARG1S', dev.name))
@@ -183,11 +197,11 @@ function onConnectionStateChangedListener (mode, state, device) {
         speak(getText('PLEASE_WAIT'))
       } else {
         speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
-        lastUrl = '/derived_from_phone'
+        resetLastUrl()
       }
       break
     case protocol.CONNECTION_STATE.DISCONNECTED:
-      if (lastUrl !== '/implicit_disconnect' && lastUrl !== '/bluetooth_disconnect') {
+      if (lastUrl !== '/close') {
         speak(getText('DISCONNECTED'))
       } else {
         logger.debug('Suppress "disconnected" prompt while NOT user explicit intent.')
@@ -199,7 +213,7 @@ function onConnectionStateChangedListener (mode, state, device) {
       }
       break
     case protocol.CONNECTION_STATE.AUTOCONNECT_FAILED:
-      if (lastUrl === '/bluetooth_broadcast') {
+      if (lastUrl === '/open') {
         // NOP while auto connect failed if user only says 'open bluetooth'.
       } else {
         speak(getText('SOURCE_CONNECT_FAILED_ARG1S', device.name), res.AUDIO[state])
@@ -215,7 +229,7 @@ function onAudioStateChangedListener (mode, state, extra) {
   switch (state) {
     case protocol.AUDIO_STATE.PLAYING:
       a2dp.mute()
-      service.openUrl(res.URL.BLUETOOTH_MUSIC)
+      service.openUrl(res.URL.BLUETOOTH_MUSIC + state)
       break
     default:
       break
@@ -229,10 +243,10 @@ function onDiscoveryStateChangedListener (mode, state, extra) {
   }
   switch (state) {
     case protocol.DISCOVERY_STATE.ON:
-      if (lastUrl !== '/implicit_disconnect' && lastUrl !== '/bluetooth_disconnect') {
+      if (lastUrl !== '/close') {
         rt.effect.play(res.LIGHT.DISCOVERY_ON, {}, { shouldResume: true, zIndex: 2 })
           .catch((err) => {
-            logger.error('bluetooth play light error: ', err)
+            logger.error('bluetooth play light error:', err)
           })
       } else {
         logger.debug('Suppress "discovery" light in conditions which is not user explicit intents.')
@@ -241,7 +255,8 @@ function onDiscoveryStateChangedListener (mode, state, extra) {
     case protocol.DISCOVERY_STATE.OFF:
       rt.effect.stop(res.LIGHT.DISCOVERY_ON)
       break
-    case protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED:
+    case protocol.DISCOVERY_STATE.FOUND_DEVICE:
+      uploadEvent(state, extra)
       break
     default:
       break
@@ -250,13 +265,7 @@ function onDiscoveryStateChangedListener (mode, state, extra) {
 
 function onCallStateChangedListener (state, extra) {
   logger.debug(`onCallStateChanged(${state})`)
-  switch (state) {
-    case protocol.CALL_STATE.INCOMING:
-      service.openUrl(res.URL.BLUETOOTH_CALL)
-      break
-    default:
-      break
-  }
+  service.openUrl(res.URL.BLUETOOTH_CALL + state)
 }
 
 var service = Service({
@@ -270,6 +279,8 @@ var service = Service({
     a2dp.on('discovery_state_changed', onDiscoveryStateChangedListener)
     hfp.on('call_state_changed', onCallStateChangedListener)
     deviceName = `<num=tel>${system.getDeviceName()}</num>`
+    agent = new Agent('unix:/var/run/flora.sock')
+    agent.start()
   },
   destroyed: () => {
     logger.debug('Bluetooth service destroyed')
@@ -282,20 +293,12 @@ var service = Service({
       hfp.destroy()
       hfp = null
     }
-  },
-  url: (url) => {
-    logger.debug('on url: ', url)
-    logger.debug(`pathname = ${url.pathname}`)
-    switch (url.pathname) {
-      case '/stop':
-        this.finish()
-        break
-    }
+    agent.close()
   }
 })
 
 service.handleUrl = (url) => {
-  logger.debug('handleIntents: ', url.pathname)
+  logger.debug('handleUrl:', url.pathname)
   cancelTimer()
   var handler = urlHandlers[url.pathname]
   if (typeof handler === 'function') {

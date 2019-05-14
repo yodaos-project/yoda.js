@@ -12,17 +12,11 @@
     ],
     "hosts": [
       "bluetooth"
-    ],
-    "broadcast": [
-      "on-system-booted",
-      "on-system-shutdown"
     ]
   },
   "keywords": [
     "bluetooth",
-    "A2DP",
-    "AVRCP",
-    "HFP"
+    "A2DP"
   ],
   "author": "Morrowind xie <morrowindxie@gmail.com>",
   "license": "Apache 2.0"
