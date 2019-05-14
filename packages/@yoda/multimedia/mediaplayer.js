@@ -1,9 +1,12 @@
 'use strict'
 
-var native = require('./mediaplayer.node')
+var PlayerWrap = require('./mediaplayer.node').MediaPlayer
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 var AudioManager = require('@yoda/audio').AudioManager
+var delegate = require('@yoda/util/delegate')
+
+var handle = Symbol('mediaplayer#native')
 
 /**
  * @class
@@ -62,207 +65,145 @@ var AudioManager = require('@yoda/audio').AudioManager
 function MediaPlayer (stream) {
   EventEmitter.call(this)
   this._stream = stream || AudioManager.STREAM_PLAYBACK
-  this._handle = null
-  this._seekcompleteCb = null
-  this._initialize()
-  /**
-   * @property {string} indicates current state of the player
-   */
-  this.status = MediaPlayer.status.idle
-  this._ignoreCancelEvent = false
+  this[handle] = new PlayerWrap()
+  this._settled = false
+  this._preparing = false
 }
 inherits(MediaPlayer, EventEmitter)
-
-/**
- * @memberof module:@yoda/multimedia~MediaPlayer
- * @member {object} status
- */
-MediaPlayer.status = {
-  idle: 'idle',
-  preparing: 'preparing',
-  prepared: 'prepared'
-}
 
 /**
  * Initialize the media player, set callbacks
  * @private
  */
-MediaPlayer.prototype._initialize = function () {
+MediaPlayer.prototype._setup = function () {
   var streamName = AudioManager.getStreamName(this._stream)
-  this._handle = new native.Player(streamName)
-  this._handle.onprepared = this.onprepared.bind(this)
-  this._handle.onplaybackcomplete = this.onplaybackcomplete.bind(this)
-  this._handle.onbufferingupdate = this.onbufferingupdate.bind(this)
-  this._handle.onseekcomplete = this.onseekcomplete.bind(this)
-  this._handle.onplayingstatus = this.onplayingstatus.bind(this)
-  this._handle.onblockpausemode = this.onblockpausemode.bind(this)
-  this._handle.onerror = this.onerror.bind(this)
+  this[handle].setup(streamName, undefined, this._onevent.bind(this))
+  this._settled = true
 }
 
-/**
- * Prepare is ready
- * @private
- */
-MediaPlayer.prototype.onprepared = function () {
-  var vol = AudioManager.getVolume(this._stream)
-  AudioManager.setVolume(this._stream, vol)
-  this.status = MediaPlayer.status.prepared
+var EventMap = {
   /**
    * Prepared event, media resource is loaded
    * @event module:@yoda/multimedia~MediaPlayer#prepared
    */
-  this.emit('prepared')
-}
-
-MediaPlayer.prototype.onplaybackcomplete = function () {
-  this._ignoreCancelEvent = true
+  1: 'prepared',
   /**
    * Fired when media playback is complete.
    * @event module:@yoda/multimedia~MediaPlayer#playbackcomplete
    */
-  this.emit('playbackcomplete')
-}
-
-MediaPlayer.prototype.onbufferingupdate = function () {
+  2: 'playbackcomplete',
   /**
    * Fired when media buffer is update.
    * @event module:@yoda/multimedia~MediaPlayer#bufferingupdate
    */
-  this.emit('bufferingupdate')
-}
-
-MediaPlayer.prototype.onseekcomplete = function () {
-  if (typeof this._seekcompleteCb === 'function') {
-    this._seekcompleteCb()
-    this._seekcompleteCb = null
-  }
+  3: 'bufferingupdate',
   /**
    * Fired when media seek is complete.
    * @event module:@yoda/multimedia~MediaPlayer#seekcomplete
    */
-  this.emit('seekcomplete')
-}
-
-MediaPlayer.prototype.onplayingstatus = function (ext1, ext2) {
-  // TODO: nothing to to now
-}
-
-MediaPlayer.prototype.onblockpausemode = function (ext1, ext2) {
-  this.blockpausemodeEnabled = ext1 === 0
+  4: 'seekcomplete',
+  5: 'position', /** doesn't fire on synchronous call */
+  6: 'pause', /** doesn't fire on synchronous call */
+  7: 'stopped', /** doesn't fire on synchronous call */
+  8: 'playing',
   /**
    * Fired when player is blocked for no cache available to play.
    * @event module:@yoda/multimedia~MediaPlayer#blockpausemode
    * @param {boolean} enabled
    */
-  this.emit('blockpausemode', this.blockpausemodeEnabled)
-}
-
-MediaPlayer.prototype.onerror = function () {
-  this._ignoreCancelEvent = true
+  9: 'blockpausemode',
+  10: 'playingstatus',
   /**
    * Fired when something went wrong.
    * @event module:@yoda/multimedia~MediaPlayer#error
    * @type {Error}
    */
-  this.emit('error', new Error('something went wrong'))
+  100: 'error',
+  200: 'info'
 }
-
-/**
- * prepare with the given resource(URI).
- * @param {string} uri - The resource uri to play.
- * @throws {Error} uri must be a valid string.
- */
-MediaPlayer.prototype.prepare = function (uri) {
-  if (!uri) {
-    throw new Error('url must be a valid string')
+MediaPlayer.prototype._onevent = function (type, ext1) {
+  var eve = EventMap[type]
+  var args = [eve]
+  switch (eve) {
+    case 'prepared':
+      var vol = AudioManager.getVolume(this._stream)
+      AudioManager.setVolume(this._stream, vol)
+      this._preparing = false
+      break
+    case 'blockpausemode':
+      args.push(ext1 === 0)
+      break
+    case 'error':
+      args.push(new Error('player error'))
+      this._settled = false
+      this._preparing = false
+      break
   }
-  this.status = MediaPlayer.status.preparing
-  return this._handle.prepare(uri)
+  this.emit.apply(this, args)
+}
+
+delegate(MediaPlayer.prototype, handle)
+  .method('pause')
+  .method('seekTo')
+  .method('reset')
+  .method('getAudioSessionId')
+  .method('setAudioSessionId')
+  .method('getDuration')
+  .method('getPosition')
+  .method('getPlaying')
+  .method('getLooping')
+  .method('setLooping')
+  .method('setTempoDelta')
+  .method('getVolume')
+  .method('setVolume')
+
+/**
+ * initialize player with given media on the url.
+ * @param {string} url
+ */
+MediaPlayer.prototype.setDataSource = function (url) {
+  if (!this._settled) {
+    this._setup()
+  }
+  this[handle].setDataSource(url)
+  this.url = url
 }
 
 /**
- * start asynchronously.
- * @param {string} uri - The resource uri to play.
- * @throws {Error} uri must be a valid string.
+ * prepare the player.
  */
-MediaPlayer.prototype.start = function (uri) {
-  if (uri) {
-    this._handle.prepare(uri)
-    this.once('prepared', () => this._handle.start())
+MediaPlayer.prototype.prepare = function (url) {
+  if (url) {
+    this.setDataSource(url)
+  }
+  if (this.url && !this._settled) {
+    this.setDataSource(this.url)
+  }
+  this[handle].prepare()
+  this._preparing = true
+}
+
+/**
+ * start playback.
+ */
+MediaPlayer.prototype.start = function (url) {
+  if (url) {
+    this.prepare(url)
+  }
+  if (this._preparing) {
+    this.once('prepared', () => this.start())
     return
   }
-  if (this.status === MediaPlayer.status.preparing) {
-    this.once('prepared', () => this._handle.start())
-    return
-  }
-  return this._handle.start()
+  return this[handle].start()
 }
 
-/**
- * This stops the `MediaPlayer` instance, `.stop()` will destroy
- * the handle and emit 'cancel' event.
- *
- * > Don't use the instance anymore when you stopped it.
- */
 MediaPlayer.prototype.stop = function () {
-  this._handle.stop()
-  // after error or complete event emit, the cancel event should not emit.
-  // because only one event can be emit.
-  if (this._ignoreCancelEvent) {
-    return
-  }
-  /**
-   * this event is fired when the player is cancel.
-   * @event module:@yoda/multimedia~MediaPlayer#cancel
-   */
-  this.emit('cancel')
+  this._settled = false
+  return this[handle].stop()
 }
 
-/**
- * pause the playing media.
- */
-MediaPlayer.prototype.pause = function () {
-  return this._handle.pause()
-}
-
-/**
- * resume the paused media.
- */
 MediaPlayer.prototype.resume = function () {
-  if (this.status === MediaPlayer.status.preparing) {
-    this.once('prepared', () => this._handle.resume())
-    return
-  }
-  return this._handle.resume()
-}
-
-/**
- * seek to `pos`.
- * @param {number} pos - the position in ms.
- * @param {function} callback - get called when seek complete
- */
-MediaPlayer.prototype.seek = function (pos, callback) {
-  process.nextTick(() => {
-    if (typeof callback === 'function') {
-      this._seekcompleteCb = callback
-    }
-    return this._handle.seek(pos)
-  })
-}
-
-/**
- * get the  volume
- */
-MediaPlayer.prototype.getVolume = function () {
-  return this._handle.getVolume()
-}
-
-/**
- * reset the player.
- * @private
- */
-MediaPlayer.prototype.reset = function () {
-  return this._handle.reset()
+  return this.start()
 }
 
 /**
@@ -276,40 +217,18 @@ MediaPlayer.prototype.setSpeed = function (speed) {
   } else {
     speed = 0
   }
-  return this._handle.setTempoDelta(speed)
+  return this[handle].setTempoDelta(speed)
 }
-
-/**
- * disconnect the player.
- * @private
- */
-MediaPlayer.prototype.disconnect = function () {
-  return this.stop()
-}
-
-/**
- * @memberof @yoda/multimedia~MediaPlayer
- * @member {string} id - the player id.
- */
-Object.defineProperty(MediaPlayer.prototype, 'id', {
-  get: function () {
-    return this._handle.idGetter()
-  },
-  set: function (val) {
-    throw new Error('the property id is readonly')
-  }
-})
 
 /**
  * @member {boolean} playing
  * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'playing', {
+  enumerable: true,
+  configurable: true,
   get: function () {
-    return this._handle.playingStateGetter()
-  },
-  set: function (val) {
-    throw new Error('the property playing is readonly')
+    return this[handle].getPlaying()
   }
 })
 
@@ -318,11 +237,10 @@ Object.defineProperty(MediaPlayer.prototype, 'playing', {
  * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'duration', {
+  enumerable: true,
+  configurable: true,
   get: function () {
-    return this._handle.durationGetter()
-  },
-  set: function (val) {
-    throw new Error('the property duration is readonly')
+    return this[handle].getDuration()
   }
 })
 
@@ -331,50 +249,10 @@ Object.defineProperty(MediaPlayer.prototype, 'duration', {
  * @memberof @yoda/multimedia~MediaPlayer
  */
 Object.defineProperty(MediaPlayer.prototype, 'position', {
+  enumerable: true,
+  configurable: true,
   get: function () {
-    return this._handle.positionGetter()
-  },
-  set: function (val) {
-    throw new Error('the property position is readonly')
-  }
-})
-
-/**
- * @member {boolean} loopMode
- * @memberof @yoda/multimedia~MediaPlayer
- */
-Object.defineProperty(MediaPlayer.prototype, 'loopMode', {
-  get: function () {
-    return this._handle.loopModeGetter()
-  },
-  set: function (mode) {
-    return this._handle.loopModeSetter(mode)
-  }
-})
-
-/**
- * @member {string} sessionId
- * @memberof @yoda/multimedia~MediaPlayer
- */
-Object.defineProperty(MediaPlayer.prototype, 'sessionId', {
-  get: function () {
-    return this._handle.sessionIdGetter()
-  },
-  set: function (id) {
-    return this._handle.sessionIdSetter(id)
-  }
-})
-
-/**
- * @member {number} eqMode
- * @memberof @yoda/multimedia~MediaPlayer
- */
-Object.defineProperty(MediaPlayer.prototype, 'eqMode', {
-  get: function () {
-    return this._handle.eqModeGetter()
-  },
-  set: function (mode) {
-    return this._handle.eqModeSetter(mode)
+    return this[handle].getPosition()
   }
 })
 
