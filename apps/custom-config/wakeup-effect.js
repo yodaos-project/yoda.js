@@ -19,6 +19,7 @@ var AWAKE_EFFECT = 'rokid.custom_config.wakeup_sound'
 
 var WAKE_SOUND_OPEN_DEFAULT = '唤醒应答已设置为默认声音'
 var WAKE_SOUND_OPEN_CUSTOM = '唤醒应答已设置<phoneme alphabet="py" ph="wei2">为</phoneme>你录制的声音'
+var WAKE_SOUND_OPEN = '已为你开启'
 var WAKE_SOUND_CLOSE = '已关闭唤醒应答'
 var CONFIG_FAILED = '设置失败'
 var SWITCH_OPEN = 'open'
@@ -133,7 +134,8 @@ class WakeupEffect extends BaseConfig {
         ActivationConfig.defaultPath += '/'
       }
     }
-    this.refresh()
+    this.refresh(false)
+    this.initFromCloud()
   }
 
   /**
@@ -196,6 +198,26 @@ class WakeupEffect extends BaseConfig {
       return result
     })
   }
+
+  /**
+   * init config from cloud
+   */
+  initFromCloud () {
+    this.activity.get().then(prop => {
+      this.activity.httpgw.request('/v1/rokidAccount/RokidAccount/getUserCustomConfigByDevice',
+        {userId: prop.masterId}, {}).then((data) => {
+        var config = safeParse(_.get(data, 'values.wakeupSoundEffects', ''))
+        if (typeof config === 'object') {
+          config.wakeupSoundEffects = config.value
+          this.applyWakeupEffect(config, true)
+        } else {
+          logger.warn(`get custom config error: ${JSON.stringify(data)}`)
+        }
+      }).catch((err) => {
+        logger.error(`request custom config error: ${err}`)
+      })
+    })
+  }
   /**
    * process request from intent
    * only default wakeup effect for now
@@ -203,13 +225,13 @@ class WakeupEffect extends BaseConfig {
    */
   onWakeupEffectStatusChangedFromIntent (action) {
     property.set('sys.wakeupwitch', action, 'persist')
-    this.refresh()
+    this.refresh(true)
   }
 
   /**
    * refresh the activation sound
    */
-  refresh () {
+  refresh (isTtsAndExit) {
     var action = property.get('sys.wakeupwitch', 'persist')
     if (action === SWITCH_CLOSE) {
       logger.info('wakeup effect turned off')
@@ -227,20 +249,15 @@ class WakeupEffect extends BaseConfig {
         }
       })
     }
-    this.activity.get().then(prop => {
-      this.activity.httpgw.request('/v1/rokidAccount/RokidAccount/getUserCustomConfigByDevice',
-        {userId: prop.masterId}, {}).then((data) => {
-        var config = safeParse(_.get(data, 'values.wakeupSoundEffects', ''))
-        if (typeof config === 'object') {
-          config.wakeupSoundEffects = config.value
-          this.applyWakeupEffect(config, true)
-        } else {
-          logger.warn(`custom config error: ${JSON.stringify(data)}`)
-        }
-      }).catch((err) => {
-        logger.error(`request custom config error: ${err}`)
-      })
-    })
+    if (isTtsAndExit) {
+      if (action === SWITCH_OPEN) {
+        this.activity.tts.speak(WAKE_SOUND_OPEN).then(() => this.activity.exit())
+      } else if (action === SWITCH_CLOSE) {
+        this.activity.tts.speak(WAKE_SOUND_CLOSE).then(() => this.activity.exit())
+      } else {
+        this.activity.tts.speak(CONFIG_FAILED).then(() => this.activity.exit())
+      }
+    }
   }
   /**
    * process request from url
