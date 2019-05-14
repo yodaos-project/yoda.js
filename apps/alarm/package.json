@@ -1,36 +1,29 @@
 {
   "name": "@yoda/alarm",
   "version": "1.0.0",
-  "description": "Alarm for Rokid",
+  "description": "Alarm for CMCC",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "manifest": {
     "daemon": false,
-    "skills": [
-      "R507AD024F9A4E358B9493BBC11C852F",
-      "R05A20771E99463ABEBCDFDDE34B07E2"
-    ],
     "permission": [
       "INTERRUPT"
     ],
     "hosts": [
-      [ "r507ad024f9a4e358b9493bbc11c852f", {
-        "skillId": "R507AD024F9A4E358B9493BBC11C852F"
-        }
-      ]
+      [ "alarm", { "skillId": "@alarm.local" } ]
     ],
-    "notifications": [
-      "on-ready",
-      "on-system-booted"
+    "broadcasts": [
+      "yodaos.on-ready",
+      "yodaos.on-system-booted"
     ]
   },
   "keywords": [
     "alarm",
-    "rokid",
+    "cmcc",
     "skill"
   ],
-  "author": "yuna.li",
+  "author": "chenglong.su",
   "license": "MIT"
 }

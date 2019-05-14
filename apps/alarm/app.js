@@ -1,99 +1,91 @@
 'use strict'
 
-var wifi = require('@yoda/wifi')
-var logger = require('logger')('alarm')
-var getAlarms = require('./data-migration')
+var logger = require('logger')('alarm-application')
 var Core = require('./alarm-core')
+var Application = require('@yodaos/application').Application
+var inherits = require('util').inherits
+var EventEmitter = require('events').EventEmitter
 
-module.exports = function (activity) {
-  logger.log('alarm load')
-  var AlarmCore = new Core(activity)
-  activity.once('notification', (channel) => {
-    logger.log('alarm notification event: ', channel)
-    if (channel === 'on-ready' || channel === 'on-system-booted') {
-      AlarmCore.createConfigFile()
-      var state = wifi.getWifiState()
-      if (state === wifi.WIFI_CONNECTED) {
-        getAlarms(activity, (command) => AlarmCore.init(command, true))
+/**
+ * @class Alarm
+ * @param {Application} application
+ */
+function Alarm (option, api) {
+  logger.info('Alarm is create=====>')
+  EventEmitter.call(this)
+  this.api = global[Symbol.for('yoda#api')]
+  this.initApplication(option)
+  this.AlarmCore = new Core(this.api)
+  this.AlarmCore.createConfigFile()
+}
+inherits(Alarm, EventEmitter)
+
+/**
+ * init application,listen url or broadcast
+ */
+Alarm.prototype.initApplication = function initApplication (option) {
+  var self = this
+  option = {
+    url: function url (urlObj) {
+      logger.info('initApplication urlObj =====>', urlObj)
+      if (urlObj && urlObj.pathname === '/add') {
+        self.addAlarm(urlObj)
+      } else if (urlObj && urlObj.pathname === '/del') {
+        self.delAlarm(urlObj)
       } else {
-        AlarmCore.getTasksFromConfig((command) => {
-          AlarmCore.init(command)
-        })
+        logger.warn('url is not add/del, alarm app do not support')
+      }
+    },
+    broadcast: function broadcast (event) {
+      logger.info('alarm Application recv broadcast ', event)
+      if (event === 'yodaos.on-ready') {
+
+      } else if (event === 'yodaos.on-system-booted') {
+        self.initAlarm()
       }
     }
-  })
-  activity.on('create', function () {
-    logger.log('alarm create')
-    activity.keyboard.on('click', (e) => {
-      AlarmCore.clearAll()
-      AlarmCore.clearReminderTts()
-    })
-  })
-
-  activity.on('url', url => {
-    logger.log('alarm event: url', url)
-    var command = JSON.parse(url.query.command || '[]')
-    AlarmCore.doTask(command)
-    activity.setBackground()
-  })
-
-  activity.on('request', function (nlp, action) {
-    logger.log('alarm event: request', nlp)
-    var command = {}
-    if (nlp.intent === 'RokidAppChannelForward') {
-      command = JSON.parse(nlp.forwardContent.command)
-      AlarmCore.doTask(command)
-      activity.setBackground()
-    }
-  })
-
-  // first media canceled
-  activity.media.on('cancel', function () {
-    logger.log('alarm media cancel')
-    if (!AlarmCore.startTts) {
-      AlarmCore.clearReminderTts()
-    }
-  })
-
-  // first media error
-  activity.media.on('error', function () {
-    logger.log('alarm media error')
-    if (!AlarmCore.startTts) {
-      AlarmCore.playFirstMedia(true)
-    }
-  })
-
-  // media prepared
-  activity.media.on('prepared', function () {
-    logger.log('alarm media prepared')
-    if (!AlarmCore.startTts) {
-      AlarmCore.playMediaPrepared()
-    }
-  })
-
-  /**
-   * media paused event
-   * stop alarm when device was wakeuped
-   * todo: add timing API or queue
-   */
-  activity.media.on('paused', function () {
-    logger.log('alarm media paused')
-    AlarmCore.clearAll()
-    AlarmCore.clearReminderTts()
-  })
-
-  activity.on('destroy', function () {
-    AlarmCore.clearAll()
-    AlarmCore.clearReminderTts()
-    logger.log(this.appId + ' destroyed')
-  })
-
-  /**
-   * add unhandled rejection
-   * reason: alarm will be crashed when some process strip priority from alarm
-   * todo: just a temporary solution, will delete 'unhandledRejection' when support atomic process.
-   */
-  process.on('unhandledRejection', err => {
-    logger.error('Alarm: Unhandled Rejection', err)
-  })
+  }
+  this.application = Application(option)
 }
+
+Alarm.prototype.getApplication = function getApplication () {
+  return this.application
+}
+
+Alarm.prototype.addAlarm = function addAlarm (urlObj) {
+  if (!urlObj) {
+    return
+  }
+  var alarmData = {
+    type: urlObj.query.type,
+    id: urlObj.query.id,
+    time: urlObj.query.time,
+    repeat: urlObj.query.repeat,
+    dayofweek_on: urlObj.query.dayofweek_on,
+    dayofmonth_on: urlObj.query.dayofmonth_on,
+    dayofyear_on: urlObj.query.dayofyear_on,
+    feedback_utterance: urlObj.query.feedback_utterance,
+    feedback_isblocking: urlObj.query.feedback_isblocking,
+    feedback_pickup: urlObj.query.feedback_pickup,
+    feedback_pickup_time: urlObj.query.feedback_pickup_time,
+    memo_text: urlObj.query.memo_text
+  }
+  this.AlarmCore.addAlarm(alarmData)
+}
+
+Alarm.prototype.delAlarm = function delAlarm (urlObj) {
+  if (!urlObj) {
+    return
+  }
+  var alarmData = {
+    type: urlObj.query.type,
+    id: urlObj.query.id
+  }
+  this.AlarmCore.delAlarm(alarmData)
+}
+
+Alarm.prototype.initAlarm = function initAlarm () {
+  this.AlarmCore.initAlarm()
+}
+
+module.exports = (option, api) => new Alarm(option, api).getApplication()
