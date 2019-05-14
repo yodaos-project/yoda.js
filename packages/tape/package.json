@@ -1,0 +1,30 @@
+{
+  "name": "tape",
+  "version": "0.1.0",
+  "keywords": [
+    "tap",
+    "test",
+    "assert",
+    "iotjs"
+  ],
+  "author": "hongyun.cai <hongyun.cai@rokid.com>",
+  "license": "MIT",
+  "description": "tap-producing test harness for node and shadow-node",
+  "main": "index.js",
+  "bin": "./bin/tape.js",
+  "directories": {
+    "example": "example"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tap-parser": "^3.0.5"
+  },
+  "scripts": {
+    "pretest": "true"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/shadow-node/tape.git"
+  },
+  "homepage": "https://github.com/shadow-node/tape"
+}
