@@ -229,7 +229,7 @@ function onAudioStateChangedListener (mode, state, extra) {
   switch (state) {
     case protocol.AUDIO_STATE.PLAYING:
       a2dp.mute()
-      service.openUrl(res.URL.BLUETOOTH_MUSIC + state)
+      service.openUrl(res.URL.BLUETOOTH_MUSIC)
       break
     default:
       break
