@@ -13,23 +13,18 @@ var util = require('util')
 var audioFocus = null
 var a2dp = null
 var agent = null
-var intent = ''
-var lastState = 'stop'
+var lastUrl = null
 
 function textIsEmpty (text) {
-  return text === undefined || text === null || text.length === 0
+  return (typeof text !== 'string') || (text.length === 0)
 }
 
 function speak (text) {
   app.openUrl(`yoda-app://system/speak?text=${text}`)
 }
 
-function getText (label, args) {
-  var txt = strings[label]
-  if (args !== undefined) {
-    txt = util.format(txt, args)
-  }
-  return txt
+function resetLastUrl () {
+  lastUrl = ''
 }
 
 function onAudioFocusGained () {
@@ -44,42 +39,43 @@ function onAudioFocusLost () {
   rt.exit()
 }
 
-function reportToCloud (event, data) {
-  logger.debug(`report play event ${event}`)
+function uploadEvent (event, data) {
+  logger.debug('upload bluetooth event =', event)
   var msg = {
+    profile: 'A2DP.SINK',
     event: event,
     data: data
   }
-  agent.post('yodaos.apps.bluetooth-player', [ JSON.stringify(msg) ])
+  agent.post('yodaos.apps.bluetooth', [ JSON.stringify(msg) ])
 }
 
-function handleIntent (intent) {
-  logger.debug(`intent = ${intent}`)
-  switch (intent) {
-    case 'start':
-    case 'resume':
+function handleUrl (url) {
+  lastUrl = url
+  switch (url) {
+    case '/start':
       a2dp.play()
       break
-    case 'pause':
+    case '/pause':
       a2dp.pause()
       break
-    case 'stop':
+    case '/stop':
       a2dp.stop()
       break
-    case 'next':
+    case '/next':
       a2dp.next()
       break
-    case 'pre':
+    case '/prev':
       a2dp.prev()
       break
-    case 'like':
-    case 'bluetooth_info':
+    case '/like':
+    case '/info':
       a2dp.query()
       break
-    case 'quit':
+    case '/quit':
       rt.exit()
       break
     default:
+      speak(strings.FALLBACK)
       break
   }
 }
@@ -88,41 +84,45 @@ function onAudioStateChangedListener (mode, state, extra) {
   logger.debug(`${mode} onAudioStateChanged(${state})`)
   switch (state) {
     case protocol.AUDIO_STATE.PLAYING:
-      reportToCloud(lastState === 'stop' ? 'start' : 'resume')
+      uploadEvent(state)
       break
     case protocol.AUDIO_STATE.PAUSED:
-      reportToCloud('pause')
+      uploadEvent(state)
       break
     case protocol.AUDIO_STATE.STOPPED:
-      if (intent === 'pause') {
-        reportToCloud('pause')
+      if (lastUrl === '/pause') {
+        uploadEvent(protocol.AUDIO_STATE.PAUSED)
       } else {
-        reportToCloud('stop')
+        uploadEvent(state)
         audioFocus.abandon()
       }
       break
-    case protocol.AUDIO_STATE.QUERY_RESULT:
+    case protocol.AUDIO_STATE.MUSIC_INFO:
       logger.debug(`  title: ${extra.title}`)
       logger.debug(`  artist: ${extra.artist}`)
       logger.debug(`  album: ${extra.album}`)
-      var fail = textIsEmpty(extra.title) || textIsEmpty(extra.artist)
-      switch (intent) {
-        case 'bluetooth_info':
-          if (fail) {
-            speak(getText('MUSIC_INFO_FAIL'))
+      switch (lastUrl) {
+        case '/info':
+          uploadEvent(state, extra)
+          if (textIsEmpty(extra.title)) {
+            speak(strings.MUSIC_INFO_FAIL)
+          } else if (textIsEmpty(extra.artist) && textIsEmpty(extra.album)) {
+            speak(util.format(strings.MUSIC_INFO_SUCC_TITLE, extra.title))
+          } else if (textIsEmpty(textIsEmpty(extra.album))) {
+            speak(util.format(strings.MUSIC_INFO_SUCC_TITLE_ARTIST, extra.artist, extra.title))
+          } else if (textIsEmpty(extra.artist)) {
+            speak(util.format(strings.MUSIC_INFO_SUCC_TITLE_ALBUM, extra.title, extra.album))
           } else {
-            if (textIsEmpty(extra.album)) {
-              extra.album = extra.title
-            }
             speak(util.format(strings.MUSIC_INFO_SUCC, extra.artist, extra.title, extra.album))
-            reportToCloud('info', [ extra.artist, extra.title, extra.album ])
           }
           break
-        case 'like':
+        case '/like':
+          uploadEvent(state, extra)
+          break
         default:
           break
       }
-      intent = ''
+      resetLastUrl()
       break
     case protocol.AUDIO_STATE.VOLUMN_CHANGED:
     default:
@@ -150,26 +150,26 @@ var app = Application({
     audioFocus.abandon()
   },
   url: (url) => {
-    logger.debug('on url: ', url)
-    intent = url.pathname.substr(1)
-    handleIntent(intent)
+    logger.debug('on url:', url.pathname)
+    handleUrl(url.pathname)
   },
   broadcast: channel => {
     logger.debug('on broadcast: ', channel)
+    var pathname = ''
     switch (channel) {
       case 'on-quite-front':
-        intent = 'resume'
+        pathname = '/start'
         break
       case 'on-quite-back':
-        intent = 'pause'
+        pathname = '/pause'
         break
       case 'on-stop-shake':
-        intent = 'next'
+        pathname = '/next'
         break
       default:
         break
     }
-    handleIntent(intent)
+    handleUrl(pathname)
   }
 })
 

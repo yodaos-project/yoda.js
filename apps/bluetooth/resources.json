@@ -1,18 +1,18 @@
 {
   "AUDIO": {
-    "ON_OPENED": "system://openbluetooth.ogg",
-    "ON_CLOSED": "system://closebluetooth.ogg",
-    "ON_OPENED_FAILED": "system://openbluetootherror.ogg",
-    "ON_CONNECTED": "system://connectbluetooth.ogg",
-    "ON_CONNECTED_FAILED": "system://connectfailedbluetooth.ogg",
-    "ON_AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg"
+    "OPENED": "system://openbluetooth.ogg",
+    "CLOSED": "system://closebluetooth.ogg",
+    "OPEN_FAILED": "system://openbluetootherror.ogg",
+    "CONNECTED": "system://connectbluetooth.ogg",
+    "CONNECT_FAILED": "system://connectfailedbluetooth.ogg",
+    "AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg"
   },
   "LIGHT": {
     "DISCOVERY_ON": "system://bluetoothOpen.js"
   },
   "URL": {
-    "BLUETOOTH_MUSIC": "yoda-app://bluetooth-music/play",
-    "BLUETOOTH_CALL": "yoda-app://bluetooth-call/start",
+    "BLUETOOTH_MUSIC": "yoda-app://bluetooth-music/",
+    "BLUETOOTH_CALL": "yoda-app://bluetooth-call/",
     "PLAYER_CONTROLLER": "yoda-app://playercontrol/playercontrol?name=%s"
   }
 }

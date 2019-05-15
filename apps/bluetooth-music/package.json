@@ -18,7 +18,8 @@
   },
   "keywords": [
     "bluetooth",
-    "music"
+    "music",
+    "AVRCP"
   ],
   "author": "Morrowind xie <morrowindxie@gmail.com>",
   "license": "Apache 2.0"

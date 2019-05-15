@@ -14,6 +14,7 @@ var stateFilters = require('./a2dp-statemap').stateFilters
  * @typedef {object} PROFILE
  * @property {string} BLE - Bluetooth low energy profile.
  * @property {string} A2DP - Bluetooth advanced audio distribution profile.
+ * @property {string} AVRCP - Bluetooth audio video remote control profile.
  */
 
 /**
@@ -43,13 +44,14 @@ var stateFilters = require('./a2dp-statemap').stateFilters
  * @property {string} PAUSED - Music stream is paused.
  * @property {string} STOPPED - Music stream is stopped.
  * @property {string} VOLUMN_CHANGED - Music stream's volumn is changed.
+ * @property {string} MUSIC_INFO - Music information retrieved.
  */
 
 /**
  * @typedef {object} DISCOVERY_STATE
  * @property {string} ON - Local device is discoverable.
  * @property {string} OFF - Local device is undiscoverable.
- * @property {string} DEVICE_LIST_CHANGED - Found new around bluetooth devices.
+ * @property {string} FOUND_DEVICE - Found new around bluetooth devices.
  */
 
 /**
@@ -94,6 +96,7 @@ function BluetoothA2dp (deviceName) {
   this._end = false
   this.lastMode = protocol.A2DP_MODE.SINK // last used a2dp mode
   this.localName = deviceName // local bluetooth device name
+  this.settingVolume = false
 
   this._flora = new FloraComp(null, {
     'uri': 'unix:/var/run/flora.sock',
@@ -163,12 +166,13 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
       }
     } else if (msg.action === 'volumechange') {
       var vol = msg.value
-      if (vol === undefined) {
-        vol = AudioManager.getVolume(AudioManager.STREAM_PLAYBACK)
+      var sysVol = AudioManager.getVolume(AudioManager.STREAM_PLAYBACK)
+      if (vol != null && vol !== sysVol) {
+        this.settingVolume = true
+        AudioManager.setVolume(AudioManager.STREAM_PLAYBACK, vol)
+        logger.info(`Set volume ${vol} for bluetooth a2dp sink.`)
+        this.emit('audio_state_changed', protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.VOLUMN_CHANGED, {volumn: vol})
       }
-      AudioManager.setVolume(vol)
-      logger.info(`Set volume ${vol} for bluetooth a2dp sink.`)
-      this.emit('audio_state_changed', protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.VOLUMN_CHANGED, {volumn: vol})
     } else if (msg.action === 'discovery') {
       var results = msg.results
       var nbr = results.deviceList != null ? results.deviceList.length : 0
@@ -178,14 +182,14 @@ BluetoothA2dp.prototype.handleEvent = function (data, mode) {
           logger.debug(`  ${device.name} : ${device.address}`)
         })
       }
-      this.emit('discovery_state_changed', protocol.A2DP_MODE.SOURCE, protocol.DISCOVERY_STATE.DEVICE_LIST_CHANGED, results)
+      this.emit('discovery_state_changed', protocol.A2DP_MODE.SOURCE, protocol.DISCOVERY_STATE.FOUND_DEVICE, results)
     } else if (msg.action === 'element_attrs') {
       var song = {
         title: msg.title,
         artist: msg.artist,
         album: msg.album
       }
-      this.emit(`audio_state_changed`, protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.QUERY_RESULT, song)
+      this.emit(`audio_state_changed`, protocol.A2DP_MODE.SINK, protocol.AUDIO_STATE.MUSIC_INFO, song)
     }
   } catch (err) {
     logger.error(`on ${mode} error(${JSON.stringify(err)})`)
@@ -363,10 +367,13 @@ BluetoothA2dp.prototype.unmute = function () {
  * @returns {boolean} `true` if send command success else `false`.
  */
 BluetoothA2dp.prototype.syncVol = function (vol) {
-  logger.debug(`sync volume(${vol})`)
-  if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    return this._send(this.lastMode, 'VOLUME', { value: vol })
+  if (this.settingVolume) {
+    this.settingVolume = false
+    logger.warn('Ignore sync while setting volume.')
+    return true
   }
+  logger.debug(`sync volume(${vol})`)
+  return this._send(this.lastMode, 'VOLUME', { value: vol })
 }
 
 /**
@@ -455,7 +462,7 @@ BluetoothA2dp.prototype.next = function () {
  * Query playing song's information such as album, title, artist, etc.
  *
  * You can listen following changed state:
- * - `protocol.AUDIO_STATE.QUERY_RESULT`.
+ * - `protocol.AUDIO_STATE.MUSIC_INFO`.
  * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
  */
@@ -498,7 +505,7 @@ BluetoothA2dp.prototype.setUndiscoverable = function () {
  * Discovery around bluetooth devices.
  *
  * You can listen following changed state:
- * - `protocol.DISCOVER_STATE.DEVICE_LIST_CHANGED` while some bluetooth devices have been found.
+ * - `protocol.DISCOVER_STATE.FOUND_DEVICE` while some bluetooth devices have been found.
  * @returns {boolean} `true` if send command success else `false`.
  * @fires module:@yoda/bluetooth/BluetoothA2dp#discovery_state_changed
  */
