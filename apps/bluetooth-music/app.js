@@ -49,12 +49,14 @@ function onAudioFocusLost (transient, mayDuck) {
 
 function uploadEvent (event, data) {
   logger.debug('upload bluetooth event =', event)
-  var msg = {
-    profile: 'A2DP.SINK',
-    event: event,
-    data: data
+  var MEDIA_SOURCE_BLUETOOTH = 3
+  var event2status = {
+    PLAYING: 0,
+    STOPPED: 1,
+    PAUSED: 2
   }
-  agent.post('yodaos.apps.bluetooth', [ JSON.stringify(msg) ])
+  var msg = [ MEDIA_SOURCE_BLUETOOTH, event2status[event] ]
+  agent.post('yodaos.apps.multimedia.playback-status', msg)
 }
 
 function handleUrl (url) {
@@ -81,6 +83,9 @@ function handleUrl (url) {
       break
     case '/quit':
       rt.activity.exit()
+      break
+    case '/PLAYING':
+      uploadEvent(protocol.AUDIO_STATE.PLAYING)
       break
     default:
       speak(strings.FALLBACK)
