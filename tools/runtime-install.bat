@@ -84,7 +84,7 @@ goto :eof
   call:push "runtime" "/usr/yoda"
 
   echo ^>^> install node_modules
-  call:shell "rm -rf /usr/lib/node_modules"
+  rem call:shell "rm -rf /usr/lib/node_modules"
   call:push "packages" "/usr/lib/node_modules"
 goto :eof
 
