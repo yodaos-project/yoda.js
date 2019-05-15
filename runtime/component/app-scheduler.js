@@ -34,19 +34,39 @@ AppScheduler.prototype.getAppStatusById = function getAppStatusById (appId) {
   return this.appStatus[appId] || Constants.status.notRunning
 }
 
+/**
+ *
+ * @param {string} appId -
+ * @param {object} metadata - app metadata
+ * @param {AppBridge} bridge -
+ * @param {number} mode - running mode
+ * @param {object} [options]
+ * @param {string} [options.descriptorPath] - api descriptor file to be used
+ * @param {string[]} [options.args] - additional execution arguments to the child process
+ * @param {object} [options.environs] - additional execution environs to the child process
+ */
 AppScheduler.prototype.appCreationHandler = {
-  light: function (appId, metadata, appBridge, mode) {
+  light: function (appId, metadata, appBridge, mode, options) {
     return lightApp(appId, metadata, appBridge)
   },
-  exe: function (appId, metadata, appBridge, mode) {
+  exe: function (appId, metadata, appBridge, mode, options) {
     return executableProc(appId, metadata, appBridge)
   },
-  default: function (appId, metadata, appBridge, mode) {
-    return extApp(appId, metadata, appBridge, mode)
+  default: function (appId, metadata, appBridge, mode, options) {
+    return extApp(appId, metadata, appBridge, mode, options)
   }
 }
 
-AppScheduler.prototype.createApp = function createApp (appId, mode) {
+/**
+ *
+ * @param {string} appId
+ * @param {string | number} mode
+ * @param {object} [options]
+ * @param {string} [options.descriptorPath] - api descriptor file to be used
+ * @param {string[]} [options.args] - additional execution arguments to the child process
+ * @param {object} [options.environs] - additional execution environs to the child process
+ */
+AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
   if (this.isAppRunning(appId)) {
     return Promise.resolve(this.getAppById(appId))
   }
@@ -54,21 +74,26 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   switch (this.appStatus[appId]) {
     case Constants.status.creating:
       future = this.appCreationFutures[appId]
-      if (future != null) {
-        return future
+      if (future == null) {
+        return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
       }
-      return Promise.reject(new Error(`Scheduler is creating app ${appId}.`))
+      return future
     case Constants.status.suspending:
       future = this.appSuspensionFutures[appId]
       if (future == null) {
         return Promise.reject(new Error(`Scheduler is suspending app ${appId}.`))
       }
-      return future.then(() => this.createApp(appId, mode), () => this.createApp(appId, mode))
+      return future.then(() => this.createApp(appId, mode))
+    case Constants.status.error:
+      future = this.suspendApp(appId, { force: true })
+      return future.then(() => this.createApp(appId, mode))
   }
   this.appStatus[appId] = Constants.status.creating
 
   var appType = this.loader.getTypeOfApp(appId)
   var metadata = this.loader.getAppManifest(appId)
+  var args = _.get(options, 'args')
+  var environs = _.get(options, 'environs')
 
   if (typeof mode !== 'number') {
     mode = Constants.modes[mode]
@@ -76,7 +101,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
   if (mode == null) {
     mode = Constants.modes.default
   }
-  this.appLaunchOptions[appId] = { type: appType, mode: mode }
+  this.appLaunchOptions[appId] = { type: appType, mode: mode, args: args, environs: environs }
 
   var appBridge = new AppBridge(this.runtime, appId, metadata)
   var creationHandler = this.appCreationHandler[appType]
@@ -84,7 +109,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode) {
     creationHandler = this.appCreationHandler.default
   }
 
-  future = Promise.resolve().then(() => creationHandler(appId, metadata, appBridge, mode))
+  future = Promise.resolve().then(() => creationHandler(appId, metadata, appBridge, mode, options))
     .then(() => {
       logger.info(`App(${appId}) successfully started`)
       appBridge.onExit = (code, signal) => {
@@ -117,6 +142,13 @@ AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
   return app
 }
 
+/**
+ *
+ * @private
+ * @param {string} appId
+ * @param {number | undefined} code
+ * @param {string | undefined} signal
+ */
 AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, signal) {
   logger.info(`${appId} exited.`)
   /** incase bridge has not been marked as suspended */
@@ -146,11 +178,20 @@ AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, sign
   }
 }
 
+/**
+ * @param {object} [options]
+ * @param {boolean} [options.force=false]
+ */
 AppScheduler.prototype.suspendAllApps = function suspendAllApps (options) {
   var aliveAppIds = Object.keys(this.appMap)
   return Promise.all(aliveAppIds.map(id => this.suspendApp(id, options)))
 }
 
+/**
+ * @param {string} appId
+ * @param {object} [options]
+ * @param {boolean} [options.force=false]
+ */
 AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   var force = _.get(options, 'force', false)
   var appType = this.loader.getTypeOfApp(appId)
@@ -176,17 +217,18 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
     return Promise.resolve()
   }
 
-  var app = this.appMap[appId]
-  if (app) {
-    app.emit('activity', 'destroyed')
-    app.suspend()
+  var bridge = this.appMap[appId]
+  var future = Promise.resolve()
+  if (bridge) {
+    bridge.emit('activity', 'destroyed')
     this.appStatus[appId] = Constants.status.suspending
-    this.appSuspensionFutures[appId] = new Promise((resolve, reject) => {
+    future = this.appSuspensionFutures[appId] = new Promise((resolve, reject) => {
       var timer = setTimeout(() => {
         if (timer == null) {
           return
         }
         timer = null
+        this.appStatus[appId] = Constants.status.error
         reject(new Error(`Suspend app(${appId}) timed out`))
       }, 5000)
       this.__appSuspensionResolvers[appId] = () => {
@@ -197,8 +239,9 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
         timer = null
         resolve()
       }
+      bridge.suspend({ force: force })
     })
   }
 
-  return Promise.resolve()
+  return future
 }

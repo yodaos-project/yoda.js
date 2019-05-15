@@ -1,0 +1,16 @@
+{
+  "name": "@test/malicious-app",
+  "version": "1.0.0",
+  "description": "Test App",
+  "main": "app.js",
+  "metadata": {
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "test"
+  ],
+  "author": "Chengzhong Wu <chengzhong.wu@rokid.com>",
+  "license": "UNLICENSED"
+}

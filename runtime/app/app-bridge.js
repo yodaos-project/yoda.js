@@ -1,3 +1,4 @@
+var _ = require('@yoda/util')._
 var Logger = require('logger')
 
 class BridgeError extends Error {
@@ -75,19 +76,20 @@ class AppBridge {
     this.onExit(code, signal)
   }
 
-  suspend () {
-    if (this.suspended) {
+  suspend (options) {
+    var force = _.get(options, 'force', false)
+    if (this.suspended && !force) {
       return
     }
     this.suspended = true
     if (this.exited) {
       return
     }
-    this.onSuspend()
+    this.onSuspend(force)
   }
 
   onExit (code, signal) {}
-  onSuspend () {}
+  onSuspend (force) {}
 }
 
 module.exports = AppBridge
