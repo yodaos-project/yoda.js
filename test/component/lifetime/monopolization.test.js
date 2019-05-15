@@ -141,16 +141,22 @@ test('scene monopolist could not be paused by cut app if filterCutOnMonopolized 
       t.strictEqual(life.isMonopolized(), true, 'monologue shall be started by app top of stack')
 
       return life.activateAppById('2', 'cut')
+        .then(() => {
+          t.fail('app 2 shall not interrupt monologue of app 1')
+        })
+        .catch(err => {
+          t.strictEqual(err.message, 'App 1 monopolized top of stack.')
+        })
     })
     .then(() => {
-      t.strictEqual(life.getCurrentAppId(), '1')
-      t.strictEqual(life.isMonopolized(), true, 'monologue shall still available by app in stack')
-      t.strictEqual(life.monopolist, '1')
-
       return life.destroyAppById('1')
     })
     .then(() => {
       t.strictEqual(life.isMonopolized(), false, 'monologue shall not be continue by app not on top of stack')
+      return life.activateAppById('2')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '2')
       t.end()
     })
     .catch(err => {
