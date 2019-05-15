@@ -1185,6 +1185,11 @@ AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
 
   var deferred = () => {
     perf.stub('started')
+
+    /** reset the `mute` state of mic silently */
+    this.setMicMute(false, { silent: true })
+
+    /** check if we should trigger `welcome` */
     if (this.shouldWelcome) {
       this.component.dispatcher.delegate('runtimeDidLogin')
         .then((delegation) => {
@@ -1194,15 +1199,11 @@ AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
           }
           this.disableRuntimeFor('welcoming')
           logger.info('announcing welcome')
-          return this.setMicMute(false, { silent: true })
-            .then(() => {
-              this.component.light.play('@yoda', 'system://setWelcome.js')
-                .then(() => this.component.light.stop('@yoda', 'system://boot.js'))
-              return this.component.light.appSound('@yoda', 'system://startup0.ogg')
-            })
-            .then(() => {
-              this.enableRuntimeFor('welcoming')
-            })
+
+          this.component.light.play('@yoda', 'system://setWelcome.js')
+            .then(() => this.component.light.stop('@yoda', 'system://boot.js'))
+          return this.component.light.appSound('@yoda', 'system://startup0.ogg')
+            .then(() => this.enableRuntimeFor('welcoming'))
             .catch(err => {
               this.enableRuntimeFor('welcoming')
               logger.error('unexpected error on welcoming', err.stack)
