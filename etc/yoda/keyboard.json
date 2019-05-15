@@ -11,7 +11,7 @@
     },
     "dbclick": {
       "debounce": 8000,
-      "url": "yoda-skill://bluetooth/bluetooth_broadcast",
+      "url": "yoda-app://bluetooth/open",
       "options": {}
     },
     "longpress-2000": {
