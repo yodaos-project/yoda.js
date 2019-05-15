@@ -3,6 +3,7 @@ var AudioFocus = require('@yodaos/application').AudioFocus
 var speechSynthesis = require('@yodaos/speech-synthesis').speechSynthesis
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var flora = require('@yoda/flora')
+var _ = require('@yoda/util')._
 var logger = require('logger')('cloud-player')
 
 var FloraUri = 'unix:/var/run/flora.sock#cloud-player'
@@ -26,7 +27,10 @@ var app = Application({
     logger.info('received url', require('url').format(urlObj))
     switch (urlObj.pathname) {
       case '/play': {
-        this.play(urlObj.query.text, urlObj.query.url, Number(urlObj.query.transient) !== 0, Number(urlObj.query.sequential) > 0)
+        this.play(urlObj.query.text, urlObj.query.url,
+          _.get(urlObj.query, 'transient', '1') === '1', /** defaults to transient */
+          _.get(urlObj.query, 'sequential', '0') === '1' /** defaults to sequential */
+        )
         break
       }
       case '/play-tts-stream': {
@@ -43,23 +47,24 @@ app.play = function play (text, url, transient, sequential) {
     return
   }
   var focus = new AudioFocus(transient ? AudioFocus.Type.TRANSIENT : AudioFocus.Type.DEFAULT)
-  var utter
-  var player
-  var resumeOnGain = false
+  focus.resumeOnGain = false
   if (url) {
-    player = new MediaPlayer()
-    player.prepare(url)
-    player.on('playbackcomplete', () => {
+    focus.player = new MediaPlayer()
+    focus.player.prepare(url)
+    focus.player.on('playbackcomplete', () => {
       this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.end ])
+      if (sequential || !speechSynthesis.speaking) {
+        focus.abandon()
+      }
     })
   }
   focus.onGain = () => {
-    if (text && utter == null) {
-      utter = speechSynthesis.speak(text)
+    if (text && focus.utter == null) {
+      focus.utter = speechSynthesis.speak(text)
         .on('start', () => {
           this.agent.post(TtsStatusChannel, [ StatusCode.start ])
-          if (!sequential && player != null) {
-            player && player.resume()
+          if (!sequential && focus.player != null) {
+            focus.player.start()
           }
         })
         .on('cancel', () => {
@@ -75,30 +80,34 @@ app.play = function play (text, url, transient, sequential) {
         .on('end', () => {
           logger.info('on end')
           this.agent.post(TtsStatusChannel, [ StatusCode.end ])
-          if (sequential && player != null) {
-            player.resume()
+
+          if (sequential && focus.player) {
+            focus.player.start()
+            return
+          }
+          if (focus.player && focus.player.playing) {
             return
           }
           focus.abandon()
         })
-    } else if (text == null && player != null) {
-      player.resume()
+    } else if (text == null && focus.player != null) {
+      focus.player.start()
     }
 
-    if (resumeOnGain) {
-      player && player.resume()
+    if (focus.resumeOnGain && focus.player != null) {
+      focus.player.start()
     }
-    resumeOnGain = false
+    focus.resumeOnGain = false
   }
   focus.onLoss = (transient) => {
-    if (utter) {
+    if (focus.utter) {
       speechSynthesis.cancel()
     }
     if (transient) {
-      resumeOnGain = true
-      player && player.pause()
+      focus.resumeOnGain = true
+      focus.player && focus.player.pause()
     } else {
-      player && player.stop()
+      focus.player && focus.player.stop()
     }
   }
   focus.request()

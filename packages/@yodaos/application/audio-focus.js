@@ -76,7 +76,7 @@ class AudioFocus {
     }
     this.api = api
     this.id = ++_id
-    this.type = type
+    this.type = type || AudioFocus.Type.DEFAULT
     register(this.api, this.id, this)
   }
 

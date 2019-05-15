@@ -63,17 +63,19 @@ class TSAudioFocus extends EventEmitter {
   }
 }
 
-class TSSpeechSynthesis {
+class TSSpeechSynthesis extends EventEmitter {
   constructor () {
+    super()
     this.records = []
+    this.events = []
+    this.hookBound = this.hook.bind(this)
   }
 
   startRecord () {
-    speechSynthesis[speechSymbol.hook] = (event, utter) => {
-      if (event === 'speak') {
-        this.records.push(_.pick(utter, 'text'))
-      }
+    if (speechSynthesis[speechSymbol.hook] && speechSynthesis[speechSymbol.hook] !== this.hookBound) {
+      throw new Error('Another test was not torn down before TSSpeechSynthesis#startRecord')
     }
+    speechSynthesis[speechSymbol.hook] = this.hookBound
   }
 
   stopRecord () {
@@ -84,8 +86,22 @@ class TSSpeechSynthesis {
     return this.records
   }
 
+  getEvents () {
+    return this.events
+  }
+
   clearRecords () {
     this.records = []
+    this.events = []
+  }
+
+  hook (event, utter) {
+    var utterFields = _.pick(utter, 'text')
+    if (event === 'speak') {
+      this.records.push(utterFields)
+    }
+    this.events.push(Object.assign({ type: event }, utterFields))
+    this.emit(event, utter)
   }
 }
 

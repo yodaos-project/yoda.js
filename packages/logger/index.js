@@ -144,3 +144,8 @@ module.exports.setGlobalUploadLevel = function (level, authorization) {
 }
 
 module.exports.levels = logLevels
+
+module.exports.syslog = function syslog (message, priority, identity) {
+  priority = priority == null ? /** LOG_DEBUG */7 : priority
+  native.syslog(identity, priority, message)
+}

@@ -37,7 +37,7 @@ function createExtApp (appId, metadata, bridge, mode, options) {
     cwd: target,
     env: Object.assign({}, process.env),
     // rklog would redirect process log to logd if stdout is not a tty
-    stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ]
+    stdio: [ 'ignore', 'ignore', 'inherit', 'ipc' ]
   })
   bridge.childProcess = cp
   logger.info(`Forked child app ${target}(${cp.pid}).`)
