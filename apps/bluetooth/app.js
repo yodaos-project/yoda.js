@@ -33,7 +33,7 @@ var app = Application({
         service = app.getService('bluetooth-service')
         if (service == null) {
           logger.debug('bluetooth service not running, now start it.')
-          app.startService()
+          app.startService('bluetooth-service')
           service = app.getService('bluetooth-service')
         }
         if (service != null) {

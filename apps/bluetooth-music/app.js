@@ -32,11 +32,19 @@ function onAudioFocusGained () {
   a2dp.unmute()
 }
 
-function onAudioFocusLost () {
-  logger.debug('onAudioFocusLost')
-  a2dp.pause()
-  a2dp.destroy()
-  rt.exit()
+function onAudioFocusLost (transient, mayDuck) {
+  logger.debug('onAudioFocusLost, transient =', transient)
+  if (transient) {
+    if (mayDuck) {
+      // TODO: Duck music volume.
+    } else {
+      a2dp.mute()
+    }
+  } else {
+    a2dp.pause()
+    a2dp.destroy()
+    rt.activity.exit()
+  }
 }
 
 function uploadEvent (event, data) {
@@ -72,7 +80,7 @@ function handleUrl (url) {
       a2dp.query()
       break
     case '/quit':
-      rt.exit()
+      rt.activity.exit()
       break
     default:
       speak(strings.FALLBACK)
@@ -151,7 +159,9 @@ var app = Application({
   },
   url: (url) => {
     logger.debug('on url:', url.pathname)
-    handleUrl(url.pathname)
+    if (url.pathname !== '/') {
+      handleUrl(url.pathname)
+    }
   },
   broadcast: channel => {
     logger.debug('on broadcast: ', channel)
