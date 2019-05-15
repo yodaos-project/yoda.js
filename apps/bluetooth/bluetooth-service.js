@@ -197,8 +197,8 @@ function onConnectionStateChangedListener (mode, state, device) {
         speak(getText('PLEASE_WAIT'))
       } else {
         speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
-        resetLastUrl()
       }
+      resetLastUrl()
       break
     case protocol.CONNECTION_STATE.DISCONNECTED:
       if (lastUrl !== '/close') {
@@ -229,7 +229,7 @@ function onAudioStateChangedListener (mode, state, extra) {
   switch (state) {
     case protocol.AUDIO_STATE.PLAYING:
       a2dp.mute()
-      service.openUrl(res.URL.BLUETOOTH_MUSIC)
+      service.openUrl(res.URL.BLUETOOTH_MUSIC + state)
       break
     default:
       break
