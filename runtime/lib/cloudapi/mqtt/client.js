@@ -3,6 +3,7 @@
 var mqtt = require('mqtt')
 var _ = require('@yoda/util')._
 var logger = require('logger')('mqtt')
+var config = require('../../helper/config').getConfig('wormhole.json')
 var env = require('@yoda/env')()
 
 // The initial backoff time after a disconnection occurs, in seconds.
@@ -82,6 +83,9 @@ MqttClient.prototype.onmessage = function onmessage (channel, message) {
     logger.error(`parse error with message: ${channel} ${message}`)
     logger.error(err && err.stack)
     return
+  }
+  if (!msg.topic && config._prefixForUnknown) {
+    msg.topic = `${config._prefixForUnknown}/${msg.type}`
   }
   logger.info(`mqtt message with topic -> ${msg.topic}; text -> ${msg.text}`)
   this._messageHandler(msg.topic, msg.text)
