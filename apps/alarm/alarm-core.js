@@ -1,40 +1,41 @@
 
 'use strict'
 var fs = require('fs')
-var logger = require('logger')('alarm')
+var logger = require('logger')('alarm-core')
 var yodaUtil = require('@yoda/util')
-var wifi = require('@yoda/wifi')
-var TtsEventHandle = require('@yodaos/ttskit').Convergence
+var network = require('@yoda/network')
 var AudioManager = require('@yoda/audio').AudioManager
-var request = require('./request')
 var Cron = require('./node-cron')
+var MediaManager = require('./media-manager').MediaManager
+var keyboard = require('@yodaos/keyboard').keyboard
 var CONFIGFILEPATH = '/data/AppData/alarm/config.json'
 
 var KEYCODES = [113, 114, 115, 116]
-var DEFAULT_ALARM_RING = 'system://alarm_default_ringtone.mp3'
-var DEFAULT_REMINDER_RING = 'system://reminder_default.mp3'
+var DEFAULT_ALARM_RING = '/opt/media/alarm_default_ringtone.mp3'
+var DEFAULT_REMINDER_RING = '/opt/media/reminder_default.mp3'
+var TYPE_REMINDER = 'reminder'
+var TYPE_ALARM = 'alarm'
 
 /**
  * Construct a new alarm core function
  *
  * Options:
- *   activity: avtivity object
+ *   api: global api object
  *
  * @constructor
  * @private
  * @param {Object} Options  avtivity object
  */
-function AlarmCore (activity) {
-  this.activity = activity
+function AlarmCore (api) {
   this.scheduleHandler = new Cron.Schedule()
   this.jobQueue = []
-  this.reminderTTS = []
   this.taskTimeout = null
   this.volumeInterval = null
   this.stopTimeout = null
   this.activeOption = null
   this.ringUrl = null
-  this.ttsClient = new TtsEventHandle(activity.tts)
+  this.mediaManager = new MediaManager(this)
+  this.wifi = new network.NetworkAgent()
 }
 
 /**
@@ -44,14 +45,18 @@ function AlarmCore (activity) {
  */
 AlarmCore.prototype._formatCommandData = function (commandObj) {
   return {
-    id: commandObj.id,
-    createTime: commandObj.createTime,
     type: commandObj.type,
-    tts: commandObj.tts,
-    url: commandObj.url,
-    mode: commandObj.mode,
+    id: commandObj.id,
     time: commandObj.time,
-    date: commandObj.date
+    repeat: commandObj.repeat,
+    dayofweek_on: commandObj.dayofweek_on,
+    dayofmonth_on: commandObj.dayofmonth_on,
+    dayofyear_on: commandObj.dayofyear_on,
+    feedback_utterance: commandObj.feedback_utterance,
+    feedback_isblocking: commandObj.feedback_isblocking,
+    feedback_pickup: commandObj.feedback_pickup,
+    feedback_pickup_time: commandObj.feedback_pickup_time,
+    memo_text: commandObj.memo_text
   }
 }
 
@@ -62,31 +67,24 @@ AlarmCore.prototype._formatCommandData = function (commandObj) {
  * @param {String} Options time string
  * @param {String} Options repeat type
  */
-AlarmCore.prototype._transferPattern = function (date, time, repeatType) {
-  time = time.split(':')
-  var s = time[2]
-  var m = time[1]
-  var h = time[0]
-  switch (repeatType) {
-    case 'D1':
-    case 'D2':
-    case 'D3':
-    case 'D4':
-    case 'D5':
-    case 'D6':
-    case 'D7':
-      var weekNum = repeatType.split('D')[1]
-      return s + ' ' + m + ' ' + h + ' * * ' + weekNum
-    case 'WEEKEND':
-      return s + ' ' + m + ' ' + h + ' * * 1-5'
-    case 'WEEKDAY':
-      return s + ' ' + m + ' ' + h + ' * * 6,0'
-    default:
-      break
+AlarmCore.prototype._transferPattern = function (dateTime, repeatType, option) {
+  var date = dateTime.split(' ')
+  var fullDate = date[0].split('-')
+  var fullTime = date[1].split(':')
+  var s = parseInt(fullTime[2] || 0)
+  var m = parseInt(fullTime[1])
+  var h = parseInt(fullTime[0])
+  var day = parseInt(fullDate[2])
+  var month = parseInt(fullDate[1])
+  if (repeatType === 2) { // day repeat
+    return s + ' ' + m + ' ' + h + ' * * *'
+  } else if (repeatType === 3) { // week repeat
+    return s + ' ' + m + ' ' + h + ' * * ' + option
+  } else if (repeatType === 4) { // month repeat
+    return s + ' ' + m + ' ' + h + ' ' + option + ' * *'
+  } else if (repeatType === 5) { // year repeat
+    return s + ' ' + m + ' ' + h + ' ' + option + ' *'
   }
-  var dateArr = date.split(':')
-  var day = dateArr[2] === '**' ? '*' : dateArr[2]
-  var month = dateArr[1] === '**' ? '*' : dateArr[1]
   return s + ' ' + m + ' ' + h + ' ' + day + ' ' + month + ' *'
 }
 
@@ -95,9 +93,14 @@ AlarmCore.prototype._transferPattern = function (date, time, repeatType) {
  * @private
  */
 AlarmCore.prototype._preventEventsDefaults = function () {
+  logger.info('_preventEventsDefaults------------->')
   for (var i = 0; i < KEYCODES.length; i++) {
-    this.activity.keyboard.preventDefaults(KEYCODES[i])
+    keyboard.preventDefaults(KEYCODES[i])
   }
+  keyboard.on('keydown', (e) => {
+    logger.info('keydown------------->', e)
+    this.clearAll()
+  })
 }
 
 /**
@@ -153,6 +156,14 @@ AlarmCore.prototype._setConfig = function (options) {
       if (options[i].mode === 'remove') {
         delete parseJson[options[i].command.id]
       }
+
+      if (options[i].mode === 'multiRemove') {
+        var ids = options[i].command
+        for (var id in ids) {
+          logger.info('_setConfig----->mode is multiRemove && delete id ', ids[id])
+          delete parseJson[ids[id]]
+        }
+      }
     }
     fs.unlink(CONFIGFILEPATH, (err) => {
       if (err) {
@@ -165,9 +176,7 @@ AlarmCore.prototype._setConfig = function (options) {
         }
         // parseJson is empty, kill alarm
         if (Object.keys(parseJson).length === 0) {
-          // kill alarm
-          logger.log('kill alarm')
-          this.activity.exit()
+          logger.log('_setConfig parseJson lenght is 0')
         }
       })
     })
@@ -180,12 +189,14 @@ AlarmCore.prototype._setConfig = function (options) {
  * @param {String} Options mode
  * @param {Object} Options formated alarm data
  */
-AlarmCore.prototype._clearTask = function (mode, option) {
+AlarmCore.prototype._clearTask = function (mode, option, isForce) {
+  logger.info('_clearTask-----> mode: ', mode)
   var idx = this.jobQueue.indexOf(option.id)
   if (idx > -1) {
     this.jobQueue.splice(idx, 1)
   }
-  if (mode === 'single') {
+  logger.info('_clearTask-----> option: ', option)
+  if (option.repeat === 1 || isForce) {
     this.scheduleHandler.clear(option.id)
     this._setConfig([{ command: option, mode: 'remove' }])
   }
@@ -198,7 +209,7 @@ AlarmCore.prototype._clearTask = function (mode, option) {
  */
 AlarmCore.prototype._ttsSpeak = function (tts) {
   return new Promise((resolve, reject) => {
-    this.ttsClient.speak(tts, (name) => {
+    this.mediaManager.speakTts(tts, (name) => {
       if (name === 'end') {
         resolve()
       } else if (name === 'error') {
@@ -217,7 +228,7 @@ AlarmCore.prototype._ttsSpeak = function (tts) {
  */
 AlarmCore.prototype.restoreEventsDefaults = function () {
   for (var i = 0; i < KEYCODES.length; i++) {
-    this.activity.keyboard.restoreDefaults(KEYCODES[i])
+    keyboard.restoreDefaults(KEYCODES[i])
   }
 }
 
@@ -228,51 +239,58 @@ AlarmCore.prototype.restoreEventsDefaults = function () {
  * @param {String} Options alarm type
  */
 AlarmCore.prototype._taskCallback = function (option, isLocal) {
-  var status = wifi.getWifiState() === wifi.WIFI_CONNECTED && !isLocal
-  var tts = option.tts
-  if (option.type === 'Remind') {
-    tts = this.reminderTTS.join(',') + option.tts
-    this.reminderTTS = []
-    this.startTts = true
-    this.activity.setForeground().then(() => {
-      if (status) {
-        return this._ttsSpeak(tts || option.tts)
-      }
-    }).then(() => {
-      logger.info('alarm start second media')
-      this.activity.media.start(DEFAULT_REMINDER_RING, {
-        streamType: 'alarm'
-      })
-      return this.activity.media.setLoopMode(true)
-    }).then(() => {
-      this.stopTimeout = setTimeout(() => {
-        logger.log('alarm-reminder: ', option.id, ' stop after 5 minutes')
-        this.scheduleHandler.clearReminderQueue()
-        this.clearAll()
-      }, 5 * 60 * 1000)
-    }).catch(() => {
-      // alarm only need end event, but promise has to reject
-    })
-  } else {
-    this.activity.setForeground().then(() => {
+  this.wifi.getNetworkStatus().then((reply) => {
+    var status = (reply.network.state === network.CONNECTED) && !isLocal
+    var tts = option.memo_text
+    if (option.type === TYPE_REMINDER) {
+      tts = (option.memo_text || '提醒') + '时间到'
       this.startTts = true
       if (status) {
-        return this._ttsSpeak(option.tts)
+        return this._ttsSpeak(tts).then(() => {
+          logger.info('alarm start second media')
+          this.mediaManager.playAudio(this.ringUrl, { streamType: AudioManager.STREAM_ALARM, loop: true })
+        }).then(() => {
+          this.stopTimeout = setTimeout(() => {
+            logger.log('alarm-reminder: ', option.id, ' stop after 1 minutes')
+            this.scheduleHandler.clearReminderQueue()
+            this.clearAll()
+          }, 1 * 60 * 1000)
+        }).catch(() => {
+          // alarm only need end event, but promise has to reject
+        })
+      } else {
+        this.mediaManager.playAudio(this.ringUrl, { streamType: AudioManager.STREAM_ALARM, loop: true })
+        this.stopTimeout = setTimeout(() => {
+          logger.log('alarm-reminder: ', option.id, ' stop after 1 minutes')
+          this.scheduleHandler.clearReminderQueue()
+          this.clearAll()
+        }, 1 * 60 * 1000)
       }
-    }).then(() => {
-      logger.info('alarm start second media')
-      this.ringUrl = status ? option.url : DEFAULT_ALARM_RING
-      this.activity.media.start(this.ringUrl, { streamType: 'alarm' })
-      return this.activity.media.setLoopMode(true)
-    }).then(() => {
-      this.stopTimeout = setTimeout(() => {
-        logger.log('alarm: ', option.id, ' stop after 5 minutes')
-        this.clearAll()
-      }, 5 * 60 * 1000)
-    }).catch(() => {
-      // alarm only need end event, but promise has to reject
-    })
-  }
+    } else {
+      this.startTts = true
+      tts = (option.memo_text || '闹钟') + '时间到'
+      if (status) {
+        return this._ttsSpeak(tts).then(() => {
+          logger.info('alarm start second media')
+          this.mediaManager.playAudio(this.ringUrl, { streamType: AudioManager.STREAM_ALARM, loop: true })
+        }).then(() => {
+          this.stopTimeout = setTimeout(() => {
+            logger.log('alarm: ', option.id, ' stop after 1 minutes')
+            this.clearAll()
+          }, 1 * 60 * 1000)
+        }).catch(() => {
+          // alarm only need end event, but promise has to reject
+        })
+      } else {
+        this.ringUrl = DEFAULT_ALARM_RING
+        this.mediaManager.playAudio(this.ringUrl, { streamType: AudioManager.STREAM_ALARM, loop: true })
+        this.stopTimeout = setTimeout(() => {
+          logger.log('alarm: ', option.id, ' stop after 1 minutes')
+          this.clearAll()
+        }, 1 * 60 * 1000)
+      }
+    }
+  })
 }
 
 /**
@@ -283,52 +301,23 @@ AlarmCore.prototype._taskCallback = function (option, isLocal) {
  */
 AlarmCore.prototype._onTaskActive = function (option) {
   this.clearAll()
-  this.activity.setForeground().then(() => {
-    logger.log('alarm: ', option.id, ' start ')
-    var mode = option.mode
-    if (this.jobQueue.indexOf(option.id) > -1) {
-      return
-    }
-    this.jobQueue.push(option.id)
-    var jobConf = this.scheduleHandler.getJobConfig(option.id)
-    if (!jobConf) {
-      logger.log('alarm: ' + option.id + ' can not run')
-      if (option.type === 'Remind') {
-        this.reminderTTS.push(option.tts)
-      }
-      this._clearTask(mode, option)
-      return
-    }
-    this.activeOption = option
-    this._preventEventsDefaults()
-    this._controlVolume(10, 1000, 7)
-    // send card to app
-    request({
-      activity: this.activity,
-      intent: 'send_card',
-      businessParams: {
-        alarmId: option.id
-      }
-    })
-    this.startTts = false
-    this.playFirstMedia()
-  })
-}
-
-/**
- * alarm play media prepared
- */
-AlarmCore.prototype.playMediaPrepared = function () {
-  this.taskTimeout && clearTimeout(this.taskTimeout)
-  // pd require online url can only play 7s,after 7s should stop && play anther tts
-  this.taskTimeout = setTimeout(() => {
-    var isLocal = false
-    this.activity.media.stop()
-    if (this.ringUrl === DEFAULT_REMINDER_RING || this.ringUrl === DEFAULT_ALARM_RING) {
-      isLocal = true
-    }
-    this._taskCallback(this.activeOption, isLocal)
-  }, 7000)
+  logger.log('alarm: ', option.id, ' start ')
+  var mode = option.mode
+  if (this.jobQueue.indexOf(option.id) > -1) {
+    return
+  }
+  this.jobQueue.push(option.id)
+  var jobConf = this.scheduleHandler.getJobConfig(option.id)
+  if (!jobConf) {
+    logger.log('alarm: ' + option.id + ' can not run')
+    this._clearTask(mode, option)
+    return
+  }
+  this.activeOption = option
+  this._controlVolume(10, 1000, 7)
+  this.startTts = false
+  this.playFirstMedia()
+  // this._preventEventsDefaults()
 }
 
 /**
@@ -336,13 +325,19 @@ AlarmCore.prototype.playMediaPrepared = function () {
  * @param {Boolean} isLocal if play local ring
  */
 AlarmCore.prototype.playFirstMedia = function (isLocal) {
-  var state = wifi.getWifiState()
-  if (this.activeOption.type === 'Remind') {
+  // var state = wifi.getWifiState()
+  this.isLocal = isLocal
+  if (this.activeOption.type === TYPE_REMINDER) {
     this.ringUrl = DEFAULT_REMINDER_RING
   } else {
-    this.ringUrl = state === wifi.WIFI_CONNECTED && !isLocal ? this.activeOption.url : DEFAULT_ALARM_RING
+    // this.ringUrl = state === wifi.WIFI_CONNECTED && !isLocal ? this.activeOption.url : DEFAULT_ALARM_RING
+    this.ringUrl = DEFAULT_ALARM_RING
   }
-  this.activity.media.start(this.ringUrl, { streamType: 'alarm' }).then(() => {
+  this.mediaManager.playAudio(this.ringUrl, { streamType: AudioManager.STREAM_ALARM }).then(() => {
+    this.taskTimeout = setTimeout(() => {
+      this.mediaManager.stopMedia()
+      this._taskCallback(this.activeOption, this.isLocal)
+    }, 7000)
   }).catch((err) => {
     logger.log('alarm first media play error', err.stack)
   })
@@ -373,7 +368,22 @@ AlarmCore.prototype.init = function (command, isUpdateNative) {
   for (var i in command) {
     flag = true
     var commandOpt = this._formatCommandData(command[i])
-    var pattern = this._transferPattern(command[i].date, command[i].time, command[i].repeatType)
+    logger.log('alarm init -------> ', commandOpt.id, ' && commandOpt.repeat : ', commandOpt.repeat)
+    if (commandOpt.repeat === 1) { // once alarm/reminder need check expired time
+      var nowDate = new Date()
+      var nowDateTime = nowDate.getTime()
+      var alarmDate = this.formatAlarmDate(commandOpt.time)
+      var alarmDateTime = alarmDate.getTime()
+      logger.log('alarm init----->alarmDateStr: ', alarmDate, ' && ms value is : ', alarmDateTime, ' && origin date string is ', commandOpt.time)
+      logger.log('alarm init----->nowDateTime: ', nowDate, ' && ms value is : ', nowDateTime)
+      if (alarmDate <= nowDateTime) {
+        logger.log('alarm init -------> ', commandOpt.id, '  time has expired, so should remove it from local')
+        this.delAlarm(commandOpt)
+        continue
+      }
+    }
+    var alarmRepeatOption = this.getRepeatOption(commandOpt)
+    var pattern = this._transferPattern(commandOpt.time, commandOpt.repeat, alarmRepeatOption)
     this.startTask(commandOpt, pattern)
     options.push({ command: command[i], mode: 'add' })
   }
@@ -385,11 +395,21 @@ AlarmCore.prototype.init = function (command, isUpdateNative) {
       if (err) {
         logger.error('alarm init: clear local data error', err.stack)
       }
-      // kill alarm
-      logger.log('kill alarm')
-      this.activity.exit()
     })
   }
+}
+
+AlarmCore.prototype.formatAlarmDate = function formatAlarmDate (alarmDate) {
+  var date = alarmDate.split(' ')
+  var fullDate = date[0].split('-')
+  var fullTime = date[1].split(':')
+  var s = parseInt(fullTime[2] || 0)
+  var m = parseInt(fullTime[1])
+  var h = parseInt(fullTime[0])
+  var day = parseInt(fullDate[2])
+  var month = parseInt(fullDate[1] - 1)
+  var year = parseInt(fullDate[0])
+  return new Date(year, month, day, h, m, s)
 }
 
 /**
@@ -434,34 +454,125 @@ AlarmCore.prototype.getTasksFromConfig = function (callback) {
   })
 }
 
-/**
- * do task
- * @param {Object} Options command object
- */
-AlarmCore.prototype.doTask = function (command) {
-  if (command.length > 0) {
-    var options = []
-    for (var i = 0; i < command.length; i++) {
-      var commandItem = command[i]
-      var commandOpt = this._formatCommandData(commandItem)
-      if (commandItem.flag === 'add' || commandItem.flag === 'edit') {
-        var pattern = this._transferPattern(commandItem.date, commandItem.time, commandItem.repeatType)
-        options.push({ command: commandItem, mode: 'add' })
-        this.startTask(commandOpt, pattern)
-      }
-
-      if (commandItem.flag === 'del') {
-        this.scheduleHandler.clear(commandItem.id)
-        options.push({
-          command: {
-            id: commandItem.id
-          },
-          mode: 'remove'
-        })
-      }
-    }
-    this._setConfig(options)
+AlarmCore.prototype.isAlarmDataValid = function isAlarmDataValid (alarmData, noNeedCheckId) {
+  if (!alarmData) {
+    logger.warn('isAlarmDataValid -----> alarmData is undefine ')
+    return false
   }
+  if (alarmData.type !== TYPE_ALARM && alarmData.type !== TYPE_REMINDER) {
+    logger.warn('isAlarmDataValid -----> alarmData.type is not alarm or reminder')
+    return false
+  }
+  if (!noNeedCheckId && !alarmData.id) {
+    logger.warn('isAlarmDataValid -----> alarmData id is undefined')
+    return false
+  }
+  return true
+}
+
+AlarmCore.prototype.getRepeatOption = function getRepeatOption (alarmData) {
+  var option = ''
+  if (alarmData.repeat === 3) { // week repeat
+    var dayOfWeekOn = alarmData.dayofweek_on
+    var isRepeatD1 = dayOfWeekOn.substring(0, 1)
+    var isRepeatD2 = dayOfWeekOn.substring(1, 2)
+    var isRepeatD3 = dayOfWeekOn.substring(2, 3)
+    var isRepeatD4 = dayOfWeekOn.substring(3, 4)
+    var isRepeatD5 = dayOfWeekOn.substring(4, 5)
+    var isRepeatD6 = dayOfWeekOn.substring(5, 6)
+    var isRepeatD7 = dayOfWeekOn.substring(6, 7)
+    logger.info('getRepeatOption---->dayofweek_on: ', dayOfWeekOn)
+    if (isRepeatD1 === '1') {
+      option = '1'
+    }
+    if (isRepeatD2 === '1') {
+      option = (option === '' ? '2' : option + ',2')
+    }
+    if (isRepeatD3 === '1') {
+      option = (option === '' ? '3' : option + ',3')
+    }
+    if (isRepeatD4 === '1') {
+      option = (option === '' ? '4' : option + ',4')
+    }
+    if (isRepeatD5 === '1') {
+      option = (option === '' ? '5' : option + ',5')
+    }
+    if (isRepeatD6 === '1') {
+      option = (option === '' ? '6' : option + ',6')
+    }
+    if (isRepeatD7 === '1') {
+      option = (option === '' ? '0' : option + ',0')
+    }
+  } else if (alarmData.repeat === 4) { // month repeat
+    var dayOfMonthOn = alarmData.dayofmonth_on
+    option = dayOfMonthOn
+  } else if (alarmData.repeat === 5) { // year repeat
+    var dayOfYearOn = alarmData.dayofyear_on
+    var monthDay = dayOfYearOn.split('_')
+    var month = monthDay[0]
+    var day = monthDay[1]
+    option = day + ' ' + month
+  }
+  return option
+}
+
+AlarmCore.prototype.addAlarm = function addAlarm (alarmData) {
+  if (!this.isAlarmDataValid(alarmData)) {
+    logger.warn('addAlarm ---but alarm data invalid: ', alarmData)
+    return
+  }
+  var options = []
+  var alarmRepeatOption = this.getRepeatOption(alarmData)
+  logger.info('addAlarm--->alarmRepeatOption: ', alarmRepeatOption)
+  var pattern = this._transferPattern(alarmData.time, alarmData.repeat, alarmRepeatOption)
+  logger.info('addAlarm--->_transferPattern: ', pattern)
+  options.push({ command: alarmData, mode: 'add' })
+  this.startTask(alarmData, pattern)
+  this._setConfig(options)
+}
+
+AlarmCore.prototype.cancelAll = function cancelAll (type) {
+  logger.info('cancelAll: ------> is called,  type: ', type)
+  var targetDelJobsId = []
+  var allJobs = this.scheduleHandler.getAllJobs()
+  for (var jobId in allJobs) {
+    logger.info('cancelAll: ------> is called,  jobId: ', jobId)
+    var jobType = this.scheduleHandler.getJobType(jobId)
+    logger.info('cancelAll: ------> is called,  jobType: ', jobType)
+    if (jobType === type) {
+      targetDelJobsId.push(jobId)
+    }
+  }
+
+  for (var j = 0; j < targetDelJobsId.length; j++) {
+    logger.info('cancelAll: ------> _clearTask: ', targetDelJobsId[j])
+    var idx = this.jobQueue.indexOf(targetDelJobsId[j])
+    if (idx > -1) {
+      this.jobQueue.splice(idx, 1)
+    }
+    this.scheduleHandler.clear(targetDelJobsId[j])
+  }
+  var options = []
+  options.push({ command: targetDelJobsId, mode: 'multiRemove' })
+  this._setConfig(options)
+}
+
+AlarmCore.prototype.delAlarm = function delAlarm (alarmData) {
+  if (!this.isAlarmDataValid(alarmData, true)) {
+    logger.warn('delAlarm ---but alarm data invalid: ', alarmData)
+    return
+  }
+  if (!alarmData.id) {
+    this.cancelAll(alarmData.type)
+    return
+  }
+  this._clearTask(alarmData.type, alarmData, true)
+}
+
+AlarmCore.prototype.initAlarm = function initAlarm () {
+  this.getTasksFromConfig((command) => {
+    this.init(command)
+  })
 }
 
 /**
@@ -473,17 +584,11 @@ AlarmCore.prototype.clearAll = function () {
     this._clearTask(this.activeOption.mode, this.activeOption)
   }
   this.activeOption = null
-  this.activity.media.stop()
-  this.activity.tts.stop()
+  this.mediaManager.stopMediaAndTts()
   this.taskTimeout && clearTimeout(this.taskTimeout)
   this.volumeInterval && clearInterval(this.volumeInterval)
   this.stopTimeout && clearTimeout(this.stopTimeout)
-  this.restoreEventsDefaults()
-  this.activity.setBackground()
-}
-
-AlarmCore.prototype.clearReminderTts = function () {
-  this.reminderTTS = []
+  // this.restoreEventsDefaults()
 }
 
 module.exports = AlarmCore

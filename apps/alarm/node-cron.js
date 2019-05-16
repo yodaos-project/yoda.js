@@ -3,12 +3,11 @@
 var Task = require('./task')
 var ScheduledTask = require('./scheduled-task')
 var validation = require('./pattern-validation')
-// var parser = require('./parser')
 var CronExpression = require('./expression')
 
 var priority = {
-  'Remind': 100,
-  'Alarm': 50
+  'reminder': 100,
+  'alarm': 50
 }
 module.exports = (function () {
   function cronTab () {
@@ -33,12 +32,6 @@ module.exports = (function () {
       } else {
         if (priority[current.type] > priority[refered.type]) {
           return true
-        } else if (priority[current.type] === priority[refered.type]) {
-          if (current.createTime > refered.createTime) {
-            return true
-          } else {
-            return false
-          }
         } else {
           return false
         }
@@ -64,9 +57,17 @@ module.exports = (function () {
       return false
     }
 
+    this.getAllJobs = function () {
+      return self.jobs
+    }
+
+    this.getJobType = function (id) {
+      return self.jobs[id].type
+    }
+
     this.getJobConfig = function (id) {
       var isRunnable = false
-      if (self.jobs[id].type === 'Remind') {
+      if (self.jobs[id].type === 'reminder') {
         if (self.reminderQueue.indexOf(id) < 0) {
           self.reminderQueue.push(id)
         }
@@ -76,16 +77,14 @@ module.exports = (function () {
           var currentObj = {
             type: self.jobs[id].type,
             expression: self.jobs[id].expression,
-            createTime: self.jobs[id].createTime,
             tts: self.jobs[id].tts
           }
           var referedObj = {
             type: self.jobs[key].type,
-            expression: self.jobs[key].expression,
-            createTime: self.jobs[key].createTime
+            expression: self.jobs[key].expression
           }
           var compareResult = compareTask(id, currentObj, referedObj)
-          if (currentObj.type === 'Remind') {
+          if (currentObj.type === 'reminder') {
             if (clearPrevReminders(currentObj, referedObj)) {
               self.reminderQueue.splice(key, 1)
             }
@@ -169,11 +168,8 @@ module.exports = (function () {
           job: scheduleJob,
           pattern: task.initialPattern,
           expression: expression,
-          createTime: param.createTime,
-          tts: param.tts,
-          url: param.url,
-          time: param.time,
-          date: param.date
+          tts: param.feedback_utterance,
+          time: param.time
         }
       }
       return scheduleJob
