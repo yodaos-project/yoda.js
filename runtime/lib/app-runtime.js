@@ -511,12 +511,15 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
  * Note that monologues automatically ends on unexpected exit of apps.
  *
  * @param {string} appId
+ * @param {object} options
+ * @param {boolean} [options.allowCut=true] - allows the cut skill.
  */
-AppRuntime.prototype.startMonologue = function (appId) {
+AppRuntime.prototype.startMonologue = function (appId, options) {
   if (appId !== this.component.lifetime.getCurrentAppId()) {
     return Promise.reject(new Error(`App ${appId} is not currently on top of stack.`))
   }
   this.component.lifetime.monopolist = appId
+  this.component.lifetime.allowCutOnMonopolized = _.get(options, 'allowCut', true)
   return Promise.resolve()
 }
 
@@ -528,6 +531,7 @@ AppRuntime.prototype.startMonologue = function (appId) {
 AppRuntime.prototype.stopMonologue = function (appId) {
   if (this.component.lifetime.monopolist === appId) {
     this.component.lifetime.monopolist = null
+    this.component.lifetime.allowCutOnMonopolized = true
   }
   return Promise.resolve()
 }

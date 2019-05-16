@@ -124,3 +124,43 @@ test('scene monopolist could be temporarily paused by a cut app', t => {
       t.end()
     })
 })
+
+test('scene monopolist could not be paused by cut app if allowCutOnMonopolized is false', t => {
+  mock.restore()
+  mock.mockAppExecutors(3)
+  var life = new Lifetime(mock.runtime)
+
+  Promise.all(_.times(3).map(idx => life.createApp(`${idx}`)))
+    .then(() => {
+      return life.activateAppById('1', 'scene')
+    })
+    .then(() => {
+      life.monopolist = '1'
+      life.allowCutOnMonopolized = false
+      t.strictEqual(life.getCurrentAppId(), '1')
+      t.strictEqual(life.isMonopolized(), true, 'monologue shall be started by app top of stack')
+
+      return life.activateAppById('2', 'cut')
+        .then(() => {
+          t.fail('app 2 shall not interrupt monologue of app 1')
+        })
+        .catch(err => {
+          t.strictEqual(err.message, 'App 1 monopolized top of stack.')
+        })
+    })
+    .then(() => {
+      return life.destroyAppById('1')
+    })
+    .then(() => {
+      t.strictEqual(life.isMonopolized(), false, 'monologue shall not be continue by app not on top of stack')
+      return life.activateAppById('2')
+    })
+    .then(() => {
+      t.strictEqual(life.getCurrentAppId(), '2')
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
