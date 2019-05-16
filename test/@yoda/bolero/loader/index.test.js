@@ -35,6 +35,27 @@ test('should loads classes', t => {
   t.strictEqual(runtime.component.bar.hello(), 'hello')
 })
 
+test('should loads classes', t => {
+  var runtime = {}
+  class Foo extends Component {
+    hello () {
+      return 'foo'
+    }
+  }
+
+  class Bar extends Component {
+    hello () {
+      return 'bar'
+    }
+  }
+
+  var loader = new Loader(runtime, 'component')
+  loader.register('foo', Foo)
+  loader.register('foo', Bar)
+  t.strictEqual(runtime.component.foo.hello(), 'bar')
+  t.end()
+})
+
 test('should load path', t => {
   t.plan(1)
   var runtime = {}
