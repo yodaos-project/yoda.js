@@ -1,5 +1,7 @@
 'use strict'
 
+var _ = require('@yoda/util')._
+
 /**
  * @module @yoda/property
  * @description
@@ -65,10 +67,10 @@ function normalize (key, flag) {
 module.exports = {
   /**
    * @function get
-   * @param {String} key - the property key.
-   * @param {String} [flag] - the flag for set operation, available
+   * @param {string} key - the property key.
+   * @param {string} [flag] - the flag for set operation, available
    *                 values are: persistent and readonly.
-   * @returns {String|Number} returns the value by the given key.
+   * @returns {string} returns the value by the given key.
    * @throws {TypeError} key must be a string.
    * @throws {TypeError} key must not be empty string.
    */
@@ -79,9 +81,9 @@ module.exports = {
 
   /**
    * @function set
-   * @param {String} key - the property key.
-   * @param {String} val - the property val to set.
-   * @param {String} [flag] - the flag for set operation, available
+   * @param {string} key - the property key.
+   * @param {string} val - the property val to set.
+   * @param {string} [flag] - the flag for set operation, available
    *                 values are: persistent and readonly.
    * @throws {TypeError} key must be a string.
    * @throws {TypeError} key must not be empty string.
@@ -93,5 +95,33 @@ module.exports = {
       throw new TypeError('value must be required to be not undefined or null')
     }
     native.set(key, val + '')
+  },
+
+  /**
+   * @function list
+   * @param {prefix} [key] - the property key prefix to be listed.
+   * @param {Function} iterator - an iterator function on each key-value pair.
+   * @throws {TypeError} prefix must be a string.
+   * @throws {TypeError} iterator must be a function.
+   */
+  list: function (prefix, iterator) {
+    if (typeof prefix === 'function') {
+      iterator = prefix
+      prefix = undefined
+    }
+    if (typeof iterator !== 'function') {
+      throw new TypeError('Expect a function on property.list')
+    }
+    if (prefix != null && typeof prefix !== 'string') {
+      throw new TypeError('Expect a string on optional argument "prefix".')
+    }
+    if (prefix != null) {
+      return native.list((key, val) => {
+        if (_.startsWith(key, prefix)) {
+          iterator(key, val)
+        }
+      })
+    }
+    native.list(iterator)
   }
 }
