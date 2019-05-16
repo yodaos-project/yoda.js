@@ -7,35 +7,44 @@ var path = require('path')
 var logger = require('logger')('ext-app')
 var _ = require('@yoda/util')._
 
-var kAppModesTest = require('../constants').AppScheduler.modes.test
+var kAppModesInstrument = require('../constants').AppScheduler.modes.instrument
 
 var entriesDir = path.join(__dirname, '..', 'client')
 var defaultEntry = path.join(entriesDir, 'ext-app-entry.js')
-var testEntry = path.join(entriesDir, 'ext-test-entry.js')
+var instrumentEntry = path.join(entriesDir, 'ext-instrument-entry.js')
 
 module.exports = createExtApp
 /**
  *
  * @author Chengzhong Wu <chengzhong.wu@rokid.com>
  * @param {string} appId -
- * @param {string} target - app home directory
- * @param {AppRuntime} runtime -
+ * @param {object} metadata - app metadata
+ * @param {AppBridge} bridge -
+ * @param {number} mode - running mode
+ * @param {object} [options]
+ * @param {string} [options.descriptorPath] - api descriptor file to be used
+ * @param {string[]} [options.args] - additional execution arguments to the child process
+ * @param {object} [options.environs] - additional execution arguments to the child process
  */
 function createExtApp (appId, metadata, bridge, mode, options) {
   var target = _.get(metadata, 'appHome')
   options = options || {}
   var entry = defaultEntry
-  if (mode & kAppModesTest) {
-    entry = testEntry
+  if (mode & kAppModesInstrument) {
+    entry = instrumentEntry
   }
 
   if (options.descriptorPath == null) {
     options.descriptorPath = path.join(__dirname, '../client/api/default.json')
   }
 
-  var cp = childProcess.fork(entry, [ target, mode ], {
+  var execArgs = [ target ]
+  if (options.args) {
+    execArgs = execArgs.concat(options.args)
+  }
+  var cp = childProcess.fork(entry, execArgs, {
     cwd: target,
-    env: Object.assign({}, process.env),
+    env: Object.assign({}, process.env, options.environs),
     // rklog would redirect process log to logd if stdout is not a tty
     stdio: [ 'ignore', 'ignore', 'inherit', 'ipc' ]
   })
@@ -52,7 +61,12 @@ function createExtApp (appId, metadata, bridge, mode, options) {
 
   var eventBus = new EventBus(bridge, cp, appId, options)
   var onMessage = eventBus.onMessage.bind(eventBus)
-  var onSuspend = () => {
+  var onSuspend = (force) => {
+    if (force) {
+      logger.info(`${appId}(${cp.pid}) force stop process.`)
+      cp.kill(/** SIGKILL */9)
+      return
+    }
     logger.info(`${appId}(${cp.pid}) Activity end of life, killing process after 1s.`)
     setTimeout(() => cp.kill(), 1000)
   }
@@ -80,9 +94,9 @@ function createExtApp (appId, metadata, bridge, mode, options) {
   return new Promise((resolve, reject) => {
     var timer = setTimeout(() => {
       cp.removeListener('message', onMessage)
-      cp.kill()
+      cp.kill(/** SIGKILL */9)
       cleanup()
-      reject(new Error(` ExtApp '${target}'(${cp.pid}) failed to be ready in 15s.`))
+      reject(new Error(`ExtApp '${target}'(${cp.pid}) failed to be ready in 15s.`))
     }, 15 * 1000)
 
     eventBus.once('status-report:ready', () => {

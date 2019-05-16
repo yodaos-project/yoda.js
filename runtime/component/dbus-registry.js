@@ -403,7 +403,7 @@ DBus.prototype.amsexport = {
           cb(null, JSON.stringify({ ok: true, result: result }))
         })
         .catch(err => {
-          logger.info('unexpected error on opening url', url, optionsJson, err.stack)
+          logger.error('unexpected error on opening url', url, optionsJson, err.stack)
           cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
         })
     }
@@ -424,15 +424,15 @@ DBus.prototype.amsexport = {
       logger.info('launch requested by dbus iface', appId, 'mode', mode)
       var future = Promise.resolve()
       if (stopBeforeLaunch) {
-        future = this.component.appScheduler.suspendApp(appId, { force: true })
+        future = this.component.appScheduler.suspendApp(appId)
       }
       future
-        .then(() => this.component.appScheduler.createApp(appId, mode))
+        .then(() => this.component.appScheduler.createApp(appId, mode, options))
         .then(() => {
           cb(null, JSON.stringify({ ok: true, result: { appId: appId, mode: mode } }))
         })
         .catch(err => {
-          logger.info('unexpected error on launch app', appId, 'mode', mode, err.stack)
+          logger.error('unexpected error on launch app', appId, 'mode', mode, err.stack)
           cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
         })
     }
@@ -447,7 +447,7 @@ DBus.prototype.amsexport = {
           cb(null, JSON.stringify({ ok: true, result: { appId: appId } }))
         })
         .catch(err => {
-          logger.info('unexpected error on launch app', appId, err.stack)
+          logger.error('unexpected error on launch app', appId, err.stack)
           cb(null, JSON.stringify({ ok: false, message: err.message, stack: err.stack }))
         })
     }
@@ -480,13 +480,13 @@ DBus.prototype.amsexport = {
 
       var future
       if (appId) {
-        future = this.component.appScheduler.suspendApp(appId, { force: true })
+        future = this.component.appScheduler.suspendApp(appId)
           .then(() => this.component.appLoader.reload(appId))
           .then(() => {
             cb(null, JSON.stringify({ ok: true, result: this.component.appLoader.appManifests[appId] }))
           })
       } else {
-        future = this.component.appScheduler.suspendAllApps({ force: true })
+        future = this.component.appScheduler.suspendAllApps()
           .then(() => this.component.appLoader.reload())
           .then(() => {
             cb(null, JSON.stringify({ ok: true, result: this.component.appLoader.appManifests }))

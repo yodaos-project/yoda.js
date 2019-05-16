@@ -454,7 +454,11 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
 
 AppRuntime.prototype.appDidExit = function appDidExit (appId) {
   logger.info('Collecting resources of app', appId)
-  this.componentsInvoke('appDidExit', [ appId ])
+  try {
+    this.componentsInvoke('appDidExit', [ appId ])
+  } catch (err) {
+    logger.error('unexpected error on collection resources of app', appId, err.stack)
+  }
 }
 
 /**

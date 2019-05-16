@@ -2,26 +2,21 @@ var test = require('tape')
 var path = require('path')
 
 var helper = require('../../helper')
-var mock = require('../../helper/mock')
-var getLoader = require('./mock').getLoader
-var Scheduler = require(`${helper.paths.runtime}/component/app-scheduler`)
+var bootstrap = require('../../bootstrap')
+var mm = require('../../helper/mock')
 
 test('shall create light app', t => {
   var target = path.join(helper.paths.fixture, 'noop-app')
   t.plan(4)
   var appId = '@test'
-  var runtime = {
-    appDidExit: function () {},
-    component: {
-      appLoader: getLoader({
-        '@test': {
-          appHome: target
-        }
-      })
-    }
-  }
-  mock.mockReturns(runtime.component.appLoader, 'getTypeOfApp', 'light')
-  var scheduler = new Scheduler(runtime)
+  var tt = bootstrap()
+  mm.mockReturns(tt.runtime, 'appDidExit')
+  mm.mockReturns(tt.component.appLoader, 'getTypeOfApp', 'light')
+  mm.mockReturns(tt.component.appLoader, 'getAppManifest', {
+    appHome: target
+  })
+  var scheduler = tt.component.appScheduler
+
   t.looseEqual(scheduler.appStatus[appId], null)
   var promise = scheduler.createApp(appId)
   t.strictEqual(scheduler.appStatus[appId], 'creating')
@@ -42,18 +37,14 @@ test('light app exits on start up', t => {
   var target = path.join(helper.paths.fixture, 'crash-on-startup-app')
   t.plan(5)
   var appId = '@test'
-  var runtime = {
-    appDidExit: function () {},
-    component: {
-      appLoader: getLoader({
-        '@test': {
-          appHome: target
-        }
-      })
-    }
-  }
-  mock.mockReturns(runtime.component.appLoader, 'getTypeOfApp', 'light')
-  var scheduler = new Scheduler(runtime)
+  var tt = bootstrap()
+  mm.mockReturns(tt.runtime, 'appDidExit')
+  mm.mockReturns(tt.component.appLoader, 'getTypeOfApp', 'light')
+  mm.mockReturns(tt.component.appLoader, 'getAppManifest', {
+    appHome: target
+  })
+  var scheduler = tt.component.appScheduler
+
   t.looseEqual(scheduler.appStatus[appId], null)
   var promise = scheduler.createApp(appId)
   t.strictEqual(scheduler.appStatus[appId], 'creating')
