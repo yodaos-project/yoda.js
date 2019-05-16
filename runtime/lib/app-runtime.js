@@ -531,7 +531,7 @@ AppRuntime.prototype.startMonologue = function (appId, options) {
 AppRuntime.prototype.stopMonologue = function (appId) {
   if (this.component.lifetime.monopolist === appId) {
     this.component.lifetime.monopolist = null
-    this.component.lifetime.filterCutOnMonopolized = true
+    this.component.lifetime.allowCutOnMonopolized = true
   }
   return Promise.resolve()
 }
