@@ -512,14 +512,14 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
  *
  * @param {string} appId
  * @param {object} options
- * @param {boolean} [options.filterCut=true] - allows the cut skill.
+ * @param {boolean} [options.allowCut=true] - allows the cut skill.
  */
 AppRuntime.prototype.startMonologue = function (appId, options) {
   if (appId !== this.component.lifetime.getCurrentAppId()) {
     return Promise.reject(new Error(`App ${appId} is not currently on top of stack.`))
   }
   this.component.lifetime.monopolist = appId
-  this.component.lifetime.filterCutOnMonopolized = _.get(options, 'filterCut', true)
+  this.component.lifetime.allowCutOnMonopolized = _.get(options, 'allowCut', true)
   return Promise.resolve()
 }
 

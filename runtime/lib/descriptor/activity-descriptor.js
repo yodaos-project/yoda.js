@@ -569,7 +569,7 @@ Object.assign(ActivityDescriptor.prototype,
      * @instance
      * @function startMonologue
      * @param {object} [options]
-     * @param {boolean} [options.filterCut=true] - allows the cut skill.
+     * @param {boolean} [options.allowCut=true] - allows the cut skill.
      * @returns {Promise<void>}
      */
     startMonologue: {

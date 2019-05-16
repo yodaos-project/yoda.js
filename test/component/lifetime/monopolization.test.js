@@ -125,7 +125,7 @@ test('scene monopolist could be temporarily paused by a cut app', t => {
     })
 })
 
-test('scene monopolist could not be paused by cut app if filterCutOnMonopolized is false', t => {
+test('scene monopolist could not be paused by cut app if allowCutOnMonopolized is false', t => {
   mock.restore()
   mock.mockAppExecutors(3)
   var life = new Lifetime(mock.runtime)
@@ -136,7 +136,7 @@ test('scene monopolist could not be paused by cut app if filterCutOnMonopolized 
     })
     .then(() => {
       life.monopolist = '1'
-      life.filterCutOnMonopolized = false
+      life.allowCutOnMonopolized = false
       t.strictEqual(life.getCurrentAppId(), '1')
       t.strictEqual(life.isMonopolized(), true, 'monologue shall be started by app top of stack')
 

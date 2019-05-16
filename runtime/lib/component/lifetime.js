@@ -126,7 +126,7 @@ function LaVieEnPile (runtime) {
   /**
    * Allows the cut skill when monopolized, this is the behavior by default.
    */
-  this.filterCutOnMonopolized = true
+  this.allowCutOnMonopolized = true
 
   /**
    * Determines if lifetime is been paused globally by system.
@@ -246,7 +246,7 @@ LaVieEnPile.prototype.guardMonopolization = function guardMonopolization (appId,
   if (appId === this.monopolist) {
     return false
   }
-  if (this.filterCutOnMonopolized === true &&
+  if (this.allowCutOnMonopolized === true &&
     form === 'cut' && this.activeSlots.scene === this.monopolist) {
     logger.info(`current monopolist is a scene app, bypassing upcoming cut app(${appId})`)
     return false
