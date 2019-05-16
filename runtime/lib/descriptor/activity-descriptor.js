@@ -568,16 +568,18 @@ Object.assign(ActivityDescriptor.prototype,
      * @memberof yodaRT.activity.Activity
      * @instance
      * @function startMonologue
+     * @param {object} [options]
+     * @param {boolean} [options.allowCut=true] - allows the cut skill.
      * @returns {Promise<void>}
      */
     startMonologue: {
       type: 'method',
       returns: 'promise',
-      fn: function startMonologue () {
+      fn: function startMonologue (options) {
         if (!this._runtime.component.permission.check(this._appId, 'ACCESS_MONOPOLIZATION')) {
           return Promise.reject(new Error('Permission denied.'))
         }
-        return this._runtime.startMonologue(this._appId)
+        return this._runtime.startMonologue(this._appId, options)
       }
     },
     /**
