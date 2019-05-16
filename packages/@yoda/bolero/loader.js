@@ -84,7 +84,7 @@ class Loader {
   register (name, Klass) {
     name = _.camelCase(name)
     if (this.registry[name]) {
-      throw new Error(`Conflict registration on '${name}'.`)
+      logger.warn(`Overriding existing ${name}`)
     }
     this.registry[name] = Klass
     this.loadToTarget(name, Klass)
