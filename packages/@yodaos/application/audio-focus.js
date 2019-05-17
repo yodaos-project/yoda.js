@@ -77,13 +77,13 @@ class AudioFocus {
     this.api = api
     this.id = ++_id
     this.type = type || AudioFocus.Type.DEFAULT
-    register(this.api, this.id, this)
   }
 
   /**
    * @returns {Promise}
    */
   request () {
+    register(this.api, this.id, this)
     return this.api.request({ id: this.id, gain: this.type })
   }
 

@@ -1,4 +1,5 @@
 var _ = require('@yoda/util')._
+var assert = require('assert')
 
 var RequestType = {
   DEFAULT: 0b000,
@@ -8,6 +9,7 @@ var RequestType = {
 }
 
 var RequestStatus = {
+  REQUEST_NOT_MATCH: -3,
   DELAYED: -2,
   FAILED: -1,
   GRANTED: 0
@@ -57,7 +59,14 @@ class AudioFocus {
       exclusive: (gain & RequestType.EXCLUSIVE) > 0,
       mayDuck: (gain & RequestType.MAY_DUCK) > 0
     })
+    if (this.guardRequest(req)) {
+      return RequestStatus.REQUEST_NOT_MATCH
+    }
+
     var currentFocus = this.getCurrentFocus()
+    if (_.get(currentFocus, 'appId') === req.appId && _.get(currentFocus, 'id') === req.id) {
+      return RequestStatus.GRANTED
+    }
     if (_.get(currentFocus, 'exclusive')) {
       return RequestStatus.FAILED
     }
@@ -117,6 +126,20 @@ class AudioFocus {
     this.descriptor.audioFocus.emitToApp(req.appId, 'gain', [ req.id ])
   }
 
+  guardRequest (req) {
+    try {
+      if (this.transientRequest && this.transientRequest.appId === req.appId && this.transientRequest.id === req.id) {
+        assert.deepStrictEqual(this.transientRequest, req)
+      }
+      if (this.lastingRequest && this.lastingRequest.appId === req.appId && this.lastingRequest.id === req.id) {
+        assert.deepStrictEqual(this.lastingRequest, req)
+      }
+    } catch (e) {
+      return true
+    }
+    return false
+  }
+
   shiftTransientFocus (req) {
     var tmp = this.transientRequest
     if (tmp) {
@@ -140,8 +163,11 @@ class AudioFocus {
     }
     tmp = this.lastingRequest
     if (tmp) {
-      this.lastingRequest = null
-      this.castRequest(tmp, req.transient, req.mayDuck)
+      /** in case of identical focus re-request */
+      if (tmp.appId !== req.appId || tmp.id !== req.id) {
+        this.lastingRequest = null
+        this.castRequest(tmp, req.transient, req.mayDuck)
+      }
     }
     this.lastingRequest = req
     this.descriptor.audioFocus.emitToApp(req.appId, 'gain', [ req.id ])
