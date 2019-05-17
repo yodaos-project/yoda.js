@@ -506,6 +506,43 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
 }
 
 /**
+ * Switch the playback status of scene applications.
+ *
+ * @param {string} [playerControlAppId] - The appId of playerControl. playerControl app will be requested when there is no scene app to resume.
+ *
+ * usage: Configure the buttons that need to be triggered or any others can trigger this method.
+ * example: edit /etc/yoda/keyboard.json
+      click": {
+        "debounce": 1000,
+        "runtimeMethod": "playerControl",
+        "params": ["@yoda/playercontrol"]
+      }
+ */
+AppRuntime.prototype.playerControl = function (playerControlAppId) {
+  var playing = property.get('audio.multimedia.playing')
+  logger.log(`playerControl: current playing: ${playing}`)
+  if (playing === 'true') {
+    if (this.component.lifetime.activeSlots.scene == null) {
+      logger.log('playerControl: current no scene app. skip.')
+      return
+    }
+    logger.log(`playerControl: paues appId: ${this.component.lifetime.activeSlots.scene}`)
+    return this.component.lifetime.onLifeCycle(this.component.lifetime.activeSlots.scene, 'pause')
+  }
+  if (this.component.lifetime.activeSlots.scene == null) {
+    var mockNlp = {
+      cloud: true,
+      intent: 'ROKID.INTENT.RESUME',
+      appId: playerControlAppId
+    }
+    logger.log(`playerControl: request playerControlAppId: ${playerControlAppId}`)
+    return this.component.lifetime.onLifeCycle(playerControlAppId, 'request', [mockNlp, {}])
+  }
+  logger.log(`playerControl: resume appId: ${this.component.lifetime.activeSlots.scene}`)
+  this.component.lifetime.onLifeCycle(this.component.lifetime.activeSlots.scene, 'resume')
+}
+
+/**
  * Start a session of monologue. In session of monologue, no other apps could preempt top of stack.
  *
  * Note that monologues automatically ends on unexpected exit of apps.
