@@ -506,7 +506,7 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
 }
 
 /**
- * Switch the playback status of scene applications.
+ * Switch the playback status of scene applications. support cloud and bluetooth.
  *
  * @param {string} [playerControlAppId] - The appId of playerControl. playerControl app will be requested when there is no scene app to resume.
  *
@@ -520,8 +520,9 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
  */
 AppRuntime.prototype.playerControl = function (playerControlAppId) {
   var playing = property.get('audio.multimedia.playing')
-  logger.log(`playerControl: current playing: ${playing}`)
-  if (playing === 'true') {
+  var bluetoothPlaying = property.get('audio.bluetooth.playing')
+  logger.log(`playerControl: current playing: ${playing}; bluetoothPlaying: ${bluetoothPlaying}`)
+  if (playing === 'true' || bluetoothPlaying === 'true') {
     if (this.component.lifetime.activeSlots.scene == null) {
       logger.log('playerControl: current no scene app. skip.')
       return
