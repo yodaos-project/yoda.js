@@ -9,8 +9,8 @@ test('should transform url scheme "self:"', t => {
   t.plan(4)
 
   var tt = bootstrap()
-  Object.defineProperty(tt.component, 'light', { value: {} })
-  mm.mockPromise(tt.component.light, 'play', (appId, absPath, args, options) => {
+  Object.defineProperty(tt.component, 'effect', { value: {} })
+  mm.mockPromise(tt.component.effect, 'play', (appId, absPath, args, options) => {
     t.strictEqual(appId, 'test')
     t.strictEqual(absPath, '/data/apps/test/light/foobar.js')
     t.deepEqual(args, {})

@@ -13,7 +13,6 @@ module.exports = function bootstrap () {
       component.appScheduler.appMap[ctx.appId] = bridge
       component.appScheduler.appStatus[ctx.appId] = kRunning
       component.appScheduler.appLaunchOptions[ctx.appId] = {}
-      component.lifetime.activateAppById(ctx.appId)
       return bridge
     }
   })

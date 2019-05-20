@@ -139,8 +139,6 @@ ActivityDescriptor.methods = {
    * @instance
    * @function openUrl
    * @param {string} url - the YodaOS url to open.
-   * @param {object} [options]
-   * @param {boolean} [options.preemptive=true] -
    * @returns {Promise<boolean>}
    */
   openUrl: {

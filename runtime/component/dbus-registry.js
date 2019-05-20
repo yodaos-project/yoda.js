@@ -501,20 +501,6 @@ DBus.prototype.amsexport = {
 }
 
 DBus.prototype.yodadebug = {
-  GetLifetime: {
-    in: [],
-    out: ['s'],
-    fn: function (cb) {
-      cb(null, JSON.stringify({
-        ok: true,
-        result: {
-          activitiesStack: this.component.lifetime.activitiesStack,
-          monopolist: this.component.lifetime.monopolist,
-          appStatus: this.component.appScheduler.appStatus
-        }
-      }))
-    }
-  },
   GetLoader: {
     in: [],
     out: ['s'],
