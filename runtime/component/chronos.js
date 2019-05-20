@@ -5,6 +5,7 @@
  * @property {number} interval
  * @property {string} url
  * @property {string} appId
+ * @property {number} lastExecutedAt
  */
 
 class Chronos {
@@ -80,6 +81,7 @@ class Chronos {
       return
     }
     this.nextJobs.forEach(it => {
+      it.lastExecutedAt = Date.now()
       this.runtime.openUrl(it.url)
     })
     this.go()
@@ -120,6 +122,9 @@ class Chronos {
    * @param {number} now
    */
   calculateNextTime (job, now) {
+    if (job.lastExecutedAt && !job.repeat) {
+      return -1
+    }
     var triggerAt = job.triggerAt
     if (triggerAt >= now) {
       return triggerAt
