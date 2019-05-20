@@ -51,3 +51,32 @@ test('should create audio focus of expected type', t => {
   }
   focus.request()
 })
+
+test('should re-register audio focus on recycling', t => {
+  t.plan(4)
+
+  var api = new EventEmitter()
+  api.request = function (opt) {
+    api.emit('gain', opt.id)
+    return Promise.resolve()
+  }
+  api.abandon = function (id) {
+    api.emit('loss', id, false, false)
+    return Promise.resolve()
+  }
+
+  var focus = new AudioFocus(AudioFocus.Type.TRANSIENT, api)
+  focus.onGain = () => {
+    t.pass('focus gained')
+    focus.abandon()
+  }
+  var lost = false
+  focus.onLoss = (transient, mayDuck) => {
+    t.strictEqual(transient || mayDuck, false)
+    if (!lost) {
+      lost = true
+      focus.request()
+    }
+  }
+  focus.request()
+})

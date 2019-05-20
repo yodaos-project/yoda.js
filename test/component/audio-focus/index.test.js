@@ -51,6 +51,28 @@ test('transient request should gain focus', t => {
   t.end()
 })
 
+test('re-request an modified request', t => {
+  var tt = bootstrap()
+  var comp = tt.component.audioFocus
+  var desc = tt.descriptor.audioFocus
+  mm.mockReturns(desc, 'emitToApp', function () {
+    t.deepEqual(Array.prototype.slice.call(arguments), [ 'test', 'gain', [ 1 ] ])
+  })
+  comp.request({
+    id: 1,
+    appId: 'test',
+    gain: 0b000 /** default */
+  })
+  var ret = comp.request({
+    id: 1,
+    appId: 'test',
+    gain: 0b001 /** transient */
+  })
+
+  t.deepEqual(ret, -3)
+  t.end()
+})
+
 test('transient request should gain focus over default request', t => {
   var tt = bootstrap()
   var comp = tt.component.audioFocus
@@ -445,4 +467,51 @@ test('abandoning all focuses', t => {
     gain: 0b001 /** transient */
   })
   comp.abandonAllFocuses()
+})
+
+test('identical focus re-requesting', t => {
+  var tt = bootstrap()
+  var comp = tt.component.audioFocus
+  var desc = tt.descriptor.audioFocus
+
+  var eventSeq = []
+  var expected = [
+    [ 'test', 'gain', 1 ],
+    [ 'test', 'loss', 1, /** transient */true, /** may duck */false ],
+    [ 'test', 'gain', 2 ],
+    [ 'test', 'loss', 2, /** transient */false, /** may duck */false ],
+    [ 'test', 'gain', 1 ]
+  ]
+  mm.mockReturns(desc, 'emitToApp', function (appId, event, args) {
+    eventSeq.push([ appId, event ].concat(args))
+  })
+
+  comp.request({
+    id: 1,
+    appId: 'test',
+    gain: 0b000 /** default */
+  })
+  comp.request({
+    id: 1,
+    appId: 'test',
+    gain: 0b000 /** default */
+  })
+  comp.request({
+    id: 2,
+    appId: 'test',
+    gain: 0b001 /** transient */
+  })
+  comp.request({
+    id: 2,
+    appId: 'test',
+    gain: 0b001 /** transient */
+  })
+  comp.request({
+    id: 1,
+    appId: 'test',
+    gain: 0b000 /** default */
+  })
+
+  t.deepEqual(eventSeq, expected)
+  t.end()
 })
