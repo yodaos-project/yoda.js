@@ -25,13 +25,13 @@ class EffectDescriptor extends Descriptor {
     var args = ctx.args[1]
     var options = ctx.args[2]
     var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, ctx.appHome + '/light')
-    logger.log('playing light effect', absPath)
-    return this.component.light.play(ctx.appId, absPath, args || {}, options || {})
+    logger.log('playing effect', absPath)
+    return this.component.effect.play(ctx.appId, absPath, args || {}, options || {})
       .then((res) => {
         if (res && res[0] === true) {
           return
         }
-        throw new Error('unknown light error')
+        throw new Error('unknown effect error')
       })
   }
 
@@ -40,17 +40,17 @@ class EffectDescriptor extends Descriptor {
     var future
     if (uri && typeof uri === 'string') {
       var absPath = yodaPath.transformPathScheme(uri, LIGHT_SOURCE, ctx.appHome + '/light')
-      future = this.component.light.stop(ctx.appId, absPath)
+      future = this.component.effect.stop(ctx.appId, absPath)
     } else {
-      /** stop all light effects belonging to the app */
-      future = this.component.light.stopByAppId(ctx.appId)
+      /** stop all effects belonging to the app */
+      future = this.component.effect.stopByAppId(ctx.appId)
     }
     return future
       .then((res) => {
         if (res && res[0] === true) {
           return
         }
-        throw new Error('stop light failed')
+        throw new Error('stop effect failed')
       })
   }
 }
@@ -61,7 +61,7 @@ EffectDescriptor.methods = {
    * @memberof yodaRT.activity.Activity.EffectClient
    * @instance
    * @function play
-   * @param {string} uri - the light resource uri.
+   * @param {string} uri - the effect resource uri.
    * @param {object} args - the args.
    * @param {object} [options]
    * @param {number} [options.zIndex] number of layers to play. default minimum layer
@@ -72,11 +72,11 @@ EffectDescriptor.methods = {
     returns: 'promise'
   },
   /**
-   * stop the given light effect and clear from the recovery queue
+   * stop the given effect and clear from the recovery queue
    * @memberof yodaRT.activity.Activity.EffectClient
    * @instance
    * @function stop
-   * @param {string} [uri] - the light resource uri.
+   * @param {string} [uri] - the effect resource uri.
    * @returns {Promise<void>}
    */
   stop: {

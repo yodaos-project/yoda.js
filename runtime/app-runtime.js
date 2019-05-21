@@ -27,7 +27,6 @@ module.exports = AppRuntime
 function AppRuntime () {
   EventEmitter.call(this)
 
-  this.shouldWelcome = true
   this.inited = false
   this.hibernated = false
   this.__temporaryDisablingReasons = [ 'initiating' ]
@@ -47,87 +46,37 @@ AppRuntime.prototype.init = function init () {
     return Promise.resolve()
   }
 
+  /** 0. load components and descriptors */
   ComponentConfig.paths.forEach(it => {
     this.componentLoader.load(it)
   })
   this.descriptorLoader.load(path.join(__dirname, 'descriptor'))
 
-  /** 1. init components. */
+  /** 1. init components */
   this.componentsInvoke('init')
   this.phaseToBooting()
-  /** 2. init device properties, such as volume and cloud stack. */
-  this.initiate()
-  /** 3. init services */
-  // TODO: OPEN WAKEUP ENGINE
+  /** 2. init services */
   this.resetServices()
 
-  /** 4. determines if welcome announcements are needed */
-  this.shouldWelcome = !this.isStartupFlagExists()
-
-  var shouldBreakInit = () => {
-    if (this.hasBeenDisabled()) {
-      if (this.__temporaryDisablingReasons.length > 1) {
-        return true
-      }
-      if (this.__temporaryDisablingReasons[0] !== 'welcoming') {
-        return true
-      }
-    }
-    return false
-  }
-
-  /** 5. load app manifests */
-  return this.loadApps().then(() => {
+  /** 3. load app manifests */
+  logger.info('start loading applications')
+  return this.component.appLoader.reload().then(() => {
     this.inited = true
     this.enableRuntimeFor('initiating')
 
-    /** 6. questioning if any interests of delegation */
+    /** 4. questioning if any interests of delegation */
     return this.component.dispatcher.delegate('runtimeDidInit')
   }).then(delegation => {
+    /** 5. broadcast system booted */
+    var future = this.component.broadcast.dispatch('yodaos.on-system-booted', [])
     if (delegation) {
-      return
+      return future
     }
-    this.disableRuntimeFor('welcoming')
 
-    /** 7. announce welcoming */
-    var future = Promise.resolve()
-    // TODO: move welcoming to launcher app
-    // var isFirstBoot = property.get('sys.firstboot.init', 'persist') !== '1'
-    // property.set('sys.firstboot.init', '1', 'persist')
-    // if (isFirstBoot) {
-    //   /** 8.1. announce first time welcoming */
-    //   future = future.then(() => {
-    //     if (shouldBreakInit()) {
-    //       return
-    //     }
-    //     return this.component.light.ttsSound('@yoda', 'system://firstboot.ogg')
-    //   })
-    // }
-    // if (this.shouldWelcome) {
-    //   /** 8.2. announce system loading */
-    //   future = future.then(() => {
-    //     if (shouldBreakInit()) {
-    //       return
-    //     }
-    //     this.component.light.play('@yoda', 'system://boot.js', { fps: 200 })
-    //     return this.component.light.appSound('@yoda', 'system://boot.ogg')
-    //   })
-    // }
-    return future.then(() => {
-      this.enableRuntimeFor('welcoming')
-      if (shouldBreakInit()) {
-        return
-      }
-      /** 8. force-enable and check network states */
-      this.component.broadcast.dispatch('yodaos.on-system-booted', [])
-    }).catch(err => {
-      logger.error('unexpected error on boot welcoming', err.stack)
-      this.enableRuntimeFor('welcoming')
-    })
-  }).then(() => {
+    /** 6. phase runtime to reset */
     this.phaseToReset()
-    /** 10. open the setup url and wait for incoming `ready` call */
-    return this.openUrl('yoda-app://setup/init', { preemptive: true })
+    /** 7. open the setup url and wait for incoming `ready` call */
+    return this.openUrl('yoda-app://setup/init')
   })
 }
 
@@ -158,36 +107,14 @@ AppRuntime.prototype.componentsInvoke = function componentsInvoke (method, args)
 }
 
 /**
- * Load applications.
- */
-AppRuntime.prototype.loadApps = function loadApps () {
-  logger.info('start loading applications')
-  return this.component.appLoader.reload()
-    .then(() => {
-      this.loadAppComplete = true
-      logger.log('load app complete')
-    })
-}
-
-/**
- * Initiate/Re-initiate runtime configs
- */
-AppRuntime.prototype.initiate = function initiate () {
-  return Promise.resolve()
-}
-
-/**
  * Start the daemon apps.
  */
 AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
   var self = this
-  var daemons = Object.keys(self.component.appLoader.appManifests).map(appId => {
+  var daemons = Object.keys(self.component.appLoader.appManifests).filter(appId => {
     var manifest = self.component.appLoader.appManifests[appId]
-    if (!manifest.daemon) {
-      return
-    }
-    return appId
-  }).filter(it => it)
+    return !!manifest.daemon
+  })
 
   return start(0)
   function start (idx) {
@@ -204,46 +131,6 @@ AppRuntime.prototype.startDaemonApps = function startDaemonApps () {
         return start(idx + 1)
       })
   }
-}
-
-/**
- * Handle power button activation.
- * - if not connected to network yet, disable bluetooth broadcast.
- * - if there are apps actively running, terminates all apps.
- * - otherwise set device actively pickup.
- */
-AppRuntime.prototype.handlePowerActivation = function handlePowerActivation () {
-  var currentAppId = this.component.visibility.getKeyAndVisibleAppId()
-  logger.info('handling power activation, current app is', currentAppId)
-
-  /**
-   * reset services whenever possible
-   */
-  var future = this.resetServices({ lightd: false })
-
-  if (currentAppId == null && !this.component.custodian.isPrepared()) {
-    // guide user to configure network but not start network app directly
-    return future.then(() => this.component.light.ttsSound('@yoda', 'system://guide_config_network.ogg'))
-  }
-
-  future = Promise.all([ future, this.idle() ])
-
-  if (currentAppId) {
-    /**
-     * if there is any app actively running, do not pick up.
-     */
-    return future
-  }
-
-  return future.then(() => {
-    if (this.component.turen.pickingUp) {
-      /**
-       * already picking up, discard current pick session.
-       */
-      return this.setPickup(false)
-    }
-    return this.setPickup(true, 6000, true)
-  })
 }
 
 /**
@@ -367,7 +254,6 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
  *
  * @param {string} url -
  * @param {object} [options] -
- * @param {boolean} [options.preemptive=true] -
  * @returns {Promise<boolean>}
  */
 AppRuntime.prototype.openUrl = function (url, options) {
@@ -391,42 +277,8 @@ AppRuntime.prototype.openUrl = function (url, options) {
 
 /**
  *
- * @param {boolean} mute - set mic to mute, switch mute if not given.
- * @param {object} [options]
- * @param {boolean} [options.silent]
- */
-AppRuntime.prototype.setMicMute = function setMicMute (mute, options) {
-  var silent = _.get(options, 'silent', false)
-
-  var future = Promise.resolve()
-  if (silent) {
-    future = this.component.light.stop('@yoda', 'system://setMuted.js')
-  }
-
-  /** mute */
-  var muted = this.component.turen.toggleMute(mute)
-
-  if (silent) {
-    return future
-  }
-
-  return future
-    .then(() => {
-      var noTts = !!this.component.visibility.getKeyAndVisibleAppId()
-      this.component.light.play(
-        '@yoda',
-        'system://setMuted.js',
-        { muted: muted, noTts: noTts },
-        { shouldResume: muted })
-    })
-}
-
-/**
- *
  * @param {object} [options] -
  * @param {boolean} [options.lightd=true] -
- * @param {boolean} [options.ttsd=true] -
- * @param {boolean} [options.multimediad=true] -
  */
 AppRuntime.prototype.resetServices = function resetServices (options) {
   var lightd = _.get(options, 'lightd', true)
@@ -435,7 +287,7 @@ AppRuntime.prototype.resetServices = function resetServices (options) {
   var promises = []
   if (lightd) {
     promises.push(
-      this.component.light.reset()
+      this.component.effect.reset()
         .then((res) => {
           if (res && res[0] === true) {
             logger.log('reset lightd success')
@@ -459,49 +311,6 @@ AppRuntime.prototype.appDidExit = function appDidExit (appId) {
   } catch (err) {
     logger.error('unexpected error on collection resources of app', appId, err.stack)
   }
-}
-
-/**
- * @param {boolean} isPickup
- * @private
- */
-AppRuntime.prototype.setPickup = function (isPickup, duration, withAwaken) {
-  if (this.component.turen.pickingUp === isPickup) {
-    /** already at expected state */
-    logger.info('turen already at picking up?', this.component.turen.pickingUp)
-    return Promise.resolve()
-  }
-
-  if (this.component.turen.muted && isPickup) {
-    logger.info('Turen has been muted, skip picking up.')
-    return Promise.resolve()
-  }
-
-  logger.info('set turen picking up', isPickup)
-  this.component.turen.pickup(isPickup)
-
-  if (isPickup) {
-    /** stop all other announcements on picking up */
-    this.component.light.stopSoundByAppId('@yoda')
-    this.component.light.stopByAppId('@yoda')
-    return this.component.light.setPickup('@yoda', duration, withAwaken)
-  }
-  return this.component.light.stop('@yoda', 'system://setPickup.js')
-}
-
-AppRuntime.prototype.setConfirm = function (appId, intent, slot, options, attrs) {
-  var currAppId = this.component.visibility.getKeyAndVisibleAppId()
-  if (currAppId !== appId) {
-    return Promise.reject(new Error(`App is not currently active app, active app: ${currAppId}.`))
-  }
-  return new Promise((resolve, reject) => {
-    this.cloudApi.sendNlpConform(this.domain.active, intent, slot, options, attrs, (error) => {
-      if (error) {
-        return reject(error)
-      }
-      resolve()
-    })
-  }).then(() => this.setPickup(true))
 }
 
 /**
@@ -558,8 +367,7 @@ AppRuntime.prototype.phaseToReady = function phaseToReady () {
   this.component.flora.post('yodaos.runtime.phase', ['ready'], require('@yoda/flora').MSGTYPE_PERSIST)
   return Promise.all([
     this.startDaemonApps(),
-    this.setStartupFlag(),
-    this.initiate()
+    this.setStartupFlag()
   ]).then(onDone, err => {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()

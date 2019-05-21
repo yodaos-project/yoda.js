@@ -126,7 +126,6 @@ YodaLocalPackage(tape)
 if(NOT CMAKE_BUILD_HOST)
   # local packages
   YodaLocalPackage(yoda-audio @yoda/audio)
-  YodaLocalPackage(yoda-httpdns @yoda/httpdns)
   YodaLocalPackage(yoda-httpsession @yoda/httpsession)
   YodaLocalPackage(yoda-input @yoda/input)
   YodaLocalPackage(yoda-light @yoda/light)
