@@ -521,17 +521,23 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
 AppRuntime.prototype.playerControl = function (playerControlAppId) {
   var playing = property.get('audio.multimedia.playing')
   var bluetoothPlaying = property.get('audio.bluetooth.playing')
+  var mockNlp
   logger.log(`playerControl: current playing: ${playing}; bluetoothPlaying: ${bluetoothPlaying}`)
   if (playing === 'true' || bluetoothPlaying === 'true') {
     if (this.component.lifetime.activeSlots.scene == null) {
       logger.log('playerControl: current no scene app. skip.')
       return
     }
-    logger.log(`playerControl: paues appId: ${this.component.lifetime.activeSlots.scene}`)
-    return this.component.lifetime.onLifeCycle(this.component.lifetime.activeSlots.scene, 'pause')
+    logger.log(`playerControl: system app hold`)
+    mockNlp = {
+      cloud: false,
+      intent: 'hold',
+      appId: 'ROKID.SYSTEM'
+    }
+    return this.handleNlpIntent('', mockNlp, {})
   }
-  if (this.component.lifetime.activeSlots.scene == null) {
-    var mockNlp = {
+  if (this.component.lifetime.activeSlots.scene == null && this.component.lifetime.activeSlots.cut == null) {
+    mockNlp = {
       cloud: true,
       intent: 'ROKID.INTENT.RESUME',
       appId: playerControlAppId
@@ -539,8 +545,13 @@ AppRuntime.prototype.playerControl = function (playerControlAppId) {
     logger.log(`playerControl: request playerControlAppId: ${playerControlAppId}`)
     return this.component.lifetime.onLifeCycle(playerControlAppId, 'request', [mockNlp, {}])
   }
-  logger.log(`playerControl: resume appId: ${this.component.lifetime.activeSlots.scene}`)
-  this.component.lifetime.onLifeCycle(this.component.lifetime.activeSlots.scene, 'resume')
+  logger.log(`playerControl: system app free`)
+  mockNlp = {
+    cloud: false,
+    intent: 'free',
+    appId: 'ROKID.SYSTEM'
+  }
+  return this.handleNlpIntent('', mockNlp, {})
 }
 
 /**
