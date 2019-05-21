@@ -87,7 +87,7 @@ dbusApis.addMethod('connect', {
   in: ['s'],
   out: ['b']
 }, function (config, callback) {
-  connect()
+  connect(config)
   callback(null, true)
 })
 
