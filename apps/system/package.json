@@ -6,6 +6,7 @@
   "manifest": {
     "daemon": true,
     "skills": [
+      "@system",
       "ROKID.SYSTEM",
       "ROKID.EXCEPTION",
       "1B54DBC9F7D74C619282CCE8FE28EB7E",
@@ -14,7 +15,8 @@
     "permission": [
     ],
     "hosts": [
-      [ "rokid-exception", { "skillId": "ROKID.EXCEPTION" } ]
+      [ "rokid-exception", { "skillId": "ROKID.EXCEPTION" } ],
+      [ "rokid-system", { "skillId": "@system" } ]
     ]
   },
   "scripts": {
