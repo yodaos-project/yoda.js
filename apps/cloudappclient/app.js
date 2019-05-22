@@ -372,7 +372,7 @@ module.exports = activity => {
   activity.on('request', function (nlp, action) {
     var intentType = _.get(action, 'response.action.type')
     if (!intentType) {
-      logger.error(`The content of the action is wrong! The actual value is: [${action}]`)
+      logger.error(`The content of the action is wrong! The actual value is: [${JSON.stringify(action)}]`)
       if (sos.skills.length === 0) {
         logger.log('there is no skill to run, setBackground because action error!')
         activity.setBackground()
