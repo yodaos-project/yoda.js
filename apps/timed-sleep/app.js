@@ -6,6 +6,7 @@ var _ = require('@yoda/util')._
 var time = require('@yoda/util').time
 var math = require('@yoda/util').math
 var trace = require('@yoda/trace')
+var ContextManager = require('@yodaos/application/context-manager')
 
 module.exports = function (activity) {
   var config = require('./config.json')
@@ -34,49 +35,51 @@ module.exports = function (activity) {
     activity.keyboard.restoreDefaults(config.KEY_CODE.POWER)
   })
 
-  activity.on('request', (nlp, action) => {
+  var contextManager = new ContextManager(activity)
+  contextManager.on('request', (ctx) => {
+    var nlp = ctx.nlp
     logger.log('on request: ', nlp.intent, nlp.slots)
     switch (nlp.intent) {
       case 'timed_sleep':
         totalSecs = parseTimeToSeconds(nlp.slots)
         logger.debug(`sleep after ${totalSecs} seconds`)
         if (totalSecs < config.TIME.SHORTEST) {
-          speak(strings.SET_FAIL.TOO_SHORT)
+          speak(ctx, strings.SET_FAIL.TOO_SHORT)
         } else if (totalSecs > config.TIME.LONGEST) {
-          speak(strings.SET_FAIL.TOO_LONG)
+          speak(ctx, strings.SET_FAIL.TOO_LONG)
         } else {
           if (timer !== null) {
             clearTimeout(timer)
           }
           timer = setTimeout(doSleep, totalSecs * 1000)
-          speak(strings.SET_SUCC, time.toString(totalSecs))
+          speak(ctx, strings.SET_SUCC, time.toString(totalSecs))
         }
         break
       case 'cancel_timing':
         if (timer === null) {
-          speak(strings.CANCEL_FAIL)
+          speak(ctx, strings.CANCEL_FAIL)
         } else {
           clearTimeout(timer)
           timer = null
-          speak(strings.CANCEL_SUCC)
+          speak(ctx, strings.CANCEL_SUCC)
         }
         break
       default:
-        activity.exit()
+        ctx.exit()
         break
     }
   })
 
-  function afterSpeak () {
+  function afterSpeak (ctx) {
     logger.debug('after speak, set background or exit.')
     if (timer !== null) {
-      activity.setBackground()
+      ctx.setBackground()
     } else {
-      activity.exit()
+      ctx.exit()
     }
   }
 
-  function speak (text, args) {
+  function speak (ctx, text, args) {
     var afterFunc = afterSpeak
     if (Array.isArray(text)) {
       var i = math.randInt(text.length)
@@ -92,9 +95,9 @@ module.exports = function (activity) {
     return activity.setForeground().then(() => {
       return activity.tts.speak(text, { impatient: false }).catch((err) => {
         logger.error('Speak error: ', err)
-        afterFunc()
+        afterFunc(ctx)
       })
-    }).then(afterFunc)
+    }).then(() => afterFunc(ctx))
   }
 
   function parseTimeToSeconds (slots) {
