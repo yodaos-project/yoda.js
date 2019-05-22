@@ -19,12 +19,6 @@ module.exports = function (activity) {
       case 'ROKID.SYSTEM.EXIT':
         activity.idle()
         break
-      case 'hold':
-        // nothing to do. just waiting.
-        break
-      case 'free':
-        activity.exit()
-        break
       default:
         fallback()
     }
@@ -44,6 +38,12 @@ module.exports = function (activity) {
       }
       case '/malicious-nlp':
         fallback()
+        break
+      case '/hold':
+        // nothing to do. just waiting.
+        break
+      case '/free':
+        activity.exit()
         break
       default:
         activity.exit()
