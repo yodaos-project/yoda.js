@@ -508,20 +508,19 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
 /**
  * Switch the playback status of scene applications. support cloud and bluetooth.
  *
- * @param {string} [playerControlAppId] - The appId of playerControl. playerControl app will be requested when there is no scene app to resume.
+ * @param {string} [playerControlURL] - The URL of playerControl. playerControl app will be requested when there is no scene app to resume.
  *
  * usage: Configure the buttons that need to be triggered or any others can trigger this method.
  * example: edit /etc/yoda/keyboard.json
       click": {
         "debounce": 1000,
         "runtimeMethod": "playerControl",
-        "params": ["@yoda/playercontrol"]
+        "params": ["yoda-skill://playercontrol/resume"]
       }
  */
-AppRuntime.prototype.playerControl = function (playerControlAppId) {
+AppRuntime.prototype.playerControl = function (playerControlURL) {
   var playing = property.get('audio.multimedia.playing')
   var bluetoothPlaying = property.get('audio.bluetooth.playing')
-  var mockNlp
   logger.log(`playerControl: current playing: ${playing}; bluetoothPlaying: ${bluetoothPlaying}`)
   if (playing === 'true' || bluetoothPlaying === 'true') {
     if (this.component.lifetime.activeSlots.scene == null) {
@@ -529,29 +528,14 @@ AppRuntime.prototype.playerControl = function (playerControlAppId) {
       return
     }
     logger.log(`playerControl: system app hold`)
-    mockNlp = {
-      cloud: false,
-      intent: 'hold',
-      appId: 'ROKID.SYSTEM'
-    }
-    return this.handleNlpIntent('', mockNlp, {})
+    return this.openUrl('yoda-skill://rokid-system/hold')
   }
   if (this.component.lifetime.activeSlots.scene == null && this.component.lifetime.activeSlots.cut == null) {
-    mockNlp = {
-      cloud: true,
-      intent: 'ROKID.INTENT.RESUME',
-      appId: playerControlAppId
-    }
-    logger.log(`playerControl: request playerControlAppId: ${playerControlAppId}`)
-    return this.component.lifetime.onLifeCycle(playerControlAppId, 'request', [mockNlp, {}])
+    logger.log(`playerControl: request playerControlURL: ${playerControlURL}`)
+    return this.openUrl(playerControlURL)
   }
   logger.log(`playerControl: system app free`)
-  mockNlp = {
-    cloud: false,
-    intent: 'free',
-    appId: 'ROKID.SYSTEM'
-  }
-  return this.handleNlpIntent('', mockNlp, {})
+  return this.openUrl('yoda-skill://rokid-system/free')
 }
 
 /**
