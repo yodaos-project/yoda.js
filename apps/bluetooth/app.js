@@ -734,8 +734,7 @@ module.exports = function (activity) {
   activity.on('background', () => {
     logger.log(`activity.onBackground(${currentSkillName})`)
     if (currentSkillName === 'bluetooth_music') {
-      var skillId = getSkillId(currentSkillName)
-      var url = util.format(res.URL.PLAYER_CONTROLLER, skillId)
+      var url = util.format(res.URL.PLAYER_CONTROLLER, currentSkillName)
       activity.openUrl(url, {preemptive: false})
     }
     if (currentSkillName !== 'bluetooth') {

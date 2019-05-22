@@ -506,6 +506,39 @@ AppRuntime.prototype.resetNetwork = function resetNetwork (options) {
 }
 
 /**
+ * Switch the playback status of scene applications. support cloud and bluetooth.
+ *
+ * @param {string} [playerControlURL] - The URL of playerControl. playerControl app will be requested when there is no scene app to resume.
+ *
+ * usage: Configure the buttons that need to be triggered or any others can trigger this method.
+ * example: edit /etc/yoda/keyboard.json
+      click": {
+        "debounce": 1000,
+        "runtimeMethod": "playerControl",
+        "params": ["yoda-skill://playercontrol/resume"]
+      }
+ */
+AppRuntime.prototype.playerControl = function (playerControlURL) {
+  var playing = property.get('audio.multimedia.playing')
+  var bluetoothPlaying = property.get('audio.bluetooth.playing')
+  logger.log(`playerControl: current playing: ${playing}; bluetoothPlaying: ${bluetoothPlaying}`)
+  if (playing === 'true' || bluetoothPlaying === 'true') {
+    if (this.component.lifetime.activeSlots.scene == null) {
+      logger.log('playerControl: current no scene app. skip.')
+      return
+    }
+    logger.log(`playerControl: system app hold`)
+    return this.openUrl('yoda-skill://rokid-system/hold')
+  }
+  if (this.component.lifetime.activeSlots.scene == null && this.component.lifetime.activeSlots.cut == null) {
+    logger.log(`playerControl: request playerControlURL: ${playerControlURL}`)
+    return this.openUrl(playerControlURL)
+  }
+  logger.log(`playerControl: system app free`)
+  return this.openUrl('yoda-skill://rokid-system/free')
+}
+
+/**
  * Start a session of monologue. In session of monologue, no other apps could preempt top of stack.
  *
  * Note that monologues automatically ends on unexpected exit of apps.
