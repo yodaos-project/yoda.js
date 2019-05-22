@@ -53,6 +53,7 @@ function startFeeding (timeout, callback) {
       return callback(err)
     }
     dog = yorkie
+    property.set('state.watchdog.fd', dog)
     feeding = setInterval(feed.bind(null, yorkie), timeout)
   })
 }
