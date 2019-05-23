@@ -1,6 +1,6 @@
 {
   "name": "yodart",
-  "version": "7.37.2",
+  "version": "7.37.3",
   "scripts": {
     "prerestart": "tools/runtime-install",
     "pre-push": "npm run lint",
@@ -24,7 +24,7 @@
     "apilevel": 0.6
   },
   "devDependencies": {
-    "@yoda/mock": "yodaos-project/yoda-mock#46f8faad2ac0ad1d334e667978627a37f26e6e62",
+    "@yoda/mock": "yodaos-project/yoda-mock#46f8faad2ac0ad1d334e667978627.37.36e6e62",
     "husky": "^1.0.0-rc.14",
     "nyc": "^13.1.0",
     "standard": "^11.0.1",
