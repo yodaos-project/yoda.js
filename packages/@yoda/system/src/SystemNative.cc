@@ -1,6 +1,8 @@
 #define _XOPEN_SOURCE
 #include <node_api.h>
+#if not defined(BUILD_HOST)
 #include <recovery/recovery.h>
+#endif // not defined(BUILD_HOST)
 #include <sys/statvfs.h>
 #include <time.h>
 #include <string.h>
@@ -8,7 +10,9 @@
 #include <stdlib.h>
 #include <common.h>
 #include <errno.h>
+#if defined(__GLIBC__)
 #include <malloc.h>
+#endif // defined(__GLIBC__)
 #include <unistd.h>
 
 static napi_value PowerOff(napi_env env, napi_callback_info info) {
@@ -29,12 +33,6 @@ static napi_value Reboot(napi_env env, napi_callback_info info) {
   return returnVal;
 }
 
-static napi_value VerifyOtaImage(napi_env env, napi_callback_info info) {
-  napi_value returnVal;
-  napi_get_boolean(env, true, &returnVal);
-  return returnVal;
-}
-
 static napi_value PrepareOta(napi_env env, napi_callback_info info) {
   napi_value returnVal;
   napi_status status;
@@ -46,6 +44,7 @@ static napi_value PrepareOta(napi_env env, napi_callback_info info) {
   napi_get_value_string_utf8(env, argv[0], NULL, 0, &vallen);
   char path[vallen + 1];
   napi_get_value_string_utf8(env, argv[0], path, vallen + 1, &valRes);
+#if not defined(BUILD_HOST)
   const char *mode, *state;
   if (strlen(path) == 0) {
     /**
@@ -71,14 +70,16 @@ static napi_value PrepareOta(napi_env env, napi_callback_info info) {
   strncpy(cmd.recovery_state, state, strlen(state) + 1);
   statusVal = set_recovery_cmd_status(&cmd);
   napi_create_int32(env, statusVal, &returnVal);
+#endif // not defined(BUILD_HOST)
   return returnVal;
 }
 
 static napi_value GetRecoveryState(napi_env env, napi_callback_info info) {
-  struct boot_cmd cmd;
   napi_value obj;
   napi_value key;
   napi_value value;
+#if not defined(BUILD_HOST)
+  struct boot_cmd cmd;
   memset(&cmd, 0, sizeof(cmd));
   get_recovery_cmd_status(&cmd);
   napi_create_object(env, &obj);
@@ -96,11 +97,14 @@ static napi_value GetRecoveryState(napi_env env, napi_callback_info info) {
   napi_create_string_utf8(env, cmd.recovery_state, strlen(cmd.recovery_state),
                           &value);
   napi_set_property(env, obj, key, value);
+#endif // not defined(BUILD_HOST)
   return obj;
 }
 
 static napi_value SetRecoveryOk(napi_env env, napi_callback_info info) {
   napi_value returnVal;
+
+#if not defined(BUILD_HOST)
   struct boot_cmd cmd;
   const char* state = BOOTSTATE_NONE;
   const char* mode = "";
@@ -119,6 +123,7 @@ static napi_value SetRecoveryOk(napi_env env, napi_callback_info info) {
 
   int status = set_recovery_cmd_status(&cmd);
   napi_create_int32(env, status, &returnVal);
+#endif // not defined(BUILD_HOST)
   return returnVal;
 }
 
@@ -126,7 +131,9 @@ static napi_value SetRecoveryOk(napi_env env, napi_callback_info info) {
 static napi_value SetRecoveryMode(napi_env env, napi_callback_info info) {
   napi_value returnVal;
   napi_get_boolean(env, true, &returnVal);
+#if not defined(BUILD_HOST)
   set_boot_flush_data();
+#endif // not defined(BUILD_HOST)
   return returnVal;
 }
 
@@ -225,6 +232,7 @@ static napi_value AdjustMallocSettings(napi_env env, napi_callback_info info) {
   if (max_thread < 1) {
     max_thread = 1;
   }
+#if defined(__GLIBC__)
   mallopt(M_ARENA_MAX, max_thread);
   long long ps = sysconf(_SC_PAGESIZE);
   long long pn = sysconf(_SC_PHYS_PAGES);
@@ -233,16 +241,21 @@ static napi_value AdjustMallocSettings(napi_env env, napi_callback_info info) {
     mallopt(M_TRIM_THRESHOLD, 64 * 1024);
     mallopt(M_MMAP_THRESHOLD, 64 * 1024);
   }
+#endif // defined(__GLIBC__)
   return NULL;
 }
 
 static napi_value MallocTrim(napi_env env, napi_callback_info info) {
+#if defined(__GLIBC__)
   malloc_trim(0);
+#endif // defined(__GLIBC__)
   return NULL;
 }
 
 static napi_value MallocStats(napi_env env, napi_callback_info info) {
+#if defined(__GLIBC__)
   malloc_stats();
+#endif // defined(__GLIBC__)
   return NULL;
 }
 
@@ -251,7 +264,6 @@ static napi_value Init(napi_env env, napi_value exports) {
     DECLARE_NAPI_PROPERTY("powerOff", PowerOff),
     DECLARE_NAPI_PROPERTY("rebootCharging", RebootCharging),
     DECLARE_NAPI_PROPERTY("reboot", Reboot),
-    DECLARE_NAPI_PROPERTY("verifyOtaImage", VerifyOtaImage),
     DECLARE_NAPI_PROPERTY("prepareOta", PrepareOta),
     DECLARE_NAPI_PROPERTY("getRecoveryState", GetRecoveryState),
     DECLARE_NAPI_PROPERTY("setRecoveryMode", SetRecoveryMode),

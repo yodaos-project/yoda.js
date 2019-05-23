@@ -26,6 +26,11 @@ Flora.prototype.handlers = {
     if (msg[0] === 'step') {
       this.component.broadcast.dispatch('yodaos.on-time-changed')
     }
+  },
+  'yodaos.otad.event': function onOtadEvent (msg) {
+    if (msg[0] === 'prepared') {
+      this.component.broadcast.dispatch('yodaos.on-ota-prepared')
+    }
   }
 }
 
