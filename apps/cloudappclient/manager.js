@@ -117,7 +117,13 @@ Manager.prototype.onrequestOnce = function (nlp, action, callback) {
     pos = this.findByAppId(action.appId)
     cur = this.skills[pos]
   }
-  cur.requestOnce(nlp, action, callback)
+  cur.requestOnce(nlp, action, () => {
+    this.destroyByAppId(cur.appId)
+    var continuous = this.skills.length > 0
+    if (typeof callback === 'function') {
+      callback(continuous)
+    }
+  })
 }
 
 Manager.prototype.findByAppId = function (appId) {

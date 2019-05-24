@@ -37,9 +37,15 @@ Skill.prototype.handleEvent = function () {
   })
   this.on('resume', () => {
     eventBus.emit(`resume:${this.appId}`)
+    if (this.task <= 0 && this.directives.length <= 0) {
+      this.emit('exit')
+    }
   })
   this.on('destroy', () => {
     eventBus.emit(`destroy:${this.appId}`)
+  })
+  this.on('exit', () => {
+    eventBus.emit(`exit:${this.appId}`)
   })
 }
 
@@ -75,5 +81,131 @@ test('test EXIT: requestOnce\'s should called after execute directive', (t) => {
     }
   }, () => {
     t.pass('requestOnce should called')
+  })
+})
+
+test('test EXIT: requestOnce\'s should called and manager should continue execute', (t) => {
+  t.plan(5)
+  var exe = new MockDirective()
+  var manager = new Manager(exe, Skill)
+
+  eventBus.on('start:appid-test-requestOnce-continue1', () => {
+    t.pass('appid-test-requestOnce-continue1 should emit start event')
+  })
+  eventBus.on('pause:appid-test-requestOnce-continue1', () => {
+    t.pass('appid-test-requestOnce-continue1 should emit pause event')
+    // Simulate continuous tasks
+    manager.skills[0].task = 1
+  })
+  eventBus.on('resume:appid-test-requestOnce-continue1', () => {
+    t.pass('appid-test-requestOnce-continue1 should emit resume event')
+  })
+  eventBus.on('destroy:appid-test-requestOnce-continue1', () => {
+    t.fail('appid-test-requestOnce-continue1 should not emit destroy event')
+  })
+
+  eventBus.on('start:appid-test-requestOnce-continue2', () => {
+    t.fail('appid-test-requestOnce-continue2 should not emit start event')
+  })
+
+  manager.onrequest({
+    appId: 'appid-test-requestOnce-continue1'
+  }, {
+    appId: 'appid-test-requestOnce-continue1',
+    response: {
+      action: {
+        shouldEndSession: false,
+        form: 'scene',
+        directives: [{
+          type: 'test'
+        }]
+      }
+    }
+  })
+
+  manager.onrequestOnce({
+    appId: 'appid-test-requestOnce-continue2'
+  }, {
+    appId: 'appid-test-requestOnce-continue2',
+    response: {
+      action: {
+        shouldEndSession: false,
+        form: 'cut',
+        directives: [{
+          type: 'test'
+        }]
+      }
+    }
+  }, (continuous) => {
+    t.pass('requestOnce should called')
+    t.strictEqual(continuous, true, 'continuous should be true')
+  })
+})
+
+test('test EXIT 2: requestOnce\'s should called and manager should continue execute', (t) => {
+  t.plan(9)
+  var exe = new MockDirective()
+  var manager = new Manager(exe, Skill)
+
+  manager.on('empty', () => {
+    t.pass('manager should be emit empty event')
+  })
+  eventBus.on('start:appid-test-requestOnce-continue3', () => {
+    t.pass('appid-test-requestOnce-continue3 should emit start event')
+  })
+  eventBus.on('pause:appid-test-requestOnce-continue3', () => {
+    t.pass('appid-test-requestOnce-continue3 should emit pause event')
+  })
+  eventBus.on('resume:appid-test-requestOnce-continue3', () => {
+    t.pass('appid-test-requestOnce-continue3 should emit resume event')
+  })
+  eventBus.on('destroy:appid-test-requestOnce-continue3', () => {
+    t.fail('appid-test-requestOnce-continue3 should not emit destroy event')
+  })
+  eventBus.on('exit:appid-test-requestOnce-continue3', () => {
+    t.pass('appid-test-requestOnce-continue3 should emit exit event')
+  })
+
+  eventBus.on('start:appid-test-requestOnce-continue4', () => {
+    t.fail('appid-test-requestOnce-continue4 should not emit start event')
+  })
+  eventBus.on('destroy:appid-test-requestOnce-continue4', () => {
+    t.pass('appid-test-requestOnce-continue4 should emit destroy event')
+  })
+  eventBus.on('exit:appid-test-requestOnce-continue4', () => {
+    t.pass('appid-test-requestOnce-continue4 should emit exit event')
+  })
+
+  manager.onrequest({
+    appId: 'appid-test-requestOnce-continue3'
+  }, {
+    appId: 'appid-test-requestOnce-continue3',
+    response: {
+      action: {
+        shouldEndSession: false,
+        form: 'scene',
+        directives: [{
+          type: 'test'
+        }]
+      }
+    }
+  })
+
+  manager.onrequestOnce({
+    appId: 'appid-test-requestOnce-continue4'
+  }, {
+    appId: 'appid-test-requestOnce-continue4',
+    response: {
+      action: {
+        shouldEndSession: false,
+        form: 'cut',
+        directives: [{
+          type: 'test'
+        }]
+      }
+    }
+  }, (continuous) => {
+    t.pass('requestOnce should called')
+    t.strictEqual(continuous, false, 'continuous should be false')
   })
 })

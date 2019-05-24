@@ -384,17 +384,19 @@ module.exports = activity => {
     var appId = _.get(nlp, 'appId')
     if (appId && intentType === 'EXIT') {
       logger.warn(`The intent value is [EXIT] with appId: [${appId}]`)
-      sos.onrequestOnce(nlp, action, () => {
+      sos.onrequestOnce(nlp, action, (continuous) => {
+        if (continuous) {
+          return
+        }
         savePlayerInfo()
           .then(() => {
-            sos.destroyByAppId(appId)
             logger.log('save playerInfo success!')
           })
           .catch((err) => {
-            sos.destroyByAppId(appId)
             logger.error(`save playerInfo error(${err})`)
           })
         // clear domain locally and it will automatically upload to cloud
+        clearTimeout(taskTimerHandle)
         activity.exit({ clearContext: true })
       })
       return
@@ -413,6 +415,7 @@ module.exports = activity => {
           })
         pm.clear()
         // clear domain locally and it will automatically upload to cloud
+        clearTimeout(taskTimerHandle)
         activity.exit({ clearContext: true })
       })
       return
