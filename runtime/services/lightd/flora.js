@@ -26,6 +26,10 @@ Flora.prototype.handlers = {
       logger.info('runtime not ready, skipping')
       return
     }
+    if (!this.voiceInterfaceAvailable) {
+      logger.info('voice interface not available, skipping')
+      return
+    }
     this.light.loadfile('@yoda', this.wakeUri, {}, {})
   },
   'rokid.turen.end_voice': function (msg) {
@@ -50,6 +54,10 @@ Flora.prototype.handlers = {
   'yodaos.runtime.phase': function (msg) {
     this.runtimePhase = msg[0]
     logger.info('applied runtime phase', this.runtimePhase)
+  },
+  'yodaos.voice-interface.availability': function (msg) {
+    this.voiceInterfaceAvailable = msg[0] === 1
+    logger.info(`applied voice interface availability '${this.voiceInterfaceAvailable}'`)
   }
 }
 
