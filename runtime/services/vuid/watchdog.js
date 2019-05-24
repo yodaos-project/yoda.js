@@ -10,12 +10,19 @@ var WATCHDOG_DEFAULT_TIMEOUT = 1000
 
 var dog = null
 var feeding = null
+var feedCount = 0
 
 function noop () {
   // Nothing
 }
 
 function feed (dog) {
+  if (feedCount === 30) {
+    logger.info(`feed dog`)
+    feedCount = 0
+  } else {
+    feedCount++
+  }
   fs.write(dog, Buffer.alloc(4), 0, 4, noop)
 }
 
