@@ -94,12 +94,12 @@ Manager.prototype.onrequest = function (nlp, action, calmly) {
 Manager.prototype.onrequestOnce = function (nlp, action, callback) {
   if (!action || !action.appId) {
     logger.error(`Missing the appId! The action value is: [${JSON.stringify(action)}]`)
-    return callback()
+    return callback(new Error('Missing the appId!'))
   }
   var directives = _.get(action, 'response.action.directives', [])
   if (directives.length <= 0) {
     logger.warn(`directive is empty! The action value is: [${JSON.stringify(action)}]`)
-    return callback()
+    return callback(new Error('directive is empty!'))
   }
   var cur
   var pos = this.findByAppId(action.appId)
@@ -117,7 +117,13 @@ Manager.prototype.onrequestOnce = function (nlp, action, callback) {
     pos = this.findByAppId(action.appId)
     cur = this.skills[pos]
   }
-  cur.requestOnce(nlp, action, callback)
+  cur.requestOnce(nlp, action, () => {
+    this.destroyByAppId(cur.appId)
+    var continuous = this.skills.length > 0
+    if (typeof callback === 'function') {
+      callback(null, continuous)
+    }
+  })
 }
 
 Manager.prototype.findByAppId = function (appId) {

@@ -150,6 +150,10 @@ Skill.prototype.handleEvent = function () {
     logger.log(this.appId + ' emit resume')
     this.paused = false
     if (this.isSkillActive) {
+      // there is no tasks to do. just exit.
+      if (this.task <= 0 && this.directives.length <= 0) {
+        return this.emit('exit')
+      }
       this.exe.execute([{
         type: 'media',
         action: 'resume',

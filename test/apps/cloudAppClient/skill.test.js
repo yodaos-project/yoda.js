@@ -7,7 +7,7 @@ var Skill = require(`${helper.paths.apps}/cloudappclient/skill`)
 function createSkill (form, shouldEndSession) {
   var Directive = {
     execute: function (dts, ways, done) {
-      done()
+      done && done()
     }
   }
   return new Skill(Directive, {}, {
@@ -39,4 +39,38 @@ test('test should end session', (t) => {
     t.pass('skill emit exit')
   })
   skill.emit('start')
+})
+
+test('test resume: exit should be emit', (t) => {
+  var skill = createSkill('cut', false)
+  skill.on('exit', () => {
+    t.end()
+  })
+  skill.emit('resume')
+})
+
+test('test resume: exit should not be emit', (t) => {
+  var skill = createSkill('cut', false)
+  skill.task = 1
+  skill.on('exit', () => {
+    t.fail()
+  })
+  skill.emit('resume')
+  t.end()
+})
+
+test('requestOnce should always be return', (t) => {
+  var skill = createSkill('cut', false)
+  skill.task = 5
+  var action = {
+    appId: 'test_requestOnce',
+    response: {
+      action: {
+        directives: [{ type: 'media', action: 'PLAY' }]
+      }
+    }
+  }
+  skill.requestOnce({}, action, () => {
+    t.end()
+  })
 })
