@@ -136,14 +136,15 @@ test('test EXIT: requestOnce\'s should called and manager should continue execut
         }]
       }
     }
-  }, (continuous) => {
+  }, (err, continuous) => {
+    t.strictEqual(err, null, 'err should be null')
     t.pass('requestOnce should called')
     t.strictEqual(continuous, true, 'continuous should be true')
   })
 })
 
 test('test EXIT 2: requestOnce\'s should called and manager should continue execute', (t) => {
-  t.plan(9)
+  t.plan(10)
   var exe = new MockDirective()
   var manager = new Manager(exe, Skill)
 
@@ -204,7 +205,8 @@ test('test EXIT 2: requestOnce\'s should called and manager should continue exec
         }]
       }
     }
-  }, (continuous) => {
+  }, (err, continuous) => {
+    t.strictEqual(err, null, 'err should be null')
     t.pass('requestOnce should called')
     t.strictEqual(continuous, false, 'continuous should be false')
   })

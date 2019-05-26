@@ -384,7 +384,12 @@ module.exports = activity => {
     var appId = _.get(nlp, 'appId')
     if (appId && intentType === 'EXIT') {
       logger.warn(`The intent value is [EXIT] with appId: [${appId}]`)
-      sos.onrequestOnce(nlp, action, (continuous) => {
+      sos.onrequestOnce(nlp, action, (err, continuous) => {
+        if (err) {
+          logger.error(`on requestOnce error: ${err}`)
+          sos.resume()
+          return
+        }
         if (continuous) {
           return
         }
@@ -403,7 +408,11 @@ module.exports = activity => {
     }
     if (intentType === 'EXIT') {
       logger.warn(`${this.appId}: intent value is [EXIT]`)
-      sos.onrequestOnce(nlp, action, () => {
+      sos.onrequestOnce(nlp, action, (err) => {
+        if (err) {
+          logger.error(`on requestOnce error: ${err}`)
+          // exit anyway. so don't need return
+        }
         savePlayerInfo()
           .then(() => {
             sos.destroy()
