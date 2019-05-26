@@ -20,16 +20,19 @@ class ContextManager extends EventEmitter {
       this.activity.on(it, this.clearContexts.bind(this))
     })
 
-    this.activity.on('request', this.onRequest.bind(this))
-    this.activity.on('url', this.onUrl.bind(this))
+    this.on('newListener', (eventName) => {
+      switch (eventName) {
+        case 'request':
+          this.activity.on('request', this.onRequest.bind(this))
+          break
+        case 'url':
+          this.activity.on('url', this.onUrl.bind(this))
+          break
+      }
+    })
   }
 
-  /**
-   * @public
-   * @param {Context} ctx -
-   * @param {any[]} args - arguments to `activity.exit`
-   */
-  exit (ctx, args) {
+  exitWrapper (ctx, func, self, args) {
     var idx = this.contexts.indexOf(ctx.id)
     if (idx < 0) {
       return Promise.resolve()
@@ -38,7 +41,25 @@ class ContextManager extends EventEmitter {
     if (this.contexts.length > 0) {
       return Promise.resolve()
     }
-    return this.activity.exit.apply(this.activity, args)
+    return func.apply(self, args)
+  }
+
+  /**
+   * @public
+   * @param {Context} ctx -
+   * @param {any[]} args - arguments to `activity.exit`
+   */
+  exit (ctx, args) {
+    return this.exitWrapper(ctx, this.activity.exit, this.activity, args)
+  }
+
+  /**
+   * @public
+   * @param {Context} ctx -
+   * @param {any[]} args - arguments to `activity.setBackground`
+   */
+  setBackground (ctx, args) {
+    return this.exitWrapper(ctx, this.activity.setBackground, this.activity, args)
   }
 
   /**
@@ -82,6 +103,9 @@ class ContextManager extends EventEmitter {
       id: ++self.__ctxId,
       exit: function () {
         self.exit(ctx, arguments)
+      },
+      setBackground: function () {
+        self.setBackground(ctx, arguments)
       }
     })
     self.contexts.push(ctx.id)
