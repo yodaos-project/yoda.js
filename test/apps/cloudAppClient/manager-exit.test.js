@@ -85,7 +85,7 @@ test('test EXIT: requestOnce\'s should called after execute directive', (t) => {
 })
 
 test('test EXIT: requestOnce\'s should called and manager should continue execute', (t) => {
-  t.plan(5)
+  t.plan(6)
   var exe = new MockDirective()
   var manager = new Manager(exe, Skill)
 
