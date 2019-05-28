@@ -16,6 +16,7 @@ function Flora (light) {
   this.light = light
   this.wakeUri = '/opt/light/awake.js'
   this.runtimePhase = 'boot'
+  this.voiceInterfaceAvailable = false
 }
 inherits(Flora, FloraComp)
 
@@ -32,19 +33,23 @@ Flora.prototype.handlers = {
     }
     this.light.loadfile('@yoda', this.wakeUri, {}, {})
   },
-  'rokid.turen.end_voice': function (msg) {
-    logger.log('rokid.turen.end_voice')
-    this.light.stopFile('@yoda', SETPICKUPURI)
-    this.light.stopFile('@yoda', this.wakeUri)
-  },
   'rokid.turen.local_awake': function (msg) {
     logger.log('voice local awake', msg)
     if (this.runtimePhase !== 'ready') {
       logger.info('runtime not ready, skipping')
       return
     }
+    if (!this.voiceInterfaceAvailable) {
+      logger.info('voice interface not available, skipping')
+      return
+    }
     var degree = msg[0]
     this.light.loadfile('@yoda', this.wakeUri, { degree: degree }, { shouldResume: true })
+  },
+  'rokid.turen.end_voice': function (msg) {
+    logger.log('rokid.turen.end_voice')
+    this.light.stopFile('@yoda', SETPICKUPURI)
+    this.light.stopFile('@yoda', this.wakeUri)
   },
   'rokid.lightd.global_alpha_factor': function (msg) {
     var alphaFactor = msg[0]
