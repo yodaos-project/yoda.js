@@ -1,6 +1,8 @@
 var _ = require('@yoda/util')._
 var assert = require('assert')
 
+var FocusShiftChannel = 'yodaos.audio-focus.on-focus-shift'
+
 var RequestType = {
   DEFAULT: 0b000,
   TRANSIENT: 0b001,
@@ -35,10 +37,15 @@ var RequestStatus = {
 class AudioFocus {
   constructor (runtime) {
     this.runtime = runtime
+    this.component = runtime.component
     this.descriptor = runtime.descriptor
 
     this.transientRequest = null
     this.lastingRequest = null
+  }
+
+  init () {
+    this.component.broadcast.registerBroadcastChannel(FocusShiftChannel)
   }
 
   getCurrentFocus () {
@@ -46,6 +53,9 @@ class AudioFocus {
       return this.transientRequest
     }
     return this.lastingRequest
+  }
+  getCurrentFocuses () {
+    return [this.transientRequest, this.lastingRequest].filter(it => it != null)
   }
 
   /**
@@ -82,6 +92,7 @@ class AudioFocus {
 
   /**
    *
+   * @param {string} appId
    * @param {number} id
    */
   abandon (appId, id) {
@@ -91,6 +102,7 @@ class AudioFocus {
       this.transientRequest = null
       this.castRequest(req)
       this.recoverLastingRequest()
+      this.component.broadcast.dispatch(FocusShiftChannel, [ this.lastingRequest, req ])
       return
     }
     if (this.lastingRequest && this.lastingRequest.appId === appId && this.lastingRequest.id === id) {
@@ -114,10 +126,21 @@ class AudioFocus {
       }
       this.castRequest(it)
     })
+    var transientRequest = this.transientRequest
     this.transientRequest = null
+    var lastingRequest = this.lastingRequest
     this.lastingRequest = null
+
+    if (transientRequest || lastingRequest) {
+      this.component.broadcast.dispatch(FocusShiftChannel, [ null, transientRequest || lastingRequest ])
+    }
   }
 
+  // MARK: - Private methods
+
+  /**
+   * @private
+   */
   recoverLastingRequest () {
     var req = this.lastingRequest
     if (req == null) {
@@ -126,6 +149,9 @@ class AudioFocus {
     this.descriptor.audioFocus.emitToApp(req.appId, 'gain', [ req.id ])
   }
 
+  /**
+   * @private
+   */
   guardRequest (req) {
     try {
       if (this.transientRequest && this.transientRequest.appId === req.appId && this.transientRequest.id === req.id) {
@@ -140,39 +166,50 @@ class AudioFocus {
     return false
   }
 
+  /**
+   * @private
+   */
   shiftTransientFocus (req) {
-    var tmp = this.transientRequest
-    if (tmp) {
+    var prev = this.transientRequest
+    if (prev) {
       this.transientRequest = null
-      this.castRequest(tmp, req.transient, req.mayDuck)
+      this.castRequest(prev, req.transient, req.mayDuck)
     } else {
-      tmp = this.lastingRequest
-      if (tmp) {
-        this.castRequest(tmp, req.transient, req.mayDuck)
+      prev = this.lastingRequest
+      if (prev) {
+        this.castRequest(prev, req.transient, req.mayDuck)
       }
     }
     this.transientRequest = req
     this.descriptor.audioFocus.emitToApp(req.appId, 'gain', [ req.id ])
+    this.component.broadcast.dispatch(FocusShiftChannel, [ req, prev ])
   }
 
+  /**
+   * @private
+   */
   shiftLastingFocus (req) {
-    var tmp = this.transientRequest
-    if (tmp) {
+    var prev = this.transientRequest
+    if (prev) {
       this.transientRequest = null
-      this.castRequest(tmp, req.transient, req.mayDuck)
+      this.castRequest(prev, req.transient, req.mayDuck)
     }
-    tmp = this.lastingRequest
-    if (tmp) {
+    prev = this.lastingRequest
+    if (prev) {
       /** in case of identical focus re-request */
-      if (tmp.appId !== req.appId || tmp.id !== req.id) {
+      if (prev.appId !== req.appId || prev.id !== req.id) {
         this.lastingRequest = null
-        this.castRequest(tmp, req.transient, req.mayDuck)
+        this.castRequest(prev, req.transient, req.mayDuck)
       }
     }
     this.lastingRequest = req
     this.descriptor.audioFocus.emitToApp(req.appId, 'gain', [ req.id ])
+    this.component.broadcast.dispatch(FocusShiftChannel, [ req, prev ])
   }
 
+  /**
+   * @private
+   */
   castRequest (req, transient, mayDuck) {
     transient = transient == null ? false : transient
     mayDuck = mayDuck == null ? false : mayDuck
@@ -186,6 +223,7 @@ class AudioFocus {
       this.transientRequest = null
       this.castRequest(req)
       this.recoverLastingRequest()
+      this.component.broadcast.dispatch(FocusShiftChannel, [ this.lastingRequest, req ])
       return
     }
     if (this.lastingRequest && this.lastingRequest.appId === appId) {
