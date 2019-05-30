@@ -14,8 +14,9 @@ This directory contains all the tests and data to test the [YODAOS][] runtime.
 
 ## Runs on CI
 
-[YODAOS][] uses the `testsets.txt` to specify which files would be ran in every CI job. This file is written
-in glob syntax, for example:
+[YODAOS][] uses the `testsets.txt` or `testsets-local.txt` to specify which files would be ran in every CI job. 
+Especial the `testsets-local.txt` can be also ran in your own manchine ,not just on embedded devices, This file 
+is writtenin glob syntax, for example:
 
 ```txt
 @yoda/env/*.test.js

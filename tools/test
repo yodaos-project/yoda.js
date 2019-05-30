@@ -87,9 +87,29 @@ iotjs /usr/lib/node_modules/tape/bin/tape.js
   fi
 fi
 
-for pattern in $patterns; do
-  if ! test -z "$pattern"; then
-    printf "# $patternPrefix$pattern\n"
-    $cmd $pre_scripts $coverage $timeout "$patternPrefix$pattern" | $reporter
-  fi
-done
+if test "$coverage" != ""; then
+  rm -f coverage.data
+  rm -rf .nyc_output
+  mkdir .nyc_output
+fi
+
+function run_test(){
+  # generate the coverage data for each case and collect them to the ".nyc_output" directory
+  name=0
+  for pattern in $patterns; do
+    if ! test -z "$pattern" && ! [[ "$pattern" =~ "#" ]]; then
+      printf ">>> $patternPrefix$pattern\n"
+      $cmd $pre_scripts $coverage $timeout "$patternPrefix$pattern" | $reporter
+
+      # collect
+      if test "$coverage" != "" && test "$local" = "YES"; then
+        if [[ -f "coverage.data" ]];then
+          mv coverage.data .nyc_output/${name}.data
+          name=`expr ${name} + 1`
+        fi
+      fi
+    fi
+  done
+}
+
+run_test
