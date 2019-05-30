@@ -48,3 +48,21 @@ test('get service', t => {
   var actual = application.getService('foo')
   t.strictEqual(actual, service)
 })
+
+test('get application', t => {
+  t.plan(1)
+
+  var api = new EventEmitter()
+  api.appHome = path.join(__dirname, '../../fixture/noop-app')
+  api.exit = function () {
+    t.pass('should exit app process on no task available')
+  }
+
+  var application = yodaos.Application({}, api)
+  var service = yodaos.Service({}, api)
+  service[symbol.componentName] = 'foo'
+  application[symbol.registry].service['foo'] = { mod: service }
+
+  var actual = service.getApplication()
+  t.strictEqual(actual, application)
+})

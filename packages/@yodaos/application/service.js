@@ -42,6 +42,7 @@ function Service (options, api) {
  * @hideconstructor
  */
 var ComponentProto = {
+  getApplication: getApplication,
   finish: finish
 }
 
@@ -61,6 +62,18 @@ delegate(ComponentProto, symbol.application)
    */
   .method('openUrl')
 
+/**
+ * Get application instance.
+ * @memberof module:@yodaos/application~ServicePrototype
+ */
+function getApplication () {
+  return this[symbol.application]
+}
+
+/**
+ * Finish current service instance.
+ * @memberof module:@yodaos/application~ServicePrototype
+ */
 function finish () {
   var application = this[symbol.application]
   application[symbol.finishService](this)
