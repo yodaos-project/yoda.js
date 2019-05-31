@@ -53,6 +53,11 @@ function main (target, runner) {
         status: 'ready'
       })
 
+      /**
+       * Force await on app initialization.
+       */
+      return onceAppCreated()
+    }).then(() => {
       runner(appId, pkg)
     }).catch(error => {
       logger.error('fatal error:', error.stack)
@@ -83,6 +88,20 @@ function getActivityDescriptor () {
         return reject(new Error('Unexpected result on fetching descriptor path.'))
       }
       return resolve(require(message.result))
+    }
+  })
+}
+
+function onceAppCreated () {
+  return new Promise((resolve, reject) => {
+    process.on('message', onMessage)
+
+    function onMessage (message) {
+      if (message.type !== 'event' && message.event !== 'created') {
+        return
+      }
+      process.removeListener('message', onMessage)
+      return resolve()
     }
   })
 }

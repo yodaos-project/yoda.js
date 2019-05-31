@@ -91,3 +91,44 @@ test('should speak and play sequentially', t => {
 
   t.suite.openUrl('yoda-app://cloud-player/play?text=foo&url=/opt/media/awake_01.wav&transient=0&sequential=1')
 })
+
+test('should accept player control url', t => {
+  t.plan(3)
+
+  var player
+  var playbackCompleted = false
+  t.suite.audioFocus
+    .on('gain', focus => {
+      t.strictEqual(focus.type, AudioFocus.Type.DEFAULT)
+
+      player = focus.player
+      player.on('playing', () => {
+        t.suite.openUrl('yoda-app://cloud-player/pause')
+        t.strictEqual(focus.resumeOnGain, false)
+        t.suite.openUrl('yoda-app://cloud-player/resume')
+      })
+      player.on('playbackcomplete', () => {
+        playbackCompleted = true
+      })
+    })
+    .on('loss', focus => {
+      t.ok(playbackCompleted, 'playback should completed on focus loss')
+      t.end()
+    })
+
+  t.suite.openUrl('yoda-app://cloud-player/play?url=/opt/media/awake_01.wav&transient=0')
+})
+
+test('should ignore player control if not playing', t => {
+  t.plan(1)
+
+  t.suite.audioFocus
+    .on('gain', focus => {
+      t.fail('unreachable path')
+    })
+
+  t.suite.openUrl('yoda-app://cloud-player/pause')
+  t.suite.openUrl('yoda-app://cloud-player/resume')
+
+  t.pass('no error expected')
+})
