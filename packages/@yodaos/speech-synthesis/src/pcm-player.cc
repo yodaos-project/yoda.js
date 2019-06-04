@@ -3,6 +3,9 @@
 #include "pulse/error.h"
 #include "pcm-player.h"
 
+#define LOG_TAG "PcmPlayer"
+#include "logger.h"
+
 bool PcmPlayer::init(pa_sample_spec ss) {
   if (stream)
     return true;
@@ -12,8 +15,7 @@ bool PcmPlayer::init(pa_sample_spec ss) {
   stream = pa_simple_new(nullptr, "speech-synthesizer", PA_STREAM_PLAYBACK,
                          nullptr, "tts", &ss, nullptr, nullptr, &err);
   if (stream == nullptr) {
-    fprintf(stderr, "[PcmPlayer] pa_simple_new error(%d): %s\n", err,
-            pa_strerror(err));
+    RKLogw("pa_simple_new error(%d): %s", err, pa_strerror(err));
   }
   return stream != nullptr;
 }
@@ -21,7 +23,7 @@ bool PcmPlayer::init(pa_sample_spec ss) {
 void PcmPlayer::destroy() {
   if (stream) {
     pa_simple_free(stream);
-    fprintf(stdout, "[PcmPlayer] pa_simple_free\n");
+    RKLogv("pa_simple_free");
     stream = nullptr;
     tp->close();
     delete tp;
@@ -42,31 +44,26 @@ void PcmPlayer::write(std::vector<uint8_t>& data) {
 
   tp->push([this, data]() {
     if (stream == nullptr) {
-      fprintf(stderr, "[PcmPlayer] Unexpected null on stream\n");
+      RKLogw("Unexpected null on stream");
       return;
     }
     if (status != player_status_playing &&
         status != player_status_pending_end) {
-      fprintf(
-          stderr,
-          "[PcmPlayer] player status changed on write, current status(%d)\n",
-          status);
+      RKLogw("player status changed on write, current status(%d)", status);
       return;
     }
     int err;
 
-    fprintf(stdout, "[PcmPlayer] write data(%zu)\n", data.size());
+    RKLogv("write data(%zu)", data.size());
     if (pa_simple_write(stream, data.data(), data.size(), &err) < 0) {
-      fprintf(stderr, "[PcmPlayer] write data error(%d): %s\n", err,
-              pa_strerror(err));
+      RKLogw("write data error(%d): %s", err, pa_strerror(err));
     }
   });
 }
 
 void PcmPlayer::end() {
   if (status == player_status_pending_end || status == player_status_pending) {
-    fprintf(stdout,
-            "[PcmPlayer] player pending end or not playing, skip draining\n");
+    RKLogv("player pending end or not playing, skip draining");
     return;
   }
   if (status == player_status_playing) {
@@ -74,25 +71,22 @@ void PcmPlayer::end() {
   }
   tp->push([this]() {
     if (stream == nullptr) {
-      fprintf(stderr, "[PcmPlayer] Unexpected null on stream\n");
+      RKLogw("Unexpected null on stream");
       return;
     }
     if (status != player_status_pending_end &&
         status != player_status_cancelled) {
-      fprintf(stderr,
-              "[PcmPlayer] player status changed on end, current status(%d)\n",
-              status);
+      RKLogw("player status changed on end, current status(%d)", status);
       return;
     }
     int err;
-    fprintf(stdout, "[PcmPlayer] draining player\n");
+    RKLogv("draining player");
     do {
       if (pa_simple_drain(stream, &err) < 0) {
-        fprintf(stderr, "[PcmPlayer] drain player error(%d): %s\n", err,
-                pa_strerror(err));
+        RKLogw("drain player error(%d): %s", err, pa_strerror(err));
       }
     } while (err == /** drain timed out, retrying */ PA_ERR_TIMEOUT);
-    fprintf(stdout, "[PcmPlayer] drained player, status(%d)\n", status);
+    RKLogv("drained player, status(%d)", status);
 
     if (status == player_status_cancelled) {
       onevent(pcm_player_cancelled);
@@ -107,16 +101,13 @@ void PcmPlayer::end() {
 
 void PcmPlayer::cancel() {
   if (status != player_status_playing && status != player_status_pending_end) {
-    fprintf(
-        stdout,
-        "[PcmPlayer] player not playing nor pending end, skip cancelling\n");
+    RKLogv("player not playing nor pending end, skip cancelling");
     return;
   }
   status = player_status_cancelled;
   int err;
   if (pa_simple_flush(stream, &err) < 0) {
-    fprintf(stderr, "[PcmPlayer] flush data error(%d): %s\n", err,
-            pa_strerror(err));
+    RKLogw("flush data error(%d): %s", err, pa_strerror(err));
   }
   /** clears pending writes */
   tp->clear();

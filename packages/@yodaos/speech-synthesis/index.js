@@ -61,7 +61,6 @@ class SpeechSynthesis {
    * @returns {SpeechSynthesisUtterance} the utterance
    */
   speak (utterance) {
-    this[symbol.status] = Status.pending
     if (typeof utterance === 'string') {
       utterance = new SpeechSynthesisUtterance(utterance)
     }
