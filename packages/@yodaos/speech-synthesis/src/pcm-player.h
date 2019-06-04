@@ -10,6 +10,7 @@ typedef enum {
   player_status_pending = 0,
   player_status_playing,
   player_status_pending_end,
+  player_status_end,
   player_status_cancelled,
 } PcmPlayerStatus;
 
@@ -30,7 +31,7 @@ class PcmPlayer {
   bool init(pa_sample_spec ss);
   void destroy();
 
-  void write(std::vector<uint8_t>& data);
+  bool write(std::vector<uint8_t>& data);
   void end();
   void cancel();
 

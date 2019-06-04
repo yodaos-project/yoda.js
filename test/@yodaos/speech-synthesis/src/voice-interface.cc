@@ -7,6 +7,13 @@
 using namespace std;
 using namespace flora;
 
+bool startsWith(const char *str, const char *pre)
+{
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
+}
+
 int main(int argc, const char* argv[])
 {
   auto floraAgent = new Agent();
@@ -16,6 +23,11 @@ int main(int argc, const char* argv[])
     msg->read(channel);
     printf("incoming speak request: %s, opening %s\n", channel.c_str(), argv[1]);
 
+    if (startsWith(channel.c_str(), "yodaos.speech-synthesis.do-not-send-data")) {
+      reply->end(0);
+      return;
+    }
+
     FILE* fp = fopen(argv[1], "r");
     if (!fp) {
       printf("failed to open file");
@@ -24,7 +36,7 @@ int main(int argc, const char* argv[])
     }
     reply->end(0);
 
-    #define buffer_size 1024
+    #define buffer_size 8192
     int c;
     size_t idx = 0;
     int buf[buffer_size];

@@ -3,6 +3,7 @@ var EventEmitter = require('events')
 var SpeechSynthesis = require('@yodaos/speech-synthesis').SpeechSynthesis
 
 test('should create utterance and speak', t => {
+  t.plan(9)
   var api = new EventEmitter()
   api.appId = 'test'
   api.effect = {
@@ -28,6 +29,7 @@ test('should create utterance and speak', t => {
 })
 
 test('should cancel utterance', t => {
+  t.plan(3)
   var api = new EventEmitter()
   api.appId = 'test'
   api.effect = {
@@ -43,6 +45,28 @@ test('should cancel utterance', t => {
     speechSynthesis.cancel()
   })
 
+  utter.on('cancel', () => {
+    t.strictEqual(speechSynthesis.speaking, false, 'canceled')
+    t.end()
+  })
+})
+
+test('should cancel immediately', t => {
+  t.plan(3)
+  var api = new EventEmitter()
+  api.appId = 'test'
+  api.effect = {
+    play: () => {},
+    stop: () => {}
+  }
+  var speechSynthesis = new SpeechSynthesis(api)
+  var utter = speechSynthesis.speak('foo')
+  t.strictEqual(speechSynthesis.speaking, false, 'not speaking')
+  speechSynthesis.cancel()
+
+  utter.on('start', () => {
+    t.strictEqual(speechSynthesis.speaking, true, 'started')
+  })
   utter.on('cancel', () => {
     t.strictEqual(speechSynthesis.speaking, false, 'canceled')
     t.end()
