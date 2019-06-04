@@ -15,37 +15,39 @@ else()
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s")
 endif()
 
-if(CMAKE_BUILD_HOST)
-  node_addon_find_package(mutils SHARED REQUIRED
-    HINTS ${mutilsPrefix}
-    HEADERS caps.h
-    ARCHIVES caps rlog misc
-    INC_PATH_SUFFIX caps
-  )
-  node_addon_find_package(flora-cli STATIC REQUIRED
-    HINTS ${floraPrefix}
-    HEADERS flora-cli.h
-    ARCHIVES flora-cli
-  )
-  node_addon_find_package(pulse SHARED REQUIRED
-    HINTS ${pulsePrefix}
-    HEADERS pulse/simple.h
-    ARCHIVES pulse pulse-simple
-  )
-  target_link_libraries(${PROJECT_NAME}
-    mutils::caps mutils::rlog mutils::misc
-    flora-cli::flora-cli
-    pulse::pulse pulse::pulse-simple
-  )
+node_addon_find_package(mutils SHARED REQUIRED
+  HINTS ${mutilsPrefix}
+  HEADERS caps.h
+  ARCHIVES caps rlog misc
+  INC_PATH_SUFFIX caps
+)
+node_addon_find_package(flora-cli SHARED REQUIRED
+  HINTS ${floraPrefix}
+  HEADERS flora-cli.h
+  ARCHIVES flora-cli
+)
+node_addon_find_package(pulse SHARED REQUIRED
+  HINTS ${pulsePrefix}
+  HEADERS pulse/simple.h
+  ARCHIVES pulse pulse-simple
+)
+target_link_libraries(${PROJECT_NAME}
+  mutils::caps mutils::rlog mutils::misc
+  flora-cli::flora-cli
+  pulse::pulse pulse::pulse-simple
+)
 
+if(CMAKE_BUILD_HOST)
   install(TARGETS ${PROJECT_NAME} DESTINATION out)
   install(FILES package.json DESTINATION ./)
   install(FILES ${SPEECHSYNTHESIS_SRC} DESTINATION ./)
 else(CMAKE_BUILD_HOST)
-  target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_INCLUDE_DIR}/usr/include/caps
+  node_addon_find_package(rklog SHARED REAUIRED
+    HEADERS rklog/RKLog.h
+    ARCHIVES rklog
   )
-  target_link_libraries(${PROJECT_NAME} flora-cli caps pulse pulse-simple)
+  target_link_libraries(${PROJECT_NAME} rklog::rklog)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE -DRKLOG_PRESENT)
 
   install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_DIR}/out)
 

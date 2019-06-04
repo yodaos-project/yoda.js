@@ -1,6 +1,9 @@
 #include "speech-synthesizer.h"
 #include "pulse/simple.h"
 
+#define LOG_TAG "SpeechSynthesizer"
+#include "logger.h"
+
 using namespace Napi;
 
 // Initialize native add-on
@@ -15,8 +18,7 @@ NODE_API_MODULE(NODE_GYP_MODULE_NAME, Init);
 static void speech_synthesis_event_callback(napi_env env,
                                             napi_value js_callback,
                                             void* context, void* data) {
-  fprintf(stdout, "[SpeechSynthesizer] on event callback(%d)\n",
-          (int)(uintptr_t)data);
+  RKLogv("on event callback(%d)", (int)(uintptr_t)data);
   SpeechSynthesizer* synth = static_cast<SpeechSynthesizer*>(context);
   synth->onevent(Napi::Function(env, js_callback), data);
 }
@@ -107,30 +109,30 @@ Value SpeechSynthesizer::speak(const CallbackInfo& info) {
   ss.channels = 1;
   ss.rate = 24000;
   this->player = new PcmPlayer([this](PcmPlayerEvent eve) {
-    fprintf(stdout, "[SpeechSynthesizer] on player event(%d)\n", eve);
+    RKLogv("on player event(%d)", eve);
     napi_call_threadsafe_function(this->tsfn, (void*)(uintptr_t)eve,
                                   napi_tsfn_blocking);
   });
   this->player->init(ss);
 
   this->id = id;
-  this->floraAgent.subscribe(id.c_str(), [this](const char* name,
-                                                std::shared_ptr<Caps>& msg,
-                                                uint32_t type) {
-    int32_t status = 0;
-    msg->read(status);
-    if (status > 0) {
-      fprintf(stdout, "[SpeechSynthesizer] end(%d)\n", status);
-      this->player->end();
-      this->floraAgent.unsubscribe(this->id.c_str());
-      return;
-    }
+  this->floraAgent.subscribe(id.c_str(),
+                             [this](const char* name,
+                                    std::shared_ptr<Caps>& msg, uint32_t type) {
+                               int32_t status = 0;
+                               msg->read(status);
+                               if (status > 0) {
+                                 RKLogv("end(%d)", status);
+                                 this->player->end();
+                                 this->floraAgent.unsubscribe(this->id.c_str());
+                                 return;
+                               }
 
-    std::vector<uint8_t> data;
-    msg->read(data);
-    fprintf(stdout, "[SpeechSynthesizer] write data(%zu)\n", data.size());
-    this->player->write(data);
-  });
+                               std::vector<uint8_t> data;
+                               msg->read(data);
+                               RKLogv("write data(%zu)", data.size());
+                               this->player->write(data);
+                             });
   std::shared_ptr<Caps> msg = Caps::new_instance();
   msg->write(id);
   msg->write(text);
@@ -213,7 +215,7 @@ Value SpeechSynthesizer::playStream(const CallbackInfo& info) {
 void SpeechSynthesizer::onevent(Napi::Function fn, void* data) {
   auto env = fn.Env();
   PcmPlayerEvent eve = (PcmPlayerEvent)(uintptr_t)data;
-  fprintf(stdout, "[SpeechSynthesizer] on event(%d) calling js\n", eve);
+  RKLogv("on event(%d) calling js", eve);
 
   if (eve > 0) {
     /**
@@ -224,7 +226,7 @@ void SpeechSynthesizer::onevent(Napi::Function fn, void* data) {
     this->player = nullptr;
   }
 
-  fprintf(stdout, "[SpeechSynthesizer] calling js for Event(%d)\n", eve);
+  RKLogv("calling js for Event(%d)", eve);
   fn.Call({ Number::New(env, (uintptr_t)data), Number::New(env, errCode) });
-  fprintf(stdout, "[SpeechSynthesizer] Event(%d) fired\n", eve);
+  RKLogv("Event(%d) fired", eve);
 }
