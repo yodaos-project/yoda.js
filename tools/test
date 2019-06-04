@@ -103,7 +103,7 @@ function run_test(){
 
       # collect
       if test "$coverage" != "" && test "$local" = "YES"; then
-        if [[ -f "coverage.data" ]];then
+        if [[ -f "coverage.data" ]]; then
           mv coverage.data .nyc_output/${name}.data
           name=`expr ${name} + 1`
         fi
