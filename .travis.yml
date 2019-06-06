@@ -26,11 +26,6 @@ jobs:
     - n 10
     - yarn
     script:
+    - sudo tools/build-yodart.sh
     - npm run lint
     - npm run test-local
-
-  - stage: test
-    env:
-    - JOBNAME="Linux/x86-64 Correctness Build"
-    script:
-    - sudo tools/build-yodart.sh

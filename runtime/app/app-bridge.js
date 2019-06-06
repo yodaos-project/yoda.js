@@ -18,6 +18,10 @@ class AppBridge {
     this.subscriptionTable = {}
     this.suspended = false
     this.exited = false
+    this.ready = false
+
+    // Implementation
+    this.exitInl = null
   }
 
   emit (namespace, name, args) {
@@ -67,15 +71,7 @@ class AppBridge {
     }, this.metadata)
   }
 
-  exit (code, signal) {
-    if (this.exited) {
-      this.logger.warn(`app(${this.appId}) might have been exited multiple times.`)
-      return
-    }
-    this.exited = true
-    this.onExit(code, signal)
-  }
-
+  // MARK: - APIs for scheduler
   suspend (options) {
     var force = _.get(options, 'force', false)
     if (this.suspended && !force) {
@@ -85,11 +81,39 @@ class AppBridge {
     if (this.exited) {
       return
     }
-    this.onSuspend(force)
+    this.exitInl && this.exitInl(force)
+  }
+  statusReport () {
+    this.onStatusReport && this.onStatusReport.apply(this, arguments)
+  }
+  onExit (code, signal) {}
+  // eslint-disable-next-line handle-callback-err
+  onReady (err) {}
+
+  // MARK: - APIs for implementor
+  implement (exitInl) {
+    this.exitInl = exitInl
   }
 
-  onExit (code, signal) {}
-  onSuspend (force) {}
+  didExit (code, signal) {
+    if (this.exited) {
+      this.logger.warn(`app(${this.appId}) might have been exited multiple times.`)
+      return
+    }
+    this.exited = true
+    this.onExit(code, signal)
+  }
+
+  didReady (err) {
+    if (this.ready) {
+      this.logger.warn(`app(${this.appId}) might have been ready for multiple times.`)
+      return
+    }
+    this.ready = true
+    this.onReady(err)
+  }
+
+  onStatusReport () {}
 }
 
 module.exports = AppBridge

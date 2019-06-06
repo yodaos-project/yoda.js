@@ -76,23 +76,3 @@ test('should load app', t => {
       t.end()
     })
 })
-
-test('should load dbus app', t => {
-  var fakeRuntime = mock.mockRuntime()
-  var loader = new AppLoader(fakeRuntime)
-
-  var appId = '@dbus-app'
-  var manifest = {
-    objectPath: 'foo',
-    ifaceName: 'bar',
-    permission: []
-  }
-  loader.setManifest(appId, manifest, { dbusApp: true })
-  t.deepEqual(fakeRuntime.component.permission.map[appId], manifest.permission)
-
-  var loadedManifest = loader.appManifests[appId]
-  t.strictEqual(loadedManifest.objectPath, 'foo', 'objectPath')
-  t.strictEqual(loadedManifest.ifaceName, 'bar', 'ifaceName')
-
-  t.end()
-})

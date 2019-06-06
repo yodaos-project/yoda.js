@@ -65,8 +65,7 @@ AppChargeur.prototype.markupConfig = function markupConfig (config) {
     config = {}
   }
   ;['paths',
-    'lightAppIds',
-    'dbusAppIds'
+    'lightAppIds'
   ].forEach(key => {
     if (!Array.isArray(config[key])) {
       config[key] = []
@@ -101,19 +100,16 @@ AppChargeur.prototype.getAppManifest = function getAppManifest (appId) {
 /**
  *
  * @param {string} appId
- * @returns {'ext' | 'light' | 'dbus'}
+ * @returns {'default' | 'light' | 'exe'}
  */
 AppChargeur.prototype.getTypeOfApp = function getTypeOfApp (appId) {
   if (this.config.lightAppIds.indexOf(appId) >= 0) {
     return 'light'
   }
-  if (this.config.dbusAppIds.indexOf(appId) >= 0) {
-    return 'dbus'
-  }
   if (_.get(this.getAppManifest(appId), 'rawExecutable', false) === true) {
     return 'exe'
   }
-  return 'ext'
+  return 'default'
 }
 
 /**
@@ -130,26 +126,6 @@ AppChargeur.prototype.registerBroadcastChannel = function registerBroadcastChann
   }
   logger.info(`registering broadcast channel '${name}'`)
   this.broadcasts[name] = []
-}
-
-/**
- * Directly set manifest for appId and populate its permissions.
- *
- * @param {string} appId
- * @param {object} manifest
- * @param {string[]} [manifest.permission]
- * @param {string[]} [manifest.hosts]
- * @returns {void}
- */
-AppChargeur.prototype.setManifest = function setManifest (appId, manifest, options) {
-  var dbusApp = _.get(options, 'dbusApp', false)
-
-  if (dbusApp && this.config.dbusAppIds.indexOf(appId) < 0) {
-    this.config.dbusAppIds.push(appId)
-    /** dbus apps shall be daemon app since they are running alone with vui */
-    manifest.daemon = true
-  }
-  this.__loadApp(appId, null, manifest)
 }
 
 /**
@@ -298,7 +274,7 @@ AppChargeur.prototype.__loadApp = function __loadApp (appId, appHome, manifest) 
   }).filter(it => it != null)
 
   this.runtime.component.permission.load(appId, permissions)
-  this.appManifests[appId] = Object.assign(_.pick(manifest, 'objectPath', 'ifaceName'), {
+  this.appManifests[appId] = Object.assign(_.pick(manifest, 'daemon', 'rawExecutable'), {
     hosts: hosts,
     permissions: permissions,
     broadcasts: broadcasts,

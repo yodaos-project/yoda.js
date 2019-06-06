@@ -4,7 +4,8 @@ require('@yoda/oh-my-little-pony')
 var extapp = require('./ext-helper')
 
 var target = process.argv[2]
-var instruments = process.argv[3]
+var descriptorPath = process.argv[3]
+var instruments = process.argv[4]
 
 function instrument (instruments) {
   var resolvePath = require('path').resolve
@@ -24,6 +25,6 @@ function instrument (instruments) {
   })
 }
 
-extapp.main(target, (appId, pkg) => {
+extapp.main(target, descriptorPath, (appId, pkg) => {
   instrument(instruments)
 })

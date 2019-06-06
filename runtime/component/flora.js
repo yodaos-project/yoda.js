@@ -64,5 +64,82 @@ Flora.prototype.remoteMethods = {
         logger.info('unexpected error on opening url format', reqMsg, err.stack)
         res.end(0, [ JSON.stringify({ ok: false, message: err.message, stack: err.stack }) ])
       })
+  },
+  'yodaos.fauna.status-report': function StatusReport (reqMsg, res, sender) {
+    var pid = sender.pid
+    if (pid == null) {
+      return res.end(403, [ `yodaos.fauna.status-report doesn't support been called over network.` ])
+    }
+    var appId = this.component.appScheduler.pidAppIdMap[sender.pid]
+    if (appId == null) {
+      return res.end(403, [ 'yodaos.fauna.status-report should be called within app process.' ])
+    }
+    var bridge = this.component.appScheduler.appMap[appId]
+
+    if (reqMsg[0] !== 'alive') {
+      logger.debug(`Received child(${appId}:${pid}) status-report ${reqMsg[0]}`)
+    }
+    bridge.statusReport.apply(bridge, reqMsg)
+    res.end(0, [])
+  },
+  'yodaos.fauna.invoke': function Invoke (reqMsg, res, sender) {
+    // Get app bridge
+    if (sender.pid == null) {
+      return res.end(403, [ `yodaos.fauna.invoke doesn't support been called over network.` ])
+    }
+    var appId = this.component.appScheduler.pidAppIdMap[sender.pid]
+    if (appId == null) {
+      return res.end(403, [ 'yodaos.fauna.invoke should be called within app process.' ])
+    }
+    var message = JSON.parse(reqMsg[0])
+    var bridge = this.component.appScheduler.appMap[appId]
+
+    var namespace = message.namespace
+    var method = message.method
+    var params = message.params
+    logger.debug(`Received child(${appId}:${sender.pid}) invocation ${namespace || 'activity'}.${method}`)
+    return bridge.invoke(namespace, method, params)
+      .then(
+        ret => {
+          return res.end(0, [ JSON.stringify({
+            action: 'resolve',
+            result: ret
+          }) ])
+        },
+        err => {
+          return res.end(0, [ JSON.stringify({
+            action: 'reject',
+            error: Object.assign({}, err, { name: err.name, message: err.message })
+          }) ])
+        }
+      )
+  },
+  'yodaos.fauna.subscribe': function Subscribe (reqMsg, res, sender) {
+    if (sender.pid == null) {
+      return res.end(403, [ `yodaos.fauna.subscribe doesn't support been called over network.` ])
+    }
+    var appId = this.component.appScheduler.pidAppIdMap[sender.pid]
+    if (appId == null) {
+      return res.end(403, [ 'yodaos.fauna.subscribe should be called within app process.' ])
+    }
+    var message = JSON.parse(reqMsg[0])
+    var bridge = this.component.appScheduler.appMap[appId]
+
+    var namespace = message.namespace
+    var event = message.event
+    logger.debug(`Received child(${appId}:${sender.pid}) subscription ${namespace || 'activity'}.${event}`)
+    var self = this
+    bridge.subscribe(namespace, event, function OnEvent () {
+      logger.debug(`Dispatching message(${namespace || 'activity'}.${event}) to child(${appId}:${sender.pid})`)
+      self.call('yodaos.fauna.harbor', [ 'event', JSON.stringify({
+        namespace: namespace,
+        event: event,
+        params: Array.prototype.slice.call(arguments, 0)
+      })], `${appId}:${sender.pid}`)
+        .catch(err => {
+          logger.error(`unexpected error on dispatching event(${namespace}.${event}) to app(${appId}, ${sender.pid})`, err.stack)
+        })
+    })
+    res.end(0, [])
   }
 }
