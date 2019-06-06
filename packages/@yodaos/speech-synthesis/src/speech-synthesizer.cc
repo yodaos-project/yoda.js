@@ -142,7 +142,8 @@ Value SpeechSynthesizer::speak(const CallbackInfo& info) {
       [this](int32_t resCode, flora::Response& resp) {
         if (resCode != 0) {
           this->errCode = resCode;
-          this->player->cancel();
+          if (this->player != nullptr)
+            this->player->cancel();
         }
       },
       10 * 1000);

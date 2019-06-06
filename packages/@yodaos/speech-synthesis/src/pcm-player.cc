@@ -16,6 +16,8 @@ bool PcmPlayer::init(pa_sample_spec ss) {
                          nullptr, "tts", &ss, nullptr, nullptr, &err);
   if (stream == nullptr) {
     RKLogw("pa_simple_new error(%d): %s", err, pa_strerror(err));
+  } else {
+    onevent(pcm_player_started);
   }
   return stream != nullptr;
 }
@@ -30,16 +32,15 @@ void PcmPlayer::destroy() {
   }
 }
 
-void PcmPlayer::write(std::vector<uint8_t>& data) {
+bool PcmPlayer::write(std::vector<uint8_t>& data) {
   if (stream == nullptr) {
-    return;
+    return false;
   }
-  if (status == player_status_cancelled) {
-    return;
+  if (status == player_status_cancelled || status == player_status_end) {
+    return false;
   }
   if (status == player_status_pending) {
     status = player_status_playing;
-    onevent(pcm_player_started);
   }
 
   tp->push([this, data]() {
@@ -59,11 +60,15 @@ void PcmPlayer::write(std::vector<uint8_t>& data) {
       RKLogw("write data error(%d): %s", err, pa_strerror(err));
     }
   });
+  return true;
 }
 
 void PcmPlayer::end() {
   if (status == player_status_pending_end || status == player_status_pending) {
     RKLogv("player pending end or not playing, skip draining");
+    onevent(pcm_player_ended);
+    /** set player as deprecated */
+    status = player_status_end;
     return;
   }
   if (status == player_status_playing) {
@@ -93,7 +98,8 @@ void PcmPlayer::end() {
     } else {
       onevent(pcm_player_ended);
     }
-    status = player_status_pending;
+    /** set player as deprecated */
+    status = player_status_end;
     /** clears all pending tasks on end */
     tp->clear();
   });
@@ -101,7 +107,10 @@ void PcmPlayer::end() {
 
 void PcmPlayer::cancel() {
   if (status != player_status_playing && status != player_status_pending_end) {
-    RKLogv("player not playing nor pending end, skip cancelling");
+    RKLogv("player not playing nor pending end, cancelling");
+    onevent(pcm_player_cancelled);
+    /** set player as deprecated */
+    status = player_status_end;
     return;
   }
   status = player_status_cancelled;

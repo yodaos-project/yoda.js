@@ -86,13 +86,10 @@ class SpeechSynthesis {
    * If an utterance is currently being spoken, speaking will stop immediately.
    */
   cancel () {
-    if (this[symbol.status] === Status.speaking) {
-      this[symbol.native].cancel()
-    }
+    this[symbol.native].cancel()
   }
 
   playStream () {
-    this[symbol.status] = Status.pending
     var utterance = new SpeechSynthesisUtterance()
     utterance.setId(this[symbol.label])
     this[symbol.queue].push(utterance)
@@ -107,6 +104,7 @@ class SpeechSynthesis {
     var utter = this[symbol.utter]
     if (eve === 0) {
       this[symbol.status] = Status.speaking
+      this[symbol.effect].play(SpeechSynthesisEffectUri)
     } else if (eve > 0) {
       this[symbol.status] = Status.none
       this[symbol.utter] = null
@@ -124,7 +122,7 @@ class SpeechSynthesis {
       err.code = errCode
       utter.emit('error', err)
     } else {
-      utter.emit(Events[eve])
+      utter.emit(name)
     }
     this.go()
   }
@@ -149,7 +147,6 @@ class SpeechSynthesis {
       }
       this[symbol.native].playStream(utter)
     }
-    this[symbol.effect].play(SpeechSynthesisEffectUri)
   }
 }
 
