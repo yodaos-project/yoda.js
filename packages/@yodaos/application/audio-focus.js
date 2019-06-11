@@ -11,6 +11,9 @@ function setup (api) {
     if (focus && typeof focus.onGain === 'function') {
       focus.onGain()
     }
+    if (hook) {
+      hook('gained', focus)
+    }
   })
   api.on('loss', (id, transient, mayDuck) => {
     var focus = api[symbol.registry][id]
@@ -23,6 +26,9 @@ function setup (api) {
     }
     if (focus && typeof focus.onLoss === 'function') {
       focus.onLoss(transient, mayDuck)
+    }
+    if (hook) {
+      hook('lost', focus)
     }
   })
   return registry

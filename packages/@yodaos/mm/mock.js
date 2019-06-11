@@ -5,11 +5,16 @@ var mockContext = []
 
 function mockReturns (target, prop, ret) {
   var orig = target[prop]
-  target[prop] = mocking
+  var descriptor = Object.getOwnPropertyDescriptor(target, prop)
+  Object.defineProperty(target, prop, Object.assign({
+    enumerable: true,
+    configurable: true
+  }, descriptor, { value: mocking }))
   mockContext.push({
     target: target,
     prop: prop,
-    orig: orig
+    orig: orig,
+    hasOwnProperty: descriptor
   })
 
   function mocking () {
@@ -86,6 +91,10 @@ function proxyMethod (target, prop, proxy) {
 
 function restore () {
   mockContext.forEach(it => {
+    if (!it.hasOwnProperty) {
+      delete it.target[it.prop]
+      return
+    }
     it.target[it.prop] = it.orig
   })
   mockContext = []
