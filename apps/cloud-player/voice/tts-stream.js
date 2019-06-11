@@ -12,7 +12,6 @@ module.exports = function TtsStream () {
   focus.onGain = () => {
     var utter = speechSynthesis.playStream()
       .on('start', () => {
-        this.agent.removeMethod(GetStreamChannel)
         this.agent.post(TtsStatusChannel, [ StatusCode.start ])
       })
       .on('cancel', () => {
@@ -37,6 +36,7 @@ module.exports = function TtsStream () {
   }
   focus.onLoss = () => {
     speechSynthesis.cancel()
+    this.agent.removeMethod(GetStreamChannel)
     this.finishVoice(focus)
   }
   focus.request()
