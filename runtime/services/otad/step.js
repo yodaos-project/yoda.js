@@ -78,7 +78,7 @@ function downloadImage (delegate, info, callback) {
     cb => wget.download(info.imageUrl, dest, { noCheckCertificate: true, continue: true }, cb),
     cb => {
       logger.info('ota image successfully downloaded, calculating hash')
-      delegate.checkIntegrity(dest, cb)
+      delegate.checkIntegrity(dest, info.integrity, cb)
     },
     (cb, result) => {
       if (!result) {

@@ -48,6 +48,8 @@ function main (done) {
     var agent = new flora.Agent('unix:/var/run/flora.sock')
     agent.start()
     agent.post('yodaos.otad.event', [ 'prepared', JSON.stringify(info) ])
+    agent.close()
+    done()
   }
 }
 
