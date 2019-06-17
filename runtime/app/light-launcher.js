@@ -6,22 +6,20 @@ var _ = require('@yoda/util')._
 var translate = require('../client/translator-in-process').translate
 /**
  *
- * @author Chengzhong Wu <chengzhong.wu@rokid.com>
  * @param {string} appId -
  * @param {string} target - app home directory
  * @param {AppRuntime} runtime
  */
-module.exports = function createLightApp (appId, metadata, bridge, options) {
-  var target = _.get(metadata, 'appHome')
-  logger.log(`load target: ${target}/package.json`)
-  var pkg = require(`${target}/package.json`)
-  var main = `${target}/${pkg.main || 'app.js'}`
+module.exports = function launchLightApp (appId, appDir, bridge, options) {
+  logger.log(`load target: ${appDir}/package.json`)
+  var pkg = require(`${appDir}/package.json`)
+  var main = `${appDir}/${pkg.main || 'app.js'}`
 
   logger.log('descriptor created.')
   var descriptor = require(_.get(options, 'descriptorPath', '../client/api/default.json'))
   var activity = translate(descriptor, bridge)
   activity.appId = appId
-  activity.appHome = target
+  activity.appHome = appDir
   logger.log('descriptor translated.')
   bridge.activity = activity
 
@@ -36,6 +34,7 @@ module.exports = function createLightApp (appId, metadata, bridge, options) {
     delete require.cache[main]
     return Promise.reject(err)
   }
+  bridge.didReady()
 
-  return Promise.resolve(bridge)
+  return Promise.resolve(null)
 }

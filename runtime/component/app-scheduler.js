@@ -4,20 +4,21 @@ var _ = require('@yoda/util')._
 
 var Constants = require('../constants').AppScheduler
 var AppBridge = require('../app/app-bridge')
-var lightApp = require('../app/light-app')
-var extApp = require('../app/ext-app')
-var executableProc = require('../app/executable-proc')
+var lightLauncher = require('../app/light-launcher')
+var defaultLauncher = require('../app/default-launcher')
+var executableLauncher = require('../app/executable-launcher')
 
 module.exports = AppScheduler
 function AppScheduler (runtime) {
   this.runtime = runtime
   this.loader = runtime.component.appLoader
 
+  this.pidAppIdMap = {}
   this.appMap = {}
   this.appStatus = {}
   this.appLaunchOptions = {}
-  this.appCreationFutures = {}
 
+  this.appCreationFutures = {}
   this.__appSuspensionResolvers = {}
   this.appSuspensionFutures = {}
 }
@@ -45,15 +46,15 @@ AppScheduler.prototype.getAppStatusById = function getAppStatusById (appId) {
  * @param {string[]} [options.args] - additional execution arguments to the child process
  * @param {object} [options.environs] - additional execution environs to the child process
  */
-AppScheduler.prototype.appCreationHandler = {
+AppScheduler.prototype.appLauncher = {
   light: function (appId, metadata, appBridge, mode, options) {
-    return lightApp(appId, metadata, appBridge)
+    return lightLauncher(appId, metadata.appHome, appBridge)
   },
   exe: function (appId, metadata, appBridge, mode, options) {
-    return executableProc(appId, metadata, appBridge)
+    return executableLauncher(metadata.appHome, appBridge)
   },
   default: function (appId, metadata, appBridge, mode, options) {
-    return extApp(appId, metadata, appBridge, mode, options)
+    return defaultLauncher(metadata.appHome, appBridge, mode, options)
   }
 }
 
@@ -101,45 +102,58 @@ AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
   if (mode == null) {
     mode = Constants.modes.default
   }
+
+  var launcher = this.appLauncher[appType]
+  if (launcher == null) {
+    launcher = this.appLauncher.default
+    appType = 'default'
+  }
   this.appLaunchOptions[appId] = { type: appType, mode: mode, args: args, environs: environs }
 
   var appBridge = new AppBridge(this.runtime, appId, metadata)
-  var creationHandler = this.appCreationHandler[appType]
-  if (creationHandler == null) {
-    creationHandler = this.appCreationHandler.default
+  this.appMap[appId] = appBridge
+  appBridge.onExit = (code, signal) => {
+    if (this.appMap[appId] !== appBridge) {
+      logger.info(`Not matched app on exiting, skip unset executor.app(${appId})`)
+      return
+    }
+    this.handleAppExit(appId, code, signal)
   }
-
-  future = Promise.resolve().then(() => creationHandler(appId, metadata, appBridge, mode, options))
-    .then(() => {
-      logger.info(`App(${appId}) successfully started`)
-      appBridge.onExit = (code, signal) => {
-        if (this.appMap[appId] !== appBridge) {
-          logger.info(`Not matched app on exiting, skip unset executor.app(${appId})`)
-          return
-        }
-        this.handleAppExit(appId, code, signal)
+  var readyPromise = new Promise((resolve, reject) => {
+    appBridge.onReady = (err) => {
+      if (err) {
+        logger.error(`Unexpected error on initializing ${appType} app(${appId})`, err.stack)
+        this.handleAppExit(appId)
+        reject(err)
+        return
       }
-
-      delete this.appCreationFutures[appId]
-      return this.handleAppCreate(appId, appBridge)
+      this.appStatus[appId] = Constants.status.running
+      appBridge.emit('activity', 'created')
+      resolve()
+    }
+  })
+  var launchPromise = Promise.resolve()
+    .then(() => launcher.call(this, appId, metadata, appBridge, mode, options))
+    .then(pid => {
+      if (pid != null) {
+        this.pidAppIdMap[pid] = appId
+        appBridge.pid = pid
+      }
+      logger.info(`App(${appId}) launched`)
+      this.appMap[appId] = appBridge
     }, err => {
-      logger.error(`Unexpected error on starting ext-app(${appId})`, err.stack)
-
-      delete this.appCreationFutures[appId]
+      logger.error(`Unexpected error on launching ${appType} app(${appId})`, err.stack)
       this.handleAppExit(appId)
       throw err
     })
 
+  future = Promise.all([ readyPromise, launchPromise ])
+    .finally(() => {
+      delete this.appCreationFutures[appId]
+    })
+    .then(() => appBridge)
   this.appCreationFutures[appId] = future
   return future
-}
-
-AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
-  this.appMap[appId] = app
-  this.appStatus[appId] = Constants.status.running
-  app.emit('activity', 'created')
-
-  return app
 }
 
 /**
@@ -152,8 +166,10 @@ AppScheduler.prototype.handleAppCreate = function handleAppCreate (appId, app) {
 AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, signal) {
   logger.info(`${appId} exited.`)
   /** incase bridge has not been marked as suspended */
-  if (this.appMap[appId] && typeof this.appMap[appId].suspend === 'function') {
-    this.appMap[appId].suspend()
+  var app = this.appMap[appId]
+  if (app) {
+    app.suspend()
+    delete this.pidAppIdMap[app.pid]
   }
   this.appStatus[appId] = Constants.status.exited
   this.runtime.appDidExit(appId)
@@ -194,14 +210,14 @@ AppScheduler.prototype.suspendAllApps = function suspendAllApps (options) {
  */
 AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   var force = _.get(options, 'force', false)
-  var appType = this.loader.getTypeOfApp(appId)
+  var launchOptions = this.appLaunchOptions[appId]
+  if (launchOptions == null) {
+    return Promise.resolve()
+  }
+  var appType = launchOptions.type
   logger.info(`suspending ${appType}-app(${appId}), force?`, force)
 
   if (appType === 'light') {
-    return Promise.resolve()
-  }
-
-  if (appType === 'dbus') {
     return Promise.resolve()
   }
 

@@ -4,29 +4,26 @@ var childProcess = require('child_process')
 var path = require('path')
 var fs = require('fs')
 var promisify = require('util').promisify
-var logger = require('logger')('ext-app')
 var _ = require('@yoda/util')._
 
 var readFileAsync = promisify(fs.readFile)
 var statAsync = promisify(fs.stat)
 
-module.exports = createExtApp
+module.exports = launchExecutable
 /**
  *
- * @author Chengzhong Wu <chengzhong.wu@rokid.com>
  * @param {string} appId -
  * @param {string} target - app home directory
  * @param {AppRuntime} runtime -
  */
-function createExtApp (appId, metadata, bridge) {
-  var target = _.get(metadata, 'appHome')
-  var packageJsonPath = path.join(target, 'package.json')
+function launchExecutable (appDir, bridge) {
+  var packageJsonPath = path.join(appDir, 'package.json')
   var executablePath
 
   return readFileAsync(packageJsonPath, 'utf8')
     .then(data => {
       var packageJson = JSON.parse(data)
-      executablePath = path.join(target, _.get(packageJson, 'main'))
+      executablePath = path.join(appDir, _.get(packageJson, 'main'))
       return statAsync(executablePath)
     })
     .then(stat => {
@@ -38,23 +35,24 @@ function createExtApp (appId, metadata, bridge) {
       }
 
       var cp = childProcess.spawn(executablePath, [], {
-        cwd: target,
+        cwd: appDir,
         stdio: 'inherit'
       })
 
       cp.once('error', function onError (err) {
-        logger.error(`${appId}(${cp.pid}) Unexpected error on child process '${target}'`, err.message, err.stack)
+        bridge.logger.error(`Process(${cp.pid}) Unexpected error on child process '${appDir}'`, err.message, err.stack)
         cp.kill(/** SIGKILL */9)
       })
       cp.once('exit', (code, signal) => {
-        logger.info(`${appId}(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
+        bridge.logger.info(`Process(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
         bridge.exit(code, signal)
       })
-      bridge.onSuspend = () => {
-        logger.info(`${appId}(${cp.pid}) Activity end of life, killing process.`)
-        cp.kill()
-      }
-      return bridge
+      bridge.implement((force) => {
+        bridge.logger.info(`Process(${cp.pid}) end of life, killing process.`)
+        cp.kill(force ? 'SIGKILL' : 'SIGTERM')
+      })
+
+      return cp.pid
     })
 }
 

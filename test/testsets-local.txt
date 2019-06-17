@@ -3,6 +3,7 @@
 @yodaos/application/*.test.js
 @yodaos/application/vui/*.test.js
 @yodaos/storage/*.test.js
+client/light-launcher.test.js
 component/app-loader/*.test.js
 component/app-scheduler/*.test.js
 component/audio-focus/*.test.js

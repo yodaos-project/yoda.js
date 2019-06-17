@@ -1,6 +1,7 @@
 'use strict'
 var EventEmitter = require('events')
 var logger = require('logger')('@ipc')
+var agent = null
 
 /**
  * interface Descriptor {
@@ -33,42 +34,41 @@ var logger = require('logger')('@ipc')
 
 var messageRegistry = {}
 
-var invocationId = 0
 var MethodProxies = {
   promise: (name, descriptor, ns, nsDescriptor) => function proxy () {
-    var id = invocationId
-    invocationId += 1
-
     /**
      * create error right on invocation
      * to retain current invocation stack on callback errors.
      */
     var err = new Error('Pending error.')
     var args = Array.prototype.slice.call(arguments, 0)
-    return new Promise((resolve, reject) => {
-      var channel = `invoke:${id}`
-      messageRegistry[channel] = function onCallback (msg) {
-        delete messageRegistry[channel]
-        if (msg.action === 'resolve') {
-          return resolve(msg.result)
-        }
-        if (msg.action === 'reject') {
-          Object.assign(err, msg.error)
-          return reject(err)
-        }
-        err.message = 'Unknown response message type from VuiDaemon.'
-        err.msg = msg
-        reject(err)
-      }
-
-      process.send({
-        type: 'invoke',
-        invocationId: id,
+    return agent.call('yodaos.fauna.invoke', [
+      JSON.stringify({
         namespace: nsDescriptor.name,
         method: name,
         params: args
       })
-    })
+    ], 'runtime', 10000)
+      .then(
+        res => {
+          var msg = res.msg[0]
+          msg = JSON.parse(msg)
+          if (msg.action === 'resolve') {
+            return msg.result
+          }
+          if (msg.action === 'reject') {
+            Object.assign(err, msg.error)
+            throw err
+          }
+          err.message = 'Unknown response message type from VuiDaemon.'
+          err.msg = msg
+          throw err
+        },
+        error => {
+          Object.assign(err, error, { name: err.name, message: error.message })
+          throw err
+        }
+      )
   }
 }
 
@@ -123,11 +123,12 @@ var PropertyDescriptions = {
       EventEmitter.prototype.emit.apply(namespace, [ name ].concat(params))
     }
 
-    process.send({
-      type: 'subscribe',
-      namespace: nsDescriptor.name,
-      event: name
-    })
+    agent.call('yodaos.fauna.subscribe', [
+      JSON.stringify({
+        namespace: nsDescriptor.name,
+        event: name
+      })
+    ], 'runtime')
   },
   value: function Value (name, descriptor, namespace, nsDescriptor) {
     return descriptor.value
@@ -139,11 +140,8 @@ module.exports.setLogger = function setLogger (_logger) {
 }
 
 module.exports.translate = translate
-function translate (descriptor) {
-  if (typeof process.send !== 'function') {
-    throw new Error('IpcTranslator must work in child process.')
-  }
-
+function translate (descriptor, _agent) {
+  agent = _agent
   var activity = PropertyDescriptions.namespace(null, descriptor, null, null)
 
   listenIpc()
@@ -169,14 +167,6 @@ var listenMap = {
       reg(msg.params)
     }
   },
-  invoke: msg => {
-    var channel = `invoke:${msg.invocationId}`
-    logger.debug(`Received VuiDaemon response('${msg.action || 'returned'}') of '${channel}'`)
-    var reg = messageRegistry[channel]
-    if (typeof reg === 'function') {
-      reg(msg)
-    }
-  },
   'fatal-error': msg => {
     var err = new Error(msg.message)
     throw err
@@ -193,13 +183,14 @@ var listenMap = {
 }
 
 function listenIpc () {
-  process.on('message', function onMessage (message) {
-    var handle = listenMap[message.type]
+  agent.declareMethod('yodaos.fauna.harbor', (req, res) => {
+    var handle = listenMap[req[0]]
     if (handle == null) {
-      logger.info(`Unhandled Ipc message type '${message.type}'.`)
+      logger.info(`Unhandled Ipc message type '${req[0]}'.`)
       return
     }
 
-    handle(message)
+    res.end(0, [])
+    handle(JSON.parse(req[1]))
   })
 }

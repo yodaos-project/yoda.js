@@ -2,11 +2,11 @@
 
 var logger = require('logger')('ext-app-client')
 var translator = require('./translator-ipc')
+var flora = require('@yoda/flora')
 var apiSymbol = Symbol.for('yoda#api')
 
 module.exports = {
   main: main,
-  getActivityDescriptor: getActivityDescriptor,
   launchApp: launchApp,
   keepAlive: keepAlive
 }
@@ -16,7 +16,7 @@ process.once('disconnect', () => {
   process.exit(233)
 })
 
-function main (target, runner) {
+function main (target, descriptorPath, runner) {
   if (!target) {
     logger.error('Target is required.')
     process.exit(-1)
@@ -32,77 +32,49 @@ function main (target, runner) {
 
   var main = `${target}/${pkg.main || 'app.js'}`
 
-  keepAlive()
-  getActivityDescriptor()
-    .then(descriptor => {
-      // FIXME: unref should be enabled on https://github.com/yodaos-project/ShadowNode/issues/517 got fixed.
-      // aliveInterval.unref()
-      translator.setLogger(require('logger')(`@ipc-${process.pid}`))
-      var api = translator.translate(descriptor)
-      api.appId = appId
-      api.appHome = target
-      global[apiSymbol] = api
+  var agent = new flora.Agent(`unix:/var/run/flora.sock#${appId}:${process.pid}`)
+  agent.start()
 
-      /**
-       * Executes app's main function
-       */
-      launchApp(main, api)
+  keepAlive(agent, appId)
+  var descriptor = require(descriptorPath)
 
-      process.send({
-        type: 'status-report',
-        status: 'ready'
-      })
+  // FIXME: unref should be enabled on https://github.com/yodaos-project/ShadowNode/issues/517 got fixed.
+  // aliveInterval.unref()
+  translator.setLogger(require('logger')(`@ipc-${process.pid}`))
+  var api = translator.translate(descriptor, agent)
+  api.appId = appId
+  api.appHome = target
+  global[apiSymbol] = api
 
-      /**
-       * Force await on app initialization.
-       */
-      return onceAppCreated()
-    }).then(() => {
-      runner(appId, pkg)
-    }).catch(error => {
+  try {
+    /**
+     * Executes app's main function
+     */
+    launchApp(main, api)
+  } catch (error) {
+    logger.error('fatal error:', error.stack)
+    agent.call('yodaos.fauna.status-report', ['error', error.stack])
+    process.exit(1)
+  }
+
+  agent.call('yodaos.fauna.status-report', ['ready'], 'runtime')
+
+  /**
+   * Force await on app initialization.
+   */
+  Promise.resolve()
+    .then(() => onceAppCreated(api))
+    .then(() => runner(appId, pkg))
+    .catch(error => {
       logger.error('fatal error:', error.stack)
-      process.send({
-        type: 'status-report',
-        status: 'error',
-        error: error.message,
-        stack: error.stack
-      })
+      agent.call('yodaos.fauna.status-report', ['error', error.stack])
       process.exit(1)
     })
 }
 
-function getActivityDescriptor () {
-  return new Promise((resolve, reject) => {
-    process.on('message', onMessage)
-    process.send({
-      type: 'status-report',
-      status: 'initiating'
-    })
-
-    function onMessage (message) {
-      if (message.type !== 'descriptor') {
-        return
-      }
-      process.removeListener('message', onMessage)
-      if (typeof message.result !== 'string') {
-        return reject(new Error('Unexpected result on fetching descriptor path.'))
-      }
-      return resolve(require(message.result))
-    }
-  })
-}
-
-function onceAppCreated () {
-  return new Promise((resolve, reject) => {
-    process.on('message', onMessage)
-
-    function onMessage (message) {
-      if (message.type !== 'event' && message.event !== 'created') {
-        return
-      }
-      process.removeListener('message', onMessage)
-      return resolve()
-    }
+function onceAppCreated (api) {
+  return new Promise(resolve => {
+    api.once('created', resolve)
   })
 }
 
@@ -116,18 +88,18 @@ function launchApp (main, activity) {
 }
 
 var aliveInterval
-function keepAlive () {
+function keepAlive (agent) {
   if (aliveInterval) {
     clearInterval(aliveInterval)
   }
-  setAlive()
+  setAlive(agent)
   aliveInterval = setInterval(() => {
-    setAlive()
+    setAlive(agent)
   }, 5 * 1000)
 }
 
-function setAlive () {
-  process.send({ type: 'alive' })
+function setAlive (agent) {
+  agent.call('yodaos.fauna.status-report', ['alive'], 'runtime')
 }
 
 function noopRunner () {

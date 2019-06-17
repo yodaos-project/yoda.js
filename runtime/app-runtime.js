@@ -314,33 +314,6 @@ AppRuntime.prototype.appDidExit = function appDidExit (appId) {
 }
 
 /**
- * Register the dbus app.
- *
- * @param {string} appId extapp的AppID
- * @param {object} profile extapp的profile
- * @private
- */
-AppRuntime.prototype.registerDbusApp = function (appId, objectPath, ifaceName) {
-  logger.log('register dbus app with id: ', appId)
-  try {
-    this.component.appLoader.setManifest(appId, {
-      objectPath: objectPath,
-      ifaceName: ifaceName,
-      permission: []
-    }, {
-      dbusApp: true
-    })
-  } catch (err) {
-    if (_.startsWith(err.message, 'AppId exists')) {
-      return
-    }
-    throw err
-  }
-  /** dbus apps are already running, creating a daemon app proxy for then */
-  return this.component.appScheduler.createApp(appId)
-}
-
-/**
  * Reset the runtime to the reset state, it deactivates all running apps and
  * open the url "yoda-app://setup/reset".
  */
