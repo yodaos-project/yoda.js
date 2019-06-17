@@ -8,11 +8,8 @@ var ota = require('@yoda/ota')
 var system = require('@yoda/system')
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var logger = require('logger')('otap')
-var util = require('util')
 
 var strings = require('./strings.json')
-
-var getAvailableInfoAsync = util.promisify(ota.getAvailableInfo)
 
 /**
  *
@@ -49,54 +46,6 @@ module.exports = function (api) {
     })
   }
 
-  function checkUpdateAvailability () {
-    logger.info('fetching available ota info')
-    getAvailableInfoAsync().then(info => {
-      if (info == null) {
-        return speakAsync(strings.NO_UPDATES_AVAILABLE)
-      }
-      if (info.status === 'downloading') {
-        return ota.getImageDownloadProgress(info, (err, progress) => {
-          if (err) {
-            return speakAsync(strings.UPDATES_START_DOWNLOADING)
-          }
-          var utterance
-          if (isNaN(progress) || progress < 0 || progress >= 100) {
-            utterance = strings.UPDATES_START_DOWNLOADING
-          } else {
-            progress = Math.round(progress * 100)
-            utterance = util.format(strings.UPDATES_ON_DOWNLOADING, progress)
-          }
-          return speakAsync(utterance)
-        })
-      }
-      if (info.status !== 'downloaded') {
-        ota.runInBackground()
-        return speakAsync(strings.UPDATES_START_DOWNLOADING)
-      }
-      return ota.condition.getAvailabilityOfOta(info)
-        .then(availability => {
-          switch (availability) {
-            case true:
-              return startUpgrade(info.imagePath)
-            case 'low_power':
-              return speakAsync(strings.UPDATE_NOT_AVAILABLE_LOW_POWER)
-            case 'extremely_low_power':
-              return speakAsync(strings.UPDATE_NOT_AVAILABLE_EXTREMELY_LOW_POWER)
-            default:
-              return speakAsync(strings.NO_UPDATES_AVAILABLE)
-          }
-        })
-    }, error => {
-      logger.error('Unexpected error on check available updates', error.stack)
-      return speakAsync(strings.NO_UPDATES_AVAILABLE)
-    })
-  }
-
-  function whatsCurrentVersion () {
-    speakAsync(strings.GENERIC_VERSION_ANNOUNCEMENT)
-  }
-
   /**
    *
    * @param {URL} url
@@ -131,17 +80,11 @@ module.exports = function (api) {
   var app = Application({
     url: function url (url) {
       switch (url.pathname) {
-        case '/check_sys_upgrade':
-          checkUpdateAvailability()
-          break
-        case '/check_sys_version':
-          whatsCurrentVersion()
-          break
         case '/on_first_boot_after_upgrade':
           onFirstBootAfterUpgrade(url)
           break
-        case '/force_upgrade':
-          startUpgrade(url.query.image_path, true)
+        case '/upgrade':
+          startUpgrade(url.query.image_path, !!url.query.force)
           break
       }
     }

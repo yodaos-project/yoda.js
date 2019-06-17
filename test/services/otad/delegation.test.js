@@ -41,8 +41,31 @@ test('should delegate fetchOtaInfo to executable', t => {
   })
 })
 
+test('should delegate fetchOtaInfo to echo', t => {
+  var expected = {
+    imageUrl: 'https://example.com',
+    version: '2.3.3',
+    integrity: 'foobar'
+  }
+  var delegate = new Delegation([ '--fetcher', `echo "${JSON.stringify(expected).replace(/"/g, '\\"')}"; #` ])
+  delegate.fetchOtaInfo('foobar', (err, result) => {
+    t.error(err)
+    t.deepEqual(result, expected)
+    t.end()
+  })
+})
+
 test('should delegate checkIntegrity to executable', t => {
   var delegate = new Delegation([ '--integrity', `${path.join(__dirname, 'fixture/md5check.sh')}` ])
+  delegate.checkIntegrity(path.join(helper.paths.fixture, 'tobeornottobe.txt'), '99d7bdf3ecf03f3fd081d7b835c7347f', (err, result) => {
+    t.error(err)
+    t.deepEqual(result, true)
+    t.end()
+  })
+})
+
+test('should delegate checkIntegrity to shell command', t => {
+  var delegate = new Delegation([ '--integrity', `bash -c 'printf "$1  $0" | md5sum -c' ` ])
   delegate.checkIntegrity(path.join(helper.paths.fixture, 'tobeornottobe.txt'), '99d7bdf3ecf03f3fd081d7b835c7347f', (err, result) => {
     t.error(err)
     t.deepEqual(result, true)

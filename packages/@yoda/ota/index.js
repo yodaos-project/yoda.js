@@ -156,5 +156,3 @@ function getImageDownloadProgress (info, callback) {
     callback(null, stat.size / info.totalSize)
   }) /** fs.stat */
 }
-
-module.exports.condition = require('./condition')
