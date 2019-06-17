@@ -104,7 +104,7 @@ class SpeechSynthesis {
     var utter = this[symbol.utter]
     if (eve === 0) {
       this[symbol.status] = Status.speaking
-      this[symbol.effect].play(SpeechSynthesisEffectUri)
+      this[symbol.effect].play(SpeechSynthesisEffectUri, undefined, { shouldResume: true })
     } else if (eve > 0) {
       this[symbol.status] = Status.none
       this[symbol.utter] = null
