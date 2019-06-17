@@ -33,6 +33,14 @@ Example OTA info:
 
 `integrity-command` should exit with code 0 on successful integrity check.
 
+#### --prelude <prelude-command>
+
+Embedder could terminate OTA process early by providing a custom prelude command.
+
+`prelude-command` would be executed after `yodaos.runtime.phase` is [ `ready` ].
+
+`prelude-command` should exit with code 0 on successful prelude check. Or OTA would exit prematurely without any actual download operations.
+
 ### Examples
 
 #### Start download with info-json and md5sum
