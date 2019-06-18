@@ -16,6 +16,7 @@ var native = require('./httpsession.node')
  * @param {string} [options.body] - the http body to send.
  * @param {number} [options.timeout] - the timeout in seconds.
  * @param {object} [options.headers] - the http headers.
+ * @param {boolean} [options.trust_all] - trust all SSL certs.
  * @param {function} [callback] - the callback when request is done.
  */
 exports.request = native.request
