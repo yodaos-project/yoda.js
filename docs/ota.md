@@ -41,6 +41,16 @@ Embedder could terminate OTA process early by providing a custom prelude command
 
 `prelude-command` should exit with code 0 on successful prelude check. Or OTA would exit prematurely without any actual download operations.
 
+#### --notify <notify-command>
+
+Embedder could execute custom notify command on image download complete (or failed).
+
+`notify-command` would be executed after image download complete or failed with arguments of `image-version` and `image-path`.
+
+If image download failed, the both arguments would be empty.
+
+`notify-command` should exit with code 0 on successful notify. Failure would be ignored.
+
 ### Examples
 
 #### Start download with info-json and md5sum

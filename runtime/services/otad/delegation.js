@@ -10,7 +10,8 @@ class Delegation {
     this.programs = {
       prelude: null,
       fetchOtaInfo: null,
-      checkIntegrity: null
+      checkIntegrity: null,
+      notify: null
     }
     argv = argv || []
     while (argv.length > 0) {
@@ -27,6 +28,9 @@ class Delegation {
           break
         case '--integrity':
           this.programs.checkIntegrity = argv.shift()
+          break
+        case '--notify':
+          this.programs.notify = argv.shift()
           break
       }
     }
@@ -68,6 +72,14 @@ class Delegation {
       .then(
         () => callback(null, true),
         err => callback(err, false)
+      )
+  }
+
+  notify (version, imagePath, callback) {
+    this.execute(this.programs.notify, [version, imagePath])
+      .then(
+        () => callback(null),
+        err => callback(err)
       )
   }
 

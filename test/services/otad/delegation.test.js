@@ -81,3 +81,39 @@ test('should delegate checkIntegrity to executable and fail the check', t => {
     t.end()
   })
 })
+
+test('should delegate notify to executable', t => {
+  t.plan(2)
+  var delegate = new Delegation([ '--notify', `echo` ])
+  mm.mockCallback(require('child_process'), 'exec', (command, callback) => {
+    t.strictEqual(command, 'echo 1.0.0 /data/path')
+    callback(null, '')
+  })
+  delegate.notify('1.0.0', '/data/path', (err) => {
+    t.error(err)
+    mm.restore()
+    t.end()
+  })
+})
+
+test('should delegate notify to executable with no version and imagePath', t => {
+  t.plan(2)
+  var delegate = new Delegation([ '--notify', `echo` ])
+  mm.mockCallback(require('child_process'), 'exec', (command, callback) => {
+    t.strictEqual(command, 'echo  ')
+    callback(null, '')
+  })
+  delegate.notify(null, null, (err) => {
+    t.error(err)
+    mm.restore()
+    t.end()
+  })
+})
+
+test('should delegate notify to executable and throws on not found', t => {
+  var delegate = new Delegation([ '--notify', `foo` ])
+  delegate.notify('1.0.0', '/data/path', (err) => {
+    t.throws(() => { throw err }, /Error: Command failed/)
+    t.end()
+  })
+})
