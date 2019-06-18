@@ -37,7 +37,7 @@ function main (done) {
         return done()
       }
       /** not errored for locking, shall retry in a short sleep */
-      return ota.resetOta(() => done(err))
+      return ota.resetOta(() => delegate.notify(null, null, () => done(err)))
     }
     var imagePath = info && info.imagePath
     if (typeof imagePath !== 'string') {
@@ -49,7 +49,7 @@ function main (done) {
     agent.start()
     agent.post('yodaos.otad.event', [ 'prepared', JSON.stringify(info) ])
     agent.close()
-    done()
+    delegate.notify(info.version, info.imagePath, done)
   }
 }
 
