@@ -4,16 +4,16 @@
 [![codecov](https://codecov.io/gh/yodaos-project/yodart/branch/master/graph/badge.svg)](https://codecov.io/gh/yodaos-project/yodart)
 [![License](https://img.shields.io/badge/licence-apache%202.0-green.svg)](LICENSE.md)
 
-YODAOS runtime is the JavaScript layer in [YODAOS][]. It provides the main functionalities includes:
+YodaOS Application Runtime is the JavaScript layer in [YodaOS][]. It provides the main functionalities includes:
 
 - Getting and handling NLP request
 - Playing music and TTS
-- Controling the volume
-- Controling the network state
+- Controlling the volume
+- Controlling the network state
 - Providing basic SDK for application development
 
-And it is powered by [ShadowNode](https://github.com/Rokid/ShadowNode), which provides the basic system API,
-you could visit [API Documentation](https://github.com/Rokid/ShadowNode/tree/master/docs/api) for details.
+It is powered by [ShadowNode](https://github.com/Rokid/ShadowNode), which provides the basic system API.
+See [ShadowNode Documentation](https://github.com/Rokid/ShadowNode/tree/master/docs/api) for details.
 
 <!-- {project.manifest.apilevel} -->
 
@@ -32,27 +32,6 @@ $ npm test
 
 Ensure you have a connected YodaOS device via ADB v1.0.39.
 
-**Define your test.json**
-
-`test.json` is the configuration in JSON for your testing jobs. An example is here:
-
-```json
-{
-  "cloudgw": {
-    "deviceId": "your device id",
-    "deviceTypeId": "your device type id",
-    "key": "your rokid cloud key",
-    "secret": "your rokid cloud secret"
-  },
-  "wifi": {
-    "ssid": "your ssid of wifi",
-    "psk": "your psk of wifi"
-  }
-}
-```
-
-And put this file under the ./test directory.
-
 ## Development
 
 In development, code changes are in a very frequent fashion and it might be hard to maintain
@@ -69,5 +48,5 @@ For more useful development tools, see [tools](./tools#yodaos-core-tools).
 
 [Apache-2.0](LICENSE.md)
 
-[YODAOS]: https://github.com/yodaos-project/yodaos
+[YodaOS]: https://github.com/yodaos-project/yodaos
 
