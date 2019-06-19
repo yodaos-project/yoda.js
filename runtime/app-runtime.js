@@ -7,8 +7,6 @@
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var Url = require('url')
-var fs = require('fs')
-var childProcess = require('child_process')
 var path = require('path')
 
 var logger = require('logger')('yoda')
@@ -333,18 +331,10 @@ AppRuntime.prototype.phaseToBooting = function phaseToBooting () {
  * @private
  */
 AppRuntime.prototype.phaseToReady = function phaseToReady () {
-  var onDone = () => {
-    this.component.broadcast.dispatch('yodaos.on-phase-ready', [])
-  }
-
   this.component.flora.post('yodaos.runtime.phase', ['ready'], require('@yoda/flora').MSGTYPE_PERSIST)
-  return Promise.all([
-    this.startDaemonApps(),
-    this.setStartupFlag()
-  ]).then(onDone, err => {
-    logger.error('Unexpected error on logged in', err.stack)
-    return onDone()
-  })
+  return this.startDaemonApps()
+    .catch(err => logger.error('Unexpected error on starting daemon app', err.stack))
+    .then(() => this.component.broadcast.dispatch('yodaos.on-phase-ready', []))
 }
 
 /**
@@ -354,31 +344,4 @@ AppRuntime.prototype.phaseToReset = function phaseToReset () {
   this.component.flora.post('yodaos.runtime.phase', ['setup'], require('@yoda/flora').MSGTYPE_PERSIST)
   this.component.broadcast.dispatch('yodaos.on-phase-reset', [])
   return this.component.visibility.abandonAllVisibilities()
-}
-
-/**
- * Set a flag which informs startup service that it is time to boot other services.
- */
-AppRuntime.prototype.setStartupFlag = function setStartupFlag () {
-  return new Promise((resolve, reject) => {
-    /**
-     * intended typo: bootts
-     */
-    childProcess.exec('touch /tmp/.com.rokid.activation.bootts', err => {
-      if (err) {
-        return reject(err)
-      }
-      resolve()
-    })
-  })
-}
-
-/**
- * Determines if startup flag has been set.
- * WARNING: This is a synchronous function.
- *
- * @returns {boolean}
- */
-AppRuntime.prototype.isStartupFlagExists = function isStartupFlagExists () {
-  return fs.existsSync('/tmp/.com.rokid.activation.bootts')
 }
