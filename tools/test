@@ -3,16 +3,22 @@ set -e -o pipefail
 
 help="
 Usage:
-  -l                  run tests on local machine
-  -p <pattern>        test file pattern, defaults to '$pattern'
-  --reporter <name>   test result reporter, no reporter by default
-  -s                  Select which device to be installed on if multiple devices presents.
+  -l, --local                  run tests on local machine
+  --reporter <name>            test result reporter, no reporter by default
+  -s, --serial                 select which device to be installed on if multiple devices presents
+
+  -p, --pattern <pattern>      test files pattern, would disable --testset options and default testset
+  --testset <testsets>         run testset in addition to 'test/testset.txt'
+
+  --node-path <path>           run test with the NODE_PATH environ
+  --manifest <path>            run test with the manifest.json
 
 Example:
   $ ./tools/test --reporter tap-spec --pattern '**/*.test.js'
 "
 
-testset='test/testsets.txt'
+testsets=('test/testsets.txt')
+manifest=''
 patternPrefix='/data/workspace/test/'
 patterns=""
 reporter="cat"
@@ -20,6 +26,7 @@ coverage=""
 timeout=""
 local="NO"
 sn=""
+node_path="$(pwd)/packages"
 while [ $# -gt 0 ]; do
   case "$1" in
     -p|--pattern)
@@ -27,7 +34,7 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     --testset)
-      testset="$2"
+      testsets+=("$2")
       shift
       ;;
     --reporter)
@@ -37,8 +44,16 @@ while [ $# -gt 0 ]; do
     -l|--local)
       local="YES"
       ;;
-    -s)
+    -s|--serial)
       sn="$2"
+      shift
+      ;;
+    --node-path)
+      node_path="$2"
+      shift
+      ;;
+    --manifest)
+      manifest="$2"
       shift
       ;;
     -h|--help)
@@ -61,14 +76,15 @@ while [ $# -gt 0 ]; do
 done
 
 if test -z "$patterns"; then
-  patterns=$(cat $testset)
+  patterns="$(cat ${testsets[@]})"
 fi
 
 pre_scripts=""
 
 if test "$local" = "YES"; then
-  export NODE_PATH="$(pwd)/packages"
+  export NODE_PATH="$node_path"
   export YODA_RUN_MODE=host
+  export YODA_MANIFEST="$manifest"
   export NODE_ENV=unittest
 
   patternPrefix="$(pwd)/test/"
@@ -77,6 +93,7 @@ if test "$local" = "YES"; then
 else
   pre_scripts="
 export BLUETOOTH_CHANNEL_PREFIX=/tmp;
+export YODA_MANIFEST=$manifest
 export NODE_ENV=unittest;
 iotjs /usr/lib/node_modules/tape/bin/tape.js
 "
@@ -87,9 +104,15 @@ iotjs /usr/lib/node_modules/tape/bin/tape.js
   fi
 fi
 
-for pattern in $patterns; do
-  if ! test -z "$pattern"; then
-    printf "# $patternPrefix$pattern\n"
-    $cmd $pre_scripts $coverage $timeout "$patternPrefix$pattern" | $reporter
+IFS=$'\n' patterns=($patterns)
+unset IFS
+for pattern in "${patterns[@]}"; do
+  if test -z "$pattern"; then
+    continue
   fi
+  if [[ "$pattern" == \#* ]]; then
+    continue
+  fi
+  printf "# $patternPrefix$pattern\n"
+  $cmd $pre_scripts $coverage $timeout "$patternPrefix$pattern" | $reporter
 done

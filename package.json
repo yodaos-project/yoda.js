@@ -13,14 +13,14 @@
     "build-api": "node tools/generate-api-json.js",
     "pretest": "tools/runtime-install -t",
     "bare-test": "tools/runtime-install -t --no-os && tools/test",
-    "test-local": "tools/test --local --reporter tap-spec --testset 'test/testsets-local.txt'",
+    "test-local": "tools/test --local --reporter tap-spec",
     "test": "tools/test --reporter tap-spec"
   },
   "config": {
     "unsafe-perm": true
   },
   "engine": {
-    "shadow-node": "0.11.4"
+    "shadow-node": "0.11.6"
   },
   "manifest": {
     "apilevel": 0.6

@@ -16,15 +16,19 @@ if(CMAKE_BUILD_HOST)
     ARCHIVES caps rlog misc
     INC_PATH_SUFFIX caps
   )
-  node_addon_find_package(flora-cli STATIC REQUIRED
+  node_addon_find_package(flora-cli SHARED REQUIRED
     HINTS ${floraPrefix}
     HEADERS flora-cli.h
     ARCHIVES flora-cli
   )
   target_link_libraries(${PROJECT_NAME}
     mutils::caps mutils::rlog mutils::misc
-    flora-cli::flora-cli
+    flora-cli::flora-cli pthread
   )
+  install(TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION /usr/bin
+    LIBRARY DESTINATION /usr/lib
+    PUBLIC_HEADER DESTINATION /usr/include)
 else(CMAKE_BUILD_HOST)
   target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_INCLUDE_DIR}/usr/include/caps
