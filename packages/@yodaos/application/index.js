@@ -1,6 +1,6 @@
 /**
  * @module @yodaos/application
- * @description YODAOS application framework.
+ * @description YodaOS application framework.
  */
 
 var properties = {}

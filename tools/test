@@ -9,7 +9,7 @@ Usage:
   -s                  Select which device to be installed on if multiple devices presents.
 
 Example:
-  $ ./tools/test --reporter tap-nyan --pattern '**/*.test.js'
+  $ ./tools/test --reporter tap-spec --pattern '**/*.test.js'
 "
 
 testset='test/testsets.txt'

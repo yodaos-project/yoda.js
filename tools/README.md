@@ -1,4 +1,4 @@
-# YODAOS Core Tools
+# YodaOS Core Tools
 
 This directory contains all the development tools.
 
@@ -11,7 +11,6 @@ This directory contains all the development tools.
 | runtime-install  | Dev      | Install the current source into target device |
 | runtime-op       | Dev      | Operate the OS service or services |
 | switch-env       | Dev      | Switch services environment used on device |
-| flora-debug      | Dev      | Send message with given channel to `flora-dispatcher` |
 | upgrade          | Dev      | Upgrade the OS image cross-platform |
 | clang-format     | Testing  | The clang-format helper script |
 | test             | Testing  | Run runtime tests |

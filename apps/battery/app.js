@@ -105,7 +105,7 @@ module.exports = function (api) {
 
   function powerStatusChange (isOnline, isPlaying, testPercent) {
     logger.log('powerStatusChanged ', isOnline, isPlaying, testPercent)
-    var sound = isOnline ? '/opt/media/power_plug.ogg' : '/opt/media/power_pull.ogg'
+    var sound = isOnline ? resourcePath.powerPlug : resourcePath.powerPull
     playMediaAsync(sound)
       .then(() => {
         if (isOnline || isPlaying !== 'false') {

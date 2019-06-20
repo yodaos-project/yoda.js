@@ -17,6 +17,8 @@
     "batteryNotEnabled": "当前产品没有电池，使用期间请连接电源"
   },
   "resource": {
+    "powerPlug": "./res/power_plug.ogg",
+    "powerPull": "./res/power_pull.ogg",
     "powerDisconnect10": "./res/lowpower_10.ogg",
     "powerDisconnect20": "./res/lower_than_20.ogg",
     "temperature0": "./res/battery_temp_low.ogg",

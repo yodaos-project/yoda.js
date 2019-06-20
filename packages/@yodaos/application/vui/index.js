@@ -1,6 +1,6 @@
 /**
  * @module @yodaos/application/vui
- * @description YODAOS application Voice UI framework.
+ * @description YodaOS application Voice UI framework.
  */
 
 var properties = {}

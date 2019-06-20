@@ -18,7 +18,7 @@ var events = [
   'error'
 ]
 
-var dataSource = path.join(helper.paths.fixture, 'audio', 'hibernate.wav')
+var dataSource = path.join(helper.paths.fixture, 'audio', 'awake_01.wav')
 
 test('should setup media with MediaPlayer#start(url)', (t) => {
   t.plan(3)
