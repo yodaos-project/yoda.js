@@ -330,3 +330,27 @@ test('fast resume on pausing', t => {
     service.resume('@test')
   }, 500)
 })
+
+test('should not emit event after speaking end', t => {
+  t.plan(1)
+  var service = new TtsService(ttsMock.lightd)
+  service.connect({})
+
+  var eventRecords = [ ]
+  service.on('start', (id, appId) => {
+    eventRecords.push(`start-${id}`)
+  })
+  service.on('cancel', (id) => {
+    eventRecords.push(`cancel-${id}`)
+  })
+  service.on('end', (id, appId) => {
+    eventRecords.push(`end-${id}`)
+    service.stop('@test')
+    t.deepEqual(eventRecords, [
+      'start-0',
+      'end-0'
+    ])
+  })
+
+  service.speak('@test', 'foobar')
+})

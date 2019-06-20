@@ -226,6 +226,8 @@ Tts.prototype.onTtsTermination = function onTtsTermination (event, reqId, errno)
   if (masqueradeId != null) {
     reqId = masqueradeId
   }
+  // should not emit any termination event after emit once
+  delete this.appRequestMemo[appId]
   /** delay to 2s to prevent event `end` been received before event `start` */
   setTimeout(() => {
     this.emit(event, reqId, appId, errno)
