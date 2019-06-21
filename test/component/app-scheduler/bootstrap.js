@@ -1,4 +1,5 @@
 var bootstrap = require('../../bootstrap')
+var _ = require('@yoda/util')._
 
 module.exports = function appSchedulerBootstrap () {
   var suite = bootstrap()
@@ -12,14 +13,17 @@ module.exports = function appSchedulerBootstrap () {
 
 function testLauncher (appId, metadata, bridge, mode, options) {
   bridge.__launchArgs = [ appId, metadata, bridge, mode, options ]
-  bridge.implement((force) => {
-    if (force) {
-      bridge.logger.info(`force stop app.`)
-      bridge.didExit(0, 'SIGKILL')
-      return
+  bridge.implement({
+    anrEnabled: _.get(options, 'anrEnabled', true),
+    exit: (force) => {
+      if (force) {
+        bridge.logger.info(`force stop app.`)
+        bridge.didExit(0, 'SIGKILL')
+        return
+      }
+      bridge.logger.info(`Process end of life, killing process after 1s.`)
+      setTimeout(() => bridge.didExit(0, 'SIGTERM'), 1000)
     }
-    bridge.logger.info(`Process end of life, killing process after 1s.`)
-    setTimeout(() => bridge.didExit(0, 'SIGTERM'), 1000)
   })
   setTimeout(() => {
     bridge.didReady()
@@ -29,7 +33,10 @@ function testLauncher (appId, metadata, bridge, mode, options) {
 
 function startupCrashLauncher (appId, metadata, bridge, mode, options) {
   bridge.__launchArgs = [ appId, metadata, bridge, mode, options ]
-  bridge.implement(doExit.bind(global, bridge))
+  bridge.implement({
+    anrEnabled: true,
+    exit: doExit.bind(global, bridge)
+  })
   setTimeout(() => {
     bridge.didReady(new Error('Foobar error on startup'))
   }, 1000)
@@ -38,13 +45,16 @@ function startupCrashLauncher (appId, metadata, bridge, mode, options) {
 
 function deadOnExitLauncher (appId, metadata, bridge, mode, options) {
   bridge.__launchArgs = [ appId, metadata, bridge, mode, options ]
-  bridge.implement((force) => {
-    if (force) {
-      bridge.logger.info(`force stop app.`)
-      setTimeout(() => bridge.didExit(0, 'SIGKILL'), 1)
-      return
+  bridge.implement({
+    anrEnabled: true,
+    exit: (force) => {
+      if (force) {
+        bridge.logger.info(`force stop app.`)
+        setTimeout(() => bridge.didExit(0, 'SIGKILL'), 1)
+        return
+      }
+      bridge.logger.info(`app pretending dead on exit.`)
     }
-    bridge.logger.info(`app pretending dead on exit.`)
   })
   setTimeout(() => {
     bridge.didReady()
