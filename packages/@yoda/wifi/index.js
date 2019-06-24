@@ -30,6 +30,10 @@ var keyMethods = {
 
 module.exports = {
   /**
+   * @var WPA_ALL_NETWORK {number} - wpa all network
+   */
+  WPA_ALL_NETWORK: native.WPA_ALL_NETWORK,
+  /**
    * @var WIFI_INIVATE {number} - wifi is invalid
    */
   WIFI_INIVATE: 0,
@@ -307,3 +311,20 @@ module.exports.removeAll = function removeAll () {
   native.removeNetwork(native.WPA_ALL_NETWORK)
   native.save()
 }
+
+/**
+ * set wifi to ap mode sync
+ * @function setApModeSync
+ * @param {string} ssid - ssid
+ * @param {string} psk - psk
+ * @param {string} ip - gateway ip
+ * @returns {boolean} true if switch success
+ */
+module.exports.setApModeSync = native.setApModeSync
+
+/**
+ * set wifi to station mode sync
+ * @function setStationModeSync
+ * @returns {boolean} true if switch success
+ */
+module.exports.setStationModeSync = native.setStationModeSync
