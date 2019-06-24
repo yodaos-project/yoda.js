@@ -75,9 +75,9 @@ AlarmCore.prototype._transferPattern = function (date, time, repeatType) {
     case 'D7':
       var weekNum = repeatType.split('D')[1]
       return s + ' ' + m + ' ' + h + ' * * ' + weekNum
-    case 'WEEKEND':
-      return s + ' ' + m + ' ' + h + ' * * 1-5'
     case 'WEEKDAY':
+      return s + ' ' + m + ' ' + h + ' * * 1-5'
+    case 'WEEKEND':
       return s + ' ' + m + ' ' + h + ' * * 6,0'
     default:
       break
