@@ -194,7 +194,8 @@ static napi_value SetApModeSync(napi_env env, napi_callback_info info) {
   size_t ssidLen = -1;
   size_t pskLen = -1;
   size_t ipLen = -1;
-  napi_status status = napi_get_value_string_utf8(env, argv[0], NULL, 0, &ssidLen);
+  napi_status status =
+      napi_get_value_string_utf8(env, argv[0], NULL, 0, &ssidLen);
   if (status == napi_string_expected) {
     napi_throw_type_error(env, NULL, "ssid must be a string");
     return NULL;
