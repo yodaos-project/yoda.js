@@ -1,0 +1,9 @@
+<map id="src/util.c" name="src/util.c">
+<area shape="rect" id="node1" title="Utils are used in client sdk." alt="" coords="24,5,94,31"/>
+<area shape="rect" id="node2" title=" " alt="" coords="25,225,86,251"/>
+<area shape="rect" id="node3" title=" " alt="" coords="27,79,91,104"/>
+<area shape="rect" id="node4" href="$yodaos__inner_8h.html" title="The file just used in sdk, not export." alt="" coords="115,79,227,104"/>
+<area shape="rect" id="node5" title=" " alt="" coords="27,152,123,177"/>
+<area shape="rect" id="node6" href="$yodaos__api__defines_8h.html" title="The base struct and macro." alt="" coords="148,152,306,177"/>
+<area shape="rect" id="node7" href="$yodaos__apis_8h.html" title="The names of api and event. Api and event naming rules: prefix, YODAOSAPI; NS, namespace; MT,..." alt="" coords="174,225,281,251"/>
+</map>
