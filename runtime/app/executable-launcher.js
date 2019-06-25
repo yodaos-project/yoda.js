@@ -36,7 +36,7 @@ function launchExecutable (appDir, bridge) {
 
       var cp = childProcess.spawn(executablePath, [], {
         cwd: appDir,
-        stdio: 'inherit'
+        stdio: [ 'ignore', 'ignore', 'inherit' ]
       })
 
       cp.once('error', function onError (err) {
@@ -44,12 +44,20 @@ function launchExecutable (appDir, bridge) {
         cp.kill(/** SIGKILL */9)
       })
       cp.once('exit', (code, signal) => {
-        bridge.logger.info(`Process(${cp.pid}) exited with code ${code}, signal ${signal}, disconnected? ${!cp.connected}`)
-        bridge.exit(code, signal)
+        bridge.logger.info(`Process(${cp.pid}) exited with code ${code}, signal ${signal}`)
+        bridge.didExit(code, signal)
       })
-      bridge.implement((force) => {
-        bridge.logger.info(`Process(${cp.pid}) end of life, killing process.`)
-        cp.kill(force ? 'SIGKILL' : 'SIGTERM')
+      bridge.implement({
+        anrEnabled: true,
+        exit: (force) => {
+          if (force) {
+            bridge.logger.info(`force stop process(${cp.pid}).`)
+            cp.kill(/** SIGKILL */9)
+            return
+          }
+          bridge.logger.info(`Process(${cp.pid}) end of life, killing process after 1s.`)
+          setTimeout(() => cp.kill(), 1000)
+        }
       })
 
       return cp.pid

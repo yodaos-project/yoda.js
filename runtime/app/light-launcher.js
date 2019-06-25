@@ -34,7 +34,10 @@ module.exports = function launchLightApp (appId, appDir, bridge, options) {
     delete require.cache[main]
     return Promise.reject(err)
   }
-  bridge.didReady()
+
+  bridge.implement({
+    anrEnabled: false
+  })
 
   return Promise.resolve(null)
 }
