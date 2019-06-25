@@ -1,0 +1,6 @@
+<map id="include/yodaos_inner.h" name="include/yodaos_inner.h">
+<area shape="rect" id="node1" title="The file just used in sdk, not export." alt="" coords="65,5,222,31"/>
+<area shape="rect" id="node2" href="$flora_8c.html" title="Client communication functions implement here." alt="" coords="5,79,84,104"/>
+<area shape="rect" id="node3" href="$util_8c.html" title="Utils are used in client sdk." alt="" coords="108,79,179,104"/>
+<area shape="rect" id="node4" href="$yodaos__sdk_8c.html" title="Client base functions implement here." alt="" coords="203,79,327,104"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="yodaos_api_call_ignoreresult" name="yodaos_api_call_ignoreresult">
+<area shape="rect" id="node1" title="Call runtime api and ignore result." alt="" coords="5,31,199,56"/>
+<area shape="rect" id="node2" href="$flora_8c.html#a8ae3462d35fd5def065c6c18ecc4e2bf" title="Call runtime api and get result." alt="" coords="269,5,386,31"/>
+<area shape="rect" id="node3" href="$flora_8c.html#ad00a0701ac286b41ede872c067bac7ab" title="Free the result from api call." alt="" coords="247,55,407,80"/>
+</map>

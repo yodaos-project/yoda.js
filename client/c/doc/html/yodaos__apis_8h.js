@@ -1,0 +1,45 @@
+var yodaos__apis_8h =
+[
+    [ "YODAOS_APINAME", "yodaos__apis_8h.html#ad90ef871807bd6bb81ed7521c5e39ea0", null ],
+    [ "YODAOS_EVNAME", "yodaos__apis_8h.html#a92fe22b3ff5b44923a87a23f81ea97ca", null ],
+    [ "yodaos_api_name", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72d", [
+      [ "YODAOSAPI_NS_AUDIOFOCUS_MT_REQUEST", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da55f2d9bb85a2272b87b07d0a18b375c7", null ],
+      [ "YODAOSAPI_NS_AUDIOFOCUS_MT_ABANDON", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72dada5e911fc6491687c3e3eac864813c36", null ],
+      [ "YODAOSAPI_NS_AUDIOFOCUS_MT_GETCURRENTFOCUSES", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da038a21e5bc23ab262e68ff705b6e7017", null ],
+      [ "YODAOSAPI_NS_BROADCAST_MT_REGISTERBROADCAST", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da503184927d54816f77606adce9cea1cc", null ],
+      [ "YODAOSAPI_NS_BROADCAST_MT_UNREGISTERBROADCAST", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72dad60f5a6b39032dfd483438003e662029", null ],
+      [ "YODAOSAPI_NS_CHRONOS_MT_SCHEDULE", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72dabefece4daa5d25bedc0fc9a968e5fe65", null ],
+      [ "YODAOSAPI_NS_CHRONOS_MT_CANCEL", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da4a28d35f657a70a3fb2da1a627d651ee", null ],
+      [ "YODAOSAPI_NS_EFFECT_MT_PLAY", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da76d0a89b19fb6baf682b00c09fed7217", null ],
+      [ "YODAOSAPI_NS_EFFECT_MT_STOP", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da360a70f8d589f09f396541751ec0048f", null ],
+      [ "YODAOSAPI_NS_KEYBOARD_MT_PREVENTDEFAULTS", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72dabed16f7ce672fce0bc5d11557149451e", null ],
+      [ "YODAOSAPI_NS_KEYBOARD_MT_RESTOREDEFAULTS", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da1e541bcc666075a8dd0c22ab52c193d4", null ],
+      [ "YODAOSAPI_NS_KEYBOARD_MT_RESTOREALL", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72dab62a6ae947fb685783cb1da523171ff7", null ],
+      [ "YODAOSAPI_NS_RUNTIME_MT_SETPHASE", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da7e0d516f43ce1fb01c5c23ac3ce51978", null ],
+      [ "YODAOSAPI_NS_VISIBILITY_MT_GETKEYANDVISIBLEAPPID", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72daf3f6ceb23576781740f4864119881aa4", null ],
+      [ "YODAOSAPI_NS_VISIBILITY_MT_ABANDONKEYVISIBILITY", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da366e9bf8e81bb42ebe33de7a83bab525", null ],
+      [ "YODAOSAPI_NS_VISIBILITY_MT_ABANDONALLVISIBILITIES", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72daf9652fc5199f9920308bac3c1d2c84b9", null ],
+      [ "YODAOSAPI_NS_GLOBAL_MT_EXIT", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72dadc457c6aae201eb81ba13b02b9ded4c2", null ],
+      [ "YODAOSAPI_NS_GLOBAL_MT_OPENURL", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da17efb38f7669eee3d4eea2c2a59e582f", null ],
+      [ "YODAOSAPI_NS_GLOBAL_MT_SETCONTEXTOPTIONS", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da75a3d15002317ee2623b0f0192ceb57d", null ],
+      [ "YODAOSAPI_NS_GLOBAL_MT_GETCONTEXTOPTIONS", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da1935d73c79c70ec5f9849653ec063c54", null ],
+      [ "YODAOSAPI_NS_GLOBAL_MT_STARTMONOLOGUE", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da9a91a4fb818627293ca838037f34ff8f", null ],
+      [ "YODAOSAPI_NS_GLOBAL_MT_STOPMONOLOGUE", "yodaos__apis_8h.html#a511df17bf05509c63482d4379407e72da7fcba4ea69de6263a775128189cd231b", null ]
+    ] ],
+    [ "yodaos_ev_name", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37a", [
+      [ "YODAOSAPI_NS_AUDIOFOCUS_EV_GAIN", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aa4fd32674e526a392c43396f5814f2435", null ],
+      [ "YODAOSAPI_NS_AUDIOFOCUS_EV_LOSS", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aa4b468d09609defdde981ed72275ccf7d", null ],
+      [ "YODAOSAPI_NS_BROADCAST_EV_BROADCAST", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aac3dc3f9a5fc68a662e9d4f8ef48be4c0", null ],
+      [ "YODAOSAPI_NS_KEYBOARD_EV_KEYDOWN", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aaae3a0b4a18289b6df0dce70c3656468b", null ],
+      [ "YODAOSAPI_NS_KEYBOARD_EV_KEYUP", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aab0955ce35981cdcb9ce0d550bd44a4cc", null ],
+      [ "YODAOSAPI_NS_KEYBOARD_EV_CLICK", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aa91b560ce64dc80b215c2a9cae4f8c0f4", null ],
+      [ "YODAOSAPI_NS_KEYBOARD_EV_DBLCLICK", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aae420f4a2e6eaa1eadc47fca0011f2b50", null ],
+      [ "YODAOSAPI_NS_KEYBOARD_EV_LONGPRESS", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aac84ec6f1f581e4479a0a5c5e8bb8c206", null ],
+      [ "YODAOSAPI_NS_GLOBAL_EV_CREATED", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aacf1ae0c577f7e6b04ee25dbeb27ea5a8", null ],
+      [ "YODAOSAPI_NS_GLOBAL_EV_PAUSED", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aab71630428b0fc1ffabcfa65f5e53fd03", null ],
+      [ "YODAOSAPI_NS_GLOBAL_EV_RESUMED", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aaff57e99cf662038e3c948b4d570a9b53", null ],
+      [ "YODAOSAPI_NS_GLOBAL_EV_DESTROYED", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aaa6af360124db9b100c2393aa9387694e", null ],
+      [ "YODAOSAPI_NS_GLOBAL_EV_URL", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aa2c2a589518079dd542ce0001f91fc4fe", null ],
+      [ "YODAOSAPI_NS_GLOBAL_EV_OPPRESSING", "yodaos__apis_8h.html#af56c17b8bd9b98ac6d8a0356bf34e37aa314eb2651e3cdf722522067aa5b561c9", null ]
+    ] ]
+];
