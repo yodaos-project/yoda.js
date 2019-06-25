@@ -46,6 +46,10 @@ AppScheduler.prototype.getAppStatusById = function getAppStatusById (appId) {
   return this.appStatus[appId] || Constants.status.notRunning
 }
 
+AppScheduler.prototype.getAppStat = function getAppStat (appId) {
+  return _.get(this.appMap[appId], 'stat')
+}
+
 /**
  *
  * @param {string} appId -
