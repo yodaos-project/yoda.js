@@ -46,7 +46,8 @@ Ensure you have a connected YodaOS device via ADB v1.0.39.
   },
   "wifi": {
     "ssid": "your ssid of wifi",
-    "psk": "your psk of wifi"
+    "psk": "your psk of wifi",
+    "ip": "your ip of gateway"
   }
 }
 ```

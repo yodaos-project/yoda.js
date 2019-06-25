@@ -184,6 +184,57 @@ static napi_value RemoveNetwork(napi_env env, napi_callback_info info) {
   return returnVal;
 }
 
+static napi_value SetApModeSync(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  int r = 0;
+  size_t argc = 3;
+  napi_value argv[3];
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+
+  size_t ssidLen = -1;
+  size_t pskLen = -1;
+  size_t ipLen = -1;
+  napi_status status =
+      napi_get_value_string_utf8(env, argv[0], NULL, 0, &ssidLen);
+  if (status == napi_string_expected) {
+    napi_throw_type_error(env, NULL, "ssid must be a string");
+    return NULL;
+  }
+  char ssid[ssidLen + 1];
+  napi_get_value_string_utf8(env, argv[0], ssid, ssidLen, &ssidLen);
+  ssid[ssidLen] = '\0';
+
+  status = napi_get_value_string_utf8(env, argv[1], NULL, 0, &pskLen);
+  if (status == napi_string_expected) {
+    napi_throw_type_error(env, NULL, "psk must be a string");
+    return NULL;
+  }
+  char psk[pskLen + 1];
+  napi_get_value_string_utf8(env, argv[1], psk, pskLen, &pskLen);
+  psk[pskLen] = '\0';
+
+  status = napi_get_value_string_utf8(env, argv[2], NULL, 0, &ipLen);
+  if (status == napi_string_expected) {
+    napi_throw_type_error(env, NULL, "ip must be a string");
+    return NULL;
+  }
+  char ip[ipLen + 1];
+  napi_get_value_string_utf8(env, argv[2], ip, ipLen, &ipLen);
+  ip[ipLen] = '\0';
+
+  r = wifi_change_station_to_ap(ssid, psk, ip);
+
+  napi_get_boolean(env, r == 0, &returnVal);
+  return returnVal;
+}
+
+static napi_value SetStationModeSync(napi_env env, napi_callback_info info) {
+  napi_value returnVal;
+  int r = wifi_change_ap_to_station();
+  napi_get_boolean(env, r == 0, &returnVal);
+  return returnVal;
+}
+
 static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
     DECLARE_NAPI_PROPERTY("joinNetwork", JoinNetwork),
@@ -200,6 +251,8 @@ static napi_value Init(napi_env env, napi_value exports) {
     DECLARE_NAPI_PROPERTY("getLocalAddress", GetLocalAddress),
     DECLARE_NAPI_PROPERTY("getNumOfHistory", GetNumOfHistory),
     DECLARE_NAPI_PROPERTY("removeNetwork", RemoveNetwork),
+    DECLARE_NAPI_PROPERTY("setApModeSync", SetApModeSync),
+    DECLARE_NAPI_PROPERTY("setStationModeSync", SetStationModeSync),
   };
   napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc);
   NAPI_SET_CONSTANT(exports, WPA_ALL_NETWORK);
