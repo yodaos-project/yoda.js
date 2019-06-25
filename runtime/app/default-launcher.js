@@ -50,7 +50,7 @@ function launchApp (appDir, bridge, mode, options) {
     exit: (force) => {
       if (force) {
         bridge.logger.info(`force stop process(${cp.pid}).`)
-        cp.kill(/** SIGKILL */9)
+        setTimeout(() => cp.kill(/** SIGKILL */9), 1000)
         return
       }
       bridge.logger.info(`Process(${cp.pid}) end of life, killing process after 1s.`)

@@ -23,6 +23,7 @@ class AppBridge {
     this.exited = false
     this.ready = false
     this.lastReportTimestamp = NaN
+    this.stat = { idleAt: Date.now() }
 
     // Implementation
     this.exitInl = null
@@ -33,6 +34,7 @@ class AppBridge {
     var eventStr = `${namespace}.${name}`
     var listener = this.subscriptionTable[eventStr]
     if (typeof listener === 'function') {
+      this.stat.idleAt = Date.now()
       listener.apply(global, args)
     }
   }
@@ -45,6 +47,7 @@ class AppBridge {
       this.logger.debug(`Event '${eventStr}' has already been subscribed, skipping.`)
       return
     }
+    this.stat.idleAt = Date.now()
 
     this.subscriptionTable[eventStr] = listener
   }
@@ -61,6 +64,7 @@ class AppBridge {
     if (typeof fn !== 'function') {
       return Promise.reject(new BridgeError(`Unknown method '${methodStr}' been invoked`))
     }
+    this.stat.idleAt = Date.now()
     // TODO: metadata check
     return Promise.resolve().then(() => fn.call(descriptor, this.getContext({ args: params })))
       .catch(e => {
