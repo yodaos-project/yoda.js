@@ -21,6 +21,17 @@ function AppScheduler (runtime) {
   this.appCreationFutures = {}
   this.__appSuspensionResolvers = {}
   this.appSuspensionFutures = {}
+
+  this.anrSentinelTimer = null
+}
+
+AppScheduler.prototype.init = function init () {
+  this.anrSentinelTimer = setInterval(this.anrSentinel.bind(this), 5 * 1000)
+}
+
+AppScheduler.prototype.deinit = function deinit () {
+  clearInterval(this.anrSentinelTimer)
+  this.anrSentinelTimer = null
 }
 
 AppScheduler.prototype.isAppRunning = function isAppRunning (appId) {
@@ -123,7 +134,6 @@ AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
     appBridge.onReady = (err) => {
       if (err) {
         logger.error(`Unexpected error on initializing ${appType} app(${appId})`, err.stack)
-        this.handleAppExit(appId)
         reject(err)
         return
       }
@@ -141,17 +151,20 @@ AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
       }
       logger.info(`App(${appId}) launched`)
       this.appMap[appId] = appBridge
-    }, err => {
-      logger.error(`Unexpected error on launching ${appType} app(${appId})`, err.stack)
-      this.handleAppExit(appId)
-      throw err
     })
 
   future = Promise.all([ readyPromise, launchPromise ])
-    .finally(() => {
-      delete this.appCreationFutures[appId]
-    })
-    .then(() => appBridge)
+    .then(
+      () => {
+        delete this.appCreationFutures[appId]
+        return appBridge
+      },
+      err => {
+        delete this.appCreationFutures[appId]
+        logger.error(`Unexpected error on launching ${appType} app(${appId})`, err.stack)
+        this.suspendApp(appId, { force: true })
+        throw err
+      })
   this.appCreationFutures[appId] = future
   return future
 }
@@ -260,4 +273,22 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   }
 
   return future
+}
+
+AppScheduler.prototype.anrSentinel = function anrSentinel () {
+  var now = Date.now()
+  return Promise.all(
+    Object.keys(this.appMap)
+      .map(appId => {
+        var bridge = this.appMap[appId]
+        var lastReportTimestamp = bridge.lastReportTimestamp
+        if (isNaN(lastReportTimestamp)) {
+          return
+        }
+        if (now - lastReportTimestamp < 15 * 1000) {
+          return
+        }
+        return this.suspendApp(appId, { force: true })
+      })
+  )
 }

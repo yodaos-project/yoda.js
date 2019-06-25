@@ -45,14 +45,17 @@ function launchApp (appDir, bridge, mode, options) {
   })
   bridge.logger.info(`Forked child process ${appDir}(${cp.pid}).`)
 
-  bridge.implement((force) => {
-    if (force) {
-      bridge.logger.info(`force stop process(${cp.pid}).`)
-      cp.kill(/** SIGKILL */9)
-      return
+  bridge.implement({
+    anrEnabled: true,
+    exit: (force) => {
+      if (force) {
+        bridge.logger.info(`force stop process(${cp.pid}).`)
+        cp.kill(/** SIGKILL */9)
+        return
+      }
+      bridge.logger.info(`Process(${cp.pid}) end of life, killing process after 1s.`)
+      setTimeout(() => cp.kill(), 1000)
     }
-    bridge.logger.info(`Process(${cp.pid}) end of life, killing process after 1s.`)
-    setTimeout(() => cp.kill(), 1000)
   })
   cp.once('error', function onError (err) {
     bridge.logger.error(`Unexpected error on child process(${cp.pid})`, err.message, err.stack)
@@ -61,44 +64,7 @@ function launchApp (appDir, bridge, mode, options) {
   cp.once('exit', (code, signal) => {
     bridge.logger.info(`Process(${cp.pid}) exited with code ${code}, signal ${signal}`)
     bridge.didExit(code, signal)
-    clearAnr()
   })
-
-  // MARK: - Ready Reports
-  var readyTimer = setTimeout(() => {
-    cp.kill(/** SIGKILL */9)
-    cleanupReady()
-    bridge.didReady(new Error(`Process(${cp.pid}) failed to be ready in 15s.`))
-  }, 15 * 1000)
-
-  bridge.onStatusReport = (status) => {
-    switch (status) {
-      case 'ready':
-        cleanupReady()
-        bridge.didReady()
-        refreshAnr()
-        break
-      case 'alive':
-        refreshAnr()
-        break
-    }
-  }
-
-  function cleanupReady () {
-    clearTimeout(readyTimer)
-  }
-
-  var anrTimer
-  function refreshAnr () {
-    clearTimeout(anrTimer)
-    anrTimer = setTimeout(() => {
-      cp.kill('SIGKILL')
-    }, /** 3 times not received */15 * 1000)
-  }
-
-  function clearAnr () {
-    clearTimeout(anrTimer)
-  }
 
   return Promise.resolve(cp.pid)
 }

@@ -15,10 +15,14 @@ class AppBridge {
     this.metadata = metadata
     this.logger = Logger(`bridge-${appId}`)
 
+    // Bridging
     this.subscriptionTable = {}
+
+    // States
     this.suspended = false
     this.exited = false
     this.ready = false
+    this.lastReportTimestamp = NaN
 
     // Implementation
     this.exitInl = null
@@ -71,6 +75,20 @@ class AppBridge {
     }, this.metadata)
   }
 
+  // MARK: - Status Reports
+  didReady (err) {
+    if (this.ready) {
+      this.logger.warn(`app(${this.appId}) might have been ready for multiple times.`)
+      return
+    }
+    this.ready = true
+    this.onReady(err)
+  }
+
+  refreshAnr () {
+    this.lastReportTimestamp = Date.now()
+  }
+
   // MARK: - APIs for scheduler
   suspend (options) {
     var force = _.get(options, 'force', false)
@@ -83,16 +101,35 @@ class AppBridge {
     }
     this.exitInl && this.exitInl(force)
   }
-  statusReport () {
-    this.onStatusReport && this.onStatusReport.apply(this, arguments)
+
+  statusReport (status) {
+    switch (status) {
+      case 'ready':
+        this.didReady()
+        this.refreshAnr()
+        break
+      case 'alive':
+        this.refreshAnr()
+        break
+    }
   }
+
   onExit (code, signal) {}
   // eslint-disable-next-line handle-callback-err
   onReady (err) {}
 
   // MARK: - APIs for implementor
-  implement (exitInl) {
-    this.exitInl = exitInl
+  implement (inl) {
+    if (typeof inl !== 'object') {
+      return
+    }
+    this.exitInl = inl.exit
+    if (inl.anrEnabled) {
+      this.refreshAnr()
+    } else {
+      /** for launchers doesn't need anr timer */
+      this.didReady()
+    }
   }
 
   didExit (code, signal) {
@@ -101,19 +138,11 @@ class AppBridge {
       return
     }
     this.exited = true
+    if (!this.ready) {
+      this.didReady(new Error(`app(${this.appId}) exited before ready`))
+    }
     this.onExit(code, signal)
   }
-
-  didReady (err) {
-    if (this.ready) {
-      this.logger.warn(`app(${this.appId}) might have been ready for multiple times.`)
-      return
-    }
-    this.ready = true
-    this.onReady(err)
-  }
-
-  onStatusReport () {}
 }
 
 module.exports = AppBridge
