@@ -35,9 +35,7 @@ function(YodaLocalPackage NAME)
       -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
       -DCMAKE_SYSTEM_PERFIX_PATH=${CMAKE_SYSTEM_PREFIX_PATH}
       -DCMAKE_STAGING_PERFIX=${CMAKE_STAGING_PREFIX}
-      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-      -DCMAKE_EXTERNAL_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+      -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
       # compat
       -DCMAKE_INSTALL_DIR=./
       -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
@@ -66,11 +64,9 @@ function(YodaGitPackage NAME REPO TAG)
     LOG_DOWNLOAD ON
     LIST_SEPARATOR | # Use the alternate list separator
     CMAKE_ARGS
-      -DLIBFFI_LINK_EXTERNAL=YES
       -DYODAOS_VERSION=${CMAKE_PROJECT_VERSION}
       -DYODART_SOURCE_DIR=${YODART_SOURCE_DIR}
       -DNODEJS_VARIANT=shadow-node
-      -DLINK_DIRECTORIES=${CMAKE_LIBRARY_PATH_ALT_SEP}
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_BUILD_HOST=${CMAKE_BUILD_HOST}
       -DCMAKE_MODULE_PATH=${CMAKE_SOURCE_DIR}/cmake/module
@@ -82,9 +78,7 @@ function(YodaGitPackage NAME REPO TAG)
       -DCMAKE_SYSROOT=${CMAKE_EXTERNAL_SYSROOT}
       -DCMAKE_SYSTEM_PERFIX_PATH=${CMAKE_SYSTEM_PREFIX_PATH}
       -DCMAKE_STAGING_PERFIX=${CMAKE_STAGING_PREFIX}
-      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-      -DCMAKE_EXTERNAL_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+      -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
       # compat
       -DCMAKE_INSTALL_DIR=./
       -DCMAKE_INCLUDE_DIR=${CMAKE_INCLUDE_DIR}
@@ -92,7 +86,6 @@ function(YodaGitPackage NAME REPO TAG)
   )
 endfunction()
 
-YodaGitPackage(ffi https://github.com/shadow-node/ffi.git master)
 YodaGitPackage(node-flock https://github.com/shadow-node/node-flock.git master flock)
 YodaGitPackage(node-caps https://github.com/shadow-node/node-caps.git master @yoda/caps)
 YodaGitPackage(node-flora https://github.com/yodaos-project/node-flora.git master @yoda/flora)
