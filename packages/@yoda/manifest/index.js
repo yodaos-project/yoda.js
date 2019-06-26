@@ -10,7 +10,9 @@ var path = require('path')
 var _ = require('@yoda/util')._
 
 var manifestPath = '/etc/manifest.json'
-if (process.env.YODA_RUN_MODE === 'host') {
+if (process.env.YODA_MANIFEST) {
+  manifestPath = process.env.YODA_MANIFEST
+} else if (process.env.YODA_RUN_MODE === 'host') {
   manifestPath = /** ${workspace}/etc/manifest.json */path.join(__dirname, '../../..', manifestPath)
 }
 

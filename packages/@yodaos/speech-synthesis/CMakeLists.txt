@@ -37,6 +37,7 @@ target_link_libraries(${PROJECT_NAME}
   pulse::pulse pulse::pulse-simple
 )
 
+file(GLOB SPEECHSYNTHESIS_SRC *.js)
 if(CMAKE_BUILD_HOST)
   install(TARGETS ${PROJECT_NAME} DESTINATION out)
   install(FILES package.json DESTINATION ./)
@@ -50,8 +51,6 @@ else(CMAKE_BUILD_HOST)
   target_compile_definitions(${PROJECT_NAME} PRIVATE -DRKLOG_PRESENT)
 
   install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_DIR}/out)
-
-  file(GLOB SPEECHSYNTHESIS_SRC *.js)
   install(FILES package.json DESTINATION ${CMAKE_INSTALL_DIR})
   install(FILES ${SPEECHSYNTHESIS_SRC} DESTINATION ${CMAKE_INSTALL_DIR})
 endif(CMAKE_BUILD_HOST)

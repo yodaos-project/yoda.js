@@ -8,7 +8,9 @@ file_name="shadow-node-v$shadow_node_version-$(uname)-$(uname -m).tar.gz"
 cd /tmp
   wget $url
   tar -xzf $file_name
-  sudo cp ./usr/bin/iotjs /usr/local/bin
+
+  sudo=`command -v sudo || true`
+  command $sudo cp -r ./usr/* /usr
 cd -
 
 type iotjs

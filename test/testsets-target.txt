@@ -1,0 +1,13 @@
+@yoda/audio/*.test.js
+@yoda/bluetooth/*.test.js
+@yoda/light/*.test.js
+@yoda/input/*.test.js
+@yoda/property/*.test.js
+@yoda/system/*.test.js
+@yoda/cloudgw/*.test.js
+@yoda/httpdns/*.test.js
+@yoda/ota/*.test.js
+@yoda/util/*.test.js
+logger/*.test.js
+client/*.test.js
+services/lightd/**/*.test.js
