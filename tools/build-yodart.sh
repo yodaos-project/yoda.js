@@ -6,32 +6,25 @@ if ! test -z $TRAVIS_BUILD_DIR; then
   workdir=$TRAVIS_BUILD_DIR
 fi
 
-apt-get update
-apt-get install -y \
-    cmake curl git jq \
-    pulseaudio libpulse-dev \
-    libdbus-1-dev \
-    libz-dev \
-    libffi-dev
+mkdir -p ./vendor
+cd $workdir/vendor
 
-curl -sL https://deb.nodesource.com/setup_10.x | bash -
-apt-get install -y \
-  nodejs
-
-mkdir /vendor
-cd /vendor
-git clone https://github.com/yodaos-project/node-flora.git
-shadow_node_version=`cat $workdir/package.json | jq -r '.engine."shadow-node"'`
-git clone https://github.com/yodaos-project/ShadowNode.git -b v$shadow_node_version
-
-cd /vendor/node-flora
+if ! test -d node-flora; then
+  git clone https://github.com/yodaos-project/node-flora.git
+fi
+cd $workdir/vendor/node-flora
 npm install
-script/install && script/build
+script/install --test && script/build --test
 cp -r out/usr/* /usr
-
-cd /vendor/ShadowNode
-tools/build.py --buildtype release --napi  --install --install-prefix /usr
 
 cd $workdir
 cmake `pwd` -B`pwd`/build -DCMAKE_BUILD_HOST=ON -DCMAKE_EXTERNAL_SYSROOT=/ -DCMAKE_PREFIX_PATH=/ -DCMAKE_INCLUDE_DIR=/
-cd build; make install; cd -
+cd build
+  make DESTDIR=/ install
+cd -
+
+cd test/@yodaos/speech-synthesis/src
+cmake `pwd` -B`pwd`/build -DCMAKE_BUILD_HOST=ON -DCMAKE_MODULE_PATH="$workdir/cmake/module"
+cd build
+  make DESTDIR=/ install
+cd -
