@@ -7,14 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "manifest": {
-    "skills": [
-      "RFCBA81EECAC4E11BA0EBC1AEC397A93"
-    ],
     "permission": [
       "INTERRUPT"
     ],
     "hosts": [
-      [ "timer", { "skillId": "RFCBA81EECAC4E11BA0EBC1AEC397A93" } ]
+      "timer"
     ]
   },
   "keywords": [
