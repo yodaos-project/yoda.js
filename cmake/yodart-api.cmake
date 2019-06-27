@@ -10,3 +10,7 @@ add_custom_target(yodart-api ALL ${HOST_NODEJS_BIN} tools/generate-api-json.js
 )
 
 install(FILES ${YODA_API_OUTPUT} DESTINATION /usr/yoda/client/api)
+
+add_custom_target(yodart-api-c ALL ${HOST_NODEJS_BIN} tools/generate-api-c.js
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
