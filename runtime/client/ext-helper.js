@@ -16,6 +16,11 @@ process.once('disconnect', () => {
   process.exit(233)
 })
 
+function safeCall (agent, name, msg, target) {
+  return agent.call(name, msg, target, 10 * 1000)
+    .catch(err => logger.error(`unexpected error on invoking ${target}#${name}`, err.stack))
+}
+
 function main (target, descriptorPath, runner) {
   if (!target) {
     logger.error('Target is required.')
@@ -53,11 +58,11 @@ function main (target, descriptorPath, runner) {
     launchApp(main, api)
   } catch (error) {
     logger.error('fatal error:', error.stack)
-    agent.call('yodaos.fauna.status-report', ['error', error.stack])
-    process.exit(1)
+    return safeCall(agent, 'yodaos.fauna.status-report', ['error', error.stack], 'runtime')
+      .then(() => process.exit(1))
   }
 
-  agent.call('yodaos.fauna.status-report', ['ready'], 'runtime')
+  agent.call('yodaos.fauna.status-report', ['ready'], 'runtime', 10 * 1000)
 
   /**
    * Force await on app initialization.
@@ -67,8 +72,8 @@ function main (target, descriptorPath, runner) {
     .then(() => runner(appId, pkg))
     .catch(error => {
       logger.error('fatal error:', error.stack)
-      agent.call('yodaos.fauna.status-report', ['error', error.stack])
-      process.exit(1)
+      return safeCall(agent, 'yodaos.fauna.status-report', ['error', error.stack], 'runtime')
+        .then(() => process.exit(1))
     })
 }
 
@@ -99,7 +104,7 @@ function keepAlive (agent) {
 }
 
 function setAlive (agent) {
-  agent.call('yodaos.fauna.status-report', ['alive'], 'runtime')
+  safeCall(agent, 'yodaos.fauna.status-report', ['alive'], 'runtime')
 }
 
 function noopRunner () {
