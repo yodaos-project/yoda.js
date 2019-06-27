@@ -26,7 +26,7 @@ cmake ../
 make && make install
 
 cd $workdir
-cmake `pwd` -B`pwd`/build -DCMAKE_BUILD_HOST=ON -DCMAKE_EXTERNAL_SYSROOT=/ -DCMAKE_PREFIX_PATH=/ -DCMAKE_INCLUDE_DIR=/ -DYODAOS_MAKE_IN_CI=1
+cmake `pwd` -B`pwd`/build -DCMAKE_BUILD_HOST=ON -DCMAKE_EXTERNAL_SYSROOT=/ -DCMAKE_PREFIX_PATH=/ -DCMAKE_INCLUDE_DIR=/
 cd build
   make DESTDIR=/ install
 cd -

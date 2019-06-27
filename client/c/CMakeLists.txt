@@ -34,7 +34,7 @@ target_link_libraries(yodaosclient_c
 SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
 
-if(YODAOS_MAKE_IN_CI)
+if(CMAKE_BUILD_HOST)
     target_link_libraries(yodaosclient_c
     mutils::caps mutils::misc flora-cli::flora-cli json-c pthread
     )
