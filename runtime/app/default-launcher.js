@@ -5,7 +5,7 @@ var path = require('path')
 
 var kAppModesInstrument = require('../constants').AppScheduler.modes.instrument
 
-var entriesDir = path.join(__dirname, '..', 'client')
+var entriesDir = path.join(__dirname, '..', '..', 'client', 'js')
 var defaultEntry = path.join(entriesDir, 'ext-app-entry.js')
 var instrumentEntry = path.join(entriesDir, 'ext-instrument-entry.js')
 
@@ -30,7 +30,7 @@ function launchApp (appDir, bridge, mode, options) {
 
   var descriptorPath = options.descriptorPath
   if (descriptorPath == null) {
-    descriptorPath = path.join(__dirname, '../client/api/default.json')
+    descriptorPath = path.join(__dirname, '../../client/js/api/default.json')
   }
 
   var execArgs = [ appDir, descriptorPath ]

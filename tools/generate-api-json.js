@@ -21,7 +21,7 @@ var api = descriptorFiles
     return accu
   }, { namespaces: {} })
 
-fs.writeFileSync(path.join(__dirname, '../runtime/client/api/default.json'), JSON.stringify(api, null, 2))
+fs.writeFileSync(path.join(__dirname, '../client/js/api/default.json'), JSON.stringify(api, null, 2))
 
 function generate (filename) {
   var dirname = path.join(__dirname, '../runtime/descriptor')
