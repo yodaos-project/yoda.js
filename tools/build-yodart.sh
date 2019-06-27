@@ -17,6 +17,14 @@ npm install
 script/install --test && script/build --test
 cp -r out/usr/* /usr
 
+cd $workdir/vendor
+git clone https://github.com/json-c/json-c.git
+cd json-c
+mkdir build
+cd build
+cmake ../
+make && make install
+
 cd $workdir
 cmake `pwd` -B`pwd`/build -DCMAKE_BUILD_HOST=ON -DCMAKE_EXTERNAL_SYSROOT=/ -DCMAKE_PREFIX_PATH=/ -DCMAKE_INCLUDE_DIR=/
 cd build

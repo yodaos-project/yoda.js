@@ -37,12 +37,12 @@ fi
 command $cmd --version
 
 if test $inplace = 'YES'; then
-  find packages -iname *.h -o -iname *.cc | xargs $cmd -style=file -i
+  find packages client/c -iname *.h -o -iname *.cc -o -iname *.c | xargs $cmd -style=file -i
 fi
 
-rep_count=`find packages -iname *.h -o -iname *.cc | xargs $cmd -style=file -output-replacements-xml | grep -c '<replacement '`
+rep_count=`find packages client/c -iname *.h -o -iname *.cc -o -iname *.c | xargs $cmd -style=file -output-replacements-xml | grep -c '<replacement '`
 
 if ! test $rep_count = 0; then
-  find packages -iname *.h -o -iname *.cc | xargs $cmd -style=file
+  find packages client/c -iname *.h -o -iname *.cc -o -iname *.c | xargs $cmd -style=file
   exit 1
 fi
