@@ -56,26 +56,26 @@ var evsContainer = `/**
 struct yodaos_ev_s ev_container[] = {`
 
 Object.keys(api).forEach((key) => {
-  if (key === "namespaces") {
-    let nsObject = api["namespaces"]
+  if (key === 'namespaces') {
+    let nsObject = api['namespaces']
     Object.keys(nsObject).forEach((nsName) => {
-      let tmp = nsObject[nsName];
-      if (tmp["methods"]) {
-        Object.keys(tmp["methods"]).forEach((methodsName) => {
-          let _enumName = `YODAOSAPI_NS_` + nsName.toUpperCase() + "_MT_" + methodsName.toUpperCase()
+      let tmp = nsObject[nsName]
+      if (tmp['methods']) {
+        Object.keys(tmp['methods']).forEach((methodsName) => {
+          let _enumName = `YODAOSAPI_NS_` + nsName.toUpperCase() + '_MT_' + methodsName.toUpperCase()
 
           apis += `
-    ` + _enumName + ","
+    ` + _enumName + ','
           apiContainer += `
     {` + _enumName + `, "` + nsName + `", "` + methodsName + `"},`
         })
       }
 
-      if (tmp["events"]) {
-        Object.keys(tmp["events"]).forEach((evName) => {
-          let _evName = `YODAOSAPI_NS_` + nsName.toUpperCase() + "_EV_" + evName.toUpperCase()
+      if (tmp['events']) {
+        Object.keys(tmp['events']).forEach((evName) => {
+          let _evName = `YODAOSAPI_NS_` + nsName.toUpperCase() + '_EV_' + evName.toUpperCase()
           evsName += `
-    ` + _evName + ","
+    ` + _evName + ','
 
           evsContainer += `
     {` + _evName + `, "` + nsName + `", "` + evName + `"},`
@@ -84,22 +84,22 @@ Object.keys(api).forEach((key) => {
     })
   }
 
-  if (key === "methods") {
-    Object.keys(api["methods"]).forEach((methodsName) => {
+  if (key === 'methods') {
+    Object.keys(api['methods']).forEach((methodsName) => {
       let _enumName = `YODAOSAPI_NS_GLOBAL_MT_` + methodsName.toUpperCase()
 
       apis += `
-    ` + _enumName + ","
+    ` + _enumName + ','
       apiContainer += `
     {` + _enumName + `, "", "` + methodsName + `"},`
     })
   }
 
-  if (key === "events") {
-    Object.keys(api["events"]).forEach((evName) => {
+  if (key === 'events') {
+    Object.keys(api['events']).forEach((evName) => {
       let _evName = `YODAOSAPI_NS_GLOBAL_EV_` + evName.toUpperCase()
       evsName += `
-    ` + _evName + ","
+    ` + _evName + ','
       evsContainer += `
     {${_evName}, "", "${evName}"},`
     })
@@ -114,7 +114,7 @@ apiContainer += `
 apis += `
 } YODAOS_APINAME;
 
-`+ evsName + `
+` + evsName + `
 } YODAOS_EVNAME;
 
 #endif`
@@ -122,7 +122,7 @@ apis += `
 fs.writeFileSync(path.join(__dirname, '../client/c/include/yodaos_apis.h'), apis)
 fs.writeFileSync(path.join(__dirname, '../client/c/include/yodaos_api_container.h'), apiContainer)
 
-function generate(filename) {
+function generate (filename) {
   var dirname = path.join(__dirname, '../runtime/descriptor')
   var module = { exports: {} } //eslint-disable-line
   var require = (id) => {  //eslint-disable-line
