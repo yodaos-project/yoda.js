@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
-project(yodaos_client_c)
+project(yodaosclient_c)
 
 aux_source_directory(src SRC_LIST)
 include_directories("./include")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/module")
+find_package(NodeAddon REQUIRED)
 
 set(HEADER_FILES
     ./include/yodaos_sdk.h
@@ -10,22 +12,42 @@ set(HEADER_FILES
     ./include/yodaos_apis.h
 )
 
-if(EXISTS "$ENV{STAGING_DIR}")
-    include_directories("$ENV{STAGING_DIR}/usr/include/caps/")
-endif()
-SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
-if(DEFINED YODAOS_MAKE_IN_CI)
-    message("build in ci!!")
-    link_libraries(flora-cli caps pthread json-c)
-    add_definitions(-DYODAOS_EXPORT -Wall -Wno-unused-parameter)
-    include_directories("/usr/include/caps/")
-else()
-    link_libraries(rlog flora-cli caps pthread json-c rklog)
-    add_definitions(-DYODAOS_EXPORT -DUSING_RKLOG -Wall -Wno-unused-parameter)
-endif()
+node_addon_find_package(mutils SHARED REQUIRED
+  HINTS ${mutilsPrefix}
+  HEADERS caps.h
+  ARCHIVES caps rlog misc
+  INC_PATH_SUFFIX caps
+)
+node_addon_find_package(flora-cli SHARED REQUIRED
+  HINTS ${floraPrefix}
+  HEADERS flora-cli.h
+  ARCHIVES flora-cli
+)
 
 add_library(yodaosclient_c SHARED ${SRC_LIST})
-add_executable(yodaosclient_c_example ${SRC_LIST} example/example.c)
+
+target_link_libraries(yodaosclient_c
+  mutils::caps mutils::rlog mutils::misc
+  flora-cli::flora-cli
+)
+
+SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+
+
+if(YODAOS_MAKE_IN_CI)
+    target_link_libraries(yodaosclient_c
+    mutils::caps mutils::misc flora-cli::flora-cli json-c pthread
+    )
+
+    target_compile_definitions(yodaosclient_c PRIVATE -DYODAOS_EXPORT)
+else()
+    target_link_libraries(yodaosclient_c
+    mutils::caps mutils::rlog mutils::misc
+    flora-cli::flora-cli json-c pthread
+    )
+
+    target_compile_definitions(yodaosclient_c PRIVATE -DYODAOS_EXPORT -DUSING_RKLOG)
+endif()
 
 install(FILES ${HEADER_FILES}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/usr/include
@@ -38,8 +60,17 @@ install(TARGETS yodaosclient_c
     PUBLIC_HEADER DESTINATION /include
 )
 
-install(TARGETS yodaosclient_c_example
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION usr/lib
-    PUBLIC_HEADER DESTINATION include
-)
+if(YODAOS_CLIENT_C_BUILD_EXAMPLE)
+    add_executable(yodaosclient_c_example ${SRC_LIST} example/example.c)
+    target_link_libraries(yodaosclient_c_example
+    mutils::caps mutils::rlog mutils::misc
+    flora-cli::flora-cli json-c pthread
+    )
+
+    target_compile_definitions(yodaosclient_c_example PRIVATE -DYODAOS_EXPORT -DUSING_RKLOG)
+    install(TARGETS yodaosclient_c_example
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION usr/lib
+        PUBLIC_HEADER DESTINATION include
+    )
+endif()
