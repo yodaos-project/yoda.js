@@ -99,7 +99,7 @@ Object.defineProperty(module.exports, 'localStorage', {
   get: () => {
     if (localStorage == null) {
       var appId = global[Symbol.for('yoda#api')].appId
-      localStorage = new Storage(path.join('/data/appData', appId), 10)
+      localStorage = new Storage(path.join('/data/AppData', appId), 10)
     }
     return localStorage
   }
