@@ -1097,7 +1097,7 @@ AppRuntime.prototype.onForward = function (message) {
 AppRuntime.prototype.unBindDevice = function () {
   return Promise.resolve().then(() => {
     this.resetNetwork({ removeAll: true })
-    this.onLogout()
+    this.component.custodian.onLogout()
   })
 }
 

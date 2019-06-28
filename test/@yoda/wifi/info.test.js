@@ -101,3 +101,15 @@ test('Check the return value of the function save', (t) => {
   t.assert(wifi.save(), true)
   t.end()
 })
+
+test('Check the return value of the function setApModeSync', (t) => {
+  t.equal(typeof wifi.setApModeSync, 'function')
+  t.assert(wifi.setApModeSync(config.ssid, config.psk, config.ip), true)
+  t.end()
+})
+
+test('Check the return value of the function setStationModeSync', (t) => {
+  t.equal(typeof wifi.setStationModeSync, 'function')
+  t.assert(wifi.setStationModeSync(), true)
+  t.end()
+})
