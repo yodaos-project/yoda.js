@@ -4,6 +4,7 @@
 
 var EventEmitter = require('events')
 var SpeechSynthesizer = require('./out/speech-synthesis.node').SpeechSynthesizer
+var logger = require('logger')('speech-synthesis')
 
 var symbol = require('./symbol')
 
@@ -64,6 +65,7 @@ class SpeechSynthesis {
     if (typeof utterance === 'string') {
       utterance = new SpeechSynthesisUtterance(utterance)
     }
+    logger.verbose(`request speaking utterance(${utterance.text})`)
     if (!(utterance instanceof SpeechSynthesisUtterance)) {
       throw TypeError('Expect a string or SpeechSynthesisUtterance on SpeechSynthesis.speak')
     }
@@ -90,6 +92,7 @@ class SpeechSynthesis {
   }
 
   playStream () {
+    logger.verbose(`request playing stream`)
     var utterance = new SpeechSynthesisUtterance()
     utterance.setId(this[symbol.label])
     this[symbol.queue].push(utterance)
@@ -111,6 +114,7 @@ class SpeechSynthesis {
       this[symbol.effect].stop(SpeechSynthesisEffectUri)
     }
     if (utter == null) {
+      logger.verbose(`no active utterance, ignoring synthesis event.`)
       return
     }
     var name = Events[eve]
@@ -129,9 +133,11 @@ class SpeechSynthesis {
 
   go () {
     if (this[symbol.utter]) {
+      logger.verbose(`active utterance synthesizing, skip activating queue.`)
       return
     }
     if (this[symbol.queue].length <= 0) {
+      logger.verbose(`no more queued utterance to be synthesized.`)
       return
     }
     var utter = this[symbol.queue].shift()
