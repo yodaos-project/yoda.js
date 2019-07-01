@@ -54,7 +54,7 @@ Flora.prototype.remoteMethods = {
       if (!Array.isArray(it)) {
         return
       }
-      urlObj.query[it[0]] = it[1]
+      urlObj.query[it[0]] = String(it[1])
     })
     this.runtime.openUrl(urlObj)
       .then(result => {

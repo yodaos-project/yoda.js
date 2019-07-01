@@ -1,5 +1,5 @@
 var test = require('tape')
-var bootstrap = require('./fauna-bootstrap')
+var bootstrap = require('./bootstrap')
 
 test('should reject no-pid sender', t => {
   t.plan(2)

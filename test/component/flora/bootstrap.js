@@ -19,7 +19,7 @@ module.exports = function faunaBootstrap () {
         end: (code, msg) => {
           resolve({ code: code, msg: msg })
         }
-      }, sender)
+      }, sender || {})
     })
   }
   return suite
