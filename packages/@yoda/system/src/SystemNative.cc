@@ -8,8 +8,10 @@
 #include <stdlib.h>
 #include <common.h>
 #include <errno.h>
-#include <malloc.h>
 #include <unistd.h>
+#ifdef __GLIBC__
+#include <malloc.h>
+#endif
 
 static napi_value PowerOff(napi_env env, napi_callback_info info) {
   napi_value returnVal;
@@ -217,6 +219,7 @@ static napi_value Strptime(napi_env env, napi_callback_info info) {
 }
 
 static napi_value AdjustMallocSettings(napi_env env, napi_callback_info info) {
+#ifdef __GLIBC__
   int max_thread = 0;
   size_t argc = 1;
   napi_value argv[1];
@@ -233,16 +236,20 @@ static napi_value AdjustMallocSettings(napi_env env, napi_callback_info info) {
     mallopt(M_TRIM_THRESHOLD, 64 * 1024);
     mallopt(M_MMAP_THRESHOLD, 64 * 1024);
   }
+#endif
   return NULL;
 }
-
 static napi_value MallocTrim(napi_env env, napi_callback_info info) {
+#ifdef __GLIBC__
   malloc_trim(0);
+#endif
   return NULL;
 }
 
 static napi_value MallocStats(napi_env env, napi_callback_info info) {
+#ifdef __GLIBC__
   malloc_stats();
+#endif
   return NULL;
 }
 
