@@ -1,5 +1,5 @@
 var test = require('tape')
-var bootstrap = require('./fauna-bootstrap')
+var bootstrap = require('./bootstrap')
 var mm = require('../../helper/mock')
 
 test('should reject unknown sender', t => {

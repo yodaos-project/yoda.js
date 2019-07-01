@@ -127,10 +127,16 @@ test('transient request should gain focus over transient request', t => {
   var tt = bootstrap()
   var comp = tt.component.audioFocus
   var desc = tt.descriptor.audioFocus
-  t.pass(6)
+  t.pass(8)
   mm.mockReturns(desc, 'emitToApp', true)
 
   var ret = comp.request({
+    id: 0,
+    appId: 'should-not-be-preempted',
+    gain: 0b000 /** default */
+  })
+  t.strictEqual(ret, 0)
+  ret = comp.request({
     id: 1,
     appId: 'test',
     gain: 0b001 /** transient */
@@ -140,10 +146,12 @@ test('transient request should gain focus over transient request', t => {
   mm.mockReturns(desc, 'emitToApp', function (appId, event) {
     switch (event) {
       case 'gain': {
+        t.strictEqual(appId, 'test')
         t.deepEqual(Array.prototype.slice.call(arguments), [ 'test', 'gain', [ 2 ] ])
         break
       }
       case 'loss': {
+        t.strictEqual(appId, 'test')
         t.deepEqual(Array.prototype.slice.call(arguments), [ 'test', 'loss', [ 1, /** transient */true, /** mayDuck */ false ] ])
       }
     }
@@ -163,7 +171,13 @@ test('transient request should gain focus over transient request', t => {
     mayDuck: false,
     transient: true
   })
-  t.looseEqual(comp.lastingRequest, null)
+  t.deepEqual(comp.lastingRequest, {
+    id: 0,
+    appId: 'should-not-be-preempted',
+    exclusive: false,
+    mayDuck: false,
+    transient: false
+  })
   t.end()
 })
 
