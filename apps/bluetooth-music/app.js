@@ -14,6 +14,8 @@ var audioFocus = null
 var a2dp = null
 var agent = null
 var lastUrl = null
+var needResume = false
+var playing = false
 
 function textIsEmpty (text) {
   return (typeof text !== 'string') || (text.length === 0)
@@ -24,31 +26,36 @@ function speak (text) {
 }
 
 function resetLastUrl () {
-  lastUrl = ''
+  lastUrl = '/phone'
 }
 
 function onAudioFocusGained () {
-  logger.debug('onAudioFocusGained')
-  a2dp.unmute()
+  logger.info(`onAudioFocusGained, needResume=${needResume}, playing=${playing}`)
+  if (needResume && !playing) {
+    a2dp.play()
+  }
 }
 
 function onAudioFocusLost (transient, mayDuck) {
-  logger.debug('onAudioFocusLost, transient =', transient)
+  logger.info(`onAudioFocusLost, transient=${transient}, playing=${playing}`)
   if (transient) {
-    if (mayDuck) {
-      // TODO: Duck music volume.
+    if (playing) {
+      needResume = true
+      lastUrl = '/pause'
+      a2dp.pause()
     } else {
-      a2dp.mute()
+      needResume = false
     }
   } else {
-    a2dp.pause()
+    uploadEvent(protocol.AUDIO_STATE.STOPPED)
+    a2dp.stop()
     a2dp.destroy()
-    rt.activity.exit()
+    rt.exit()
   }
 }
 
 function uploadEvent (event, data) {
-  logger.debug('upload bluetooth event =', event)
+  logger.debug('upload bluetooth event', event)
   var MEDIA_SOURCE_BLUETOOTH = 3
   var event2status = {
     PLAYING: 0,
@@ -60,16 +67,25 @@ function uploadEvent (event, data) {
 }
 
 function handleUrl (url) {
-  lastUrl = url
+  resetLastUrl()
   switch (url) {
     case '/start':
       a2dp.play()
+      lastUrl = url
       break
     case '/pause':
-      a2dp.pause()
+      needResume = false
+      if (playing) {
+        a2dp.pause()
+        lastUrl = url
+      }
       break
     case '/stop':
-      a2dp.stop()
+      needResume = false
+      if (playing) {
+        a2dp.stop()
+        lastUrl = url
+      }
       break
     case '/next':
       a2dp.next()
@@ -80,11 +96,17 @@ function handleUrl (url) {
     case '/like':
     case '/info':
       a2dp.query()
+      lastUrl = url
       break
     case '/quit':
-      rt.activity.exit()
+      rt.exit()
       break
     case '/PLAYING':
+      logger.debug('focus state:', audioFocus.state)
+      playing = true
+      if (audioFocus.state !== 'active') {
+        audioFocus.request()
+      }
       uploadEvent(protocol.AUDIO_STATE.PLAYING)
       break
     default:
@@ -97,17 +119,21 @@ function onAudioStateChangedListener (mode, state, extra) {
   logger.debug(`${mode} onAudioStateChanged(${state})`)
   switch (state) {
     case protocol.AUDIO_STATE.PLAYING:
-      uploadEvent(state)
+      playing = true
       break
     case protocol.AUDIO_STATE.PAUSED:
+      playing = false
       uploadEvent(state)
       break
     case protocol.AUDIO_STATE.STOPPED:
+      playing = false
       if (lastUrl === '/pause') {
-        uploadEvent(protocol.AUDIO_STATE.PAUSED)
+        state = protocol.AUDIO_STATE.PAUSED
+      }
+      if (lastUrl === '/stop') {
+        audioFocus.abandon()
       } else {
         uploadEvent(state)
-        audioFocus.abandon()
       }
       break
     case protocol.AUDIO_STATE.MUSIC_INFO:
@@ -127,7 +153,7 @@ function onAudioStateChangedListener (mode, state, extra) {
             speak(util.format(strings.MUSIC_INFO_SUCC_TITLE_ALBUM, extra.title, extra.album))
           } else {
             speak(util.format(strings.MUSIC_INFO_SUCC, extra.artist, extra.title, extra.album))
-            reportToCloud('info', [ extra.artist, extra.title, extra.album ])
+            // TODO: reportToCloud('info', [ extra.artist, extra.title, extra.album ])
           }
           break
         case '/like':
@@ -153,10 +179,9 @@ var app = Application({
     agent = new Agent('unix:/var/run/flora.sock')
     agent.start()
 
-    audioFocus = new AudioFocus(AudioFocus.TRANSIENT_EXCLUSIVE)
+    audioFocus = new AudioFocus()
     audioFocus.onGain = onAudioFocusGained
     audioFocus.onLoss = onAudioFocusLost
-    audioFocus.request()
   },
   destroyed: () => {
     logger.debug('destroyed')

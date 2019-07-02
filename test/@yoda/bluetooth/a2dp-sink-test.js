@@ -20,11 +20,11 @@ var testCases = [
   },
   {
     exec: (adapter) => { adapter.play() },
-    sendMsg: { command: 'PLAY_UNMUTE' }
+    sendMsg: { command: 'PLAY' }
   },
   {
     exec: (adapter) => { adapter.pause() },
-    sendMsg: { command: 'PAUSE_MUTE' }
+    sendMsg: { command: 'PAUSE' }
   },
   {
     exec: (adapter) => { adapter.stop() },
@@ -36,11 +36,11 @@ var testCases = [
   },
   {
     exec: (adapter) => { adapter.prev() },
-    sendMsg: [ { command: 'UNMUTE' }, { command: 'PREV' } ]
+    sendMsg: { command: 'PREV' }
   },
   {
     exec: (adapter) => { adapter.next() },
-    sendMsg: [ { command: 'UNMUTE' }, { command: 'NEXT' } ]
+    sendMsg: { command: 'NEXT' }
   },
   {
     exec: (adapter) => { adapter.query() },
