@@ -70,3 +70,20 @@ test('should dispatch broadcasts to statically registered apps while exited', t 
 
   broadcast.dispatch('foobar')
 })
+
+test('should dispatch broadcasts to apps with params', t => {
+  t.plan(3)
+  var tt = bootstrap()
+  var broadcast = tt.component.broadcast
+
+  mm.mockPromise(tt.component.appScheduler, 'createApp', null, null)
+  mm.mockReturns(tt.descriptor.broadcast, 'emitToApp', (appId, name, args) => {
+    t.strictEqual(appId, 'test')
+    t.strictEqual(name, 'broadcast')
+    t.deepEqual(args, [ 'foobar', [ 'arg1', 'arg2' ] ])
+  })
+  broadcast.registerBroadcastChannel('foobar')
+  tt.component.appLoader.broadcasts['foobar'].push('test')
+
+  broadcast.dispatch('foobar', ['arg1', 'arg2'])
+})

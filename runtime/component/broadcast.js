@@ -53,10 +53,10 @@ class Broadcast {
    * Dispatches a broadcast request to apps registered for the channel.
    *
    * @param {string} channel
-   * @param {any[]} params
+   * @param {any[]} extra
    * @param {object} [options]
    */
-  dispatch (channel, params) {
+  dispatch (channel, extra) {
     var appIds = Object.keys(this.interests).filter(it => {
       if (this.interests[it][channel]) {
         return true
@@ -73,9 +73,7 @@ class Broadcast {
       return Promise.resolve()
     }
 
-    if (params == null) {
-      params = []
-    }
+    var broadcastArgs = extra === undefined ? [ channel ] : [ channel, extra ]
     var self = this
     return step(0)
 
@@ -93,7 +91,7 @@ class Broadcast {
             .then(() => { /** rethrow error to break following procedures */throw err })
         })
       return future
-        .then(() => self.descriptor.broadcast.emitToApp(appId, 'broadcast', [ channel ].concat(params)))
+        .then(() => self.descriptor.broadcast.emitToApp(appId, 'broadcast', broadcastArgs))
         .catch(err => {
           logger.error(`send broadcast(${channel}) failed with appId: ${appId}`, err.stack)
         })

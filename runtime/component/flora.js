@@ -135,7 +135,7 @@ Flora.prototype.remoteMethods = {
         namespace: namespace,
         event: event,
         params: Array.prototype.slice.call(arguments, 0)
-      })], `${appId}:${sender.pid}`)
+      })], `${appId}:${sender.pid}`, 5000)
         .catch(err => {
           logger.error(`unexpected error on dispatching event(${namespace}.${event}) to app(${appId}, ${sender.pid})`, err.stack)
         })
