@@ -29,6 +29,25 @@ int main(int argc, const char* argv[])
       return;
     }
 
+    if (startsWith(channel.c_str(), "yodaos.speech-synthesis.timeout")) {
+      reply->end(0);
+
+      sleep(10);
+      shared_ptr<Caps> fmsg = Caps::new_instance();
+      fmsg->write(-1);
+      floraAgent->post(channel.c_str(), fmsg, FLORA_MSGTYPE_INSTANT);
+      return;
+    }
+
+    if (startsWith(channel.c_str(), "yodaos.speech-synthesis.immediate-error")) {
+      reply->end(0);
+
+      shared_ptr<Caps> fmsg = Caps::new_instance();
+      fmsg->write(-2);
+      floraAgent->post(channel.c_str(), fmsg, FLORA_MSGTYPE_INSTANT);
+      return;
+    }
+
     FILE* fp = fopen(argv[1], "r");
     if (!fp) {
       printf("failed to open file");

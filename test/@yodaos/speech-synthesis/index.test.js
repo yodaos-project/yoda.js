@@ -78,3 +78,57 @@ test('should cancel immediately', t => {
     t.end()
   })
 })
+
+test('should emit error on timeout', t => {
+  t.plan(3)
+  var api = new EventEmitter()
+  api.appId = 'timeout'
+  api.effect = {
+    play: () => {},
+    stop: () => {}
+  }
+  var speechSynthesis = new SpeechSynthesis(api)
+  var utter = speechSynthesis.speak('foo')
+  t.strictEqual(speechSynthesis.speaking, false, 'not speaking')
+
+  utter.on('start', () => {
+    t.strictEqual(speechSynthesis.speaking, true, 'started')
+  })
+  utter.on('end', () => {
+    t.fail('unreachable path')
+  })
+  utter.on('cancel', () => {
+    t.fail('unreachable path')
+  })
+  utter.on('error', () => {
+    t.pass('error emitted')
+    t.end()
+  })
+})
+
+test('should emit error on arbitrary error', t => {
+  t.plan(3)
+  var api = new EventEmitter()
+  api.appId = 'immediate-error'
+  api.effect = {
+    play: () => {},
+    stop: () => {}
+  }
+  var speechSynthesis = new SpeechSynthesis(api)
+  var utter = speechSynthesis.speak('foo')
+  t.strictEqual(speechSynthesis.speaking, false, 'not speaking')
+
+  utter.on('start', () => {
+    t.strictEqual(speechSynthesis.speaking, true, 'started')
+  })
+  utter.on('end', () => {
+    t.fail('unreachable path')
+  })
+  utter.on('cancel', () => {
+    t.fail('unreachable path')
+  })
+  utter.on('error', () => {
+    t.pass('error emitted')
+    t.end()
+  })
+})

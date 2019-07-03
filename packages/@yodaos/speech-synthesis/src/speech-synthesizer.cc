@@ -127,6 +127,13 @@ Value SpeechSynthesizer::speak(const CallbackInfo& info) {
                                  this->floraAgent.unsubscribe(this->id.c_str());
                                  return;
                                }
+                               if (status < 0) {
+                                 RKLogv("error(%d)", status);
+                                 this->errCode = status;
+                                 this->player->cancel();
+                                 this->floraAgent.unsubscribe(this->id.c_str());
+                                 return;
+                               }
 
                                std::vector<uint8_t> data;
                                msg->read(data);
@@ -202,10 +209,19 @@ Value SpeechSynthesizer::playStream(const CallbackInfo& info) {
                                int32_t status = 0;
                                msg->read(status);
                                if (status > 0) {
+                                 RKLogv("end(%d)", status);
                                  this->player->end();
                                  this->floraAgent.unsubscribe(this->id.c_str());
                                  return;
                                }
+                               if (status < 0) {
+                                 RKLogv("error(%d)", status);
+                                 this->errCode = status;
+                                 this->player->cancel();
+                                 this->floraAgent.unsubscribe(this->id.c_str());
+                                 return;
+                               }
+
                                std::vector<uint8_t> data;
                                msg->read(data);
                                this->player->write(data);
