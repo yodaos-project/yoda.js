@@ -2,6 +2,7 @@
 var EventEmitter = require('events')
 var logger = require('logger')('@ipc')
 var agent = null
+var FAUNA_TIMEOUT = 10000
 
 /**
  * interface Descriptor {
@@ -48,7 +49,7 @@ var MethodProxies = {
         method: name,
         params: args
       })
-    ], 'runtime', 10000)
+    ], 'runtime', FAUNA_TIMEOUT)
       .then(
         res => {
           var msg = res.msg[0]
@@ -128,7 +129,7 @@ var PropertyDescriptions = {
         namespace: nsDescriptor.name,
         event: name
       })
-    ], 'runtime')
+    ], 'runtime', FAUNA_TIMEOUT)
   },
   value: function Value (name, descriptor, namespace, nsDescriptor) {
     return descriptor.value
