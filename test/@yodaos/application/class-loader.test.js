@@ -13,6 +13,6 @@ test('simple app integration', t => {
   }
 
   require('./fixture/simple-app/app')
-  api.emit('url')
+  api.emit('url', 'yoda-app://foo')
   t.end()
 })
