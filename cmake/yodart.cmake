@@ -14,7 +14,7 @@ install(DIRECTORY ./runtime/ DESTINATION /usr/yoda
         PATTERN "**/*.txt" EXCLUDE
         PATTERN "**/*.cc" EXCLUDE)
 
-install(DIRECTORY ./client/js/ DESTINATION /usr/yoda-client/js
+install(DIRECTORY ./client/js/ DESTINATION /usr/lib/yoda-client/js
         PATTERN "**/OWNERS" EXCLUDE
         PATTERN "**/.gitkeep" EXCLUDE
         PATTERN "**/*.md" EXCLUDE
