@@ -16,6 +16,7 @@ var native = require('./audio.node')
 var manifest = require('@yoda/manifest')
 var property = require('@yoda/property')
 var logger = require('logger')('audio')
+var flora = require('@yoda/flora')
 var floraDisposable = require('@yoda/flora/disposable')
 /**
  * This define the streams config
@@ -177,7 +178,7 @@ AudioManager.setVolume = function (type, vol) {
   var stream = AudioBase[type]
 
   process.nextTick(() => {
-    floraDisposable.post(`yodart.audio.on-volume-change`, [ stream.name, vol ])
+    floraDisposable.post(`yodaos.audio.on-volume-change.${stream.name}`, [ vol ], flora.MSGTYPE_PERSIST)
   })
   return _storeVolume(stream, vol)
 }
