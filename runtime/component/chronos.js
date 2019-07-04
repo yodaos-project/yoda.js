@@ -24,6 +24,13 @@ class Chronos {
   }
 
   /**
+   * Invoked when time changed by NTP service.
+   */
+  timeDidChanged () {
+    this.go(/** recalc */ true)
+  }
+
+  /**
    *
    * @param {Job} job
    */

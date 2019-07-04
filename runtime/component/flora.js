@@ -24,6 +24,7 @@ inherits(Flora, FloraComp)
 Flora.prototype.handlers = {
   'yodaos.ntpd.event': function onTimeChanged (msg) {
     if (msg[0] === 'step') {
+      this.runtime.componentsInvoke('timeDidChanged')
       this.component.broadcast.dispatch('yodaos.on-time-changed')
     }
   },

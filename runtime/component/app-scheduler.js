@@ -34,6 +34,17 @@ AppScheduler.prototype.deinit = function deinit () {
   this.anrSentinelTimer = null
 }
 
+/**
+ * Invoked when time changed by NTP service.
+ */
+AppScheduler.prototype.timeDidChanged = function timeDidChanged () {
+  Object.keys(this.appMap)
+    .map(appId => {
+      var bridge = this.appMap[appId]
+      bridge.lastReportTimestamp = NaN
+    })
+}
+
 AppScheduler.prototype.isAppRunning = function isAppRunning (appId) {
   return this.appStatus[appId] === Constants.status.running
 }
@@ -280,6 +291,7 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
 }
 
 AppScheduler.prototype.anrSentinel = function anrSentinel () {
+  // FIXME: replace it with CLOCK_MONOTONIC
   var now = Date.now()
   return Promise.all(
     Object.keys(this.appMap)
@@ -289,9 +301,11 @@ AppScheduler.prototype.anrSentinel = function anrSentinel () {
         if (isNaN(lastReportTimestamp)) {
           return
         }
-        if (now - lastReportTimestamp < 15 * 1000) {
+        var delta = now - lastReportTimestamp
+        if (delta < 15 * 1000 /** 15s */) {
           return
         }
+        logger.warn(`ANR: app(${appId}) has not been reported alive for ${delta}ms.`)
         return this.suspendApp(appId, { force: true })
       })
   )
