@@ -1,6 +1,7 @@
 var test = require('tape')
 var EventEmitter = require('events')
 var path = require('path')
+var url = require('url')
 
 var Application = require('@yodaos/application/application')
 
@@ -38,13 +39,13 @@ test('should delegates url events', t => {
   var apiSymbol = Symbol.for('yoda#api')
   global[apiSymbol] = api
 
-  var expectedUrlObj = { href: 'yoda-test://foobar' }
+  var expectedUrlObj = url.parse('yoda-test://foobar')
   Application({
     url: function url (urlObj) {
       t.deepEqual(urlObj, expectedUrlObj)
     }
   })
-  api.emit('url', expectedUrlObj)
+  api.emit('url', expectedUrlObj.href)
 })
 
 test('should delegates methods', t => {

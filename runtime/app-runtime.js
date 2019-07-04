@@ -256,6 +256,8 @@ AppRuntime.prototype.wakeup = function wakeup (options) {
  */
 AppRuntime.prototype.openUrl = function (url, options) {
   var urlObj = Url.parse(url, true)
+  // ensure to clean up potentially wonky urls.
+  url = Url.format(urlObj)
   if (urlObj.protocol !== 'yoda-app:') {
     logger.info('Url protocol other than yoda-app is not supported now.')
     return Promise.resolve(false)
@@ -268,7 +270,7 @@ AppRuntime.prototype.openUrl = function (url, options) {
 
   return this.component.dispatcher.dispatchAppEvent(
     appId,
-    'url', [ urlObj ],
+    'url', [ url ],
     Object.assign({}, options)
   )
 }

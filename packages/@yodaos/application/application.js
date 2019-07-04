@@ -49,13 +49,19 @@ function Application (options, api) {
   var registry = application[symbol.registry] = { service: {}, activity: {} }
   classLoader.loadPackage(api, registry)
 
-  ;['created', 'destroyed'].forEach(eve => {
-    api.on(eve, () => {
-      invoke(application, eve)
+  var urlHandler = application[symbol.options]['url']
+  if (typeof urlHandler === 'function') {
+    /**
+     * Compatibility: keep parsing url here to prevent API break change.
+     * Though we should remove it and leave it to apps own choice.
+     */
+    api.on('url', (urlString) => {
+      var url = require('url')
+      urlHandler.call(application, url.parse(urlString))
     })
-  })
+  }
 
-  ;[['url', api], ['broadcast', api.broadcast]].forEach(it => {
+  ;[[ 'created', api ], [ 'destroyed', api ], ['broadcast', api.broadcast]].forEach(it => {
     var eve = it[0]
     var handler = application[symbol.options][eve]
     if (typeof handler !== 'function') {

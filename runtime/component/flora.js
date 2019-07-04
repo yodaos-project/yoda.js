@@ -48,7 +48,7 @@ Flora.prototype.remoteMethods = {
         res.end(0, [ JSON.stringify({ ok: false, message: err.message, stack: err.stack }) ])
       })
   },
-  'yodaos.runtime.open-url-format': function OpenUrl (reqMsg, res) {
+  'yodaos.runtime.open-url-format': function OpenUrlFormat (reqMsg, res) {
     logger.info('open-url with format', reqMsg)
     var urlObj = url.parse(reqMsg[0], true)
     reqMsg.slice(1).forEach(it => {
