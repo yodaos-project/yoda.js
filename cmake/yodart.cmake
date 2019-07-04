@@ -7,7 +7,7 @@ install(FILES ${YODA_CONFIG_FILES} DESTINATION /etc/yoda)
 install(DIRECTORY ./etc/hotplug.d DESTINATION /etc)
 install(FILES ./etc/manifest.json DESTINATION /etc)
 
-install(DIRECTORY ./runtime/ DESTINATION /usr/yoda
+install(DIRECTORY ./runtime/ DESTINATION /system
         PATTERN "**/OWNERS" EXCLUDE
         PATTERN "**/.gitkeep" EXCLUDE
         PATTERN "**/*.md" EXCLUDE
