@@ -57,6 +57,10 @@ Flora.prototype.remoteMethods = {
       }
       urlObj.query[it[0]] = String(it[1])
     })
+    /** Force url format to use un-stringified query object */
+    delete urlObj.search
+    delete urlObj.path
+    delete urlObj.href
     this.runtime.openUrl(urlObj)
       .then(result => {
         res.end(0, [ JSON.stringify({ ok: true, result: result }) ])
