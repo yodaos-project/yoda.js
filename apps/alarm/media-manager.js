@@ -22,9 +22,7 @@ function MediaManager (alarmCore) {
       player = this.audioFocus.player = new MediaPlayer(this.streamType || AudioManager.STREAM_ALARM)
     }
     this.setListener(player)
-    if (this.audioFocus.resumeOnGain) {
-      player.resume()
-    } else if (this.audioFocus.playUrl) {
+    if (this.audioFocus.playUrl) {
       player.start(this.audioFocus.playUrl)
     }
   }
@@ -37,13 +35,9 @@ function MediaManager (alarmCore) {
     if (!player) {
       return
     }
-    if (transient) {
-      player.pause()
-      this.audioFocus.resumeOnGain = true
-    } else {
-      this.stopMedia()
-      this.audioFocus.playUrl = null
-    }
+    this.stopMedia()
+    this.audioFocus.playUrl = null
+    this.alarmCore.clearAll()
   }
 }
 
