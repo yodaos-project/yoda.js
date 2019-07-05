@@ -5,41 +5,32 @@ var yodaUtil = require('@yoda/util')
 
 var HealthReporter = require('./health-reporter')
 
-var profilerFlag
-try {
-  profilerFlag = require('@yoda/property').get('sys.vm.profiler', 'persist')
-} catch (e) {
-
-}
-
 module.exports.catchUncaughtError = catchUncaughtError
 module.exports.HealthReporter = HealthReporter
 module.exports.healthReport = healthReport
 
-if (profilerFlag === 'true') {
-  var profiling = false
-  process.on('SIGUSR1', function () {
-    var profiler = require('profiler')
-    if (profiling) {
-      logger.debug('stop profiling')
-      profiler.stopProfiling()
-      return
-    }
-    var timestamp = Math.floor(Date.now())
-    var filename = `/data/cpu-profile-${process.pid}-${timestamp}.txt`
-    profiler.startProfiling(filename)
-    logger.debug(`start profiling, target ${filename}`)
-    profiling = true
-  })
-  process.on('SIGUSR2', function () {
-    var profiler = require('profiler')
-    var timestamp = Math.floor(Date.now())
-    var filename = `/data/heapdump-${process.pid}-${timestamp}.json`
-    profiler.takeSnapshot(filename)
-    logger.debug(`dump the heap profile at ${filename}`)
-    logger.debug('memory usage is at', process.memoryUsage())
-  })
-}
+var profiling = false
+process.on('SIGUSR1', function () {
+  var profiler = require('profiler')
+  if (profiling) {
+    logger.debug('stop profiling')
+    profiler.stopProfiling()
+    return
+  }
+  var timestamp = Math.floor(Date.now())
+  var filename = `/data/cpu-profile-${process.pid}-${timestamp}.txt`
+  profiler.startProfiling(filename)
+  logger.debug(`start profiling, target ${filename}`)
+  profiling = true
+})
+process.on('SIGUSR2', function () {
+  var profiler = require('profiler')
+  var timestamp = Math.floor(Date.now())
+  var filename = `/data/heapdump-${process.pid}-${timestamp}.json`
+  profiler.takeSnapshot(filename)
+  logger.debug(`dump the heap profile at ${filename}`)
+  logger.debug('memory usage is at', process.memoryUsage())
+})
 
 function catchUncaughtError (logfile) {
   var stream
