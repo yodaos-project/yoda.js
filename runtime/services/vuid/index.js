@@ -2,6 +2,22 @@
 
 var logger = require('logger')('main')
 var exodus = require('@yoda/exodus')
+var os = require('os')
+
+var systemConfig = {}
+try {
+  systemConfig = require('/etc/yoda/system-config.json')
+} catch (error) {
+  systemConfig = {}
+  logger.info('Not found: system-config.json')
+}
+
+;(function booting () {
+  // optimized startup
+  if (systemConfig && systemConfig.bootPriority) {
+    os.setPriority(systemConfig.bootPriority)
+  }
+})()
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/yodart-err.log')
