@@ -95,7 +95,7 @@ test('should not suspend app by force if anr not enabled', t => {
   var scheduler = tt.component.appScheduler
 
   var now = Date.now()
-  scheduler.createApp(appId, 'default', { anrEnabled: false })
+  scheduler.createApp(appId, { mode: 'default', anrEnabled: false })
     .then(() => {
       t.notLooseEqual(scheduler.appMap[appId], null)
       t.strictEqual(scheduler.appStatus[appId], 'running')

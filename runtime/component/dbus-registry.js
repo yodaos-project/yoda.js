@@ -113,7 +113,7 @@ DBus.prototype.amsexport = {
         future = this.component.appScheduler.suspendApp(appId)
       }
       future
-        .then(() => this.component.appScheduler.createApp(appId, mode, options))
+        .then(() => this.component.appScheduler.createApp(appId, options))
         .then(() => {
           cb(null, JSON.stringify({ ok: true, result: { appId: appId, mode: mode } }))
         })

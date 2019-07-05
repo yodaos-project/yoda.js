@@ -7,7 +7,7 @@ test('should dispatch broadcasts to dynamically registered apps', t => {
   var tt = bootstrap()
   var broadcast = tt.component.broadcast
 
-  mm.mockPromise(tt.component.appScheduler, 'createApp', null, null)
+  mm.mockPromise(tt.component.appScheduler, 'createApp', null)
   mm.mockReturns(tt.descriptor.broadcast, 'emitToApp', (appId, name, args) => {
     t.strictEqual(appId, 'test')
     t.strictEqual(name, 'broadcast')
@@ -23,7 +23,7 @@ test('should not dispatch broadcasts to dynamically registered apps while exited
   var tt = bootstrap()
   var broadcast = tt.component.broadcast
 
-  mm.mockPromise(tt.component.appScheduler, 'createApp', null, null)
+  mm.mockPromise(tt.component.appScheduler, 'createApp', null)
   mm.mockReturns(tt.descriptor.broadcast, 'emitToApp', (appId, name, args) => {
     t.fail('unreachable path')
   })
@@ -40,7 +40,7 @@ test('should dispatch broadcasts to statically registered apps', t => {
   var tt = bootstrap()
   var broadcast = tt.component.broadcast
 
-  mm.mockPromise(tt.component.appScheduler, 'createApp', null, null)
+  mm.mockPromise(tt.component.appScheduler, 'createApp', null)
   mm.mockReturns(tt.descriptor.broadcast, 'emitToApp', (appId, name, args) => {
     t.strictEqual(appId, 'test')
     t.strictEqual(name, 'broadcast')
@@ -56,7 +56,7 @@ test('should dispatch broadcasts to statically registered apps while exited', t 
   var tt = bootstrap()
   var broadcast = tt.component.broadcast
 
-  mm.mockPromise(tt.component.appScheduler, 'createApp', null, null)
+  mm.mockPromise(tt.component.appScheduler, 'createApp', null)
   mm.mockReturns(tt.descriptor.broadcast, 'emitToApp', (appId, name, args) => {
     t.strictEqual(appId, 'test')
     t.strictEqual(name, 'broadcast')
@@ -76,7 +76,7 @@ test('should dispatch broadcasts to apps with params', t => {
   var tt = bootstrap()
   var broadcast = tt.component.broadcast
 
-  mm.mockPromise(tt.component.appScheduler, 'createApp', null, null)
+  mm.mockPromise(tt.component.appScheduler, 'createApp', null)
   mm.mockReturns(tt.descriptor.broadcast, 'emitToApp', (appId, name, args) => {
     t.strictEqual(appId, 'test')
     t.strictEqual(name, 'broadcast')
