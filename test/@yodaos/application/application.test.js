@@ -39,7 +39,8 @@ test('should delegates url events', t => {
   var apiSymbol = Symbol.for('yoda#api')
   global[apiSymbol] = api
 
-  var expectedUrlObj = url.parse('yoda-test://foobar')
+  /** should parse query */
+  var expectedUrlObj = url.parse('yoda-test://foobar?foo=bar', true)
   Application({
     url: function url (urlObj) {
       t.deepEqual(urlObj, expectedUrlObj)
