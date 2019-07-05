@@ -45,6 +45,10 @@ function entry () {
     logger.debug('vui is started')
 
     var runtime = new AppRuntime()
+    runtime.on('on-ready', () => {
+      // reset bootPriority
+      os.setPriority(0)
+    })
     runtime.init()
 
     // starts the watchdog when the runtime is initialized.

@@ -3,7 +3,6 @@
 /**
  * @namespace yodaRT
  */
-var os = require('os')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var Url = require('url')
@@ -1251,6 +1250,7 @@ AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
   }
 
   var onDone = () => {
+    this.emit('on-ready', [])
     this.dispatchNotification('on-ready', [])
   }
 
@@ -1265,10 +1265,6 @@ AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
     logger.error('Unexpected error on logged in', err.stack)
     return onDone()
   }).then(this.startDaemonApps.bind(this))
-    .then(() => {
-      // reset bootPriority
-      os.setPriority(0)
-    })
 }
 
 /**
