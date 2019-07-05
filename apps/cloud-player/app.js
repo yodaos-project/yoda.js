@@ -13,7 +13,7 @@ var app = Application({
     this.agent.start()
   },
   url: function url (urlObj) {
-    logger.info('received url', require('url').format(urlObj))
+    logger.info('received url', urlObj.href)
     var voice
     switch (urlObj.pathname) {
       case '/play': {

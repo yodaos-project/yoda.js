@@ -57,7 +57,7 @@ function Application (options, api) {
      */
     api.on('url', (urlString) => {
       var url = require('url')
-      urlHandler.call(application, url.parse(urlString))
+      urlHandler.call(application, url.parse(urlString, true))
     })
   }
 
