@@ -10,6 +10,7 @@ module.exports = {
   componentName: Symbol('component#name'),
   audioFocus: {
     registry: Symbol('audio-focus#registry'),
-    hook: Symbol('audio-focus#hook')
+    hook: Symbol('audio-focus#hook'),
+    state: Symbol('audio-focus#state')
   }
 }

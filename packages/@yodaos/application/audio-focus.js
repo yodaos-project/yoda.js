@@ -4,6 +4,8 @@ function setup (api) {
   var registry = api[symbol.registry] = {}
   api.on('gain', (id) => {
     var focus = api[symbol.registry][id]
+    focus[symbol.state] = AudioFocus.State.ACTIVE
+
     var hook = registry[symbol.hook]
     if (hook) {
       hook('gain', focus)
@@ -17,9 +19,13 @@ function setup (api) {
   })
   api.on('loss', (id, transient, mayDuck) => {
     var focus = api[symbol.registry][id]
-    if (!transient) {
+    if (transient) {
+      focus[symbol.state] = AudioFocus.State.SUSPENDED
+    } else {
       delete api[symbol.registry][id]
+      focus[symbol.state] = AudioFocus.State.INACTIVE
     }
+
     var hook = registry[symbol.hook]
     if (hook) {
       hook('loss', focus, transient, mayDuck)
@@ -83,12 +89,23 @@ class AudioFocus {
     this.api = api
     this.id = ++_id
     this.type = type || AudioFocus.Type.DEFAULT
+    this[symbol.state] = AudioFocus.State.INACTIVE
+  }
+
+  /**
+   * @returns {AudioFocus.State}
+   */
+  get state () {
+    return this[symbol.state]
   }
 
   /**
    * @returns {Promise}
    */
   request () {
+    if (this[symbol.state] === AudioFocus.State.ACTIVE) {
+      return Promise.resolve()
+    }
     register(this.api, this.id, this)
     return this.api.request({ id: this.id, gain: this.type })
   }
@@ -116,6 +133,10 @@ class AudioFocus {
 /**
  * @memberof module:@yodaos/application~AudioFocus
  * @static
+ * @readonly
+ * @enum {number}
+ *
+ * Enum for AudioFocus types.
  */
 AudioFocus.Type = {
   DEFAULT: 0b000,
@@ -123,6 +144,30 @@ AudioFocus.Type = {
   TRANSIENT_EXCLUSIVE: 0b011,
   TRANSIENT_MAY_DUCK: 0b101
 }
+Object.freeze(AudioFocus.Type)
+
+/**
+ * @memberof module:@yodaos/application~AudioFocus
+ * @static
+ * @readonly
+ * @enum {string}
+ */
+AudioFocus.State = {
+  /**
+   * the AudioFocus is allowed to play sound.
+   */
+  ACTIVE: 'active',
+  /**
+   * the AudioFocus is not allowed to play sound, but can resume when it regains focus.
+   */
+  SUSPENDED: 'suspended',
+  /**
+   * the AudioFocus is not allowed to play sound, and will not regain focus unless it
+   * requests audio focus again.
+   */
+  INACTIVE: 'inactive'
+}
+Object.freeze(AudioFocus.State)
 
 module.exports = AudioFocus
 module.exports.setup = setup
