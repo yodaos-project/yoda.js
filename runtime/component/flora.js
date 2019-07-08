@@ -4,6 +4,7 @@ var inherits = require('util').inherits
 
 var FloraComp = require('@yoda/flora/comp')
 var safeParse = require('@yoda/util').json.safeParse
+var _ = require('@yoda/util')._
 var url = require('url')
 
 var floraConfig = require('../lib/config').getConfig('flora-config.json')
@@ -18,10 +19,30 @@ function Flora (runtime) {
   this.runtime = runtime
   this.component = runtime.component
   this.descriptor = runtime.descriptor
+
+  this.networkMemo = null
 }
 inherits(Flora, FloraComp)
 
 Flora.prototype.handlers = {
+  'network.status': function NetworkStatus (msg) {
+    var data = safeParse(msg[0])
+    var state = _.get(data, 'network.state')
+    if (state === 'CONNECTED' && state !== _.get(this.networkMemo, 'network.state')) {
+      /** force a routing table reset */
+      Object.keys(this.component.appScheduler.pidAppIdMap)
+        .forEach(pid => {
+          var appId = this.component.appScheduler.pidAppIdMap[pid]
+          this.call('yodaos.fauna.harbor', [ 'internal', JSON.stringify({
+            topic: 'network-connected'
+          })], `${appId}:${pid}`, 5000)
+            .catch(err => {
+              logger.error(`unexpected error on dispatching internal event(${'network-connected'}) to app(${appId}, ${pid})`, err.stack)
+            })
+        })
+    }
+    this.networkMemo = data
+  },
   'yodaos.ntpd.event': function onTimeChanged (msg) {
     if (msg[0] === 'step') {
       this.runtime.componentsInvoke('timeDidChanged')
