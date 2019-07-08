@@ -75,7 +75,7 @@ app.finishVoice = function finishVoice (it) {
   if (idx < 0) {
     return
   }
-  this.voices.splice(it, 1)
+  this.voices.splice(idx, 1)
 }
 
 module.exports = app
