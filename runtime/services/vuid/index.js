@@ -12,12 +12,10 @@ try {
   logger.info('Not found: system-config.json')
 }
 
-;(function booting () {
-  // optimized startup
-  if (systemConfig && systemConfig.bootPriority) {
-    os.setPriority(systemConfig.bootPriority)
-  }
-})()
+// optimized startup
+if (systemConfig && systemConfig.bootPriority) {
+  os.setPriority(systemConfig.bootPriority)
+}
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/yodart-err.log')

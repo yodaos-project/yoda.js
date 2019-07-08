@@ -1,4 +1,5 @@
 {
   "audioMixType": "suppress",
-  "scale": 0.3
+  "scale": 0.3,
+  "bootPriority": 0
 }
