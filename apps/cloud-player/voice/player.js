@@ -14,7 +14,7 @@ module.exports = function Player (text, url, transient, sequential) {
     return
   }
   var focus = new AudioFocus(transient ? AudioFocus.Type.TRANSIENT : AudioFocus.Type.DEFAULT)
-  focus.resumeOnGain = false
+  focus.resumeOnGain = true
   if (url) {
     focus.player = new MediaPlayer()
     focus.player.prepare(url)
@@ -29,7 +29,9 @@ module.exports = function Player (text, url, transient, sequential) {
     })
   }
   focus.onGain = () => {
+    logger.info(`focus gain, transient? ${transient}, player? ${focus.player == null}, resumeOnGain? ${focus.resumeOnGain}`)
     if (text && focus.utter == null) {
+      /** on first gain */
       focus.utter = speechSynthesis.speak(text)
         .on('start', () => {
           this.agent.post(TtsStatusChannel, [ StatusCode.start ])
@@ -59,28 +61,30 @@ module.exports = function Player (text, url, transient, sequential) {
           }
           focus.abandon()
         })
-    } else if (text == null && focus.player != null) {
+    } else if (focus.resumeOnGain && focus.player != null) {
       focus.player.start()
     }
 
-    if (focus.resumeOnGain && focus.player != null) {
-      focus.player.start()
-    }
     focus.resumeOnGain = false
   }
   focus.onLoss = (transient) => {
+    logger.info(`focus lost, transient? ${transient}, player? ${focus.player == null}`)
     if (focus.utter) {
       speechSynthesis.cancel()
     }
-    if (transient) {
-      focus.resumeOnGain = true
-      focus.player && focus.player.pause()
-    } else {
+    if (!transient || focus.player == null) {
       focus.player && focus.player.stop()
       this.finishVoice(focus)
+      return
     }
+    if (!focus.player.playing) {
+      return
+    }
+    focus.resumeOnGain = true
+    focus.player.pause()
   }
   focus.pause = () => {
+    logger.info(`pausing, transient? ${transient}, player? ${focus.player == null}, state? ${focus.state}`)
     if (transient) {
       focus.abandon()
       return
@@ -94,13 +98,19 @@ module.exports = function Player (text, url, transient, sequential) {
     }
   }
   focus.resume = () => {
+    logger.info(`resuming, transient? ${transient}, player? ${focus.player == null}, state? ${focus.state}`)
     if (transient) {
       return
     }
-    if (focus.player) {
-      focus.request()
-      focus.player.start()
+    if (focus.player == null) {
+      return
     }
+    if (focus.state === AudioFocus.State.ACTIVE) {
+      focus.player.start()
+      return
+    }
+    focus.resumeOnGain = true
+    focus.request()
   }
 
   focus.request()
