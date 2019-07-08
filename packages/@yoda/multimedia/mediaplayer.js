@@ -191,7 +191,7 @@ MediaPlayer.prototype.start = function (url) {
     this.prepare(url)
   }
   if (this._preparing) {
-    this.once('prepared', () => this.start())
+    this.once('prepared', () => this[handle].start())
     return
   }
   return this[handle].start()
