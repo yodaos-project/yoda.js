@@ -28,7 +28,11 @@ Flora.prototype.handlers = {
   'network.status': function NetworkStatus (msg) {
     var data = safeParse(msg[0])
     var state = _.get(data, 'network.state')
-    if (state === 'CONNECTED' && state !== _.get(this.networkMemo, 'network.state')) {
+    if (state == null) {
+      return
+    }
+    var memoState = _.get(this.networkMemo, 'network.state')
+    if (state === 'CONNECTED' && state !== memoState) {
       /** force a routing table reset */
       Object.keys(this.component.appScheduler.pidAppIdMap)
         .forEach(pid => {
