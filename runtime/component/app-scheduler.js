@@ -87,13 +87,14 @@ AppScheduler.prototype.appLauncher = {
 /**
  *
  * @param {string} appId
- * @param {string | number} mode
  * @param {object} [options]
+ * @param {string | number} [options.mode] - app launch mode
  * @param {string} [options.descriptorPath] - api descriptor file to be used
  * @param {string[]} [options.args] - additional execution arguments to the child process
  * @param {object} [options.environs] - additional execution environs to the child process
+ * @param {boolean} [options.daemon] - daemonize app process
  */
-AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
+AppScheduler.prototype.createApp = function createApp (appId, options) {
   if (this.isAppRunning(appId)) {
     return Promise.resolve(this.getAppById(appId))
   }
@@ -110,17 +111,20 @@ AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
       if (future == null) {
         return Promise.reject(new Error(`Scheduler is suspending app ${appId}.`))
       }
-      return future.then(() => this.createApp(appId, mode))
+      return future.then(() => this.createApp(appId, options))
     case Constants.status.error:
       future = this.suspendApp(appId, { force: true })
-      return future.then(() => this.createApp(appId, mode))
+      return future.then(() => this.createApp(appId, options))
   }
   this.appStatus[appId] = Constants.status.creating
 
-  var appType = this.loader.getTypeOfApp(appId)
   var metadata = this.loader.getAppManifest(appId)
+
+  var mode = _.get(options, 'mode')
+  var type = _.get(options, 'type', this.loader.getTypeOfApp(appId))
   var args = _.get(options, 'args')
   var environs = _.get(options, 'environs')
+  var daemon = _.get(options, 'daemon', metadata && metadata.daemon)
 
   if (typeof mode !== 'number') {
     mode = Constants.modes[mode]
@@ -129,12 +133,12 @@ AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
     mode = Constants.modes.default
   }
 
-  var launcher = this.appLauncher[appType]
+  var launcher = this.appLauncher[type]
   if (launcher == null) {
     launcher = this.appLauncher.default
-    appType = 'default'
+    type = 'default'
   }
-  this.appLaunchOptions[appId] = { type: appType, mode: mode, args: args, environs: environs }
+  this.appLaunchOptions[appId] = { type: type, mode: mode, args: args, environs: environs, daemon: daemon }
 
   var appBridge = new AppBridge(this.runtime, appId, metadata)
   this.appMap[appId] = appBridge
@@ -148,7 +152,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
   var readyPromise = new Promise((resolve, reject) => {
     appBridge.onReady = (err) => {
       if (err) {
-        logger.error(`Unexpected error on initializing ${appType} app(${appId})`, err.stack)
+        logger.error(`Unexpected error on initializing ${type} app(${appId})`, err.stack)
         reject(err)
         return
       }
@@ -176,7 +180,7 @@ AppScheduler.prototype.createApp = function createApp (appId, mode, options) {
       },
       err => {
         delete this.appCreationFutures[appId]
-        logger.error(`Unexpected error on launching ${appType} app(${appId})`, err.stack)
+        logger.error(`Unexpected error on launching ${type} app(${appId})`, err.stack)
         this.suspendApp(appId, { force: true })
         throw err
       })
@@ -195,6 +199,7 @@ AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, sign
   logger.info(`${appId} exited.`)
   /** incase bridge has not been marked as suspended */
   var app = this.appMap[appId]
+  var appLaunchOptions = this.appLaunchOptions[appId]
   if (app) {
     app.suspend()
     delete this.pidAppIdMap[app.pid]
@@ -211,14 +216,11 @@ AppScheduler.prototype.handleAppExit = function handleAppExit (appId, code, sign
   }
   delete this.__appSuspensionResolvers[appId]
 
-  if (code != null) {
-    var manifest = this.loader.getAppManifest(appId)
-    if (manifest && manifest.daemon) {
-      logger.info(`Restarting daemon app(${appId}) in 5s`)
-      setTimeout(() => {
-        this.createApp(appId)
-      }, 5 * 1000)
-    }
+  if (appLaunchOptions.daemon) {
+    logger.warn(`Restarting daemon app(${appId}) in 5s`)
+    setTimeout(() => {
+      this.createApp(appId)
+    }, 5 * 1000)
   }
 }
 
@@ -246,14 +248,6 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   logger.info(`suspending ${appType}-app(${appId}), force?`, force)
 
   if (appType === 'light') {
-    return Promise.resolve()
-  }
-
-  // TODO: emit event `destroy` on destroy of app
-
-  var manifest = this.loader.getAppManifest(appId)
-  if (manifest && manifest.daemon && !force) {
-    // do nothing
     return Promise.resolve()
   }
 
