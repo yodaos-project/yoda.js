@@ -186,21 +186,20 @@ test('should updateCloudStack set right id', t => {
   rtHelper.loadBaseConfig()
   var runtime = getAppRuntime(initComponents)
 
-  function _mock(tar) {
+  function _mock (tar) {
     mock.mockPromise(runtime.component.flora, 'updateStack', (stack) => {
       if (stack !== tar) {
-        t.fail('updateCloudStack error', stack);
+        t.fail('updateCloudStack error', stack)
       }
-    });
+    })
   }
-  
   runtime.init()
     .then(() => {
-      _mock('skillid-cut:');
-      runtime.updateCloudStack('skillid-cut', 'cut');
+      _mock('skillid-cut:')
+      runtime.updateCloudStack('skillid-cut', 'cut')
 
-      _mock('skillid-cut:skillid-scene');
-      runtime.updateCloudStack('skillid-scene', 'scene');
+      _mock('skillid-cut:skillid-scene')
+      runtime.updateCloudStack('skillid-scene', 'scene')
 
       runtime.deinit()
       t.end()
