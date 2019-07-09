@@ -20,6 +20,7 @@ YODAOS_API_LOCAL char* yodaos_read_json_file(char* filepath);
 
 YODAOS_API_LOCAL struct yodaos_api_s* yodaos_get_apihd(YODAOS_APINAME api);
 YODAOS_API_LOCAL int yodaos_check_api_valid(YODAOS_APINAME api);
+YODAOS_API_LOCAL void yodaos_local_event_lock(int lock);
 
 #ifdef __cplusplus
 }

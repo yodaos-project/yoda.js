@@ -14,9 +14,17 @@
 
 static flora_agent_t agent;
 static pthread_mutex_t flora_lock;
+static pthread_mutex_t event_lock;
 static yodaos_harbor_cb _harbor_cb = NULL;
 
 #define API_NULL_ARG "[]"
+
+YODAOS_API_LOCAL void yodaos_local_event_lock(int lock) {
+  if (lock)
+    pthread_mutex_lock(&event_lock);
+  else
+    pthread_mutex_unlock(&event_lock);
+}
 
 YODAOS_API_PUBLIC void yodaos_api_registe_eventcb(yodaos_harbor_cb cb) {
   _harbor_cb = cb;
@@ -33,9 +41,12 @@ static void _flora_method_call_harbor(const char* name, caps_t msg,
   flora_call_reply_write_code(reply, 0);
   flora_call_reply_end(reply);
 
+  yodaos_local_event_lock(1);
   if (_harbor_cb && type && desc) {
     _harbor_cb(name, (const char*)type, (const char*)desc);
   }
+  yodaos_local_event_lock(0);
+  usleep(100);
 }
 
 YODAOS_API_LOCAL void yodaos_init_flora(const char* moduleName) {
@@ -45,6 +56,7 @@ YODAOS_API_LOCAL void yodaos_init_flora(const char* moduleName) {
   RKLogv("Socket path:%s\n", socketPath);
 
   pthread_mutex_init(&flora_lock, NULL);
+  pthread_mutex_init(&event_lock, NULL);
 
   agent = flora_agent_create();
 

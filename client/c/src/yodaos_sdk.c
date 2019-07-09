@@ -15,7 +15,10 @@
 static pthread_t mainThreadId;
 
 static void timeoutCb() {
-  RKLogw("Begin to ping active From pid(%lu)\n", pthread_self());
+  RKLogw("Begin to ping active From pid(%d) tpid(%lu)\n", getpid(),
+         pthread_self());
+  yodaos_local_event_lock(1);
+  yodaos_local_event_lock(0);
   yodaos_send_runtime_active();
 }
 
