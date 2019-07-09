@@ -182,7 +182,6 @@ test('should break in announcing if runtime disabled', t => {
 })
 
 test('should updateCloudStack set right id', t => {
-  t.plan(1)
   rtHelper.loadBaseConfig()
   var runtime = getAppRuntime(initComponents)
 
