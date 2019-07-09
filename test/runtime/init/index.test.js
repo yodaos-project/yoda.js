@@ -180,3 +180,35 @@ test('should break in announcing if runtime disabled', t => {
       t.end()
     })
 })
+
+test('should updateCloudStack set right id', t => {
+  t.plan(1)
+  rtHelper.loadBaseConfig()
+  var runtime = getAppRuntime(initComponents)
+
+  function _mock(tar) {
+    mock.mockPromise(runtime.component.flora, 'updateStack', (stack) => {
+      if (stack !== tar) {
+        t.fail('updateCloudStack error', stack);
+      }
+    });
+  }
+  
+  runtime.init()
+    .then(() => {
+      _mock('skillid-cut:');
+      runtime.updateCloudStack('skillid-cut', 'cut');
+
+      _mock('skillid-cut:skillid-scene');
+      runtime.updateCloudStack('skillid-scene', 'scene');
+
+      runtime.deinit()
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+
+      runtime.deinit()
+      t.end()
+    })
+})
