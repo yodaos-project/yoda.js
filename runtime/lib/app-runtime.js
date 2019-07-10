@@ -849,7 +849,7 @@ AppRuntime.prototype.updateCloudStack = function (skillId, form, options) {
   } else if (form === 'scene') {
     this.domain.scene = skillId
   }
-  var ids = [this.domain.scene, this.domain.cut]
+  var ids = [this.domain.cut, this.domain.scene]
   var stack = ids.join(':')
   this.component.flora.updateStack(stack)
 }
