@@ -48,8 +48,7 @@ function onAudioFocusLost (transient, mayDuck) {
     }
   } else {
     uploadEvent(protocol.AUDIO_STATE.STOPPED)
-    a2dp.stop()
-    a2dp.destroy()
+    app.openUrl('yoda-app://bluetooth/implied_close')
     rt.exit()
   }
 }
@@ -85,13 +84,22 @@ function handleUrl (url) {
       if (playing) {
         a2dp.stop()
         lastUrl = url
+      } else {
+        if (audioFocus.state !== 'inactive') {
+          audioFocus.abandon()
+        } else {
+          app.openUrl('yoda-app://bluetooth/disconnect')
+          rt.exit()
+        }
       }
       break
     case '/next':
       a2dp.next()
+      lastUrl = url
       break
     case '/prev':
       a2dp.prev()
+      lastUrl = url
       break
     case '/like':
     case '/info':
@@ -186,7 +194,10 @@ var app = Application({
   destroyed: () => {
     logger.debug('destroyed')
     agent.close()
-    audioFocus.abandon()
+    if (audioFocus.state !== 'inactive') {
+      audioFocus.abandon()
+    }
+    a2dp.destroy()
   },
   url: (url) => {
     logger.debug('on url:', url.pathname)
