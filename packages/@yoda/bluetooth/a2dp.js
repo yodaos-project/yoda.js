@@ -390,7 +390,7 @@ BluetoothA2dp.prototype.play = function () {
     if (this.lastMsg.play_state === 'played') {
       logger.warn('play() while last state is already played.')
     }
-    return this._send(this.lastMode, 'PLAY_UNMUTE')
+    return this._send(this.lastMode, 'PLAY')
   }
 }
 
@@ -409,7 +409,7 @@ BluetoothA2dp.prototype.pause = function () {
       logger.warn('pause() while last state is already stopped.')
     }
     this.lastCmd = 'pause'
-    return this._send(this.lastMode, 'PAUSE_MUTE')
+    return this._send(this.lastMode, 'PAUSE')
   }
 }
 
@@ -441,7 +441,7 @@ BluetoothA2dp.prototype.stop = function () {
 BluetoothA2dp.prototype.prev = function () {
   logger.debug(`prev(${this.lastMode})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    return this._send(this.lastMode, 'UNMUTE') && this._send(this.lastMode, 'PREV')
+    return this._send(this.lastMode, 'PREV')
   }
 }
 
@@ -454,7 +454,7 @@ BluetoothA2dp.prototype.prev = function () {
 BluetoothA2dp.prototype.next = function () {
   logger.debug(`next(${this.lastMode})`)
   if (this.lastMode === protocol.A2DP_MODE.SINK) {
-    return this._send(this.lastMode, 'UNMUTE') && this._send(this.lastMode, 'NEXT')
+    return this._send(this.lastMode, 'NEXT')
   }
 }
 

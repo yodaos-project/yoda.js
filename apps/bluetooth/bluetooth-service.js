@@ -97,6 +97,10 @@ var urlHandlers = {
   // disconnect from remote device whatever in sink or source mode
   '/disconnect': () => {
     a2dp.disconnect()
+  },
+  // implied close bluetooth
+  '/implied_close': () => {
+    a2dp.close()
   }
 }
 
@@ -166,7 +170,6 @@ function onRadioStateChangedListener (mode, state, extra) {
       if (lastUrl === '/close') {
         speak(getText('CLOSED'), res.AUDIO[state])
       }
-      service.finish()
       break
     default:
       break
@@ -197,11 +200,12 @@ function onConnectionStateChangedListener (mode, state, device) {
         speak(getText('PLEASE_WAIT'))
       } else {
         speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
+        lastUrl = '/derived_from_phone'
       }
       resetLastUrl()
       break
     case protocol.CONNECTION_STATE.DISCONNECTED:
-      if (lastUrl !== '/close') {
+      if (lastUrl !== '/close' && lastUrl !== '/implied_close') {
         speak(getText('DISCONNECTED'))
       } else {
         logger.debug('Suppress "disconnected" prompt while NOT user explicit intent.')
@@ -228,7 +232,7 @@ function onAudioStateChangedListener (mode, state, extra) {
   logger.debug(`${mode} onAudioStateChanged(${state})`)
   switch (state) {
     case protocol.AUDIO_STATE.PLAYING:
-      a2dp.mute()
+      cancelTimer()
       service.openUrl(res.URL.BLUETOOTH_MUSIC + state)
       break
     default:
