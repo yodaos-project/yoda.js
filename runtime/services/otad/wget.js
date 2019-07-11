@@ -2,6 +2,7 @@ var childProcess = require('child_process')
 
 /**
  * @typedef DownloadOptions
+ * @property {number} [timeout=15] timeout in seconds
  * @property {boolean} [noCheckCertificate]
  * @property {boolean} [continue]
  */
@@ -23,7 +24,12 @@ function download (url, dest, options, callback) {
   if (options.continue) {
     args = args.concat('-c')
   }
-  args = args.concat('-O', dest, url)
+
+  var timeout = 15 /** seconds */
+  if (options.timeout) {
+    timeout = options.timeout
+  }
+  args = args.concat('--timeout', String(timeout), '-O', dest, url)
   var cp = childProcess.spawn('wget', args)
 
   var returned = false
