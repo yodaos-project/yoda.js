@@ -110,8 +110,12 @@ MediaManager.prototype.setListener = function setListener (player) {
 }
 
 MediaManager.prototype.stopMediaAndTts = function stopMediaAndTts () {
-  this.stopMedia()
-  tts.cancel()
+  logger.info('stopMediaAndTts----> this.audioFocus.isFocus is ', this.audioFocus.isFocus)
+  if (this.audioFocus.isFocus) {
+    this.stopMedia()
+    tts.cancel()
+    this.release()
+  }
 }
 
 MediaManager.prototype.speakTts = function speakTts (content, callback) {
