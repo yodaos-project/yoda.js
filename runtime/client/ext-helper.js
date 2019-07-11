@@ -67,7 +67,7 @@ function main (target, descriptorPath, runner) {
   } catch (error) {
     logger.error('fatal error:', error.stack)
     return safeCall(agent, 'yodaos.fauna.status-report', ['error', error.stack], 'runtime')
-      .then(() => terminate())
+      .then(terminate)
   }
 
   agent.call('yodaos.fauna.status-report', ['ready'], 'runtime', 10 * 1000)
