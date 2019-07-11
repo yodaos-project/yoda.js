@@ -11,9 +11,17 @@ module.exports = {
   keepAlive: keepAlive
 }
 
+function terminate () {
+  /**
+   * FIXME: https://github.com/yodaos-project/ShadowNode/issues/373
+   * force process to exit without any proceeding.
+   */
+  process.kill(process.pid, 'SIGKILL')
+}
+
 process.once('disconnect', () => {
   logger.info('IPC disconnected, exiting self.')
-  process.exit(233)
+  terminate()
 })
 
 function safeCall (agent, name, msg, target) {
@@ -24,7 +32,7 @@ function safeCall (agent, name, msg, target) {
 function main (target, descriptorPath, runner) {
   if (!target) {
     logger.error('Target is required.')
-    process.exit(-1)
+    terminate()
   }
   if (runner == null) {
     runner = noopRunner
@@ -59,7 +67,7 @@ function main (target, descriptorPath, runner) {
   } catch (error) {
     logger.error('fatal error:', error.stack)
     return safeCall(agent, 'yodaos.fauna.status-report', ['error', error.stack], 'runtime')
-      .then(() => process.exit(1))
+      .then(() => terminate())
   }
 
   agent.call('yodaos.fauna.status-report', ['ready'], 'runtime', 10 * 1000)
@@ -73,7 +81,7 @@ function main (target, descriptorPath, runner) {
     .catch(error => {
       logger.error('fatal error:', error.stack)
       return safeCall(agent, 'yodaos.fauna.status-report', ['error', error.stack], 'runtime')
-        .then(() => process.exit(1))
+        .then(() => terminate())
     })
 }
 
