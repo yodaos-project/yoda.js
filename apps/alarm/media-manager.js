@@ -116,7 +116,6 @@ MediaManager.prototype.stopMediaAndTts = function stopMediaAndTts () {
     tts.cancel()
     this.release()
   }
-
 }
 
 MediaManager.prototype.speakTts = function speakTts (content, callback) {
