@@ -68,8 +68,9 @@ module.exports.downloadImage = downloadImage
 function downloadImage (delegate, info, callback) {
   var dest = persistance.getImagePath(info)
   compose([
-    cb => {
-      checkDiskAvailability(info.imageSize, dest, cb)
+    cb => wget.fetchImageSize(info.imageUrl, cb),
+    (cb, imageSize) => {
+      checkDiskAvailability(imageSize, dest, cb)
     },
     cb => {
       info.status = 'downloading'

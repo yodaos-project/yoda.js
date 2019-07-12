@@ -5,6 +5,7 @@ var helper = require('../../helper')
 var Delegation = require(`${helper.paths.runtime}/services/otad/delegation`)
 var ota = require(`${helper.paths.runtime}/services/otad/step`)
 var wget = require(`${helper.paths.runtime}/services/otad/wget`)
+var system = require('@yoda/system')
 
 test('should skip ota if runtime is not ready', t => {
   var delegation = new Delegation()
@@ -39,12 +40,20 @@ test('should throw if disk space not available', t => {
   mock.mockCallback(delegation, 'prelude', null, true)
   mock.mockCallback(delegation, 'fetchOtaInfo', null, {
     imageUrl: 'https://example.com',
-    imageSize: 1024 * 1024 * 1024 * 1024 /** 1T */,
     version: 'foobar',
     integrity: '99d7bdf3ecf03f3fd081d7b835c7347f'
   })
+
+  mock.mockCallback(wget, 'fetchImageSize', null, 1024 * 1024 * 1024 * 1024 /** 1T */)
   mock.mockCallback(wget, 'download', () => {
     t.fail('unreachable path')
+  })
+
+  mock.mockReturns(system, 'diskUsage', (path) => {
+    t.ok(/\/data\/upgrade/.test(path), path)
+    return {
+      available: 100 /** 100 Bytes */
+    }
   })
   ota.runInCurrentContext(delegation, function onOTA (err, info) {
     t.throws(() => { throw err }, 'Disk space not available')
@@ -61,7 +70,6 @@ test('should download image and validate checksum', t => {
   mock.mockCallback(wget, 'download', null, null)
   ota.downloadImage(delegation, {
     imageUrl: 'https://example.com',
-    imageSize: 1024 /** 1K, don't care */,
     version: 'foobar',
     integrity: '99d7bdf3ecf03f3fd081d7b835c7347f'
   }, function onDownload (err, result) {
