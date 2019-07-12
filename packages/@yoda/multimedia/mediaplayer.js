@@ -68,6 +68,7 @@ function MediaPlayer (stream) {
   this[handle] = new PlayerWrap()
   this._settled = false
   this._preparing = false
+  this._startOnPrepared = false
 }
 inherits(MediaPlayer, EventEmitter)
 
@@ -140,6 +141,15 @@ MediaPlayer.prototype._onevent = function (type, ext1) {
       break
   }
   this.emit.apply(this, args)
+
+  switch (eve) {
+    case 'prepared':
+      /** delay until `prepared` had been emitted */
+      if (this._startOnPrepared && this._settled) {
+        this[handle].start()
+      }
+      this._startOnPrepared = false
+  }
 }
 
 delegate(MediaPlayer.prototype, handle)
@@ -191,7 +201,7 @@ MediaPlayer.prototype.start = function (url) {
     this.prepare(url)
   }
   if (this._preparing) {
-    this.once('prepared', () => this[handle].start())
+    this._startOnPrepared = true
     return
   }
   return this[handle].start()
@@ -199,6 +209,8 @@ MediaPlayer.prototype.start = function (url) {
 
 MediaPlayer.prototype.stop = function () {
   this._settled = false
+  this._preparing = false
+  this._startOnPrepared = false
   return this[handle].stop()
 }
 

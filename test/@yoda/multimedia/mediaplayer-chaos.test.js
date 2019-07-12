@@ -15,7 +15,7 @@ var events = [
   'error'
 ]
 
-var dataSource = path.join(helper.paths.fixture, 'audio', 'awake_01.wav')
+var dataSource = path.join(helper.paths.fixture, 'audio', 'hibernate.wav')
 
 test('duplicate start/stop', (t) => {
   t.plan(1)

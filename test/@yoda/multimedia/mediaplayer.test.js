@@ -18,7 +18,7 @@ var events = [
   'error'
 ]
 
-var dataSource = path.join(helper.paths.fixture, 'audio', 'awake_01.wav')
+var dataSource = path.join(helper.paths.fixture, 'audio', 'hibernate.wav')
 
 test('should play media', (t) => {
   t.plan(4)
@@ -40,6 +40,22 @@ test('should play media', (t) => {
   player.setDataSource(dataSource)
   player.prepare()
   player.start()
+})
+
+test('delayed start should be suppressed on stop', (t) => {
+  t.plan(2)
+  var player = new MediaPlayer()
+  player.setDataSource(dataSource)
+  player.prepare()
+  player.on('prepared', () => {
+    t.strictEqual(player.playing, false)
+    player.stop()
+  })
+  player.start()
+  player.on('prepared', () => {
+    t.throws(() => player.start(), /MediaPlayerWrap has not been set up/)
+    t.end()
+  })
 })
 
 test('pause and resume player', t => {
