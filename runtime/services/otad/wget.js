@@ -1,4 +1,7 @@
 var childProcess = require('child_process')
+var Url = require('url')
+var http = require('http')
+var https = require('https')
 
 /**
  * @typedef DownloadOptions
@@ -8,6 +11,7 @@ var childProcess = require('child_process')
  */
 
 module.exports.download = download
+module.exports.fetchImageSize = fetchImageSize
 /**
  *
  * @private
@@ -54,4 +58,48 @@ function download (url, dest, options, callback) {
     returned = true
     callback(err)
   }) /** cp.on('exit') */
+}
+
+/**
+ *
+ * @private
+ * @param {string} urlStr
+ * @param {module:@yoda/ota~FetchImageSizeCallback} callback
+ */
+function fetchImageSize (urlStr, callback) {
+  var urlObj = Url.parse(urlStr)
+  /**
+   * @type {http}
+   */
+  var handler
+  switch (urlObj.protocol) {
+    case 'http:':
+      handler = http
+      break
+    case 'https:':
+      handler = https
+      break
+    default:
+      throw new Error(`Not supported protocol ${urlObj.protocol} on fetch ota image size`)
+  }
+  var req = handler.request(
+    Object.assign({}, urlObj, {
+      method: 'HEAD',
+      timeout: 1000
+    }),
+    (res) => {
+      res.on('error', callback)
+      res.destroy(null)
+
+      var headers = res.headers
+      var contentLengthStr = headers['content-length']
+      var contentLength = Number(contentLengthStr)
+      require('logger')('wget').warn('content length', contentLength)
+      if (isNaN(contentLength)) {
+        callback(new Error(`Failed to fetch ota image size. Got ${contentLengthStr}`))
+        return
+      }
+      callback(null, contentLength)
+    }) /** req.on('response') */
+  req.end()
 }
