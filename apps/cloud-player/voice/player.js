@@ -8,7 +8,7 @@ var MultimediaStatusChannel = constant.MultimediaStatusChannel
 var TtsStatusChannel = constant.TtsStatusChannel
 var StatusCode = constant.StatusCode
 
-module.exports = function Player (text, url, transient, sequential) {
+module.exports = function Player (text, url, transient, sequential, tag) {
   logger.info(`playing text(${text}) & url(${url}), transient(${transient}), sequential(${sequential})`)
   if (text == null && url == null) {
     return
@@ -19,10 +19,10 @@ module.exports = function Player (text, url, transient, sequential) {
     focus.player = new MediaPlayer()
     focus.player.prepare(url)
     focus.player.on('playing', () => {
-      this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.start ])
+      this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.start, tag ])
     })
     focus.player.on('playbackcomplete', () => {
-      this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.end ])
+      this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.end, tag ])
       if (sequential || !speechSynthesis.speaking) {
         focus.abandon()
       }
