@@ -7,7 +7,7 @@ var GetStreamChannel = constant.GetStreamChannel
 var TtsStatusChannel = constant.TtsStatusChannel
 var StatusCode = constant.StatusCode
 
-module.exports = function TtsStream () {
+module.exports = function TtsStream (pickupOnEnd) {
   var focus = new AudioFocus(AudioFocus.Type.TRANSIENT)
   focus.onGain = () => {
     var utter = speechSynthesis.playStream()
@@ -28,6 +28,9 @@ module.exports = function TtsStream () {
         logger.info('on end')
         this.agent.post(TtsStatusChannel, [ StatusCode.end ])
         focus.abandon()
+        if (pickupOnEnd) {
+          this.openUrl('yoda-app://launcher/pickup')
+        }
       })
     this.agent.declareMethod(GetStreamChannel, (req, res) => {
       logger.info('on get stream channel', utter.id)

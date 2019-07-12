@@ -11,17 +11,21 @@ var app = Application({
     this.voices = []
     this.agent = new flora.Agent(FloraUri)
     this.agent.start()
+    this.agent.declareMethod(constant.InspectPlayerChannel, (req, res) => {
+      res.end(0, this.inspectPlayers())
+    })
   },
   url: function url (urlObj) {
     logger.info('received url', urlObj.href)
     var voice
     switch (urlObj.pathname) {
       case '/play': {
-        this.startVoice('player', [
+        voice = this.startVoice('player', [
           urlObj.query.text, urlObj.query.url,
           _.get(urlObj.query, 'transient', '1') === '1', /** defaults to transient */
           _.get(urlObj.query, 'sequential', '0') === '1' /** defaults to sequential */
         ])
+        voice.tag = urlObj.query.tag
         break
       }
       case '/pause': {
@@ -46,12 +50,26 @@ var app = Application({
         break
       }
       case '/play-tts-stream': {
-        this.startVoice('tts-stream')
+        this.startVoice('tts-stream', [
+          _.get(urlObj.query, 'pickupOnEnd', '0') === '1',
+          Number(_.get(urlObj.query, 'pickupDuration', '0'))
+        ])
         break
       }
     }
   }
 })
+
+app.inspectPlayers = function inspectPlayers () {
+  return this.voices
+    .filter(it => it.name === 'player')
+    .map(it => ([
+      it.tag,
+      [ 'duration', _.get(it, 'player.duration') ],
+      [ 'position', _.get(it, 'player.position') ],
+      [ 'playing', _.get(it, 'player.playing') ? 1 : 0 ]
+    ]))
+}
 
 app.startVoice = function startVoice (name, args) {
   var voiceConstructor = require(`./voice/${name}`)
