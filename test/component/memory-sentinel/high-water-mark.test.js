@@ -4,7 +4,7 @@ var bootstrap = require('../../bootstrap')
 
 function setupWaterMark (memorySentinel) {
   memorySentinel.backgroundAppHWM = 8 * 1024
-  memorySentinel.keyAndVisibleAppHWM = 10 * 1024
+  memorySentinel.visibleAppHWM = 10 * 1024
 }
 
 function setupApp (memorySentinel, pid, appId, mem) {
@@ -18,7 +18,7 @@ function readjustMem (memorySentinel, pid, mem) {
   memorySentinel.memMemo[pid] = mem || 6 * 1024
 }
 
-test('high water mark: should apply background app water mark if app is not key and visible', t => {
+test('high water mark: should apply background app water mark if app is not visible', t => {
   t.plan(2)
 
   var suite = bootstrap()
@@ -49,7 +49,7 @@ test('high water mark: should apply background app water mark if app is not key 
     })
 })
 
-test('high water mark: should apply key and visible app water mark if app is key and visible', t => {
+test('high water mark: should apply visible app water mark if app is visible', t => {
   t.plan(2)
 
   var suite = bootstrap()
@@ -59,7 +59,7 @@ test('high water mark: should apply key and visible app water mark if app is key
   setupWaterMark(memorySentinel)
   setupApp(memorySentinel, pid, appId)
 
-  mm.mockReturns(suite.component.visibility, 'getKeyAndVisibleAppId', appId)
+  mm.mockReturns(suite.component.visibility, 'getVisibleAppIds', [ appId ])
   mm.mockPromise(suite.component.appScheduler, 'suspendApp', () => {
     t.fail('unreachable path')
   })

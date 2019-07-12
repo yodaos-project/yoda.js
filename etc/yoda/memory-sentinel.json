@@ -2,11 +2,11 @@
   "enabled": true,
   "patrolInterval": 5000,
   "backgroundAppHighWaterMarkRatio": 0.1,
-  "keyAndVisibleAppHighWaterMarkRatio": 0.2,
+  "visibleAppHighWaterMarkRatio": 0.2,
   "warningDeviceLowWaterMarkRatio": 0.15,
   "fatalDeviceLowWaterMarkRatio": 0.1,
   "backgroundAppHighWaterMark": 0,
-  "keyAndVisibleAppHighWaterMark": 0,
+  "visibleAppHighWaterMark": 0,
   "warningDeviceLowWaterMark": 0,
   "fatalDeviceLowWaterMark": 0
 }

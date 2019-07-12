@@ -15,7 +15,7 @@ class MemorySentinel {
 
     this.memTotal = -1
     this.backgroundAppHWM = Infinity
-    this.keyAndVisibleAppHWM = Infinity
+    this.visibleAppHWM = Infinity
     this.warningDeviceLWM = -1
     this.fatalDeviceLWM = -1
 
@@ -25,13 +25,13 @@ class MemorySentinel {
       'enabled': true,
 
       'backgroundAppHighWaterMarkRatio': 1.0,
-      'keyAndVisibleAppHighWaterMarkRatio': 1.0,
+      'visibleAppHighWaterMarkRatio': 1.0,
       'warningDeviceLowWaterMarkRatio': 1.0,
       'fatalDeviceLowWaterMarkRatio': 1.0,
 
       /** {High,Low}WaterMarks are preferred than {High,Low}WaterMarkRatio */
       'backgroundAppHighWaterMark': 0,
-      'keyAndVisibleAppAppHighWaterMark': 0,
+      'visibleAppAppHighWaterMark': 0,
       'warningDeviceLowWaterMark': 0,
       'fatalDeviceLowWaterMark': 0,
 
@@ -56,9 +56,9 @@ class MemorySentinel {
   }
 
   /**
-   * Check app memory high water mark. Apps that is not key and visible app are
-   * checked against `backgroundAppHighWaterMark`. The key and visible app is
-   * checked against the `keyAndVisibleAppHighWaterMark`.
+   * Check app memory high water mark. Apps that is not visible apps are
+   * checked against `backgroundAppHighWaterMark`. The visible apps is
+   * checked against the `visibleAppHighWaterMark`.
    */
   compelHighWaterMark () {
     var pids = Object.keys(this.memMemo)
@@ -74,12 +74,12 @@ class MemorySentinel {
         delete this.memMemo[pid]
         return step(idx + 1)
       }
-      var isKeyAndVisible = this.component.visibility.getKeyAndVisibleAppId() === appId
+      var isVisible = this.component.visibility.getVisibleAppIds().indexOf(appId) >= 0
       var mem = this.memMemo[pid]
-      if (mem <= (isKeyAndVisible ? this.keyAndVisibleAppHWM : this.backgroundAppHWM)) {
+      if (mem <= (isVisible ? this.visibleAppHWM : this.backgroundAppHWM)) {
         return step(idx + 1)
       }
-      logger.warn(`app(${appId}:${pid}) memory reached ${isKeyAndVisible ? 'key and visible app' : 'background app'} high water mark, killing app...`)
+      logger.warn(`app(${appId}:${pid}) memory reached ${isVisible ? 'visible app' : 'background app'} high water mark, killing app...`)
       delete this.memMemo[pid]
       return this.appScheduler.suspendApp(appId, { force: true })
         .then(
@@ -96,8 +96,8 @@ class MemorySentinel {
 
   /**
    * check device free memory available. Send warning or kill victim if possible.
-   * Victims were determined by if the app is key and visible and if the app is
-   * daemon app and the current memory usage. Key and visible apps and daemon apps
+   * Victims were determined by if the app is visible and if the app is
+   * daemon app and the current memory usage. Visible apps and daemon apps
    * would be excluded from the process. The most memory consumer would be _elected_
    * as victim.
    */
@@ -126,12 +126,12 @@ class MemorySentinel {
   }
 
   findVictim () {
-    var keyAndVisibleAppId = this.component.visibility.getKeyAndVisibleAppId()
+    var visibleAppIds = this.component.visibility.getVisibleAppIds()
     var pids = Object.keys(this.memMemo)
 
     return pids.reduce((accu, pid) => {
       var appId = this.appScheduler.pidAppIdMap[pid]
-      if (appId === keyAndVisibleAppId || (this.component.appLoader.getAppManifest(appId) || {}).daemon) {
+      if (visibleAppIds.indexOf(appId) >= 0 || (this.component.appLoader.getAppManifest(appId) || {}).daemon) {
         return accu
       }
       var mem = this.memMemo[pid]
@@ -184,8 +184,8 @@ class MemorySentinel {
     if (this.config.backgroundAppHighWaterMark > 0) {
       this.backgroundAppHWM = this.config.backgroundAppHighWaterMark
     }
-    if (this.config.keyAndVisibleAppHighWaterMark > 0) {
-      this.keyAndVisibleAppHWM = this.config.keyAndVisibleAppHighWaterMark
+    if (this.config.visibleAppHighWaterMark > 0) {
+      this.visibleAppHWM = this.config.visibleAppHighWaterMark
     }
     if (this.config.warningDeviceLowWaterMark > 0) {
       this.warningDeviceLWM = this.config.warningDeviceLowWaterMark
@@ -203,8 +203,8 @@ class MemorySentinel {
         if (!(isFinite(this.backgroundAppHWM) && this.backgroundAppHWM > 0)) {
           this.backgroundAppHWM = Math.floor(memTotal * this.config.backgroundAppHighWaterMarkRatio)
         }
-        if (!(isFinite(this.keyAndVisibleAppHWM) && this.keyAndVisibleAppHWM > 0)) {
-          this.keyAndVisibleAppHWM = Math.floor(memTotal * this.config.keyAndVisibleAppHighWaterMarkRatio)
+        if (!(isFinite(this.visibleAppHWM) && this.visibleAppHWM > 0)) {
+          this.visibleAppHWM = Math.floor(memTotal * this.config.visibleAppHighWaterMarkRatio)
         }
         if (!(isFinite(this.warningDeviceLWM) && this.warningDeviceLWM > 0)) {
           this.warningDeviceLWM = Math.floor(memTotal * this.config.warningDeviceLowWaterMarkRatio)

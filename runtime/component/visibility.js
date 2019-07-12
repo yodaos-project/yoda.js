@@ -10,7 +10,7 @@ var VisibilityHandler = {
         return _.get(this.component.audioFocus.getCurrentFocus(), 'appId')
       }
     })
-    Object.defineProperty(this, 'visibilities', {
+    Object.defineProperty(this, 'visibleAppIds', {
       enumerable: true,
       get: () => {
         return [ this.component.audioFocus.transientRequest, this.component.audioFocus.lastingRequest ]
@@ -33,6 +33,7 @@ class Visibility {
     this.runtime = runtime
     this.component = runtime.component
     this.keyAndVisibleAppId = undefined
+    this.visibleAppIds = []
 
     var availableVisibilities = Object.keys(VisibilityHandler)
     var mainVisibility = manifest.get('capabilities.main-visibility', 'voice')
@@ -52,6 +53,10 @@ class Visibility {
    */
   getKeyAndVisibleAppId () {
     return this.keyAndVisibleAppId
+  }
+
+  getVisibleAppIds () {
+    return this.visibleAppIds
   }
 
   abandonKeyVisibility () {

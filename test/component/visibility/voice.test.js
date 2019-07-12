@@ -28,6 +28,23 @@ test('should get key and visible app id', t => {
   t.end()
 })
 
+test('should get all visible app ids', t => {
+  var tt = bootstrap()
+  var audioFocus = tt.component.audioFocus
+  var audioFocusDescriptor = tt.descriptor.audioFocus
+  var visibility = tt.component.visibility
+
+  mm.mockReturns(audioFocusDescriptor, 'emitToApp', function (appId, event, args) {})
+
+  audioFocus.request({
+    id: 1,
+    appId: 'test',
+    gain: 0b000 /** default */
+  })
+  t.deepEqual(visibility.getVisibleAppIds(), [ 'test' ])
+  t.end()
+})
+
 test('should abandon key visibility', t => {
   var tt = bootstrap()
   var audioFocus = tt.component.audioFocus
