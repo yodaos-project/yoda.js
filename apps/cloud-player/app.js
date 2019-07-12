@@ -23,7 +23,8 @@ var app = Application({
         voice = this.startVoice('player', [
           urlObj.query.text, urlObj.query.url,
           _.get(urlObj.query, 'transient', '1') === '1', /** defaults to transient */
-          _.get(urlObj.query, 'sequential', '0') === '1' /** defaults to sequential */
+          _.get(urlObj.query, 'sequential', '0') === '1', /** defaults to sequential */
+          urlObj.query.tag
         ])
         voice.tag = urlObj.query.tag
         break
