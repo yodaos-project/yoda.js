@@ -2,6 +2,20 @@
 
 var logger = require('logger')('main')
 var exodus = require('@yoda/exodus')
+var os = require('os')
+
+var systemConfig = {}
+try {
+  systemConfig = require('/etc/yoda/system-config.json')
+} catch (error) {
+  systemConfig = {}
+  logger.info('Not found: system-config.json')
+}
+
+// optimized startup
+if (systemConfig && systemConfig.bootPriority) {
+  os.setPriority(systemConfig.bootPriority)
+}
 
 require('@yoda/oh-my-little-pony')
   .catchUncaughtError('/data/system/yodart-err.log')
@@ -29,6 +43,10 @@ function entry () {
     logger.debug('vui is started')
 
     var runtime = new AppRuntime()
+    runtime.on('on-ready', () => {
+      // reset bootPriority
+      os.setPriority(0)
+    })
     runtime.init()
 
     // starts the watchdog when the runtime is initialized.

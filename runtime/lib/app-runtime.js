@@ -3,7 +3,6 @@
 /**
  * @namespace yodaRT
  */
-
 var EventEmitter = require('events').EventEmitter
 var inherits = require('util').inherits
 var Url = require('url')
@@ -1251,6 +1250,7 @@ AppRuntime.prototype.onLoggedIn = function onLoggedIn (config) {
   }
 
   var onDone = () => {
+    this.emit('on-ready', [])
     this.dispatchNotification('on-ready', [])
   }
 
