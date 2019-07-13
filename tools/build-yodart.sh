@@ -18,9 +18,11 @@ script/install --test && script/build --test
 cp -r out/usr/* /usr
 
 cd $workdir/vendor
-git clone https://github.com/json-c/json-c.git
+if ! test -d json-c; then
+  git clone https://github.com/json-c/json-c.git
+fi
 cd json-c
-mkdir build
+mkdir -p build
 cd build
 cmake ../
 make && make install

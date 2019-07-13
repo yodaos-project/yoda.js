@@ -18,3 +18,5 @@ vendor
 
 runtime/client/api/*
 !runtime/client/api/.gitkeep
+client/c/include/yodaos_api_container.h
+client/c/include/yodaos_apis.h

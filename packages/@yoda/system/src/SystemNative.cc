@@ -259,6 +259,40 @@ static napi_value MallocStats(napi_env env, napi_callback_info info) {
   return NULL;
 }
 
+static napi_value ClockGetTime(napi_env env, napi_callback_info info) {
+  clockid_t id;
+  size_t argc = 1;
+  napi_value argv[1];
+  napi_get_cb_info(env, info, &argc, argv, 0, 0);
+
+  napi_valuetype vt;
+  napi_typeof(env, argv[0], &vt);
+  if (vt != napi_number) {
+    napi_throw_type_error(env, "", "number expected");
+    return nullptr;
+  }
+  napi_get_value_int32(env, argv[0], (int32_t*)&id);
+
+  struct timespec ts;
+  int status = clock_gettime(id, &ts);
+  if (status != 0) {
+    napi_value err_code, err_msg, err;
+    char msg[50];
+    snprintf(msg, 50, "clock_gettime err(%d)", status);
+    napi_create_string_utf8(env, msg, NAPI_AUTO_LENGTH, &err_msg);
+    napi_create_error(env, NULL, err_msg, &err);
+    napi_throw(env, err);
+    return nullptr;
+  }
+  napi_value ret, nval_nsec, nval_sec;
+  napi_create_object(env, &ret);
+  napi_create_int64(env, ts.tv_nsec, &nval_nsec);
+  napi_create_int64(env, ts.tv_sec, &nval_sec);
+  napi_set_named_property(env, ret, "nsec", nval_nsec);
+  napi_set_named_property(env, ret, "sec", nval_sec);
+  return ret;
+}
+
 static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
     DECLARE_NAPI_PROPERTY("powerOff", PowerOff),
@@ -273,8 +307,13 @@ static napi_value Init(napi_env env, napi_value exports) {
     DECLARE_NAPI_PROPERTY("adjustMallocSettings", AdjustMallocSettings),
     DECLARE_NAPI_PROPERTY("mallocTrim", MallocTrim),
     DECLARE_NAPI_PROPERTY("mallocStats", MallocStats),
+    DECLARE_NAPI_PROPERTY("clockGetTime", ClockGetTime),
   };
   napi_define_properties(env, exports, sizeof(desc) / sizeof(*desc), desc);
+
+  NAPI_SET_CONSTANT(exports, CLOCK_REALTIME);
+  NAPI_SET_CONSTANT(exports, CLOCK_MONOTONIC);
+  NAPI_SET_CONSTANT(exports, CLOCK_PROCESS_CPUTIME_ID);
   return exports;
 }
 

@@ -1,5 +1,6 @@
 var _ = require('@yoda/util')._
 var Logger = require('logger')
+var system = require('@yoda/system')
 
 class BridgeError extends Error {
   constructor (message) {
@@ -90,7 +91,7 @@ class AppBridge {
   }
 
   refreshAnr () {
-    this.lastReportTimestamp = Date.now()
+    this.lastReportTimestamp = system.clockGetTime(system.CLOCK_MONOTONIC).sec
   }
 
   // MARK: - APIs for scheduler
