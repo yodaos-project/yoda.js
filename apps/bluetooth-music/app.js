@@ -2,7 +2,6 @@
 
 var logger = require('logger')('bluetooth-music')
 var Application = require('@yodaos/application').Application
-var rt = global[Symbol.for('yoda#api')]
 var bluetooth = require('@yoda/bluetooth')
 var protocol = bluetooth.protocol
 var AudioFocus = require('@yodaos/application').AudioFocus
@@ -49,7 +48,7 @@ function onAudioFocusLost (transient, mayDuck) {
   } else {
     uploadEvent(protocol.AUDIO_STATE.STOPPED)
     app.openUrl('yoda-app://bluetooth/implied_close')
-    rt.exit()
+    needResume = false
   }
 }
 
@@ -89,7 +88,6 @@ function handleUrl (url) {
           audioFocus.abandon()
         } else {
           app.openUrl('yoda-app://bluetooth/disconnect')
-          rt.exit()
         }
       }
       break
@@ -105,9 +103,6 @@ function handleUrl (url) {
     case '/info':
       a2dp.query()
       lastUrl = url
-      break
-    case '/quit':
-      rt.exit()
       break
     case '/PLAYING':
       logger.debug('focus state:', audioFocus.state)
