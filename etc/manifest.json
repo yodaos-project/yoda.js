@@ -7,6 +7,7 @@
   },
   "defaults": {
     "audio.volume.init": 60,
-    "audio.volume.recover": 30
+    "audio.volume.recover": 30,
+    "ota.constraint.additional_available_space_kb": 5120
   }
 }

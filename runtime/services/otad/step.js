@@ -4,6 +4,7 @@ var logger = require('logger')('otad/step')
 var system = require('@yoda/system')
 var yodaUtil = require('@yoda/util')
 var property = require('@yoda/property')
+var manifest = require('@yoda/manifest')
 
 var common = require('@yoda/ota')
 var lock = require('@yoda/ota/lock')
@@ -14,6 +15,7 @@ var wget = require('./wget')
 
 var compose = yodaUtil.compose
 var systemVersionProp = 'ro.build.version.release'
+var additionalAvailableSpaceConstraintKey = 'ota.constraint.additional_available_space_kb'
 
 /**
  * Calculate if there is available disk space left for pending image to be downloaded.
@@ -37,7 +39,12 @@ function checkDiskAvailability (imageSize, destPath, callback) {
     }
     var diskUsage = system.diskUsage(constants.upgradeDir)
     var left = diskUsage.available - imageSize + downloadedSize
-    if (left < 5 * 1024 * 1024) {
+    var additionalAvailableSpaceConstraint = manifest.getDefaultValue(additionalAvailableSpaceConstraintKey) * 1024
+    if (isNaN(additionalAvailableSpaceConstraint)) {
+      additionalAvailableSpaceConstraint = 5 * 1024 * 1024
+    }
+    logger.info(`requesting additional available space ${additionalAvailableSpaceConstraint}kB, left after download ${left / 1024}kB`)
+    if (left < additionalAvailableSpaceConstraint) {
       /**
        * no space left for new image, try remove existed images
        * TODO: monkey army, remove arbitrary low prioritized files
@@ -50,7 +57,7 @@ function checkDiskAvailability (imageSize, destPath, callback) {
           }
         }
         callback(new Error(
-          `Disk space not available for new ota image, expect ${imageSize}, got ${diskUsage.available}`))
+          `Disk space not available for new ota image, expect ${imageSize} bytes, got ${diskUsage.available} bytes`))
       })
     }
     callback(null, true)

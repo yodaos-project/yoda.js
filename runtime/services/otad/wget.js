@@ -94,7 +94,6 @@ function fetchImageSize (urlStr, callback) {
       var headers = res.headers
       var contentLengthStr = headers['content-length']
       var contentLength = Number(contentLengthStr)
-      require('logger')('wget').warn('content length', contentLength)
       if (isNaN(contentLength)) {
         callback(new Error(`Failed to fetch ota image size. Got ${contentLengthStr}`))
         return
