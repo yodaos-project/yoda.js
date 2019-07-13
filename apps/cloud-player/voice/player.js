@@ -22,7 +22,14 @@ module.exports = function Player (text, url, transient, sequential, tag) {
       this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.start, tag ])
     })
     focus.player.on('playbackcomplete', () => {
+      focus.player.playbackComplete = true
       this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.end, tag ])
+      if (sequential || !speechSynthesis.speaking) {
+        focus.abandon()
+      }
+    })
+    focus.player.on('error', (err) => {
+      logger.error('unexpected player error', err.stack)
       if (sequential || !speechSynthesis.speaking) {
         focus.abandon()
       }
@@ -73,6 +80,9 @@ module.exports = function Player (text, url, transient, sequential, tag) {
       speechSynthesis.cancel()
     }
     if (!transient || focus.player == null) {
+      if (focus.player && !focus.player.playbackComplete) {
+        this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.cancel, tag ])
+      }
       focus.player && focus.player.stop()
       this.finishVoice(focus)
       return
