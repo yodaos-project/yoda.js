@@ -10,7 +10,6 @@ bool PcmPlayer::init(pa_sample_spec ss) {
   if (stream)
     return true;
 
-  tp = new ThreadPool(1);
   int err;
   stream = pa_simple_new(nullptr, "speech-synthesizer", PA_STREAM_PLAYBACK,
                          nullptr, "tts", &ss, nullptr, nullptr, &err);
@@ -27,8 +26,7 @@ void PcmPlayer::destroy() {
     pa_simple_free(stream);
     RKLogv("pa_simple_free");
     stream = nullptr;
-    tp->close();
-    delete tp;
+    tp.finish();
   }
 }
 
@@ -43,7 +41,7 @@ bool PcmPlayer::write(std::vector<uint8_t>& data) {
     status = player_status_playing;
   }
 
-  tp->push([this, data]() {
+  tp.push([this, data]() {
     if (stream == nullptr) {
       RKLogw("Unexpected null on stream");
       return;
@@ -74,7 +72,7 @@ void PcmPlayer::end() {
   if (status == player_status_playing) {
     status = player_status_pending_end;
   }
-  tp->push([this]() {
+  tp.push([this]() {
     if (stream == nullptr) {
       RKLogw("Unexpected null on stream");
       return;
@@ -100,8 +98,6 @@ void PcmPlayer::end() {
     }
     /** set player as deprecated */
     status = player_status_end;
-    /** clears all pending tasks on end */
-    tp->clear();
   });
 }
 
@@ -119,6 +115,6 @@ void PcmPlayer::cancel() {
     RKLogw("flush data error(%d): %s", err, pa_strerror(err));
   }
   /** clears pending writes */
-  tp->clear();
+  tp.finish();
   this->end();
 }
