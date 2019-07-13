@@ -9,7 +9,7 @@ test('should load device info', t => {
   memorySentinel.loadDeviceInfo()
     .then(() => {
       ;['backgroundAppHWM',
-        'keyAndVisibleAppHWM',
+        'visibleAppHWM',
         'warningDeviceLWM',
         'fatalDeviceLWM'
       ].forEach(it => {

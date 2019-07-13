@@ -13,7 +13,7 @@ function setupApp (memorySentinel, pid, appId, mem) {
   memorySentinel.appScheduler.pidAppIdMap[pid] = appId
 }
 
-test('find victim: should exclude current key and visible app', t => {
+test('find victim: should exclude current visible apps', t => {
   var suite = bootstrap()
   var memorySentinel = suite.component.memorySentinel
   var pid = 123
@@ -21,7 +21,7 @@ test('find victim: should exclude current key and visible app', t => {
   setupWaterMark(memorySentinel)
   setupApp(memorySentinel, pid, appId)
 
-  mm.mockReturns(suite.component.visibility, 'getKeyAndVisibleAppId', appId)
+  mm.mockReturns(suite.component.visibility, 'getVisibleAppIds', [ appId ])
   var victim = memorySentinel.findVictim()
   t.ok(victim == null)
   t.end()
