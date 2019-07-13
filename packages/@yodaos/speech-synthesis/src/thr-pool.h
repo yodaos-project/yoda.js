@@ -48,6 +48,8 @@ class ThreadPool {
         thr_cond.notify_one();
         locker.unlock();
         thr.join();
+        locker.lock();
+        flags = 0;
       }
     }
 
@@ -90,10 +92,10 @@ class ThreadPool {
   }
 
   ~ThreadPool() {
-    close();
+    finish();
   }
 
-  void push(TaskFunc& task) {
+  void push(TaskFunc task) {
     std::lock_guard<std::mutex> locker(task_mutex);
     if (idle_threads.empty()) {
       pending_tasks.push_back(task);
@@ -103,21 +105,7 @@ class ThreadPool {
     }
   }
 
-  void push(TaskFunc&& task) {
-    push(task);
-  }
-
-  void clear() {
-    std::lock_guard<std::mutex> locker(task_mutex);
-    pending_tasks.clear();
-  }
-
   void finish() {
-    close();
-    init_idle_threads();
-  }
-
-  void close() {
     size_t sz = thread_array.size();
     size_t i;
     for (i = 0; i < sz; ++i) {
@@ -125,7 +113,6 @@ class ThreadPool {
     }
     std::lock_guard<std::mutex> locker(task_mutex);
     pending_tasks.clear();
-    idle_threads.clear();
   }
 
  private:

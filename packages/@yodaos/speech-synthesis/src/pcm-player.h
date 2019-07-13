@@ -38,6 +38,6 @@ class PcmPlayer {
  private:
   EventListener onevent;
   pa_simple* stream = nullptr;
-  ThreadPool* tp;
+  ThreadPool tp{ 1 };
   PcmPlayerStatus status = player_status_pending;
 };
