@@ -1,6 +1,7 @@
 'use strict'
 var logger = require('logger')('scheduler')
 var _ = require('@yoda/util')._
+var system = require('@yoda/system')
 
 var Constants = require('../constants').AppScheduler
 var AppBridge = require('../app/app-bridge')
@@ -32,17 +33,6 @@ AppScheduler.prototype.init = function init () {
 AppScheduler.prototype.deinit = function deinit () {
   clearInterval(this.anrSentinelTimer)
   this.anrSentinelTimer = null
-}
-
-/**
- * Invoked when time changed by NTP service.
- */
-AppScheduler.prototype.timeDidChanged = function timeDidChanged () {
-  Object.keys(this.appMap)
-    .map(appId => {
-      var bridge = this.appMap[appId]
-      bridge.lastReportTimestamp = NaN
-    })
 }
 
 AppScheduler.prototype.isAppRunning = function isAppRunning (appId) {
@@ -285,8 +275,7 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
 }
 
 AppScheduler.prototype.anrSentinel = function anrSentinel () {
-  // FIXME: replace it with CLOCK_MONOTONIC
-  var now = Date.now()
+  var now = system.clockGetTime(system.CLOCK_MONOTONIC).sec
   return Promise.all(
     Object.keys(this.appMap)
       .map(appId => {
@@ -296,7 +285,7 @@ AppScheduler.prototype.anrSentinel = function anrSentinel () {
           return
         }
         var delta = now - lastReportTimestamp
-        if (delta < 15 * 1000 /** 15s */) {
+        if (delta < 15 /** 15s */) {
           return
         }
         logger.warn(`ANR: app(${appId}) has not been reported alive for ${delta}ms.`)

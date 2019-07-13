@@ -1,1 +1,9 @@
 @yodaos/speech-synthesis/*.test.js
+client/light-launcher.test.js
+component/app-scheduler/*.test.js
+component/dispatcher/*.test.js
+component/keyboard/*.test.js
+descriptor/activity/*.test.js
+descriptor/effect/*.test.js
+descriptor/keyboard/*.test.js
+descriptor/runtime/*.test.js

@@ -5,7 +5,6 @@
  */
 
 var native = require('./system.node')
-var property = require('@yoda/property')
 
 /**
  * Power off the device.
@@ -15,6 +14,7 @@ var property = require('@yoda/property')
  * @private
  */
 exports.powerOff = function powerOff (reason) {
+  var property = require('@yoda/property')
   property.set('sys.power_off.reason', reason || 'system', 'persist')
   property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.powerOff())
@@ -28,6 +28,7 @@ exports.powerOff = function powerOff (reason) {
  * @private
  */
 exports.rebootCharging = function rebootCharging () {
+  var property = require('@yoda/property')
   property.set('sys.power_off.reason', 'charging', 'persist')
   property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.rebootCharging())
@@ -42,6 +43,7 @@ exports.rebootCharging = function rebootCharging () {
  * @private
  */
 exports.reboot = function reboot (reason) {
+  var property = require('@yoda/property')
   property.set('sys.power_off.reason', reason || 'reboot', 'persist')
   property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.reboot())
@@ -140,6 +142,7 @@ exports.parseDateString = function parseDateString (date, format) {
  * @returns {string} the device name.
  */
 exports.getDeviceName = function getDeviceName () {
+  var property = require('@yoda/property')
   var uuid = (property.get('ro.boot.serialno') || '').substr(-6)
   var productName = property.get('ro.rokid.build.productname') || 'Rokid-speaker-'
   var deviceName = [ productName, uuid ].join('-')
@@ -166,4 +169,11 @@ exports.mallocTrim = function mallocTrim () {
  */
 exports.mallocStats = function mallocStats () {
   return native.mallocStats()
+}
+
+exports.CLOCK_REALTIME = native.CLOCK_REALTIME
+exports.CLOCK_MONOTONIC = native.CLOCK_MONOTONIC
+exports.CLOCK_PROCESS_CPUTIME_ID = native.CLOCK_PROCESS_CPUTIME_ID
+exports.clockGetTime = function clockGetTime (clockId) {
+  return native.clockGetTime(clockId)
 }
