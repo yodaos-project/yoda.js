@@ -64,6 +64,36 @@ test('should throw if disk space not available', t => {
   })
 })
 
+test('should skip fetching image size if ota info has it', t => {
+  var delegation = new Delegation()
+  mock.mockCallback(delegation, 'prelude', null, true)
+  mock.mockCallback(delegation, 'fetchOtaInfo', null, {
+    imageUrl: 'https://example.com',
+    imageSize: 1024 * 1024 * 1024 * 1024, /** 1T */
+    version: 'foobar',
+    integrity: '99d7bdf3ecf03f3fd081d7b835c7347f'
+  })
+
+  mock.mockCallback(wget, 'fetchImageSize', new Error('unreachable'))
+  mock.mockCallback(wget, 'download', () => {
+    t.fail('unreachable path')
+  })
+
+  mock.mockReturns(system, 'diskUsage', (path) => {
+    t.ok(/\/data\/upgrade/.test(path), path)
+    return {
+      available: 100 /** 100 Bytes */
+    }
+  })
+  ota.runInCurrentContext(delegation, function onOTA (err, info) {
+    t.throws(() => { throw err }, 'Disk space not available')
+    t.assert(info == null)
+
+    mock.restore()
+    t.end()
+  })
+})
+
 test('should download image and validate checksum', t => {
   var delegation = new Delegation()
   mock.mockCallback(delegation, 'checkIntegrity', null, '99d7bdf3ecf03f3fd081d7b835c7347f')
