@@ -32,9 +32,16 @@ module.exports = function TtsStream (pickupOnEnd) {
           this.openUrl('yoda-app://launcher/pickup')
         }
       })
+
     this.agent.declareMethod(GetStreamChannel, (req, res) => {
       logger.info('on get stream channel', utter.id)
       res.end(0, [utter.id])
+
+      /**
+       * Remove method immediately after first successful invocation.
+       * Prevent confusing stream name between consecutive stream request.
+       */
+      this.agent.removeMethod(GetStreamChannel)
     })
   }
   focus.onLoss = () => {
