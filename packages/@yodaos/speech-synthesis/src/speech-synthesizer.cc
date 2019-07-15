@@ -98,48 +98,8 @@ Value SpeechSynthesizer::speak(const CallbackInfo& info) {
   auto id = utter.Get("id").As<String>().Utf8Value();
   auto text = utter.Get("text").As<String>().Utf8Value();
 
-  /**
-   * prevent process from exit while there are active SpeechSynthesis requests
-   */
-  napi_ref_threadsafe_function(env, this->tsfn);
-  this->errCode = 0;
+  this->createPlayer(env, id);
 
-  pa_sample_spec ss;
-  ss.format = PA_SAMPLE_S16NE;
-  ss.channels = 1;
-  ss.rate = 24000;
-  this->player = new PcmPlayer([this](PcmPlayerEvent eve) {
-    RKLogv("on player event(%d)", eve);
-    napi_call_threadsafe_function(this->tsfn, (void*)(uintptr_t)eve,
-                                  napi_tsfn_blocking);
-  });
-  this->player->init(ss);
-
-  this->id = id;
-  this->floraAgent.subscribe(id.c_str(),
-                             [this](const char* name,
-                                    std::shared_ptr<Caps>& msg, uint32_t type) {
-                               int32_t status = 0;
-                               msg->read(status);
-                               if (status > 0) {
-                                 RKLogv("end(%d)", status);
-                                 this->player->end();
-                                 this->floraAgent.unsubscribe(this->id.c_str());
-                                 return;
-                               }
-                               if (status < 0) {
-                                 RKLogv("error(%d)", status);
-                                 this->errCode = status;
-                                 this->player->cancel();
-                                 this->floraAgent.unsubscribe(this->id.c_str());
-                                 return;
-                               }
-
-                               std::vector<uint8_t> data;
-                               msg->read(data);
-                               RKLogv("write data(%zu)", data.size());
-                               this->player->write(data);
-                             });
   std::shared_ptr<Caps> msg = Caps::new_instance();
   msg->write(id);
   msg->write(text);
@@ -186,6 +146,12 @@ Value SpeechSynthesizer::playStream(const CallbackInfo& info) {
   Object utter = info[0].As<Object>();
   auto id = utter.Get("id").As<String>().Utf8Value();
 
+  this->createPlayer(env, id);
+
+  return env.Undefined();
+}
+
+void SpeechSynthesizer::createPlayer(Napi::Env env, const std::string& id) {
   /**
    * prevent process from exit while there are active SpeechSynthesis requests
    */
@@ -197,36 +163,44 @@ Value SpeechSynthesizer::playStream(const CallbackInfo& info) {
   ss.channels = 1;
   ss.rate = 24000;
   this->player = new PcmPlayer([this](PcmPlayerEvent eve) {
+    RKLogv("on player event(%d)", eve);
     napi_call_threadsafe_function(this->tsfn, (void*)(uintptr_t)eve,
                                   napi_tsfn_blocking);
   });
   this->player->init(ss);
 
   this->id = id;
-  this->floraAgent.subscribe(id.c_str(),
-                             [this](const char* name,
-                                    std::shared_ptr<Caps>& msg, uint32_t type) {
-                               int32_t status = 0;
-                               msg->read(status);
-                               if (status > 0) {
-                                 RKLogv("end(%d)", status);
-                                 this->player->end();
-                                 this->floraAgent.unsubscribe(this->id.c_str());
-                                 return;
-                               }
-                               if (status < 0) {
-                                 RKLogv("error(%d)", status);
-                                 this->errCode = status;
-                                 this->player->cancel();
-                                 this->floraAgent.unsubscribe(this->id.c_str());
-                                 return;
-                               }
+  this->floraAgent.subscribe(id.c_str(), [this](const char* name,
+                                                std::shared_ptr<Caps>& msg,
+                                                uint32_t type) {
+    RKLogv("write locking");
+    std::lock_guard<std::mutex> guard(this->playerMutex);
+    if (this->player == nullptr) {
+      RKLogv("player has been released");
+      return;
+    }
 
-                               std::vector<uint8_t> data;
-                               msg->read(data);
-                               this->player->write(data);
-                             });
-  return env.Undefined();
+    int32_t status = 0;
+    msg->read(status);
+    if (status > 0) {
+      RKLogv("end(%d)", status);
+      this->floraAgent.unsubscribe(this->id.c_str());
+      this->player->end();
+      return;
+    }
+    if (status < 0) {
+      RKLogv("error(%d)", status);
+      this->floraAgent.unsubscribe(this->id.c_str());
+      this->errCode = status;
+      this->player->cancel();
+      return;
+    }
+
+    std::vector<uint8_t> data;
+    msg->read(data);
+    RKLogv("write data(%zu)", data.size());
+    this->player->write(data);
+  });
 }
 
 void SpeechSynthesizer::onevent(Napi::Function fn, void* data) {
@@ -239,8 +213,13 @@ void SpeechSynthesizer::onevent(Napi::Function fn, void* data) {
      * allow process to exit while there is no active SpeechSynthesis requests
      */
     napi_unref_threadsafe_function(env, this->tsfn);
-    delete this->player;
-    this->player = nullptr;
+    {
+      RKLogv("release player locking");
+      std::lock_guard<std::mutex> guard(playerMutex);
+      auto player = this->player;
+      this->player = nullptr;
+      delete player;
+    }
   }
 
   RKLogv("calling js for Event(%d)", eve);

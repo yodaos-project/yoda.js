@@ -23,11 +23,13 @@ class SpeechSynthesizer : public Napi::ObjectWrap<SpeechSynthesizer> {
   Napi::Value playStream(const Napi::CallbackInfo& info);
   Napi::Value cancel(const Napi::CallbackInfo& info);
 
+  void createPlayer(Napi::Env env, const std::string& id);
   void onevent(Napi::Function fn, void* data);
 
  private:
   std::string id;
   PcmPlayer* player = nullptr;
+  std::mutex playerMutex;
   int32_t errCode = 0;
 
   flora::Agent floraAgent;
