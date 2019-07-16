@@ -77,13 +77,14 @@ AlarmCore.prototype._transferPattern = function (dateTime, repeatType, option) {
   var h = parseInt(fullTime[0])
   var day = parseInt(fullDate[2])
   var month = parseInt(fullDate[1])
-  if (Number(repeatType) === 2) { // day repeat
+  var repeat = Number(repeatType)
+  if (repeat === 2) { // day repeat
     return s + ' ' + m + ' ' + h + ' * * *'
-  } else if (Number(repeatType) === 3) { // week repeat
+  } else if (repeat === 3) { // week repeat
     return s + ' ' + m + ' ' + h + ' * * ' + option
-  } else if (Number(repeatType) === 4) { // month repeat
+  } else if (repeat === 4) { // month repeat
     return s + ' ' + m + ' ' + h + ' ' + option + ' * *'
-  } else if (Number(repeatType) === 5) { // year repeat
+  } else if (repeat === 5) { // year repeat
     return s + ' ' + m + ' ' + h + ' ' + option + ' *'
   }
   return s + ' ' + m + ' ' + h + ' ' + day + ' ' + month + ' *'
@@ -479,7 +480,8 @@ AlarmCore.prototype.isAlarmDataValid = function isAlarmDataValid (alarmData, noN
 
 AlarmCore.prototype.getRepeatOption = function getRepeatOption (alarmData) {
   var option = ''
-  if (Number(alarmData.repeat) === 3) { // week repeat
+  var repeatType = Number(alarmData.repeat)
+  if (repeatType === 3) { // week repeat
     var dayOfWeekOn = alarmData.dayofweek_on
     var isRepeatD1 = dayOfWeekOn.substring(0, 1)
     var isRepeatD2 = dayOfWeekOn.substring(1, 2)
@@ -510,10 +512,10 @@ AlarmCore.prototype.getRepeatOption = function getRepeatOption (alarmData) {
     if (isRepeatD7 === '1') {
       option = (option === '' ? '0' : option + ',0')
     }
-  } else if (Number(alarmData.repeat) === 4) { // month repeat
+  } else if (repeatType === 4) { // month repeat
     var dayOfMonthOn = alarmData.dayofmonth_on
     option = dayOfMonthOn
-  } else if (Number(alarmData.repeat) === 5) { // year repeat
+  } else if (repeatType === 5) { // year repeat
     var dayOfYearOn = alarmData.dayofyear_on
     var monthDay = dayOfYearOn.split('_')
     var month = monthDay[0]
