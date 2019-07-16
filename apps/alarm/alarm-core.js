@@ -77,13 +77,13 @@ AlarmCore.prototype._transferPattern = function (dateTime, repeatType, option) {
   var h = parseInt(fullTime[0])
   var day = parseInt(fullDate[2])
   var month = parseInt(fullDate[1])
-  if (repeatType == 2) { // day repeat
+  if (Number(repeatType) === 2) { // day repeat
     return s + ' ' + m + ' ' + h + ' * * *'
-  } else if (repeatType == 3) { // week repeat
+  } else if (Number(repeatType) === 3) { // week repeat
     return s + ' ' + m + ' ' + h + ' * * ' + option
-  } else if (repeatType == 4) { // month repeat
+  } else if (Number(repeatType) === 4) { // month repeat
     return s + ' ' + m + ' ' + h + ' ' + option + ' * *'
-  } else if (repeatType == 5) { // year repeat
+  } else if (Number(repeatType) === 5) { // year repeat
     return s + ' ' + m + ' ' + h + ' ' + option + ' *'
   }
   return s + ' ' + m + ' ' + h + ' ' + day + ' ' + month + ' *'
@@ -197,7 +197,7 @@ AlarmCore.prototype._clearTask = function (mode, option, isForce) {
     this.jobQueue.splice(idx, 1)
   }
   logger.info('_clearTask-----> option: ', option)
-  if (option.repeat == 1 || isForce) {
+  if (Number(option.repeat) === 1 || isForce) {
     this.scheduleHandler.clear(option.id)
     this._setConfig([{ command: option, mode: 'remove' }])
   }
@@ -376,7 +376,7 @@ AlarmCore.prototype.init = function (command, isUpdateNative) {
     flag = true
     var commandOpt = this._formatCommandData(command[i])
     logger.log('alarm init -------> ', commandOpt.id, ' && commandOpt.repeat : ', commandOpt.repeat)
-    if (commandOpt.repeat == 1) { // once alarm/reminder need check expired time
+    if (Number(commandOpt.repeat) === 1) { // once alarm/reminder need check expired time
       var nowDate = new Date()
       var nowDateTime = nowDate.getTime()
       var alarmDate = this.formatAlarmDate(commandOpt.time)
@@ -479,7 +479,7 @@ AlarmCore.prototype.isAlarmDataValid = function isAlarmDataValid (alarmData, noN
 
 AlarmCore.prototype.getRepeatOption = function getRepeatOption (alarmData) {
   var option = ''
-  if (alarmData.repeat == 3) { // week repeat
+  if (Number(alarmData.repeat) === 3) { // week repeat
     var dayOfWeekOn = alarmData.dayofweek_on
     var isRepeatD1 = dayOfWeekOn.substring(0, 1)
     var isRepeatD2 = dayOfWeekOn.substring(1, 2)
@@ -510,10 +510,10 @@ AlarmCore.prototype.getRepeatOption = function getRepeatOption (alarmData) {
     if (isRepeatD7 === '1') {
       option = (option === '' ? '0' : option + ',0')
     }
-  } else if (alarmData.repeat == 4) { // month repeat
+  } else if (Number(alarmData.repeat) === 4) { // month repeat
     var dayOfMonthOn = alarmData.dayofmonth_on
     option = dayOfMonthOn
-  } else if (alarmData.repeat == 5) { // year repeat
+  } else if (Number(alarmData.repeat) === 5) { // year repeat
     var dayOfYearOn = alarmData.dayofyear_on
     var monthDay = dayOfYearOn.split('_')
     var month = monthDay[0]
