@@ -178,7 +178,7 @@ module.exports = (function () {
           expression: expression,
           tts: param.feedback_utterance,
           time: param.time,
-          createTime: new Date().getMilliseconds()
+          createTime: new Date().getTime()
         }
       }
       return scheduleJob
