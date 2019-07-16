@@ -7,6 +7,7 @@
 component/app-loader/*.test.js
 component/audio-focus/*.test.js
 component/chronos/*.test.js
+component/media-controller/*.test.js
 component/visibility/*.test.js
 packages/logger/*.test.js
 packages/lru-cache/*.test.js

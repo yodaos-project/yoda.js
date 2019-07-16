@@ -7,6 +7,7 @@ var properties = {}
 ;[
   { name: 'Application', path: './application' },
   { name: 'AudioFocus', path: './audio-focus' },
+  { name: 'NowPlayingCenter', path: './now-playing-center' },
   { name: 'Service', path: './service' },
   { name: 'vui', path: './vui' }
 ].forEach(it => {
