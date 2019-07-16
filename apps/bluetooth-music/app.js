@@ -68,7 +68,11 @@ function handleUrl (url) {
   resetLastUrl()
   switch (url) {
     case '/start':
-      a2dp.play()
+      if (!a2dp.isConnected()) {
+        app.openUrl('yoda-app://bluetooth/open_and_play')
+      } else {
+        a2dp.play()
+      }
       lastUrl = url
       break
     case '/pause':
