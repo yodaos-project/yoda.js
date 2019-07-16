@@ -23,10 +23,10 @@ bool PcmPlayer::init(pa_sample_spec ss) {
 
 void PcmPlayer::destroy() {
   if (stream) {
+    tp.finish();
     pa_simple_free(stream);
     RKLogv("pa_simple_free");
     stream = nullptr;
-    tp.finish();
   }
 }
 
