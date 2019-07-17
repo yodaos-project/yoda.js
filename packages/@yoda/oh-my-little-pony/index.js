@@ -32,7 +32,11 @@ process.on('SIGUSR2', function () {
   logger.debug('memory usage is at', process.memoryUsage())
 })
 
-function catchUncaughtError (logfile) {
+function catchUncaughtError (logfile, callback) {
+  if (typeof logfile === 'function') {
+    callback = logfile
+    logfile = undefined
+  }
   var stream
   if (logfile) {
     yodaUtil.fs.mkdirp(path.dirname(logfile), (err) => {
@@ -48,12 +52,14 @@ function catchUncaughtError (logfile) {
     logger.error('Uncaught Exception', err)
     stream && stream.write(`[${new Date().toISOString()}] <${process.argv[1]}> Uncaught Exception:
 ${err.stack}\n`, () => {})
+    callback && callback(err)
   })
 
   process.on('unhandledRejection', err => {
     logger.error('Unhandled Rejection', err)
     stream && stream.write(`[${new Date().toISOString()}] <${process.argv[1]}> Unhandled Rejection:
 ${err.stack}\n`, () => {})
+    callback && callback(err)
   })
 
   return module.exports
