@@ -20,7 +20,7 @@ module.exports = (function () {
      *  1. if there is only one task at the moment, return true.
      *  2. if there are concurrent tasks at the moment:
      *      1. both reminders and clocks, only reminders can be run, clocks cannot be run.
-     *      2. only reminders: combine reminders tts and play once.
+     *      2. only reminders: combine reminder memo_text..
      *      3. only clocks: run the last setting clock.
      */
     function compareTask (id, current, refered) {
@@ -32,6 +32,12 @@ module.exports = (function () {
       } else {
         if (priority[current.type] > priority[refered.type]) {
           return true
+        } else if (priority[current.type] === priority[refered.type]) {
+          if (current.createTime > refered.createTime) {
+            return true
+          } else {
+            return false
+          }
         } else {
           return false
         }
@@ -77,11 +83,13 @@ module.exports = (function () {
           var currentObj = {
             type: self.jobs[id].type,
             expression: self.jobs[id].expression,
+            createTime: self.jobs[id].createTime,
             tts: self.jobs[id].tts
           }
           var referedObj = {
             type: self.jobs[key].type,
-            expression: self.jobs[key].expression
+            expression: self.jobs[key].expression,
+            createTime: self.jobs[key].createTime
           }
           var compareResult = compareTask(id, currentObj, referedObj)
           if (currentObj.type === 'reminder') {
@@ -169,7 +177,8 @@ module.exports = (function () {
           pattern: task.initialPattern,
           expression: expression,
           tts: param.feedback_utterance,
-          time: param.time
+          time: param.time,
+          createTime: new Date().getTime()
         }
       }
       return scheduleJob

@@ -29,6 +29,7 @@ var TYPE_ALARM = 'alarm'
 function AlarmCore (api) {
   this.scheduleHandler = new Cron.Schedule()
   this.jobQueue = []
+  this.reminderTTS = []
   this.taskTimeout = null
   this.volumeInterval = null
   this.stopTimeout = null
@@ -76,13 +77,14 @@ AlarmCore.prototype._transferPattern = function (dateTime, repeatType, option) {
   var h = parseInt(fullTime[0])
   var day = parseInt(fullDate[2])
   var month = parseInt(fullDate[1])
-  if (repeatType === 2) { // day repeat
+  var repeat = Number(repeatType)
+  if (repeat === 2) { // day repeat
     return s + ' ' + m + ' ' + h + ' * * *'
-  } else if (repeatType === 3) { // week repeat
+  } else if (repeat === 3) { // week repeat
     return s + ' ' + m + ' ' + h + ' * * ' + option
-  } else if (repeatType === 4) { // month repeat
+  } else if (repeat === 4) { // month repeat
     return s + ' ' + m + ' ' + h + ' ' + option + ' * *'
-  } else if (repeatType === 5) { // year repeat
+  } else if (repeat === 5) { // year repeat
     return s + ' ' + m + ' ' + h + ' ' + option + ' *'
   }
   return s + ' ' + m + ' ' + h + ' ' + day + ' ' + month + ' *'
@@ -196,7 +198,7 @@ AlarmCore.prototype._clearTask = function (mode, option, isForce) {
     this.jobQueue.splice(idx, 1)
   }
   logger.info('_clearTask-----> option: ', option)
-  if (option.repeat === 1 || isForce) {
+  if (Number(option.repeat) === 1 || isForce) {
     this.scheduleHandler.clear(option.id)
     this._setConfig([{ command: option, mode: 'remove' }])
   }
@@ -243,7 +245,10 @@ AlarmCore.prototype._taskCallback = function (option, isLocal) {
     var status = (reply.network.state === network.CONNECTED) && !isLocal
     var tts = option.memo_text
     if (option.type === TYPE_REMINDER) {
-      tts = (option.memo_text || '提醒') + '时间到'
+      this.reminderTTS.push(option.memo_text)
+      tts = (this.reminderTTS.join(',') || '提醒') + '时间到'
+      logger.info('_taskCallback-----> reminder tts is ', tts)
+      this.reminderTTS = []
       this.startTts = true
       if (status) {
         return this._ttsSpeak(tts).then(() => {
@@ -300,7 +305,6 @@ AlarmCore.prototype._taskCallback = function (option, isLocal) {
  * @param {String} Options mode
  */
 AlarmCore.prototype._onTaskActive = function (option) {
-  this.clearAll()
   logger.log('alarm: ', option.id, ' start ')
   var mode = option.mode
   if (this.jobQueue.indexOf(option.id) > -1) {
@@ -310,9 +314,13 @@ AlarmCore.prototype._onTaskActive = function (option) {
   var jobConf = this.scheduleHandler.getJobConfig(option.id)
   if (!jobConf) {
     logger.log('alarm: ' + option.id + ' can not run')
+    if (option.type === TYPE_REMINDER) {
+      this.reminderTTS.push(option.memo_text)
+    }
     this._clearTask(mode, option)
     return
   }
+  this.clearAll()
   this.activeOption = option
   this._controlVolume(10, 1000, 7)
   this.startTts = false
@@ -369,7 +377,7 @@ AlarmCore.prototype.init = function (command, isUpdateNative) {
     flag = true
     var commandOpt = this._formatCommandData(command[i])
     logger.log('alarm init -------> ', commandOpt.id, ' && commandOpt.repeat : ', commandOpt.repeat)
-    if (commandOpt.repeat === 1) { // once alarm/reminder need check expired time
+    if (Number(commandOpt.repeat) === 1) { // once alarm/reminder need check expired time
       var nowDate = new Date()
       var nowDateTime = nowDate.getTime()
       var alarmDate = this.formatAlarmDate(commandOpt.time)
@@ -472,7 +480,8 @@ AlarmCore.prototype.isAlarmDataValid = function isAlarmDataValid (alarmData, noN
 
 AlarmCore.prototype.getRepeatOption = function getRepeatOption (alarmData) {
   var option = ''
-  if (alarmData.repeat === 3) { // week repeat
+  var repeatType = Number(alarmData.repeat)
+  if (repeatType === 3) { // week repeat
     var dayOfWeekOn = alarmData.dayofweek_on
     var isRepeatD1 = dayOfWeekOn.substring(0, 1)
     var isRepeatD2 = dayOfWeekOn.substring(1, 2)
@@ -503,10 +512,10 @@ AlarmCore.prototype.getRepeatOption = function getRepeatOption (alarmData) {
     if (isRepeatD7 === '1') {
       option = (option === '' ? '0' : option + ',0')
     }
-  } else if (alarmData.repeat === 4) { // month repeat
+  } else if (repeatType === 4) { // month repeat
     var dayOfMonthOn = alarmData.dayofmonth_on
     option = dayOfMonthOn
-  } else if (alarmData.repeat === 5) { // year repeat
+  } else if (repeatType === 5) { // year repeat
     var dayOfYearOn = alarmData.dayofyear_on
     var monthDay = dayOfYearOn.split('_')
     var month = monthDay[0]
@@ -584,6 +593,7 @@ AlarmCore.prototype.clearAll = function () {
     this._clearTask(this.activeOption.mode, this.activeOption)
   }
   this.activeOption = null
+  this.reminderTTS = []
   this.mediaManager.stopMediaAndTts()
   this.taskTimeout && clearTimeout(this.taskTimeout)
   this.volumeInterval && clearInterval(this.volumeInterval)
