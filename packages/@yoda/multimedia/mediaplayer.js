@@ -240,6 +240,9 @@ Object.defineProperty(MediaPlayer.prototype, 'playing', {
   enumerable: true,
   configurable: true,
   get: function () {
+    if (!this._settled) {
+      return false
+    }
     return this[handle].getPlaying()
   }
 })
@@ -252,6 +255,9 @@ Object.defineProperty(MediaPlayer.prototype, 'duration', {
   enumerable: true,
   configurable: true,
   get: function () {
+    if (!this._settled) {
+      return -1
+    }
     return this[handle].getDuration()
   }
 })
@@ -264,6 +270,9 @@ Object.defineProperty(MediaPlayer.prototype, 'position', {
   enumerable: true,
   configurable: true,
   get: function () {
+    if (!this._settled) {
+      return -1
+    }
     return this[handle].getPosition()
   }
 })

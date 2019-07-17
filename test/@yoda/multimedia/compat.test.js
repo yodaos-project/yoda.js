@@ -58,3 +58,11 @@ test('should setup media with MediaPlayer#prepare(url)', (t) => {
   player.prepare(dataSource)
   player.start()
 })
+
+test('should not thrown on getters if player not set up', (t) => {
+  t.plan(3)
+  var player = new MediaPlayer()
+  t.strictEqual(player.playing, false)
+  t.strictEqual(player.duration, -1)
+  t.strictEqual(player.position, -1)
+})
