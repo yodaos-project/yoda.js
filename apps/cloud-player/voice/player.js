@@ -19,11 +19,11 @@ module.exports = function Player (text, url, transient, sequential, tag) {
     focus.player = new MediaPlayer()
     focus.player.prepare(url)
     focus.player.on('playing', () => {
-      this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.start, tag ])
+      this.agent.post(MultimediaStatusChannel, [ StatusCode.start, tag ])
     })
     focus.player.on('playbackcomplete', () => {
       focus.player.playbackComplete = true
-      this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.end, tag ])
+      this.agent.post(MultimediaStatusChannel, [ StatusCode.end, tag ])
       if (sequential || !speechSynthesis.speaking) {
         focus.abandon()
       }
@@ -81,7 +81,7 @@ module.exports = function Player (text, url, transient, sequential, tag) {
     }
     if (!transient || focus.player == null) {
       if (focus.player && !focus.player.playbackComplete) {
-        this.agent.post(MultimediaStatusChannel, [ 0/** cloud-multimedia */, StatusCode.cancel, tag ])
+        this.agent.post(MultimediaStatusChannel, [ StatusCode.cancel, tag ])
       }
       focus.player && focus.player.stop()
       this.finishVoice(focus)
@@ -121,6 +121,37 @@ module.exports = function Player (text, url, transient, sequential, tag) {
     }
     focus.resumeOnGain = true
     focus.request()
+  }
+  focus.seekTo = (pos) => {
+    logger.info(`seeking, player? ${focus.player == null}, to ${pos}`)
+    if (focus.player == null) {
+      return
+    }
+    focus.player.seekTo(pos)
+    focus.resume()
+  }
+  focus.seekBy = (delta) => {
+    logger.info(`seeking, player? ${focus.player == null}, by delta ${delta}`)
+    if (focus.player == null) {
+      return
+    }
+    var pos = focus.player.position
+    if (pos < 0) {
+      return
+    }
+    pos = pos + delta
+    if (pos < 0) {
+      pos = 0
+    }
+    focus.seekTo(pos)
+  }
+  focus.setSpeed = (speed) => {
+    logger.info(`resuming, player? ${focus.player == null}, speed ${speed}`)
+    if (focus.player == null) {
+      return
+    }
+    focus.player.setSpeed(speed)
+    focus.resume()
   }
 
   focus.request()

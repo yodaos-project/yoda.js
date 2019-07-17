@@ -43,6 +43,34 @@ var app = Application({
         }
         break
       }
+      case '/seek': {
+        var pos = Number(urlObj.query.to)
+        var by = Number(urlObj.query.by)
+        voice = this.getVoice('player')
+        if (voice == null) {
+          break
+        }
+        if (!isNaN(pos) || pos >= 0) {
+          voice.seekTo(pos)
+          break
+        }
+        if (!isNaN(by)) {
+          voice.seekBy(by)
+          break
+        }
+        break
+      }
+      case '/set-speed': {
+        var speed = Number(urlObj.query.speed)
+        if (isNaN(speed) || speed < 0) {
+          break
+        }
+        voice = this.getVoice('player')
+        if (voice) {
+          voice.setSpeed(speed)
+        }
+        break
+      }
       case '/stop': {
         voice = this.getVoice('player')
         if (voice) {
