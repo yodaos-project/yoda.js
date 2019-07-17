@@ -7,7 +7,6 @@ var protocol = bluetooth.protocol
 var AudioFocus = require('@yodaos/application').AudioFocus
 var Agent = require('@yoda/flora').Agent
 var strings = require('./strings.json')
-var util = require('util')
 
 var audioFocus = null
 var a2dp = null
@@ -15,10 +14,6 @@ var agent = null
 var lastUrl = null
 var needResume = false
 var playing = false
-
-function textIsEmpty (text) {
-  return (typeof text !== 'string') || (text.length === 0)
-}
 
 function speak (text) {
   app.openUrl(`yoda-app://system/speak?text=${text}`)
@@ -52,16 +47,14 @@ function onAudioFocusLost (transient, mayDuck) {
   }
 }
 
-function uploadEvent (event, data) {
+function uploadEvent (event) {
   logger.debug('upload bluetooth event', event)
-  var MEDIA_SOURCE_BLUETOOTH = 3
-  var event2status = {
-    PLAYING: 0,
-    STOPPED: 1,
-    PAUSED: 2
-  }
-  var msg = [ MEDIA_SOURCE_BLUETOOTH, event2status[event] ]
-  agent.post('yodaos.apps.multimedia.playback-status', msg)
+  agent.post('yodaos.apps.bluetooth.multimedia.playback-status', [ event ])
+}
+
+function uploadInfo (info) {
+  logger.debug('upload bluetooth music info')
+  agent.post('yodaos.apps.bluetooth.multimedia.music-info', [ JSON.stringify(info) ])
 }
 
 function handleUrl (url) {
@@ -147,29 +140,7 @@ function onAudioStateChangedListener (mode, state, extra) {
       logger.debug(`  title: ${extra.title}`)
       logger.debug(`  artist: ${extra.artist}`)
       logger.debug(`  album: ${extra.album}`)
-      switch (lastUrl) {
-        case '/info':
-          uploadEvent(state, extra)
-          if (textIsEmpty(extra.title)) {
-            speak(strings.MUSIC_INFO_FAIL)
-          } else if (textIsEmpty(extra.artist) && textIsEmpty(extra.album)) {
-            speak(util.format(strings.MUSIC_INFO_SUCC_TITLE, extra.title))
-          } else if (textIsEmpty(textIsEmpty(extra.album))) {
-            speak(util.format(strings.MUSIC_INFO_SUCC_TITLE_ARTIST, extra.artist, extra.title))
-          } else if (textIsEmpty(extra.artist)) {
-            speak(util.format(strings.MUSIC_INFO_SUCC_TITLE_ALBUM, extra.title, extra.album))
-          } else {
-            speak(util.format(strings.MUSIC_INFO_SUCC, extra.artist, extra.title, extra.album))
-            // TODO: reportToCloud('info', [ extra.artist, extra.title, extra.album ])
-          }
-          break
-        case '/like':
-          uploadEvent(state, extra)
-          break
-        default:
-          break
-      }
-      resetLastUrl()
+      uploadInfo(extra)
       break
     case protocol.AUDIO_STATE.VOLUMN_CHANGED:
     default:
