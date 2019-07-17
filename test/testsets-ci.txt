@@ -1,4 +1,5 @@
 @yodaos/speech-synthesis/*.test.js
+@yodaos/voice-interface/*.test.js
 client/light-launcher.test.js
 component/app-scheduler/*.test.js
 component/dispatcher/*.test.js

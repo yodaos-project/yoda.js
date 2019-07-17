@@ -1,81 +1,112 @@
 var EventEmitter = require('events')
-var flora = require('@yoda/flora')
-var floraDisposable = require('@yoda/flora/disposable')
 
-var MONOLOGUE_CHANNEL = 'yodaos.voice-interface.monologue-app'
-var MONOLOGUE_OPPRESSING_CHANNEL = 'yodaos.voice-interface.monologue-oppressing'
-var PICKUP_CHANNEL = 'rokid.turen.pickup'
-var MIC_MUTE_CHANNEL = 'rokid.turen.mute'
-var DISABLE_WAKEUP_ENGINE_CHANNEL = 'rokid.turen.disable.wakeupEngine'
+var DEFAULT_TIMEOUT = 10000
 
-/**
- * @event oppress
- */
-class VoiceInterface extends EventEmitter {
-  constructor (appId) {
+var ENGINE_TARGET = 'launcher'
+var ENGINE_PICKUP_CHANNEL = 'yodaos.voice-interface.engine.pickup'
+var ENGINE_MUTED_CHANNEL = 'yodaos.voice-interface.engine.muted'
+var ENGINE_VIGILANCE_CHANNEL = 'yodaos.voice-interface.engine.vigilance'
+
+class VoiceEngine extends EventEmitter {
+  constructor (agent) {
     super()
-    this.appId = appId
+    this.agent = agent
   }
 
-  startMonologue () {
-    if (this.agent) {
-      return
-    }
-    this.agent = new flora.Agent('unix:/var/run/flora.sock#monologue-app')
-    this.agent.subscribe(MONOLOGUE_OPPRESSING_CHANNEL, () => this.emit('oppress'))
-    this.agent.start()
-    floraDisposable.post(MONOLOGUE_CHANNEL, [ this.appId ], flora.MSGTYPE_PERSIST)
-  }
-
-  stopMonologue () {
-    floraDisposable.post(MONOLOGUE_CHANNEL, [], flora.MSGTYPE_PERSIST)
-    this.agent && this.agent.close()
-    this.agent = null
-  }
-
-  pickup (pickup) {
-    floraDisposable.post(PICKUP_CHANNEL, [ pickup ? 1 : 0 ], flora.MSGTYPE_PERSIST)
-  }
-
-  getPickingUp () {
-    return floraDisposable.once(PICKUP_CHANNEL)
+  /**
+   * Make engine to begin to pickup voices if true. Close picking up if else.
+   * @param {boolean} pickup
+   * @returns {Promise<boolean>}
+   */
+  setPickup (pickup) {
+    return this._call(ENGINE_PICKUP_CHANNEL, [ pickup ? 1 : 0 ])
       .then(msg => {
         return msg[0] === 1
       })
   }
 
-  micMute (mute) {
-    floraDisposable.post(MIC_MUTE_CHANNEL, [ mute ? 1 : 0 ], flora.MSGTYPE_PERSIST)
-  }
-
-  getMicMuted () {
-    return floraDisposable.once(MIC_MUTE_CHANNEL)
+  /**
+   * Get if engine is picking up.
+   * @returns {Promise<boolean>}
+   */
+  getPickup () {
+    return this._call(ENGINE_PICKUP_CHANNEL, [])
       .then(msg => {
         return msg[0] === 1
       })
   }
 
-  setWakeupEngineEnabled (enabled) {
-    floraDisposable.post(DISABLE_WAKEUP_ENGINE_CHANNEL, [ enabled ? 0 : 1 ], flora.MSGTYPE_PERSIST)
+  /**
+   * Make engine to mute voice input. Muted engine would not be vigilant or picking up anymore.
+   * @param {boolean} mute
+   * @returns {Promise<boolean>}
+   */
+  setMuted (mute) {
+    return this._call(ENGINE_MUTED_CHANNEL, [ mute ? 1 : 0 ])
+      .then(msg => {
+        return msg[0] === 1
+      })
   }
 
-  getWakeupEngineEnabled () {
-    return floraDisposable.once(DISABLE_WAKEUP_ENGINE_CHANNEL)
+  /**
+   * Get if engine is muted.
+   * @returns {Promise<boolean>}
+   */
+  getMuted () {
+    return this._call(ENGINE_MUTED_CHANNEL, [])
       .then(msg => {
-        return msg[0] === 0
+        return msg[0] === 1
+      })
+  }
+
+  /**
+   * Make engine to be vigilant or not. Not vigilant engine would not respond to wakeup words.
+   * But engine still could be activated by setting pickup programmatically, i.e. push to talk.
+   * @param {boolean} vigilant
+   * @returns {Promise<boolean>}
+   */
+  setVigilance (vigilant) {
+    return this._call(ENGINE_VIGILANCE_CHANNEL, [ vigilant ? 1 : 0 ])
+      .then(msg => {
+        return msg[0] === 1
+      })
+  }
+
+  /**
+   * Get if engine is vigilant.
+   * @returns {Promise<boolean>}
+   */
+  getVigilance () {
+    return this._call(ENGINE_VIGILANCE_CHANNEL, [])
+      .then(msg => {
+        return msg[0] === 1
+      })
+  }
+
+  /**
+   * @private
+   */
+  _call (channel, msg) {
+    return this.agent.call(channel, msg, ENGINE_TARGET, DEFAULT_TIMEOUT)
+      .then(reply => {
+        if (reply.retCode !== 0) {
+          throw new Error(`${channel}(${reply.retCode}) from ${ENGINE_TARGET}`)
+        }
+        return reply.msg || []
       })
   }
 }
 
-var voiceInterface
-Object.defineProperty(module.exports, 'voiceInterface', {
+module.exports.VoiceEngine = VoiceEngine
+var voiceEngine
+Object.defineProperty(module.exports, 'voiceEngine', {
   enumerable: true,
   configurable: true,
   get: () => {
-    if (voiceInterface == null) {
-      var appId = global[Symbol.for('yoda#api')].appId
-      voiceInterface = new VoiceInterface(appId)
+    if (voiceEngine == null) {
+      var agent = global[Symbol.for('yoda#api')].agent
+      voiceEngine = new VoiceEngine(agent)
     }
-    return voiceInterface
+    return voiceEngine
   }
 })
