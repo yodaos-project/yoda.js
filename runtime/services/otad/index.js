@@ -7,6 +7,10 @@ var system = require('@yoda/system')
 var logger = require('logger')('otad/index')
 var flora = require('@yoda/flora')
 
+require('@yoda/oh-my-little-pony').catchUncaughtError(() => {
+  logger.error('terminating ota for unexpected error')
+  process.exit(1)
+})
 main(function onDone (err) {
   if (err) {
     logger.error('unexpected error', err.stack)

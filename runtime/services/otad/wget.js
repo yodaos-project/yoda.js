@@ -100,5 +100,6 @@ function fetchImageSize (urlStr, callback) {
       }
       callback(null, contentLength)
     }) /** req.on('response') */
+  req.on('error', callback)
   req.end()
 }
