@@ -30,6 +30,9 @@ module.exports = function Player (text, url, transient, sequential, tag) {
     })
     focus.player.on('error', (err) => {
       logger.error('unexpected player error', err.stack)
+      this.agent.post(MultimediaStatusChannel, [ StatusCode.error, tag ])
+      focus.player.stop()
+      focus.player = null
       if (sequential || !speechSynthesis.speaking) {
         focus.abandon()
       }
