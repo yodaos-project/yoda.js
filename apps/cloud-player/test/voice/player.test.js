@@ -58,6 +58,26 @@ test('should resume on gain if no text given', t => {
     })
 })
 
+test('should handle player error', t => {
+  t.plan(1)
+
+  var application = t.suite.getApplication()
+  var voice = application.startVoice('player', [ null, 'http://foo.onion/media.mp3' ])
+
+  focusOnce(t, 'gained', voice)
+    .then(() => {
+      return focusOnce(t, 'lost', voice)
+    })
+    .then(() => {
+      t.ok(voice.player == null)
+      t.end()
+    })
+    .catch(err => {
+      t.error(err)
+      t.end()
+    })
+})
+
 test('should resume on speech-synthesis end if text given and ran sequentially', t => {
   t.plan(1)
 
