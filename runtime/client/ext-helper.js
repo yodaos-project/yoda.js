@@ -57,6 +57,7 @@ function main (target, descriptorPath, runner) {
   var api = translator.translate(descriptor, agent)
   api.appId = appId
   api.appHome = target
+  api.agent = agent
   global[apiSymbol] = api
 
   try {
