@@ -45,8 +45,7 @@ class InputInitializer {
               initializer->timeout_select, initializer->timeout_dbclick,
               initializer->timeout_slide);
       bool r =
-          init_input_key(/** monitor by /etc/input-event.conf */ 0,
-                         IOTJS_INPUT_HAS_TOUCH, initializer->timeout_select,
+          init_input_key(IOTJS_INPUT_HAS_TOUCH, initializer->timeout_select,
                          initializer->timeout_dbclick,
                          initializer->timeout_slide);
       if (r)
