@@ -17,6 +17,20 @@ Queries:
 
 ### yoda-app://cloud-player/resume
 
+
+### yoda-app://cloud-player/seek
+
+Queries:
+- `to`: Number. Optional position to be sought to.
+- `by`: Number. Optional delta to be sought by.
+
+If both `to` and `by` are specified in query, `by` would be ignored.
+
+### yoda-app://cloud-player/set-speed
+
+Queries:
+- `speed`: Number.
+
 ### yoda-app://cloud-player/stop
 
 ### yoda-app://cloud-player/play-tts-stream
@@ -27,9 +41,9 @@ Queries:
 
 ## Flora Events
 
-### yodaos.apps.multimedia.playback-status
+### yodaos.apps.cloud-player.multimedia.playback-status
 
-Message: [0, `status-code`]
+Message: [`status-code`, `media-tag`]
 
 ### yodaos.apps.cloud-player.tts.status
 
