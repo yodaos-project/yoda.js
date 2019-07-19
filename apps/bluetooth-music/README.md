@@ -40,7 +40,7 @@ This is the app for play bluetooth music.
 
   * flora subscribe name: `yodaos.apps.bluetooth.multimedia.playback-status`
 
-  * flora message format: ```String: PLAYING|PAUSED|STOPPED```
+  * flora message format: ```Number: 0=PLAYING | 1=STOPPED | 4=PAUSED```
 
 * music info event
 

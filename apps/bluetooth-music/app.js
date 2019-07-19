@@ -49,7 +49,12 @@ function onAudioFocusLost (transient, mayDuck) {
 
 function uploadEvent (event) {
   logger.debug('upload bluetooth event', event)
-  agent.post('yodaos.apps.bluetooth.multimedia.playback-status', [ event ])
+  var event2status = {
+    [protocol.AUDIO_STATE.PLAYING]: 0,
+    [protocol.AUDIO_STATE.STOPPED]: 1,
+    [protocol.AUDIO_STATE.PAUSED]: 4
+  }
+  agent.post('yodaos.apps.bluetooth.multimedia.playback-status', [ event2status[event] ])
 }
 
 function uploadInfo (info) {
