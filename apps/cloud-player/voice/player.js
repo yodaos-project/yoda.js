@@ -3,6 +3,9 @@ var speechSynthesis = require('@yodaos/speech-synthesis').speechSynthesis
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var logger = require('logger')('player')
 
+var NowPlayingCenter = require('@yodaos/application').NowPlayingCenter
+var nowPlayingCenter = NowPlayingCenter.default
+
 var constant = require('../constant')
 var MultimediaStatusChannel = constant.MultimediaStatusChannel
 var TtsStatusChannel = constant.TtsStatusChannel
@@ -18,9 +21,6 @@ module.exports = function Player (text, url, transient, sequential, tag) {
   if (url) {
     focus.player = new MediaPlayer()
     focus.player.prepare(url)
-    focus.player.on('playing', () => {
-      this.agent.post(MultimediaStatusChannel, [ StatusCode.start, tag ])
-    })
     focus.player.on('playbackcomplete', () => {
       focus.player.playbackComplete = true
       this.agent.post(MultimediaStatusChannel, [ StatusCode.end, tag ])
@@ -73,12 +73,17 @@ module.exports = function Player (text, url, transient, sequential, tag) {
         })
     } else if (focus.resumeOnGain && focus.player != null) {
       focus.player.start()
+      this.agent.post(MultimediaStatusChannel, [ StatusCode.start, tag ])
     }
 
     focus.resumeOnGain = false
+    nowPlayingCenter.setNowPlayingInfo({/** nothing to be set */})
+    nowPlayingCenter.on('command', focus.onRemoteCommand)
   }
   focus.onLoss = (transient) => {
     logger.info(`focus lost, transient? ${transient}, player? ${focus.player == null}`)
+    nowPlayingCenter.setNowPlayingInfo(null)
+    nowPlayingCenter.removeListener('command', focus.onRemoteCommand)
     if (focus.utter) {
       speechSynthesis.cancel()
     }
@@ -94,6 +99,9 @@ module.exports = function Player (text, url, transient, sequential, tag) {
       return
     }
     focus.resumeOnGain = true
+    if (focus.player.playing) {
+      this.agent.post(MultimediaStatusChannel, [ StatusCode.pause, tag ])
+    }
     focus.player.pause()
   }
   focus.pause = () => {
@@ -105,6 +113,9 @@ module.exports = function Player (text, url, transient, sequential, tag) {
     focus.resumeOnGain = false
     speechSynthesis.cancel()
     if (focus.player) {
+      if (focus.player.playing) {
+        this.agent.post(MultimediaStatusChannel, [ StatusCode.pause, tag ])
+      }
       focus.player.pause()
     } else {
       focus.abandon()
@@ -119,6 +130,9 @@ module.exports = function Player (text, url, transient, sequential, tag) {
       return
     }
     if (focus.state === AudioFocus.State.ACTIVE) {
+      if (!focus.player.playing) {
+        this.agent.post(MultimediaStatusChannel, [ StatusCode.start, tag ])
+      }
       focus.player.start()
       return
     }
@@ -155,6 +169,26 @@ module.exports = function Player (text, url, transient, sequential, tag) {
     }
     focus.player.setSpeed(speed)
     focus.resume()
+  }
+  focus.onRemoteCommand = (command) => {
+    logger.info(`on remote command ${command.type}, url: ${url}, transient: ${transient}`)
+    if (focus.player == null) {
+      focus.abandon()
+      return
+    }
+    switch (command.type) {
+      case NowPlayingCenter.CommandType.TOGGLE_PAUSE_PLAY: {
+        if (transient) {
+          focus.abandon()
+          return
+        }
+        if (focus.player.playing) {
+          focus.pause()
+        } else {
+          focus.resume()
+        }
+      }
+    }
   }
 
   focus.request()

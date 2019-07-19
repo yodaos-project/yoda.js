@@ -1,6 +1,8 @@
 var AudioFocus = require('@yodaos/application').AudioFocus
 var speechSynthesis = require('@yodaos/speech-synthesis').speechSynthesis
-var logger = require('logger')('player')
+var logger = require('logger')('tts-stream')
+
+var nowPlayingCenter = require('@yodaos/application').NowPlayingCenter.default
 
 var constant = require('../constant')
 var GetStreamChannel = constant.GetStreamChannel
@@ -43,12 +45,22 @@ module.exports = function TtsStream (pickupOnEnd) {
        */
       this.agent.removeMethod(GetStreamChannel)
     })
+
+    nowPlayingCenter.setNowPlayingInfo({/** nothing to be set */})
+    nowPlayingCenter.on('command', focus.onRemoteCommand)
   }
   focus.onLoss = () => {
     speechSynthesis.cancel()
     this.agent.removeMethod(GetStreamChannel)
     this.finishVoice(focus)
+    nowPlayingCenter.setNowPlayingInfo(null)
+    nowPlayingCenter.removeListener('command', focus.onRemoteCommand)
   }
+  focus.onRemoteCommand = (command) => {
+    logger.info('on remote command', command)
+    focus.abandon()
+  }
+
   focus.request()
 
   return focus
