@@ -46,9 +46,10 @@ bool PcmPlayer::write(std::vector<uint8_t>& data) {
       RKLogw("Unexpected null on stream");
       return;
     }
-    if (status != player_status_playing &&
-        status != player_status_pending_end) {
-      RKLogw("player status changed on write, current status(%d)", status);
+    auto vstatus = status.load();
+    if (vstatus != player_status_playing &&
+        vstatus != player_status_pending_end) {
+      RKLogw("player status changed on write, current status(%d)", vstatus);
       return;
     }
     int err;
@@ -62,6 +63,10 @@ bool PcmPlayer::write(std::vector<uint8_t>& data) {
 }
 
 void PcmPlayer::end() {
+  if (status == player_status_end) {
+    RKLogv("player ended, skip draining");
+    return;
+  }
   if (status == player_status_pending_end || status == player_status_pending) {
     RKLogv("player pending end or not playing, skip draining");
     onevent(pcm_player_ended);
@@ -77,9 +82,10 @@ void PcmPlayer::end() {
       RKLogw("Unexpected null on stream");
       return;
     }
-    if (status != player_status_pending_end &&
-        status != player_status_cancelled) {
-      RKLogw("player status changed on end, current status(%d)", status);
+    auto vstatus = status.load();
+    if (vstatus != player_status_pending_end &&
+        vstatus != player_status_cancelled) {
+      RKLogw("player status changed on end, current status(%d)", vstatus);
       return;
     }
     int err;
@@ -89,7 +95,7 @@ void PcmPlayer::end() {
         RKLogw("drain player error(%d): %s", err, pa_strerror(err));
       }
     } while (err == /** drain timed out, retrying */ PA_ERR_TIMEOUT);
-    RKLogv("drained player, status(%d)", status);
+    RKLogv("drained player, status(%d)", status.load());
 
     if (status == player_status_cancelled) {
       onevent(pcm_player_cancelled);
@@ -102,6 +108,10 @@ void PcmPlayer::end() {
 }
 
 void PcmPlayer::cancel() {
+  if (status == player_status_end) {
+    RKLogv("player ended, skip cancelling");
+    return;
+  }
   if (status != player_status_playing && status != player_status_pending_end) {
     RKLogv("player not playing nor pending end, cancelling");
     onevent(pcm_player_cancelled);

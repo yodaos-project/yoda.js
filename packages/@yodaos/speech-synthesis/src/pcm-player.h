@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <mutex>
+#include <atomic>
 #include "pulse/simple.h"
 #include "pulse/error.h"
 #include "thr-pool.h"
@@ -39,5 +39,5 @@ class PcmPlayer {
   EventListener onevent;
   pa_simple* stream = nullptr;
   ThreadPool tp{ 1 };
-  PcmPlayerStatus status = player_status_pending;
+  std::atomic<PcmPlayerStatus> status = { player_status_pending };
 };
