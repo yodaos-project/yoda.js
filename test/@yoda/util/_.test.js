@@ -97,6 +97,14 @@ var suites = [
           'foo'
         ],
         expected: null
+      },
+      {
+        title: 'should skip with keys array',
+        params: [
+          { foo: 'bar', bar: 'foo', foobar: 'foobar' },
+          [ 'foo', 'bar' ]
+        ],
+        expected: { foo: 'bar', bar: 'foo' }
       }
     ]
   },

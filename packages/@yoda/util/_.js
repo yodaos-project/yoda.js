@@ -36,7 +36,10 @@ function pick (object) {
     return object
   }
   var ret = {}
-  var keys = Array.prototype.slice.call(arguments, 1)
+  var keys = arguments[1]
+  if (!Array.isArray(keys)) {
+    keys = Array.prototype.slice.call(arguments, 1)
+  }
   keys.forEach(key => {
     ret[key] = object[key]
   })
