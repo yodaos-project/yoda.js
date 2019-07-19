@@ -79,3 +79,4 @@ Enum of following numbers:
 - `1`: Player end
 - `2`: Player cancelled
 - `3`: Player error
+- `4`: Player paused
