@@ -11,7 +11,7 @@
     "PICKUP": 6000
   },
   "RINGTONE": {
-    "URL": "system://alarm_default_ringtone.mp3",
+    "URL": "/opt/media/alarm_default_ringtone.mp3",
     "RING_SECONDS": 8,
     "IDLE_SECONDS": 4,
     "RING_TIMES": 2
