@@ -1,6 +1,6 @@
 'use strict'
 
-var AtomicTask = require('./atomic-task').AtomicTask
+var AtomicTask = require('./atomic-task')
 var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var tts = require('@yodaos/speech-synthesis').speechSynthesis
 var util = require('util')
@@ -50,16 +50,16 @@ class AppTask {
         if (t.hasOwnProperty('tts')) {
           var text = t.tts
           if (Array.isArray(text)) {
-            var i = math.randInt(text.length)
-            text = text[i]
+            var j = math.randInt(text.length)
+            text = text[j]
           }
           if (typeof t.args === 'string') {
             text = util.format(text, t.args)
           }
           this.logger.debug(`[app-task] step ${i + 1}: speak '${text}'`)
-          tts.once('end', onQuarkTaskExecutedCallback)
-          tts.once('error', onQuarkTaskExecutedCallback)
-          tts.speak(text)
+          var utterance = tts.speak(text)
+          utterance.once('end', onQuarkTaskExecutedCallback)
+          utterance.once('error', onQuarkTaskExecutedCallback)
           return tts
         } else if (t.hasOwnProperty('media')) {
           this.logger.debug(`[app-task] step ${i + 1}: play '${t.media}'`)

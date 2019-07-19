@@ -134,6 +134,9 @@ var app = Application({
       case 'timer_start':
         var tm = url.query
         var totalSecs = time.toSeconds(tm.second, tm.minute, tm.hour, tm.day)
+        if (isNaN(totalSecs)) {
+          totalSecs = 0
+        }
         localStorage.setItem('totalSecs', totalSecs)
         logger.debug(`count ${totalSecs} seconds`)
         if (totalSecs === 0) {
@@ -191,7 +194,7 @@ var app = Application({
         alertTask = new AppTask([
           { 'tts': strings.TIMEUP },
           { 'media': config.RINGTONE.URL },
-          { 'timeout': config.RINGTONE.IDLE_SECONDS },
+          { 'timeout': config.RINGTONE.IDLE_SECONDS * 1000 },
           { 'media': config.RINGTONE.URL }
         ], 'timer-timeup-task')
         alertTask.execute()
