@@ -1,0 +1,4 @@
+{
+  "SHUTDOWN_WHEN_NO_BATTERY": "当前设备没有电池，请拔掉电源进行关机操作",
+  "REBOOT_WHEN_NO_BATTERY": "当前设备没有电池，请插拔电源进行重启操作"
+}

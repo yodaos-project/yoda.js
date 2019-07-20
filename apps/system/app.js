@@ -8,6 +8,8 @@ var MediaPlayer = require('@yoda/multimedia').MediaPlayer
 var logger = require('logger')('@system')
 var system = require('@yoda/system')
 var battery = require('@yoda/battery')
+var manifest = require('@yoda/manifest')
+var reply = require('./reply.json')
 var apiInstance
 var synth
 var player = null
@@ -48,16 +50,27 @@ module.exports = (api) => {
   apiInstance = api
   synth = new SpeechSynthesis(api)
   return Application({
+    created: function created () {
+      // FIXME: remove this if the @yodaos/mm doesn't depend on this hook.
+    },
     url: function url (urlObj) {
       switch (urlObj.pathname) {
         case '/speak':
           speak(urlObj.query.text, urlObj.query.alt)
           break
         case '/reboot':
+          if (!manifest.isCapabilityEnabled('battery')) {
+            speak(reply.REBOOT_WHEN_NO_BATTERY)
+            break
+          }
           api.effect.play('system://shutdown.js')
             .then(() => system.reboot())
           break
         case '/shutdown':
+          if (!manifest.isCapabilityEnabled('battery')) {
+            speak(reply.SHUTDOWN_WHEN_NO_BATTERY)
+            break
+          }
           api.effect.play('system://shutdown.js')
             .then(() => battery.getBatteryCharging())
             .then(charging => {
