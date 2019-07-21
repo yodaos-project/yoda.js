@@ -125,6 +125,6 @@ void PcmPlayer::cancel() {
     RKLogw("flush data error(%d): %s", err, pa_strerror(err));
   }
   /** clears pending writes */
-  tp.finish();
+  tp.clear();
   this->end();
 }
