@@ -28,12 +28,14 @@ class NowPlayingCenter extends EventEmitter {
    * @param {object|null} info
    */
   setNowPlayingInfo (info) {
-    if (info == null) {
-      this[symbol.api].removeListener('command', this._onCommand)
-    } else {
+    if (this.info == null && info != null) {
       this[symbol.api].on('command', this._onCommand)
     }
+    if (info == null) {
+      this[symbol.api].removeListener('command', this._onCommand)
+    }
     this[symbol.api].setNowPlayingInfo(info)
+    this.info = info
     return this.info
   }
 }

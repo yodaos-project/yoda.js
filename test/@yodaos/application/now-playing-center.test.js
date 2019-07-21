@@ -41,3 +41,23 @@ test('should proxy event "command"', t => {
   api.emit('command', { type: 'togglePausePlay' })
   t.end()
 })
+
+test('should not emit duplicated event "command"', t => {
+  t.plan(1)
+  var api = new EventEmitter()
+  api.setNowPlayingInfo = function (info) {
+    return Promise.resolve()
+  }
+
+  var center = new NowPlayingCenter(api)
+  center.setNowPlayingInfo({ title: 'foo' })
+  center.setNowPlayingInfo(null)
+  center.setNowPlayingInfo({ title: 'foo' })
+  center.setNowPlayingInfo({ title: 'foo' })
+
+  center.on('command', command => {
+    t.deepEqual(command, { type: 'togglePausePlay' })
+  })
+  api.emit('command', { type: 'togglePausePlay' })
+  t.end()
+})
