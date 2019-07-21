@@ -7,6 +7,8 @@ var protocol = bluetooth.protocol
 var AudioFocus = require('@yodaos/application').AudioFocus
 var Agent = require('@yoda/flora').Agent
 var strings = require('./strings.json')
+var NowPlayingCenter = require('@yodaos/application').NowPlayingCenter
+var nowPlayingCenter = NowPlayingCenter.default
 
 var audioFocus = null
 var a2dp = null
@@ -28,6 +30,7 @@ function onAudioFocusGained () {
   if (needResume && !playing) {
     a2dp.play()
   }
+  nowPlayingCenter.setNowPlayingInfo({/** nothing to be set */})
 }
 
 function onAudioFocusLost (transient, mayDuck) {
@@ -41,9 +44,25 @@ function onAudioFocusLost (transient, mayDuck) {
       needResume = false
     }
   } else {
+    nowPlayingCenter.setNowPlayingInfo(null)
     uploadEvent(protocol.AUDIO_STATE.STOPPED)
     app.openUrl('yoda-app://bluetooth/implied_close')
     needResume = false
+  }
+}
+
+function onRemoteCommand (command) {
+  logger.debug(`on remote command ${command.type}`)
+  switch (command.type) {
+    case NowPlayingCenter.CommandType.TOGGLE_PAUSE_PLAY:
+      if (playing) {
+        handleUrl('/pause')
+      } else {
+        handleUrl('/start')
+      }
+      break
+    default:
+      break
   }
 }
 
@@ -165,6 +184,7 @@ var app = Application({
     audioFocus = new AudioFocus()
     audioFocus.onGain = onAudioFocusGained
     audioFocus.onLoss = onAudioFocusLost
+    nowPlayingCenter.on('command', onRemoteCommand)
   },
   destroyed: () => {
     logger.debug('destroyed')
