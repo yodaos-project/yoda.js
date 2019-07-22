@@ -173,7 +173,7 @@ class AudioFocus {
     var prev = this.transientRequest
     if (prev) {
       this.transientRequest = null
-      this.castRequest(prev, req.transient, req.mayDuck)
+      this.castRequest(prev/** transient focus could not be lost transiently */)
     } else {
       prev = this.lastingRequest
       if (prev) {

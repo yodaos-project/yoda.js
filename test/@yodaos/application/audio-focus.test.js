@@ -2,9 +2,10 @@ var test = require('tape')
 var EventEmitter = require('events')
 
 var AudioFocus = require('@yodaos/application').AudioFocus
+var symbol = require('@yodaos/application/symbol').audioFocus
 
 test('should create audio focus', t => {
-  t.plan(3)
+  t.plan(5)
 
   var api = new EventEmitter()
   api.request = function (opt) {
@@ -19,11 +20,16 @@ test('should create audio focus', t => {
   var focus = new AudioFocus(AudioFocus.Type.TRANSIENT, api)
   focus.onGain = () => {
     t.strictEqual(focus.state, AudioFocus.State.ACTIVE)
+    /** should be registered for events */
+    t.deepEqual(Object.keys(api[symbol.registry]), [String(focus.id)])
+
     focus.abandon()
   }
   focus.onLoss = (transient, mayDuck) => {
     t.strictEqual(transient || mayDuck, false)
     t.strictEqual(focus.state, AudioFocus.State.INACTIVE)
+    /** should be de-registered from events */
+    t.deepEqual(Object.keys(api[symbol.registry]), [])
   }
   focus.request()
 })
