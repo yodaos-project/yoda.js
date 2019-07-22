@@ -152,7 +152,9 @@ test('transient request should gain focus over transient request', t => {
       }
       case 'loss': {
         t.strictEqual(appId, 'test')
-        t.deepEqual(Array.prototype.slice.call(arguments), [ 'test', 'loss', [ 1, /** transient */true, /** mayDuck */ false ] ])
+        t.deepEqual(Array.prototype.slice.call(arguments), [ 'test', 'loss',
+          [ 1, /** transient request should not loss as transient */false, /** mayDuck */ false ]
+        ])
       }
     }
   })
