@@ -86,9 +86,11 @@ function(YodaGitPackage NAME REPO TAG)
   )
 endfunction()
 
+# shadow-node/node-flock is readonly.
 YodaGitPackage(node-flock https://github.com/shadow-node/node-flock.git master flock)
+# shadow-node/node-caps is readonly.
 YodaGitPackage(node-caps https://github.com/shadow-node/node-caps.git master @yoda/caps)
-YodaGitPackage(node-flora https://github.com/yodaos-project/node-flora.git master @yoda/flora)
+YodaGitPackage(node-flora https://github.com/yodaos-project/node-flora.git release/1.1.x @yoda/flora)
 
 YodaLocalPackage(yoda-battery @yoda/battery)
 YodaLocalPackage(yoda-bluetooth @yoda/bluetooth)
