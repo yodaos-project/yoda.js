@@ -57,6 +57,33 @@ test('should cancel utterance', t => {
   })
 })
 
+test('should cancel all queuing utterance', t => {
+  t.plan(2)
+  var api = new EventEmitter()
+  api.appId = 'test'
+  api.effect = {
+    play: () => {},
+    stop: () => {}
+  }
+  var speechSynthesis = new SpeechSynthesis(api)
+  var utter1 = speechSynthesis.speak('foo')
+  var utter2 = speechSynthesis.speak('foo')
+  utter1.on('start', () => {
+    speechSynthesis.cancel()
+  })
+  utter1.on('cancel', oncancel.bind(1))
+  utter2.on('cancel', oncancel.bind(2))
+
+  var canceled = []
+  function oncancel (id) {
+    canceled.push(id)
+    t.pass(`utter ${id} canceled`)
+    if (canceled.length === 2) {
+      t.end()
+    }
+  }
+})
+
 test('should cancel immediately', t => {
   t.plan(3)
   var api = new EventEmitter()
