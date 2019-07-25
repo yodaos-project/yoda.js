@@ -132,3 +132,24 @@ test('should emit error on arbitrary error', t => {
     t.end()
   })
 })
+
+test('should emit uncaught exception', t => {
+  t.plan(1)
+  var api = new EventEmitter()
+  api.appId = 'immediate-error'
+  api.effect = {
+    play: () => {},
+    stop: () => {}
+  }
+  var speechSynthesis = new SpeechSynthesis(api)
+  speechSynthesis.speak('foo')
+
+  function uncaughtException (e) {
+    t.throws(() => {
+      throw e
+    }, 'SpeechSynthesisError')
+    t.end()
+    process.removeListener('uncaughtException', uncaughtException)
+  }
+  process.on('uncaughtException', uncaughtException)
+})
