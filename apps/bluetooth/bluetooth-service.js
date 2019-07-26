@@ -68,6 +68,9 @@ var urlHandlers = {
   },
   // open bluetooth
   '/open': (url) => {
+    if (a2dp.isConnected()) {
+      lastUrl = '/reopen'
+    }
     if (url.query != null && url.query.mode != null) {
       a2dp.open(url.query.mode)
     } else {
@@ -198,6 +201,10 @@ function onConnectionStateChangedListener (mode, state, device) {
           }
         }, config.TIMER.DELAY_BEFORE_PLAY_FAILED)
         speak(getText('PLEASE_WAIT'))
+      } else if (lastUrl === '/reopen') {
+        var str = util.format(strings['RECONNECTED_ARG2S'], device.name, deviceName)
+        speak(str, res.AUDIO[state])
+        lastUrl = '/derived_from_phone'
       } else {
         speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
         lastUrl = '/derived_from_phone'
