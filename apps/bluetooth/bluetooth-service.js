@@ -108,9 +108,9 @@ function handleSinkRadioOn (autoConn) {
   switch (lastUrl) {
     case '/open':
       if (autoConn) {
-        speak(getText('SINK_OPENED'), res.AUDIO['ON_OPENED'])
+        speak(getText('SINK_OPENED'), res.AUDIO['OPENED'])
       } else {
-        speak(getText('SINK_FIRST_OPENED_ARG1S', deviceName), res.AUDIO['ON_OPENED'])
+        speak(getText('SINK_FIRST_OPENED_ARG1S', deviceName), res.AUDIO['OPENED'])
       }
       resetLastUrl()
       break
@@ -119,11 +119,11 @@ function handleSinkRadioOn (autoConn) {
       if (autoConn) {
         setTimer(() => {
           if (!a2dp.isConnected()) {
-            speak(getText('SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S', deviceName), res.AUDIO['ON_AUTOCONNECT_FAILED'])
+            speak(getText('SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S', deviceName), res.AUDIO['AUTOCONNECT_FAILED'])
           }
         }, config.TIMER.DELAY_BEFORE_AUTOCONNECT_FAILED)
       } else {
-        speak(getText('SINK_FIRST_OPENED_BY_CONNECT_ARG1S', deviceName), res.AUDIO['ON_OPENED'])
+        speak(getText('SINK_FIRST_OPENED_BY_CONNECT_ARG1S', deviceName), res.AUDIO['OPENED'])
       }
       break
     default:
@@ -133,9 +133,9 @@ function handleSinkRadioOn (autoConn) {
 
 function handleSourceRadioOn (autoConn) {
   if (autoConn) {
-    speak(getText('SOURCE_OPENED'), res.AUDIO['ON_OPENED'])
+    speak(getText('SOURCE_OPENED'), res.AUDIO['OPENED'])
   } else {
-    speak(getText('SOURCE_FIRST_OPENED'), res.AUDIO['ON_OPENED'])
+    speak(getText('SOURCE_FIRST_OPENED'), res.AUDIO['OPENED'])
   }
   resetLastUrl()
 }
