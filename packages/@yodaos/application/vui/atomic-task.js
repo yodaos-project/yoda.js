@@ -189,7 +189,7 @@ class AtomicTask {
       this.logger.warn(`[atomic-task] Task already started, ignore 'execute again'.`)
       return
     }
-    this.focus = new AudioFocus()
+    this.focus = new AudioFocus(AudioFocus.Type.TRANSIENT)
     this.focus.onGain = this._onAudioFocusGained.bind(this)
     this.focus.onLoss = this._interrupt.bind(this)
     this.focus.request()
