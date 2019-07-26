@@ -1,6 +1,7 @@
 #pragma once
 
 #define NODE_ADDON_API_DISABLE_DEPRECATED
+#define NAPI_DISABLE_CPP_EXCEPTIONS
 #define NAPI_EXPERIMENTAL
 #define NAPI_VERSION 4
 #include "napi.h"

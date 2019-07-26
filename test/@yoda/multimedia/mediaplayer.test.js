@@ -156,3 +156,40 @@ test('set/get player volume', (t) => {
   player.setVolume(101)
   t.strictEqual(player.getVolume(), 100)
 })
+
+test('should emit error', (t) => {
+  t.plan(1)
+  var player = new MediaPlayer()
+  player.on('prepared', () => {
+    t.fail('unreachable prepared')
+  })
+  player.on('playing', () => {
+    t.fail('unreachable playing')
+  })
+  player.on('playbackcomplete', () => {
+    t.fail('unreachable unreachable')
+  })
+  player.on('error', err => {
+    t.throws(() => {
+      throw err
+    }, 'player error')
+    t.end()
+  })
+  player.setDataSource('/opt/definitely-unreachable.media')
+  player.prepare()
+})
+
+test('should emit uncaught exception', (t) => {
+  t.plan(1)
+  var player = new MediaPlayer()
+  function uncaughtException (err) {
+    t.throws(() => {
+      throw err
+    }, 'player error')
+    t.end()
+    process.removeListener('uncaughtException', uncaughtException)
+  }
+  process.on('uncaughtException', uncaughtException)
+  player.setDataSource('/opt/definitely-unreachable.media')
+  player.prepare()
+})
