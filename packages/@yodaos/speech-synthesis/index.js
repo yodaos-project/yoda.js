@@ -89,6 +89,11 @@ class SpeechSynthesis {
    */
   cancel () {
     this[symbol.native].cancel()
+    var queue = this[symbol.queue]
+    this[symbol.queue] = []
+    queue.forEach(it => {
+      it.emit('cancel')
+    })
   }
 
   playStream () {
