@@ -100,6 +100,7 @@ module.exports = function Player (text, url, transient, sequential, tag) {
         this.agent.post(MultimediaStatusChannel, [ StatusCode.cancel, tag ])
       }
       focus.player && focus.player.stop()
+      focus.player = null
       this.finishVoice(focus)
       return
     }

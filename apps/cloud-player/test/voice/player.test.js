@@ -78,6 +78,22 @@ test('should handle player error', t => {
     })
 })
 
+test('should unset player on focus loss to prevent unexpected MediaPlayer not setup error', t => {
+  t.plan(1)
+
+  var application = t.suite.getApplication()
+  var voice = application.startVoice('player', [ null, '/opt/media/awake_01.wav' ])
+
+  focusOnce(t, 'gained', voice)
+    .then(() => {
+      return focusOnce(t, 'lost', voice)
+    })
+    .then(() => {
+      t.ok(voice.player == null)
+      t.end()
+    })
+})
+
 test('should resume on speech-synthesis end if text given and ran sequentially', t => {
   t.plan(1)
 
