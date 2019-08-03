@@ -47,6 +47,14 @@ var testCases = [
     sendMsg: { command: 'GETSONG_ATTRS' }
   },
   {
+    exec: (adapter) => { adapter.ffward() },
+    sendMsg: { command: 'SEND_KEY', key: 0x49 }
+  },
+  {
+    exec: (adapter) => { adapter.rewind() },
+    sendMsg: { command: 'SEND_KEY', key: 0x48 }
+  },
+  {
     exec: (adapter) => { adapter.disconnect() },
     sendMsg: { command: 'DISCONNECT' }
   },

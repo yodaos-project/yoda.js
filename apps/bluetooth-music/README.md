@@ -20,6 +20,10 @@ This is the app for play bluetooth music.
 
   * `/prev`: Play previous song.
 
+  * `/ffward`: Fast forward playing.
+
+  * `/rewind`: Rewind playing.
+
   * `/like`: Add current song to favorite.
 
   * `/info`: Query current song's information.
@@ -29,8 +33,10 @@ This is the app for play bluetooth music.
 ||/start|||Start/resume play.|
 ||/pause|||Pause music.|
 ||/stop|||Stop music.|
-|yoda-app://bluetooth-music|/next|||Play next song.|
-||/prev|||Play previous song.|
+||/next|||Play next song.|
+|yoda-app://bluetooth-music|/prev|||Play previous song.|
+||/ffward|||Fast forward playing.|
+||/rewind|||Rewind playing.|
 ||/like|||Add current song to favorite.|
 ||/info|||Query current song's information.|
 

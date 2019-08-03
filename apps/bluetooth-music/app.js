@@ -120,6 +120,12 @@ function handleUrl (url) {
       a2dp.prev()
       lastUrl = url
       break
+    case '/ffward':
+      a2dp.ffward()
+      break
+    case 'rewind':
+      a2dp.rewind()
+      break
     case '/like':
     case '/info':
       a2dp.query()

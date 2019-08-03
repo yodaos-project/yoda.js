@@ -474,6 +474,32 @@ BluetoothA2dp.prototype.query = function () {
 }
 
 /**
+ * Fast forward playing song.
+ *
+ * @return {boolean} `true` if send command success else `false`.
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
+ */
+BluetoothA2dp.prototype.ffward = function () {
+  logger.debug('fast forward')
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    return this._send(this.lastMode, 'SEND_KEY', { key: 0x49 })
+  }
+}
+
+/**
+ * Rewind playing song.
+ *
+ * @return {boolean} `true` if send command success else `false`.
+ * @fires module:@yoda/bluetooth/BluetoothA2dp#audio_state_changed
+ */
+BluetoothA2dp.prototype.rewind = function () {
+  logger.debug('rewind')
+  if (this.lastMode === protocol.A2DP_MODE.SINK) {
+    return this._send(this.lastMode, 'SEND_KEY', { key: 0x48 })
+  }
+}
+
+/**
  * Set local device discoverable.
  *
  * You can listen following changed state:
