@@ -45,9 +45,10 @@ function onAudioFocusLost (transient, mayDuck) {
     }
   } else {
     nowPlayingCenter.setNowPlayingInfo(null)
-    uploadEvent(protocol.AUDIO_STATE.STOPPED)
-    app.openUrl('yoda-app://bluetooth/implied_close')
-    needResume = false
+    if (playing) {
+      a2dp.stop()
+      needResume = false
+    }
   }
 }
 
@@ -107,8 +108,6 @@ function handleUrl (url) {
       } else {
         if (audioFocus.state !== 'inactive') {
           audioFocus.abandon()
-        } else {
-          app.openUrl('yoda-app://bluetooth/disconnect')
         }
       }
       break
