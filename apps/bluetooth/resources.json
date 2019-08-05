@@ -1,11 +1,11 @@
 {
   "AUDIO": {
-    "OPENED": "system://openbluetooth.ogg",
-    "CLOSED": "system://closebluetooth.ogg",
-    "OPEN_FAILED": "system://openbluetootherror.ogg",
-    "CONNECTED": "system://connectbluetooth.ogg",
-    "CONNECT_FAILED": "system://connectfailedbluetooth.ogg",
-    "AUTOCONNECT_FAILED": "system://connectfailedbluetooth.ogg"
+    "OPENED": "/opt/media/openbluetooth.ogg",
+    "CLOSED": "/opt/media/closebluetooth.ogg",
+    "OPEN_FAILED": "/opt/media/openbluetootherror.ogg",
+    "CONNECTED": "/opt/media/connectbluetooth.ogg",
+    "CONNECT_FAILED": "/opt/media/connectfailedbluetooth.ogg",
+    "AUTOCONNECT_FAILED": "/opt/media/connectfailedbluetooth.ogg"
   },
   "LIGHT": {
     "DISCOVERY_ON": "system://bluetoothOpen.js"
