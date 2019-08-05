@@ -12,6 +12,7 @@
   "SOURCE_CONNECT_FAILED_ARG1S": "未能连上你的%s，请在手机App中连接其它蓝牙音箱。",
   "CLOSED": "蓝牙已关闭。",
   "CONNECTED_ARG1S": "已连接上你的%s。",
+  "RECONNECTED_ARG2S": "已连接上你的%s，想要配对新的设备，请先断开当前连接，并在手机上搜索%s来连接我的蓝牙。",
   "DISCONNECTED": "蓝牙已断开。",
   "ASK": "你可以对我说，打开蓝牙。",
   "FALLBACK": "蓝牙暂不支持此功能。"
