@@ -23,6 +23,7 @@ jobs:
     - npm install
     script:
     - npm run lint
+    - rm -rf node_modules/lru-cache # FIXME: https://github.com/yodaos-project/ShadowNode/issues/551
     - sudo tools/build-yodart.sh
     - sudo chmod a+rwx /var/run
     - flora-dispatcher --uri=unix:/var/run/flora.sock --uri=tcp://0.0.0.0:37800/ --msg-buf-size=81920 --log-file=`pwd`/flora-dispatcher.log &
