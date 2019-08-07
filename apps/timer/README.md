@@ -6,7 +6,7 @@ A simple app support start/pause/continue/cancel/restart a timer.
 
 ## event `url path`
 
-* `timer_start`: Start a new timer.
+* `/timer_start`: Start a new timer.
 
   queries:
 
@@ -18,32 +18,32 @@ A simple app support start/pause/continue/cancel/restart a timer.
 
   * `second`
 
-  * `tts(optional)`
+  * `tts`(optional)
 
-* `timer_pause`: Pause current timer.
-
-  queries:
-
-  * `tts(optional)`
-
-* `timer_keepon`: Continue paused timer.
+* `/timer_pause`: Pause current timer.
 
   queries:
 
-  * `tts(optional)`
+  * `tts`(optional)
 
-* `timer_close`: Cancel current timer.
-
-  queries:
-
-  * `tts(optional)`
-
-* `timer_restart`: Restart current timer.
+* `/timer_keepon`: Continue paused timer.
 
   queries:
 
-  * `tts(optional)`
+  * `tts`(optional)
 
-* `howtouse_timer`: Usage of timer.
+* `/timer_close`: Cancel current timer.
 
-* `timer_comeback`: Query remain time of current timer.
+  queries:
+
+  * `tts`(optional)
+
+* `/timer_restart`: Restart current timer.
+
+  queries:
+
+  * `tts`(optional)
+
+* `/howtouse_timer`: Usage of timer.
+
+* `/timer_comeback`: Query remain time of current timer.

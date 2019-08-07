@@ -148,13 +148,21 @@ var app = Application({
           speak(strings.SET_FAIL.TOO_LONG, time.toString(config.TIME.LONGEST))
         } else {
           setTimer(totalSecs * 1000)
-          speak(strings.SET_SUCC, time.toString(totalSecs))
+          if (url.query.tts != null) {
+            speak(url.query.tts)
+          } else {
+            speak(strings.SET_SUCC, time.toString(totalSecs))
+          }
         }
         break
       case 'timer_keepon':
         var realRemain = resumeTimer()
         if (realRemain > 0) {
-          speak(strings.RESUME, time.toString(Math.ceil(realRemain / 1000)))
+          if (url.query.tts != null) {
+            speak(url.query.tts)
+          } else {
+            speak(strings.RESUME, time.toString(Math.ceil(realRemain / 1000)))
+          }
         } else {
           speak(strings.NO_TIMER_PROMPT)
         }
@@ -162,7 +170,11 @@ var app = Application({
       case 'timer_pause':
         realRemain = pauseTimer()
         if (realRemain > 0) {
-          speak(strings.PAUSE)
+          if (url.query.tts != null) {
+            speak(url.query.tts)
+          } else {
+            speak(strings.PAUSE)
+          }
         } else {
           speak(strings.NO_TIMER_PROMPT)
         }
@@ -170,7 +182,11 @@ var app = Application({
       case 'timer_close':
         if (isTimerExist()) {
           cancelTimer()
-          speak(strings.CANCEL_SUCC)
+          if (url.query.tts != null) {
+            speak(url.query.tts)
+          } else {
+            speak(strings.CANCEL_SUCC)
+          }
         } else {
           speak(strings.NO_TIMER_PROMPT)
         }
@@ -179,7 +195,11 @@ var app = Application({
         if (isTimerExist()) {
           totalSecs = localStorage.getItem('totalSecs')
           setTimer(totalSecs * 1000)
-          speak(strings.RESTART, time.toString(totalSecs))
+          if (url.query.tts != null) {
+            speak(url.query.tts)
+          } else {
+            speak(strings.RESTART, time.toString(totalSecs))
+          }
         } else {
           speak(strings.NO_TIMER_PROMPT)
         }
