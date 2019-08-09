@@ -29,6 +29,15 @@ var stateFilters = [
       return {'address': msg.connect_address, 'name': msg.connect_name}
     }
   },
+  // re-connected to remote device succeeded
+  {
+    lastInflowMsg: {a2dpstate: 'opened', connect_state: 'connected', play_state: 'stopped', broadcast_state: 'closed'},
+    inflowMsg: {a2dpstate: 'opened', connect_state: 'connected', play_state: 'stopped', broadcast_state: 'closed'},
+    outflowEvent: {type: 'connection_state_changed', state: protocol.CONNECTION_STATE.CONNECTED},
+    extraDataGenerator: (msg) => {
+      return {'address': msg.connect_address, 'name': msg.connect_name}
+    }
+  },
   // disconnect from remote device
   {
     inflowMsg: {a2dpstate: 'opened', connect_state: 'disconnected', play_state: 'invalid', broadcast_state: 'opened'},
