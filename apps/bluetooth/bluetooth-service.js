@@ -20,17 +20,17 @@ var hfp = null
 var lastUrl = '/derived_from_phone'
 var timer = null
 
-function speak (text, altVoice) {
-  logger.debug(`speak: ${text}`)
-  service.openUrl(`yoda-app://system/speak?text=${text}&alt=${altVoice}`)
-}
-
-function getText (label, args) {
-  var txt = strings[label]
-  if (args !== undefined) {
-    txt = util.format(txt, args)
+function speak (label) {
+  var fmt = strings[label]
+  var altVoice = null
+  if (Array.isArray(fmt)) {
+    altVoice = fmt[1]
+    fmt = fmt[0]
   }
-  return txt
+  var args = Array.prototype.slice.call(arguments, 1)
+  var text = util.format.apply(util, [fmt].concat(args))
+  logger.debug(`speak: ${text}, altVoice: ${altVoice}`)
+  service.openUrl(`yoda-app://system/speak?text=${text}&alt=${altVoice}`)
 }
 
 function setTimer (callback, timeout) {
@@ -64,7 +64,7 @@ function uploadEvent (event, data) {
 var urlHandlers = {
   // ask for how to use bluetooth
   '/usage': () => {
-    speak(getText('ASK'))
+    speak('ASK')
   },
   // open bluetooth
   '/open': (url) => {
@@ -111,9 +111,9 @@ function handleSinkRadioOn (autoConn) {
   switch (lastUrl) {
     case '/open':
       if (autoConn) {
-        speak(getText('SINK_OPENED'), res.AUDIO['OPENED'])
+        speak('SINK_OPENED')
       } else {
-        speak(getText('SINK_FIRST_OPENED_ARG1S', deviceName), res.AUDIO['OPENED'])
+        speak('SINK_FIRST_OPENED_ARG1S', deviceName)
       }
       resetLastUrl()
       break
@@ -122,11 +122,11 @@ function handleSinkRadioOn (autoConn) {
       if (autoConn) {
         setTimer(() => {
           if (!a2dp.isConnected()) {
-            speak(getText('SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S', deviceName), res.AUDIO['AUTOCONNECT_FAILED'])
+            speak('SINK_OPENED_BY_ACTION_TIMEOUT_ARG1S', deviceName)
           }
         }, config.TIMER.DELAY_BEFORE_AUTOCONNECT_FAILED)
       } else {
-        speak(getText('SINK_FIRST_OPENED_BY_CONNECT_ARG1S', deviceName), res.AUDIO['OPENED'])
+        speak('SINK_FIRST_OPENED_BY_CONNECT_ARG1S', deviceName)
       }
       break
     default:
@@ -136,9 +136,9 @@ function handleSinkRadioOn (autoConn) {
 
 function handleSourceRadioOn (autoConn) {
   if (autoConn) {
-    speak(getText('SOURCE_OPENED'), res.AUDIO['OPENED'])
+    speak('SOURCE_OPENED')
   } else {
-    speak(getText('SOURCE_FIRST_OPENED'), res.AUDIO['OPENED'])
+    speak('SOURCE_FIRST_OPENED')
   }
   resetLastUrl()
 }
@@ -164,14 +164,14 @@ function onRadioStateChangedListener (mode, state, extra) {
       break
     case protocol.RADIO_STATE.ON_FAILED:
       if (mode === protocol.A2DP_MODE.SINK) {
-        speak(getText('SINK_OPEN_FAILED'), res.AUDIO[state])
+        speak('SINK_OPEN_FAILED')
       } else {
-        speak(getText('SOURCE_OPEN_FAILED'), res.AUDIO[state])
+        speak('SOURCE_OPEN_FAILED')
       }
       break
     case protocol.RADIO_STATE.OFF:
       if (lastUrl === '/close') {
-        speak(getText('CLOSED'), res.AUDIO[state])
+        speak('CLOSED')
       }
       break
     default:
@@ -196,38 +196,37 @@ function onConnectionStateChangedListener (mode, state, device) {
           if (a2dp.isConnected() && !a2dp.isPlaying()) {
             var dev = a2dp.getConnectedDevice()
             if (dev != null) {
-              speak(getText('PLAY_FAILED_ARG1S', dev.name))
+              speak('PLAY_FAILED_ARG1S', dev.name)
             }
           }
         }, config.TIMER.DELAY_BEFORE_PLAY_FAILED)
-        speak(getText('PLEASE_WAIT'))
+        speak('PLEASE_WAIT')
       } else if (lastUrl === '/reopen') {
-        var str = util.format(strings['RECONNECTED_ARG2S'], device.name, deviceName)
-        speak(str, res.AUDIO[state])
+        speak('RECONNECTED_ARG2S', device.name, deviceName)
         lastUrl = '/derived_from_phone'
       } else {
-        speak(getText('CONNECTED_ARG1S', device.name), res.AUDIO[state])
+        speak('CONNECTED_ARG1S', device.name)
         lastUrl = '/derived_from_phone'
       }
       resetLastUrl()
       break
     case protocol.CONNECTION_STATE.DISCONNECTED:
       if (lastUrl !== '/close' && lastUrl !== '/implied_close') {
-        speak(getText('DISCONNECTED'))
+        speak('DISCONNECTED')
       } else {
         logger.debug('Suppress "disconnected" prompt while NOT user explicit intent.')
       }
       break
     case protocol.CONNECTION_STATE.CONNECT_FAILED:
       if (mode === protocol.A2DP_MODE.SOURCE) {
-        speak(getText('SOURCE_CONNECT_FAILED_ARG1S', device.name), res.AUDIO[state])
+        speak('SOURCE_CONNECT_FAILED_ARG1S', device.name)
       }
       break
     case protocol.CONNECTION_STATE.AUTOCONNECT_FAILED:
       if (lastUrl === '/open') {
         // NOP while auto connect failed if user only says 'open bluetooth'.
       } else {
-        speak(getText('SOURCE_CONNECT_FAILED_ARG1S', device.name), res.AUDIO[state])
+        speak('SOURCE_CONNECT_FAILED_ARG1S', device.name)
       }
       break
     default:
@@ -316,7 +315,7 @@ service.handleUrl = (url) => {
     lastUrl = url.pathname
     handler(url)
   } else {
-    speak(getText('FALLBACK'))
+    speak('FALLBACK')
   }
 }
 
