@@ -9,6 +9,10 @@ var lightLauncher = require('../app/light-launcher')
 var defaultLauncher = require('../app/default-launcher')
 var executableLauncher = require('../app/executable-launcher')
 
+var endoscope = require('@yoda/endoscope')
+var appLaunchDurationHistogram = new endoscope.Histogram('yodaos:runtime:app_launch_duration', [ 'type', 'mode', 'appId' ])
+var appSuspendDurationHistogram = new endoscope.Histogram('yodaos:runtime:app_suspend_duration', [ 'appId', 'isForce' ])
+
 module.exports = AppScheduler
 function AppScheduler (runtime) {
   this.runtime = runtime
@@ -130,6 +134,8 @@ AppScheduler.prototype.createApp = function createApp (appId, options) {
   }
   this.appLaunchOptions[appId] = { type: type, mode: mode, args: args, environs: environs, daemon: daemon }
 
+  var slice = appLaunchDurationHistogram.start({ type: type, mode: mode, appId: appId })
+
   var appBridge = new AppBridge(this.runtime, appId, metadata)
   this.appMap[appId] = appBridge
   appBridge.onExit = (code, signal) => {
@@ -166,6 +172,7 @@ AppScheduler.prototype.createApp = function createApp (appId, options) {
     .then(
       () => {
         delete this.appCreationFutures[appId]
+        appLaunchDurationHistogram.end(slice)
         return appBridge
       },
       err => {
@@ -249,6 +256,7 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   var future = Promise.resolve()
   if (bridge) {
     bridge.emit('activity', 'destroyed')
+    var slice = appSuspendDurationHistogram.start({ appId: appId, isForce: force })
     this.appStatus[appId] = Constants.status.suspending
     future = this.appSuspensionFutures[appId] = new Promise((resolve, reject) => {
       var timer = setTimeout(() => {
@@ -266,6 +274,7 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
         clearTimeout(timer)
         timer = null
         resolve()
+        appSuspendDurationHistogram.end(slice)
       }
       bridge.suspend({ force: force })
     })

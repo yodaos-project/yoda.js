@@ -19,6 +19,12 @@ var Status = {
 
 var Events = ['start', 'end', 'cancel']
 
+var endoscope = require('@yoda/endoscope')
+var synthesizerEventMetric = new endoscope.Enum(
+  'yodaos:speech-synthesis:event',
+  { labels: [ 'id', 'text' ], states: Events.concat('error') }
+)
+
 /**
  * @hideconstructor
  * @example
@@ -129,8 +135,10 @@ class SpeechSynthesis {
     if (name === 'cancel' && errCode !== 0) {
       var err = new Error(`SpeechSynthesisError: code(${errCode})`)
       err.code = errCode
+      synthesizerEventMetric.state(utter, 'error')
       utter.emit('error', err)
     } else {
+      synthesizerEventMetric.state(utter, name)
       utter.emit(name)
     }
     this.go()

@@ -3,6 +3,8 @@
 var logger = require('logger')('ext-app-client')
 var translator = require('./translator-ipc')
 var flora = require('@yoda/flora')
+var endoscope = require('@yoda/endoscope')
+var FloraExporter = require('@yoda/endoscope/exporter/flora')
 var apiSymbol = Symbol.for('yoda#api')
 
 module.exports = {
@@ -42,6 +44,7 @@ function main (target, descriptorPath, runner) {
   logger.log(`load target: ${target}/package.json`)
   var appId = pkg.name
   logger = require('logger')(`entry-${appId}`)
+  endoscope.addExporter(new FloraExporter('yodaos.endoscope.export'))
 
   var main = `${target}/${pkg.main || 'app.js'}`
 
