@@ -15,6 +15,10 @@ var ComponentConfig = require('./lib/config').getConfig('component-config.json')
 
 var _ = require('@yoda/util')._
 var Loader = require('@yoda/bolero').Loader
+var endoscope = require('@yoda/endoscope')
+
+var runtimePhaseMetric = new endoscope.Enum('yodaos:runtime:phase', { states: [ 'booting', 'reset', 'ready' ] })
+var dispatchDurationHistogram = new endoscope.Histogram('yodaos:runtime:open_url_duration', { labels: [ 'url' ] })
 
 module.exports = AppRuntime
 
@@ -268,11 +272,12 @@ AppRuntime.prototype.openUrl = function (url, options) {
     return Promise.resolve(false)
   }
 
+  var slice = dispatchDurationHistogram.start({ url: typeof url === 'string' ? url : Url.format(url) })
   return this.component.dispatcher.dispatchAppEvent(
     appId,
     'url', [ url ],
     Object.assign({}, options)
-  )
+  ).finally(() => dispatchDurationHistogram.end(slice))
 }
 
 /**
@@ -327,6 +332,7 @@ AppRuntime.prototype.reset = function reset () {
  */
 AppRuntime.prototype.phaseToBooting = function phaseToBooting () {
   this.component.flora.post('yodaos.runtime.phase', ['booting'], require('@yoda/flora').MSGTYPE_PERSIST)
+  runtimePhaseMetric.state('booting')
 }
 
 /**
@@ -337,6 +343,7 @@ AppRuntime.prototype.phaseToReady = function phaseToReady () {
   return this.startDaemonApps()
     .catch(err => logger.error('Unexpected error on starting daemon app', err.stack))
     .then(() => this.component.broadcast.dispatch('yodaos.on-phase-ready', []))
+    .finally(() => runtimePhaseMetric.state('ready'))
 }
 
 /**
