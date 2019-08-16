@@ -10,6 +10,8 @@ var url = require('url')
 var floraConfig = require('../lib/config').getConfig('flora-config.json')
 
 var endoscope = require('@yoda/endoscope')
+var FloraExporter = require('@yoda/endoscope/exporter/flora')
+endoscope.addExporter(new FloraExporter('yodaos.endoscope.export'))
 
 var faunaInvocationDuration = new endoscope.Histogram('yodaos:runtime:fauna_invocation_duration', [ 'namespace', 'method', 'appId' ])
 
