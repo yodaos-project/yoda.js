@@ -6,7 +6,22 @@ var EventEmitter = require('events').EventEmitter
 var AudioManager = require('@yoda/audio').AudioManager
 var delegate = require('@yoda/util/delegate')
 
+var endoscope = require('@yoda/endoscope')
+var mediaPlayerEventMetric = new endoscope.Enum('yodaos:multimedia:media_player_event', {
+  labels: [
+    'id',
+    'url'
+  ],
+  states: [
+    'prepared',
+    'playbackcomplete',
+    'playing',
+    'stopped'
+  ]
+})
+
 var handle = Symbol('mediaplayer#native')
+var gid = 0
 
 /**
  * @class
@@ -69,6 +84,7 @@ function MediaPlayer (stream) {
   this._settled = false
   this._preparing = false
   this._startOnPrepared = false
+  this._id = ++gid
 }
 inherits(MediaPlayer, EventEmitter)
 
@@ -125,6 +141,7 @@ var EventMap = {
 MediaPlayer.prototype._onevent = function (type, ext1) {
   var eve = EventMap[type]
   var args = [eve]
+  mediaPlayerEventMetric.state({ id: this._id, url: this.url }, eve)
   switch (eve) {
     case 'prepared':
       var vol = AudioManager.getVolume(this._stream)
@@ -211,7 +228,9 @@ MediaPlayer.prototype.stop = function () {
   this._settled = false
   this._preparing = false
   this._startOnPrepared = false
-  return this[handle].stop()
+  var ret = this[handle].stop()
+  mediaPlayerEventMetric.state({ id: this._id, url: this.url }, 'stopped')
+  return ret
 }
 
 MediaPlayer.prototype.resume = function () {

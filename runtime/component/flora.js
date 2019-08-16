@@ -9,6 +9,12 @@ var url = require('url')
 
 var floraConfig = require('../lib/config').getConfig('flora-config.json')
 
+var endoscope = require('@yoda/endoscope')
+var FloraExporter = require('@yoda/endoscope/exporter/flora')
+endoscope.addExporter(new FloraExporter('yodaos.endoscope.export'))
+
+var faunaInvocationDuration = new endoscope.Histogram('yodaos:runtime:fauna_invocation_duration', [ 'namespace', 'method', 'appId' ])
+
 module.exports = Flora
 /**
  *
@@ -128,15 +134,18 @@ Flora.prototype.remoteMethods = {
     var method = message.method
     var params = message.params
     logger.debug(`Received child(${appId}:${sender.pid}) invocation ${namespace || 'activity'}.${method}`)
+    var slice = faunaInvocationDuration.start({ namespace: namespace, method: method, appId: appId })
     return bridge.invoke(namespace, method, params)
       .then(
         ret => {
+          faunaInvocationDuration.end(slice)
           return res.end(0, [ JSON.stringify({
             action: 'resolve',
             result: ret
           }) ])
         },
         err => {
+          faunaInvocationDuration.end(slice)
           return res.end(0, [ JSON.stringify({
             action: 'reject',
             error: Object.assign({}, err, { name: err.name, message: err.message })
