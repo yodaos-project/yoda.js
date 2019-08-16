@@ -1,6 +1,12 @@
 var _ = require('@yoda/util')._
 var assert = require('assert')
 
+var endoscope = require('@yoda/endoscope')
+var focusShiftMetric = new endoscope.Counter(
+  'yodaos:runtime:audio_focus_shift',
+  [ 'id', 'appId', 'transient', 'mayDuck', 'exclusive' ]
+)
+
 var FocusShiftChannel = 'yodaos.audio-focus.on-focus-shift'
 
 var RequestType = {
@@ -103,6 +109,7 @@ class AudioFocus {
       this.castRequest(req)
       this.recoverLastingRequest()
       this.component.broadcast.dispatch(FocusShiftChannel, [ this.lastingRequest, req ])
+      focusShiftMetric.inc(this.lastingRequest)
       return
     }
     if (this.lastingRequest && this.lastingRequest.appId === appId && this.lastingRequest.id === id) {
@@ -133,6 +140,7 @@ class AudioFocus {
 
     if (transientRequest || lastingRequest) {
       this.component.broadcast.dispatch(FocusShiftChannel, [ null, transientRequest || lastingRequest ])
+      focusShiftMetric.inc(null)
     }
   }
 
@@ -183,6 +191,7 @@ class AudioFocus {
     this.transientRequest = req
     this.descriptor.audioFocus.emitToApp(req.appId, 'gain', [ req.id ])
     this.component.broadcast.dispatch(FocusShiftChannel, [ req, prev ])
+    focusShiftMetric.inc(req)
   }
 
   /**
@@ -205,6 +214,7 @@ class AudioFocus {
     this.lastingRequest = req
     this.descriptor.audioFocus.emitToApp(req.appId, 'gain', [ req.id ])
     this.component.broadcast.dispatch(FocusShiftChannel, [ req, prev ])
+    focusShiftMetric.inc(req)
   }
 
   /**
@@ -224,6 +234,7 @@ class AudioFocus {
       this.castRequest(req)
       this.recoverLastingRequest()
       this.component.broadcast.dispatch(FocusShiftChannel, [ this.lastingRequest, req ])
+      focusShiftMetric.inc(this.lastingRequest)
       return
     }
     if (this.lastingRequest && this.lastingRequest.appId === appId) {
