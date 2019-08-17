@@ -12,7 +12,7 @@ class Exporter {
       this.name,
       [
         it.name,
-        it.labels && Object.keys(it.labels)
+        Object.keys(it.labels || {})
           .map(key => [ key, it.labels[key] == null ? undefined : String(it.labels[key]) ]),
         it.value
       ]

@@ -1,5 +1,6 @@
 # This set is included by default
 @yoda/bolero/**/*.test.js
+@yoda/endoscope/metric/*.test.js
 @yoda/util/*.test.js
 @yodaos/application/*.test.js
 @yodaos/application/vui/*.test.js
