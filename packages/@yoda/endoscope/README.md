@@ -32,7 +32,7 @@ Enum metrics are good for collecting item state shifting during a period of time
 
 ```js
 var endoscope = require('@yoda/endoscope')
-var metric = new new endoscope.Enum('example_metric_state', { labels: [ 'method', 'url' ], states: [ 'start', 'end' ] })
+var metric = new endoscope.Enum('example_metric_state', { labels: [ 'method', 'url' ], states: [ 'start', 'end' ] })
 
 metric.state({ method: 'POST', url: '/path' }, 'start')
 metric.state({ method: 'POST', url: '/path' }, 'end')
@@ -44,7 +44,7 @@ Histogram metrics could be used to inspect how long an operation has been last.
 
 ```js
 var endoscope = require('@yoda/endoscope')
-var metric = new new endoscope.Histogram('example_metric_histogram', { labels: [ 'method', 'url' ] })
+var metric = new endoscope.Histogram('example_metric_histogram', { labels: [ 'method', 'url' ] })
 
 var slice = metric.start({ method: 'POST', url: '/path' })
 metric.end(slice)

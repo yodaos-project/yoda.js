@@ -1,3 +1,4 @@
+@yoda/endoscope/exporter/*.test.js
 @yodaos/speech-synthesis/*.test.js
 client/light-launcher.test.js
 component/app-scheduler/*.test.js
