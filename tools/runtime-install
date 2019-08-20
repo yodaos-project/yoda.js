@@ -7,7 +7,6 @@ Usage:
   -t          Only includes tests.
   -r          Only includes resources.
   -a          Include tests and resources.
-  --no-app    Exclude apps.
   --no-os     Exclude runtime and packages.
 
   -s          Select which device to be installed on if multiple devices presents.
@@ -108,15 +107,6 @@ function install_resources() {
   push "./res/media" "/opt/"
 }
 
-function install_apps {
-  # install apps
-  appdir=./apps
-  for file in `ls ${appdir}`; do
-    shell "rm -rf /opt/apps/${file}"
-  done
-  push "./apps/*" "/opt/apps/"
-}
-
 function install_configs() {
   # etc config
   shell "rm -rf /etc/yoda/*"
@@ -135,10 +125,6 @@ fi
 
 if test "$test" = 'YES'; then
   install_test
-fi
-
-if test "$exclude_app" = 'NO'; then
-  install_apps
 fi
 
 if test "$configs" = 'YES'; then
