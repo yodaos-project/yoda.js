@@ -1,9 +1,0 @@
-{
-  "ADD_TO_FAVORITE_FAILED": "无法收藏这首歌，换首歌试一下吧!",
-  "FALLBACK": "蓝牙音乐暂不支持此功能。",
-  "MUSIC_INFO_SUCC": "这首歌是%s的%s，收录在%s专辑中，喜欢的话可以让我收藏。",
-  "MUSIC_INFO_SUCC_TITLE": "这首歌叫%s，喜欢的话可以让我收藏。",
-  "MUSIC_INFO_SUCC_TITLE_ARTIST": "这首歌是%s的%s，喜欢的话可以让我收藏。",
-  "MUSIC_INFO_SUCC_TITLE_ALBUM": "这首歌叫%s，收录在%s专辑中，喜欢的话可以让我收藏。",
-  "MUSIC_INFO_FAIL": "无法查询到这首歌的信息，换首歌试一下吧!"
-}

@@ -10,7 +10,7 @@ test('should load path', t => {
   var fakeRuntime = mock.mockRuntime()
   var loader = new AppLoader(fakeRuntime)
 
-  loader.loadPath(helper.paths.apps)
+  loader.loadPath(helper.paths.fixture)
     .then(() => {
       t.assert(Object.keys(loader.appManifests).length > 0)
       t.end()
@@ -25,7 +25,7 @@ test('should skip path if not exist', t => {
   var fakeRuntime = mock.mockRuntime()
   var loader = new AppLoader(fakeRuntime)
 
-  loader.loadPath(helper.paths.apps + 'foobar')
+  loader.loadPath(helper.paths.fixture + 'foobar')
     .then(() => {
       t.pass()
       t.end()
@@ -40,7 +40,7 @@ test('should load paths', t => {
   var fakeRuntime = mock.mockRuntime()
   var loader = new AppLoader(fakeRuntime)
 
-  loader.loadPaths([ helper.paths.apps ])
+  loader.loadPaths([ helper.paths.fixture ])
     .then(() => {
       t.assert(Object.keys(loader.appManifests).length > 0)
       t.end()
