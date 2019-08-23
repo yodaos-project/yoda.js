@@ -23,8 +23,7 @@ class Enum extends Metric {
     if (Array.prototype.indexOf.call(this.states, state) < 0) {
       return
     }
-    labels = Object.assign({ state: state }, labels)
-    this._record(labels, 1)
+    this._record(labels, 1, { state: state })
   }
 }
 
