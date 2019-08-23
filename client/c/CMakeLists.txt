@@ -30,6 +30,7 @@ target_link_libraries(yodaosclient_c
   mutils::caps mutils::rlog mutils::misc
   flora-cli::flora-cli
 )
+add_dependencies(yodaosclient_c yodart-api-c)
 
 SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
