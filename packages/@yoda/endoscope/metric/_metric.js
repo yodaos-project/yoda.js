@@ -19,7 +19,10 @@ class Metric {
     if (Array.isArray(this.labels)) {
       labels = _.pick(labels, this.labels)
     }
-    if (extras) {
+    if (typeof labels !== 'object' || labels == null) {
+      labels = {}
+    }
+    if (extras != null) {
       Object.assign(labels, extras)
     }
     this.registry.export({ name: this.name, description: this.description, labels: labels, value: value })
