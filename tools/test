@@ -22,7 +22,7 @@ manifest=''
 patternPrefix='/data/workspace/test/'
 patterns=""
 reporter="cat"
-coverage=""
+coverageDir=""
 timeout=""
 local="NO"
 sn=""
@@ -60,8 +60,8 @@ while [ $# -gt 0 ]; do
       printf "$help"
       exit
       ;;
-    --coverage)
-      coverage="--coverage $2"
+    --coverage-dir)
+      coverageDir="$2"
       shift
       ;;
     --timeout)
@@ -89,7 +89,7 @@ if test "$local" = "YES"; then
 
   patternPrefix="$(pwd)/test/"
 
-  cmd='iotjs ./node_modules/tape/bin/tape.js '
+  cmd='iotjs ./packages/tape/bin/tape.js '
 else
   pre_scripts="
 export BLUETOOTH_CHANNEL_PREFIX=/tmp;
@@ -106,6 +106,10 @@ fi
 
 IFS=$'\n' patterns=($patterns)
 unset IFS
+
+if ! test -z "$coverageDir"; then
+  mkdir -p $coverageDir
+fi
 for pattern in "${patterns[@]}"; do
   if test -z "$pattern"; then
     continue
@@ -114,5 +118,9 @@ for pattern in "${patterns[@]}"; do
     continue
   fi
   printf "# $patternPrefix$pattern\n"
-  $cmd $pre_scripts $coverage $timeout "$patternPrefix$pattern" | $reporter
+  coverageOpt=""
+  if ! test -z "$coverageDir"; then
+    coverageOpt="--coverage $coverageDir/$(echo $pattern | md5sum - | awk '{ print $1 }').json"
+  fi
+  $cmd $pre_scripts $coverageOpt $timeout "$patternPrefix$pattern" | $reporter
 done

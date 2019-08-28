@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -x
+
+rm -rf .coverage-workspace
+rm -rf .nyc_output
+
+mkdir .coverage-workspace
+mkdir .nyc_output
+cp -R * .coverage-workspace
+
+npx nyc instrument --exclude .coverage-workspace --exclude packages/tape ./ .coverage-workspace

@@ -3,7 +3,6 @@
   "version": "8.1.0-alpha.0",
   "scripts": {
     "prerestart": "npm run build; tools/runtime-install",
-    "pre-push": "npm run lint",
     "postinstall": "npm run build",
     "restart": "tools/runtime-op restart",
     "lint": "npm run lint-js && npm run lint-cc",
@@ -26,9 +25,8 @@
     "apilevel": 0.6
   },
   "devDependencies": {
-    "husky": "^1.0.0-rc.14",
     "node-addon-api": "^1.6.3",
-    "nyc": "^13.1.0",
+    "nyc": "^14.1.1",
     "standard": "^11.0.1",
     "tap-parser": "^7.0.0",
     "tap-spec": "^5.0.0",

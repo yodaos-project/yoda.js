@@ -15,6 +15,9 @@ test/temp/*
 build
 out
 vendor
+.nyc_output
+.coverage-workspace
+coverage
 
 runtime/client/api/*
 !runtime/client/api/.gitkeep
