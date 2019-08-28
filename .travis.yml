@@ -24,8 +24,16 @@ jobs:
     script:
     - npm run lint
     - rm -rf node_modules/lru-cache # FIXME: https://github.com/yodaos-project/ShadowNode/issues/551
+    # MARK: - coverage
+    - tools/coverage-instrument
+    - cd .coverage-workspace
+    # MARK: END - coverage
     - sudo tools/build-yodart.sh
     - sudo chmod a+rwx /var/run
     - flora-dispatcher --uri=unix:/var/run/flora.sock --uri=tcp://0.0.0.0:37800/ --msg-buf-size=81920 --log-file=`pwd`/flora-dispatcher.log &
     - voice-interface `pwd`/test/@yodaos/speech-synthesis/audio.raw &
-    - tools/test -l --node-path /usr/lib/node_modules --manifest /etc/manifest.json --reporter tap-spec --testset test/testsets-ci.txt
+    - tools/test -l --node-path /usr/lib/node_modules --manifest /etc/manifest.json --reporter tap-spec --testset test/testsets-ci.txt --coverage-dir ../.nyc_output
+    after_success:
+    - cd ../
+    - npx nyc report --reporter=lcov
+    - npx codecov

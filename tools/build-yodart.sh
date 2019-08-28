@@ -1,10 +1,7 @@
 #!/bin/bash
 set -ex
 
-workdir=/workspace
-if ! test -z $TRAVIS_BUILD_DIR; then
-  workdir=$TRAVIS_BUILD_DIR
-fi
+workdir=`pwd`
 
 mkdir -p ./vendor
 cd $workdir/vendor
