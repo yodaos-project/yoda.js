@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(yodart VERSION 8.1.0.0 LANGUAGES C CXX)
+project(yodart VERSION 8.2.0 LANGUAGES C CXX)
 include(ExternalProject)
 find_package(Git REQUIRED)
 
