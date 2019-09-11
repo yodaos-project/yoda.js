@@ -79,7 +79,8 @@ Flora.prototype.updateSpeechPrepareOptions = function updateSpeechPrepareOptions
     speechAuthInfo.deviceId,
     ovsdkConfig.common.reconnInterval,
     ovsdkConfig.common.pingInterval,
-    ovsdkConfig.common.noRespTimeout
+    ovsdkConfig.common.noRespTimeout,
+    ovsdkConfig.common.connDuration
   ], floraFactory.MSGTYPE_PERSIST)
 }
 
