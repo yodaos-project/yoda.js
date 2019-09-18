@@ -6,6 +6,7 @@ require('@yoda/oh-my-little-pony')
 
 var Dbus = require('dbus')
 var logger = require('logger')('lightd')
+var property = require('@yoda/property')
 var Sounder = require('@yoda/multimedia').Sounder
 
 var Service = require('./service')
@@ -21,11 +22,14 @@ Sounder.once('ready', () => {
 Sounder.once('error', (err) => {
   logger.error(err && err.stack)
 })
-Sounder.init([
-  '/opt/media/volume.wav',
-  '/opt/media/mic_close_tts.wav',
-  '/opt/media/mic_open.wav'
-])
+
+if (property.get('player.lightd.holdcon', 'persist') !== '0') {
+  Sounder.init([
+    '/opt/media/volume.wav',
+    '/opt/media/mic_close_tts.wav',
+    '/opt/media/mic_open.wav'
+  ])
+}
 
 var service = new Service()
 var flora = new Flora(service)
