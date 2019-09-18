@@ -97,6 +97,7 @@ class AppBridge {
   // MARK: - APIs for scheduler
   suspend (options) {
     var force = _.get(options, 'force', false)
+    var gcore = _.get(options, 'gcore', false)
     if (this.suspended && !force) {
       return
     }
@@ -104,7 +105,7 @@ class AppBridge {
     if (this.exited) {
       return
     }
-    this.exitInl && this.exitInl(force)
+    this.exitInl && this.exitInl(force, gcore)
   }
 
   statusReport (status) {
