@@ -103,17 +103,16 @@ Value SpeechSynthesizer::speak(const CallbackInfo& info) {
   std::shared_ptr<Caps> msg = Caps::new_instance();
   msg->write(id);
   msg->write(text);
-  this->floraAgent.call(
-      YODAOS_SPEECH_SYNTHESIS_IPC_SPEAK, msg,
-      YODAOS_SPEECH_SYNTHESIS_IPC_TARGET,
-      [this](int32_t resCode, flora::Response& resp) {
-        if (resCode != 0) {
-          this->errCode = resCode;
-          if (this->player != nullptr)
-            this->player->cancel();
-        }
-      },
-      10 * 1000);
+  this->floraAgent.call(YODAOS_SPEECH_SYNTHESIS_IPC_SPEAK, msg,
+                        YODAOS_SPEECH_SYNTHESIS_IPC_TARGET,
+                        [this](int32_t resCode, flora::Response& resp) {
+                          if (resCode != 0) {
+                            this->errCode = resCode;
+                            if (this->player != nullptr)
+                              this->player->cancel();
+                          }
+                        },
+                        10 * 1000);
   return env.Undefined();
 }
 
