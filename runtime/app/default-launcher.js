@@ -47,10 +47,15 @@ function launchApp (appDir, bridge, mode, options) {
 
   bridge.implement({
     anrEnabled: true,
-    exit: (force) => {
+    exit: (force, gcore) => {
       if (force) {
         bridge.logger.info(`force stop process(${cp.pid}).`)
-        setTimeout(() => cp.kill(/** SIGKILL */9), 1000)
+        cp.kill('SIGKILL')
+        return
+      }
+      if (gcore) {
+        bridge.logger.info(`abort process(${cp.pid}).`)
+        cp.kill('SIGABRT')
         return
       }
       bridge.logger.info(`Process(${cp.pid}) end of life, killing process after 1s.`)
@@ -59,7 +64,7 @@ function launchApp (appDir, bridge, mode, options) {
   })
   cp.once('error', function onError (err) {
     bridge.logger.error(`Unexpected error on child process(${cp.pid})`, err.message, err.stack)
-    cp.kill(/** SIGKILL */9)
+    cp.kill('SIGKILL')
   })
   cp.once('exit', (code, signal) => {
     bridge.logger.info(`Process(${cp.pid}) exited with code ${code}, signal ${signal}`)
