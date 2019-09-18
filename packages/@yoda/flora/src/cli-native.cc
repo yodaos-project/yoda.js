@@ -369,13 +369,13 @@ Value ClientNative::call(const CallbackInfo& info) {
   }
   // TODO: if callback of flora.call never invokded, the FunctionReference will
   // never Unref!!
-  int32_t r = floraAgent.call(
-      info[0].As<String>().Utf8Value().c_str(), msg,
-      info[2].As<String>().Utf8Value().c_str(),
-      [this, env, cbr](int32_t rescode, Response& resp) {
-        this->respCallback(env, cbr, rescode, resp);
-      },
-      timeout);
+  int32_t r =
+      floraAgent.call(info[0].As<String>().Utf8Value().c_str(), msg,
+                      info[2].As<String>().Utf8Value().c_str(),
+                      [this, env, cbr](int32_t rescode, Response& resp) {
+                        this->respCallback(env, cbr, rescode, resp);
+                      },
+                      timeout);
   return Number::New(env, r);
 }
 
