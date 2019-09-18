@@ -11,7 +11,8 @@ var executableLauncher = require('../app/executable-launcher')
 
 var endoscope = require('@yoda/endoscope')
 var appLaunchDurationHistogram = new endoscope.Histogram('yodaos:runtime:app_launch_duration', [ 'type', 'mode', 'appId' ])
-var appSuspendDurationHistogram = new endoscope.Histogram('yodaos:runtime:app_suspend_duration', [ 'appId', 'isForce' ])
+var appSuspendDurationHistogram = new endoscope.Histogram('yodaos:runtime:app_suspend_duration', [ 'appId', 'force', 'gcore' ])
+var appNotRespondingCounter = new endoscope.Counter('yodaos:runtime:app_not_responding', [ 'appId', 'pid' ])
 
 module.exports = AppScheduler
 function AppScheduler (runtime) {
@@ -234,15 +235,18 @@ AppScheduler.prototype.suspendAllApps = function suspendAllApps (options) {
  * @param {string} appId
  * @param {object} [options]
  * @param {boolean} [options.force=false]
+ * @param {boolean} [options.gcore=false]
  */
 AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   var force = _.get(options, 'force', false)
+  var gcore = _.get(options, 'gcore', false)
+
   var launchOptions = this.appLaunchOptions[appId]
   if (launchOptions == null) {
     return Promise.resolve()
   }
   var appType = launchOptions.type
-  logger.info(`suspending ${appType}-app(${appId}), force?`, force)
+  logger.info(`suspending ${appType}-app(${appId}), force?`, force, 'gcore?', gcore)
 
   if (appType === 'light') {
     return Promise.resolve()
@@ -256,7 +260,7 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
   var future = Promise.resolve()
   if (bridge) {
     bridge.emit('activity', 'destroyed')
-    var slice = appSuspendDurationHistogram.start({ appId: appId, isForce: force })
+    var slice = appSuspendDurationHistogram.start({ appId: appId, force: force, gcore: gcore })
     this.appStatus[appId] = Constants.status.suspending
     future = this.appSuspensionFutures[appId] = new Promise((resolve, reject) => {
       var timer = setTimeout(() => {
@@ -276,7 +280,7 @@ AppScheduler.prototype.suspendApp = function suspendApp (appId, options) {
         resolve()
         appSuspendDurationHistogram.end(slice)
       }
-      bridge.suspend({ force: force })
+      bridge.suspend({ force: force, gcore: gcore })
     })
   }
 
@@ -297,8 +301,9 @@ AppScheduler.prototype.anrSentinel = function anrSentinel () {
         if (delta < 15 /** 15s */) {
           return
         }
-        logger.warn(`ANR: app(${appId}) has not been reported alive for ${delta}ms.`)
-        return this.suspendApp(appId, { force: true })
+        logger.warn(`ANR: app(${appId}) has not been reported alive for ${delta}s.`)
+        appNotRespondingCounter.inc({ appId: appId, pid: bridge.pid })
+        return this.suspendApp(appId, { gcore: true })
       })
   )
 }
