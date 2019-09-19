@@ -1,6 +1,6 @@
 {
   "name": "yodart",
-  "version": "8.2.0",
+  "version": "8.2.1",
   "scripts": {
     "prerestart": "npm run build; tools/runtime-install",
     "postinstall": "npm run build",
