@@ -234,13 +234,18 @@ module.exports = activity => {
             if (eventDeferred === null) {
               return
             }
+            var speed = _.get(data, 'item.playMultiple')
+            if (speed === undefined) {
+              logger.warn('The setspeed events are discarded because the value of speed are undefined.')
+              return
+            }
             // The speedchange event should be upload after prepared event responded.
             eventDeferred.then(() => {
               sos.sendEventRequest('media', 'setspeed', dt.data, {
                 itemId: _.get(dt, 'data.item.itemId'),
                 duration: args[0],
                 progress: args[1],
-                speed: +data.item.playMultiple
+                speed: +speed
               })
             })
           }
