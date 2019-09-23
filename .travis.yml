@@ -35,5 +35,4 @@ jobs:
     - tools/test -l --node-path /usr/lib/node_modules --manifest /etc/manifest.json --reporter tap-spec --testset test/testsets-ci.txt --coverage-dir ../.nyc_output
     after_success:
     - cd ../
-    - npx nyc report --reporter=lcov
-    - npx codecov
+    - npx nyc report
