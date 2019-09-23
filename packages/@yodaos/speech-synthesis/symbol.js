@@ -5,5 +5,7 @@ module.exports = {
   queue: Symbol('synth#queue'),
   native: Symbol('synth#native'),
   effect: Symbol('synth#effect'),
-  hook: Symbol('synth#hook')
+  hook: Symbol('synth#hook'),
+  text: Symbol('utter#text'),
+  hint: Symbol('utter#hint')
 }
