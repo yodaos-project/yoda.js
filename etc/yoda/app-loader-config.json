@@ -1,6 +1,7 @@
 {
   "paths": [
-    "/opt/apps"
+    "/opt/apps",
+    "/data/apps"
   ],
   "lightAppIds": [
     "@yoda/battery",
