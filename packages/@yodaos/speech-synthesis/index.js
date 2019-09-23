@@ -102,10 +102,15 @@ class SpeechSynthesis {
     })
   }
 
-  playStream () {
+  /**
+   * @private
+   * @param {string} [hint]
+   */
+  playStream (hint) {
     logger.verbose(`request playing stream`)
     var utterance = new SpeechSynthesisUtterance()
     utterance.setId(this[symbol.label])
+    utterance[symbol.hint] = hint
     this[symbol.queue].push(utterance)
     if (this[symbol.status] === Status.none) {
       this[symbol.status] = Status.pending
@@ -155,7 +160,7 @@ class SpeechSynthesis {
     }
     var utter = this[symbol.queue].shift()
     this[symbol.utter] = utter
-    if (utter.text) {
+    if (utter[symbol.text]) {
       if (this[symbol.hook]) {
         this[symbol.hook]('speak', utter)
       }
@@ -179,7 +184,16 @@ class SpeechSynthesis {
 class SpeechSynthesisUtterance extends EventEmitter {
   constructor (text) {
     super()
-    this.text = text
+    this[symbol.text] = text
+  }
+
+  get text () {
+    if (this[symbol.text]) {
+      return this[symbol.text]
+    }
+    if (this[symbol.hint]) {
+      return this[symbol.hint]
+    }
   }
 
   setId (label) {
