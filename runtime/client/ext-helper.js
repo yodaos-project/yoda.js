@@ -1,10 +1,14 @@
 'use strict'
 
+var path = require('path')
 var logger = require('logger')('ext-app-client')
 var translator = require('./translator-ipc')
 var flora = require('@yoda/flora')
 var endoscope = require('@yoda/endoscope')
 var FloraExporter = require('@yoda/endoscope/exporter/flora')
+var pony = require('@yoda/oh-my-little-pony')
+var mkdirpSync = require('@yoda/util/fs').mkdirpSync
+
 var apiSymbol = Symbol.for('yoda#api')
 
 module.exports = {
@@ -60,8 +64,14 @@ function main (target, descriptorPath, runner) {
   var api = translator.translate(descriptor, agent)
   api.appId = appId
   api.appHome = target
+  api.appDataDir = path.join('/data/AppData', appId)
   api.agent = agent
   global[apiSymbol] = api
+
+  mkdirpSync(api.appDataDir)
+  pony.catchUncaughtError(path.join(api.appDataDir, 'exception.stack'), () => {
+    process.exit(1)
+  })
 
   try {
     /**
