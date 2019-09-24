@@ -1,4 +1,5 @@
 @yoda/bolero/**/*.test.js
+@yoda/oh-my-little-pony/*.test.js
 @yoda/util/*.test.js
 @yodaos/application/*.test.js
 logger/*.test.js
