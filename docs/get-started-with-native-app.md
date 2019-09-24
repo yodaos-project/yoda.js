@@ -1,4 +1,4 @@
-# Develop native app
+# Get Started with Native App
 
 On YodaOS, you can build any apps using clang. This document will describe how to use c sdk to develop your apps.
 

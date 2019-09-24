@@ -1,12 +1,7 @@
-# Wiki
+# Framework Documentation
 
-**About**
-
-- [License][]
-
-**Developer Guide**
-
-- [OTA][./ota.md]
-- [Protocol Fauna][./protocol-fauna.md]
-
-[License]: ../LICENSE.md
+- Configuration
+  - [Configure OTA](./configure-ota.md)
+- Applications
+  - [Get Started with Native App](./get-started-with-native-app.md)
+  - [The Application Protocol: Fauna](./protocol-fauna.md)

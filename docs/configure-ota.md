@@ -1,4 +1,4 @@
-# OTA
+# Configure OTA
 
 ## Downloading OTA System Image
 
