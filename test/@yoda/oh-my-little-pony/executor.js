@@ -1,4 +1,4 @@
-require('@yoda/oh-my-little-pony')
+require('@yoda/oh-my-little-pony').catchUncaughtError()
 
 function main () {
   throw new Error('foobar')

@@ -38,27 +38,22 @@ if (profilerFlag === 'true') {
 }
 
 function catchUncaughtError (logfile) {
-  var stream
   if (logfile) {
-    yodaUtil.fs.mkdirp(path.dirname(logfile), (err) => {
-      if (err) {
-        logger.error(err)
-        return
-      }
-      stream = fs.createWriteStream(logfile)
-    })
+    yodaUtil.fs.mkdirpSync(path.dirname(logfile))
   }
 
   process.on('uncaughtException', err => {
     logger.error('Uncaught Exception', err)
-    stream && stream.write(`[${new Date().toISOString()}] <${process.argv[1]}> Uncaught Exception:
-${err.stack}\n`, () => {})
+    if (logfile) {
+      fs.writeFileSync(logfile, `[${new Date().toISOString()}] <${process.title}> Uncaught Exception: ${err.stack}\n`)
+    }
   })
 
   process.on('unhandledRejection', err => {
     logger.error('Unhandled Rejection', err)
-    stream && stream.write(`[${new Date().toISOString()}] <${process.argv[1]}> Unhandled Rejection:
-${err.stack}\n`, () => {})
+    if (logfile) {
+      fs.writeFileSync(logfile, `[${new Date().toISOString()}] <${process.title}> Unhandled Rejection: ${err.stack}\n`)
+    }
   })
 
   return module.exports
