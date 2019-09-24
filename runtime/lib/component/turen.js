@@ -268,6 +268,9 @@ Turen.prototype.recoverPausedOnAwaken = function recoverPausedOnAwaken () {
   this.bluetoothA2dp && this.bluetoothA2dp.unmute()
 
   logger.info('trying to resume previously awaken paused tts/media', currentAppId)
+  if (currentAppId == null) {
+    currentAppId = undefined // FIXME(Yorkie): flora could not receive `null`.
+  }
   return Promise.all([
     this.runtime.ttsMethod('resetAwaken', [ currentAppId ]),
     this.runtime.multimediaMethod('resetAwaken', [ currentAppId ])
