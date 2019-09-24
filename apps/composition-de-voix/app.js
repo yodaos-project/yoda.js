@@ -29,8 +29,11 @@ module.exports = function compositionDeVoix (activity) {
     if (handler == null) {
       return activity.speak('干蛤').then(() => activity.exit())
     }
-    currId = id
-    handler(nlp, id)
+    activity.idle()
+      .then(() => {
+        currId = id
+        handler(nlp, id)
+      })
   })
 
   activity.on('destroy', () => {
