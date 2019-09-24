@@ -1,6 +1,0 @@
-{
-  "init": "time.init",
-  "started": "time.started",
-  "voice coming": "time.voice.coming",
-  "voice awake": "time.voice.awake"
-}
