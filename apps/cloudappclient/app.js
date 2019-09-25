@@ -74,7 +74,13 @@ module.exports = activity => {
   })
   // for debug and test: save playerId map to property
   pm.on('update', (handle) => {
-    property.set('app.cloudappclient.player', JSON.stringify(handle))
+    try {
+      // error will accour when the length of value more than 96
+      property.set('app.cloudappclient.player', JSON.stringify(handle))
+    } catch (err) {
+      logger.warn('update playerId:', JSON.stringify(handle))
+      logger.error('try to save playerId to property error.', err)
+    }
   })
 
   pm.on('change', (appId, playerId) => {
