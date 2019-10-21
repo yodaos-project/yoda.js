@@ -140,15 +140,24 @@ function runInCurrentContext (delegate, callback) {
       unlockProc = unlock
       cb()
     },
-    cb => delegate.prelude(cb),
-    (cb, result) => {
-      if (!result) {
-        return compose.Break(null)
-      }
-      cb()
-    },
-    /** actual procedure, shall skip if prepare failed */
-    cb => doRun(cb)
+    cb =>
+      compose([
+        cb => delegate.prelude(cb),
+        (cb, result) => {
+          if (!result) {
+            return compose.Break(null)
+          }
+          cb()
+        },
+        /** actual procedure, shall skip if prepare failed */
+        cb => doRun(cb)
+      ], (err, info) => {
+        if (err) {
+          common.cleanup(() => cb(err))
+          return
+        }
+        cb(null, info)
+      })
   ], (err, info) => {
     logger.info('ota unlocking proc lock.')
     if (typeof unlockProc !== 'function') {
