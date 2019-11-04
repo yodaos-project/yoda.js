@@ -1,5 +1,5 @@
 {
-  "name": "yoda",
+  "name": "yodaos",
   "version": "8.2.0",
   "scripts": {
     "prerestart": "npm run build; tools/runtime-install",
