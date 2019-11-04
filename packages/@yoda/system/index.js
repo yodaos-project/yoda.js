@@ -4,7 +4,13 @@
  * @module @yoda/system
  */
 
-var native = require('./system.node')
+var property = require('@yoda/property')
+var native
+try {
+  native = require('./system.node')
+} catch (err) {
+  native = false
+}
 
 /**
  * Power off the device.
@@ -14,7 +20,6 @@ var native = require('./system.node')
  * @private
  */
 exports.powerOff = function powerOff (reason) {
-  var property = require('@yoda/property')
   property.set('sys.power_off.reason', reason || 'system', 'persist')
   property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.powerOff())
@@ -28,7 +33,6 @@ exports.powerOff = function powerOff (reason) {
  * @private
  */
 exports.rebootCharging = function rebootCharging () {
-  var property = require('@yoda/property')
   property.set('sys.power_off.reason', 'charging', 'persist')
   property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.rebootCharging())
@@ -43,7 +47,6 @@ exports.rebootCharging = function rebootCharging () {
  * @private
  */
 exports.reboot = function reboot (reason) {
-  var property = require('@yoda/property')
   property.set('sys.power_off.reason', reason || 'reboot', 'persist')
   property.set('sys.power_off.time', new Date().toISOString(), 'persist')
   process.nextTick(() => native.reboot())
@@ -56,7 +59,9 @@ exports.reboot = function reboot (reason) {
  * @returns {boolean}
  * @private
  */
-exports.verifyOtaImage = native.verifyOtaImage
+exports.verifyOtaImage = function verifyOtaImage() {
+  return native.verifyOtaImage()
+}
 
 /**
  * Prepare the OTA procedure. It should be called before start upgrading.
@@ -175,5 +180,9 @@ exports.CLOCK_REALTIME = native.CLOCK_REALTIME
 exports.CLOCK_MONOTONIC = native.CLOCK_MONOTONIC
 exports.CLOCK_PROCESS_CPUTIME_ID = native.CLOCK_PROCESS_CPUTIME_ID
 exports.clockGetTime = function clockGetTime (clockId) {
-  return native.clockGetTime(clockId)
+  if (native) {
+    return native.clockGetTime(clockId)
+  } else {
+    return { sec: Date.now() / 1000 }
+  }
 }

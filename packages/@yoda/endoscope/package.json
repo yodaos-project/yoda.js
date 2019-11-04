@@ -1,7 +1,11 @@
 {
   "name": "@yoda/endoscope",
   "version": "0.0.1",
-  "description": "",
+  "description": "## Metric names and labels Every time series is uniquely identified by its metric name and optional key-value pairs called labels.",
   "main": "index.js",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": ""
 }

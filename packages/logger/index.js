@@ -54,10 +54,13 @@ function createLoggerFunction (level) {
   }
   return function printlog () {
     var line = ''
-    if (arguments.length === 1) {
-      line = util.formatValue(arguments[0])
-    } else if (arguments.length === 2) {
-      line = `${util.formatValue(arguments[0])} ${util.formatValue(arguments[1])}`
+    var ownFormatValue = typeof util.formatValue !== 'function'
+    if (!ownFormatValue) {
+      if (arguments.length === 1) {
+        line = util.formatValue(arguments[0])
+      } else if (arguments.length === 2) {
+        line = `${util.formatValue(arguments[0])} ${util.formatValue(arguments[1])}`
+      }
     } else {
       line = util.format.apply(util, arguments)
     }

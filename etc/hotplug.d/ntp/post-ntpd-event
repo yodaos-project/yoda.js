@@ -1,3 +1,0 @@
-#!/bin/sh
-
-/usr/lib/node_modules/@yoda/flora/bin/flora-cli post yodaos.ntpd.event "[\"$ACTION\"]"

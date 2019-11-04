@@ -3,7 +3,7 @@ var Agent = require('@yoda/flora').Agent
 class Exporter {
   constructor (name) {
     this.name = name
-    this.agent = new Agent('unix:/var/run/flora.sock')
+    this.agent = new Agent(process.env.YODA_FLORA_URI)
     this.agent.start()
   }
 

@@ -1,0 +1,159 @@
+{
+  "namespaces": {
+    "audioFocus": {
+      "events": {
+        "gain": {
+          "type": "event"
+        },
+        "loss": {
+          "type": "event"
+        }
+      },
+      "methods": {
+        "request": {
+          "returns": "promise"
+        },
+        "abandon": {
+          "returns": "promise"
+        },
+        "getCurrentFocuses": {
+          "returns": "promise"
+        }
+      }
+    },
+    "broadcast": {
+      "events": {
+        "broadcast": {}
+      },
+      "methods": {
+        "registerBroadcast": {
+          "returns": "promise"
+        },
+        "unregisterBroadcast": {
+          "returns": "promise"
+        }
+      }
+    },
+    "chronos": {
+      "events": {},
+      "methods": {
+        "schedule": {
+          "returns": "promise"
+        },
+        "cancel": {
+          "returns": "promise"
+        }
+      }
+    },
+    "effect": {
+      "methods": {
+        "play": {
+          "returns": "promise"
+        },
+        "stop": {
+          "returns": "promise"
+        }
+      }
+    },
+    "keyboard": {
+      "events": {
+        "keydown": {
+          "type": "event"
+        },
+        "keyup": {
+          "type": "event"
+        },
+        "click": {
+          "type": "event"
+        },
+        "dblclick": {
+          "type": "event"
+        },
+        "longpress": {
+          "type": "event"
+        }
+      },
+      "methods": {
+        "preventDefaults": {
+          "returns": "promise"
+        },
+        "restoreDefaults": {
+          "returns": "promise"
+        },
+        "restoreAll": {
+          "returns": "promise"
+        }
+      }
+    },
+    "mediaController": {
+      "events": {
+        "command": {
+          "type": "event"
+        }
+      },
+      "methods": {
+        "setNowPlayingInfo": {
+          "returns": "promise"
+        },
+        "dispatchCommand": {
+          "returns": "promise"
+        }
+      }
+    },
+    "runtime": {
+      "methods": {
+        "setPhase": {
+          "returns": "promise"
+        }
+      }
+    },
+    "visibility": {
+      "methods": {
+        "getKeyAndVisibleAppId": {
+          "returns": "promise"
+        },
+        "abandonKeyVisibility": {
+          "returns": "promise"
+        },
+        "abandonAllVisibilities": {
+          "returns": "promise"
+        }
+      }
+    }
+  },
+  "values": {
+    "appId": {},
+    "appHome": {}
+  },
+  "events": {
+    "created": {},
+    "paused": {},
+    "resumed": {},
+    "destroyed": {},
+    "url": {},
+    "oppressing": {}
+  },
+  "methods": {
+    "exit": {
+      "returns": "promise"
+    },
+    "openUrl": {
+      "returns": "promise"
+    },
+    "setContextOptions": {
+      "returns": "promise"
+    },
+    "getContextOptions": {
+      "returns": "promise"
+    },
+    "startMonologue": {
+      "returns": "promise",
+      "permissions": [
+        "ACCESS_MONOPOLIZATION"
+      ]
+    },
+    "stopMonologue": {
+      "returns": "promise"
+    }
+  }
+}

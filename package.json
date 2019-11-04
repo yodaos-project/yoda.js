@@ -1,9 +1,9 @@
 {
-  "name": "yodart",
+  "name": "yoda",
   "version": "8.2.0",
   "scripts": {
     "prerestart": "npm run build; tools/runtime-install",
-    "postinstall": "npm run build",
+    "apostinstall": "npm run build",
     "restart": "tools/runtime-op restart",
     "lint": "npm run lint-js && npm run lint-cc",
     "lint-js": "standard",
@@ -19,10 +19,23 @@
     "unsafe-perm": true
   },
   "engine": {
-    "shadow-node": "0.11.6"
+    "shadow-node": "0.11.6",
+    "node": "11.7.0"
   },
   "manifest": {
     "apilevel": 0.6
+  },
+  "main": "src/index.js",
+  "dependencies": {
+    "logger": "./packages/logger",
+    "@yoda/bolero": "./packages/@yoda/bolero",
+    "@yoda/endoscope": "./packages/@yoda/endoscope",
+    "@yoda/flora": "https://github.com/yodaos-project/node-flora#fix/flora-package-name",
+    "@yoda/manifest": "./packages/@yoda/manifest",
+    "@yoda/ota": "./packages/@yoda/ota",
+    "@yoda/property": "./packages/@yoda/property",
+    "@yoda/system": "./packages/@yoda/system",
+    "@yoda/util": "./packages/@yoda/util"
   },
   "devDependencies": {
     "clang-format": "^1.2.4",

@@ -4,7 +4,7 @@ var _ = require('../packages/@yoda/util/_')
 
 var nodeRequire = require
 
-var descriptorFiles = fs.readdirSync(path.join(__dirname, '../runtime/descriptor'))
+var descriptorFiles = fs.readdirSync(path.join(__dirname, '../src/descriptor'))
 var api = descriptorFiles
   .filter(it => !it.endsWith('descriptor.js'))
   .map(it => ({
@@ -21,10 +21,10 @@ var api = descriptorFiles
     return accu
   }, { namespaces: {} })
 
-fs.writeFileSync(path.join(__dirname, '../runtime/client/api/default.json'), JSON.stringify(api, null, 2))
+fs.writeFileSync(path.join(__dirname, '../src/client/api/default.json'), JSON.stringify(api, null, 2))
 
 function generate (filename) {
-  var dirname = path.join(__dirname, '../runtime/descriptor')
+  var dirname = path.join(__dirname, '../src/descriptor')
   var module = { exports: {} } //eslint-disable-line
   var require = (id) => {  //eslint-disable-line
     if (id === 'logger') {

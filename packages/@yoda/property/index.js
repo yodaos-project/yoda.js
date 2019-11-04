@@ -22,8 +22,18 @@
 
 var native
 if (process.env.YODA_RUN_MODE === 'host') {
+  native = createSimpleProperty()
+} else {
+  try {
+    native = require('./property.node')
+  } catch (err) {
+    native = createSimpleProperty()
+  }
+}
+
+function createSimpleProperty () {
   // A simple implementation for host
-  native = {
+  return {
     PROP_VALUE_MAX: 30,
     map: {},
     get: function (key) {
@@ -33,8 +43,6 @@ if (process.env.YODA_RUN_MODE === 'host') {
       this.map[key] = val
     }
   }
-} else {
-  native = require('./property.node')
 }
 
 var PROP_VALUE_MAX = native.PROP_VALUE_MAX

@@ -1,0 +1,13 @@
+{
+  "product_name": "YodaOS Agent",
+  "version": "1.0.0",
+  "capabilities": {
+    "main-visibility": "voice",
+    "battery": false
+  },
+  "defaults": {
+    "audio.volume.init": 60,
+    "audio.volume.recover": 30,
+    "ota.constraint.additional_available_space_kb": 5120
+  }
+}

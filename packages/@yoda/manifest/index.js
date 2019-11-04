@@ -9,11 +9,13 @@ var fs = require('fs')
 var path = require('path')
 var _ = require('@yoda/util')._
 
-var manifestPath = '/etc/manifest.json'
+var manifestPath = '/config/manifest.json'
 if (process.env.YODA_MANIFEST) {
   manifestPath = process.env.YODA_MANIFEST
 } else if (process.env.YODA_RUN_MODE === 'host') {
   manifestPath = /** ${workspace}/etc/manifest.json */path.join(__dirname, '../../..', manifestPath)
+} else {
+  manifestPath = '/etc/manifest.json'
 }
 
 var data = fs.readFileSync(manifestPath, 'utf8')
