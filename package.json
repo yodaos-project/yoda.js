@@ -15,6 +15,9 @@
     "test-local": "tools/test --local --reporter tap-spec",
     "test": "tools/test --reporter tap-spec"
   },
+  "bin": {
+    "yoda-starter": "./targets/node/main.js"
+  },
   "config": {
     "unsafe-perm": true
   },

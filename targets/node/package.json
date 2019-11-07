@@ -1,5 +1,5 @@
 {
-  "name": "yodajs-node",
+  "name": "yoda-node",
   "version": "1.0.0",
   "description": "YodaOS on Node.js runtime",
   "main": "main.js",
