@@ -5,7 +5,7 @@ var env = require('@yoda/env')
 
 test('should test the default config', t => {
   var env1 = env()
-  t.assert(env1.cloudgw.account, 'device-account.rokid.com')
+  t.assert(env1.cloudgw.account, 'device-account-v2.rokid.com')
   t.assert(env1.cloudgw.wss, 'cloudapigw.open.rokid.com')
   t.assert(env1.cloudgw.restful, 'cloudapigw.open.rokid.com')
   t.assert(env1.mqtt.registry, 'wormhole-registry.rokid.com')
@@ -24,7 +24,7 @@ test('should test the dev config', t => {
 
 test('should test undefined config', t => {
   var env3 = env.load('undefined')
-  t.assert(env3.cloudgw.account, 'device-account.rokid.com')
+  t.assert(env3.cloudgw.account, 'device-account-v2.rokid.com')
   t.assert(env3.cloudgw.wss, 'apigwws.open.rokid.com')
   t.assert(env3.cloudgw.restful, 'apigwrest.open.rokid.com')
   t.assert(env3.mqtt.registry, 'wormhole-registry.rokid.com')
