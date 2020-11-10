@@ -19,7 +19,7 @@ function sync (source) {
   }
   var str = `${date.year}-${date.month}-${date.date} ${date.hours}:${date.minutes}:${date.seconds}`
 
-  var cmd = `date -u -s "${str}" && touch /data/system/login.timestamp`
+  var cmd = `date -u -s "${str}"`
   logger.log(`exec ${cmd} from <${source}>`)
   return execAsync(cmd, {})
 }
