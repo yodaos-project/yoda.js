@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-HOST="device-account.rokid.com"
+HOST="device-account-v2.rokid.com"
 ROKID_MASTER_ID=""
 
 while [ $# -gt 0 ]; do
