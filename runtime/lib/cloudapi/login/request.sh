@@ -20,6 +20,9 @@ while [ $# -gt 0 ]; do
   shift $(( $# > 0 ? 1 : 0 ))
 done
 
+for i_retry in $(seq 1 6)
+do 
+
 NOW_EPOCH_TIMESTAMP=`date +%s`
 DEVICE_ID=`getprop ro.boot.serialno`
 DEVICE_TYPE_ID=`getprop ro.boot.devicetypeid`
@@ -48,4 +51,14 @@ qs_stringify() {
 POST_DATA=`qs_stringify '&' $MY_OPTS`
 URI="https://$HOST/device/loginV2.do"
 
-curl -D /tmp/LOGIN_HEADER -H "Content-Type: application/x-www-form-urlencoded" -d "$POST_DATA" $URI
+result=$(curl -D /tmp/LOGIN_HEADER -H "Content-Type: application/x-www-form-urlencoded" -d "$POST_DATA" $URI)
+if [ $? -eq 0 ] && [[ "x${result}" != "x" ]]; then
+  echo $result
+  exit 0
+else
+  >&2 echo $result
+  sleep 2
+fi
+
+done
+
