@@ -214,11 +214,11 @@ MqttClient.prototype.mydisconnect = function mydisconnect (err) {
     that._clearKeepAlive()
     clearTimeout(that._reconnectingTimer)
     try {
-       var buf = that._handle._getDisconnect()
-       that._write(buf)
+      var buf = that._handle._getDisconnect()
+      that._write(buf)
     } catch (err) {
-       that.emit('error', err)
-    } 
+      that.emit('error', err)
+    }
   }
   if (mqttIsConnected || that._isSocketConnected) {
     that._socket.end()
