@@ -196,10 +196,33 @@ MqttClient.prototype.suspend = function suspend () {
     return
   }
   this._rejectReconnect = true
-  this._mqttHandle.disconnect()
+  // this._mqttHandle.disconnect()
+  this.mydisconnect()
   this._mqttHandle.removeAllListeners()
   this._mqttHandle = null
   this._backoffTime = MINIMUM_BACKOFF_TIME
+}
+
+MqttClient.prototype.mydisconnect = function mydisconnect (err) {
+  var that = this._mqttHandle
+  var mqttIsConnected = that._isConnected
+  if (err) {
+    that.emit('error', err)
+  }
+
+  if (that._isConnected) {
+    that._clearKeepAlive()
+    clearTimeout(that._reconnectingTimer)
+    try {
+      var buf = that._handle._getDisconnect()
+      that._write(buf)
+    } catch (err) {
+      that.emit('error', err)
+    } 
+  }
+  if (mqttIsConnected || that._isSocketConnected) {
+    that._socket.end()
+  }
 }
 
 /**
