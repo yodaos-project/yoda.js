@@ -218,7 +218,7 @@ MqttClient.prototype.mydisconnect = function mydisconnect (err) {
       that._write(buf)
     } catch (err) {
       that.emit('error', err)
-    } 
+    }
   }
   if (mqttIsConnected || that._isSocketConnected) {
     that._socket.end()
