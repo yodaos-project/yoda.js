@@ -151,6 +151,9 @@ MqttClient.prototype.start = function start (opts) {
       logger.warn('receives the offline event, the network maybe not stable')
       this.reconnect()
     })
+    this._mqttHandle.on('timeout', () => {
+      logger.warn('receives the timeout event, the network maybe not stable')
+    })
   }, (_) => {
     logger.info('occurs an error, set _isConnecting to false and reconnect')
     this._isConnecting = false
